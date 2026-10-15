@@ -528,18 +528,18 @@ final class UnboundSuppressionAuditTest extends TestCase
     {
         return new NamespacePattern(SelectorDefinition::fromKindAndValue($kind->value, $value));
     }
-    private static function populationPublication(): \Qualimetrix\Analysis\Finding\Contract\ChannelPublication
+    private static function populationPublication(): \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication
     {
         $decisions = [];
         foreach (\Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::channelDeclarations() as $name => $declaration) {
             foreach ($declaration->levels as $level) {
                 $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
-                    new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(\Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($name), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable),
+                    new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(\Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel($name), $level, \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole::Selectable),
                     new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
                 );
             }
         }
-        return new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null));
+        return new \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null));
     }
 
 }

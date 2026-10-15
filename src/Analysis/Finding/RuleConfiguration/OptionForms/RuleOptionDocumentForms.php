@@ -8,12 +8,12 @@ use LogicException;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\Shorthand;
-use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionAddress;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\FrameworkOptionKeys;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionAddress;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionDocumentFormsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface;
 
 /** Projects root and level declarations into document schemas. */
 final readonly class RuleOptionDocumentForms implements RuleOptionDocumentFormsInterface

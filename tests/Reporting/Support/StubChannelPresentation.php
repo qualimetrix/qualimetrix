@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Reporting\Support;
 
-use Qualimetrix\Analysis\Finding\Contract\ChannelPresentation;
-use Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPresentation;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPresentationInterface;
 
 /**
  * A fixed, non-null answer for any code — these formatter-mechanics tests

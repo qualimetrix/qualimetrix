@@ -34,15 +34,14 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
-use Qualimetrix\Infrastructure\Console\ExitCodeResolver;
-use Qualimetrix\Infrastructure\Console\ExitPolicy;
-use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
-use Qualimetrix\Infrastructure\Console\OutputHelper;
-use Qualimetrix\Infrastructure\Console\ProfilePresenter;
+use Qualimetrix\Infrastructure\Console\CheckReport\FormatterContextFactory;
+use Qualimetrix\Infrastructure\Console\CheckReport\ReportAssembler;
 use Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal;
-use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
+use Qualimetrix\Infrastructure\Console\RuntimePolicy\ExitCodeResolver;
+use Qualimetrix\Infrastructure\Console\RuntimePolicy\ExitPolicy;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\ReportPublication\OutputHelper;
 use Qualimetrix\Infrastructure\Git\GitScope;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Qualimetrix\Infrastructure\Profiler\ProfileSession;
@@ -69,7 +68,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
 
-#[CoversClass(ResultPresenter::class)]
+#[CoversClass(ReportAssembler::class)]
+#[CoversClass(\Qualimetrix\Infrastructure\Console\CheckReport\ReportFormatter::class)]
+#[CoversClass(\Qualimetrix\Infrastructure\Console\Terminal\ReportPublication\ReportPublication::class)]
 #[CoversClass(OutputHelper::class)]
 final class ResultPresenterTest extends TestCase
 {
@@ -79,7 +80,7 @@ final class ResultPresenterTest extends TestCase
         $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
         $trace->record(
             'complexity.ccn',
-            new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('complexity.ccn'),
+            new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel('complexity.ccn'),
             \Qualimetrix\Core\Symbol\SymbolLevel::Callable,
             \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::occurrence('missing', 0, 'callable'),
             'callable-value',
@@ -96,7 +97,7 @@ final class ResultPresenterTest extends TestCase
         $otherTrace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
         $otherTrace->record(
             'complexity.ccn',
-            new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('complexity.ccn'),
+            new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel('complexity.ccn'),
             \Qualimetrix\Core\Symbol\SymbolLevel::Callable,
             \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::occurrence('missing', 0, 'callable'),
             'callable-value',
@@ -295,7 +296,7 @@ final class ResultPresenterTest extends TestCase
 
     /**
      * An unwritable `--output` target is refused before analysis runs. The counter
-     * evidence that no analysis ran lives in {@see \Qualimetrix\Infrastructure\Console\Command\CheckCommand::doExecute()},
+     * evidence that no analysis ran lives in {@see \Qualimetrix\Infrastructure\Console\Check\CheckCommand::doExecute()},
      * which calls this precheck before `runAnalysis()` — this test pins the
      * precheck itself, in isolation from that ordering.
      */
@@ -308,7 +309,7 @@ final class ResultPresenterTest extends TestCase
 
         try {
             $this->presenter(self::createStub(FormatterRegistryInterface::class))
-                ->assertOutputIsWritable($this->input(['--output' => $dir . '/report.json']), $this->targets());
+                ->publication->assertOutputIsWritable($this->input(['--output' => $dir . '/report.json']), $this->targets());
             self::fail('An unwritable --output directory must be refused before analysis runs.');
         } catch (EnvironmentRefusal $refusal) {
             self::assertStringContainsString($dir, $refusal->summary());
@@ -331,7 +332,7 @@ final class ResultPresenterTest extends TestCase
 
         try {
             $this->presenter(self::createStub(FormatterRegistryInterface::class))
-                ->assertOutputIsWritable($this->input(['--output' => $dir]), $this->targets());
+                ->publication->assertOutputIsWritable($this->input(['--output' => $dir]), $this->targets());
             self::fail('A directory named by --output must be refused before analysis runs.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString('is a directory', $refusal->summary());
@@ -357,7 +358,7 @@ final class ResultPresenterTest extends TestCase
 
         try {
             $this->presenter(self::createStub(FormatterRegistryInterface::class))
-                ->assertOutputIsWritable($this->input(['--output' => $dir . '/report.json']), $this->targets());
+                ->publication->assertOutputIsWritable($this->input(['--output' => $dir . '/report.json']), $this->targets());
         } finally {
             chmod($dir, 0o755);
             unlink($dir . '/report.json');
@@ -374,8 +375,8 @@ final class ResultPresenterTest extends TestCase
         $writableTarget = sys_get_temp_dir() . '/qmx-result-presenter-writable-' . bin2hex(random_bytes(6)) . '.json';
 
         // Neither call may throw — the assertion is that execution reaches the end.
-        $presenter->assertOutputIsWritable($this->input(), $this->targets());
-        $presenter->assertOutputIsWritable($this->input(['--output' => $writableTarget]), $this->targets());
+        $presenter->publication->assertOutputIsWritable($this->input(), $this->targets());
+        $presenter->publication->assertOutputIsWritable($this->input(['--output' => $writableTarget]), $this->targets());
     }
 
     /**
@@ -388,7 +389,7 @@ final class ResultPresenterTest extends TestCase
         $target = sys_get_temp_dir() . '/qmx-result-presenter-fault-' . bin2hex(random_bytes(6)) . '.json';
         file_put_contents($target, 'old');
         $script = <<<'PHP'
-            namespace Qualimetrix\Core\FileTarget {
+            namespace Qualimetrix\Core\FileTarget\Publication {
                 function fwrite($stream, string $bytes): int|false
                 {
                     ++$GLOBALS['qmx_report_hit'];
@@ -421,7 +422,7 @@ final class ResultPresenterTest extends TestCase
                         \Qualimetrix\Core\Path\AbsolutePath::fromString('/project'),
                         $targets,
                         new \Qualimetrix\Reporting\Contract\OutputFormat(),
-                        new \Qualimetrix\Infrastructure\Console\ExitPolicy(),
+                        new \Qualimetrix\Infrastructure\Console\RuntimePolicy\ExitPolicy(),
                     );
                     $failure = null;
                 } catch (\Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal $caught) {
@@ -586,27 +587,29 @@ final class ResultPresenterTest extends TestCase
         }
     }
 
-    private function presenter(FormatterRegistryInterface $registry): ResultPresenter
+    private function presenter(FormatterRegistryInterface $registry): \Qualimetrix\Tests\Infrastructure\Console\Support\ReportPresentationFixture
     {
         $session = new ProfileSession();
         $definitions = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
         $definitions->method('all')->willReturn([]);
         $remediation = new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues());
 
-        return new ResultPresenter(
-            $registry,
-            $session,
-            new SummaryEnricher(
-                new DebtCalculator($remediation),
-                new ImpactCalculator(new ClassRankResolver(), $remediation),
-                new HealthSummaryBuilder(new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())), $definitions),
+        $error = new ErrorStream();
+        $contexts = new FormatterContextFactory($registry);
+        return new \Qualimetrix\Tests\Infrastructure\Console\Support\ReportPresentationFixture(
+            new ReportAssembler(
+                new FindingFilter(),
+                new SummaryEnricher(
+                    new DebtCalculator($remediation),
+                    new ImpactCalculator(new ClassRankResolver(), $remediation),
+                    new HealthSummaryBuilder(new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())), $definitions),
+                ),
+                self::createStub(RuleConfigurationInterface::class),
             ),
-            new ProfilePresenter($session, new ErrorStream()),
+            new \Qualimetrix\Infrastructure\Console\CheckReport\ReportFormatter($registry, $contexts, $error),
+            $contexts,
             new ExitCodeResolver(StubChannelDeclarationRegistry::withDefaults()),
-            new FindingFilter(),
-            new FormatterContextFactory($registry),
-            self::createStub(RuleConfigurationInterface::class),
-            new ErrorStream(),
+            new \Qualimetrix\Infrastructure\Console\Terminal\ReportPublication\ReportPublication($error),
         );
     }
 
@@ -678,7 +681,7 @@ final class ResultPresenterTest extends TestCase
      * @param list<array{message: string, source: list<array<string, mixed>>}> $configurationDiagnostics
      */
     private function publishRenderedResults(
-        ResultPresenter $presenter,
+        \Qualimetrix\Tests\Infrastructure\Console\Support\ReportPresentationFixture $presenter,
         array $findings,
         AnalysisResult $analysisResult,
         InputInterface $input,
@@ -694,10 +697,16 @@ final class ResultPresenterTest extends TestCase
         ?ReportProjectScope $projectScope = null,
         array $configurationDiagnostics = [],
     ): int {
-        $report = $presenter->renderResults($findings, $analysisResult, $input, $output, $projectRoot, $outputFormat, $exitPolicy, $reportScope, $filterResult, $projectionOptions, $namespacePattern, $projectScope, $configurationDiagnostics);
-        $presenter->publishReport($report, $input, $output, $runTargets);
-
-        return $report->exitCode;
+        $context = $presenter->formatter->context($input, $output, $projectRoot, $outputFormat, $reportScope !== null, $namespacePattern);
+        $projection = $filterResult ?? new FindingProjectionResult($findings, new \Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionResult($findings, [], []));
+        $suppressionOptions = ($outputFormat->value === 'suppressed' || ($input->hasOption('show-suppressed') && $input->getOption('show-suppressed') === true)) && $projectionOptions !== null && $analysisResult->ruleExecution !== null
+            ? $projectionOptions
+            : null;
+        $report = $presenter->assembler->assemble($analysisResult, $projection, $context->context, $projectScope, $configurationDiagnostics, $suppressionOptions);
+        $formatted = $presenter->formatter->format($report, $context, $output);
+        $exit = $presenter->exit->resolve($findings, $report->coverage, $exitPolicy);
+        $presenter->publication->publishReport(new \Qualimetrix\Infrastructure\Console\CheckReport\RenderedCheckReport($formatted, $outputFormat->value, $exit), $input, $output, $runTargets);
+        return $exit;
     }
 
     private function drillDownExit(string $option, string $value, ?NamespaceTree $namespaceTree = null): int

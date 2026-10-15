@@ -24,7 +24,7 @@ no consumers is refused by name (`contract declaration … must publish at least
 one used consumer`), and a declared consumer that does not import is refused too.
 So the value and its first consumer are one package.
 
-- Files: `src/Core/ProductIdentity.php`, `src/Infrastructure/Console/Application.php`,
+- Files: `src/Core/ProductIdentity.php`, `src/Infrastructure/Console/Application/Application.php`,
   `src/Infrastructure/Console/Refusal/RefusalPresenter.php`, the manifest entry
   with its consumer rows, the regenerated architecture artifacts, `qmx.yaml`, and
   the regenerated test inventories if this package adds a test.

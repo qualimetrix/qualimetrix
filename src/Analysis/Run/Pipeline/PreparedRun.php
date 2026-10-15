@@ -7,7 +7,7 @@ namespace Qualimetrix\Analysis\Run\Pipeline;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 
-use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;

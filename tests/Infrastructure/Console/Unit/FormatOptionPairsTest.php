@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Infrastructure\Console\FormatOptionPairs;
+use Qualimetrix\Infrastructure\Console\Invocation\FormatOptionPairs;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 
 #[CoversClass(FormatOptionPairs::class)]

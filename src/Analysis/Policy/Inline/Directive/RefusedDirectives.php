@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
 use Closure;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;

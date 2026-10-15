@@ -8,7 +8,7 @@ use Closure;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\AnalysedDeclarations;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CapturePattern;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\NamedType;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\UnmatchedTypeJudgement;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\UnmatchedTypeOccurrence;

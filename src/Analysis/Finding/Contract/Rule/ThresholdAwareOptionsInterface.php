@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\NoConfiguredBoundary;
+
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
 
 /**

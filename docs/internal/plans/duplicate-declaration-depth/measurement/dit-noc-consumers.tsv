@@ -8,7 +8,7 @@ reader	src/Reporting/Formatter/MetricsJsonFormatter.php	publishes every class-le
 reader	src/Reporting/Formatter/Html/HtmlTreeBuilder.php	same, for the HTML tree	same
 reader	src/Analysis/Evidence/Measurement/Aggregation/NamespaceMetricContributions.php	namespace and project rollups over logical classes	denominator unchanged; the collapsed value becomes deterministic
 reader	src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricEvaluator.php	a user formula may name design.dit by string	keeps reading one value per name -- the reason the logical projection keeps carrying one
-reader	src/Analysis/Policy/Baseline/ExplainedSubject.php	indexes declarations, then logical subjects	baseline:explain gains a per-declaration depth for a duplicated name
+reader	src/Analysis/Policy/Baseline/Explanation/ExplainedSubject.php	indexes declarations, then logical subjects	baseline:explain gains a per-declaration depth for a duplicated name
 reader	src/Analysis/Evidence/ComputedMetrics/Health/Metadata/MetricHintCatalog.php	hint text keyed by metric name	unchanged; no built-in health formula names dit or noc
 name only	src/Analysis/Configuration/Preset/{strict,legacy}.yaml, qmx.yaml, qmx.yaml.example, src/Analysis/Finding/RuleConfiguration/RuleThresholdKeyGroupRegistry.php, src/Analysis/Configuration/Pipeline/RuleNameValidator.php	rule name and thresholds	unchanged
 value oracle	tests/Analysis/Evidence/Measurement/Integration/Aggregation/GoldenFileAggregationTest.php	pins design.dit per class on a golden fixture with no duplicated name	must stay green: it is the regression witness for the ordinary case

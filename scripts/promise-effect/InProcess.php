@@ -29,10 +29,10 @@ use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumen
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
-use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
-use Qualimetrix\Infrastructure\Console\RuleInputValidator;
+use Qualimetrix\Infrastructure\Console\Invocation\CommandDefinition\CheckCommandDefinition;
+use Qualimetrix\Infrastructure\Console\Invocation\Configuration\ConfigurationInputAdapter;
+use Qualimetrix\Infrastructure\Console\RunSetup\FindingConfigurationPreparation;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
@@ -117,7 +117,7 @@ final class InProcess
     private const string OLD_OVERRIDES = 'Qualimetrix\\Analysis\\Finding\\Contract\\Configuration\\FindingCliOverrides';
     private const string OLD_FACTORY = 'Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsFactory';
     private const string OLD_PARSER_FACTORY = 'Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsParserFactory';
-    private const string OLD_CLI_PARSER = 'Qualimetrix\\Infrastructure\\Console\\CliOptionsParser';
+    private const string OLD_CLI_PARSER = 'Qualimetrix\\Infrastructure\\Console\\Invocation\\RuleOptions\\CliOptionsParser';
 
     private readonly ?object $legacyResolver;
 
@@ -125,7 +125,7 @@ final class InProcess
 
     private readonly ?ConfigurationInputAdapter $inputAdapter;
 
-    private readonly ?RuleInputValidator $ruleInputValidator;
+    private readonly ?FindingConfigurationPreparation $ruleInputValidator;
 
     private readonly Command $checkCommand;
 
@@ -156,7 +156,7 @@ final class InProcess
         $factory = new ContainerFactory();
         if ($typed) {
             $container = $factory->configure();
-            $container->getDefinition(RuleInputValidator::class)->setPublic(true);
+            $container->getDefinition(FindingConfigurationPreparation::class)->setPublic(true);
             $container->compile();
         } else {
             $container = $factory->create();
@@ -185,12 +185,12 @@ final class InProcess
             $universe = $container->get(ChannelUniverse::class);
             $optionsBuild = $container->get(RuleOptionsBuild::class);
             $computedMetrics = $container->get(ComputedMetricConfiguratorInterface::class);
-            $inputValidator = $container->get(RuleInputValidator::class);
+            $inputValidator = $container->get(FindingConfigurationPreparation::class);
 
             if (!$universe instanceof ChannelUniverse
                 || !$optionsBuild instanceof RuleOptionsBuild
                 || !$computedMetrics instanceof ComputedMetricConfiguratorInterface
-                || !$inputValidator instanceof RuleInputValidator) {
+                || !$inputValidator instanceof FindingConfigurationPreparation) {
                 throw new LedgerError('the typed product did not yield its declared collaborators');
             }
 
@@ -353,7 +353,7 @@ final class InProcess
             $request = $adapter->adapt($input, $this->workDirectory);
             $document = $this->pipeline->resolve($request);
             $validator = $this->ruleInputValidator ?? throw new LedgerError('the typed rule validator is unavailable');
-            $configuration = $validator->resolve($document, $input);
+            $configuration = $validator->resolve($document);
             $registry = new RuleOptionsRegistry();
             $registry->replace($configuration);
             $options = $registry->resolvedOptions()->for($rule);
@@ -459,7 +459,7 @@ final class InProcess
                     throw new LedgerError('The accepted merged observation has no resolved document.');
                 }
                 $validator = $this->ruleInputValidator ?? throw new LedgerError('the typed rule validator is unavailable');
-                $configuration = $validator->resolve($resolved, $input);
+                $configuration = $validator->resolve($resolved);
                 $registry = new RuleOptionsRegistry();
                 $registry->replace($configuration);
                 $options = $registry->resolvedOptions()->for($rule);

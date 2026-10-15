@@ -160,7 +160,7 @@ and `composer architecture:check` are the second witness for PHP references.
 Hand-edited:
 
 1. `src/Infrastructure/Console/DrillDownBinding.php` -> `src/Reporting/DrillDown/DrillDownBinding.php`, `namespace` line only
-2. `src/Infrastructure/Console/ResultPresenter.php` — one `use`
+2. `src/Infrastructure/Console/CheckReport/ReportAssembler.php` — one `use`
 3. `tests/Infrastructure/Console/Unit/DrillDownBindingTest.php` -> `tests/Reporting/Unit/DrillDown/DrillDownBindingTest.php`, namespace and `use`
 4. `governance/SelectorSyntax/NamespaceMatcherNormalizationSurfaceTest.php` — the `SELECTOR_SURFACES` path key
 5. `src/Analysis/Evidence/Measurement/Contract/MetricRepositoryInterface.php` — the `@qmx-threshold` docblock names `Infrastructure\Console\DrillDownBinding`

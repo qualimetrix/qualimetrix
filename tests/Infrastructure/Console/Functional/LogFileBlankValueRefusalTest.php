@@ -8,10 +8,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\Application;
-use Qualimetrix\Infrastructure\Console\ConsoleDiagnostics;
+use Qualimetrix\Infrastructure\Console\Application\Application;
+use Qualimetrix\Infrastructure\Console\Application\ConsoleDiagnostics;
 use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
-use Qualimetrix\Infrastructure\Console\RuntimeLoggerConfigurator;
+use Qualimetrix\Infrastructure\Console\RuntimePolicy\RuntimeLoggerConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Tester\ApplicationTester;
 

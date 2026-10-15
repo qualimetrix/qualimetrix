@@ -110,6 +110,6 @@ final class TypeCoverageOptionsTest extends TestCase
             ['error', 'threshold', 'warning'],
             TypeCoverageOptions::acceptedOptionKeys()->acceptedForDisplay(),
         );
-        self::assertContains('enabled', \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface::of(TypeCoverageOptions::class)->writableAt(null));
+        self::assertContains('enabled', \Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface::of(TypeCoverageOptions::class)->writableAt(null));
     }
 }

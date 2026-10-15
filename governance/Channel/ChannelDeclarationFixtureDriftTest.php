@@ -8,9 +8,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
@@ -391,10 +391,10 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
                 $declaration = $declaration->withoutConfiguredWarningBoundary();
             }
             if ($followsAddressedRule) {
-                $declaration = $declaration->selectedAs(\Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::FollowsAddressedRule);
+                $declaration = $declaration->selectedAs(\Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole::FollowsAddressedRule);
             }
             if ($filterExempt) {
-                $declaration = $declaration->selectedAs(\Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::FilterExempt);
+                $declaration = $declaration->selectedAs(\Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole::FilterExempt);
             }
             $declarations[$channelKey] = $declaration;
         }

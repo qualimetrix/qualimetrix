@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Hook;
 
-use Qualimetrix\Core\FileTarget\FileReplacement;
 use Qualimetrix\Core\FileTarget\FileTargetFailure;
 use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
-use Qualimetrix\Core\FileTarget\NewName;
+use Qualimetrix\Core\FileTarget\Publication\FileReplacement;
+use Qualimetrix\Core\FileTarget\Publication\NewName;
 use Qualimetrix\Core\FileTarget\ResolvedTarget;
 use Qualimetrix\Core\FileTarget\TargetKind;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /** Judges hook file identities and performs their replacement, removal and restoration. */

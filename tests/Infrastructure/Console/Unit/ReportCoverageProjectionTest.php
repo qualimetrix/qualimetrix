@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Infrastructure\Console\ReportCoverageProjection;
+use Qualimetrix\Infrastructure\Console\CheckReport\ReportCoverageProjection;
 
 #[CoversClass(ReportCoverageProjection::class)]
 final class ReportCoverageProjectionTest extends TestCase

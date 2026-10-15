@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
-use Qualimetrix\Analysis\Evidence\Size\ClassCountCollector;
+use Qualimetrix\Analysis\Evidence\Size\ClassCount\ClassCountCollector;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
@@ -171,7 +171,7 @@ PHP
                 new RuleOptionDocumentForms(),
                 DependencyVisitor::class,
                 [LocCollector::class, ClassCountCollector::class],
-            ), new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()), new \Qualimetrix\Infrastructure\Profiler\ProfileSession(), new \Qualimetrix\Infrastructure\Console\ErrorStream());
+            ), new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()), new \Qualimetrix\Infrastructure\Profiler\ProfileSession(), new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream());
             if (WorkerPool::unavailableCapability() !== null) {
                 self::markTestSkipped('Parallel worker transport is unavailable.');
             }

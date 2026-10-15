@@ -18,8 +18,8 @@ use Qualimetrix\Analysis\Evidence\Size\MethodCountOptions;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOptionValues;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -42,12 +42,12 @@ final class MethodCountRuleTest extends TestCase
         foreach (MethodCountRule::channelDeclarations() as $channel => $declaration) {
             foreach ($declaration->levels as $level) {
                 $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
-                    new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(MethodCountRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable),
+                    new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(MethodCountRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole::Selectable),
                     new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
                 );
             }
         }
-        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
         $context = (new AnalysisContext($repository))->withPopulationTrace($session);
         self::assertSame([], $rule->analyze($context));
         self::assertSame(1, $session->freeze()->judgedCount());

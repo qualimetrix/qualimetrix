@@ -8,9 +8,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
-use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass;
+use Qualimetrix\Infrastructure\Console\RuleListing\RulesCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\RuleCompilerPass;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**

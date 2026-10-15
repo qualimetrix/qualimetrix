@@ -141,7 +141,7 @@ final class HookInstallWorksFromTheDistPackageTest extends TestCase
             \PHP_BINARY,
             '-r',
             'require $argv[1] . "/vendor/autoload.php";'
-            . ' echo (new ReflectionClass(\Qualimetrix\Infrastructure\Console\Command\HookInstallCommand::class))->getFileName();',
+            . ' echo (new ReflectionClass(\Qualimetrix\Infrastructure\Console\Hook\HookInstallCommand::class))->getFileName();',
             $package,
         ]));
     }

@@ -59,7 +59,7 @@ PHP);
         $result = $this->runChild(<<<'PHP'
 require $argv[1];
 $hint = \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register();
-$diagnostics = \Qualimetrix\Infrastructure\Console\ConsoleDiagnostics::around($hint);
+$diagnostics = \Qualimetrix\Infrastructure\Console\Application\ConsoleDiagnostics::around($hint);
 $hint->answerThrough($diagnostics->refusalPresenter, new \Symfony\Component\Console\Output\ConsoleOutput(), 'json');
 $hint->limitSetBy(\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin::of(\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource::CommandLine, '--memory-limit'));
 $remove = $hint->onExhaustion(static function (): void { fwrite(STDERR, 'removed callback'); });
@@ -95,12 +95,12 @@ PHP);
         $script = <<<'PHP'
 require $argv[1];
 $hint = \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register();
-$controller = new \Qualimetrix\Infrastructure\Console\RuntimeLimitsController($hint);
+$controller = new \Qualimetrix\Infrastructure\Console\RuntimePolicy\RuntimeLimitsController($hint);
 $document = \Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument::of(
     [['source' => '__SOURCE__', 'values' => ['memory_limit' => '-1']]],
     \Qualimetrix\Core\Path\AbsolutePath::fromString('/project'),
 );
-$controller->apply(\Qualimetrix\Infrastructure\Console\RuntimeLimits::fromResolvedValue($document->resolved()->get('memory_limit')));
+$controller->apply(\Qualimetrix\Infrastructure\Console\RuntimePolicy\RuntimeLimits::fromResolvedValue($document->resolved()->get('memory_limit')));
 if (__RESET__) {
     $controller->reset();
 }

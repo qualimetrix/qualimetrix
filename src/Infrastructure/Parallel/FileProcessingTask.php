@@ -8,7 +8,7 @@ use Amp\Cancellation;
 use Amp\Parallel\Worker\Task;
 use Amp\Sync\Channel;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Core\Path\AbsolutePath;

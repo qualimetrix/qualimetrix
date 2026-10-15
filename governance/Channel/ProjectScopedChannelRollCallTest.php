@@ -7,7 +7,7 @@ namespace Qualimetrix\Governance\Channel;
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelFileScope;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;

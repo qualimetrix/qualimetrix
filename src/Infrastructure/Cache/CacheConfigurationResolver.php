@@ -8,8 +8,13 @@ use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
+
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
+use Qualimetrix\Infrastructure\Cache\Root\CacheLocationJudgement;
+use Qualimetrix\Infrastructure\Cache\Root\CacheRootUntrusted;
+use Qualimetrix\Infrastructure\Cache\Root\CacheSource;
+use Qualimetrix\Infrastructure\Cache\Root\DefaultCacheDirectory;
 
 final class CacheConfigurationResolver implements CacheConfigurationResolverInterface
 {

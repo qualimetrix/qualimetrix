@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Core\Environment\EnvironmentFailureInterface;
 use Qualimetrix\Core\FileTarget\FileTargetFailure;
 use Qualimetrix\Core\ProductIdentity;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Qualimetrix\Reporting\Formatter\PublishedUtf8;
 use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Output\OutputInterface;

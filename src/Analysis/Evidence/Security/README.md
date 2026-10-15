@@ -23,7 +23,7 @@ the enclosing query did not reach, such as a subquery built behind a call.
 
 ## Structure
 
-```
+```text
 Security/
 ├── Credential/
 │   ├── CredentialDeclarations.php
@@ -32,27 +32,32 @@ Security/
 │   ├── CredentialValue.php
 │   ├── HardcodedCredentialsCollector.php
 │   └── HardcodedCredentialsVisitor.php
-├── CommandInjectionDetector.php
-├── CommandInjectionRule.php
+├── DirectSinks/
+│   ├── AbstractSecurityPatternRule.php
+│   ├── CommandInjectionDetector.php
+│   ├── CommandInjectionRule.php
+│   ├── SecurityPatternCollector.php
+│   ├── SecurityPatternFinding.php
+│   ├── SecurityPatternLocation.php
+│   ├── SecurityPatternOptions.php
+│   ├── SecurityPatternVisitor.php
+│   ├── SqlInjectionDetector.php
+│   ├── SqlInjectionRule.php
+│   ├── SuperglobalAnalyzer.php
+│   ├── XssDetector.php
+│   └── XssRule.php
 ├── HardcodedCredentialsOptions.php
 ├── HardcodedCredentialsRule.php
-├── SecurityPatternCollector.php
-├── SecurityPatternFinding.php
-├── SecurityPatternLocation.php
-├── SecurityPatternOptions.php
-├── SecurityPatternVisitor.php
 ├── SensitiveNameMatcher.php
 ├── SensitiveParameterCollector.php
 ├── SensitiveParameterLocation.php
 ├── SensitiveParameterOptions.php
 ├── SensitiveParameterRule.php
-├── SensitiveParameterVisitor.php
-├── SqlInjectionDetector.php
-├── SqlInjectionRule.php
-├── SuperglobalAnalyzer.php
-├── XssDetector.php
-└── XssRule.php
+└── SensitiveParameterVisitor.php
 ```
+
+`DirectSinks` owns the direct-superglobal sink detectors, collector/visitor,
+findings, options and three rules. It shares no taint propagation lifecycle.
 
 `Credential` is a child subject: it owns literal classification and the
 credential collector/visitor pair. It uses the Security-owned

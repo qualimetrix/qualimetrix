@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Rule;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelPresentation;
-use Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPresentation;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPresentationInterface;
 
 /**
  * Layers the `computed.*` / `health.*` description preference onto

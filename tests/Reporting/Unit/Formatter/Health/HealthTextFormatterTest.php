@@ -43,7 +43,7 @@ final class HealthTextFormatterTest extends TestCase
     public function itPublishesPopulationBeforeEmptyDataReturnsAndKeepsReasonsVerbose(): void
     {
         $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
-        $trace->record('fixture.rule', new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('fixture.channel'), \Qualimetrix\Core\Symbol\SymbolLevel::Project, \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::selector('project:fixture', 'project'), 'published', 'The fixture value is absent.');
+        $trace->record('fixture.rule', new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel('fixture.channel'), \Qualimetrix\Core\Symbol\SymbolLevel::Project, \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::selector('project:fixture', 'project'), 'published', 'The fixture value is absent.');
         $report = new \Qualimetrix\Reporting\Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 0, 0, 0, 0, 0, population: $trace->freeze());
         $compact = $this->formatter->format($report, new FormatterContext(useColor: false))->body;
         self::assertSame(1, substr_count($compact, 'Rule population incomplete'));

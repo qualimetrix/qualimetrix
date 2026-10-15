@@ -68,16 +68,12 @@ final class RegisterClassesExcludesNameSomethingTest extends TestCase
     public function itRefusesAnExcludeMemberThatNamesNoFile(): void
     {
         $root = \dirname(__DIR__, 2);
-        $configurators = $root . '/src/Infrastructure/DependencyInjection/Configurator';
 
         $examined = 0;
         $dead = [];
         $unreadable = [];
 
-        $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(
-            $configurators,
-            FilesystemIterator::SKIP_DOTS,
-        ));
+        $files = self::configuratorFiles();
 
         foreach ($files as $file) {
             \assert($file instanceof SplFileInfo);
@@ -142,10 +138,7 @@ final class RegisterClassesExcludesNameSomethingTest extends TestCase
         $calls = 0;
         $members = 0;
 
-        $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(
-            $root . '/src/Infrastructure/DependencyInjection/Configurator',
-            FilesystemIterator::SKIP_DOTS,
-        ));
+        $files = self::configuratorFiles();
 
         foreach ($files as $file) {
             \assert($file instanceof SplFileInfo);
@@ -222,6 +215,18 @@ final class RegisterClassesExcludesNameSomethingTest extends TestCase
         }
 
         return $excludes;
+    }
+
+    /** @return iterable<SplFileInfo> */
+    private static function configuratorFiles(): iterable
+    {
+        $root = \dirname(__DIR__, 2) . '/src/Infrastructure/DependencyInjection';
+        foreach (['Configurator', 'CodeSmell', 'Cohesion', 'Complexity', 'Coupling', 'Design', 'Maintainability', 'Security', 'Size', 'CircularDependency', 'Duplication', 'ComputedMetrics'] as $subject) {
+            yield from new RecursiveIteratorIterator(new RecursiveDirectoryIterator(
+                $root . '/' . $subject,
+                FilesystemIterator::SKIP_DOTS,
+            ));
+        }
     }
 
     /**

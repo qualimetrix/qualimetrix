@@ -76,7 +76,7 @@ final class FindingFilterTest extends TestCase
         self::assertSame([$finding], $selected);
         self::assertSame($finding->getFingerprint(), $selected[0]->getFingerprint());
         $record = (new \Qualimetrix\Reporting\Formatter\FindingRecord(
-            new \Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry(self::createStub(\Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface::class), ['duplication.clone' => 1]),
+            new \Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry(self::createStub(\Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface::class), ['duplication.clone' => 1]),
             new \Qualimetrix\Reporting\Formatter\Json\JsonSanitizer(),
         ))->of($selected[0], $context, $index);
         self::assertSame(\count($expected) === 1 ? $expected[0] : null, $record['namespace']);

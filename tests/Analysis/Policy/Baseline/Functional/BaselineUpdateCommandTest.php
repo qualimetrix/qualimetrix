@@ -8,18 +8,18 @@ use Closure;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Policy\Baseline\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineEntryParser;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineWriter;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance\BaselineUpdater;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
@@ -28,7 +28,7 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Maintenance\BaselineUpdateCommand;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubBaselineRun;
@@ -242,13 +242,13 @@ final class BaselineUpdateCommandTest extends TestCase
         $command = new BaselineUpdateCommand(
             new StubBaselineRun($measured, $runScope, AbsolutePath::fromString($this->tempDir), onMeasure: $onMeasure),
             new BaselineLoader(new BaselineEntryParser($declarations)),
-            new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
+            new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader(),
             new BaselineUpdater($declarations, new FixedClock('2026-09-01T00:00:00+00:00')),
             new BaselineWriter(),
             StubRuleCoverage::everyRuleRan(),
         );
 
-        $command->setRefusalPresenter(new \Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter(new \Qualimetrix\Infrastructure\Console\ErrorStream()));
+        $command->setRefusalPresenter(new \Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter(new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream()));
         $tester = new CommandTester($command);
         $tester->execute(['baseline' => $this->baselinePath, 'paths' => $runScope, ...$options], ['capture_stderr_separately' => true]);
 

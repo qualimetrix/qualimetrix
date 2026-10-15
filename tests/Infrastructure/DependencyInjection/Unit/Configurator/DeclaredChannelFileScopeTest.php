@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\Configurator
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelFileScope;
 

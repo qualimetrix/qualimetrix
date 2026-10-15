@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext;
 
-use Qualimetrix\Analysis\Policy\Architecture\Layer\CriterionOutcome;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CriterionOutcome;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 
 /**

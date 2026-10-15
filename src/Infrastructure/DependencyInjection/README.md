@@ -6,9 +6,12 @@ recorded as exact manifest composition bindings and do not widen public APIs.
 ## Subject composition
 
 `ProjectManifest/ProjectManifestConfigurator` composes the analysed Composer
-snapshot behind both exact public contracts. The existing `Configurator/`
-services compose their named subjects; `CohesionConfigurator` owns the LCOM
-resolver, store and tagged collectors. `OutputConfigurator` keeps ordinary
+snapshot behind both exact public contracts. CodeSmell, Cohesion, Complexity,
+Coupling, Design, Maintainability, Security, Size, CircularDependency, Duplication
+and ComputedMetrics each own their composition in a direct subject directory.
+`Configurator/` retains the common composition contracts and the remaining
+explicit operations; it does not scan sibling configurators.
+`Cohesion/CohesionConfigurator` owns the LCOM resolver, store and tagged collectors. `OutputConfigurator` keeps ordinary
 services explicitly registered and autowired, with named loggers, the synthetic
 logger holder, lazy Options, factories and tagged collections bound explicitly.
 `ContainerFactory` registers the synthetic Console diagnostic trio and installs
@@ -60,6 +63,13 @@ requesting a warning. Console requires final Finding enablement before projectin
 `policyDisabled`; neither consumer infers enablement from private rule options.
 
 ## Compiler passes that write into named services
+
+`RuleCatalog/` owns channel declarations, rule metadata and materialization,
+producer Options, configuration validators and threshold-validator composition.
+`CompilerPass/` retains collection, file-set, formatting, configuration-stage and
+composition-integrity passes. The product factory registers both explicitly in
+their existing order; the consumer-registration witnesses scan these two exact
+roots. No future sibling is enrolled implicitly.
 
 A pass that writes into a service it names by id implements
 `CompilerPass/ConsumerBoundPassInterface` and lists those ids in

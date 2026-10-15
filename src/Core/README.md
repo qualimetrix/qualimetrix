@@ -38,34 +38,36 @@ Core/
 ├── Environment/
 │   └── EnvironmentFailureInterface.php    # Neutral delivery/storage failure marker
 ├── FileTarget/
-│   ├── CreatedDirectoryOwnership.php
+│   ├── PrivateGroup/
+│   │   ├── CreatedDirectoryOwnership.php
+│   │   ├── NativeNssEnumerator.php
+│   │   ├── NativePrivateGroupMembership.php
+│   │   ├── NssPrivateGroupRoster.php
+│   │   ├── NssSourceSelection.php
+│   │   ├── PrivateGroupMembership.php
+│   │   └── ProcessOwner.php
+│   ├── Publication/
+│   │   ├── FileReplacement.php
+│   │   ├── HeldLock.php
+│   │   ├── HeldTarget.php
+│   │   ├── NewName.php
+│   │   ├── PreparedTarget.php
+│   │   ├── TargetClaim.php
+│   │   └── TemporarySibling.php
 │   ├── DirectoryFacts.php
 │   ├── EntryControl.php
 │   ├── EntryFacts.php
 │   ├── FileIdentity.php
-│   ├── FileReplacement.php
 │   ├── FileTargetFailure.php
 │   ├── FileTargetFailureKind.php
-│   ├── HeldLock.php
-│   ├── PreparedTarget.php
-│   ├── HeldTarget.php
 │   ├── NativeCall.php
-│   ├── NativePrivateGroupMembership.php
-│   ├── NativeNssEnumerator.php
-│   ├── NssPrivateGroupRoster.php
-│   ├── NssSourceSelection.php
-│   ├── NewName.php
 │   ├── PathAbsenceProof.php
 │   ├── PathExposure.php
 │   ├── PathInspection.php
 │   ├── PathWalk.php
-│   ├── ProcessOwner.php
-│   ├── PrivateGroupMembership.php
 │   ├── ResolvedTarget.php
-│   ├── TargetClaim.php
 │   ├── TargetKind.php
-│   ├── TargetPath.php
-│   └── TemporarySibling.php
+│   └── TargetPath.php
 ├── Observation/
 │   └── WorseDirection.php                 # Enum: higher-is-worse / lower-is-worse + the comparison operators
 ├── Path/
@@ -957,9 +959,11 @@ Epsilon is a tolerance band around the allowance, never a shift of it: inside th
 
 ## File targets
 
-`Core\\FileTarget` is the first filesystem writer in Core. It owns target
-resolution, entry-control judgement, held descriptors, temporary siblings and
-publication; `Core\\Path` only represents paths and its lexical normalization
+`Core\\FileTarget` is the first filesystem writer in Core. `Publication/`
+owns held descriptors, temporary siblings and atomic publication, including
+`NewName` publication policy. `PrivateGroup/` owns effective-process ownership,
+NSS enumeration and the `PrivateGroupMembership` proof port. The root owns target
+resolution, entry-control judgement and target facts; `Core\\Path` only represents paths and its lexical normalization
 is not a safety judgement. `Core\\Environment\\EnvironmentFailureInterface`
 marks storage or delivery failures with complete user-facing messages.
 

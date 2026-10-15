@@ -6,6 +6,11 @@ Git integration enables filtering findings to show only those related to changed
 
 ## Components
 
+`ChangeListing/` owns `NameStatusListing`, `NameStatusRecord`, `ChangedFile` and
+`ChangeStatus`. Git execution and scope selection remain in this directory;
+the listing subject preserves the bytes, status and refusal semantics at their
+shared conversion boundary.
+
 ### GitClient
 
 Wrapper around git commands for obtaining the list of changed files.

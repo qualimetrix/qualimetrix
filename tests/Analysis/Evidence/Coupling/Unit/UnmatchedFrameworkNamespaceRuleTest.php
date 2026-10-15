@@ -52,10 +52,10 @@ final class UnmatchedFrameworkNamespaceRuleTest extends TestCase
             $decisions = [];
             foreach (UnmatchedFrameworkNamespaceRule::channelDeclarations() as $channel => $declaration) {
                 foreach ($declaration->levels as $level) {
-                    $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(UnmatchedFrameworkNamespaceRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
+                    $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(UnmatchedFrameworkNamespaceRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
                 }
             }
-            $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
+            $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
             $findings = $this->rule(['Nope', 'Symfony'])->analyze($context->withPopulationTrace($session));
             self::assertCount($judged === 0 ? 0 : 1, $findings);
             self::assertSame($judged, $session->freeze()->judgedCount());
@@ -70,10 +70,10 @@ final class UnmatchedFrameworkNamespaceRuleTest extends TestCase
         $decisions = [];
         foreach (UnmatchedFrameworkNamespaceRule::channelDeclarations() as $channel => $declaration) {
             foreach ($declaration->levels as $level) {
-                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(UnmatchedFrameworkNamespaceRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(UnmatchedFrameworkNamespaceRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
             }
         }
-        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
         self::assertSame([], $this->rule([])->analyze($this->context($graph)->withPopulationTrace($session)));
         self::assertTrue($session->freeze()->isEmpty());
     }

@@ -14,10 +14,10 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\UnassignedClassLayerRequir
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Infrastructure\Composer\DeclaredSupertypeReader;
-use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
-use Qualimetrix\Infrastructure\Console\AnalysisPreflightProfile;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
-use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
+use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisPreflight;
+use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisPreflightProfile;
+use Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\RuleOptionsCompilerPass;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -30,7 +30,7 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
     private const string ARCHITECTURE_POLICY = 'Qualimetrix\\Analysis\\Policy\\Architecture\\ArchitecturePolicy';
     private const string ARCHITECTURE_SECTION = 'Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\ArchitectureSection';
     private const string LAYER_ASSIGNMENT_COMMAND = 'Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand';
-    private const string LAYER_ASSIGNMENT_RESOLVER = 'Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver';
+    private const string LAYER_ASSIGNMENT_RESOLVER = 'Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentResolver';
     private const string LAYER_DECLARATION_VALIDATOR = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerDeclaration\\LayerDeclarationValidator';
     private const string LAYER_EVIDENCE_COLLECTOR = 'Qualimetrix\\Analysis\\Policy\\Architecture\\Observation\\LayerEvidenceCollector';
     private const string LAYER_VIOLATION_RULE = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule';

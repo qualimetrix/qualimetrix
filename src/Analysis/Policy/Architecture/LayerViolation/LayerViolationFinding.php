@@ -10,9 +10,9 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterionKind;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\LayerMatch;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchedCriterion;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchedCriterionKind;
 use Qualimetrix\Core\Symbol\MetricSubject;
 
 /**

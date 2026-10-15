@@ -7,12 +7,12 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\Application;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
-use Qualimetrix\Infrastructure\Console\ProfilePresenter;
+use Qualimetrix\Infrastructure\Console\Application\Application;
+use Qualimetrix\Infrastructure\Console\Profile\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
-use Qualimetrix\Infrastructure\Console\RuntimeLoggerConfigurator;
+use Qualimetrix\Infrastructure\Console\RuntimePolicy\RuntimeLoggerConfigurator;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
 use Qualimetrix\Infrastructure\Profiler\Contract\ProfileReportInterface;
@@ -75,7 +75,11 @@ final class ErrorStreamOwnershipTest extends TestCase
         $targets->claim();
 
         try {
-            (new ProfilePresenter($report, errorStream: $errorStream))->present(
+            (new ProfilePresenter(
+                $report,
+                errorStream: $errorStream,
+                profiler: new \Qualimetrix\Infrastructure\Profiler\ProfileSession(),
+            ))->present(
                 self::input(['profile-format' => 'json'], ['profile' => $target]),
                 $output,
                 $targets,

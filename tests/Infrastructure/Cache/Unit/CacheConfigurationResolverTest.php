@@ -11,7 +11,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\CacheConfigurationResolver;
 use Qualimetrix\Infrastructure\Cache\CacheConfigurationStore;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
-use Qualimetrix\Infrastructure\Cache\CacheRootUntrusted;
+use Qualimetrix\Infrastructure\Cache\Root\CacheRootUntrusted;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 final class CacheConfigurationResolverTest extends TestCase

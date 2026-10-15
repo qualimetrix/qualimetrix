@@ -60,7 +60,7 @@ final class SummaryEnricherTest extends TestCase
         $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
         $trace->record(
             'complexity.ccn',
-            new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('complexity.ccn'),
+            new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel('complexity.ccn'),
             \Qualimetrix\Core\Symbol\SymbolLevel::Callable,
             \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::occurrence('missing', 0, 'callable'),
             'callable-value',

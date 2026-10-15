@@ -8,9 +8,9 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
-use Qualimetrix\Infrastructure\Console\ProfilePresenter;
+use Qualimetrix\Infrastructure\Console\Profile\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Qualimetrix\Infrastructure\Profiler\Contract\ProfileFormat;
 use Qualimetrix\Infrastructure\Profiler\Contract\ProfileReportInterface;
@@ -37,7 +37,7 @@ final class ProfilePresenterTest extends TestCase
         $target = sys_get_temp_dir() . '/qmx-profile-fault-' . bin2hex(random_bytes(6)) . '.json';
         file_put_contents($target, 'old');
         $script = <<<'PHP'
-            namespace Qualimetrix\Core\FileTarget {
+            namespace Qualimetrix\Core\FileTarget\Publication {
                 function fwrite($stream, string $bytes): int|false
                 {
                     ++$GLOBALS['qmx_profile_hit'];
@@ -63,7 +63,7 @@ final class ProfilePresenterTest extends TestCase
                         new \Symfony\Component\Console\Input\InputOption('profile-format', null, \Symfony\Component\Console\Input\InputOption::VALUE_REQUIRED, '', 'json'),
                     ]),
                 );
-                $presenter = new \Qualimetrix\Infrastructure\Console\ProfilePresenter($report, new \Qualimetrix\Infrastructure\Console\ErrorStream());
+                $presenter = new \Qualimetrix\Infrastructure\Console\Profile\ProfilePresenter($report, new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream(), new \Qualimetrix\Infrastructure\Profiler\ProfileSession());
                 try {
                     $presenter->present($input, new \Symfony\Component\Console\Output\BufferedOutput(), $targets);
                     $failure = null;
@@ -91,7 +91,11 @@ final class ProfilePresenterTest extends TestCase
     public function itWritesAnExportItCanWrite(): void
     {
         $target = sys_get_temp_dir() . '/qmx-profile-' . bin2hex(random_bytes(6)) . '.json';
-        $presenter = new ProfilePresenter($this->enabledReport(), new ErrorStream());
+        $presenter = new ProfilePresenter(
+            $this->enabledReport(),
+            new ErrorStream(),
+            new \Qualimetrix\Infrastructure\Profiler\ProfileSession(),
+        );
         $targets = new RunTargets(new LoggerFactory(), \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register());
 
         try {

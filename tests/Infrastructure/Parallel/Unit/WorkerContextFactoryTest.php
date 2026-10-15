@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Infrastructure\Parallel\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Qualimetrix\Infrastructure\Parallel\WorkerContextFactory;
 use Qualimetrix\Infrastructure\Parallel\WorkerNotes;
 use Qualimetrix\Infrastructure\Parallel\WorkerRequest;
@@ -29,7 +29,7 @@ return static function (): array {
 PHP);
         $coordinator = <<<'PHP'
 require $argv[1];
-$owner = new \Qualimetrix\Infrastructure\Console\ErrorStream();
+$owner = new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream();
 $owner->writer(new \Symfony\Component\Console\Output\ConsoleOutput());
 $notes = new \Qualimetrix\Infrastructure\Parallel\WorkerNotes($owner);
 $factory = new \Qualimetrix\Infrastructure\Parallel\WorkerContextFactory(new \Qualimetrix\Infrastructure\Parallel\WorkerRequest(2), $notes, [PHP_BINARY, '-d', 'short_open_tag=0']);
@@ -76,7 +76,7 @@ PHP;
         $coordinator = <<<'PHP'
 require $argv[1];
 $request = new \Qualimetrix\Infrastructure\Parallel\WorkerRequest(2, '--workers=2');
-$notes = new \Qualimetrix\Infrastructure\Parallel\WorkerNotes(new \Qualimetrix\Infrastructure\Console\ErrorStream());
+$notes = new \Qualimetrix\Infrastructure\Parallel\WorkerNotes(new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream());
 try {
     new \Qualimetrix\Infrastructure\Parallel\WorkerContextFactory($request, $notes);
 } catch (\Qualimetrix\Infrastructure\Parallel\WorkerStartFailure $failure) {
@@ -103,7 +103,7 @@ PHP;
         $directory = sys_get_temp_dir() . '/qmx-context-held-' . bin2hex(random_bytes(6));
         mkdir($directory, 0700);
         $target = $directory . '/held-report.json';
-        $held = \Qualimetrix\Core\FileTarget\HeldTarget::claim(\Qualimetrix\Core\FileTarget\TargetPath::resolve($target));
+        $held = \Qualimetrix\Core\FileTarget\Publication\HeldTarget::claim(\Qualimetrix\Core\FileTarget\TargetPath::resolve($target));
         $script = $directory . '/inspect.php';
         file_put_contents($script, <<<'PHP'
 <?php

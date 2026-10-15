@@ -43,7 +43,13 @@ Configuration/
 ├── Document/           # the engine composing written layers into the resolved document
 │   ├── ShorthandExpansion.php # canonical leaf expansion and overlap refusals
 │   ├── ShorthandTarget.php    # one typed expansion destination
-│   ├── NamedEntryReading.php  # named bodies and authored bare names
+│   ├── NameBinding/          # authored keys/names, their vocabulary and pending merged recognition
+│   │   ├── KeyClaims.php
+│   │   ├── KeyRecognition.php
+│   │   ├── NameRecognition.php
+│   │   ├── NamedEntryReading.php
+│   │   ├── PendingName.php
+│   │   └── WrittenNames.php
 │   ├── ScalarConstraints.php  # value judgement after scalar-form admission
 │   ├── EmptyListOverrides.php # live diagnostic for a standing empty replacement
 │   └── Resolved/       # internal concrete resolved forms, including ResolvedScalar
@@ -135,6 +141,9 @@ context-free document before consuming its own values. Console's closed
 preflight profile controls CLI ingress and actual consumers, not the schema.
 
 ## Document engine
+
+`Document/NameBinding` owns authored key/name recognition and pending names.
+`DocumentComposer` retains composition and its ordered phases.
 
 `Document/DocumentComposer` composes the layers, lowest precedence first, into
 `Contract/Document/ResolvedDocument` in four fixed phases: (1) each layer alone

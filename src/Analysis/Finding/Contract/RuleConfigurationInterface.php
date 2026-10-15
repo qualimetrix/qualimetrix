@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract;
 
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
+
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;

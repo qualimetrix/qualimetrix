@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\FileTarget;
 
+use Qualimetrix\Core\FileTarget\PrivateGroup\PrivateGroupMembership;
+
 use Qualimetrix\Core\Path\AbsolutePath;
 
 final readonly class ResolvedTarget

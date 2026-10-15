@@ -12,7 +12,7 @@ use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterfa
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Composer\Contract\AnalysedInstallAnchorInterface;
 use Qualimetrix\Infrastructure\Composer\Contract\ComposerRootOmission;
-use Qualimetrix\Infrastructure\Console\ObservedProjectScopeReasons;
+use Qualimetrix\Infrastructure\Console\CheckScope\ObservedProjectScopeReasons;
 
 #[CoversClass(ObservedProjectScopeReasons::class)]
 final class ObservedProjectScopeReasonsTest extends TestCase

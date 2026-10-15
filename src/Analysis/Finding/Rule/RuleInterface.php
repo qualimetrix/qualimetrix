@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Rule;
 
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
@@ -21,7 +21,7 @@ interface RuleInterface extends RuleDefinitionInterface
      * (ADR 0031 / {@see ChannelShape}) — one answer for the whole rule, not
      * per channel.
      *
-     * Read by {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass}
+     * Read by {@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\ChannelDeclarationCompilerPass}
      * via a plain static call, the same way it already reads
      * {@see RuleDefinitionInterface::getOptionsClass()} — no instantiation, a
      * rule may take constructor dependencies beyond its Options object.

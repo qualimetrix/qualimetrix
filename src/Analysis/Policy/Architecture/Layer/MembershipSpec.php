@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CapturePattern;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CriterionListValidator;
+
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchMode;
 
 /**
  * Immutable specification of the criteria a class must satisfy to belong to

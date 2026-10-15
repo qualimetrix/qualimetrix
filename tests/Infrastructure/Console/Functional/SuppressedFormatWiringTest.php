@@ -7,8 +7,8 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
-use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
+use Qualimetrix\Infrastructure\Console\RunSetup\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use RuntimeException;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -105,7 +105,7 @@ final class SuppressedFormatWiringTest extends TestCase
 
     /**
      * `--format=suppressed` and `format: suppressed` in `qmx.yaml` are two
-     * routes to the same output ({@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator::configure()}'s
+     * routes to the same output ({@see \Qualimetrix\Infrastructure\Console\RunSetup\RuntimeConfigurator::configure()}'s
      * dual gate) — a config-only selection must not silently under-report
      * relative to the CLI flag.
      */

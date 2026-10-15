@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Reporting\Unit\Formatter\Prose;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Population\PopulationTrace;
 use Qualimetrix\Core\Symbol\SymbolLevel;

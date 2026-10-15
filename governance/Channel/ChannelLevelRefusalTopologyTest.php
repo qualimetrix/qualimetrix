@@ -8,8 +8,8 @@ use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelRefusalWording;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevel\ChannelLevelAddressing;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevel\ChannelLevelRefusalWording;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
@@ -87,26 +87,26 @@ final class ChannelLevelRefusalTopologyTest extends TestCase
     private const array LEVEL_READERS = [
         'src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php' =>
             'enumerates configured definition measurement levels after deriving the reporting declaration; it does not judge authored channel:level grammar',
-        'src/Analysis/Policy/Baseline/BaselineCleaner.php' =>
+        'src/Analysis/Policy/Baseline/EntryMaintenance/BaselineCleaner.php' =>
             'classifies stored identities for cleanup and does not judge authored channel:level pairs',
-        'src/Analysis/Policy/Baseline/BaselineEntryParser.php' =>
+        'src/Analysis/Policy/Baseline/DocumentReading/BaselineEntryParser.php' =>
             'validates an inert stored identity level against its declaration, not an authored pair',
         'src/Analysis/Policy/Baseline/Ceiling/EntryJudgement.php' =>
             'checks applicability of a measured group at its stored level, not authored pair grammar',
         'src/Analysis/Policy/Baseline/Ceiling/EntryAbsenceProof.php' =>
             'checks a stored baseline identity against its declared levels before proving absence, not an authored pair',
-        'src/Analysis/Policy/Baseline/CurrentBoundaryMeasurement.php' =>
+        'src/Analysis/Policy/Baseline/Explanation/CurrentBoundaryMeasurement.php' =>
             'prepares supported measured levels and known outcomes, not authored pair grammar',
-        'src/Analysis/Policy/Baseline/NewIdentityAcceptance.php' =>
+        'src/Analysis/Policy/Baseline/EntryMaintenance/NewIdentityAcceptance.php' =>
             'selects publication eligibility for capture, not authored pair grammar',
-        'src/Analysis/Finding/Contract/Rule/ChannelLevelAddressing.php' =>
+        'src/Analysis/Finding/Contract/Rule/ChannelLevel/ChannelLevelAddressing.php' =>
             'the seam itself: the one place that judges an authored channel:level pair',
         'src/Infrastructure/Rule/ChannelUniverse.php' =>
             'the adapter that answers the question rather than asking it: levelsOf() reads the declaration'
             . ' registry it holds',
-        'src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php' =>
+        'src/Infrastructure/DependencyInjection/RuleCatalog/ChannelDeclarationCompilerPass.php' =>
             'builds the registry: it reads every rule class to compose the universe, and no user text reaches it',
-        'src/Infrastructure/Console/Command/BaselineConfiguredThresholds.php' =>
+        'src/Infrastructure/Console/Command/Baseline/Explanation/BaselineConfiguredThresholds.php' =>
             'enumerates the configured warning boundary of each channel at each level it declares, for'
             . ' baseline:explain; it judges no authored text and refuses nothing',
         'src/Analysis/Finding/Selection/SelectionSpecificity.php' =>
@@ -115,7 +115,7 @@ final class ChannelLevelRefusalTopologyTest extends TestCase
         'src/Analysis/Policy/Inline/Directive/Audit/DirectiveMeasurability.php' =>
             'checks declared levels when measuring an already-bound directive; authored pair refusal belongs to'
             . ' ChannelLevelAddressing',
-        'src/Infrastructure/Console/Command/RulesCommand.php' =>
+        'src/Infrastructure/Console/RuleListing/RulesCommand.php' =>
             'trips both halves of the detector on two unrelated subjects: it asks declarationFor() for one'
             . ' property that is not a level — which metrics a channel judges — and its ->levels() call is'
             . ' RuleOptionSurface\'s, whose levels are a rule\'s option slots (callable, class, namespace) and'
@@ -130,19 +130,19 @@ final class ChannelLevelRefusalTopologyTest extends TestCase
      * @var array<string, string>
      */
     private const array LEVEL_WORDING_AUTHORS = [
-        'src/Analysis/Finding/Contract/Rule/ChannelLevelRefusalWording.php' =>
+        'src/Analysis/Finding/Contract/Rule/ChannelLevel/ChannelLevelRefusalWording.php' =>
             'the seam itself: every sentence a refusal of an authored pair is made of',
-        'src/Analysis/Finding/Contract/FindingChannel.php' =>
+        'src/Analysis/Finding/Contract/Channel/FindingChannel.php' =>
             'the channel name authority refusing a code with a level inside it: a statement about one malformed'
             . ' code, not about a pair addressed at the universe',
     ];
 
     /** Detector one has to find the seam, or its scan has stopped recognising anything. */
-    private const string LEVEL_READING_ANCHOR = 'src/Analysis/Finding/Contract/Rule/ChannelLevelAddressing.php';
+    private const string LEVEL_READING_ANCHOR = 'src/Analysis/Finding/Contract/Rule/ChannelLevel/ChannelLevelAddressing.php';
 
     /** Detector two has to find the wording half of the seam, for the same reason. */
     private const string LEVEL_WORDING_ANCHOR =
-        'src/Analysis/Finding/Contract/Rule/ChannelLevelRefusalWording.php';
+        'src/Analysis/Finding/Contract/Rule/ChannelLevel/ChannelLevelRefusalWording.php';
 
     #[Test]
     public function itPinsEveryProductionFileThatReadsDeclaredLevelsWithAReason(): void

@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CriterionListValidator;
+
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchMode;
 
 /**
  * Immutable specification of the criteria that DISQUALIFY a class from a

@@ -88,7 +88,7 @@ final class SelfTestDeclaredDelta extends SelfTestGroup
             'format:gitlab' => 'src/Reporting/Formatter/GitLabCodeQualityFormatter.php',
             'format:checkstyle' => 'src/Reporting/Formatter/CheckstyleFormatter.php',
             'format:suppressed' => 'src/Reporting/Formatter/Suppressed/SuppressedFormatter.php',
-            'baseline-file' => 'src/Analysis/Policy/Baseline/BaselineEntry.php',
+            'baseline-file' => 'src/Analysis/Policy/Baseline/Entry/BaselineEntry.php',
         ];
 
         foreach ($formatters as $surface => $relative) {

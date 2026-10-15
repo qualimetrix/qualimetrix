@@ -6,7 +6,7 @@ namespace Qualimetrix\Analysis\Evidence\Design\DataClass;
 
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Population\FlagExcludes;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
 use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;

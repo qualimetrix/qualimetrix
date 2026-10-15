@@ -5,6 +5,14 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContext;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CriteriaEvaluation;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CriterionOutcome;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\LayerCriteriaMatcher;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\LayerMatch;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchedCriterion;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchMode;
+
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MembershipResult;
 
 /**
  * Immutable Value Object describing a single architectural layer: a

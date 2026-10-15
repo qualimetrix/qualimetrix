@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Core\FileTarget;
 
 use Closure;
+use Qualimetrix\Core\FileTarget\PrivateGroup\CreatedDirectoryOwnership;
+use Qualimetrix\Core\FileTarget\PrivateGroup\PrivateGroupMembership;
+
+use Qualimetrix\Core\FileTarget\PrivateGroup\ProcessOwner;
 use Qualimetrix\Core\Path\AbsolutePath;
 
 final class PathWalk

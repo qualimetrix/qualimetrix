@@ -24,7 +24,7 @@ namespace QmxFindingGate;
  * it would licence substituting one channel for another anywhere.
  *
  * The product already answers this question about itself. `baseline:rename-channels`
- * ({@see \Qualimetrix\Analysis\Policy\Baseline\BaselineChannelRenamer}) was
+ * ({@see \Qualimetrix\Analysis\Policy\Baseline\ChannelRename\BaselineChannelRenamer}) was
  * released for this very rename, and it translates the channel, recomputes the
  * ordering key and re-sorts. This step is the same answer applied to the
  * reference's artifacts.
@@ -55,7 +55,7 @@ final class PublishedOrder
      * Measured, not assumed: `format:json` is the only formatter that goes
      * through {@see \Qualimetrix\Reporting\Formatter\Json\JsonFindingSection::sort()},
      * and the baseline file is laid out by
-     * {@see \Qualimetrix\Analysis\Policy\Baseline\BaselineEntryOrder}. Under the
+     * {@see \Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineEntryOrder}. Under the
      * the observed six-name rename set, no other corpus surface moves a record
      * because none of their keys is the channel code. Checkstyle and the verbose text report
      * group by file; the default text report and the summary's top issues sort
@@ -179,7 +179,7 @@ final class PublishedOrder
     /**
      * The record blocks of one artifact: for `format:json` the `violations`
      * array, and for the baseline file the entry list under each subject key,
-     * which is where {@see \Qualimetrix\Analysis\Policy\Baseline\BaselineWriter}
+     * which is where {@see \Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineWriter}
      * sorts. Subject keys themselves are not touched: they are sorted by
      * `ksort` and no rename in this vocabulary moves one.
      *
@@ -553,7 +553,7 @@ final class PublishedOrder
      * string one, because that is the comparison the product performs.
      *
      * The baseline reproduces
-     * {@see \Qualimetrix\Analysis\Policy\Baseline\BaselineEntryOrder::forComponents()}:
+     * {@see \Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineEntryOrder::forComponents()}:
      * one string, compared with `strcmp`, and the `0` prefix that keeps entries
      * with a channel ahead of the ones whose channel could not be read. An entry
      * without a readable channel has no key here at all — the gate refuses

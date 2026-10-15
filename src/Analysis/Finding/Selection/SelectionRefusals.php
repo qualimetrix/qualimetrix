@@ -6,13 +6,13 @@ namespace Qualimetrix\Analysis\Finding\Selection;
 
 use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
-use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole;
 use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
 use Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevel\ChannelLevelSelector;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ModeGatedOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
-use Qualimetrix\Analysis\Finding\Contract\SelectionFilter;
+use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionFilter;
 
 /** Judges contradictory and non-reporting authored selection requests. */
 final class SelectionRefusals

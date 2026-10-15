@@ -13,18 +13,18 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityOptions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ProducerDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Finding\Contract\ProducerDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOptionValues;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -78,7 +78,7 @@ final class RuleExecutionTest extends TestCase
             new \Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateLocation(RelativePath::fromString('b.php'), 2, 60, 2, 'short'),
         ], 80, str_repeat('a', 64))]);
         $rules = [
-            new \Qualimetrix\Analysis\Evidence\Security\SqlInjectionRule(new \Qualimetrix\Analysis\Evidence\Security\SecurityPatternOptions()),
+            new \Qualimetrix\Analysis\Evidence\Security\DirectSinks\SqlInjectionRule(new \Qualimetrix\Analysis\Evidence\Security\DirectSinks\SecurityPatternOptions()),
             new \Qualimetrix\Analysis\Evidence\Security\HardcodedCredentialsRule(new \Qualimetrix\Analysis\Evidence\Security\HardcodedCredentialsOptions()),
             new \Qualimetrix\Analysis\Evidence\Security\SensitiveParameterRule(new \Qualimetrix\Analysis\Evidence\Security\SensitiveParameterOptions()),
             new \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule(new \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions(error: 5), $provider),
@@ -157,7 +157,7 @@ final class RuleExecutionTest extends TestCase
     #[Test]
     public function itKeepsFreshExecutionPartitionsAndNativeProducedOccurrencesAcrossSelection(): void
     {
-        $rules = [new \Qualimetrix\Analysis\Evidence\Security\SqlInjectionRule(new \Qualimetrix\Analysis\Evidence\Security\SecurityPatternOptions()), new \Qualimetrix\Analysis\Evidence\CodeSmell\ErrorSuppressionRule(new \Qualimetrix\Analysis\Evidence\CodeSmell\ErrorSuppressionOptions())];
+        $rules = [new \Qualimetrix\Analysis\Evidence\Security\DirectSinks\SqlInjectionRule(new \Qualimetrix\Analysis\Evidence\Security\DirectSinks\SecurityPatternOptions()), new \Qualimetrix\Analysis\Evidence\CodeSmell\ErrorSuppressionRule(new \Qualimetrix\Analysis\Evidence\CodeSmell\ErrorSuppressionOptions())];
         $lookups = array_map(ResolvedOptionsFixture::lookup(...), $rules);
         $metadata = array_column($lookups, 'metadata');
         $declarations = [];

@@ -16,7 +16,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
-use Qualimetrix\Analysis\Evidence\Coupling\DistanceCollector;
+use Qualimetrix\Analysis\Evidence\Coupling\Distance\DistanceCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MetricAggregator;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
@@ -537,8 +537,8 @@ final class NamespaceFoldCountsEachDeclarationOnceTest extends TestCase
 
         $execution = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
         self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class, $execution);
-        $channels = $container->get(\Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface::class);
-        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface::class, $channels);
+        $channels = $container->get(\Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface::class, $channels);
         $rules = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface::class);
         self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface::class, $rules);
         $rules->replace(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::ready(

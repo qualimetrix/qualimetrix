@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Selection;
 
 use LogicException;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /** Ordered cell lookups by producer and channel, retaining nullable-level wildcards. */

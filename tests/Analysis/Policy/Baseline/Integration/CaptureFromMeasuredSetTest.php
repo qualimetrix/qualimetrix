@@ -8,21 +8,21 @@ use DateTimeImmutable;
 use LogicException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
-use Qualimetrix\Analysis\Policy\Baseline\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineFormatVersion;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\Capture\BaselineGenerator;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineEntryParser;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineFormatVersion;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntryMode;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
@@ -38,7 +38,7 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Generation\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
@@ -93,14 +93,14 @@ final class CaptureFromMeasuredSetTest extends TestCase
     {
         $gone = self::finding('src/Gone.php', 'App', 'Gone');
         $baselinePath = $this->writeBaseline($this->capture([$gone]));
-        $result = $this->project($this->createPipeline(), [], new FindingProjectionOptions((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($baselinePath)));
+        $result = $this->project($this->createPipeline(), [], new FindingProjectionOptions((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($baselinePath)));
         self::assertCount(1, $result->findings);
         self::assertSame('baseline.unused-entry', $result->findings[0]->channel()->code);
         self::assertSame([], $result->measuredFindings);
         self::assertSame([], $this->capture($result->measuredFindings)->entries);
         $direct = (new BaselineGenerator(StubChannelDeclarationRegistry::withDefaults(), new FixedClock()))->generate($result->findings, ['src'], self::fixtureExclusions());
         self::assertSame([], $direct->baseline->entries);
-        self::assertSame(\Qualimetrix\Analysis\Policy\Baseline\UncapturedReason::BaselineAuditChannel, $direct->uncaptured[0]->reason);
+        self::assertSame(\Qualimetrix\Analysis\Policy\Baseline\Capture\UncapturedReason::BaselineAuditChannel, $direct->uncaptured[0]->reason);
     }
 
     #[Test]
@@ -132,7 +132,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
             self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
             $baseline = (new BaselineLoader(new BaselineEntryParser(new StubChannelDeclarationRegistry([
                 'code-smell.goto' => ChannelDeclaration::occurrence(SymbolLevel::File),
-            ]))))->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path));
+            ]))))->load((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($path));
             self::assertSame([
                 'patterns' => ['subtree:src/Legacy', 'subtree:src/Nothing'],
                 'generated' => 'included',
@@ -262,7 +262,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
 
         // check
         $this->suppressions = $suppressions;
-        $result = $this->project($pipeline, [$kept, $ignoredMember], new FindingProjectionOptions((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($baselinePath)));
+        $result = $this->project($pipeline, [$kept, $ignoredMember], new FindingProjectionOptions((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($baselinePath)));
 
         self::assertSame([], $result->findings);
         self::assertSame(0, $result->staleEntryCount());

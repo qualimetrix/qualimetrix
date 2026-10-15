@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Cache;
 
-use Qualimetrix\Core\FileTarget\FileReplacement;
-use Qualimetrix\Core\FileTarget\NewName;
+use Qualimetrix\Core\FileTarget\Publication\FileReplacement;
+use Qualimetrix\Core\FileTarget\Publication\NewName;
 use Qualimetrix\Core\FileTarget\TargetPath;
 
 final class CacheLayout

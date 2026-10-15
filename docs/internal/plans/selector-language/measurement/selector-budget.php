@@ -255,7 +255,7 @@ $subtreeBody = preg_quote($subtreeValue, PATTERN_DELIMITER) . '(?:\\\\.+)?';
 $benchmarks = [
     'exact' => [$exactBody, $exactValue],
     'subtree' => [$subtreeBody, $subtreeValue . '\\DistanceRule'],
-    'representative-regex' => [$regexBody, 'Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceRule'],
+    'representative-regex' => [$regexBody, 'Qualimetrix\\Analysis\\Evidence\\Coupling\\Distance\\DistanceRule'],
 ];
 
 printf("PHP %s; PCRE %s; pcre.jit=%s; ini backtrack=%s; ini recursion=%s\n", PHP_VERSION, PCRE_VERSION, ini_get('pcre.jit'), ini_get('pcre.backtrack_limit'), ini_get('pcre.recursion_limit'));
@@ -286,7 +286,7 @@ for ($index = 0; $index < WARM_ITERATIONS; $index++) {
 $currentSubtreeNs = (hrtime(true) - $currentSubtreeStartedAt) / WARM_ITERATIONS;
 
 $currentGlob = 'Qualimetrix\\Analysis\\*';
-$currentGlobSubject = 'Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceRule';
+$currentGlobSubject = 'Qualimetrix\\Analysis\\Evidence\\Coupling\\Distance\\DistanceRule';
 $currentGlobStartedAt = hrtime(true);
 for ($index = 0; $index < WARM_ITERATIONS; $index++) {
     $currentGlobMatch = fnmatch($currentGlob, $currentGlobSubject, FNM_NOESCAPE);

@@ -22,11 +22,11 @@ use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
 use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LongFormAllowEntryNormalizer;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureFactoryResult;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureSection;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\LongFormAllowEntryNormalizer;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\SectionSpot;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
 

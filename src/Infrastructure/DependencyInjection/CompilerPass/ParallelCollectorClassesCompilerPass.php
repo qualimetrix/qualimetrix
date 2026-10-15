@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
+
+use Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\RuleRegistryCompilerPass;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;

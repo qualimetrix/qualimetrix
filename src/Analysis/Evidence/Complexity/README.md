@@ -16,28 +16,32 @@ declaration-scoped collection: the sum of the CCN values of owned methods.
 
 ```text
 Complexity/
-├── CognitiveComplexityCollector.php
-├── CognitiveComplexityVisitor.php
-├── CyclomaticComplexityCollector.php
-├── CyclomaticComplexityVisitor.php
-├── NpathComplexityCollector.php
-├── NpathComplexityVisitor.php
-├── NpathExpressionCalculator.php
+├── Npath/
+│   ├── ClassNpathComplexityOptions.php
+│   ├── MethodNpathComplexityOptions.php
+│   ├── NpathComplexityCollector.php
+│   ├── NpathComplexityOptions.php
+│   ├── NpathComplexityRule.php
+│   ├── NpathComplexityVisitor.php
+│   └── NpathExpressionCalculator.php
 ├── ClassCognitiveComplexityOptions.php
 ├── ClassComplexityOptions.php
-├── ClassNpathComplexityOptions.php
+├── CognitiveComplexityCollector.php
 ├── CognitiveComplexityOptions.php
 ├── CognitiveComplexityRule.php
+├── CognitiveComplexityVisitor.php
 ├── ComplexityOptions.php
 ├── ComplexityRule.php
+├── CyclomaticComplexityCollector.php
+├── CyclomaticComplexityVisitor.php
 ├── MethodCognitiveComplexityOptions.php
 ├── MethodComplexityOptions.php
-├── MethodNpathComplexityOptions.php
-├── NpathComplexityOptions.php
-├── NpathComplexityRule.php
 ├── WmcOptions.php
 └── WmcRule.php
 ```
+
+`Npath/` keeps the NPath expression recurrence, visitor, collector, options and
+rule together; cyclomatic and cognitive measurement remain at the capability root.
 
 The three callable collectors retain their names, requirements and metric
 definitions. Callable CCN, cognitive and NPath rule coordinates declare

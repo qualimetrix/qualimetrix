@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
-use Qualimetrix\Infrastructure\Console\ScopeWarningChecker;
+use Qualimetrix\Infrastructure\Console\CheckScope\ScopeWarningChecker;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 

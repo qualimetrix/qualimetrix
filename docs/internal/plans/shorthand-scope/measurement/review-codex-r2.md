@@ -33,7 +33,7 @@
 - **anchor**:
   - `docs/internal/plans/shorthand-scope/01-contract.md:68-76` (C3), `:202-205` (reach `scope`)
   - `docs/internal/plans/shorthand-scope/02-cure.md:145-147` (P3 исключает `scope`)
-  - `src/Analysis/Evidence/Coupling/CboOptions.php:94-97`
+  - `src/Analysis/Evidence/Coupling/Cbo/CboOptions.php:94-97`
 - **evidence**:
   > **`scope` is not**: `CboOptions::fromArray()` composes it by key already, and pushing it here too would apply it twice. (`02-cure.md:145-147`)
 

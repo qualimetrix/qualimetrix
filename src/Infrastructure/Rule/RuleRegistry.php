@@ -17,7 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
  * The registry never instantiates rules: rules may declare constructor
  * dependencies beyond their Options object, so only the DI container can build
  * them. Consumers that need instances receive them from the container (see
- * {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass}).
+ * {@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\RuleCompilerPass}).
  */
 final readonly class RuleRegistry implements RuleRegistryInterface
 {

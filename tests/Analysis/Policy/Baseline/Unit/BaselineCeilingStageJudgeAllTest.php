@@ -8,12 +8,12 @@ use PHPUnit\Framework\Attributes\CoversClass;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
-use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
-use Qualimetrix\Analysis\Policy\Baseline\RunCoverageGap;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\InertBaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\InertEntryReason;
+use Qualimetrix\Analysis\Policy\Baseline\RunCoverage\RunCoverageGap;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
@@ -86,7 +86,7 @@ final class BaselineCeilingStageJudgeAllTest extends TestCase
 
     /**
      * `inertEntries` is the route ADR 0017 needs for `check` to name an entry it
-     * could not apply — populated by the loader on the {@see \Qualimetrix\Analysis\Policy\Baseline\Baseline}
+     * could not apply — populated by the loader on the {@see \Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline}
      * the stage holds, and carried through unconditionally on every call.
      */
     #[Test]

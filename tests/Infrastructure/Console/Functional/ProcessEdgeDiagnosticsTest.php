@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\Application;
+use Qualimetrix\Infrastructure\Console\Application\Application;
 use Qualimetrix\Subprocess\ChildProcess;
 
 require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
@@ -41,7 +41,7 @@ final class ProcessEdgeDiagnosticsTest extends TestCase
 require $argv[1];
 register_shutdown_function(static function (): void { trigger_error('shutdown diagnostic', E_USER_WARNING); });
 $hint = \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register();
-$app = \Qualimetrix\Infrastructure\Console\Application::forProduct(static function (): never { throw new LogicException('bad product tag'); }, $hint);
+$app = \Qualimetrix\Infrastructure\Console\Application\Application::forProduct(static function (): never { throw new LogicException('bad product tag'); }, $hint);
 exit($app->run(new \Symfony\Component\Console\Input\ArgvInput(['qmx', 'check', '--format=json'])));
 PHP;
         $result = ChildProcess::run([\PHP_BINARY, '-d', 'display_errors=1', '-d', 'log_errors=0', '-r', $script, \dirname(__DIR__, 4) . '/vendor/autoload.php']);
@@ -60,7 +60,7 @@ PHP;
         $script = <<<'PHP'
 require $argv[1];
 $hint = \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register();
-$app = \Qualimetrix\Infrastructure\Console\Application::forProduct(static function (): never { throw new LogicException('bad product tag'); }, $hint);
+$app = \Qualimetrix\Infrastructure\Console\Application\Application::forProduct(static function (): never { throw new LogicException('bad product tag'); }, $hint);
 exit($app->run(new \Symfony\Component\Console\Input\ArgvInput(array_merge(['qmx'], array_slice($argv, 2)))));
 PHP;
 

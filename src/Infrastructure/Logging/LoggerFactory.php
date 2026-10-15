@@ -8,7 +8,7 @@ use Psr\Log\AbstractLogger;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Psr\Log\NullLogger;
-use Qualimetrix\Core\FileTarget\HeldTarget;
+use Qualimetrix\Core\FileTarget\Publication\HeldTarget;
 use Qualimetrix\Infrastructure\Logging\Contract\LogFileUnavailable;
 use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
 use Stringable;

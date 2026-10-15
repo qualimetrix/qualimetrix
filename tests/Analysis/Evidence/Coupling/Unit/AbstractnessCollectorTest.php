@@ -14,7 +14,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MetricAggregator;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
-use Qualimetrix\Analysis\Evidence\Size\ClassCountCollector;
+use Qualimetrix\Analysis\Evidence\Size\ClassCount\ClassCountCollector;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;

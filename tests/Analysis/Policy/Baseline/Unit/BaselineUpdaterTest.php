@@ -8,23 +8,23 @@ use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Policy\Baseline\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateDisposition;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateRefusalReason;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateResult;
-use Qualimetrix\Analysis\Policy\Baseline\EntrySelector;
-use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
-use Qualimetrix\Analysis\Policy\Baseline\RunScope;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntryMode;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\EntrySelector;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\InertBaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\InertEntryReason;
+use Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance\BaselineUpdateDisposition;
+use Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance\BaselineUpdater;
+use Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance\BaselineUpdateRefusalReason;
+use Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance\BaselineUpdateResult;
+use Qualimetrix\Analysis\Policy\Baseline\RunCoverage\RunScope;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -39,7 +39,7 @@ use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
 
 /**
  * ADR 0017 rules for `baseline:update`, exercised through the domain service
- * itself rather than through {@see \Qualimetrix\Analysis\Policy\Baseline\GroupAcceptance}
+ * itself rather than through {@see \Qualimetrix\Analysis\Policy\Baseline\Entry\GroupAcceptance}
  * directly — `GroupAcceptanceTest` already pins the primitive; this pins
  * that `BaselineUpdater` actually calls it and does the right thing with the
  * verdict: write, refuse, or leave untouched.
@@ -537,7 +537,7 @@ final class BaselineUpdaterTest extends TestCase
         self::assertSame($baseline, $result->baseline);
         self::assertFalse($result->changed);
         self::assertNotNull($result->writeRefusal);
-        $result = $this->updater()->recordExclusions($baseline, [$finding], $coverage, [$entry->identity->key() => \Qualimetrix\Analysis\Policy\Baseline\RunCoverageGap::NotMeasured]);
+        $result = $this->updater()->recordExclusions($baseline, [$finding], $coverage, [$entry->identity->key() => \Qualimetrix\Analysis\Policy\Baseline\RunCoverage\RunCoverageGap::NotMeasured]);
         self::assertFalse($result->changed);
         self::assertNotNull($result->writeRefusal);
     }

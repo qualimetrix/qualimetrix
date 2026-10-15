@@ -360,19 +360,20 @@ so Design can require it without importing a Size constant.
 
 ```text
 Size/
-├── ClassCountCollector.php
-├── ClassCountVisitor.php
+├── ClassCount/
+│   ├── ClassCountCollector.php
+│   ├── ClassCountOptions.php
+│   ├── ClassCountRule.php
+│   └── ClassCountVisitor.php
 ├── LocCollector.php
 ├── LocVisitor.php
-├── MethodStatementCountCollector.php
-├── MethodStatementCountVisitor.php
 ├── MethodCountCollector.php
 ├── MethodCountMetrics.php
-├── MethodCountVisitor.php
-├── ClassCountOptions.php
-├── ClassCountRule.php
 ├── MethodCountOptions.php
 ├── MethodCountRule.php
+├── MethodCountVisitor.php
+├── MethodStatementCountCollector.php
+├── MethodStatementCountVisitor.php
 ├── PropertyCountOptions.php
 └── PropertyCountRule.php
 ```
@@ -393,8 +394,8 @@ anonymous classes, methods, properties, thresholds, and property exclusions.
 
 ## Definition of Done
 
-- All 15 Size declarations remain in this flat leaf without a `Contract/` or
-  role-based subdirectory.
+- Class cardinality collection, traversal, options and rule stay together in
+  `ClassCount/`; the capability publishes no `Contract/` surface.
 - `size.class-count`, `size.method-count`, and `size.property-count` and their
   metric keys retain their existing behaviour. `design.woc` is the Lanza & Marinescu
   ratio described above; WMC stays the Complexity-owned sum of method CCN on each exact class declaration.

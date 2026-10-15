@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Selection;
 
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
-use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
-use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevel\ChannelLevelSelector;
 use Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision;
 use Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission;
 use Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch;
 use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress;
-use Qualimetrix\Analysis\Finding\Contract\SelectionFilter;
+use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionFilter;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /** Decides authored membership and rank for every declared producer/channel cell. */

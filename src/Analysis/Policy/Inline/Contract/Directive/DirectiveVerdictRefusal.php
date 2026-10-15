@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Contract\Directive;
 
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 
 /** A refusal's public wording and internal selection address. */
 final readonly class DirectiveVerdictRefusal

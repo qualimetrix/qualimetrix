@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
-use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
@@ -24,7 +24,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * Two things know what levels a producer works at, and they must agree.
  *
  * The final options and enablement snapshot answers what can run; channels declare, through
- * {@see \Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration::$levels},
+ * {@see \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration::$levels},
  * where a producer reports. The directive audit reads the first and addresses
  * the second, so a pair the channels declare and the activity omits is read as
  * "this producer does not report there" — which silently turns a real

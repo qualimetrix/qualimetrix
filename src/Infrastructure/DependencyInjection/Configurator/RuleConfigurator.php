@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
 use Qualimetrix\Analysis\Finding\ChannelPresentationView;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPresentationInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
@@ -51,7 +51,7 @@ final class RuleConfigurator implements ContainerConfiguratorInterface
 
     /**
      * One instance, four views. The static half of its arguments is filled in
-     * by {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass};
+     * by {@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\ChannelDeclarationCompilerPass};
      * the computed-metric half is the live definition catalog, which the
      * universe resolves from on every lookup.
      */
@@ -81,7 +81,7 @@ final class RuleConfigurator implements ContainerConfiguratorInterface
     }
 
     /**
-     * `$docsPageByRule` is filled in by {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass},
+     * `$docsPageByRule` is filled in by {@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\ChannelDeclarationCompilerPass},
      * the same pass that already walks every tagged rule service for its name
      * — see {@see \Qualimetrix\Analysis\Finding\ChannelPresentationView}.
      *

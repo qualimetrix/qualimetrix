@@ -23,9 +23,9 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Qualimetrix\Core\Pattern\SelectorKind;
-use Qualimetrix\Infrastructure\Console\CheckScopeResolver;
-use Qualimetrix\Infrastructure\Console\ResolvedCheckScope;
-use Qualimetrix\Infrastructure\Console\ScopeWarningChecker;
+use Qualimetrix\Infrastructure\Console\CheckScope\CheckScopeResolver;
+use Qualimetrix\Infrastructure\Console\CheckScope\ResolvedCheckScope;
+use Qualimetrix\Infrastructure\Console\CheckScope\ScopeWarningChecker;
 use Qualimetrix\Infrastructure\Git\GitScopeResolver;
 use Qualimetrix\Reporting\ReportProjectScope;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -38,6 +38,18 @@ use Throwable;
 final class CheckScopeResolverTest extends TestCase
 {
     private ComposerManifestReaderInterface $reader;
+    private string $fixtureRoot;
+
+    protected function setUp(): void
+    {
+        $this->fixtureRoot = \Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory::create('qmx-check-scope-');
+        mkdir($this->fixtureRoot . '/src');
+    }
+
+    protected function tearDown(): void
+    {
+        \Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory::remove($this->fixtureRoot);
+    }
 
     #[Test]
     public function itUsesTheInitialMeasurementWithoutReadingAfterGitResolution(): void
@@ -54,7 +66,7 @@ final class CheckScopeResolverTest extends TestCase
 
         $resolver = $this->resolver($reader);
         $configuration = $this->configuration();
-        $result = $resolver->resolve($this->input(), $configuration);
+        $result = $this->resolve($resolver, $this->input(), $configuration);
 
         self::assertSame($configuration->projectScope, $result->measurement);
         self::assertSame(['warnings'], $events);
@@ -73,7 +85,8 @@ final class CheckScopeResolverTest extends TestCase
         )->willReturnCallback(static fn(AbsolutePath $root): \Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts => (new \Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestDecoder())->decode($root, json_encode(['autoload' => ['classmap' => ['src', 'lib']]], \JSON_THROW_ON_ERROR)));
 
         try {
-            $result = $this->resolver($reader)->resolve(
+            $result = $this->resolve(
+                $this->resolver($reader),
                 $this->input(),
                 $this->configuration(AbsolutePath::fromString($projectRoot), [$projectRoot . '/src']),
             );
@@ -102,7 +115,8 @@ final class CheckScopeResolverTest extends TestCase
         $reader->method('read')->willReturnCallback(static fn(AbsolutePath $root): \Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts => (new \Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestDecoder())->decode($root, json_encode(['autoload' => ['classmap' => ['src', 'lib/vendor']]], \JSON_THROW_ON_ERROR)));
 
         try {
-            $result = $this->resolver($reader)->resolve(
+            $result = $this->resolve(
+                $this->resolver($reader),
                 $this->input(),
                 $this->configuration(AbsolutePath::fromString($projectRoot), [$projectRoot]),
             );
@@ -151,7 +165,8 @@ final class CheckScopeResolverTest extends TestCase
                 static fn(string $path): string => $projectRoot . '/' . $path,
                 $paths,
             ));
-            $result = $resolver->resolve(
+            $result = $this->resolve(
+                $resolver,
                 $this->input(),
                 $configuration,
             );
@@ -211,7 +226,7 @@ final class CheckScopeResolverTest extends TestCase
 
         $this->expectException(InvalidArgumentException::class);
 
-        $this->resolver($reader)->resolve($this->input('invalid'), $this->configuration());
+        $this->resolve($this->resolver($reader), $this->input('invalid'), $this->configuration());
     }
 
     /**
@@ -238,7 +253,7 @@ final class CheckScopeResolverTest extends TestCase
         $this->expectException($refusal);
         $this->expectExceptionMessage($message);
 
-        $this->resolver($reader)->resolve($this->input($report), $this->configuration());
+        $this->resolve($this->resolver($reader), $this->input($report), $this->configuration());
     }
 
     private function resolver(ComposerManifestReaderInterface $reader): CheckScopeResolver
@@ -248,12 +263,28 @@ final class CheckScopeResolverTest extends TestCase
         return new CheckScopeResolver(
             new GitScopeResolver(),
             new ScopeWarningChecker(),
+            new \Qualimetrix\Infrastructure\Console\RunSetup\AnalysisInputPathValidator(),
+            new \Qualimetrix\Infrastructure\Console\CheckScope\FindingProjectionOptionsResolver(new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader()),
+            new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream(),
         );
+    }
+
+    private function resolve(CheckScopeResolver $resolver, \Symfony\Component\Console\Input\InputInterface $input, RunConfiguration $configuration): ResolvedCheckScope
+    {
+        $document = \Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument::of([], $configuration->projectRoot);
+        return $resolver->resolve($input, $configuration, $document, new \Symfony\Component\Console\Output\BufferedOutput(), new \Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions());
     }
 
     private function input(mixed $report = null): ArrayInput
     {
-        $definition = new InputDefinition([new InputOption('report', null, InputOption::VALUE_REQUIRED)]);
+        $definition = new InputDefinition([
+            new InputOption('report', null, InputOption::VALUE_REQUIRED),
+            new InputOption('suppress-path', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
+            new InputOption('suppress-namespace', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
+            new InputOption('baseline', null, InputOption::VALUE_REQUIRED),
+            new InputOption('report-strict', null, InputOption::VALUE_NONE),
+            new InputOption('no-suppression-annotations', null, InputOption::VALUE_NONE),
+        ]);
 
         return new ArrayInput($report === null ? [] : ['--report' => $report], $definition);
     }
@@ -261,7 +292,7 @@ final class CheckScopeResolverTest extends TestCase
     /** @param list<string> $paths */
     private function configuration(?AbsolutePath $projectRoot = null, array $paths = ['src']): RunConfiguration
     {
-        $root = $projectRoot ?? AbsolutePath::fromString((string) getcwd());
+        $root = $projectRoot ?? AbsolutePath::fromString($this->fixtureRoot);
 
         $absolutePaths = array_map(static fn(string $path): AbsolutePath => AbsolutePath::fromString(str_starts_with($path, '/') ? $path : $root->value() . '/' . $path), $paths);
 

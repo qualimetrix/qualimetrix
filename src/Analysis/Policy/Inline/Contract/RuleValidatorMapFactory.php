@@ -7,11 +7,11 @@ namespace Qualimetrix\Analysis\Policy\Inline\Contract;
 use LogicException;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionDocumentFormsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleOptionForms;
 
@@ -32,7 +32,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleOptionForms;
  * The criterion below is mechanical — what a rule's Options class *can*
  * carry. What the run answers is what the rule *declares*, through its
  * `SUPPORTS_THRESHOLD_OVERRIDE` constant
- * ({@see \Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface::supportsThresholdOverride()}).
+ * ({@see \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelIdentityInterface::supportsThresholdOverride()}).
  * The two are pinned against each other by
  * `ChannelUniverseCoverageTest::itRequiresEveryRulesDeclaredThresholdSupportToMatchWhatItsOptionsCanHonour()`,
  * because a rule that declares support its options cannot honour promises a

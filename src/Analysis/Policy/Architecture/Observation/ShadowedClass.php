@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Observation;
 
-use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchedCriterion;
 
 /**
  * A class one layer won while a later-declared layer also matched it, with

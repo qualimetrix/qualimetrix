@@ -15,9 +15,9 @@ runtime abstraction.
 - change `src/Analysis/Run/ExcludeBinding/ExcludeBindingProbe.php`
 - change `src/Analysis/Run/ExcludeBinding/UnmatchedExcludeAudit.php`
 - change Run configuration values carrying `exclude`
-- change `src/Infrastructure/Console/AnalysisPreflight.php`
-- change `src/Infrastructure/Console/MeasuredFindingSet.php`
-- change `src/Infrastructure/Console/LayerAssignmentResolver.php`
+- change `src/Infrastructure/Console/RunSetup/AnalysisPreflight.php`
+- change `src/Infrastructure/Console/BaselineCommand/MeasuredFindingSet.php`
+- change `src/Infrastructure/Console/Command/Debug/LayerAssignmentResolver.php`
 - change `src/Infrastructure/Git/GitScopeResolver.php`
 - change every test double and call site of
   `FileDiscoveryFactoryInterface::create()` found by the re-derived census
@@ -50,9 +50,9 @@ no longer receives user exclusions.
 
 **Production files:**
 
-- `src/Analysis/Policy/Architecture/Layer/CapturePattern.php`
-- `src/Analysis/Policy/Architecture/Layer/LayerCriteriaMatcher.php`
-- `src/Analysis/Policy/Architecture/Layer/PatternScope.php`
+- `src/Analysis/Policy/Architecture/Layer/Matching/CapturePattern.php`
+- `src/Analysis/Policy/Architecture/Layer/Matching/LayerCriteriaMatcher.php`
+- `src/Analysis/Policy/Architecture/Layer/Matching/PatternScope.php`
 - `src/Analysis/Policy/Architecture/Layer/LayerShadowing.php`
 - `src/Analysis/Policy/Architecture/Layer/TemplateLayerDefinition.php`
 - `src/Analysis/Policy/Architecture/Layer/Expansion/TupleExtractor.php`

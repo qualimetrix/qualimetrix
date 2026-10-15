@@ -94,7 +94,7 @@ final readonly class DirectiveLevels
         // carries no subject by the VO's own invariant, so no level can be
         // derived from it: what stands on the suppressed line is known during
         // collection and is not carried into the directive. Returning nothing
-        // says exactly that, and {@see \Qualimetrix\Analysis\Finding\Contract\LevelActivity::ranAtAnyOf()}
+        // says exactly that, and {@see \Qualimetrix\Analysis\Finding\Contract\Channel\LevelActivity::ranAtAnyOf()}
         // then answers at producer granularity rather than inventing a level.
         return [];
     }

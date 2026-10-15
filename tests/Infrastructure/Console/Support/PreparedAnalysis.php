@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Console\Support;
 
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
-use Qualimetrix\Infrastructure\Console\PreparedAnalysisInput;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
+use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisPreflight;
+use Qualimetrix\Infrastructure\Console\RunSetup\PreparedAnalysisInput;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use RuntimeException;
 use Symfony\Component\Console\Input\ArrayInput;

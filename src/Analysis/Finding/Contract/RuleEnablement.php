@@ -5,6 +5,12 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract;
 
 use LogicException;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Channel\LevelActivity;
+use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionFilter;
+
+use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionRecord;
 use Qualimetrix\Analysis\Finding\Selection\EnablementIndex;
 use Qualimetrix\Analysis\Finding\Selection\SelectionCauses;
 use Qualimetrix\Core\Symbol\SymbolLevel;

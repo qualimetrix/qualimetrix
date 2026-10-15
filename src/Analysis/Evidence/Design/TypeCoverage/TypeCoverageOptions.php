@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Design\TypeCoverage;
 
-use Qualimetrix\Analysis\Finding\Contract\Rule\BandDirection;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\BandDirection;
 
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOptionValues;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\InvertedOverrideValidator;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 
 /**
@@ -26,7 +26,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  * the answer — one warning boundary, one error boundary, coverage in percent
  * where lower is worse — is the same for all three. Configuration is keyed by
  * producer rule name, never by Options class
- * ({@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass::optionsServiceId()}),
+ * ({@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\RuleOptionsCompilerPass::optionsServiceId()}),
  * so sharing the implementation does not share the configured instance.
  *
  * Default thresholds:

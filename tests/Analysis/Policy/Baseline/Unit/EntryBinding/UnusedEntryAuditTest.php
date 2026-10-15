@@ -8,23 +8,23 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStageResult;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineAuditChannels;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\InertBaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\InertEntryReason;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryOptions;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule;
-use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
@@ -126,17 +126,17 @@ final class UnusedEntryAuditTest extends TestCase
         return new BaselineEntry(new BaselineIdentity($subject, new FindingChannel('code-smell.goto')), null, 1);
     }
 
-    private static function populationPublication(): \Qualimetrix\Analysis\Finding\Contract\ChannelPublication
+    private static function populationPublication(): \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication
     {
         $decisions = [];
         foreach (\Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule::channelDeclarations() as $name => $declaration) {
             foreach ($declaration->levels as $level) {
                 $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
-                    new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(\Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($name), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable),
+                    new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(\Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel($name), $level, \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole::Selectable),
                     new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
                 );
             }
         }
-        return new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null));
+        return new \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null));
     }
 }

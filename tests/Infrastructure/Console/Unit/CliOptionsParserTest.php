@@ -14,9 +14,9 @@ use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomOptions;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
-use Qualimetrix\Analysis\Evidence\Coupling\CboOptions;
-use Qualimetrix\Analysis\Evidence\Coupling\DistanceOptions;
-use Qualimetrix\Analysis\Evidence\Coupling\DistanceRule;
+use Qualimetrix\Analysis\Evidence\Coupling\Cbo\CboOptions;
+use Qualimetrix\Analysis\Evidence\Coupling\Distance\DistanceOptions;
+use Qualimetrix\Analysis\Evidence\Coupling\Distance\DistanceRule;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageOptions;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityOptions;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
@@ -25,9 +25,9 @@ use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
-use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
-use Qualimetrix\Infrastructure\Console\CliOptionsParser;
-use Qualimetrix\Infrastructure\Console\CliRuleOptionAddressing;
+use Qualimetrix\Infrastructure\Console\Invocation\CommandDefinition\CheckCommandDefinition;
+use Qualimetrix\Infrastructure\Console\Invocation\RuleOptions\CliOptionsParser;
+use Qualimetrix\Infrastructure\Console\Invocation\RuleOptions\CliRuleOptionAddressing;
 use Qualimetrix\Infrastructure\Rule\RuleRegistry;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Symfony\Component\Console\Command\Command;
@@ -151,13 +151,13 @@ final class CliOptionsParserTest extends TestCase
     #[Test]
     public function itKeepsTheCanonicalIndexedSelectorPathAndOriginalCliOriginWhenTheSemanticValueIsInvalid(): void
     {
-        $surface = \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface::of(\Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions::class);
+        $surface = \Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface::of(\Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions::class);
         $write = new \Qualimetrix\Analysis\Configuration\Contract\Pipeline\CommandLinePathWrite(
             ['rules', 'complexity.ccn', 'suppress-namespaces'],
             'unknown:App',
             '--rule-opt',
             '--rule-opt=complexity.ccn:suppress-namespaces=unknown:App',
-            (new RuleOptionDocumentForms())->schemaAt($surface, new \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionAddress(null, 'suppress-namespaces')),
+            (new RuleOptionDocumentForms())->schemaAt($surface, new \Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionAddress(null, 'suppress-namespaces')),
             [['unknown' => 'App']],
         );
         try {

@@ -380,7 +380,7 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
 
     private function sourcePath(string $filename): string
     {
-        $paths = glob($this->root() . '/src/Infrastructure/DependencyInjection/{Configurator,CompilerPass}/' . $filename, \GLOB_BRACE);
+        $paths = glob($this->root() . '/src/Infrastructure/DependencyInjection/{Configurator,CompilerPass,RuleCatalog}/' . $filename, \GLOB_BRACE);
         self::assertIsArray($paths);
         self::assertCount(1, $paths, $filename);
 

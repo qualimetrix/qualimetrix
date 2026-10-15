@@ -12,7 +12,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityVisitor;
 use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityVisitor;
-use Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityVisitor;
+use Qualimetrix\Analysis\Evidence\Complexity\Npath\NpathComplexityVisitor;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageVisitor;

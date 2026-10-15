@@ -81,8 +81,8 @@ final class ExhaustionReleasesTargetsTest extends TestCase
 require __AUTOLOAD__;
 
 $hint = \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register();
-exit(\Qualimetrix\Infrastructure\Console\Application::forProduct(
-    static function (\Qualimetrix\Infrastructure\Console\ConsoleDiagnostics $diagnostics): \Symfony\Component\DependencyInjection\ContainerBuilder {
+exit(\Qualimetrix\Infrastructure\Console\Application\Application::forProduct(
+    static function (\Qualimetrix\Infrastructure\Console\Application\ConsoleDiagnostics $diagnostics): \Symfony\Component\DependencyInjection\ContainerBuilder {
         $container = (new \Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory())->configure($diagnostics);
         $container->getDefinition('qmx.run.analysis_pipeline')->setSynthetic(true);
         $container->compile();

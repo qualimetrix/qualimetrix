@@ -304,11 +304,11 @@ const P6_A_FINDING_TEST_PATHS = [
     'tests/Analysis/Finding/Support/StubChannelDeclarationRegistry.php',
     'tests/Analysis/Policy/Baseline/Support/FindingFactory.php',
     'tests/Analysis/Finding/Unit/AbstractRuleThresholdSeamTest.php',
-    'tests/Analysis/Finding/Unit/AcceptedLevelTest.php',
+    'tests/Analysis/Finding/Unit/Contract/Channel/AcceptedLevelTest.php',
     'tests/Analysis/Finding/Unit/AnalysisContextTest.php',
-    'tests/Infrastructure/DependencyInjection/Unit/CompilerPass/ChannelDeclarationCompilerPassTest.php',
+    'tests/Infrastructure/DependencyInjection/Unit/RuleCatalog/ChannelDeclarationCompilerPassTest.php',
     'tests/Analysis/Finding/Unit/ChannelDeclarationReaderTest.php',
-    'tests/Analysis/Finding/Unit/ChannelDeclarationTest.php',
+    'tests/Analysis/Finding/Unit/Contract/Channel/ChannelDeclarationTest.php',
     'tests/Analysis/Finding/Unit/LocationNullFileTest.php',
     'tests/Analysis/Finding/Unit/LocationTest.php',
     'tests/Analysis/Finding/Unit/NamespaceExclusionFilterTest.php',
@@ -324,9 +324,9 @@ const P6_A_FINDING_TEST_PATHS = [
     'tests/Analysis/Finding/Unit/RuleSelectorTest.php',
     'governance/ThresholdKeys/RuleThresholdKeyGroupRegistryDriftTest.php',
     'tests/Analysis/Finding/Unit/SeverityTest.php',
-    'tests/Analysis/Finding/Unit/ThresholdParserTest.php',
+    'tests/Analysis/Finding/Unit/Contract/Rule/OptionLanguage/ThresholdParserTest.php',
     'governance/ThresholdKeys/ThresholdValidatorAssignmentTest.php',
-    'tests/Analysis/Finding/Unit/FindingChannelTest.php',
+    'tests/Analysis/Finding/Unit/Contract/Channel/FindingChannelTest.php',
     'tests/Analysis/Finding/Unit/FindingFilterStageTest.php',
     'tests/Analysis/Finding/Unit/FindingTest.php',
 ];
@@ -381,10 +381,9 @@ const P6_LIVE_ADDED_TEST_IDS = [
 
 /** @var array<string, string> Exact zero-net method-ID replacements. */
 const P6_RENAMED_TEST_IDS = [
-    'Qualimetrix\\Tests\\Unit\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleCompilerPassTest::itCollectsTaggedRulesIntoRuleExecutor' => 'Qualimetrix\\Tests\\Infrastructure\\DependencyInjection\\Unit\\CompilerPass\\RuleCompilerPassTest::itCollectsTaggedRulesIntoRuleExecution',
+    'Qualimetrix\\Tests\\Unit\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleCompilerPassTest::itCollectsTaggedRulesIntoRuleExecutor' => 'Qualimetrix\\Tests\\Infrastructure\\DependencyInjection\\Unit\\RuleCatalog\\RuleCompilerPassTest::itCollectsTaggedRulesIntoRuleExecution',
     'Qualimetrix\\Tests\\Integration\\DependencyInjection\\ContainerFactoryTest::itInjectsRulesIntoRuleExecutor' => 'Qualimetrix\\Tests\\Infrastructure\\DependencyInjection\\Integration\\ContainerFactoryTest::itInjectsRulesIntoRuleExecution',
     'Qualimetrix\\Tests\\Integration\\Infrastructure\\Console\\RuleExclusionStatsWiringTest::itSharesTheSameRuleExecutorInstanceBetweenThePipelineAndTheOrchestrator' => 'Qualimetrix\\Tests\\Infrastructure\\Integration\\RuleExclusionStatsWiringTest::itSharesTheSameRuleExecutionInstanceBetweenThePipelineAndTheOrchestrator',
-    'Qualimetrix\\Tests\\Infrastructure\\Console\\Functional\\Command\\CheckCommandBaselineTest::itDoesNotPromoteAnAnnotatedFindingTheBaselineNeverMeasured' => 'Qualimetrix\\Tests\\Infrastructure\\Console\\Functional\\Command\\CheckCommandBaselineTest::itCombinesConfiguredAndCliExclusionsWithoutLosingBaselineAnnotationOrGit',
 ];
 
 /** @var array<string, array{string, string, string}> Exact A03 orphan-probe dispositions. */

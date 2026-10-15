@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\Application;
+use Qualimetrix\Infrastructure\Console\Application\Application;
 use Qualimetrix\Subprocess\ChildProcess;
 
 require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';

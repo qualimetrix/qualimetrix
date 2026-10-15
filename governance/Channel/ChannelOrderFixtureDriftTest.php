@@ -7,7 +7,7 @@ namespace Qualimetrix\Governance\Channel;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use RuntimeException;
 

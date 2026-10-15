@@ -33,9 +33,9 @@ use Symfony\Component\Console\Command\Command;
 #[Group('integration')]
 final class CommandRegistrationTest extends TestCase
 {
-    private const string COMMAND_DIRECTORY = __DIR__ . '/../../src/Infrastructure/Console/Command';
+    private const string COMMAND_DIRECTORY = __DIR__ . '/../../src/Infrastructure/Console';
 
-    private const string BINARY = __DIR__ . '/../../src/Infrastructure/Console/ProductCommandLoader.php';
+    private const string BINARY = __DIR__ . '/../../src/Infrastructure/Console/Application/ProductCommandLoader.php';
 
     /** @param class-string<Command> $class */
     #[Test]

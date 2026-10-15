@@ -25,9 +25,9 @@ namespace Qualimetrix\PromiseEffect;
 
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 
 /** One cell of the coordinate: this rule's key, written `~`, beside this neighbour. */
 final readonly class NeighbourhoodRow

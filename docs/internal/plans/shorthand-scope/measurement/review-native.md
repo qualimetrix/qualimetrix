@@ -67,7 +67,7 @@
     Документ `complexity.ccn: {threshold: 5, class: {max_warning: 40}}` при заполняющем прочтении `02-cure` даёт `maxWarning=40, maxError=5` → любой класс с maxCCN ≥ 5 становится ERROR; по `01-semantics` — `40/50`, то есть ровно то, что автор просил.
   - Безусловный случай (одинаковые имена ключей на обоих уровнях): `coupling.cbo: {threshold: 50, class: {warning: 1}}` → `class.error = 20` (по 01) или `50` (по 02).
 - **verification**: confirmed
-- **verification_note**: противоречие текстовое и проверяется чтением двух абзацев; следствия проверены по коду (константы конструкторов, порядок сравнений в `getSeverity`). Дополнительный довод в пользу ключевой гранулярности уже есть в продукте: `CboOptions::fromArray()` (`src/Analysis/Evidence/Coupling/CboOptions.php:94-97`) композирует `scope` по ключу — верхний уровень заполняет `class`, только если блок его не назвал.
+- **verification_note**: противоречие текстовое и проверяется чтением двух абзацев; следствия проверены по коду (константы конструкторов, порядок сравнений в `getSeverity`). Дополнительный довод в пользу ключевой гранулярности уже есть в продукте: `CboOptions::fromArray()` (`src/Analysis/Evidence/Coupling/Cbo/CboOptions.php:94-97`) композирует `scope` по ключу — верхний уровень заполняет `class`, только если блок его не назвал.
 - **fix_direction**: выбрать одну гранулярность и переписать оба этапа под неё целиком (правка вставкой абзаца даст документ, спорящий сам с собой); добавить в таблицу строку с блоком, назвавшим ровно половину полосы, и строку, где перенос сокращения дал бы `error < warning` — и решить, отказ это или дефолт.
 
 ---
@@ -162,7 +162,7 @@
 - **mechanism**: `ThresholdParser::parse()` ищет ключ полосы по списку кандидатов, ПЕРВИЧНЫЙ спеллинг первым (`max_warning`, затем легаси `maxWarning`). Все двери нормализуют ключи рекурсивно, включая вложенные блоки, поэтому написанный автором `max_warning:`/`max-warning:` внутри `class:` приходит в `fromArray()` как `maxWarning`. Существующая ветка сокращения строит конфиг уровня с литеральным `'max_warning'` (`InstabilityOptions.php:62-66`). Если лечение построит массив уровня как «ключи блока плюс значения сокращения» (буквально то, что предписывает `02-cure.md:22-26`), в массиве окажутся ОБА спеллинга, и `ThresholdParser` возьмёт первичный — то есть значение СОКРАЩЕНИЯ, а не написанное автором. Юнит-тест по DoD («теми же словами таблицы», то есть `max_warning`) этого не увидит: дефект проявляется только в спеллинге, который производит реальная дверь.
 - **trigger**: воспроизводится в нормальной работе при одной из естественных реализаций; на сегодняшнем коде недостижим (ветки ещё нет)
 - **in_scope**: нет
-- **anchor**: `src/Analysis/Finding/Contract/Rule/ThresholdParser.php:102-135`; `src/Analysis/Evidence/Coupling/InstabilityOptions.php:62-66`; `src/Analysis/Configuration/Loader/YamlConfigLoader.php:159-178`
+- **anchor**: `src/Analysis/Finding/Contract/Rule/OptionLanguage/ThresholdParser.php:102-135`; `src/Analysis/Evidence/Coupling/InstabilityOptions.php:62-66`; `src/Analysis/Configuration/Loader/YamlConfigLoader.php:159-178`
 - **evidence**:
   ```php
   // ThresholdParser::candidateKeys() — первичный спеллинг впереди легаси
@@ -187,7 +187,7 @@
 - **mechanism**: `ThresholdParser::parse()` отказывает, когда в ОДНОМ массиве несут значение и `threshold`, и градуированный ключ группы. Если лечение подаёт сокращение в массив уровня (буквальное прочтение `02-cure.md:22-26`), то `complexity.ccn: {threshold: 5, callable: {warning: 3}}` соберёт массив уровня с `threshold` (из сокращения) рядом с `warning` (от автора) и отказ произойдёт на mix — хотя в документе автора одноуровневого противоречия нет, а `threshold` внутри `callable:` автор не писал. `02-cure.md:36-40` предупреждает про соседнюю ловушку («форма значения, а не только ключ… подача не должна менять, какой ключ называет отказ»), но не про создание отказа там, где его не было. DoD `02-cure.md:57` («существующие тесты одноуровневого отказа проходят нетронутыми») этого не поймает: документ новый.
 - **trigger**: воспроизводится в нормальной работе при одной из естественных реализаций
 - **in_scope**: нет
-- **anchor**: `src/Analysis/Finding/Contract/Rule/ThresholdParser.php:82-87`; план — `02-cure.md:19-27,36-40,48-57`
+- **anchor**: `src/Analysis/Finding/Contract/Rule/OptionLanguage/ThresholdParser.php:82-87`; план — `02-cure.md:19-27,36-40,48-57`
 - **evidence**:
   ```php
   if (self::hasAnyWrittenKey($config, $candidates['warning']) || self::hasAnyWrittenKey($config, $candidates['error'])) {
@@ -236,7 +236,7 @@
 - **trigger**: воспроизводится в нормальной работе
 - **in_scope**: да
 - **anchor**: `docs/internal/plans/shorthand-scope/00-overview.md:65-73`; `01-contract.md:55-57`
-- **evidence**: леджер, `complexity.ccn | callable.threshold | threshold | same-source | refuse`, примечание: «C6c ставит верхнее сокращение ровно в этот слот, так что оба пишут одну полосу дважды … the ambiguous-write refusal rule → refuse». `CboOptions::acceptedOptionKeys()` объявляет верхние `warning`/`error` (`src/Analysis/Evidence/Coupling/CboOptions.php:111-119`).
+- **evidence**: леджер, `complexity.ccn | callable.threshold | threshold | same-source | refuse`, примечание: «C6c ставит верхнее сокращение ровно в этот слот, так что оба пишут одну полосу дважды … the ambiguous-write refusal rule → refuse». `CboOptions::acceptedOptionKeys()` объявляет верхние `warning`/`error` (`src/Analysis/Evidence/Coupling/Cbo/CboOptions.php:111-119`).
 - **verification**: unverifiable
 - **verification_note**: это суждение о когерентности правила, а не свойство кода; проверяемая его часть (леджер обещает `refuse` на совпадающей паре, и верхняя градуированная пара объявлена) подтверждена и вынесена в claude-03 и claude-05.
 - **fix_direction**: сформулировать критерий, отделяющий «два написания одного слота» от «два ключа на разных глубинах», так, чтобы он давал ответ и для `{threshold, callable.threshold}`; добавить в таблицу строку с верхней градуированной парой рядом с блоком.

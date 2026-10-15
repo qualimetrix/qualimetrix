@@ -8,7 +8,7 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Support;
  * Recursive removal of a test's scratch directory.
  *
  * Every baseline command test needs one, and a baseline directory holds more
- * than the file under test — {@see \Qualimetrix\Analysis\Policy\Baseline\BaselineWriter}
+ * than the file under test — {@see \Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineWriter}
  * leaves a `.lock` sibling behind by design, so a teardown that unlinked one
  * known filename would leak.
  */

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\RunTarget;
 
 use Qualimetrix\Core\FileTarget\FileIdentity;
-use Qualimetrix\Core\FileTarget\HeldTarget;
-use Qualimetrix\Core\FileTarget\PreparedTarget;
+use Qualimetrix\Core\FileTarget\Publication\HeldTarget;
+use Qualimetrix\Core\FileTarget\Publication\PreparedTarget;
 use Qualimetrix\Core\FileTarget\ResolvedTarget;
 use Qualimetrix\Core\FileTarget\TargetKind;
 use Qualimetrix\Core\FileTarget\TargetPath;

@@ -10,11 +10,11 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
-use Qualimetrix\Infrastructure\Console\Application;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
-use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Application\Application;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\Console\RuleListing\RulesCommand;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\TestSupport\WorkingDirectory\RunsFromRepositoryRoot;
 use Symfony\Component\Console\Input\StringInput;
@@ -71,8 +71,8 @@ final class CheckCommandInputValidationTest extends TestCase
     }
 
     #[Test]
-    #[TestWith([\Qualimetrix\Infrastructure\Console\Command\GraphExportCommand::class])]
-    #[TestWith([\Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand::class])]
+    #[TestWith([\Qualimetrix\Infrastructure\Console\GraphExport\GraphExportCommand::class])]
+    #[TestWith([\Qualimetrix\Infrastructure\Console\Command\Baseline\Generation\BaselineGenerateCommand::class])]
     public function itNamesInferredComposerTargetsThroughPreflightAndBaseline(string $commandClass): void
     {
         $root = sys_get_temp_dir() . '/qmx-inferred-adjacent-' . bin2hex(random_bytes(6));
@@ -89,7 +89,7 @@ final class CheckCommandInputValidationTest extends TestCase
             self::assertInstanceOf(RefusalPresenter::class, $presenter);
             (new Application(new ErrorStream(), $presenter, static fn() => new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()))->addCommand($command);
             $tester = new CommandTester($command);
-            $input = $commandClass === \Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand::class
+            $input = $commandClass === \Qualimetrix\Infrastructure\Console\Command\Baseline\Generation\BaselineGenerateCommand::class
                 ? ['baseline' => $root . '/baseline.json']
                 : ['--format' => 'json'];
             $tester->execute($input, ['capture_stderr_separately' => true]);
@@ -241,7 +241,7 @@ final class CheckCommandInputValidationTest extends TestCase
 
     /**
      * The configuration and CLI seam of the one refusal point for an
-     * impossible `channel:level` pair, {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing}.
+     * impossible `channel:level` pair, {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevel\ChannelLevelAddressing}.
      * The other seam is the inline directive one, checked by
      * {@see \Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest}
      * — both ask the same object, so the two families of directive cannot

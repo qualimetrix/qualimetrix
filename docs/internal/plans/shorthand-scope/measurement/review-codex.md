@@ -56,7 +56,7 @@
 - **anchor**: контракт присутствия level-блока и его enablement по умолчанию (00-overview.md / 01-contract.md формулировка "block re-enables the level")
 - **evidence**:
   ```php
-  // src/Analysis/Evidence/Complexity/ClassNpathComplexityOptions.php:23-27
+  // src/Analysis/Evidence/Complexity/Npath/ClassNpathComplexityOptions.php:23-27
   public function __construct(
       public bool $enabled = false,
       public int $maxWarning = 500,
@@ -81,7 +81,7 @@
 - **anchor**: контракт M1 «outcome identical either way» (01-contract.md) vs фактический порядок «recognition → fromArray» в `RuleOptionsFactory::create()`
 - **evidence**:
   ```php
-  // src/Analysis/Finding/Contract/Rule/ThresholdParser.php:71 (мешанина threshold+graduated)
+  // src/Analysis/Finding/Contract/Rule/OptionLanguage/ThresholdParser.php:71 (мешанина threshold+graduated)
   if (self::hasAnyWrittenKey($config, $candidates['warning']) || self::hasAnyWrittenKey($config, $candidates['error'])) {
       throw ConfigurationRefusal::atResolvedKey(...);
   }

@@ -4,7 +4,7 @@
   "scope": ["src"],
   "exclusions": {"patterns":[],"generated":"excluded"},
   "entries": {
-    "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathComplexityVisitor::calculateSequenceNpath@src/Analysis/Evidence/Complexity/NpathComplexityVisitor.php": [
+    "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Complexity\\Npath\\NpathComplexityVisitor::calculateSequenceNpath@src/Analysis/Evidence/Complexity/Npath/NpathComplexityVisitor.php": [
       {"channel":"code-smell.boolean-argument","occurrence":"663673a3f4683ab9","count":1}
     ],
     "declaration:callable:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Finding\\ComputedMetricFindingBuilder::severity@src/Analysis/Evidence/ComputedMetrics/Finding/ComputedMetricFindingBuilder.php": [
@@ -13,12 +13,12 @@
     "declaration:callable:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Metadata\\HealthMetricCatalog::getHealthDimensionLabel@src/Analysis/Evidence/ComputedMetrics/Health/Metadata/HealthMetricCatalog.php": [
       {"channel":"code-smell.boolean-argument","occurrence":"721201ef7f74a86d","count":1}
     ],
-    "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankCollector::calculate@src/Analysis/Evidence/Coupling/ClassRankCollector.php": [
+    "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRank\\ClassRankCollector::calculate@src/Analysis/Evidence/Coupling/ClassRank/ClassRankCollector.php": [
       {"channel":"complexity.ccn","magnitudes":[12]},
       {"channel":"complexity.cognitive","magnitudes":[19]},
       {"channel":"complexity.npath","magnitudes":[480]}
     ],
-    "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankCollector::computePageRank@src/Analysis/Evidence/Coupling/ClassRankCollector.php": [
+    "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRank\\ClassRankCollector::computePageRank@src/Analysis/Evidence/Coupling/ClassRank/ClassRankCollector.php": [
       {"channel":"complexity.ccn","magnitudes":[10]},
       {"channel":"complexity.cognitive","magnitudes":[19]}
     ],
@@ -55,7 +55,7 @@
     "declaration:callable:Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\Allow\\SelectorSegment::capture@src/Analysis/Policy/Architecture/Configuration/Allow/SelectorSegment.php": [
       {"channel":"code-smell.boolean-argument","occurrence":"9056ff0fa0e43c3a","count":1}
     ],
-    "declaration:callable:Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\WildcardSelfAllowDetector::detect@src/Analysis/Policy/Architecture/Configuration/WildcardSelfAllowDetector.php": [
+    "declaration:callable:Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\Allow\\WildcardSelfAllowDetector::detect@src/Analysis/Policy/Architecture/Configuration/Allow/WildcardSelfAllowDetector.php": [
       {"channel":"complexity.cognitive","magnitudes":[15]}
     ],
     "declaration:callable:Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\Expansion\\TupleExtractor::extractTuple@src/Analysis/Policy/Architecture/Layer/Expansion/TupleExtractor.php": [
@@ -67,7 +67,7 @@
     "declaration:callable:Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\LayerDefinition::validateName@src/Analysis/Policy/Architecture/Layer/LayerDefinition.php": [
       {"channel":"code-smell.boolean-argument","occurrence":"a9c1c5a63b10ba15","count":1}
     ],
-    "declaration:callable:Qualimetrix\\Analysis\\Policy\\Baseline\\ExplainedSubject::identities@src/Analysis/Policy/Baseline/ExplainedSubject.php": [
+    "declaration:callable:Qualimetrix\\Analysis\\Policy\\Baseline\\Explanation\\ExplainedSubject::identities@src/Analysis/Policy/Baseline/Explanation/ExplainedSubject.php": [
       {"channel":"complexity.ccn","magnitudes":[10]}
     ],
     "declaration:callable:Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeUniverse::__construct@src/Analysis/Run/Contract/Configuration/ProjectScopeUniverse.php": [
@@ -109,25 +109,22 @@
     "declaration:callable:Qualimetrix\\Infrastructure\\Cache\\FileCache::get@src/Infrastructure/Cache/FileCache.php": [
       {"channel":"code-smell.error-suppression","occurrence":"0d4a21c464b4bacd","count":1}
     ],
-    "declaration:callable:Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCommand::assertScopeCovers@src/Infrastructure/Console/Command/BaselineCommand.php": [
-      {"channel":"code-smell.boolean-argument","occurrence":"02e3476d01dac100","count":1}
-    ],
-    "declaration:callable:Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRun::__construct@src/Infrastructure/Console/Command/BaselineRun.php": [
-      {"channel":"code-smell.constructor-overinjection","magnitudes":[9]},
-      {"channel":"code-smell.long-parameter-list","magnitudes":[9]}
-    ],
-    "declaration:callable:Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand::__construct@src/Infrastructure/Console/Command/CheckCommand.php": [
-      {"channel":"code-smell.constructor-overinjection","magnitudes":[9]},
-      {"channel":"code-smell.long-parameter-list","magnitudes":[9]}
-    ],
-    "declaration:callable:Qualimetrix\\Infrastructure\\Console\\FormatterContextFactory::create@src/Infrastructure/Console/FormatterContextFactory.php": [
+    "declaration:callable:Qualimetrix\\Infrastructure\\Console\\CheckReport\\FormatterContextFactory::create@src/Infrastructure/Console/CheckReport/FormatterContextFactory.php": [
       {"channel":"code-smell.boolean-argument","occurrence":"c7fac59b0cebc45a","count":1}
     ],
-    "declaration:callable:Qualimetrix\\Infrastructure\\Console\\ResultPresenter::__construct@src/Infrastructure/Console/ResultPresenter.php": [
-      {"channel":"code-smell.long-parameter-list","magnitudes":[9]}
+    "declaration:callable:Qualimetrix\\Infrastructure\\Console\\CheckReport\\ReportFormatter::context@src/Infrastructure/Console/CheckReport/ReportFormatter.php": [
+      {"channel":"code-smell.boolean-argument","occurrence":"4894eaa85c8d271c","count":1}
     ],
-    "declaration:callable:Qualimetrix\\Infrastructure\\Console\\ResultPresenter::renderResults@src/Infrastructure/Console/ResultPresenter.php": [
-      {"channel":"code-smell.long-parameter-list","magnitudes":[13]}
+    "declaration:callable:Qualimetrix\\Infrastructure\\Console\\Check\\CheckCommand::__construct@src/Infrastructure/Console/Check/CheckCommand.php": [
+      {"channel":"code-smell.constructor-overinjection","magnitudes":[10]},
+      {"channel":"code-smell.long-parameter-list","magnitudes":[10]}
+    ],
+    "declaration:callable:Qualimetrix\\Infrastructure\\Console\\Command\\Baseline\\BaselineCommand::assertScopeCovers@src/Infrastructure/Console/Command/Baseline/BaselineCommand.php": [
+      {"channel":"code-smell.boolean-argument","occurrence":"02e3476d01dac100","count":1}
+    ],
+    "declaration:callable:Qualimetrix\\Infrastructure\\Console\\Command\\Baseline\\Measurement\\BaselineRun::__construct@src/Infrastructure/Console/Command/Baseline/Measurement/BaselineRun.php": [
+      {"channel":"code-smell.constructor-overinjection","magnitudes":[9]},
+      {"channel":"code-smell.long-parameter-list","magnitudes":[9]}
     ],
     "declaration:callable:Qualimetrix\\Infrastructure\\Git\\ReportingGitScopeQuery::extractNamespaces@src/Infrastructure/Git/ReportingGitScopeQuery.php": [
       {"channel":"complexity.ccn","magnitudes":[11]},
@@ -169,8 +166,11 @@
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Complexity\\ClassComplexityOptions@src/Analysis/Evidence/Complexity/ClassComplexityOptions.php": [
       {"channel":"coupling.instability","magnitudes":[0.833333]}
     ],
-    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassCboOptions@src/Analysis/Evidence/Coupling/ClassCboOptions.php": [
+    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Coupling\\Cbo\\ClassCboOptions@src/Analysis/Evidence/Coupling/Cbo/ClassCboOptions.php": [
       {"channel":"coupling.instability","magnitudes":[0.846154]}
+    ],
+    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Coupling\\Cbo\\NamespaceCboOptions@src/Analysis/Evidence/Coupling/Cbo/NamespaceCboOptions.php": [
+      {"channel":"coupling.instability","magnitudes":[0.833333]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassInstabilityOptions@src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php": [
       {"channel":"coupling.instability","magnitudes":[0.833333]}
@@ -181,11 +181,8 @@
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Coupling\\CouplingCollector@src/Analysis/Evidence/Coupling/CouplingCollector.php": [
       {"channel":"design.god-class","magnitudes":[3]}
     ],
-    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceCollector@src/Analysis/Evidence/Coupling/DistanceCollector.php": [
+    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Coupling\\Distance\\DistanceCollector@src/Analysis/Evidence/Coupling/Distance/DistanceCollector.php": [
       {"channel":"health.cohesion","magnitudes":[40]}
-    ],
-    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Coupling\\NamespaceCboOptions@src/Analysis/Evidence/Coupling/NamespaceCboOptions.php": [
-      {"channel":"coupling.instability","magnitudes":[0.833333]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DeclarationEvidence@src/Analysis/Evidence/DependencyModel/DeclarationEvidence.php": [
       {"channel":"health.cohesion","magnitudes":[40]}
@@ -226,11 +223,11 @@
     "declaration:class:Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\AnalysisContext@src/Analysis/Finding/Contract/Rule/AnalysisContext.php": [
       {"channel":"health.cohesion","magnitudes":[30]}
     ],
+    "declaration:class:Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\OptionLanguage\\ThresholdParser@src/Analysis/Finding/Contract/Rule/OptionLanguage/ThresholdParser.php": [
+      {"channel":"coupling.cbo","magnitudes":[29]}
+    ],
     "declaration:class:Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\Override\\StandardOverrideValidatorTrait@src/Analysis/Finding/Contract/Rule/Override/StandardOverrideValidatorTrait.php": [
       {"channel":"coupling.cbo","magnitudes":[24]}
-    ],
-    "declaration:class:Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\ThresholdParser@src/Analysis/Finding/Contract/Rule/ThresholdParser.php": [
-      {"channel":"coupling.cbo","magnitudes":[29]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionDocumentForms@src/Analysis/Finding/RuleConfiguration/OptionForms/RuleOptionDocumentForms.php": [
       {"channel":"coupling.instability","magnitudes":[0.846154]}
@@ -238,14 +235,18 @@
     "declaration:class:Qualimetrix\\Analysis\\Finding\\Selection\\SelectionSpecificity@src/Analysis/Finding/Selection/SelectionSpecificity.php": [
       {"channel":"coupling.instability","magnitudes":[0.857143]}
     ],
+    "declaration:class:Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionAudit@src/Analysis/Finding/SuppressionBinding/UnboundSuppressionAudit.php": [
+      {"channel":"coupling.cbo","magnitudes":[20]},
+      {"channel":"coupling.instability","magnitudes":[0.9]}
+    ],
     "declaration:class:Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\Allow\\ParseCapturedState@src/Analysis/Policy/Architecture/Configuration/Allow/ParseCapturedState.php": [
       {"channel":"design.data-class","magnitudes":[0]}
     ],
+    "declaration:class:Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\Allow\\WildcardSelfAllowDetector@src/Analysis/Policy/Architecture/Configuration/Allow/WildcardSelfAllowDetector.php": [
+      {"channel":"health.maintainability","magnitudes":[42.5]}
+    ],
     "declaration:class:Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\LayersValidator@src/Analysis/Policy/Architecture/Configuration/LayersValidator.php": [
       {"channel":"coupling.instability","magnitudes":[0.866667]}
-    ],
-    "declaration:class:Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\WildcardSelfAllowDetector@src/Analysis/Policy/Architecture/Configuration/WildcardSelfAllowDetector.php": [
-      {"channel":"health.maintainability","magnitudes":[42.5]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\Ancestry@src/Analysis/Policy/Architecture/Layer/ClassContext/Ancestry.php": [
       {"channel":"coupling.instability","magnitudes":[0.818182]}
@@ -262,23 +263,8 @@
     "declaration:class:Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\TemplateLayerDefinition@src/Analysis/Policy/Architecture/Layer/TemplateLayerDefinition.php": [
       {"channel":"health.cohesion","magnitudes":[30]}
     ],
-    "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineCleaner@src/Analysis/Policy/Baseline/BaselineCleaner.php": [
-      {"channel":"coupling.instability","magnitudes":[0.888889]}
-    ],
-    "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentWriter@src/Analysis/Policy/Baseline/BaselineDocumentWriter.php": [
-      {"channel":"coupling.instability","magnitudes":[0.857143]}
-    ],
-    "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineEntryParser@src/Analysis/Policy/Baseline/BaselineEntryParser.php": [
+    "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\Capture\\BaselineGenerator@src/Analysis/Policy/Baseline/Capture/BaselineGenerator.php": [
       {"channel":"coupling.instability","magnitudes":[0.8]}
-    ],
-    "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineGenerator@src/Analysis/Policy/Baseline/BaselineGenerator.php": [
-      {"channel":"coupling.instability","magnitudes":[0.8]}
-    ],
-    "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineUpdater@src/Analysis/Policy/Baseline/BaselineUpdater.php": [
-      {"channel":"coupling.instability","magnitudes":[0.85]}
-    ],
-    "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\BoundaryExplanationService@src/Analysis/Policy/Baseline/BoundaryExplanationService.php": [
-      {"channel":"coupling.instability","magnitudes":[0.894737]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\EntryComparability@src/Analysis/Policy/Baseline/Ceiling/EntryComparability.php": [
       {"channel":"coupling.instability","magnitudes":[0.8]}
@@ -286,11 +272,29 @@
     "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\RunCoverage@src/Analysis/Policy/Baseline/Contract/RunCoverage.php": [
       {"channel":"coupling.cbo","magnitudes":[26]}
     ],
+    "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\DocumentAccess\\BaselineDocumentWriter@src/Analysis/Policy/Baseline/DocumentAccess/BaselineDocumentWriter.php": [
+      {"channel":"coupling.instability","magnitudes":[0.857143]}
+    ],
+    "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\DocumentReading\\BaselineEntryParser@src/Analysis/Policy/Baseline/DocumentReading/BaselineEntryParser.php": [
+      {"channel":"coupling.instability","magnitudes":[0.8]}
+    ],
+    "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\EntryMaintenance\\BaselineCleaner@src/Analysis/Policy/Baseline/EntryMaintenance/BaselineCleaner.php": [
+      {"channel":"coupling.instability","magnitudes":[0.888889]}
+    ],
+    "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\EntryMaintenance\\BaselineUpdater@src/Analysis/Policy/Baseline/EntryMaintenance/BaselineUpdater.php": [
+      {"channel":"coupling.instability","magnitudes":[0.85]}
+    ],
+    "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\Explanation\\BoundaryExplanationService@src/Analysis/Policy/Baseline/Explanation/BoundaryExplanationService.php": [
+      {"channel":"coupling.instability","magnitudes":[0.894737]}
+    ],
     "declaration:class:Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\RuleValidatorMapFactory@src/Analysis/Policy/Inline/Contract/RuleValidatorMapFactory.php": [
       {"channel":"health.maintainability","magnitudes":[45.7]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy@src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php": [
       {"channel":"coupling.instability","magnitudes":[0.866667]}
+    ],
+    "declaration:class:Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\AnalysisResult@src/Analysis/Run/Contract/Pipeline/AnalysisResult.php": [
+      {"channel":"coupling.cbo","magnitudes":[20]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline@src/Analysis/Run/Pipeline/AnalysisPipeline.php": [
       {"channel":"coupling.cbo","magnitudes":[37]}
@@ -300,9 +304,6 @@
     ],
     "declaration:class:Qualimetrix\\Core\\Path\\PathFactory@src/Core/Path/PathFactory.php": [
       {"channel":"coupling.cbo","magnitudes":[20]}
-    ],
-    "declaration:class:Qualimetrix\\Core\\Profiler\\Contract\\ProfilerInterface@src/Core/Profiler/Contract/ProfilerInterface.php": [
-      {"channel":"coupling.cbo","magnitudes":[22]}
     ],
     "declaration:class:Qualimetrix\\Core\\Symbol\\SymbolPath@src/Core/Symbol/SymbolPath.php": [
       {"channel":"complexity.wmc","magnitudes":[62]}
@@ -316,73 +317,78 @@
     "declaration:class:Qualimetrix\\Infrastructure\\Composer\\DeclaredSupertypeReader@src/Infrastructure/Composer/DeclaredSupertypeReader.php": [
       {"channel":"coupling.instability","magnitudes":[0.866667]}
     ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\AnalysisRuntimeConfigurator@src/Infrastructure/Console/AnalysisRuntimeConfigurator.php": [
-      {"channel":"coupling.instability","magnitudes":[0.888889]}
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Application\\ProductCommandLoader@src/Infrastructure/Console/Application/ProductCommandLoader.php": [
+      {"channel":"coupling.cbo","magnitudes":[24]}
     ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\BaselineProjectionCoverage@src/Infrastructure/Console/BaselineProjectionCoverage.php": [
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\BaselineCommand\\BaselineProjectionCoverage@src/Infrastructure/Console/BaselineCommand/BaselineProjectionCoverage.php": [
       {"channel":"coupling.instability","magnitudes":[0.818182]}
     ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\CliRuleOptionAddressing@src/Infrastructure/Console/CliRuleOptionAddressing.php": [
-      {"channel":"coupling.instability","magnitudes":[0.857143]}
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\CheckReport\\CheckReportDelivery@src/Infrastructure/Console/CheckReport/CheckReportDelivery.php": [
+      {"channel":"coupling.instability","magnitudes":[0.818182]}
     ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCleanupCommand@src/Infrastructure/Console/Command/BaselineCleanupCommand.php": [
-      {"channel":"coupling.cbo","magnitudes":[23]},
-      {"channel":"coupling.instability","magnitudes":[0.913043]}
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\CheckReport\\CheckReportRenderer@src/Infrastructure/Console/CheckReport/CheckReportRenderer.php": [
+      {"channel":"coupling.instability","magnitudes":[0.842105]}
     ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCommand@src/Infrastructure/Console/Command/BaselineCommand.php": [
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\CheckReport\\FindingDiagnostics@src/Infrastructure/Console/CheckReport/FindingDiagnostics.php": [
+      {"channel":"coupling.instability","magnitudes":[0.818182]}
+    ],
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\CheckReport\\FindingProjection@src/Infrastructure/Console/CheckReport/FindingProjection.php": [
+      {"channel":"coupling.instability","magnitudes":[0.8]}
+    ],
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\CheckReport\\ReportAssembler@src/Infrastructure/Console/CheckReport/ReportAssembler.php": [
+      {"channel":"coupling.cbo","magnitudes":[20]},
+      {"channel":"coupling.instability","magnitudes":[0.9]}
+    ],
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\CheckReport\\ReportFormatter@src/Infrastructure/Console/CheckReport/ReportFormatter.php": [
+      {"channel":"coupling.instability","magnitudes":[0.875]},
+      {"channel":"health.cohesion","magnitudes":[40]}
+    ],
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\CheckScope\\FindingProjectionOptionsResolver@src/Infrastructure/Console/CheckScope/FindingProjectionOptionsResolver.php": [
+      {"channel":"coupling.instability","magnitudes":[0.8]}
+    ],
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Check\\CheckCommand@src/Infrastructure/Console/Check/CheckCommand.php": [
+      {"channel":"coupling.cbo","magnitudes":[26]},
+      {"channel":"coupling.instability","magnitudes":[0.923077]},
+      {"channel":"health.cohesion","magnitudes":[40]}
+    ],
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\Baseline\\BaselineCommand@src/Infrastructure/Console/Command/Baseline/BaselineCommand.php": [
       {"channel":"coupling.cbo","magnitudes":[22]}
     ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\BaselineConfiguredThresholds@src/Infrastructure/Console/Command/BaselineConfiguredThresholds.php": [
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\Baseline\\ChannelRename\\BaselineRenameChannelsCommand@src/Infrastructure/Console/Command/Baseline/ChannelRename/BaselineRenameChannelsCommand.php": [
+      {"channel":"coupling.instability","magnitudes":[0.888889]}
+    ],
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\Baseline\\Explanation\\BaselineConfiguredThresholds@src/Infrastructure/Console/Command/Baseline/Explanation/BaselineConfiguredThresholds.php": [
       {"channel":"coupling.instability","magnitudes":[0.818182]}
     ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\BaselineExplainCommand@src/Infrastructure/Console/Command/BaselineExplainCommand.php": [
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\Baseline\\Explanation\\BaselineExplainCommand@src/Infrastructure/Console/Command/Baseline/Explanation/BaselineExplainCommand.php": [
       {"channel":"coupling.cbo","magnitudes":[23]},
       {"channel":"coupling.instability","magnitudes":[0.913043]}
     ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\BaselineGenerateCommand@src/Infrastructure/Console/Command/BaselineGenerateCommand.php": [
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\Baseline\\Generation\\BaselineGenerateCommand@src/Infrastructure/Console/Command/Baseline/Generation/BaselineGenerateCommand.php": [
       {"channel":"coupling.cbo","magnitudes":[21]},
       {"channel":"coupling.instability","magnitudes":[0.904762]}
     ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRenameChannelsCommand@src/Infrastructure/Console/Command/BaselineRenameChannelsCommand.php": [
-      {"channel":"coupling.instability","magnitudes":[0.888889]}
-    ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRun@src/Infrastructure/Console/Command/BaselineRun.php": [
-      {"channel":"coupling.cbo","magnitudes":[29]}
-    ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\BaselineUpdateCommand@src/Infrastructure/Console/Command/BaselineUpdateCommand.php": [
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\Baseline\\Maintenance\\BaselineCleanupCommand@src/Infrastructure/Console/Command/Baseline/Maintenance/BaselineCleanupCommand.php": [
       {"channel":"coupling.cbo","magnitudes":[23]},
       {"channel":"coupling.instability","magnitudes":[0.913043]}
     ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand@src/Infrastructure/Console/Command/CheckCommand.php": [
-      {"channel":"coupling.cbo","magnitudes":[30]},
-      {"channel":"coupling.instability","magnitudes":[0.933333]}
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\Baseline\\Maintenance\\BaselineUpdateCommand@src/Infrastructure/Console/Command/Baseline/Maintenance/BaselineUpdateCommand.php": [
+      {"channel":"coupling.cbo","magnitudes":[23]},
+      {"channel":"coupling.instability","magnitudes":[0.913043]}
+    ],
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\Baseline\\Measurement\\BaselineRun@src/Infrastructure/Console/Command/Baseline/Measurement/BaselineRun.php": [
+      {"channel":"coupling.cbo","magnitudes":[29]}
     ],
     "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand@src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php": [
       {"channel":"coupling.cbo","magnitudes":[22]}
     ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\DirectivesCommand@src/Infrastructure/Console/Command/DirectivesCommand.php": [
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Directives\\DirectivesCommand@src/Infrastructure/Console/Directives/DirectivesCommand.php": [
       {"channel":"coupling.cbo","magnitudes":[23]},
       {"channel":"coupling.instability","magnitudes":[0.913043]}
     ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand@src/Infrastructure/Console/Command/GraphExportCommand.php": [
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\GraphExport\\GraphExportCommand@src/Infrastructure/Console/GraphExport/GraphExportCommand.php": [
       {"channel":"coupling.cbo","magnitudes":[32]},
       {"channel":"coupling.instability","magnitudes":[0.9375]}
-    ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand@src/Infrastructure/Console/Command/RulesCommand.php": [
-      {"channel":"coupling.instability","magnitudes":[0.894737]}
-    ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\ConfigurationInputAdapter@src/Infrastructure/Console/ConfigurationInputAdapter.php": [
-      {"channel":"coupling.cbo","magnitudes":[26]}
-    ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\ErrorStream@src/Infrastructure/Console/ErrorStream.php": [
-      {"channel":"coupling.cbo","magnitudes":[27]}
-    ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator@src/Infrastructure/Console/FindingFilterOrchestrator.php": [
-      {"channel":"coupling.cbo","magnitudes":[27]},
-      {"channel":"coupling.instability","magnitudes":[0.925926]}
-    ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\FormatterContextFactory@src/Infrastructure/Console/FormatterContextFactory.php": [
-      {"channel":"coupling.instability","magnitudes":[0.875]}
     ],
     "declaration:class:Qualimetrix\\Infrastructure\\Console\\Hook\\HookEntryAccess@src/Infrastructure/Console/Hook/HookEntryAccess.php": [
       {"channel":"coupling.instability","magnitudes":[0.818182]}
@@ -390,34 +396,35 @@
     "declaration:class:Qualimetrix\\Infrastructure\\Console\\Hook\\HookFileTransaction@src/Infrastructure/Console/Hook/HookFileTransaction.php": [
       {"channel":"coupling.instability","magnitudes":[0.857143]}
     ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\ProductCommandLoader@src/Infrastructure/Console/ProductCommandLoader.php": [
-      {"channel":"coupling.cbo","magnitudes":[24]}
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Invocation\\CommandDefinition\\CheckCommandDefinition@src/Infrastructure/Console/Invocation/CommandDefinition/CheckCommandDefinition.php": [
+      {"channel":"coupling.instability","magnitudes":[0.8]}
+    ],
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Invocation\\Configuration\\ConfigurationInputAdapter@src/Infrastructure/Console/Invocation/Configuration/ConfigurationInputAdapter.php": [
+      {"channel":"coupling.cbo","magnitudes":[27]}
+    ],
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Invocation\\RuleOptions\\CliRuleOptionAddressing@src/Infrastructure/Console/Invocation/RuleOptions/CliRuleOptionAddressing.php": [
+      {"channel":"coupling.instability","magnitudes":[0.857143]}
     ],
     "declaration:class:Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter@src/Infrastructure/Console/Refusal/RefusalPresenter.php": [
       {"channel":"coupling.cbo","magnitudes":[27]}
     ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\ResultPresenter@src/Infrastructure/Console/ResultPresenter.php": [
-      {"channel":"coupling.cbo","magnitudes":[40]},
-      {"channel":"coupling.instability","magnitudes":[0.95]}
-    ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\RuleInputValidator@src/Infrastructure/Console/RuleInputValidator.php": [
-      {"channel":"coupling.cbo","magnitudes":[21]}
-    ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\RuleListingPresenter@src/Infrastructure/Console/RuleListingPresenter.php": [
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\RuleListing\\RuleListingPresenter@src/Infrastructure/Console/RuleListing/RuleListingPresenter.php": [
       {"channel":"coupling.instability","magnitudes":[0.833333]}
     ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator@src/Infrastructure/Console/RuntimeConfigurator.php": [
-      {"channel":"coupling.cbo","magnitudes":[24]}
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\RuleListing\\RulesCommand@src/Infrastructure/Console/RuleListing/RulesCommand.php": [
+      {"channel":"coupling.instability","magnitudes":[0.894737]}
     ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Console\\RuntimeLoggerConfigurator@src/Infrastructure/Console/RuntimeLoggerConfigurator.php": [
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\RunSetup\\AnalysisRuntimeConfigurator@src/Infrastructure/Console/RunSetup/AnalysisRuntimeConfigurator.php": [
+      {"channel":"coupling.instability","magnitudes":[0.882353]}
+    ],
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\RuntimePolicy\\RuntimeEffects@src/Infrastructure/Console/RuntimePolicy/RuntimeEffects.php": [
+      {"channel":"coupling.instability","magnitudes":[0.833333]}
+    ],
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\RuntimePolicy\\RuntimeLoggerConfigurator@src/Infrastructure/Console/RuntimePolicy/RuntimeLoggerConfigurator.php": [
       {"channel":"coupling.instability","magnitudes":[0.846154]}
     ],
-    "declaration:class:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ChannelDeclarationCompilerPass@src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php": [
-      {"channel":"complexity.wmc","magnitudes":[50]},
-      {"channel":"coupling.cbo","magnitudes":[25]}
-    ],
-    "declaration:class:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ConfigurationValidatorCompilerPass@src/Infrastructure/DependencyInjection/CompilerPass/ConfigurationValidatorCompilerPass.php": [
-      {"channel":"coupling.instability","magnitudes":[0.8]}
+    "declaration:class:Qualimetrix\\Infrastructure\\Console\\Terminal\\ErrorStream@src/Infrastructure/Console/Terminal/ErrorStream.php": [
+      {"channel":"coupling.cbo","magnitudes":[30]}
     ],
     "declaration:class:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator@src/Infrastructure/DependencyInjection/Configurator/AnalysisConfigurator.php": [
       {"channel":"coupling.cbo","magnitudes":[42]}
@@ -429,12 +436,19 @@
       {"channel":"coupling.instability","magnitudes":[0.8]}
     ],
     "declaration:class:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator@src/Infrastructure/DependencyInjection/Configurator/OutputConfigurator.php": [
-      {"channel":"coupling.cbo","magnitudes":[99]}
+      {"channel":"coupling.cbo","magnitudes":[109]}
     ],
     "declaration:class:Qualimetrix\\Infrastructure\\DependencyInjection\\ContainerFactory@src/Infrastructure/DependencyInjection/ContainerFactory.php": [
       {"channel":"coupling.cbo","magnitudes":[50]}
     ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Git\\ChangedFile@src/Infrastructure/Git/ChangedFile.php": [
+    "declaration:class:Qualimetrix\\Infrastructure\\DependencyInjection\\RuleCatalog\\ChannelDeclarationCompilerPass@src/Infrastructure/DependencyInjection/RuleCatalog/ChannelDeclarationCompilerPass.php": [
+      {"channel":"complexity.wmc","magnitudes":[50]},
+      {"channel":"coupling.cbo","magnitudes":[25]}
+    ],
+    "declaration:class:Qualimetrix\\Infrastructure\\DependencyInjection\\RuleCatalog\\ConfigurationValidatorCompilerPass@src/Infrastructure/DependencyInjection/RuleCatalog/ConfigurationValidatorCompilerPass.php": [
+      {"channel":"coupling.instability","magnitudes":[0.8]}
+    ],
+    "declaration:class:Qualimetrix\\Infrastructure\\Git\\ChangeListing\\ChangedFile@src/Infrastructure/Git/ChangeListing/ChangedFile.php": [
       {"channel":"health.cohesion","magnitudes":[40]}
     ],
     "declaration:class:Qualimetrix\\Infrastructure\\Logging\\DelegatingLogger@src/Infrastructure/Logging/DelegatingLogger.php": [
@@ -458,37 +472,39 @@
     "file:src/Analysis/Evidence/Cohesion/TccLccVisitor.php": [
       {"channel":"duplication.clone","occurrence":"32b57d5adfade308","magnitudes":[22]}
     ],
+    "ns:Qualimetrix\\Analysis": [
+      {"channel":"health.coupling","magnitudes":[50]}
+    ],
     "ns:Qualimetrix\\Analysis\\Configuration": [
-      {"channel":"coupling.cbo","magnitudes":[20]}
+      {"channel":"coupling.cbo","magnitudes":[23]}
     ],
     "ns:Qualimetrix\\Analysis\\Configuration\\Contract\\Document": [
-      {"channel":"coupling.cbo","magnitudes":[24]}
+      {"channel":"coupling.cbo","magnitudes":[30]}
     ],
     "ns:Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema": [
-      {"channel":"coupling.cbo","magnitudes":[20]}
-    ],
-    "ns:Qualimetrix\\Analysis\\Configuration\\Document": [
-      {"channel":"size.class-count","magnitudes":[18]}
+      {"channel":"coupling.cbo","magnitudes":[22]}
     ],
     "ns:Qualimetrix\\Analysis\\Configuration\\Pipeline\\Stage": [
       {"channel":"health.cohesion","magnitudes":[25]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\CodeSmell": [
-      {"channel":"size.class-count","magnitudes":[19]}
+      {"channel":"coupling.cbo","magnitudes":[16]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Cohesion": [
-      {"channel":"coupling.cbo","magnitudes":[18]},
+      {"channel":"coupling.cbo","magnitudes":[20]},
       {"channel":"size.class-count","magnitudes":[19]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Complexity": [
-      {"channel":"size.class-count","magnitudes":[21]}
+      {"channel":"coupling.cbo","magnitudes":[17]}
+    ],
+    "ns:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics": [
+      {"channel":"coupling.cbo","magnitudes":[17]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Finding": [
       {"channel":"health.maintainability","magnitudes":[43.7]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Coupling": [
-      {"channel":"coupling.instability","magnitudes":[0.984]},
-      {"channel":"size.class-count","magnitudes":[23]}
+      {"channel":"coupling.instability","magnitudes":[0.984]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Design": [
       {"channel":"coupling.instability","magnitudes":[0.972973]}
@@ -497,7 +513,7 @@
       {"channel":"coupling.instability","magnitudes":[0.962264]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract": [
-      {"channel":"coupling.cbo","magnitudes":[63]}
+      {"channel":"coupling.cbo","magnitudes":[71]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor": [
       {"channel":"coupling.instability","magnitudes":[0.925926]}
@@ -505,49 +521,61 @@
     "ns:Qualimetrix\\Analysis\\Evidence\\Prioritization\\Impact": [
       {"channel":"health.cohesion","magnitudes":[43.3]}
     ],
-    "ns:Qualimetrix\\Analysis\\Evidence\\Security": [
-      {"channel":"size.class-count","magnitudes":[21]}
-    ],
-    "ns:Qualimetrix\\Analysis\\Evidence\\Size": [
-      {"channel":"size.class-count","magnitudes":[15]}
-    ],
-    "ns:Qualimetrix\\Analysis\\Finding\\Contract": [
-      {"channel":"coupling.cbo","magnitudes":[81]},
-      {"channel":"size.class-count","magnitudes":[24]}
-    ],
-    "ns:Qualimetrix\\Analysis\\Finding\\Contract\\Population": [
-      {"channel":"coupling.cbo","magnitudes":[43]}
-    ],
-    "ns:Qualimetrix\\Analysis\\Finding\\Contract\\Rule": [
-      {"channel":"coupling.cbo","magnitudes":[59]},
-      {"channel":"size.class-count","magnitudes":[29]}
-    ],
-    "ns:Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\Override": [
+    "ns:Qualimetrix\\Analysis\\Evidence\\Security\\DirectSinks": [
       {"channel":"coupling.cbo","magnitudes":[16]}
     ],
-    "ns:Qualimetrix\\Analysis\\Finding\\SuppressionBinding": [
-      {"channel":"coupling.instability","magnitudes":[0.911765]}
+    "ns:Qualimetrix\\Analysis\\Finding\\Contract": [
+      {"channel":"coupling.cbo","magnitudes":[90]}
     ],
-    "ns:Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration": [
-      {"channel":"size.class-count","magnitudes":[15]}
+    "ns:Qualimetrix\\Analysis\\Finding\\Contract\\Population": [
+      {"channel":"coupling.cbo","magnitudes":[50]}
     ],
-    "ns:Qualimetrix\\Analysis\\Policy\\Architecture\\Layer": [
-      {"channel":"size.class-count","magnitudes":[23]}
+    "ns:Qualimetrix\\Analysis\\Finding\\Contract\\Rule": [
+      {"channel":"coupling.cbo","magnitudes":[63]}
+    ],
+    "ns:Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\ChannelLevel": [
+      {"channel":"coupling.distance","magnitudes":[0.636364]}
+    ],
+    "ns:Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\OptionLanguage": [
+      {"channel":"coupling.cbo","magnitudes":[49]},
+      {"channel":"coupling.distance","magnitudes":[0.803512]}
+    ],
+    "ns:Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\Override": [
+      {"channel":"coupling.cbo","magnitudes":[21]}
+    ],
+    "ns:Qualimetrix\\Analysis\\Finding\\Contract\\Selection": [
+      {"channel":"coupling.distance","magnitudes":[0.527778]}
+    ],
+    "ns:Qualimetrix\\Analysis\\Finding\\RuleConfiguration": [
+      {"channel":"coupling.cbo","magnitudes":[19]}
     ],
     "ns:Qualimetrix\\Analysis\\Policy\\Architecture\\LayerDeclaration": [
       {"channel":"health.cohesion","magnitudes":[46.7]}
     ],
-    "ns:Qualimetrix\\Analysis\\Policy\\Baseline": [
-      {"channel":"coupling.cbo","magnitudes":[23]},
-      {"channel":"size.class-count","magnitudes":[55]}
+    "ns:Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\Matching": [
+      {"channel":"coupling.distance","magnitudes":[0.913043]}
+    ],
+    "ns:Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling": [
+      {"channel":"coupling.cbo","magnitudes":[16]}
+    ],
+    "ns:Qualimetrix\\Analysis\\Policy\\Baseline\\DocumentWriting": [
+      {"channel":"health.cohesion","magnitudes":[40]}
+    ],
+    "ns:Qualimetrix\\Analysis\\Policy\\Baseline\\Entry": [
+      {"channel":"coupling.cbo","magnitudes":[18]},
+      {"channel":"coupling.distance","magnitudes":[0.875]}
     ],
     "ns:Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding": [
       {"channel":"health.cohesion","magnitudes":[46.7]}
     ],
+    "ns:Qualimetrix\\Analysis\\Policy\\Baseline\\Explanation": [
+      {"channel":"coupling.instability","magnitudes":[0.914286]}
+    ],
     "ns:Qualimetrix\\Analysis\\Policy\\Inline\\Contract": [
-      {"channel":"coupling.cbo","magnitudes":[23]}
+      {"channel":"coupling.cbo","magnitudes":[24]}
     ],
     "ns:Qualimetrix\\Analysis\\Policy\\Inline\\Directive": [
+      {"channel":"coupling.cbo","magnitudes":[16]},
       {"channel":"coupling.instability","magnitudes":[0.962264]}
     ],
     "ns:Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit": [
@@ -557,58 +585,130 @@
       {"channel":"coupling.instability","magnitudes":[0.942857]}
     ],
     "ns:Qualimetrix\\Analysis\\Run\\Contract\\Pipeline": [
-      {"channel":"coupling.cbo","magnitudes":[18]}
+      {"channel":"coupling.cbo","magnitudes":[25]}
     ],
     "ns:Qualimetrix\\Analysis\\Run\\Pipeline": [
-      {"channel":"coupling.cbo","magnitudes":[22]}
+      {"channel":"coupling.cbo","magnitudes":[23]}
     ],
     "ns:Qualimetrix\\Core\\Ast": [
-      {"channel":"coupling.cbo","magnitudes":[21]}
+      {"channel":"coupling.cbo","magnitudes":[22]}
     ],
     "ns:Qualimetrix\\Core\\FileTarget": [
-      {"channel":"size.class-count","magnitudes":[24]}
+      {"channel":"coupling.cbo","magnitudes":[17]}
+    ],
+    "ns:Qualimetrix\\Core\\FileTarget\\Publication": [
+      {"channel":"coupling.distance","magnitudes":[0.652174]}
     ],
     "ns:Qualimetrix\\Core\\Path": [
-      {"channel":"coupling.cbo","magnitudes":[70]}
+      {"channel":"coupling.cbo","magnitudes":[83]}
     ],
     "ns:Qualimetrix\\Core\\Pattern": [
-      {"channel":"coupling.cbo","magnitudes":[24]}
+      {"channel":"coupling.cbo","magnitudes":[26]}
     ],
     "ns:Qualimetrix\\Core\\Symbol": [
-      {"channel":"coupling.cbo","magnitudes":[93]},
+      {"channel":"coupling.cbo","magnitudes":[107]},
       {"channel":"size.class-count","magnitudes":[21]}
     ],
+    "ns:Qualimetrix\\Infrastructure": [
+      {"channel":"health.coupling","magnitudes":[49.5]}
+    ],
     "ns:Qualimetrix\\Infrastructure\\Cache": [
-      {"channel":"size.class-count","magnitudes":[19]}
+      {"channel":"coupling.cbo","magnitudes":[17]}
     ],
     "ns:Qualimetrix\\Infrastructure\\Composer": [
       {"channel":"coupling.cbo","magnitudes":[18]}
     ],
     "ns:Qualimetrix\\Infrastructure\\Console": [
-      {"channel":"coupling.cbo","magnitudes":[73]},
-      {"channel":"coupling.instability","magnitudes":[0.979592]},
-      {"channel":"size.class-count","magnitudes":[62]}
+      {"channel":"coupling.instability","magnitudes":[0.979592]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\Console\\Application": [
+      {"channel":"coupling.cbo","magnitudes":[27]},
+      {"channel":"coupling.instability","magnitudes":[0.923077]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\Console\\Check": [
+      {"channel":"health.cohesion","magnitudes":[40]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\Console\\CheckReport": [
+      {"channel":"coupling.cbo","magnitudes":[34]},
+      {"channel":"coupling.instability","magnitudes":[0.95]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\Console\\CheckScope": [
+      {"channel":"coupling.cbo","magnitudes":[21]}
     ],
     "ns:Qualimetrix\\Infrastructure\\Console\\Command": [
-      {"channel":"coupling.cbo","magnitudes":[41]},
-      {"channel":"coupling.instability","magnitudes":[0.9851851851851852]},
-      {"channel":"size.class-count","magnitudes":[23]}
+      {"channel":"coupling.instability","magnitudes":[0.9851851851851852]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\Console\\Command\\Baseline": [
+      {"channel":"coupling.cbo","magnitudes":[23]},
+      {"channel":"coupling.instability","magnitudes":[0.976744]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\Console\\Command\\Baseline\\Explanation": [
+      {"channel":"coupling.cbo","magnitudes":[21]},
+      {"channel":"coupling.instability","magnitudes":[0.948718]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\Console\\Command\\Baseline\\Maintenance": [
+      {"channel":"coupling.cbo","magnitudes":[18]},
+      {"channel":"coupling.instability","magnitudes":[0.928571]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\Console\\Command\\Baseline\\Measurement": [
+      {"channel":"health.maintainability","magnitudes":[45.3]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\Console\\Command\\Debug": [
+      {"channel":"coupling.cbo","magnitudes":[22]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\Console\\Directives": [
+      {"channel":"coupling.cbo","magnitudes":[19]},
+      {"channel":"coupling.instability","magnitudes":[0.933333]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\Console\\GraphExport": [
+      {"channel":"health.coupling","magnitudes":[48.2]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\Console\\Hook": [
+      {"channel":"coupling.instability","magnitudes":[0.916667]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\Console\\Invocation": [
+      {"channel":"coupling.cbo","magnitudes":[21]},
+      {"channel":"coupling.distance","magnitudes":[0.758621]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\Console\\Invocation\\RuleOptions": [
+      {"channel":"health.maintainability","magnitudes":[47]}
     ],
     "ns:Qualimetrix\\Infrastructure\\Console\\Refusal": [
+      {"channel":"coupling.cbo","magnitudes":[19]},
       {"channel":"coupling.distance","magnitudes":[0.5625]}
     ],
-    "ns:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass": [
-      {"channel":"coupling.cbo","magnitudes":[18]},
-      {"channel":"coupling.instability","magnitudes":[0.904762]},
-      {"channel":"size.class-count","magnitudes":[15]}
+    "ns:Qualimetrix\\Infrastructure\\Console\\RunSetup": [
+      {"channel":"coupling.cbo","magnitudes":[40]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\Console\\RunTarget": [
+      {"channel":"coupling.cbo","magnitudes":[21]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\Console\\RuntimePolicy": [
+      {"channel":"coupling.cbo","magnitudes":[24]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\Console\\Terminal": [
+      {"channel":"coupling.cbo","magnitudes":[22]},
+      {"channel":"coupling.distance","magnitudes":[0.636364]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\Console\\Terminal\\ReportPublication": [
+      {"channel":"health.cohesion","magnitudes":[40]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\DependencyInjection": [
+      {"channel":"health.coupling","magnitudes":[50]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\DependencyInjection\\ComputedMetrics": [
+      {"channel":"health.maintainability","magnitudes":[24.7]}
     ],
     "ns:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator": [
-      {"channel":"coupling.cbo","magnitudes":[79]},
+      {"channel":"coupling.cbo","magnitudes":[112]},
       {"channel":"coupling.instability","magnitudes":[0.99]},
-      {"channel":"size.class-count","magnitudes":[24]}
+      {"channel":"health.coupling","magnitudes":[47.7]}
     ],
-    "ns:Qualimetrix\\Infrastructure\\Git": [
-      {"channel":"size.class-count","magnitudes":[15]}
+    "ns:Qualimetrix\\Infrastructure\\DependencyInjection\\RuleCatalog": [
+      {"channel":"coupling.cbo","magnitudes":[20]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\Git\\ChangeListing": [
+      {"channel":"health.cohesion","magnitudes":[45]}
     ],
     "ns:Qualimetrix\\Infrastructure\\Parallel": [
       {"channel":"coupling.cbo","magnitudes":[22]}
@@ -617,14 +717,14 @@
       {"channel":"coupling.instability","magnitudes":[0.916667]}
     ],
     "ns:Qualimetrix\\Reporting": [
-      {"channel":"coupling.cbo","magnitudes":[23]},
+      {"channel":"coupling.cbo","magnitudes":[27]},
       {"channel":"coupling.distance","magnitudes":[0.7547169811320755]}
     ],
     "ns:Qualimetrix\\Reporting\\FindingProjection": [
-      {"channel":"coupling.cbo","magnitudes":[19]}
+      {"channel":"coupling.cbo","magnitudes":[23]}
     ],
     "ns:Qualimetrix\\Reporting\\Formatter": [
-      {"channel":"coupling.cbo","magnitudes":[29]}
+      {"channel":"coupling.cbo","magnitudes":[34]}
     ],
     "ns:Qualimetrix\\Reporting\\Formatter\\Health": [
       {"channel":"health.cohesion","magnitudes":[40]}

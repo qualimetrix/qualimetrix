@@ -17,13 +17,13 @@ final class SelectorImplementationBoundaryTest extends TestCase
     private const array PATTERN_CONSTRUCTION_SITES = [
         'src/Analysis/Configuration/SelectorYamlDecoder.php' => 2,
         'src/Analysis/Evidence/Coupling/Configuration/FrameworkNamespaceSelectorParser.php' => 1,
-        'src/Analysis/Evidence/Coupling/DistanceOptions.php' => 1,
+        'src/Analysis/Evidence/Coupling/Distance/DistanceOptions.php' => 1,
         'src/Analysis/Finding/RuleConfiguration/RuleSuppressionSelectorDecoder.php' => 5,
-        'src/Analysis/Policy/Baseline/BaselineExclusionShape.php' => 1,
         'src/Analysis/Policy/Baseline/Ceiling/ExclusionDelta.php' => 1,
         'src/Analysis/Policy/Baseline/Contract/RecordedExclusions.php' => 1,
+        'src/Analysis/Policy/Baseline/DocumentReading/BaselineExclusionShape.php' => 1,
         'src/Analysis/Run/Configuration/RunConfigurationResolver.php' => 1,
-        'src/Infrastructure/Console/CliSelectorDecoder.php' => 2,
+        'src/Infrastructure/Console/Invocation/CliSelectorDecoder.php' => 2,
         'src/Reporting/GraphProjection/NamespaceSelection.php' => 1,
     ];
 

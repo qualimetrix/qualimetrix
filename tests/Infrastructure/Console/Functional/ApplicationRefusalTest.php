@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\Application;
+use Qualimetrix\Infrastructure\Console\Application\Application;
 use Qualimetrix\Subprocess\ChildProcess;
 
 require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
@@ -256,8 +256,8 @@ final class ApplicationRefusalTest extends TestCase
             declare(strict_types=1);
             require '{$repoRoot}/vendor/autoload.php';
 
-            use Qualimetrix\\Infrastructure\\Console\\Application;
-            use Qualimetrix\\Infrastructure\\Console\\ErrorStream;
+            use Qualimetrix\\Infrastructure\\Console\\Application\\Application;
+            use Qualimetrix\\Infrastructure\\Console\\Terminal\\ErrorStream;
             use Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter;
             use Symfony\\Component\\Console\\Command\\Command;
             use Symfony\\Component\\Console\\Input\\InputInterface;

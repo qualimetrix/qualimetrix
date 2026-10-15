@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Baseline\Ceiling;
 
-use Qualimetrix\Analysis\Finding\Contract\AcceptedLevel;
+use Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel;
 
 /**
  * What the ceiling decided about one group of findings sharing an identity.

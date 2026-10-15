@@ -15,7 +15,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage
 use Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerInstantiator;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\TupleExtractor;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
 use Qualimetrix\Core\Symbol\SymbolPath;

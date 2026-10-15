@@ -8,12 +8,12 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
-use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
+use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisPreflight;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Tester\CommandTester;
 
-#[\PHPUnit\Framework\Attributes\CoversClass(\Qualimetrix\Infrastructure\Console\AnalysisPreflight::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\Qualimetrix\Infrastructure\Console\RunSetup\AnalysisPreflight::class)]
 final class RuleOptionsPreflightWiringTest extends TestCase
 {
     /** @return iterable<string, array{string, array<string, mixed>}> */

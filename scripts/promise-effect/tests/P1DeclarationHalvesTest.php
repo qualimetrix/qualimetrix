@@ -7,8 +7,8 @@ namespace Qualimetrix\PromiseEffect\Tests;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use PromiseEffectP1Set;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape;
 use ReflectionMethod;
 
 final class P1DeclarationHalvesTest extends TestCase

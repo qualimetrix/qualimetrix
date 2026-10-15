@@ -11,7 +11,7 @@ use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -102,9 +102,9 @@ final class ConfigurationErrorClassificationTopologyTest extends TestCase
     public function itRefusesAnyOtherProductionFileThatEvenNamesTheWither(): void
     {
         $allowed = [
-            'src/Analysis/Finding/Contract/ChannelDeclaration.php',
+            'src/Analysis/Finding/Contract/Channel/ChannelDeclaration.php',
             'src/Analysis/Finding/Contract/ConfigurationValidatorInterface.php',
-            'src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php',
+            'src/Infrastructure/DependencyInjection/RuleCatalog/ChannelDeclarationCompilerPass.php',
         ];
 
         $mentions = [];

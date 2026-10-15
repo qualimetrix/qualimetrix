@@ -8,21 +8,21 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\Compute
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineChannelRenamer;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineCleaner;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
-use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
+use Qualimetrix\Analysis\Policy\Baseline\Capture\BaselineGenerator;
+use Qualimetrix\Analysis\Policy\Baseline\ChannelRename\BaselineChannelRenamer;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineWriter;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
-use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
+use Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance\BaselineCleaner;
+use Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance\BaselineUpdater;
+use Qualimetrix\Analysis\Policy\Baseline\Explanation\BoundaryExplanationService;
+use Qualimetrix\Analysis\Policy\Baseline\RunCoverage\RunRuleCoverage;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
 use Qualimetrix\Analysis\Run\Configuration\PathsSection;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
@@ -33,53 +33,64 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
 use Qualimetrix\Core\Ast\FileParserInterface;
-use Qualimetrix\Infrastructure\Console\AnalysisInputPathValidator;
-use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
-use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
-use Qualimetrix\Infrastructure\Console\BaselineProjectionCoverage;
-use Qualimetrix\Infrastructure\Console\CheckConfigurationResolvers;
-use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds;
-use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineRenameChannelsCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineRun;
-use Qualimetrix\Infrastructure\Console\Command\BaselineRunInterface;
-use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
-use Qualimetrix\Infrastructure\Console\Command\DirectivesCommand;
-use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
-use Qualimetrix\Infrastructure\Console\Command\HookInstallCommand;
-use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
-use Qualimetrix\Infrastructure\Console\Command\HookUninstallCommand;
-use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
-use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
-use Qualimetrix\Infrastructure\Console\ExitCodeResolver;
-use Qualimetrix\Infrastructure\Console\ExitPolicySection;
-use Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator;
-use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
+use Qualimetrix\Infrastructure\Console\Application\RunningBinaryLocator;
+use Qualimetrix\Infrastructure\Console\Application\RunningBinaryLocatorInterface;
+use Qualimetrix\Infrastructure\Console\BaselineCommand\BaselineProjectionCoverage;
+use Qualimetrix\Infrastructure\Console\BaselineCommand\MeasuredFindingSet;
+use Qualimetrix\Infrastructure\Console\CacheLifecycle\CacheRunLifecycle;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
+use Qualimetrix\Infrastructure\Console\CheckReport\CheckFindingProjection;
+use Qualimetrix\Infrastructure\Console\CheckReport\CheckReportDelivery;
+use Qualimetrix\Infrastructure\Console\CheckReport\CheckReportRenderer;
+use Qualimetrix\Infrastructure\Console\CheckReport\FindingDiagnostics;
+use Qualimetrix\Infrastructure\Console\CheckReport\FindingProjection;
+use Qualimetrix\Infrastructure\Console\CheckReport\FormatterContextFactory;
+use Qualimetrix\Infrastructure\Console\CheckReport\ReportAssembler;
+use Qualimetrix\Infrastructure\Console\CheckReport\ReportFormatter;
+use Qualimetrix\Infrastructure\Console\CheckScope\FindingProjectionOptionsResolver;
+use Qualimetrix\Infrastructure\Console\CheckScope\ObservedProjectScopeReasons;
+use Qualimetrix\Infrastructure\Console\CheckScope\ProjectScopePresenter;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\BaselineRunInterface;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\ChannelRename\BaselineRenameChannelsCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Explanation\BaselineConfiguredThresholds;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Explanation\BaselineExplainCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Generation\BaselineGenerateCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Maintenance\BaselineCleanupCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Maintenance\BaselineUpdateCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Measurement\BaselineRun;
+use Qualimetrix\Infrastructure\Console\Directives\DirectivesCommand;
+use Qualimetrix\Infrastructure\Console\GraphExport\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction;
-use Qualimetrix\Infrastructure\Console\MeasuredFindingSet;
-use Qualimetrix\Infrastructure\Console\MemoryLimitSection;
-use Qualimetrix\Infrastructure\Console\ObservedProjectScopeReasons;
-use Qualimetrix\Infrastructure\Console\ProfilePresenter;
-use Qualimetrix\Infrastructure\Console\ProfileSummaryRenderer;
+use Qualimetrix\Infrastructure\Console\Hook\HookInstallCommand;
+use Qualimetrix\Infrastructure\Console\Hook\HookStatusCommand;
+use Qualimetrix\Infrastructure\Console\Hook\HookUninstallCommand;
+use Qualimetrix\Infrastructure\Console\Invocation\CommandDefinition\CheckCommandDefinition;
+use Qualimetrix\Infrastructure\Console\Invocation\Configuration\ConfigurationInputAdapter;
+use Qualimetrix\Infrastructure\Console\Profile\ProfilePresenter;
+use Qualimetrix\Infrastructure\Console\Profile\ProfileSummaryRenderer;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
-use Qualimetrix\Infrastructure\Console\ProjectSourceConfigurator;
 use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
-use Qualimetrix\Infrastructure\Console\ResultPresenter;
-use Qualimetrix\Infrastructure\Console\RuleInputValidator;
-use Qualimetrix\Infrastructure\Console\RuleListingPresenter;
-use Qualimetrix\Infrastructure\Console\RunConfigurationPreparation;
-use Qualimetrix\Infrastructure\Console\RunningBinaryLocator;
-use Qualimetrix\Infrastructure\Console\RunningBinaryLocatorInterface;
+use Qualimetrix\Infrastructure\Console\RuleListing\RuleListingPresenter;
+use Qualimetrix\Infrastructure\Console\RuleListing\RulesCommand;
+use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisInputPathValidator;
+use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisPreflight;
+use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisRuntimeConfigurator;
+use Qualimetrix\Infrastructure\Console\RunSetup\CheckConfigurationResolvers;
+use Qualimetrix\Infrastructure\Console\RunSetup\FindingConfigurationPreparation;
+use Qualimetrix\Infrastructure\Console\RunSetup\ProjectSourceConfigurator;
+use Qualimetrix\Infrastructure\Console\RunSetup\RunConfigurationPreparation;
+use Qualimetrix\Infrastructure\Console\RunSetup\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession;
-use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
-use Qualimetrix\Infrastructure\Console\RuntimeLimitsController;
-use Qualimetrix\Infrastructure\Console\RuntimeLoggerConfigurator;
+use Qualimetrix\Infrastructure\Console\RuntimePolicy\ExitCodeResolver;
+use Qualimetrix\Infrastructure\Console\RuntimePolicy\ExitPolicySection;
+use Qualimetrix\Infrastructure\Console\RuntimePolicy\MemoryLimitSection;
+use Qualimetrix\Infrastructure\Console\RuntimePolicy\RuntimeEffects;
+use Qualimetrix\Infrastructure\Console\RuntimePolicy\RuntimeLimitsController;
+use Qualimetrix\Infrastructure\Console\RuntimePolicy\RuntimeLoggerConfigurator;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\ReportPublication\ReportPublication;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
@@ -197,17 +208,40 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $loader->registerClasses(
             $prototype,
             'Qualimetrix\\Analysis\\Policy\\Baseline\\',
-            $this->srcDir . '/Analysis/Policy/Baseline/*',
-            $this->srcDir . '/Analysis/Policy/Baseline/{'
-                . 'Baseline.php,BaselineEdge.php,BaselineEntry.php,BaselineEntryMode.php,'
-                . 'BaselineIdentity.php,EntrySelector.php,InertBaselineEntry.php,InertEntryReason.php,'
-                . 'BaselineConflictException.php,BaselineEntryRejection.php,'
-                . 'BaselineCapture.php,UncapturedGroup.php,UncapturedReason.php,'
-                . 'BaselineDocumentLayout.php,BaselineEntryOrder.php,BaselineEntryPayload.php,'
-                . 'BaselineFormatVersion.php,BaselineFileShape.php,BoundaryThresholdSources.php,BoundaryRunFacts.php,'
-                . 'BaselineExclusionShape.php,CanonicalEnvelope.php,BaselineEntryShape.php,CurrentAbsentMeasurement.php,'
-                . 'ChannelRenameMap.php,ChannelRenameReport.php,ChannelRenameRefusal.php,'
-                . 'ExplainedSubject.php,Ceiling/**,Contract/**,EntryBinding/**}',
+            $this->srcDir . '/Analysis/Policy/Baseline/{Capture,Ceiling,ChannelRename,Contract,DocumentAccess,DocumentReading,DocumentWriting,Entry,EntryBinding,EntryMaintenance,Explanation,RunCoverage}/*',
+            [
+                $this->srcDir . '/Analysis/Policy/Baseline/Entry/Baseline.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Entry/BaselineEdge.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Entry/BaselineEntry.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Entry/BaselineEntryMode.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Entry/BaselineIdentity.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Entry/EntrySelector.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Entry/InertBaselineEntry.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Entry/InertEntryReason.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/DocumentAccess/BaselineConflictException.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/DocumentReading/BaselineEntryRejection.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Capture/BaselineCapture.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Capture/UncapturedGroup.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Capture/UncapturedReason.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/DocumentWriting/BaselineDocumentLayout.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/DocumentWriting/BaselineEntryOrder.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/ChannelRename/BaselineEntryPayload.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/DocumentReading/BaselineFormatVersion.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/DocumentReading/BaselineFileShape.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Explanation/BoundaryThresholdSources.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Explanation/BoundaryRunFacts.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/DocumentReading/BaselineExclusionShape.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/DocumentReading/CanonicalEnvelope.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/DocumentReading/BaselineEntryShape.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Explanation/CurrentAbsentMeasurement.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/ChannelRename/ChannelRenameMap.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/ChannelRename/ChannelRenameReport.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/ChannelRename/ChannelRenameRefusal.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Explanation/ExplainedSubject.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Ceiling/**',
+                $this->srcDir . '/Analysis/Policy/Baseline/Contract/**',
+                $this->srcDir . '/Analysis/Policy/Baseline/EntryBinding/**',
+            ],
         );
     }
 
@@ -288,6 +322,18 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
 
     private function registerRuntimePreparation(ContainerBuilder $container): void
     {
+        $container->register(FindingProjectionOptionsResolver::class)->setAutowired(true);
+        $container->register(ProjectScopePresenter::class)->setAutowired(true);
+        $container->register(CheckReportDelivery::class)->setAutowired(true);
+        $container->register(FindingDiagnostics::class)->setAutowired(true);
+        $container->register(CheckFindingProjection::class)->setAutowired(true);
+        $container->register(ReportFormatter::class)->setAutowired(true);
+        $container->register(CheckReportRenderer::class)->setAutowired(true);
+        $container->register(ReportPublication::class)->setAutowired(true);
+        $container->register(CacheRunLifecycle::class)->setAutowired(true)->setPublic(true);
+        $container->register(RuntimeEffects::class)->setAutowired(true);
+        $container->register(CheckCommandDefinition::class)->setAutowired(true);
+
         $container->register(RunConfigurationPreparation::class)->setAutowired(true);
         $container->register(ObservedProjectScopeReasons::class)->setAutowired(true);
 
@@ -315,14 +361,14 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(RunTargets::class),
                 new Reference(RefusalPresenter::class),
-                new Reference(RuntimeConfigurator::class),
+                new Reference(CacheRunLifecycle::class),
             ]);
 
         $container->register(ProgressConfigurator::class)
             ->setAutowired(true);
         $container->register(RuntimeLimitsController::class)
             ->setArguments([new Reference(OutOfMemoryHint::class)]);
-        $container->register(RuleInputValidator::class)
+        $container->register(FindingConfigurationPreparation::class)
             ->setAutowired(true);
 
         // ProfilePresenter for profiling output
@@ -335,18 +381,18 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(ExitCodeResolver::class)
             ->setAutowired(true);
 
-        // What --namespace/--class selects; ResultPresenter and the autowired
+        // What --namespace/--class selects; ReportAssembler and the autowired
         // formatter sections both resolve it from here.
         $container->register(FindingFilter::class);
 
-        // ResultPresenter for formatting/output of analysis results
-        $container->register(ResultPresenter::class)
+        // ReportAssembler for formatting/output of analysis results
+        $container->register(ReportAssembler::class)
             ->setAutowired(true);
 
-        // FindingFilterOrchestrator
+        // FindingProjection
         $container->register(BaselineProjectionCoverage::class)
             ->setAutowired(true);
-        $container->register(FindingFilterOrchestrator::class)
+        $container->register(FindingProjection::class)
             ->setAutowired(true);
     }
 
@@ -361,32 +407,23 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(DelegatingLogger::class),
             ]);
         $container->register(
-            'Qualimetrix\\Infrastructure\\Console\\ScopeWarningChecker',
-            'Qualimetrix\\Infrastructure\\Console\\ScopeWarningChecker',
+            'Qualimetrix\\Infrastructure\\Console\\CheckScope\\ScopeWarningChecker',
+            'Qualimetrix\\Infrastructure\\Console\\CheckScope\\ScopeWarningChecker',
         );
         $container->register(
-            'Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver',
-            'Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver',
+            'Qualimetrix\\Infrastructure\\Console\\CheckScope\\CheckScopeResolver',
+            'Qualimetrix\\Infrastructure\\Console\\CheckScope\\CheckScopeResolver',
         )
+            ->setAutowired(true)
             ->setArguments([
                 new Reference('Qualimetrix\\Infrastructure\\Git\\GitScopeResolver'),
-                new Reference('Qualimetrix\\Infrastructure\\Console\\ScopeWarningChecker'),
+                new Reference('Qualimetrix\\Infrastructure\\Console\\CheckScope\\ScopeWarningChecker'),
             ]);
         $container->register(CheckConfigurationResolvers::class)
             ->setAutowired(true);
 
         $container->register(CheckCommand::class)
-            ->setArguments([
-                new Reference(AnalysisPipelineInterface::class),
-                new Reference(FindingFilterOrchestrator::class),
-                new Reference(RuntimeConfigurator::class),
-                new Reference(ResultPresenter::class),
-                new Reference(RuleInputValidator::class),
-                new Reference('Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver'),
-                new Reference(ConfigurationInputAdapter::class),
-                new Reference(CheckConfigurationResolvers::class),
-                new Reference(RunTargetSession::class),
-            ])
+            ->setAutowired(true)
             ->setPublic(true);
     }
 

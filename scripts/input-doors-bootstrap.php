@@ -12,9 +12,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\InputDoors;
 
-use Qualimetrix\Infrastructure\Console\Application;
-use Qualimetrix\Infrastructure\Console\ConsoleDiagnostics;
-use Qualimetrix\Infrastructure\Console\ProductCommandLoader;
+use Qualimetrix\Infrastructure\Console\Application\Application;
+use Qualimetrix\Infrastructure\Console\Application\ConsoleDiagnostics;
+use Qualimetrix\Infrastructure\Console\Application\ProductCommandLoader;
 use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 

@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding;
 
 use LogicException;
-use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
-use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole;
+use Qualimetrix\Analysis\Finding\Contract\Channel\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
-use Qualimetrix\Analysis\Finding\Contract\SelectionTrace;
+use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionTrace;
 use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 
 /**

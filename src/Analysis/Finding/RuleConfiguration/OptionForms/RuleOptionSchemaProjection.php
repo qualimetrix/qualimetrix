@@ -10,8 +10,8 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SchemaWordSet;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\TextRequirement;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionValueForm;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionValueForm;
 
 /** Projects an option declaration into the document reader's node language. */
 final readonly class RuleOptionSchemaProjection

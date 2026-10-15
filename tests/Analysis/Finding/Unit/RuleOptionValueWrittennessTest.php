@@ -20,10 +20,10 @@ use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
 use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
 use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
-use Qualimetrix\Analysis\Finding\Contract\Rule\BandDirection;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionBand;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\BandDirection;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOptionValues;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionBand;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ThresholdParser;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionValueWrittenness;
 
 #[CoversClass(RuleOptionValueWrittenness::class)]

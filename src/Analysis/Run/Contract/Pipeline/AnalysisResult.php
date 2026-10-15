@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Run\Contract\Pipeline;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary;
-use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 

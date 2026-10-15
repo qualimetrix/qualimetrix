@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
-use Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Explanation\BaselineConfiguredThresholds;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 
@@ -92,7 +92,7 @@ final class ConfiguredWarningBoundaryMapTest extends TestCase
     public function itReadsNoOptionsMemberByName(): void
     {
         $source = file_get_contents(
-            \dirname(__DIR__, 2) . '/src/Infrastructure/Console/Command/BaselineConfiguredThresholds.php',
+            \dirname(__DIR__, 2) . '/src/Infrastructure/Console/Command/Baseline/Explanation/BaselineConfiguredThresholds.php',
         );
 
         self::assertIsString($source);
@@ -116,8 +116,8 @@ final class ConfiguredWarningBoundaryMapTest extends TestCase
         $configuration = FindingConfiguration::none();
         $execution = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
         self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class, $execution);
-        $channels = $container->get(\Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface::class);
-        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface::class, $channels);
+        $channels = $container->get(\Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface::class, $channels);
         $options->replace(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::ready($configuration, $execution->allRules(), channels: $channels));
 
         $map = (new BaselineConfiguredThresholds($rules, $options))->resolve();

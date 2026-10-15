@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Inline\Support;
 
 use LogicException;
-use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\Channel\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;

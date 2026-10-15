@@ -866,12 +866,15 @@ final class SyntheticTree
                 }
             }
 
-            namespace Qualimetrix\\Analysis\\Finding\\Contract {
+            namespace Qualimetrix\\Analysis\\Finding\\Contract\\Channel {
                 interface ChannelDeclarationRegistryInterface
                 {
                     public function staticDeclarations(): array;
                 }
                 interface ChannelUniverseInterface extends ChannelDeclarationRegistryInterface {}
+            }
+
+            namespace Qualimetrix\\Analysis\\Finding\\Contract {
                 final class Location
                 {
                     public static function none(): self { return new self(); }
@@ -895,11 +898,11 @@ final class SyntheticTree
             namespace Qualimetrix\\Infrastructure\\Rule\\Contract {
                 interface RuleChannelSnapshotFactoryInterface
                 {
-                    public function snapshot(object \$definitions): \\Qualimetrix\\Analysis\\Finding\\Contract\\ChannelUniverseInterface;
+                    public function snapshot(object \$definitions): \\Qualimetrix\\Analysis\\Finding\\Contract\\Channel\\ChannelUniverseInterface;
                 }
             }
 
-            namespace Qualimetrix\\Analysis\\Policy\\Baseline {
+            namespace Qualimetrix\\Analysis\\Policy\\Baseline\\Capture {
                 final class BaselineGenerator
                 {
                     public function __construct(object \$channels, object \$clock) {}
@@ -946,19 +949,25 @@ final class SyntheticTree
                 interface RuleRegistryInterface {}
             }
 
-            namespace Qualimetrix\\Infrastructure\\Console {
-                use Qualimetrix\\Analysis\\Configuration\\Contract\\Pipeline\\ConfigurationPipelineInterface;
-                use Qualimetrix\\Analysis\\Configuration\\Contract\\Pipeline\\ConfigurationResolutionRequest;
+            namespace Qualimetrix\\Infrastructure\\Console\\Invocation\\CommandDefinition {
                 use Qualimetrix\\Infrastructure\\Rule\\RuleRegistryInterface;
                 use Symfony\\Component\\Console\\Command\\Command;
-                use Symfony\\Component\\Console\\Input\\ArgvInput;
 
                 final class CheckCommandDefinition
                 {
                     public static function addOptions(Command \$command, RuleRegistryInterface \$rules): array { return []; }
                 }
+            }
 
+            namespace Qualimetrix\\Infrastructure\\Console\\Terminal {
                 final class ErrorStream {}
+            }
+
+            namespace Qualimetrix\\Infrastructure\\Console\\Invocation\\Configuration {
+                use Qualimetrix\\Analysis\\Configuration\\Contract\\Pipeline\\ConfigurationPipelineInterface;
+                use Qualimetrix\\Analysis\\Configuration\\Contract\\Pipeline\\ConfigurationResolutionRequest;
+                use Qualimetrix\\Infrastructure\\Console\\Terminal\\ErrorStream;
+                use Symfony\\Component\\Console\\Input\\ArgvInput;
 
                 final class ConfigurationInputAdapter
                 {
@@ -975,8 +984,8 @@ final class SyntheticTree
                 use Qualimetrix\\Analysis\\Configuration\\Contract\\Pipeline\\ConfigurationPipelineInterface;
                 use Qualimetrix\\Analysis\\Configuration\\Contract\\Pipeline\\ConfigurationResolutionRequest;
                 use Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Configuration\\ComputedMetricConfiguratorInterface;
-                use Qualimetrix\\Analysis\\Finding\\Contract\\ChannelDeclarationRegistryInterface;
-                use Qualimetrix\\Analysis\\Finding\\Contract\\ChannelUniverseInterface;
+                use Qualimetrix\\Analysis\\Finding\\Contract\\Channel\\ChannelDeclarationRegistryInterface;
+                use Qualimetrix\\Analysis\\Finding\\Contract\\Channel\\ChannelUniverseInterface;
                 use Qualimetrix\\Core\\Symbol\\SymbolLevel;
                 use Qualimetrix\\Infrastructure\\Rule\\RuleRegistryInterface;
 

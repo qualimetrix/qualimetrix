@@ -21,15 +21,17 @@ declare(strict_types=1);
  */
 
 use QmxFindingGate\CommandLine;
+use QmxFindingGate\ProductProbeTypes;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Core\Symbol\SymbolLevel;
-use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
-use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Invocation\CommandDefinition\CheckCommandDefinition;
+use Qualimetrix\Infrastructure\Console\Invocation\Configuration\ConfigurationInputAdapter;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Console\Application;
@@ -55,8 +57,9 @@ require $treeRoot . '/vendor/autoload.php';
 
 $container = (new ContainerFactory())->create();
 
-$registry = $container->get(ChannelDeclarationRegistryInterface::class);
-assert($registry instanceof ChannelDeclarationRegistryInterface);
+$registryType = ProductProbeTypes::existing(ChannelDeclarationRegistryInterface::class);
+$registry = $container->get($registryType);
+assert($registry instanceof $registryType);
 
 $document = null;
 $computed = null;
@@ -70,7 +73,7 @@ if ($mode === 'case') {
     $command = new Command('check');
     $command->setApplication(new Application());
     $optionDependencies = [$command, $rules];
-    $optionConstructor = new ReflectionMethod(CheckCommandDefinition::class, 'addOptions');
+    $optionConstructor = new ReflectionMethod(ProductProbeTypes::existing(CheckCommandDefinition::class), 'addOptions');
     if ($optionConstructor->getNumberOfRequiredParameters() === 3) {
         array_unshift($optionDependencies, new RuleOptionDocumentForms());
     } elseif ($optionConstructor->getNumberOfRequiredParameters() !== 2) {
@@ -79,11 +82,12 @@ if ($mode === 'case') {
     $optionConstructor->invokeArgs(null, $optionDependencies);
     $command->mergeApplicationDefinition(false);
     $input = new ArgvInput(['probe', ...array_slice($arguments, 1)], $command->getDefinition());
-    $constructor = new ReflectionMethod(ConfigurationInputAdapter::class, '__construct');
-    $dependencies = [$pipeline, new ErrorStream()];
+    $adapterType = ProductProbeTypes::existing(ConfigurationInputAdapter::class);
+    $constructor = new ReflectionMethod($adapterType, '__construct');
+    $dependencies = [$pipeline, new (ProductProbeTypes::existing(ErrorStream::class))()];
     $parameters = $constructor->getParameters();
     $firstType = $parameters[0]->getType();
-    if ($firstType instanceof ReflectionNamedType && $firstType->getName() === \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface::class) {
+    if ($firstType instanceof ReflectionNamedType && ProductProbeTypes::isName($firstType->getName(), \Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionDocumentFormsInterface::class)) {
         array_unshift($dependencies, new RuleOptionDocumentForms());
     }
     $next = $parameters[count($dependencies)] ?? null;
@@ -96,8 +100,10 @@ if ($mode === 'case') {
     if ($constructor->getNumberOfRequiredParameters() !== count($dependencies)) {
         throw new RuntimeException('The probe does not support this configuration adapter constructor.');
     }
-    $adapter = (new ReflectionClass(ConfigurationInputAdapter::class))->newInstanceArgs($dependencies);
-    $document = $pipeline->resolve($adapter->adapt($input, $caseDirectory));
+    $adapter = (new ReflectionClass($adapterType))->newInstanceArgs($dependencies);
+    $request = (new ReflectionMethod($adapter, 'adapt'))->invoke($adapter, $input, $caseDirectory);
+    assert($request instanceof ConfigurationResolutionRequest);
+    $document = $pipeline->resolve($request);
 }
 
 $values = static fn(array $levels): array => array_values(array_map(
@@ -107,7 +113,9 @@ $values = static fn(array $levels): array => array_values(array_map(
 
 $staticChannels = [];
 
-foreach ($registry->staticDeclarations() as $channel => $declaration) {
+/** @var array<string, object{levels: list<SymbolLevel>}> $declarations */
+$declarations = (new ReflectionMethod($registry, 'staticDeclarations'))->invoke($registry);
+foreach ($declarations as $channel => $declaration) {
     $staticChannels[$channel] = $values($declaration->levels);
 }
 

@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract;
 
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
+
+use Qualimetrix\Analysis\Finding\Contract\Channel\OptionActivity;
 use Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision;
 use Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission;
 use Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch;

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline\Ceiling;
 
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
-use Qualimetrix\Analysis\Policy\Baseline\RunScope;
+use Qualimetrix\Analysis\Policy\Baseline\RunCoverage\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;

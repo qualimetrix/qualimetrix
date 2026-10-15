@@ -14,14 +14,14 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\LongParameterListOptions;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface;
-use Qualimetrix\Analysis\Evidence\Coupling\CboOptions;
-use Qualimetrix\Analysis\Evidence\Coupling\DistanceOptions;
+use Qualimetrix\Analysis\Evidence\Coupling\Cbo\CboOptions;
+use Qualimetrix\Analysis\Evidence\Coupling\Distance\DistanceOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\InstabilityOptions;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageOptions;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountOptions;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;
@@ -32,7 +32,7 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOption
 use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassOptions;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
-use Qualimetrix\Infrastructure\Console\CliOptionsParser;
+use Qualimetrix\Infrastructure\Console\Invocation\RuleOptions\CliOptionsParser;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptions;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptionsNoConstructor;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptionsWithRequiredParams;
@@ -1099,8 +1099,8 @@ final class RuleOptionsFactoryTest extends TestCase
 
         $channels = new \Qualimetrix\Infrastructure\Rule\ChannelUniverse(
             [
-                'health.cohesion' => \Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration::occurrence(\Qualimetrix\Core\Symbol\SymbolLevel::Namespace_),
-                'health.typing' => \Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration::occurrence(\Qualimetrix\Core\Symbol\SymbolLevel::Namespace_),
+                'health.cohesion' => \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration::occurrence(\Qualimetrix\Core\Symbol\SymbolLevel::Namespace_),
+                'health.typing' => \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration::occurrence(\Qualimetrix\Core\Symbol\SymbolLevel::Namespace_),
             ],
             ['computed.health' => ['health.cohesion', 'health.typing']],
             ['computed.health' => false],
@@ -2248,7 +2248,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     /**
-     * The half of {@see \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet}
+     * The half of {@see \Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet}
      * that carries no form: a key the class recognises only in order to
      * answer about it must still reach that answer, not a sentence about its
      * form and not the generic unknown-key one.

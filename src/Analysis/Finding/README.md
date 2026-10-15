@@ -7,6 +7,22 @@ The Finding capability owns analysis-rule vocabulary, rule execution, rule confi
 ```text
 Finding/
 ├── Contract/             # Published metadata, configuration, finding, channel, and filter contracts
+│   ├── Channel/          # channel identity, declaration, publication and presentation
+│   │   ├── AcceptedLevel.php
+│   │   ├── ChannelDeclaration.php
+│   │   ├── ChannelDeclarationRegistryInterface.php
+│   │   ├── ChannelIdentityInterface.php
+│   │   ├── ChannelPresentation.php
+│   │   ├── ChannelPresentationInterface.php
+│   │   ├── ChannelPublication.php
+│   │   ├── ChannelSelectionRole.php
+│   │   ├── ChannelShape.php
+│   │   ├── ChannelUniverseInterface.php
+│   │   ├── FindingChannel.php
+│   │   ├── JudgedMetrics.php
+│   │   ├── LevelActivity.php
+│   │   ├── OptionActivity.php
+│   │   └── ProducerDeclaration.php
 │   ├── ThresholdCrossing.php # Raw value against selected effective threshold
 │   ├── RulePublicationInterface.php # External selection and activity projection
 │   ├── Configuration/    # completed carrier and public typed options construction
@@ -19,6 +35,9 @@ Finding/
 │   │   ├── CellAdmission.php
 │   │   ├── RuleEnablementResolver.php
 │   │   ├── RuleNameJudge.php
+│   │   ├── SelectionFilter.php
+│   │   ├── SelectionRecord.php
+│   │   ├── SelectionTrace.php
 │   │   └── StatedEnablement.php
 │   ├── Population/       # declared eligibility and immutable selected judgements
 │   │   ├── PopulationGate.php
@@ -40,9 +59,27 @@ Finding/
 │   │   └── FindingNamespace.php # declared namespace of a finding, excluding project subjects
 │   ├── Rule/             # Rule authoring contracts
 │   │   ├── RuleDescriptionReader.php # validates each rule's own declared description
-│   │   ├── RuleOptionShape.php # immutable recursive option declaration
-│   │   ├── RuleOptionSurface.php # accepted addresses and declaration lookup
-│   │   ├── RuleOptionDocumentFormsInterface.php # named CLI and Inline document forms
+│   │   ├── OptionLanguage/
+│   │   │   ├── BandDirection.php
+│   │   │   ├── FrameworkOptionKeys.php
+│   │   │   ├── NoConfiguredBoundary.php
+│   │   │   ├── ResolvedRuleOptionValues.php
+│   │   │   ├── RuleOptionAddress.php
+│   │   │   ├── RuleOptionBand.php
+│   │   │   ├── RuleOptionDocumentFormsInterface.php
+│   │   │   ├── RuleOptionKey.php
+│   │   │   ├── RuleOptionKeySet.php
+│   │   │   ├── RuleOptionRefusal.php
+│   │   │   ├── RuleOptionRefusalWording.php
+│   │   │   ├── RuleOptionShape.php
+│   │   │   ├── RuleOptionSurface.php
+│   │   │   ├── RuleOptionValueForm.php
+│   │   │   ├── RuleOptionWordSet.php
+│   │   │   └── ThresholdParser.php
+│   │   ├── ChannelLevel/
+│   │   │   ├── ChannelLevelAddressing.php
+│   │   │   ├── ChannelLevelRefusalWording.php
+│   │   │   └── ChannelLevelSelector.php
 │   │   └── Override/     # numeric validation and authored request
 │   │       ├── ThresholdOverrideRequest.php # values, syntax and written axes
 │   │       ├── OverrideAxis.php # warning or error
@@ -80,6 +117,12 @@ Finding/
 ├── FindingPublication.php # Exclusion accounting and channel-selection projection behind RulePublicationInterface
 └── ChannelPresentationView.php # Joins a channel to its description and its producer's docs page
 ```
+
+`Contract/Channel` promises channel facts and their publication to consumers;
+`Contract/Selection` promises authored decisions and their trace.
+`Contract/Rule/OptionLanguage` owns the complete declared option vocabulary,
+including its numeric boundary forms; `ChannelLevel` owns channel/level addressing.
+These public subsubjects retain Finding as their semantic capability owner.
 
 `RuleMaterialization` owns lazy instance caches and ordered producer metadata;
 `FindingPublication` owns the one execution exclusion ledger and reads the live

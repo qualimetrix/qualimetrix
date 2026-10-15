@@ -22,7 +22,7 @@ use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumen
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
-use Qualimetrix\Infrastructure\Console\CliOptionsParser;
+use Qualimetrix\Infrastructure\Console\Invocation\RuleOptions\CliOptionsParser;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;

@@ -13,7 +13,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Core\FileTarget\HeldTarget;
+use Qualimetrix\Core\FileTarget\Publication\HeldTarget;
 use Qualimetrix\Core\FileTarget\TargetPath;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
 use Qualimetrix\Infrastructure\Logging\FileLogger;
@@ -492,7 +492,7 @@ final class FileLoggerTest extends TestCase
         $path = $this->tempDir . '/partial.log';
         file_put_contents($path, '');
         $script = <<<'PHP'
-            namespace Qualimetrix\Core\FileTarget {
+            namespace Qualimetrix\Core\FileTarget\Publication {
                 function fwrite($stream, string $bytes): int|false
                 {
                     ++$GLOBALS['qmx_native_hits'];
@@ -504,7 +504,7 @@ final class FileLoggerTest extends TestCase
             namespace {
                 require $argv[1];
                 $GLOBALS['qmx_native_hits'] = 0;
-                $held = \Qualimetrix\Core\FileTarget\HeldTarget::claim(
+                $held = \Qualimetrix\Core\FileTarget\Publication\HeldTarget::claim(
                     \Qualimetrix\Core\FileTarget\TargetPath::resolve($argv[2]),
                 );
                 $logger = new \Qualimetrix\Infrastructure\Logging\FileLogger($argv[2]);

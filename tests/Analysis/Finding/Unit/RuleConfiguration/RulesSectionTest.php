@@ -100,8 +100,8 @@ final class RulesSectionTest extends TestCase
     #[Test]
     #[\PHPUnit\Framework\Attributes\TestWith(['complexity.ccn', ComplexityOptions::class, 'suppress-namespaces'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['complexity.ccn', ComplexityOptions::class, 'suppress-paths'])]
-    #[\PHPUnit\Framework\Attributes\TestWith(['coupling.cbo', \Qualimetrix\Analysis\Evidence\Coupling\CboOptions::class, 'suppress-namespace-channels'])]
-    #[\PHPUnit\Framework\Attributes\TestWith(['coupling.distance', \Qualimetrix\Analysis\Evidence\Coupling\DistanceOptions::class, 'include-namespaces'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['coupling.cbo', \Qualimetrix\Analysis\Evidence\Coupling\Cbo\CboOptions::class, 'suppress-namespace-channels'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['coupling.distance', \Qualimetrix\Analysis\Evidence\Coupling\Distance\DistanceOptions::class, 'include-namespaces'])]
     public function itRefusesAnInvalidSemanticSelectorBeforeAValidOverlay(string $producer, string $optionsClass, string $key): void
     {
         $execution = ResolvedOptionsFixture::execution([new RuleMetadata($producer, $optionsClass, '', [], false)]);
@@ -137,7 +137,7 @@ final class RulesSectionTest extends TestCase
         $resolver->conclude($stated, $options);
         if ($key === 'include-namespaces') {
             $typed = $options->for($producer);
-            self::assertInstanceOf(\Qualimetrix\Analysis\Evidence\Coupling\DistanceOptions::class, $typed);
+            self::assertInstanceOf(\Qualimetrix\Analysis\Evidence\Coupling\Distance\DistanceOptions::class, $typed);
             $patterns = $typed->includeNamespaces;
         } else {
             $suppression = $options->suppressionFor($producer);

@@ -16,7 +16,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
-use Qualimetrix\Analysis\Evidence\Size\ClassCountCollector;
+use Qualimetrix\Analysis\Evidence\Size\ClassCount\ClassCountCollector;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;

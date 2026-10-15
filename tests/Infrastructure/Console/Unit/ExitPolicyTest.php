@@ -15,7 +15,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Infrastructure\Console\ExitPolicy;
+use Qualimetrix\Infrastructure\Console\RuntimePolicy\ExitPolicy;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 #[CoversClass(ExitPolicy::class)]

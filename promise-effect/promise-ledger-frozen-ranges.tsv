@@ -17,7 +17,7 @@
 # causes conservative drift.
 #
 # The following overlap with p1-file-set.tsv is recomputed on every run:
-#   P1 ∩ frozen: src/Analysis/Evidence/Cohesion/LcomOptions.php:104-107, src/Analysis/Evidence/Coupling/DistanceOptions.php:74-109, src/Analysis/Finding/Contract/Rule/LevelOptionsInterface.php:31-37, src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php:26-32, src/Analysis/Policy/Architecture/LayerViolation/LayerViolationOptions.php:58-78
+#   P1 ∩ frozen: src/Analysis/Evidence/Cohesion/LcomOptions.php:104-107, src/Analysis/Evidence/Coupling/Distance/DistanceOptions.php:74-109, src/Analysis/Finding/Contract/Rule/LevelOptionsInterface.php:31-37, src/Analysis/Finding/Contract/Rule/OptionLanguage/RuleOptionKeySet.php:26-32, src/Analysis/Policy/Architecture/LayerViolation/LayerViolationOptions.php:58-78
 # This overlap is a measurement of the ledger's current citations, not a rule
 # limiting source carriers. A cited src/** range may cover a docblock,
 # declaration, or implementation in any class the ledger uses as evidence.
@@ -30,11 +30,11 @@ src/Analysis/Configuration/Contract/Document/Schema/Shorthand.php	8	12	35aa1b37e
 src/Analysis/Configuration/Loader/CommandLineSyntax.php	18	82	e962e509d0376ea3	P1 (product source)	{
 src/Analysis/Configuration/Loader/CommandLineValue.php	19	66	c745dc5835abeda2	P1 (product source)	/** @param non-empty-list<string> $path */
 src/Analysis/Evidence/Cohesion/LcomOptions.php	104	107	433ba7d51044b800	P1 (product source)	{
-src/Analysis/Evidence/Coupling/DistanceOptions.php	74	109	a5e657072f50084a	P1 (product source)	public static function acceptedOptionKeys(): RuleOptionKeySet
-src/Analysis/Finding/Contract/Rule/FrameworkOptionKeys.php	15	34	40819fbc8836c5e4	P1 (product source)	public static function declared(): RuleOptionKeySet
-src/Analysis/Finding/Contract/Rule/FrameworkOptionKeys.php	25	34	65fdee1ad59cf141	P1 (product source)	},
+src/Analysis/Evidence/Coupling/Distance/DistanceOptions.php	74	109	a5e657072f50084a	P1 (product source)	public static function acceptedOptionKeys(): RuleOptionKeySet
+src/Analysis/Finding/Contract/Rule/OptionLanguage/FrameworkOptionKeys.php	15	34	40819fbc8836c5e4	P1 (product source)	public static function declared(): RuleOptionKeySet
+src/Analysis/Finding/Contract/Rule/OptionLanguage/FrameworkOptionKeys.php	25	34	65fdee1ad59cf141	P1 (product source)	},
 src/Analysis/Finding/Contract/Rule/LevelOptionsInterface.php	31	37	f84132545b7f7be1	P1 (product source)	/**
-src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php	26	32	7eeeb43799480966	P1 (product source)	* - **answered by the class** — a recognised key whose refusal wording
+src/Analysis/Finding/Contract/Rule/OptionLanguage/RuleOptionKeySet.php	26	32	7eeeb43799480966	P1 (product source)	* - **answered by the class** — a recognised key whose refusal wording
 src/Analysis/Policy/Architecture/LayerViolation/LayerViolationOptions.php	58	78	d3a968f72f39cf7a	P1 (product source)	*/
 src/Infrastructure/Cache/CacheSection.php	19	47	78553ae88c0d2dd4	P1 (product source)	public function declaration(): SectionDeclaration
 website/docs/getting-started/configuration.md	54	54	6a61c178688f5f0d	P6 (website documentation)	paths:

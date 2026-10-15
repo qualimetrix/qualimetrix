@@ -10,11 +10,11 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
-use Qualimetrix\Analysis\Evidence\Coupling\DistanceOptions;
-use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionAddress;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
+use Qualimetrix\Analysis\Evidence\Coupling\Distance\DistanceOptions;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\FrameworkOptionKeys;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionAddress;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 
 #[CoversClass(RuleOptionShape::class)]

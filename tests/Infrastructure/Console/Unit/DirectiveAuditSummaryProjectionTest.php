@@ -7,8 +7,8 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellOptions;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
@@ -24,7 +24,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter;
+use Qualimetrix\Infrastructure\Console\Directives\DirectiveAuditPresenter;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 /**

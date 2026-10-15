@@ -10,8 +10,8 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedWriteHistoryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Selection\RuleNameJudge;
 
 /** Judges authored selector and namespace-channel spelling with its writers. */

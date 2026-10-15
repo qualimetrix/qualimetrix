@@ -6,7 +6,7 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Observation;
 
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\KnownTypes;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterionKind;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchedCriterionKind;
 
 /**
  * Everything one run's walk over the classes and the dependency graph

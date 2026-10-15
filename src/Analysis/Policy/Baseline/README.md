@@ -12,101 +12,113 @@ values only where an effective boundary must be explained.
 
 ```
 Baseline/
-├── Baseline.php                 # VO: a loaded/captured file (generated, scope, entries, inert entries)
-├── BaselineFormatVersion.php    # The current file format's version number, read by the loader, the writer, and the carry that never builds a Baseline
-├── BaselineIdentity.php         # VO: what an entry is about — symbol + channel + dependency edge
-├── BaselineEdge.php             # VO: the dependency edge half of an identity
-├── BaselineEntry.php            # VO: one accepted group (identity, magnitudes, count, mode)
-├── BaselineEntryMode.php        # Enum: the optional `mode` (only `suppress`)
-├── EntrySelector.php            # VO: the short handle addressing one entry
-├── InertBaselineEntry.php       # VO: an entry that cannot be applied, and why
-├── InertEntryReason.php         # Enum: why an entry is inert
-├── BaselineEntryParser.php      # Parses one raw entry into a valid or inert entry
-├── BaselineEntryValues.php      # Strict count/magnitudes/mode value decoding for one entry
-├── BaselineEntryRejection.php   # Internal control-flow signal used by the parser
-├── BaselineConflictException.php # Environment failure: the file changed between read and write
-├── BaselineLockFailure.php      # Environment failure acquiring the baseline sibling lock, preserving its cause
-├── BaselineReadFailure.php      # Environment failure reading an existing baseline, with path and reason
-├── BaselineGenerator.php        # Captures a run's findings as entries (injected clock)
-├── BaselineCapture.php          # VO/factory: baseline plus materialized rejected-group outcomes
-├── UncapturedGroup.php          # VO: a group that produced no entry, and why
-├── UncapturedReason.php         # Enum: undeclared / configuration-error channel / no finite magnitude
-├── BaselineFileShape.php        # Shared closed document grammar
-├── BaselineExclusionShape.php   # Closed recorded-exclusion grammar and indexed refusals
-├── BaselineEntryShape.php       # Closed raw entry and edge keys before value normalization
-├── GroupAcceptance.php          # Acceptance policy over complete groups
-├── BaselineDocumentReader.php   # Acquires and judges held document bytes before analysis
-├── BaselineLoader.php           # Semantically loads entries from the held version 14 document
-├── CanonicalBaselineReader.php  # Reads the held canonical bytes, or declines to the full-document decoder
-├── CanonicalSubjectReader.php   # Existing canonical subject blocks and entry admission through the reader's line source
-├── CanonicalEnvelope.php        # Pure canonical envelope-line recognition and depth-bounded decoding
-├── BaselineWriter.php           # Turns a Baseline into the document's fields, and refuses two entries of one identity
-├── BaselineDocumentLayout.php   # How a baseline document is spelled: one entry per line, float representation pinned
-├── BaselineDocumentWriter.php   # How a baseline file is replaced: sibling lock, compare-and-swap, atomic rename, the snapshot a forced replacement compares; an unusable path throws Core FileTargetFailure
-├── BaselineEntryOrder.php       # Where an entry sorts among its siblings, computed identically by the writer and the carry
-├── BaselineEntryPayload.php     # One entry line as the file spells it: the identity and ordering the document alone decides, built from the real types
-├── RunScope.php                 # VO: a run's analysed paths in the portable form the file records, plus the coverage predicate the scope guard reads
-├── RunRuleCoverage.php          # Classifies whether an identity's producer did not run or its stored level is no longer declared
-├── RunCoverageGap.php           # Enum: producer/publication coverage gaps
-│
-├── BaselineUpdater.php          # `baseline:update`: direction-aware monotonic tightening
-├── BaselineEntryTightening.php  # Reconciles one existing entry against the whole ceiling outcome
-├── ExclusionRemovedPopulation.php # Proves that a file identity's own population was newly excluded
-├── NewIdentityAcceptance.php    # Captures complete comparable identities of explicitly selected channels
-├── BaselineUpdateResult.php     # VO: the updated baseline, one outcome per entry, and whether anything actually changed
-├── BaselineEntryUpdateOutcome.php # VO: what update did to one entry, and why
-├── BaselineUpdateDisposition.php  # Enum: updated / unchanged / removed / refused / skipped / accepted / re-recorded
-├── BaselineUpdateRefusalReason.php # Enum: why update refused to tighten an entry
-│
-├── BaselineCleaner.php          # `baseline:cleanup`: candidate enumeration and selector removal
-├── BaselineCleanupCandidate.php # VO: one removal candidate — selector, description, reason
-├── BaselineCleanupReason.php    # Enum: stale / producer did not run / level not declared / channel no longer declared / configuration-error channel / inert
-├── BaselineCleanupRemoval.php   # VO: what one `--remove` run did — removed/not-found/ambiguous
-│
-├── BaselineChannelRenamer.php   # `baseline:rename-channels`: carries a raw document onto renamed channels, analysing nothing
-├── ChannelRenameMap.php         # VO: the declared old -> new map, read from the gate's channels.tsv format
-├── ChannelRenameReport.php      # VO: what a carry did — entries moved, idle rows, lines this build cannot read
-├── ChannelRenameRefusal.php     # A carry the product understood and declined; the file is left byte-identical
-│
-├── BoundaryExplanationService.php # `baseline:explain`: assembles the explained identities and sources
-├── BoundaryThresholdSources.php # readonly invocation configured and inline thresholds
-├── BoundaryRunFacts.php         # readonly measured findings, coverage and optional symbol locations
-├── CurrentBoundaryMeasurement.php # Projects independent current evidence and the whole ceiling verdict
-├── CurrentAbsentMeasurement.php # Proves file or aggregate absence only for unrecorded identities
-├── IdentityBoundaryExplanation.php # Joins one identity with its configured threshold and annotation
-├── ExplainedSubject.php         # What the run knows about the explained symbol: its relevant identities, its typed repository index, its exact subject
-├── EffectiveBoundary.php        # VO: one identity's boundary — mandatory current measurement plus nullable baseline, threshold and annotation
-├── EffectiveBoundaryBaselineSource.php # VO: the baseline half of an EffectiveBoundary — inert state, mode, acceptance and comparison verdict/reason
-├── BoundaryExplanation.php      # VO: every boundary bearing on one symbol, plus the subject's lines whose identity could not be read — what the command prints
-├── BoundaryExplanationStatus.php # Current, baseline-only, or unknown symbol classification
-│
+├── Capture/
+│   ├── BaselineCapture.php
+│   ├── BaselineGenerator.php
+│   ├── UncapturedGroup.php
+│   └── UncapturedReason.php
 ├── Ceiling/
-│   ├── BaselineCeilingStage.php # FindingFilterStageInterface: applies entries as ceilings over groups
-│   ├── Absence.php              # Proven absence classification
-│   ├── EntryComparability.php   # Full-group comparison evidence
-│   ├── EntryJudgement.php       # Present-group acceptance
-│   ├── EntryAbsenceProof.php    # Positive evidence and ordered reasons for absent entries
-│   ├── RecordedRootPresence.php # Recorded-root containment and tri-state directory evidence
-│   ├── ExclusionDelta.php       # Changed discovery definition evidence
-│   ├── GroupCapture.php         # Complete finite-vector capture
-│   ├── GroupMeasurement.php     # Declared group measurement
-│   ├── IncomparabilityReason.php # Why a group cannot be compared
-│   ├── Region.php               # File or whole comparison region
-│   ├── SubjectRegion.php        # Exact subject placement
-│   └── GroupCeilingVerdict.php  # VO: accepted / measured breach / reported, for one group
+│   ├── Absence.php
+│   ├── BaselineCeilingStage.php
+│   ├── EntryAbsenceProof.php
+│   ├── EntryComparability.php
+│   ├── EntryJudgement.php
+│   ├── ExclusionDelta.php
+│   ├── GroupCapture.php
+│   ├── GroupCeilingVerdict.php
+│   ├── GroupMeasurement.php
+│   ├── IncomparabilityReason.php
+│   ├── RecordedRootPresence.php
+│   ├── Region.php
+│   └── SubjectRegion.php
+├── ChannelRename/
+│   ├── BaselineChannelRenamer.php
+│   ├── BaselineEntryPayload.php
+│   ├── ChannelRenameMap.php
+│   ├── ChannelRenameRefusal.php
+│   └── ChannelRenameReport.php
+├── Contract/
+│   ├── BaselineAuditChannels.php
+│   ├── BaselineDocument.php
+│   ├── CeilingOutcome.php
+│   ├── CurrentMeasurement.php
+│   ├── RecordedExclusions.php
+│   └── RunCoverage.php
+├── DocumentAccess/
+│   ├── BaselineConflictException.php
+│   ├── BaselineDocumentReader.php
+│   ├── BaselineDocumentWriter.php
+│   ├── BaselineLockFailure.php
+│   └── BaselineReadFailure.php
+├── DocumentReading/
+│   ├── BaselineEntryParser.php
+│   ├── BaselineEntryRejection.php
+│   ├── BaselineEntryShape.php
+│   ├── BaselineEntryValues.php
+│   ├── BaselineExclusionShape.php
+│   ├── BaselineFileShape.php
+│   ├── BaselineFormatVersion.php
+│   ├── BaselineLoader.php
+│   ├── CanonicalBaselineReader.php
+│   ├── CanonicalEnvelope.php
+│   └── CanonicalSubjectReader.php
+├── DocumentWriting/
+│   ├── BaselineDocumentLayout.php
+│   ├── BaselineEntryOrder.php
+│   └── BaselineWriter.php
+├── Entry/
+│   ├── Baseline.php
+│   ├── BaselineEdge.php
+│   ├── BaselineEntry.php
+│   ├── BaselineEntryMode.php
+│   ├── BaselineIdentity.php
+│   ├── EntrySelector.php
+│   ├── GroupAcceptance.php
+│   ├── InertBaselineEntry.php
+│   └── InertEntryReason.php
 ├── EntryBinding/
-│   ├── UnusedEntryAudit.php     # Streams post-ceiling diagnostic records into the captured publication
-│   ├── UnusedEntryFinding.php   # Stale/inert diagnostic messages and stable occurrence identity
-│   ├── UnusedEntryOptions.php   # Audit enablement
-│   └── UnusedEntryRule.php      # Declared warning channel metadata
-└── Contract/
-    ├── BaselineAuditChannels.php # Audit channel identity
-    ├── BaselineDocument.php     # Immutable bytes and target provenance
-    ├── CurrentMeasurement.php   # Independent explain-now evidence
-    ├── RecordedExclusions.php   # Explicit stored discovery definition
-    ├── RunCoverage.php          # Baseline-specific invocation evidence
-    └── CeilingOutcome.php      # VO: the ceiling result with stale and inert entries from one measured set
+│   ├── UnusedEntryAudit.php
+│   ├── UnusedEntryFinding.php
+│   ├── UnusedEntryOptions.php
+│   └── UnusedEntryRule.php
+├── EntryMaintenance/
+│   ├── BaselineCleaner.php
+│   ├── BaselineCleanupCandidate.php
+│   ├── BaselineCleanupReason.php
+│   ├── BaselineCleanupRemoval.php
+│   ├── BaselineEntryTightening.php
+│   ├── BaselineEntryUpdateOutcome.php
+│   ├── BaselineUpdateDisposition.php
+│   ├── BaselineUpdateRefusalReason.php
+│   ├── BaselineUpdateResult.php
+│   ├── BaselineUpdater.php
+│   ├── ExclusionRemovedPopulation.php
+│   └── NewIdentityAcceptance.php
+├── Explanation/
+│   ├── BoundaryExplanation.php
+│   ├── BoundaryExplanationService.php
+│   ├── BoundaryExplanationStatus.php
+│   ├── BoundaryRunFacts.php
+│   ├── BoundaryThresholdSources.php
+│   ├── CurrentAbsentMeasurement.php
+│   ├── CurrentBoundaryMeasurement.php
+│   ├── EffectiveBoundary.php
+│   ├── EffectiveBoundaryBaselineSource.php
+│   ├── ExplainedSubject.php
+│   └── IdentityBoundaryExplanation.php
+└── RunCoverage/
+    ├── RunCoverageGap.php
+    ├── RunRuleCoverage.php
+    └── RunScope.php
 ```
+
+The root is a navigation boundary. `Entry` owns accepted identities and groups;
+`DocumentReading`, `DocumentWriting` and `DocumentAccess` own grammar,
+serialization and held-file access respectively. `Capture` measures candidates,
+`RunCoverage` supplies comparison evidence, and `EntryMaintenance` shares the
+update/cleanup removal proof. `ChannelRename` owns raw entry payload migration;
+`Explanation` owns current-boundary interpretation. `Ceiling`, `EntryBinding` and
+`Contract` retain their existing policy and outward boundaries.
 
 ## Baseline Workflow
 

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding;
 
 use Closure;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ProducerDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
-use Qualimetrix\Analysis\Finding\Contract\ProducerDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions;
 use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;

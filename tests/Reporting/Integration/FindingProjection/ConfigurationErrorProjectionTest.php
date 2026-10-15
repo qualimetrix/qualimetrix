@@ -9,16 +9,16 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineEntryParser;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
@@ -197,7 +197,7 @@ final class ConfigurationErrorProjectionTest extends TestCase
         $configurationError = $this->makeConfigurationError();
 
         $result = $this->project([$configurationError], new FindingProjectionOptions(
-            baselineDocument: (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->writeBaselineFile([
+            baselineDocument: (new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($this->writeBaselineFile([
                 $configurationError->subject->toCanonical() => [
                     ['channel' => $configurationError->channel()->code, 'count' => 1],
                 ],

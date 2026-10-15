@@ -44,7 +44,7 @@ declare(strict_types=1);
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -87,10 +87,10 @@ final class PromiseEffectP1Set
      * @var list<string>
      */
     private const array P4_ADAPTERS = [
-        'src/Infrastructure/Console/ConfigurationInputAdapter.php',
-        'src/Infrastructure/Console/CliOptionsParser.php',
-        'src/Infrastructure/Console/RuleInputValidator.php',
-        'src/Infrastructure/Console/ExitPolicy.php',
+        'src/Infrastructure/Console/Invocation/Configuration/ConfigurationInputAdapter.php',
+        'src/Infrastructure/Console/Invocation/RuleOptions/CliOptionsParser.php',
+        'src/Infrastructure/Console/RunSetup/FindingConfigurationPreparation.php',
+        'src/Infrastructure/Console/RuntimePolicy/ExitPolicy.php',
     ];
 
     /** @var list<string> owner cells of config-paths.tsv that name no loadable class */
@@ -103,12 +103,12 @@ final class PromiseEffectP1Set
      * @var array<string, string>
      */
     private const array NAMED = [
-        'src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php' => 'the declaration itself absorbs value form into this set',
+        'src/Analysis/Finding/Contract/Rule/OptionLanguage/RuleOptionKeySet.php' => 'the declaration itself absorbs value form into this set',
         'src/Analysis/Finding/Contract/Rule/RuleOptionsInterface.php' => 'contract stating acceptedOptionKeys()',
         'src/Analysis/Finding/Contract/Rule/LevelOptionsInterface.php' => 'contract stating a level slot key set',
         'src/Analysis/Finding/Contract/Rule/HierarchicalRuleOptionsInterface.php' => 'contract stating levelOptionsClasses(), the source of slot existence',
         'src/Analysis/Finding/Contract/Configuration/RuleOptionsBuild.php' => 'the consumer constructing typed options and attributing refusals to authored writes',
-        'src/Analysis/Finding/Contract/Rule/RuleOptionRefusalWording.php' => 'the words of every rule-option refusal, including the one about a value\'s form',
+        'src/Analysis/Finding/Contract/Rule/OptionLanguage/RuleOptionRefusalWording.php' => 'the words of every rule-option refusal, including the one about a value\'s form',
         'src/Analysis/Finding/Exclusion/RuleNamespaceExclusionProvider.php' => 'the throw site behind most malformed framework-key cells, in no other package set',
         'src/Analysis/Finding/Exclusion/RulePathExclusionProvider.php' => 'its neighbour, which judged no form at all',
     ];
@@ -120,7 +120,7 @@ final class PromiseEffectP1Set
      * @var array<string, true>
      */
     private const array ADDED_BY_THE_ORCHESTRATOR = [
-        'src/Analysis/Finding/Contract/Rule/RuleOptionRefusalWording.php' => true,
+        'src/Analysis/Finding/Contract/Rule/OptionLanguage/RuleOptionRefusalWording.php' => true,
         'src/Analysis/Finding/Exclusion/RuleNamespaceExclusionProvider.php' => true,
         'src/Analysis/Finding/Exclusion/RulePathExclusionProvider.php' => true,
     ];

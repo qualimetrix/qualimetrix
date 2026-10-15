@@ -42,12 +42,12 @@ final class CognitiveComplexityRuleTest extends TestCase
         foreach (CognitiveComplexityRule::channelDeclarations() as $channel => $declaration) {
             foreach ($declaration->levels as $level) {
                 $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
-                    new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(CognitiveComplexityRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable),
+                    new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(CognitiveComplexityRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole::Selectable),
                     new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
                 );
             }
         }
-        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
         $context = (new AnalysisContext($repository))->withPopulationTrace($session);
         self::assertSame([], $rule->analyzeLevel(\Qualimetrix\Core\Symbol\SymbolLevel::Class_, $context));
         self::assertSame(1, $session->freeze()->judgedCount());
@@ -600,10 +600,10 @@ final class CognitiveComplexityRuleTest extends TestCase
         $zeroSubject = $zero->subject ?? throw new LogicException('Fixture requires an exact callable.');
         $repository->method('getSubject')->willReturnCallback(static fn($subject): MetricBag =>
             $subject->toCanonical() === $zeroSubject->toCanonical() ? MetricBag::fromArray(['complexity.cognitive' => 0]) : new MetricBag());
-        $channel = new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('complexity.cognitive');
-        $publication = new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement([
+        $channel = new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel('complexity.cognitive');
+        $publication = new \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement([
             new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
-                new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress('complexity.cognitive', $channel, SymbolLevel::Callable, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable),
+                new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress('complexity.cognitive', $channel, SymbolLevel::Callable, \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole::Selectable),
                 new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
             ),
         ], null));

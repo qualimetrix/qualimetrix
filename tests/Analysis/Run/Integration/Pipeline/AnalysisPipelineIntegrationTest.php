@@ -41,10 +41,10 @@ use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\DerivedMetricExtractor;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
+use Qualimetrix\Analysis\Finding\Contract\Channel\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
@@ -101,10 +101,11 @@ use Qualimetrix\Infrastructure\Cache\CacheConfigurationStore;
 use Qualimetrix\Infrastructure\Cache\CacheKeyGenerator;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
 use Qualimetrix\Infrastructure\Cache\FileCache;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter;
-use Qualimetrix\Infrastructure\Console\RuleInputValidator;
-use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
+use Qualimetrix\Infrastructure\Console\RunSetup\CheckConfigurationResolvers;
+use Qualimetrix\Infrastructure\Console\RunSetup\FindingConfigurationPreparation;
+use Qualimetrix\Infrastructure\Console\RunSetup\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfiguration;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
@@ -608,8 +609,8 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         self::assertInstanceOf(CheckCommand::class, $checkCommand);
         self::assertInstanceOf(ProfileReportInterface::class, $profileReport);
         self::assertInstanceOf(RuleConfigurationInterface::class, $ruleConfiguration);
-        $ruleInputValidator = (new ReflectionProperty(CheckCommand::class, 'ruleInputValidator'))->getValue($checkCommand);
-        self::assertInstanceOf(RuleInputValidator::class, $ruleInputValidator);
+        $ruleInputValidator = (new ReflectionProperty(CheckConfigurationResolvers::class, 'findingConfigurationPreparation'))->getValue((new ReflectionProperty(CheckCommand::class, 'configurationResolvers'))->getValue($checkCommand));
+        self::assertInstanceOf(FindingConfigurationPreparation::class, $ruleInputValidator);
 
         $configurationPipeline = $container->get(ConfigurationPipelineInterface::class);
         self::assertInstanceOf(ConfigurationPipelineInterface::class, $configurationPipeline);
@@ -645,8 +646,8 @@ final class AnalysisPipelineIntegrationTest extends TestCase
                 }
                 $document = LayeredDocument::of([['source' => 'test', 'values' => $values]], $projectRoot, ...$pipelineSections);
             }
-            $findingConfiguration = $ruleInputValidator->resolve($document, $input);
-            $runtimeConfigurator->configure($document, new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration(self::runConfigurationFor($document), new CacheConfiguration(PathFactory::fromCliArgument('.qmx-cache', $projectRoot), true), new ParallelConfiguration()), $findingConfiguration, $input, new BufferedOutput());
+            $findingConfiguration = $ruleInputValidator->resolve($document);
+            $runtimeConfigurator->configure($document, new \Qualimetrix\Infrastructure\Console\RunSetup\ResolvedRunConfiguration(self::runConfigurationFor($document), new CacheConfiguration(PathFactory::fromCliArgument('.qmx-cache', $projectRoot), true), new ParallelConfiguration()), $findingConfiguration, $input, new BufferedOutput());
             $result = $pipeline->analyze(new RunConfiguration(
                 pathExcludes: [],
                 projectRoot: AbsolutePath::fromString($fixtureRoot),
@@ -759,7 +760,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             [],
             [],
             new \Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats(),
-            \Qualimetrix\Analysis\Finding\Contract\LevelActivity::empty(),
+            \Qualimetrix\Analysis\Finding\Contract\Channel\LevelActivity::empty(),
         ));
 
         $pipeline = $this->createPipelineWithGlobalCollectors(
@@ -1384,7 +1385,7 @@ PHP);
             [],
             [ComplexityRule::class],
         );
-        $parallelStrategy = new AmphpParallelStrategy($fileProcessingTaskFactory, new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()), new \Qualimetrix\Infrastructure\Profiler\ProfileSession(), new \Qualimetrix\Infrastructure\Console\ErrorStream(), $logger);
+        $parallelStrategy = new AmphpParallelStrategy($fileProcessingTaskFactory, new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()), new \Qualimetrix\Infrastructure\Profiler\ProfileSession(), new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream(), $logger);
         $parallelStrategy->setMinFilesForParallel(1);
         $selector = new StrategySelector(
             $parallelStrategy,

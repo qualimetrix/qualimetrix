@@ -29,10 +29,10 @@ use PhpParser\NodeVisitor\NameResolver;
 use PhpParser\ParserFactory;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use ReflectionClass;
 
 /**

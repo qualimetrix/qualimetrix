@@ -8,14 +8,14 @@ use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Policy\Baseline\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineEntryParser;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineWriter;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
@@ -144,7 +144,7 @@ final class BaselineRoundTripVOTest extends TestCase
         $this->writer->write($this->severalSubjects(), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $root);
         $first = (string) file_get_contents($path);
 
-        $this->writer->write($this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path)), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $root);
+        $this->writer->write($this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($path)), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $root);
 
         self::assertSame($first, (string) file_get_contents($path));
     }
@@ -208,7 +208,7 @@ final class BaselineRoundTripVOTest extends TestCase
         $path = $this->tempDir . '/baseline.json';
         $this->writer->write($baseline, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), AbsolutePath::fromString('/home/user/project'));
 
-        return $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path));
+        return $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($path));
     }
 
     private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions

@@ -11,7 +11,7 @@ use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Infrastructure\Console\AnalysisInputPathValidator;
+use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisInputPathValidator;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 #[CoversClass(AnalysisInputPathValidator::class)]

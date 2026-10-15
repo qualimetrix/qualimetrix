@@ -11,22 +11,22 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
-use Qualimetrix\Analysis\Policy\Baseline\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineCleaner;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
-use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineEntryParser;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineWriter;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance\BaselineCleaner;
+use Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance\BaselineUpdater;
+use Qualimetrix\Analysis\Policy\Baseline\Explanation\BoundaryExplanationService;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -34,11 +34,11 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds;
-use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\BaselineCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Explanation\BaselineConfiguredThresholds;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Explanation\BaselineExplainCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Maintenance\BaselineCleanupCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Maintenance\BaselineUpdateCommand;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
@@ -59,7 +59,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * the configured definition catalog, which the run populates.
  *
  * So a semantic load *before* the run is judged against an empty vocabulary:
- * {@see \Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser} finds no declaration for
+ * {@see \Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineEntryParser} finds no declaration for
  * the channel, and every entry on a computed metric loads inert. Nothing
  * fails; the entry simply stops meaning anything — while the `check` that
  * applies the very same file, on the very same project, applies it normally.
@@ -202,7 +202,7 @@ final class BaselineRunBeforeLoadTest extends TestCase
         $command = new BaselineCleanupCommand(
             $this->measuredRun($configured),
             new BaselineLoader(new BaselineEntryParser($declarations)),
-            new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
+            new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader(),
             new BaselineCleaner(new FixedClock('2026-09-01T00:00:00+00:00')),
             new BaselineWriter(),
             $declarations,
@@ -219,7 +219,7 @@ final class BaselineRunBeforeLoadTest extends TestCase
         $command = new BaselineUpdateCommand(
             $this->measuredRun($configured),
             new BaselineLoader(new BaselineEntryParser($declarations)),
-            new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
+            new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader(),
             new BaselineUpdater($declarations, new FixedClock('2026-09-01T00:00:00+00:00')),
             new BaselineWriter(),
             StubRuleCoverage::everyRuleRan(),
@@ -235,7 +235,7 @@ final class BaselineRunBeforeLoadTest extends TestCase
         $command = new BaselineExplainCommand(
             $this->measuredRun($configured),
             new BaselineLoader(new BaselineEntryParser($declarations)),
-            new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
+            new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader(),
             new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan(), $declarations),
             new BaselineConfiguredThresholds(self::emptyRuleRegistry(), new RuleOptionsRegistry()),
             $declarations,
@@ -261,7 +261,7 @@ final class BaselineRunBeforeLoadTest extends TestCase
 
     /**
      * A run that resolves a `computed.*` definition on its way to an answer,
-     * exactly as {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator}
+     * exactly as {@see \Qualimetrix\Infrastructure\Console\RunSetup\RuntimeConfigurator}
      * does for a real one.
      */
     private function measuredRun(bool $configured): StubBaselineRun

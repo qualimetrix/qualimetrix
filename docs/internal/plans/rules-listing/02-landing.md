@@ -56,7 +56,7 @@ Nothing is left uncompensated: no published surface moves, and the listing is
 still short until P2.
 
 **P2 — the listing.**
-`src/Infrastructure/Console/Command/RulesCommand.php`,
+`src/Infrastructure/Console/RuleListing/RulesCommand.php`,
 `tests/Infrastructure/Unit/RulesCommandTest.php`,
 `tests/Infrastructure/Integration/RulesCommandWiringTest.php`,
 the new agreement test, the generated artifacts for the added test file, and

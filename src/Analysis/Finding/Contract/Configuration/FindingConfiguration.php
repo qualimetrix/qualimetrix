@@ -7,7 +7,7 @@ namespace Qualimetrix\Analysis\Finding\Contract\Configuration;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ConfigurationDiagnostic;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument;
-use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions;
 use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 

@@ -21,33 +21,31 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
-use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
-use Qualimetrix\Infrastructure\Console\AnalysisPreflightProfile;
-use Qualimetrix\Infrastructure\Console\CheckConfigurationResolvers;
-use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineRenameChannelsCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineRun;
-use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\BaselineCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\ChannelRename\BaselineRenameChannelsCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Explanation\BaselineExplainCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Generation\BaselineGenerateCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Maintenance\BaselineCleanupCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Maintenance\BaselineUpdateCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Measurement\BaselineRun;
 use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
-use Qualimetrix\Infrastructure\Console\Command\DirectivesCommand;
-use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
-use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
-use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Directives\DirectivesCommand;
+use Qualimetrix\Infrastructure\Console\GraphExport\GraphExportCommand;
+use Qualimetrix\Infrastructure\Console\Invocation\Configuration\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
-use Qualimetrix\Infrastructure\Console\ResultPresenter;
-use Qualimetrix\Infrastructure\Console\RuleInputValidator;
+use Qualimetrix\Infrastructure\Console\RuleListing\RulesCommand;
+use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisPreflight;
+use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisPreflightProfile;
+use Qualimetrix\Infrastructure\Console\RunSetup\CheckConfigurationResolvers;
+use Qualimetrix\Infrastructure\Console\RunSetup\FindingConfigurationPreparation;
+use Qualimetrix\Infrastructure\Console\RunSetup\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession;
-use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
 use Qualimetrix\Infrastructure\Rule\ConflictingCliAliasException;
-use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
 use Qualimetrix\Tests\TestSupport\WorkingDirectory\RunsFromRepositoryRoot;
 use ReflectionClass;
@@ -90,7 +88,7 @@ use Throwable;
  * `baseline:rename-channels` is wired identically to the other four
  * `baseline:*` commands (proven in the wiring case) but carries no
  * behavioural case here: it takes no `--config`, resolves no configuration
- * document, and consults {@see \Qualimetrix\Analysis\Policy\Baseline\BaselineChannelRenamer}
+ * document, and consults {@see \Qualimetrix\Analysis\Policy\Baseline\ChannelRename\BaselineChannelRenamer}
  * alone — there is no resolver in its call path to substitute.
  *
  * `baseline:update` and `baseline:cleanup` preflight baseline grammar before
@@ -130,7 +128,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
         self::assertInstanceOf(DirectivesCommand::class, $command);
         $presenter = $container->get(RefusalPresenter::class);
         self::assertInstanceOf(RefusalPresenter::class, $presenter);
-        $application = new \Qualimetrix\Infrastructure\Console\Application(new ErrorStream(), $presenter, static fn() => new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
+        $application = new \Qualimetrix\Infrastructure\Console\Application\Application(new ErrorStream(), $presenter, static fn() => new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $application->addCommand($command);
         $tester = new CommandTester($command);
         $code = $tester->execute([
@@ -258,7 +256,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
             $stream = new ErrorStream();
             $snapshot = $container->get(\Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface::class);
             self::assertInstanceOf(\Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface::class, $snapshot);
-            $application = new \Qualimetrix\Infrastructure\Console\Application($stream, new RefusalPresenter($stream), static fn() => $snapshot);
+            $application = new \Qualimetrix\Infrastructure\Console\Application\Application($stream, new RefusalPresenter($stream), static fn() => $snapshot);
             $application->setAutoExit(false);
             $application->addCommand($command);
             $tester = new ApplicationTester($application);
@@ -279,17 +277,16 @@ final class ConfigurationRefusalRoutingTest extends TestCase
         /** @var RunTargets $targets */
         $targets = $container->get(RunTargets::class);
 
-        $command = new CheckCommand(
-            $this->inert(AnalysisPipelineInterface::class),
-            $this->inert('Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator'),
-            $runtime,
-            $this->realResultPresenter(),
-            $this->realRuleInputValidator(),
-            $this->inert('Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver'),
-            $this->throwingConfigurationInputAdapter(),
-            $this->inert(CheckConfigurationResolvers::class),
-            new RunTargetSession($targets, $this->freshPresenter()),
-        );
+        $original = $container->get(CheckCommand::class);
+        self::assertInstanceOf(CheckCommand::class, $original);
+        $command = \Qualimetrix\Tests\Infrastructure\Console\Support\CheckCommandFixture::replace($original, [
+            'analyzer' => $this->inert(AnalysisPipelineInterface::class),
+            'runtimeConfigurator' => $runtime,
+            'checkScopeResolver' => $this->inert('Qualimetrix\\Infrastructure\\Console\\CheckScope\\CheckScopeResolver'),
+            'configurationInputAdapter' => $this->throwingConfigurationInputAdapter(),
+            'configurationResolvers' => $this->inert(CheckConfigurationResolvers::class),
+            'runTargetSession' => new RunTargetSession($targets, $this->freshPresenter()),
+        ]);
 
         $tester = new CommandTester($command);
         $code = $tester->execute(['paths' => ['src']], ['capture_stderr_separately' => true]);
@@ -324,12 +321,12 @@ final class ConfigurationRefusalRoutingTest extends TestCase
         // helper `itAnswersTheCarrierWithExitThreeInDirectives` already
         // builds, reused here rather than duplicated. `resolve()` reaches the
         // throwing `ConfigurationInputAdapter` before any of the run/cache/
-        // parallel resolvers or `RuleInputValidator` it bundles, so those
+        // parallel resolvers or `FindingConfigurationPreparation` it bundles, so those
         // stay inert.
         $command = new LayerAssignmentCommand(
             $this->realAnalysisPreflight(),
             AnalysisPreflightProfile::analysis(),
-            $this->inert('Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver'),
+            $this->inert('Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentResolver'),
             $this->freshPresenter(),
         );
 
@@ -347,8 +344,8 @@ final class ConfigurationRefusalRoutingTest extends TestCase
         $errorStream = new ErrorStream();
         $command = new BaselineGenerateCommand(
             $this->realBaselineRun(),
-            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineGenerator'),
-            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineWriter'),
+            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\Capture\\BaselineGenerator'),
+            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\DocumentWriting\\BaselineWriter'),
             $errorStream,
         );
         $command->setRefusalPresenter(new RefusalPresenter($errorStream));
@@ -369,11 +366,11 @@ final class ConfigurationRefusalRoutingTest extends TestCase
     {
         $command = new BaselineUpdateCommand(
             $this->realBaselineRun(),
-            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader'),
-            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentReader'),
-            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineUpdater'),
-            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineWriter'),
-            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\RunRuleCoverage'),
+            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\DocumentReading\\BaselineLoader'),
+            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\DocumentAccess\\BaselineDocumentReader'),
+            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\EntryMaintenance\\BaselineUpdater'),
+            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\DocumentWriting\\BaselineWriter'),
+            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\RunCoverage\\RunRuleCoverage'),
         );
         $command->setRefusalPresenter($this->freshPresenter());
 
@@ -393,12 +390,12 @@ final class ConfigurationRefusalRoutingTest extends TestCase
     {
         $command = new BaselineCleanupCommand(
             $this->realBaselineRun(),
-            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader'),
-            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentReader'),
-            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineCleaner'),
-            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineWriter'),
-            $this->inert('Qualimetrix\\Analysis\\Finding\\Contract\\ChannelDeclarationRegistryInterface'),
-            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\RunRuleCoverage'),
+            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\DocumentReading\\BaselineLoader'),
+            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\DocumentAccess\\BaselineDocumentReader'),
+            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\EntryMaintenance\\BaselineCleaner'),
+            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\DocumentWriting\\BaselineWriter'),
+            $this->inert('Qualimetrix\\Analysis\\Finding\\Contract\\Channel\\ChannelDeclarationRegistryInterface'),
+            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\RunCoverage\\RunRuleCoverage'),
         );
         $command->setRefusalPresenter($this->freshPresenter());
 
@@ -418,11 +415,11 @@ final class ConfigurationRefusalRoutingTest extends TestCase
     {
         $command = new BaselineExplainCommand(
             $this->realBaselineRun(),
-            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader'),
-            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentReader'),
-            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BoundaryExplanationService'),
-            $this->inert('Qualimetrix\\Infrastructure\\Console\\Command\\BaselineConfiguredThresholds'),
-            $this->inert('Qualimetrix\\Analysis\\Finding\\Contract\\ChannelDeclarationRegistryInterface'),
+            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\DocumentReading\\BaselineLoader'),
+            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\DocumentAccess\\BaselineDocumentReader'),
+            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\Explanation\\BoundaryExplanationService'),
+            $this->inert('Qualimetrix\\Infrastructure\\Console\\Command\\Baseline\\Explanation\\BaselineConfiguredThresholds'),
+            $this->inert('Qualimetrix\\Analysis\\Finding\\Contract\\Channel\\ChannelDeclarationRegistryInterface'),
         );
         $command->setRefusalPresenter($this->freshPresenter());
 
@@ -483,21 +480,20 @@ final class ConfigurationRefusalRoutingTest extends TestCase
         /** @var RunTargets $targets */
         $targets = $container->get(RunTargets::class);
 
-        $command = new CheckCommand(
-            $this->inert(AnalysisPipelineInterface::class),
-            $this->inert('Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator'),
-            $runtime,
-            $this->realResultPresenter(),
-            $this->realRuleInputValidator(),
-            $this->inert('Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver'),
-            $this->throwingConfigurationInputAdapter(new ConflictingCliAliasException(
+        $original = $container->get(CheckCommand::class);
+        self::assertInstanceOf(CheckCommand::class, $original);
+        $command = \Qualimetrix\Tests\Infrastructure\Console\Support\CheckCommandFixture::replace($original, [
+            'analyzer' => $this->inert(AnalysisPipelineInterface::class),
+            'runtimeConfigurator' => $runtime,
+            'checkScopeResolver' => $this->inert('Qualimetrix\\Infrastructure\\Console\\CheckScope\\CheckScopeResolver'),
+            'configurationInputAdapter' => $this->throwingConfigurationInputAdapter(new ConflictingCliAliasException(
                 'complexity.cyclomatic',
                 'security.hardcoded-credentials',
                 '--strict',
             )),
-            $this->inert(CheckConfigurationResolvers::class),
-            new RunTargetSession($targets, $this->freshPresenter()),
-        );
+            'configurationResolvers' => $this->inert(CheckConfigurationResolvers::class),
+            'runTargetSession' => new RunTargetSession($targets, $this->freshPresenter()),
+        ]);
 
         $tester = new CommandTester($command);
         $code = $tester->execute(['paths' => ['src']]);
@@ -539,63 +535,14 @@ final class ConfigurationRefusalRoutingTest extends TestCase
         return $configurator;
     }
 
-    /**
-     * Only `writeDiagnostic()` — which writes through `ErrorStream` — is
-     * exercised by the cases in this class; every other collaborator is
-     * inert.
-     */
-    private function realResultPresenter(): ResultPresenter
-    {
-        return new ResultPresenter(
-            $this->inert('Qualimetrix\\Reporting\\Formatter\\FormatterRegistryInterface'),
-            $this->inert('Qualimetrix\\Core\\Profiler\\Contract\\ProfilerInterface'),
-            $this->inert('Qualimetrix\\Reporting\\Health\\SummaryEnricher'),
-            $this->inert('Qualimetrix\\Infrastructure\\Console\\ProfilePresenter'),
-            $this->inert('Qualimetrix\\Infrastructure\\Console\\ExitCodeResolver'),
-            $this->inert('Qualimetrix\\Reporting\\DrillDown\\FindingFilter'),
-            $this->inert('Qualimetrix\\Infrastructure\\Console\\FormatterContextFactory'),
-            $this->inert('Qualimetrix\\Analysis\\Finding\\Contract\\RuleConfigurationInterface'),
-            new ErrorStream(),
-        );
-    }
-
-    private function realRuleInputValidator(): RuleInputValidator
-    {
-        // Only its constructor runs before the carrier is thrown
-        // (`configure()` calls `configureCheckCommand()`, which reads
-        // `RuleRegistryInterface::getClasses()`/`getAllCliAliases()`); every
-        // other collaborator is inert.
-        $ruleRegistry = new class implements RuleRegistryInterface {
-            public function getClasses(): array
-            {
-                return [];
-            }
-
-            public function getAllCliAliases(): array
-            {
-                return [];
-            }
-        };
-
-        return new RuleInputValidator(
-            new RuleOptionDocumentForms(),
-            $ruleRegistry,
-            $this->inert('Qualimetrix\\Infrastructure\\Rule\\Contract\\RuleChannelSnapshotFactoryInterface'),
-            new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
-            $this->inert('Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Configuration\\ComputedMetricConfiguratorInterface'),
-            new \Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver(),
-            self::createStub(\Qualimetrix\Analysis\Policy\Architecture\Contract\UnassignedClassLayerRequirementInterface::class),
-        );
-    }
-
     private function realAnalysisPreflight(): AnalysisPreflight
     {
-        return new AnalysisPreflight($this->realRuntimeConfigurator(), $this->throwingConfigurationInputAdapter(), new \Qualimetrix\Infrastructure\Console\RunConfigurationPreparation($this->inert(RunConfigurationResolverInterface::class), $this->inert(CacheConfigurationResolverInterface::class), $this->inert(ParallelConfigurationResolverInterface::class)), $this->inert('Qualimetrix\\Infrastructure\\Console\\RuleInputValidator'));
+        return new AnalysisPreflight($this->realRuntimeConfigurator(), $this->throwingConfigurationInputAdapter(), new \Qualimetrix\Infrastructure\Console\RunSetup\RunConfigurationPreparation($this->inert(RunConfigurationResolverInterface::class), $this->inert(CacheConfigurationResolverInterface::class), $this->inert(ParallelConfigurationResolverInterface::class)), $this->inert('Qualimetrix\\Infrastructure\\Console\\RunSetup\\FindingConfigurationPreparation'));
     }
 
     private function realBaselineRun(): BaselineRun
     {
-        return new BaselineRun($this->realRuntimeConfigurator(), $this->inert('Qualimetrix\\Infrastructure\\Console\\MeasuredFindingSet'), $this->inert('Qualimetrix\\Infrastructure\\Console\\RuleInputValidator'), $this->throwingConfigurationInputAdapter(), new \Qualimetrix\Infrastructure\Console\RunConfigurationPreparation($this->inert(RunConfigurationResolverInterface::class), $this->inert(CacheConfigurationResolverInterface::class), $this->inert(ParallelConfigurationResolverInterface::class)), $this->inert(ConfiguredFindingExclusionsResolverInterface::class), new ErrorStream(), $this->inert(\Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface::class), $this->inert(\Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface::class));
+        return new BaselineRun($this->realRuntimeConfigurator(), $this->inert('Qualimetrix\\Infrastructure\\Console\\BaselineCommand\\MeasuredFindingSet'), $this->inert('Qualimetrix\\Infrastructure\\Console\\RunSetup\\FindingConfigurationPreparation'), $this->throwingConfigurationInputAdapter(), new \Qualimetrix\Infrastructure\Console\RunSetup\RunConfigurationPreparation($this->inert(RunConfigurationResolverInterface::class), $this->inert(CacheConfigurationResolverInterface::class), $this->inert(ParallelConfigurationResolverInterface::class)), $this->inert(ConfiguredFindingExclusionsResolverInterface::class), new ErrorStream(), $this->inert(\Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface::class), $this->inert(\Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface::class));
     }
 
     private function nonExistentBaselinePath(): string

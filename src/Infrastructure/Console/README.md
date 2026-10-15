@@ -14,91 +14,159 @@ CLI application based on Symfony Console with support for:
 
 ```
 Console/
-├── Application.php
-├── ConsoleDiagnostics.php       # immutable process/container diagnostic identity
-├── ProductCommandLoader.php     # product name map and lazy container boundary
-├── ContainerBuildFailure.php    # internal composition failure, never an input refusal
-├── CliSelectorDecoder.php       # explicit kind:value scalar → Core path/namespace pattern
-├── CliOptionsParser.php
-├── AuthoredRuleOptionWrites.php    # preserves authored occurrences across input adapters
-├── RuleOptionArgv.php              # repeated argv tokens and their original ordinal
-├── CliRuleOptionAddressing.php     # alias admission and the declared option address
-├── ConfigurationInputAdapter.php   # shared document and CLI ingress
-├── ConfigurationDiagnosticsPublisher.php # warnings and source diagnostics on the error stream
-├── RuleListingPresenter.php        # producer rows, computed footer and selection sources
-├── MeasuredFindingSet.php         # The set a baseline measures (ADR 0017): the pipeline's findings before the baseline stage. Defined by configuration alone — qmx.yaml, source annotations, and the config CLI flags baseline commands share with check (--preset, --disable-rule, --only-rule, --include-generated, --include-autoload-dev), which can narrow or widen it; check's own --suppress-path/--suppress-namespace flags never reach it, since baseline commands deliberately omit them
-├── FindingFilterOrchestrator.php  # Builds Reporting projection options and renders stage diagnostics; policy and ordering remain in Reporting
-├── BaselineProjectionCoverage.php # Carries the completed run's evidence into baseline projection
-├── BaselineFilterReporter.php     # Private count-only unused/uncompared diagnostics with the selected error writer
-├── DirectiveAuditTextPresenter.php # Private text wording; the facade owns shared text/JSON values
-├── ExitPolicySection.php            # every writing layer's fail_on value, using the resolved ExitPolicy validator
-├── MemoryLimitSection.php           # every writing layer's memory_limit syntax, using RuntimeLimits
-├── RuntimeConfigurator.php
-├── AnalysisPreflightProfile.php     # Closed analysis and graph consumer profiles
-├── AnalysisInputPathValidator.php   # Missing path and explicit non-PHP regular-file refusal
-├── ProjectSourceConfigurator.php    # Current manifest facts, namespace binding and DIT install anchor
-├── RuntimeLoggerConfigurator.php    # Creates, publishes, and returns the logger for one run
-├── AnalysisRuntimeConfigurator.php  # Prepares and commits per-run rule, collector and feature state
-├── PreparedAnalysisRuntimeConfiguration.php # Accepted analysis values before stores commit
-├── RunConfigurationPreparation.php  # Resolves the run, cache and parallel values together
-├── ResolvedRunConfiguration.php     # Immutable accepted run/cache/parallel values
-├── ObservedProjectScopeReasons.php  # Projects already observed source issues and install-root omissions
-├── CheckScopeResolver.php           # Pure transfer of the initial measurement after Git resolution
-├── ResolvedCheckScope.php           # Resolved Git scope plus deferred warning messages
-├── ErrorStream.php                   # The run's single error-stream owner: the progress section and every diagnostic writer
-├── OutputEncoding.php               # Closed QMX_ASCII environment-value judgement inside the application exit ladder
-├── GlyphOutput.php                  # Diagnostic writer preserving Symfony's output settings
-├── GlyphConsoleSection.php          # Encodes before native progress/diagnostic section bookkeeping
-├── Refusal/
-│   ├── ConsoleExitCode.php             # shared terminal exit vocabulary
-│   ├── MachineReadableFormats.php      # formats that publish a structured refusal
-│   ├── EnvironmentRefusal.php          # storage and delivery refusal wording
-│   ├── FileTargetRefusal.php           # Core failure kind to refusal family
-│   └── RefusalPresenter.php            # terminal classification and stream publication
-├── RuleInputValidator.php            # Fail-closed selector/option-owner validation
-├── ChannelExclusionKeyValidator.php  # Whether one suppress_namespace_channels key can exclude anything
-├── ChannelExclusionKeyHints.php      # What to say when it cannot
-├── ResultPresenter.php
-├── RenderedCheckReport.php          # rendered check answer awaiting profile and report publication
-├── ReportCoverageProjection.php     # The run's coverage as a report publishes it, failures relative to the project
-├── RunTarget/
-│   ├── RunTargets.php               # shared preparation, publication and teardown for report/profile/log
-│   ├── RunTargetClaimLifecycle.php # claimed resources, staged publication, signal ownership and cleanup
-│   ├── StagedSignalGuard.php        # scoped interruption and restoration for staged targets
-│   ├── RunTargetSession.php         # command outcome, cleanup and terminal classification
-│   ├── TargetAccess.php             # pure CLI target-access judgement
-│   ├── TargetCollisions.php         # identity/name conflicts before and after claim
-│   └── ProcessStreams.php           # current descriptor identity and Linux access-mode inspection
-├── CommandLineSpelling.php          # An option or argument value as argv would spell it; every valued door reads through it
-├── FormatOptionPairs.php            # The --format-opt door: every written pair judged, a repeated key and two spellings of one value refused
-├── CheckCommandDefinition.php
-├── FilteredInputDefinition.php      # InputDefinition that hides rule-specific options from --help
-├── OutputHelper.php                 # answer publication at quiet verbosity with checked stream writes
-├── RunningBinaryLocator.php         # Where the qmx binary running this process lives on disk
-├── RunningBinaryLocatorInterface.php
+├── Application/
+│   ├── Application.php
+│   ├── ConsoleDiagnostics.php
+│   ├── ContainerBuildFailure.php
+│   ├── ProductCommandLoader.php
+│   ├── RunningBinaryLocator.php
+│   └── RunningBinaryLocatorInterface.php
+├── BaselineCommand/
+│   ├── BaselineProjectionCoverage.php
+│   ├── MeasuredAnalysisRun.php
+│   └── MeasuredFindingSet.php
+├── CacheLifecycle/
+│   └── CacheRunLifecycle.php
+├── Check/
+│   └── CheckCommand.php
+├── CheckReport/
+│   ├── BaselineFilterReporter.php
+│   ├── BoundCheckReportFormat.php
+│   ├── CheckFindingProjection.php
+│   ├── CheckReportDelivery.php
+│   ├── CheckReportRenderer.php
+│   ├── CheckResponse.php
+│   ├── FindingDiagnostics.php
+│   ├── FindingProjection.php
+│   ├── FormatterContextFactory.php
+│   ├── RenderedCheckReport.php
+│   ├── ReportAssembler.php
+│   ├── ReportCoverageProjection.php
+│   └── ReportFormatter.php
+├── CheckScope/
+│   ├── CheckScopeResolver.php
+│   ├── FindingProjectionOptionsResolver.php
+│   ├── ObservedProjectScopeReasons.php
+│   ├── ProjectScopePresenter.php
+│   ├── ResolvedCheckScope.php
+│   └── ScopeWarningChecker.php
+├── Command/
+│   ├── Baseline/
+│   │   ├── ChannelRename/
+│   │   │   ├── BaselineRenameChannelsCommand.php
+│   │   │   └── ChannelRenameReporter.php
+│   │   ├── Explanation/
+│   │   │   ├── BaselineConfiguredThresholds.php
+│   │   │   ├── BaselineExplainCommand.php
+│   │   │   └── BaselineExplanationRenderer.php
+│   │   ├── Generation/
+│   │   │   ├── BaselineCaptureReporter.php
+│   │   │   └── BaselineGenerateCommand.php
+│   │   ├── Maintenance/
+│   │   │   ├── BaselineCleanupCommand.php
+│   │   │   ├── BaselineUpdateCommand.php
+│   │   │   └── BaselineUpdateInvocation.php
+│   │   ├── Measurement/
+│   │   │   └── BaselineRun.php
+│   │   ├── BaselineCommand.php
+│   │   ├── BaselineCommandDefinition.php
+│   │   ├── BaselineRunContext.php
+│   │   ├── BaselineRunInterface.php
+│   │   └── LoadedBaselineRun.php
+│   └── Debug/
+│       ├── LayerAssignmentCommand.php
+│       ├── LayerAssignmentJsonPresenter.php
+│       ├── LayerAssignmentResolver.php
+│       └── LayerAssignmentTextPresenter.php
+├── Directives/
+│   ├── DirectiveAuditPresenter.php
+│   ├── DirectiveAuditTextPresenter.php
+│   ├── DirectiveVerdictTally.php
+│   └── DirectivesCommand.php
+├── GraphExport/
+│   └── GraphExportCommand.php
 ├── Hook/
-│   ├── HookFileTransaction.php   # identity-fenced hook publication, backup and restoration
-│   ├── HookBackupTransaction.php # judged, identity-fenced creation of a hook backup
-│   ├── HookEntryAccess.php         # shared guarded hook IO, identity checks and exposure warnings
-│   └── PreCommitHook.php            # The generated pre-commit hook: its text, its marker, and what counts as ours
-├── LayerAssignmentResolver.php      # Rebuilds collected project state for layer-assignment inspection
+│   ├── AbstractHookCommand.php
+│   ├── HookBackupTransaction.php
+│   ├── HookEntryAccess.php
+│   ├── HookFileTransaction.php
+│   ├── HookInstallCommand.php
+│   ├── HookStatusCommand.php
+│   ├── HookUninstallCommand.php
+│   └── PreCommitHook.php
+├── Invocation/
+│   ├── CommandDefinition/
+│   │   ├── AnalysisReportCommandDefinition.php
+│   │   ├── CheckCommandDefinition.php
+│   │   └── FilteredInputDefinition.php
+│   ├── Configuration/
+│   │   ├── ConfigurationInputAdapter.php
+│   │   └── WorkerCountParser.php
+│   ├── RuleOptions/
+│   │   ├── AuthoredRuleOptionWrites.php
+│   │   ├── CliOptionsParser.php
+│   │   ├── CliRuleOptionAddressing.php
+│   │   └── RuleOptionArgv.php
+│   ├── CliSelectorDecoder.php
+│   ├── CommandLineSpelling.php
+│   └── FormatOptionPairs.php
+├── Profile/
+│   ├── ProfilePresenter.php
+│   └── ProfileSummaryRenderer.php
 ├── Progress/
 │   ├── ConsoleProgressBar.php
-│   ├── ProgressConfigurator.php      # Whether this run shows a frame, and on what
+│   ├── ProgressConfigurator.php
 │   └── SwitchableProgressReporter.php
-└── Command/
-    ├── CheckCommand.php             # Main analysis command
-    ├── AbstractHookCommand.php      # Shared by the three below: locate the repository, spell hooks/pre-commit, refuse once
-    ├── BaselineCleanupCommand.php   # Cleanup stale baseline entries
-    ├── BaselineUpdateInvocation.php # Document and selected update action for one invocation
-    ├── GraphExportCommand.php       # Export dependency graph (DOT, JSON)
-    ├── HookInstallCommand.php       # Install pre-commit hook
-    ├── HookStatusCommand.php        # Check hook status
-    ├── HookUninstallCommand.php     # Remove pre-commit hook
-    └── Debug/
-        ├── LayerAssignmentCommand.php # Validate input, configure runtime, and route presentation
-        ├── LayerAssignmentJsonPresenter.php # Render the complete assignment as JSON
-        └── LayerAssignmentTextPresenter.php # Render measured layer assignments as text
+├── Refusal/
+│   ├── ConsoleExitCode.php
+│   ├── EnvironmentRefusal.php
+│   ├── FileTargetRefusal.php
+│   ├── MachineReadableFormats.php
+│   ├── OutOfMemoryHint.php
+│   └── RefusalPresenter.php
+├── RuleListing/
+│   ├── RuleListingPresenter.php
+│   └── RulesCommand.php
+├── RunSetup/
+│   ├── AnalysisInputPathValidator.php
+│   ├── AnalysisPreflight.php
+│   ├── AnalysisPreflightProfile.php
+│   ├── AnalysisRuntimeConfigurator.php
+│   ├── CheckConfigurationResolvers.php
+│   ├── CheckResolvedConfiguration.php
+│   ├── ConfigurationDiagnosticsPublisher.php
+│   ├── FindingConfigurationPreparation.php
+│   ├── PreparedAnalysisInput.php
+│   ├── PreparedAnalysisRuntimeConfiguration.php
+│   ├── ProjectSourceConfigurator.php
+│   ├── ResolvedRunConfiguration.php
+│   ├── RunConfigurationPreparation.php
+│   └── RuntimeConfigurator.php
+├── RunTarget/
+│   ├── ProcessStreams.php
+│   ├── RunTargetClaimLifecycle.php
+│   ├── RunTargetSession.php
+│   ├── RunTargets.php
+│   ├── StagedSignalGuard.php
+│   ├── TargetAccess.php
+│   └── TargetCollisions.php
+├── RuntimePolicy/
+│   ├── ExitCodeResolver.php
+│   ├── ExitPolicy.php
+│   ├── ExitPolicySection.php
+│   ├── MemoryLimitSection.php
+│   ├── RuntimeEffects.php
+│   ├── RuntimeLimits.php
+│   ├── RuntimeLimitsController.php
+│   └── RuntimeLoggerConfigurator.php
+└── Terminal/
+    ├── ReportPublication/
+    │   ├── OutputHelper.php
+    │   └── ReportPublication.php
+    ├── ErrorStream.php
+    ├── GlyphConsoleSection.php
+    ├── GlyphOutput.php
+    └── OutputEncoding.php
 ```
 
 `ExitPolicySection` and `MemoryLimitSection` declare the Console-owned
@@ -116,6 +184,70 @@ threshold-override maps. Console reads `findings()` for execution publication
 plus late findings. Baseline's `MeasuredAnalysisRun.findings` remains its
 post-suppression set; it is not the pipeline's late-published list. Hand-built
 fixtures without rule execution explicitly pass null and their findings as late.
+
+`Hook`, `RuleListing` and `Directives` keep their commands beside their
+existing publication and lifecycle operations. `Check` and `GraphExport` are
+distinct user operations; the `Command` root is navigation only.
+
+Baseline's common invocation owns `BaselineRunInterface` and its returned
+`BaselineRunContext`, together with the shared scope guard. Its measurement
+implementation lives in `Measurement`; generation, entry maintenance, channel
+rename and explanation retain their own command operations. The configured
+threshold reader belongs to explanation.
+
+`Invocation/CommandDefinition` owns declared command forms and help visibility;
+`RuleOptions` preserves authored rule-option occurrences and binds them to
+document writes; `Configuration` constructs the configuration request, including
+workers parsing. Common scalar spelling and selectors stay in `Invocation`.
+`Terminal/ReportPublication` publishes serialized reports and prose command
+reports through checked stdout or held-target writes. The single stderr and
+progress-frame owner, its sections and glyph mode stay in `Terminal`.
+
+## Response and runtime operations
+
+`Invocation` owns CLI spelling, option definitions and worker-count parsing.
+`WorkerCountParser` applies PHP's integer validator before a CLI worker value
+enters the document, including the graph profile. YAML values remain subject to
+Parallel's own semantic validation.
+
+`CheckConfigurationResolvers` resolves run/cache/parallel, exclusions, output
+format and Finding configuration from the same document in that order. The
+mandatory `CheckResolvedConfiguration` result carries those accepted parts.
+Resolved-format binding and ExitPolicy judgement retain their order before
+runtime commit; the configuration resolver performs no runtime effects.
+
+`CheckScopeResolver` accepts Git scope, validates selected paths, publishes scope
+warnings and preflights projection selectors and baseline in that order. Its
+mandatory `ResolvedCheckScope.projectionOptions` is the same value late
+projection receives. Scope preparation finishes before targets are claimed,
+cache is cleared or analysis starts; it does not reread the manifest or document.
+
+`RunSetup` resolves and commits accepted owner values. `RuntimeEffects` owns
+limits, logger, progress and profiler effects after that commit; those effects
+are fallible and do not roll committed stores back. `CacheRunLifecycle` resets
+cache state and reports discarded entries once across both session and loader
+completion. The committed ComputedMetrics catalog intentionally has no reset.
+
+`CheckScope` binds projection selectors and preflights the baseline before
+claiming targets. Its `ProjectScopePresenter` reads the pipeline's final measured
+scope. `FindingProjection` performs late projection and population accounting;
+`FindingDiagnostics` publishes baseline, annotation and exclusion diagnostics
+through the shared `ErrorStream`.
+
+`ReportAssembler` constructs the report, including computed evaluation,
+population, drill-down and suppression composition. `ReportFormatter` binds one
+formatter instance and preserves its structured or prose publication contract.
+`CheckReportRenderer` owns the reporting span and calculates the whole-run exit
+before report drill-down can hide findings. `ReportPublication` owns terminal
+and held-target report delivery.
+
+`CheckReportDelivery` prepares one invocation-local `CheckResponse`. The response
+starts analysis only after the command's remaining preflight and target claim,
+then projects findings, settles targets, renders, records one profile outcome,
+exports the profile, settles targets again, publishes the report and marks
+publication. The once flag is set before profile export, so an export failure
+cannot retry the profile or publish the ready report. Graph and baseline runs
+do not enter this check-only response operation.
 
 ## Commands
 
@@ -138,7 +270,7 @@ directory alone is not missing PHP evidence.
 Finding's single `ProjectScopeJudgement` travels in the result/context and copied
 threshold contexts. Declaration absence and exclude-selector completeness are
 separate questions; Console does not synthesize another coverage boolean.
-`FindingFilterOrchestrator` uses that judgement for per-value suppression binding.
+`FindingProjection` uses that judgement for per-value suppression binding.
 It reads the final measurement's single `ValueScopeJudgement` for both late
 suppression findings and skipped-value reporting. The main manifest source and
 state also come from Run's captured facts, without another Console read.
@@ -179,7 +311,7 @@ and delegates binding and PCRE validation to Core. `CliOptionsParser` retains
 the Finding-owned `RULE:OPTION=VALUE` grammar; selector-valued rule options are
 wired only once their Finding owners accept the bound values.
 
-`RuleInputValidator` validates selectors against one immutable rule-channel
+`FindingConfigurationPreparation` validates selectors against one immutable rule-channel
 snapshot for the resolved run. The snapshot is assembled by Infrastructure Rule
 from `ResolvedComputedMetricDefinitions`; Console consumes only that resolved
 snapshot while processing the invocation.
@@ -266,7 +398,7 @@ refuses an empty value for the five doors whose owners would read it as
 "not given" (`--config`, `--preset`, `--baseline`, `--output`, `--report`), and
 `ProfilePresenter::refuseImpossibleExport()` refuses a `--profile-format` outside
 its closed set and a `--profile` target the export cannot be written to, and
-`ResultPresenter::assertOutputIsWritable()` the same for `--output` — all before
+`ReportPublication::assertOutputIsWritable()` the same for `--output` — all before
 analysis. `RunTargets` owns report, profile and log target judgement, collision
 checks. Its private `RunTargetClaimLifecycle` owns held resources, staged
 publication, signal ownership and teardown; `TargetCollisions` judges target

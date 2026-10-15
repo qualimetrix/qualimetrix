@@ -10,8 +10,8 @@ use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
 use Qualimetrix\Core\FileTarget\ResolvedTarget;
 use Qualimetrix\Core\FileTarget\TargetKind;
 use Qualimetrix\Core\FileTarget\TargetPath;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /** Shared guarded access to hook entries and their exposure warnings. */

@@ -186,9 +186,9 @@ final class ErrorSuppressionRuleTest extends TestCase
         $repository->method('get')
             ->willReturn($metricBag);
 
-        $channel = new \Qualimetrix\Analysis\Finding\Contract\FindingChannel(ErrorSuppressionRule::NAME);
-        $publication = new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement([
-            new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(ErrorSuppressionRule::NAME, $channel, SymbolLevel::File, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct)),
+        $channel = new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel(ErrorSuppressionRule::NAME);
+        $publication = new \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement([
+            new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(ErrorSuppressionRule::NAME, $channel, SymbolLevel::File, \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct)),
         ], null));
         $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(($publication)->publishes(...));
         $context = (new AnalysisContext($repository))->withPopulationTrace($session);

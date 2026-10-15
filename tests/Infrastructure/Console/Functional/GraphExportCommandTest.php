@@ -12,12 +12,12 @@ use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Core\ProductIdentity;
-use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
-use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\GraphExport\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Qualimetrix\Reporting\GraphProjection\DependencyGraphProjector;
@@ -456,8 +456,8 @@ final class GraphExportCommandTest extends TestCase
             self::assertStringNotContainsString('Excluded', $tester->getDisplay());
             self::assertStringNotContainsString('Outside', $tester->getDisplay());
 
-            $check = (new ContainerFactory())->create()->get(\Qualimetrix\Infrastructure\Console\Command\CheckCommand::class);
-            self::assertInstanceOf(\Qualimetrix\Infrastructure\Console\Command\CheckCommand::class, $check);
+            $check = (new ContainerFactory())->create()->get(\Qualimetrix\Infrastructure\Console\Check\CheckCommand::class);
+            self::assertInstanceOf(\Qualimetrix\Infrastructure\Console\Check\CheckCommand::class, $check);
             $checked = new CommandTester($check);
             self::assertSame(0, $checked->execute(['--workers' => '0']));
             $report = json_decode($checked->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);

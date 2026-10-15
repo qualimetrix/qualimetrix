@@ -12,16 +12,16 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
+use Qualimetrix\Analysis\Policy\Baseline\Capture\BaselineGenerator;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineWriter;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Generation\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
@@ -136,8 +136,8 @@ final class BaselineGenerateCommandTest extends TestCase
         $ready = $this->tempDir . '/ready';
         $script = <<<'PHP'
 require $argv[1];
-$error = new \Qualimetrix\Infrastructure\Console\ErrorStream();
-$command = new \Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand(
+$error = new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream();
+$command = new \Qualimetrix\Infrastructure\Console\Command\Baseline\Generation\BaselineGenerateCommand(
     new \Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubBaselineRun(
         [],
         ['src'],
@@ -147,11 +147,11 @@ $command = new \Qualimetrix\Infrastructure\Console\Command\BaselineGenerateComma
             sleep(10);
         },
     ),
-    new \Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator(
+    new \Qualimetrix\Analysis\Policy\Baseline\Capture\BaselineGenerator(
         \Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry::withDefaults(),
         new \Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock(),
     ),
-    new \Qualimetrix\Analysis\Policy\Baseline\BaselineWriter(),
+    new \Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineWriter(),
     $error,
 );
 $command->setRefusalPresenter(new \Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter($error));

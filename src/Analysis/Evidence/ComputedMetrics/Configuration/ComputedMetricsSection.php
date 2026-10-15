@@ -11,7 +11,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\RefusedName;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**

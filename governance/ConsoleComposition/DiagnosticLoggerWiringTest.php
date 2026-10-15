@@ -75,7 +75,7 @@ final class DiagnosticLoggerWiringTest extends TestCase
      */
     private const array COMPOSED_HOLDERS = [
         'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Evaluation\\ComputedMetricEvaluator',
-        'Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceRule',
+        'Qualimetrix\\Analysis\\Evidence\\Coupling\\Distance\\DistanceRule',
         'Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule',
         'Qualimetrix\\Analysis\\Evidence\\Duplication\\DuplicationDetector',
         'Qualimetrix\\Analysis\\Evidence\\Measurement\\Aggregation\\MeasurementAggregationService',
@@ -83,7 +83,7 @@ final class DiagnosticLoggerWiringTest extends TestCase
         'Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline',
         'Qualimetrix\\Infrastructure\\Ast\\PhpFileParser',
         'Qualimetrix\\Infrastructure\\Composer\\ComposerAutoloadMap',
-        'Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand',
+        'Qualimetrix\\Infrastructure\\Console\\GraphExport\\GraphExportCommand',
         'Qualimetrix\\Infrastructure\\Git\\GitScopeResolver',
         'Qualimetrix\\Infrastructure\\Git\\ReportingGitScopeQuery',
         'Qualimetrix\\Infrastructure\\Parallel\\Strategy\\AmphpParallelStrategy',

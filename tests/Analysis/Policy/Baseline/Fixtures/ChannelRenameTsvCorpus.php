@@ -10,7 +10,7 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Fixtures;
  * The finding gate reads `finding-gate/maps/channels.tsv` with
  * `QmxFindingGate\Tsv`, which lives in `scripts/` and is not on the
  * production autoloader; the product reads the same shape with
- * {@see \Qualimetrix\Analysis\Policy\Baseline\ChannelRenameMap}. They are two
+ * {@see \Qualimetrix\Analysis\Policy\Baseline\ChannelRename\ChannelRenameMap}. They are two
  * implementations, so "the same format" is a claim, and this corpus is what
  * makes it checkable: every case states what each consumer does with it, and
  * the five cases where the two deliberately disagree say why in the same

@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
-use Qualimetrix\Analysis\Finding\Contract\AcceptedLevel;
+use Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -43,7 +43,7 @@ final class TextFormatterTest extends TestCase
     public function itPublishesPopulationBeforeEmptyDataReturnsAndKeepsReasonsVerbose(): void
     {
         $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
-        $trace->record('fixture.rule', new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('fixture.channel'), \Qualimetrix\Core\Symbol\SymbolLevel::Project, \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::selector('project:fixture', 'project'), 'published', 'The fixture value is absent.');
+        $trace->record('fixture.rule', new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel('fixture.channel'), \Qualimetrix\Core\Symbol\SymbolLevel::Project, \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::selector('project:fixture', 'project'), 'published', 'The fixture value is absent.');
         $report = new \Qualimetrix\Reporting\Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 0, 0, 0, 0, 0, population: $trace->freeze());
         $compact = $this->formatter->format($report, new FormatterContext(useColor: false))->body;
         self::assertSame(1, substr_count($compact, 'Rule population incomplete'));
@@ -82,7 +82,7 @@ final class TextFormatterTest extends TestCase
             severity: Severity::Warning,
             metricValue: 31,
             recommendation: 'Recommended repair',
-        )->reportedUncompared(new \Qualimetrix\Analysis\Finding\Contract\AcceptedLevel([25.0], 1), 'analysis-incomplete');
+        )->reportedUncompared(new \Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel([25.0], 1), 'analysis-incomplete');
         $output = $this->formatter->format(ReportBuilder::create()->addFinding($finding)->filesAnalyzed(1)->build(), $this->plainContext)->body;
         self::assertStringContainsString('accepted at 25; not compared: analysis-incomplete', $output);
         self::assertStringNotContainsString('now 31', $output);
@@ -767,7 +767,7 @@ final class TextFormatterTest extends TestCase
     }
 
     /** @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations */
-    private static function finding(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $code, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Finding
+    private static function finding(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $code, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Finding
     {
         $subject ??= match ($symbolPath->getType()) {
             \Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),

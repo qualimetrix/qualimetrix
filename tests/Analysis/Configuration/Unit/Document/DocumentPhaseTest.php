@@ -23,13 +23,13 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
-use Qualimetrix\Analysis\Configuration\Document\KeyClaims;
-use Qualimetrix\Analysis\Configuration\Document\KeyRecognition;
 use Qualimetrix\Analysis\Configuration\Document\LayerReading;
-use Qualimetrix\Analysis\Configuration\Document\NameRecognition;
+use Qualimetrix\Analysis\Configuration\Document\NameBinding\KeyClaims;
+use Qualimetrix\Analysis\Configuration\Document\NameBinding\KeyRecognition;
+use Qualimetrix\Analysis\Configuration\Document\NameBinding\NameRecognition;
+use Qualimetrix\Analysis\Configuration\Document\NameBinding\WrittenNames;
 use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedScalar;
 use Qualimetrix\Analysis\Configuration\Document\WrittenForm;
-use Qualimetrix\Analysis\Configuration\Document\WrittenNames;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\Document\SampleDocument;
 
 /**

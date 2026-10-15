@@ -11,8 +11,8 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedWriteHistoryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
-use Qualimetrix\Analysis\Finding\Contract\SelectionFilter;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionFilter;
 
 /** Reads every authored selector writer before resolving a cell. */
 final class AuthoredSelection

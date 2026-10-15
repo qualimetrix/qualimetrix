@@ -8,8 +8,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use QmxFindingGate\CaseDefinition;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Analysis\Finding\Support\CorpusCaseRun;
 use RuntimeException;
@@ -35,7 +35,7 @@ use RuntimeException;
  *
  * - rounding — {@see \Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule}
  *   publishes `round($miValue, 1)`;
- * - a key chosen by configuration — {@see \Qualimetrix\Analysis\Evidence\Coupling\CboRule}
+ * - a key chosen by configuration — {@see \Qualimetrix\Analysis\Evidence\Coupling\Cbo\CboRule}
  *   reads `coupling.cbo` or `coupling.cbo-app` depending on its `scope`
  *   option, and a complexity channel reads a base key at callable level and
  *   that key's `.max` aggregate at class level.
@@ -68,7 +68,7 @@ use RuntimeException;
  * **What this guard does not cover — six, named, so the set cannot grow in
  * silence.** The same six the build-time half names, for the same reasons
  * (see `assertJudgedMetricsAreDeclarable()` in
- * {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass}):
+ * {@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\ChannelDeclarationCompilerPass}):
  *
  * 1. `architecture.circular-dependency` — magnitude of its own making (a
  *    cycle's member count).

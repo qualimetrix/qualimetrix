@@ -10,7 +10,7 @@ use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusal;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionRefusal;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Pattern\SelectorDefinition;

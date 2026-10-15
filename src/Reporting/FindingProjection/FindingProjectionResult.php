@@ -8,9 +8,9 @@ use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
-use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\InertBaselineEntry;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionResult;
 
 /**

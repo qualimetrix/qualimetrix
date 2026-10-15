@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Prioritization\Debt;
 
 use LogicException;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader;
 
@@ -20,7 +20,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader;
  * declares its own via a `REMEDIATION_MINUTES` constant, read reflectively
  * by {@see RuleRemediationMinutesReader} at container-build time and handed
  * in as `$minutesByRule` — the same idiom, and the same compiler pass
- * ({@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass}),
+ * ({@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\ChannelDeclarationCompilerPass}),
  * that already assembles `$docsPageByRule` for
  * {@see \Qualimetrix\Analysis\Finding\ChannelPresentationView}. A private
  * table here, kept in sync by hand across every capability that adds a rule,
@@ -33,7 +33,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader;
  * read from {@see ChannelDeclarationRegistryInterface::declarationFor()} —
  * the same registry {@see \Qualimetrix\Reporting\FindingProjection\FindingProjector}
  * consumes — rather than kept as a private copy here, via
- * {@see \Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration::isLowerWorse()}.
+ * {@see \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration::isLowerWorse()}.
  * A `magnitude` channel whose smaller number is worse (e.g. maintainability
  * index) has its ratio flipped to threshold / metricValue; a `computed.*` /
  * `health.*` channel resolves the same way, since the registry already
@@ -42,7 +42,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader;
  *
  * The policy is fail-closed: a channel whose declaration carries no
  * direction — no declaration at all, or an `occurrence` shape, which is
- * forbidden a direction by {@see \Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration} —
+ * forbidden a direction by {@see \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration} —
  * is not scaled and takes the flat base time. `coupling.class-rank` is the
  * one registered channel this currently affects: it is declared `occurrence`
  * because its reported rank is a project-wide normalised PageRank whose
@@ -56,7 +56,7 @@ final class RemediationTimeRegistry
     /**
      * @param array<string, int> $minutesByRule every registered rule name => its declared
      *                                          `REMEDIATION_MINUTES`, injected by
-     *                                          {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass}
+     *                                          {@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\ChannelDeclarationCompilerPass}
      */
     public function __construct(
         private ChannelDeclarationRegistryInterface $declarations,

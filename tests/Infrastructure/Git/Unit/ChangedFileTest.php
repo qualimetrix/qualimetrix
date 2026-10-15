@@ -8,8 +8,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Infrastructure\Git\ChangedFile;
-use Qualimetrix\Infrastructure\Git\ChangeStatus;
+use Qualimetrix\Infrastructure\Git\ChangeListing\ChangedFile;
+use Qualimetrix\Infrastructure\Git\ChangeListing\ChangeStatus;
 
 #[CoversClass(ChangedFile::class)]
 #[CoversClass(ChangeStatus::class)]

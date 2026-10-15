@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
 use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;

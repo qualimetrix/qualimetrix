@@ -42,10 +42,10 @@ final class CircularDependencyRuleTest extends TestCase
             new Cycle($this->paths(['A', 'B']), $this->paths(['A', 'B', 'A'])),
             new Cycle($this->paths(['A', 'B', 'C']), $this->paths(['A', 'B', 'C', 'A'])),
         ]);
-        $channel = new \Qualimetrix\Analysis\Finding\Contract\FindingChannel(CircularDependencyRule::NAME);
-        $publication = new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement([
+        $channel = new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel(CircularDependencyRule::NAME);
+        $publication = new \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement([
             new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
-                new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(CircularDependencyRule::NAME, $channel, \Qualimetrix\Core\Symbol\SymbolLevel::Project, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable),
+                new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(CircularDependencyRule::NAME, $channel, \Qualimetrix\Core\Symbol\SymbolLevel::Project, \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole::Selectable),
                 new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
             ),
         ], null));

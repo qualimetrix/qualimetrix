@@ -9,8 +9,8 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigura
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentShadowVerdict;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\AnalysedDeclarations;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerShadowing;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\LayerMatch;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /** Projects prepared layer state into the facts carried by a debug assignment. */

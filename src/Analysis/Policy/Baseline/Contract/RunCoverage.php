@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline\Contract;
 
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
-use Qualimetrix\Analysis\Policy\Baseline\RunScope;
+use Qualimetrix\Analysis\Policy\Baseline\RunCoverage\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface;

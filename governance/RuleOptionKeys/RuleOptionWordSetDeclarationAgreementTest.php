@@ -12,7 +12,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionShapeMatcher;
@@ -266,7 +266,7 @@ final class RuleOptionWordSetDeclarationAgreementTest extends TestCase
      */
     private static function shapeOf(string $optionsClass, string $key): RuleOptionShape
     {
-        $shape = \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface::declaredFor($optionsClass)->shapeOf(ConfigKeySpelling::normalize($key));
+        $shape = \Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface::declaredFor($optionsClass)->shapeOf(ConfigKeySpelling::normalize($key));
         self::assertNotNull($shape, \sprintf('%s does not declare a shape for "%s"', $optionsClass, $key));
 
         return $shape;
@@ -308,7 +308,7 @@ final class RuleOptionWordSetDeclarationAgreementTest extends TestCase
                 \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin::of(\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource::ConfigFile, '/project/qmx.yaml'),
                 \Qualimetrix\Analysis\Configuration\Document\AuthoredNode::fromPlain(['rules' => ['fixture' => $config]]),
             )]);
-            $optionsClass::fromResolved(new \Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues($document, 'fixture'));
+            $optionsClass::fromResolved(new \Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOptionValues($document, 'fixture'));
 
             return true;
         } catch (Throwable) {

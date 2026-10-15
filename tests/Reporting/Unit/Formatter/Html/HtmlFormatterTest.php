@@ -53,7 +53,7 @@ final class HtmlFormatterTest extends TestCase
         $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
         $trace->record(
             'complexity.ccn',
-            new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('complexity.ccn'),
+            new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel('complexity.ccn'),
             \Qualimetrix\Core\Symbol\SymbolLevel::Callable,
             \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::selector("missing\xFF", 'callable'),
             'callable-value',
@@ -72,7 +72,7 @@ final class HtmlFormatterTest extends TestCase
     public function itPublishesUnjudgedPopulationOnAnEmptyFindingReportWithoutAFailure(): void
     {
         $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
-        $channel = new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('complexity.ccn');
+        $channel = new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel('complexity.ccn');
         $trace->record(
             'complexity.ccn',
             $channel,

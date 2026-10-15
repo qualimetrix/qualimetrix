@@ -29,9 +29,9 @@ use PhpParser\NodeFinder;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
@@ -415,7 +415,7 @@ final class ChannelEmissionStaticGuardTest extends TestCase
             'src/Analysis/Evidence/CodeSmell/CodeSmellFinding.php' =>
                 'AbstractCodeSmellRule hands a collected entry to this value object, which builds the finding;'
                 . ' the resolver follows constructions declared on a rule chain, not one method call further.',
-            'src/Analysis/Evidence/Security/SecurityPatternFinding.php' =>
+            'src/Analysis/Evidence/Security/DirectSinks/SecurityPatternFinding.php' =>
                 'The same shape for AbstractSecurityPatternRule.',
             'src/Analysis/Evidence/ComputedMetrics/Finding/ComputedMetricFindingBuilder.php' =>
                 'ComputedMetricRule delegates construction to this builder, and a computed channel is named by'

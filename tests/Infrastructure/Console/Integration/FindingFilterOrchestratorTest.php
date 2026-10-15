@@ -9,9 +9,9 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
@@ -19,8 +19,8 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineEntryParser;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
 use Qualimetrix\Analysis\Policy\Inline\Contract\DirectiveObservations;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
@@ -40,9 +40,9 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
-use Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator;
-use Qualimetrix\Infrastructure\Console\ResolvedCheckScope;
+use Qualimetrix\Infrastructure\Console\CheckReport\FindingProjection;
+use Qualimetrix\Infrastructure\Console\CheckScope\ResolvedCheckScope;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
@@ -67,7 +67,10 @@ use Symfony\Component\Console\Output\OutputInterface;
  * `-v` and `--show-suppressed` output, mirroring the existing global-filter
  * reporting (path/namespace exclusion counters).
  */
-#[CoversClass(FindingFilterOrchestrator::class)]
+#[CoversClass(FindingProjection::class)]
+#[CoversClass(\Qualimetrix\Infrastructure\Console\CheckReport\FindingDiagnostics::class)]
+#[CoversClass(\Qualimetrix\Infrastructure\Console\CheckReport\CheckFindingProjection::class)]
+#[CoversClass(\Qualimetrix\Infrastructure\Console\CheckScope\ProjectScopePresenter::class)]
 final class FindingFilterOrchestratorTest extends TestCase
 {
     /** @var list<string> */
@@ -108,7 +111,7 @@ final class FindingFilterOrchestratorTest extends TestCase
             $measurement = (new \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage($reader))->measure(AbsolutePath::fromString($root), [AbsolutePath::fromString($root . '/dependency')], \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude, \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored);
             $reader->read(AbsolutePath::fromString($root . '/dependency'));
             $measured = $measurement->withDiscoveredFiles(new \Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles([], [], [], [], [], new \Qualimetrix\Analysis\Run\Discovery\ScopeFacts([RelativePath::fromString('src/A.php')], [], [], false), 0));
-            $report = $this->createOrchestrator($reader, $anchor)->projectScope($this->createAnalysisResult(projectScope: $measured), new FindingProjectionOptions());
+            $report = (new \Qualimetrix\Infrastructure\Console\CheckScope\ProjectScopePresenter(self::silentSuppressionAudit(), new \Qualimetrix\Infrastructure\Console\CheckScope\ObservedProjectScopeReasons($reader, $anchor)))->project($this->createAnalysisResult(projectScope: $measured), new FindingProjectionOptions());
             self::assertSame('narrowed', $report->state);
             self::assertCount(10, $report->unjudgedChannels);
             self::assertSame([
@@ -492,7 +495,7 @@ final class FindingFilterOrchestratorTest extends TestCase
     }
 
     private function filterAndReport(
-        FindingFilterOrchestrator $orchestrator,
+        \Qualimetrix\Infrastructure\Console\CheckReport\CheckFindingProjection $orchestrator,
         AnalysisResult $result,
         ArrayInput $input,
         OutputInterface $output,
@@ -507,19 +510,21 @@ final class FindingFilterOrchestratorTest extends TestCase
             \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored,
         );
 
-        return $orchestrator->filterAndReport(
+        $options = new FindingProjectionOptions(
+            baselineDocument: \is_string($baselinePath) && $baselinePath !== '' ? (new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($baselinePath) : null,
+        );
+
+        return $orchestrator->project(
             $result,
             $input,
             $output,
-            new ResolvedCheckScope($scopeResolution, [], $measurement),
-            new FindingProjectionOptions(
-                baselineDocument: \is_string($baselinePath) && $baselinePath !== '' ? (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($baselinePath) : null,
-            ),
+            new ResolvedCheckScope($scopeResolution, [], $measurement, $options),
+            $options,
             new RunConfiguration([], $scopeResolution->projectRoot, GeneratedFilePolicy::Exclude, $measurement, [], AutoloadDevPolicy::Exclude),
         );
     }
 
-    private function createOrchestrator(?\Qualimetrix\Infrastructure\Composer\ComposerManifestReader $reader = null, ?\Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap $anchor = null): FindingFilterOrchestrator
+    private function createOrchestrator(?\Qualimetrix\Infrastructure\Composer\ComposerManifestReader $reader = null, ?\Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap $anchor = null): \Qualimetrix\Infrastructure\Console\CheckReport\CheckFindingProjection
     {
         $reader ??= new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader();
         $anchor ??= new \Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap($reader);
@@ -545,13 +550,9 @@ final class FindingFilterOrchestratorTest extends TestCase
             fileScope: \Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelFileScope::create(),
         );
 
-        return new FindingFilterOrchestrator(
-            $pipeline,
-            new ErrorStream(),
-            self::silentSuppressionAudit(),
-            new \Qualimetrix\Infrastructure\Console\ObservedProjectScopeReasons($reader, $anchor),
-            new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
-            new \Qualimetrix\Infrastructure\Console\BaselineProjectionCoverage($reader, new ProjectTree(new EntryInspector()), StubRuleCoverage::everyRuleRan()),
+        return new \Qualimetrix\Infrastructure\Console\CheckReport\CheckFindingProjection(
+            new FindingProjection($pipeline, self::silentSuppressionAudit(), new \Qualimetrix\Infrastructure\Console\BaselineCommand\BaselineProjectionCoverage($reader, new ProjectTree(new EntryInspector()), StubRuleCoverage::everyRuleRan())),
+            new \Qualimetrix\Infrastructure\Console\CheckReport\FindingDiagnostics(new ErrorStream()),
         );
     }
 
@@ -637,19 +638,19 @@ final class FindingFilterOrchestratorTest extends TestCase
         );
     }
 
-    private static function populationPublication(): \Qualimetrix\Analysis\Finding\Contract\ChannelPublication
+    private static function populationPublication(): \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication
     {
         $decisions = [];
         foreach ([\Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule::class, \Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::class] as $rule) {
             foreach ($rule::channelDeclarations() as $name => $declaration) {
                 foreach ($declaration->levels as $level) {
                     $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
-                        new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress($rule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($name), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable),
+                        new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress($rule::NAME, new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel($name), $level, \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole::Selectable),
                         new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
                     );
                 }
             }
         }
-        return new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null));
+        return new \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null));
     }
 }

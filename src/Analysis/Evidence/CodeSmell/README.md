@@ -29,7 +29,7 @@ parameter is a promoted constructor property (`public bool $x`, has parser visib
 readonly flags) rather than a plain method/function argument. `BooleanArgumentRule`
 excludes promoted entries by default (`flag_promoted_properties: false`) since a promoted
 parameter declares a field, not a behavior switch — see
-[`BooleanArgumentRule.php`](BooleanArgumentRule.php).
+[`BooleanArgumentRule.php`](BooleanArgument/BooleanArgumentRule.php).
 
 ## Debug Functions
 
@@ -102,6 +102,9 @@ the visitor evaluates the chain once, at its head.
 
 ### Files
 
+- `BooleanArgument/BooleanArgumentOptions.php` and `BooleanArgument/BooleanArgumentRule.php` — boolean-argument policy and options
+- `ControlFlow/EmptyCatchRule.php` — empty-catch finding interpretation
+- `RepeatedExpression/IdenticalSubExpressionOptions.php` and `RepeatedExpression/IdenticalSubExpressionRule.php` — repeated-expression policy and options
 - `RepeatedExpression/IdenticalSubExpressionCollector.php` — repeated-expression collector implementation
 - `RepeatedExpression/IdenticalSubExpressionVisitor.php` — repeated-expression AST traversal and delegation
 - `RepeatedExpression/IdenticalSubExpressionFinding.php` — repeated-expression finding value object

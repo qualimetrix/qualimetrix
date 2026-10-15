@@ -15,12 +15,12 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\Console\AnalysisPreflightProfile;
 use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
 use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentJsonPresenter;
+use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentResolver;
 use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentTextPresenter;
-use Qualimetrix\Infrastructure\Console\LayerAssignmentResolver;
 use Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode;
+use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisPreflightProfile;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use ReflectionClass;
 use ReflectionMethod;
@@ -852,7 +852,7 @@ final class LayerAssignmentCommandTest extends TestCase
     /**
      * `debug:layer-assignment` runs a full Discovery + Collection
      * pass (matching `qmx check` byte-for-byte), but the per-run
-     * {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator::configure()}
+     * {@see \Qualimetrix\Infrastructure\Console\RunSetup\RuntimeConfigurator::configure()}
      * hook — which applies the YAML `memory_limit` to the PHP runtime before
      * the parallel-worker pool spins up — was wired only into `CheckCommand`.
      * On any non-trivial codebase the workers exhausted the default 128MB

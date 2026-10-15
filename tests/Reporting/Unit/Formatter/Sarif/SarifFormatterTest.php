@@ -8,8 +8,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
-use Qualimetrix\Analysis\Finding\Contract\AcceptedLevel;
-use Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPresentationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -52,7 +52,7 @@ final class SarifFormatterTest extends TestCase
     public function itPublishesUnjudgedPopulationOnAnEmptyFindingReportWithoutAFailure(): void
     {
         $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
-        $channel = new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('complexity.ccn');
+        $channel = new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel('complexity.ccn');
         $trace->record(
             'complexity.ccn',
             $channel,
@@ -83,7 +83,7 @@ final class SarifFormatterTest extends TestCase
             severity: Severity::Warning,
             metricValue: 31,
             recommendation: 'Recommended repair',
-        )->reportedUncompared(new \Qualimetrix\Analysis\Finding\Contract\AcceptedLevel([25.0], 1), 'analysis-incomplete');
+        )->reportedUncompared(new \Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel([25.0], 1), 'analysis-incomplete');
         $output = $this->formatter->format(ReportBuilder::create()->addFinding($finding)->filesAnalyzed(1)->build(), new FormatterContext())->body;
         self::assertStringContainsString('accepted at 25; not compared: analysis-incomplete', $output);
         self::assertStringNotContainsString('now 31', $output);
@@ -965,7 +965,7 @@ final class SarifFormatterTest extends TestCase
         int|float|null $threshold = null,
         ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null,
         ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null,
-        ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null,
+        ?\Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel $acceptedLevel = null,
         ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null,
         ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null,
     ): Finding {

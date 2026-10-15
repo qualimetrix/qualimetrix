@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract;
 
+use Qualimetrix\Analysis\Finding\Contract\Channel\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
+
+use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionTrace;
 
 /**
  * What one {@see RuleExecutionInterface::execute()} call did, as a value

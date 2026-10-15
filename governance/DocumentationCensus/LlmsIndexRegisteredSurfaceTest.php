@@ -101,9 +101,9 @@ use Symfony\Component\Console\Command\Command;
  */
 final class LlmsIndexRegisteredSurfaceTest extends TestCase
 {
-    private const string COMMAND_DIRECTORY = __DIR__ . '/../../src/Infrastructure/Console/Command';
+    private const string COMMAND_DIRECTORY = __DIR__ . '/../../src/Infrastructure/Console';
 
-    private const string BINARY_PATH = __DIR__ . '/../../src/Infrastructure/Console/ProductCommandLoader.php';
+    private const string BINARY_PATH = __DIR__ . '/../../src/Infrastructure/Console/Application/ProductCommandLoader.php';
 
     private const string LLMS_TXT_PATH = __DIR__ . '/../../website/docs/llms.txt';
 

@@ -11,7 +11,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFacto
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory;
 use Qualimetrix\Analysis\Policy\Inline\Contract\SourceControlExtractorInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor;

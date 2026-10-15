@@ -6,12 +6,12 @@ namespace Qualimetrix\Analysis\Finding\Contract;
 
 use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionAddress;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionDocumentFormsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\ThresholdOverrideRequest;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionAddress;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Rule\Override\OverrideValidationFailure;
 
 /** The declared override forms and the existing value-pair strategy of one rule. */
