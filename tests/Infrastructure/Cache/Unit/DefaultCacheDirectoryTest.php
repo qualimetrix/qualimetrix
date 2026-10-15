@@ -29,6 +29,9 @@ final class DefaultCacheDirectoryTest extends TestCase
         self::assertNull(DefaultCacheDirectory::for(['LOCALAPPDATA' => '\\\\server\\cache'], 'Windows'));
         self::assertNull(DefaultCacheDirectory::for([], 'Linux'));
         self::assertNull(DefaultCacheDirectory::for(['HOME' => 'relative'], 'Darwin'));
+        self::assertNull(DefaultCacheDirectory::for(['XDG_CACHE_HOME' => '/../../cache', 'HOME' => '/owner'], 'Linux'));
+        self::assertNull(DefaultCacheDirectory::for(['HOME' => '/../../owner'], 'Darwin'));
+        self::assertNull(DefaultCacheDirectory::for(['LOCALAPPDATA' => '/../../local'], 'Windows'));
     }
     #[Test]
     public function itDisablesUnrepresentableNativeDriveAndUncDefaults(): void

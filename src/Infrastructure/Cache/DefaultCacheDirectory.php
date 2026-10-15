@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Cache;
 
+use InvalidArgumentException;
 use Qualimetrix\Core\Path\AbsolutePath;
 
 final class DefaultCacheDirectory
@@ -13,7 +14,7 @@ final class DefaultCacheDirectory
     {
         $xdg = $environment['XDG_CACHE_HOME'] ?? '';
         if (self::absolute($xdg)) {
-            return AbsolutePath::fromString(rtrim($xdg, '/\\') . '/qmx');
+            return self::fromBase($xdg, '/qmx');
         }
         $base = $os === 'Windows' ? ($environment['LOCALAPPDATA'] ?? '') : ($environment['HOME'] ?? '');
         if (!self::absolute($base)) {
@@ -25,7 +26,16 @@ final class DefaultCacheDirectory
             default => '/.cache/qmx',
         };
 
-        return AbsolutePath::fromString(rtrim($base, '/\\') . $suffix);
+        return self::fromBase($base, $suffix);
+    }
+
+    private static function fromBase(string $base, string $suffix): ?AbsolutePath
+    {
+        try {
+            return AbsolutePath::fromString(rtrim($base, '/\\') . $suffix);
+        } catch (InvalidArgumentException) {
+            return null;
+        }
     }
 
     private static function absolute(string $path): bool
