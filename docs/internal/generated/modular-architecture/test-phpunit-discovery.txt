@@ -12394,12 +12394,11 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\WorkerBootstrapTest::itRejectsAMissingDependencyTraversalParticipantClass
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\WorkerBootstrapTest::itResetsStaticState
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\WorkerBootstrapTest::itTreatsCollectorOrderAsIrrelevantInCacheKey
- - Qualimetrix\Tests\Infrastructure\Parallel\Unit\WorkerContextFactoryTest::itBoundsStartupByTheBindingDeadlineAndCapturesTheOwnedPhpLog
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\WorkerContextFactoryTest::itClassifiesAnUnavailableLocalIpcDirectoryAsWorkerStartupFailure
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\WorkerContextFactoryTest::itDoesNotInheritTheCoordinatorsHeldTargetDescriptor
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\WorkerContextFactoryTest::itStartsOnlyAProcessWithMergedEnvironmentParseIniAndCapturedStreams
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\WorkerNotesTest::itUsesOnlyTheNamedNonceChannelAndKeepsAllWorkerOutputOffThePayload
- - Qualimetrix\Tests\Infrastructure\Parallel\Unit\WorkerPoolTest::itDrainsACancelledProbeBeforeClosingItsIpcAndReturningTheProcessCode
+ - Qualimetrix\Tests\Infrastructure\Parallel\Unit\WorkerPoolTest::itOverlapsTheFactoryStartupDeadlineWithTheCancelledProbeDrain
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\WorkerPoolTest::itPublishesTheOriginalTaskMessageWithoutTheTransportTrace
  - Qualimetrix\Tests\Infrastructure\Profiler\Unit\Export\ChromeTracingExporterTest::itExportsDeeplyNestedSpans
  - Qualimetrix\Tests\Infrastructure\Profiler\Unit\Export\ChromeTracingExporterTest::itExportsEmptyEventsForNoSpans

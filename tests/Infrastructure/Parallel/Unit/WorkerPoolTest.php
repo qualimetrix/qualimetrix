@@ -18,6 +18,7 @@ use RuntimeException;
 use Symfony\Component\Process\Process;
 
 #[CoversClass(WorkerPool::class)]
+#[CoversClass(WorkerContextFactory::class)]
 final class WorkerPoolTest extends TestCase
 {
     #[Test]
@@ -35,39 +36,80 @@ final class WorkerPoolTest extends TestCase
     }
 
     #[Test]
-    public function itDrainsACancelledProbeBeforeClosingItsIpcAndReturningTheProcessCode(): void
+    public function itOverlapsTheFactoryStartupDeadlineWithTheCancelledProbeDrain(): void
     {
-        $prepend = sys_get_temp_dir() . '/qmx-probe-fatal-' . bin2hex(random_bytes(6)) . '.php';
-        file_put_contents($prepend, '<?php probe_startup_missing_function();');
-        $script = <<<'PHP'
+        $factoryPrepend = sys_get_temp_dir() . '/qmx-start-fatal-' . bin2hex(random_bytes(6)) . '.php';
+        $poolPrepend = sys_get_temp_dir() . '/qmx-probe-fatal-' . bin2hex(random_bytes(6)) . '.php';
+        file_put_contents($factoryPrepend, '<?php missing_worker_startup_function();');
+        file_put_contents($poolPrepend, '<?php probe_startup_missing_function();');
+        $factoryScript = <<<'PHP'
+require $argv[1];
+$request = new \Qualimetrix\Infrastructure\Parallel\WorkerRequest(2, '--workers=2');
+$notes = new \Qualimetrix\Infrastructure\Parallel\WorkerNotes(new \Qualimetrix\Infrastructure\Console\ErrorStream());
+$factory = new \Qualimetrix\Infrastructure\Parallel\WorkerContextFactory($request, $notes, [PHP_BINARY, '-d', 'auto_prepend_file=' . $argv[2]]);
+$directory = (new \ReflectionProperty($factory, 'directory'))->getValue($factory);
+$record = ['code' => 0, 'message' => '', 'closed' => false];
+try {
+    $factory->start(\Amp\Parallel\Worker\ContextWorkerFactory::SCRIPT_PATH);
+} catch (\Qualimetrix\Infrastructure\Parallel\WorkerStartFailure $failure) {
+    $record['code'] = 3;
+    $record['message'] = $failure->getMessage();
+} finally {
+    $factory->close();
+    $record['closed'] = !is_dir($directory);
+}
+echo json_encode($record, JSON_THROW_ON_ERROR);
+exit($record['code']);
+PHP;
+        $poolScript = <<<'PHP'
 require $argv[1];
 $request = new \Qualimetrix\Infrastructure\Parallel\WorkerRequest(2, '--workers=2');
 $notes = new \Qualimetrix\Infrastructure\Parallel\WorkerNotes(new \Qualimetrix\Infrastructure\Console\ErrorStream());
 $contexts = new \Qualimetrix\Infrastructure\Parallel\WorkerContextFactory($request, $notes, [PHP_BINARY, '-d', 'auto_prepend_file=' . $argv[2]]);
 $pool = \Qualimetrix\Infrastructure\Parallel\WorkerPool::open(2, new \Psr\Log\NullLogger(), $contexts, $notes);
 $factory = new \Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory(new \Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore(),new \Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms(),\Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor::class,[\Qualimetrix\Analysis\Evidence\Size\LocCollector::class]);
+$directory = (new \ReflectionProperty($contexts, 'directory'))->getValue($contexts);
+$record = ['code' => 0, 'message' => '', 'closed' => false];
 try {
     $pool->probe($factory->probe(\Qualimetrix\Core\Path\AbsolutePath::fromString(dirname($argv[2])),null),$request);
-    $code=0;
 } catch (\Qualimetrix\Infrastructure\Parallel\WorkerStartFailure $failure) {
-    echo json_encode(['message'=>$failure->getMessage()], JSON_THROW_ON_ERROR);
-    $code=3;
+    $record['code'] = 3;
+    $record['message'] = $failure->getMessage();
 } finally {
     $pool->close();
+    $record['closed'] = !is_dir($directory);
 }
-exit($code);
+echo json_encode($record, JSON_THROW_ON_ERROR);
+exit($record['code']);
 PHP;
         try {
-            $process = new Process([\PHP_BINARY, '-r', $script, \dirname(__DIR__, 4) . '/vendor/autoload.php', $prepend]);
-            $process->setTimeout(WorkerRequest::START_DEADLINE_SECONDS * 3);
-            $process->run();
-            self::assertSame(3, $process->getExitCode(), $process->getErrorOutput());
-            $record = json_decode($process->getOutput(), true, flags: \JSON_THROW_ON_ERROR);
-            self::assertStringContainsString('did not answer within 10 s', $record['message']);
-            self::assertStringContainsString('probe_startup_missing_function', $record['message']);
-            self::assertStringNotContainsString('Operation is no longer pending', $process->getErrorOutput());
+            $factoryProcess = new Process([\PHP_BINARY, '-r', $factoryScript, \dirname(__DIR__, 4) . '/vendor/autoload.php', $factoryPrepend]);
+            $poolProcess = new Process([\PHP_BINARY, '-r', $poolScript, \dirname(__DIR__, 4) . '/vendor/autoload.php', $poolPrepend]);
+            $factoryProcess->setTimeout(WorkerRequest::START_DEADLINE_SECONDS * 2);
+            $poolProcess->setTimeout(WorkerRequest::START_DEADLINE_SECONDS * 2);
+            $started = microtime(true);
+            $factoryProcess->start();
+            $poolProcess->start();
+            $factoryProcess->wait();
+            $poolProcess->wait();
+            self::assertLessThan(WorkerRequest::START_DEADLINE_SECONDS * 2, microtime(true) - $started);
+
+            self::assertSame(3, $factoryProcess->getExitCode(), $factoryProcess->getErrorOutput());
+            $factoryRecord = json_decode($factoryProcess->getOutput(), true, flags: \JSON_THROW_ON_ERROR);
+            self::assertStringContainsString('did not answer within 10 s', $factoryRecord['message']);
+            self::assertStringContainsString('missing_worker_startup_function', $factoryRecord['message']);
+            self::assertStringContainsString('--workers=2', $factoryRecord['message']);
+            self::assertTrue($factoryRecord['closed']);
+
+            self::assertSame(3, $poolProcess->getExitCode(), $poolProcess->getErrorOutput());
+            $poolRecord = json_decode($poolProcess->getOutput(), true, flags: \JSON_THROW_ON_ERROR);
+            self::assertStringContainsString('did not answer within 10 s', $poolRecord['message']);
+            self::assertStringContainsString('probe_startup_missing_function', $poolRecord['message']);
+            self::assertTrue($poolRecord['closed']);
+            self::assertStringNotContainsString('Operation is no longer pending', $poolProcess->getErrorOutput());
         } finally {
-            unlink($prepend);
+            unlink($factoryPrepend);
+            unlink($poolPrepend);
         }
     }
 }
