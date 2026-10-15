@@ -13,12 +13,18 @@ use Symfony\Component\Console\Output\StreamOutput;
  */
 final class OutputHelper
 {
-    public static function writeJsonReport(OutputInterface $output, string $content): void
+    /**
+     * Publishes a command answer at QUIET verbosity, preserving raw bytes and checked stream writes.
+     * Application normalizes --silent to QUIET, so its answers survive too.
+     *
+     * @param OutputInterface $output Symfony Console output
+     * @param string $content Content to write
+     */
+    public static function write(OutputInterface $output, string $content): void
     {
-        if ($output->getVerbosity() === OutputInterface::VERBOSITY_SILENT) {
+        if ($output->getVerbosity() < OutputInterface::VERBOSITY_QUIET) {
             return;
         }
-
         if ($output instanceof StreamOutput) {
             $stream = $output->getStream();
             $spelling = stream_get_meta_data($stream)['uri'] ?? 'console output stream';
@@ -28,26 +34,5 @@ final class OutputHelper
         }
 
         $output->write($content, false, OutputInterface::OUTPUT_RAW | OutputInterface::VERBOSITY_QUIET);
-    }
-
-    /**
-     * Writes content to output, checking stream writes after restoring blocking mode.
-     *
-     * @param OutputInterface $output Symfony Console output
-     * @param string $content Content to write
-     */
-    public static function write(OutputInterface $output, string $content): void
-    {
-        if ($output instanceof StreamOutput) {
-            if ($output->getVerbosity() >= OutputInterface::VERBOSITY_NORMAL) {
-                $stream = $output->getStream();
-                $spelling = stream_get_meta_data($stream)['uri'] ?? 'console output stream';
-                HeldTarget::writeToStream($stream, $content, $spelling);
-            }
-
-            return;
-        }
-
-        $output->write($content, false, OutputInterface::OUTPUT_RAW);
     }
 }

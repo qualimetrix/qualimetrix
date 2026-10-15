@@ -74,15 +74,6 @@ final class RunTargetSession
         $this->outputPublished = true;
     }
 
-    /** @param callable(): void $action */
-    public function afterPublishedReport(callable $action, int $successExit): int
-    {
-        $this->markOutputPublished();
-        $action();
-
-        return $successExit;
-    }
-
     private function presentOutcome(
         OutputInterface $output,
         ?string $format,

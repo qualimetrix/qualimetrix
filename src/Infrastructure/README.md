@@ -143,7 +143,7 @@ Infrastructure/
 └── Console/                          # -> See Console/README.md
     ├── Application.php
     ├── CliOptionsParser.php
-    ├── OutputHelper.php               # Helper for large text output (line-by-line flush)
+    ├── OutputHelper.php               # answer publication at quiet verbosity with checked stream writes
     ├── MeasuredFindingSet.php       # The one definition of the set a baseline measures: paths + resolved config in, findings at the baseline stage's input out (no InputInterface)
     ├── FindingFilterOrchestrator.php # Adapts check options to the Reporting-owned FindingProjector, asks Finding's suppression-binding audit using the final measured judgement — for findings and for the values it skipped, which the project scope publishes — and reports the stage results
     ├── RuntimeConfigurator.php        # Closed-profile runtime composition; graph consumes no Finding or analysis format

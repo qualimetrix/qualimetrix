@@ -78,11 +78,7 @@ final class HookStatusCommandTest extends TestCase
         self::assertStringContainsString('To install the hook', $output);
     }
 
-    /**
-     * The pointer comes from the shared `AbstractHookCommand::execute()`
-     * wrapper, so it reaches this "not installed" exit exactly as it reaches
-     * the "installed" ones exercised by the tests below.
-     */
+    /** The status answer includes the pointer on every successful exit. */
     #[Test]
     public function itPrintsTheDocsPointerAfterTheReport(): void
     {
@@ -94,13 +90,13 @@ final class HookStatusCommandTest extends TestCase
     }
 
     #[Test]
-    public function itSuppressesTheDocsPointerUnderQuiet(): void
+    public function itKeepsTheDocsPointerUnderQuiet(): void
     {
         $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction(new ErrorStream()));
         $commandTester = new CommandTester($command);
         $commandTester->execute([], ['verbosity' => OutputInterface::VERBOSITY_QUIET]);
 
-        self::assertStringNotContainsString('Docs:', $commandTester->getDisplay());
+        self::assertStringContainsString('Docs: ' . ProductIdentity::docsUrl(), $commandTester->getDisplay());
     }
 
     #[Test]

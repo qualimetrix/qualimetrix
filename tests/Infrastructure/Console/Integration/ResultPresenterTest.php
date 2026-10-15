@@ -31,6 +31,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\MeasuredRunResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
@@ -42,23 +43,29 @@ use Qualimetrix\Infrastructure\Console\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
+use Qualimetrix\Infrastructure\Git\GitScope;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Qualimetrix\Infrastructure\Profiler\ProfileSession;
 use Qualimetrix\Reporting\Contract\OutputFormat;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
+use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
+use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
 use Qualimetrix\Reporting\Formatter\FormattedReport;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
 use Qualimetrix\Reporting\Report;
+use Qualimetrix\Reporting\ReportProjectScope;
 use Qualimetrix\Subprocess\ChildProcess;
 use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
+use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\BufferedOutput;
+use Symfony\Component\Console\Output\OutputInterface;
 
 require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
 
@@ -123,7 +130,8 @@ final class ResultPresenterTest extends TestCase
         )->willReturn(new FormattedReport('{}'));
         $registry = self::createStub(FormatterRegistryInterface::class);
         $registry->method('get')->willReturn($formatter);
-        $exit = $this->presenter($registry)->presentResults(
+        $exit = $this->publishRenderedResults(
+            $this->presenter($registry),
             [],
             $result,
             $this->input(),
@@ -181,7 +189,8 @@ final class ResultPresenterTest extends TestCase
         $registry->expects(self::once())->method('get')->with('json')->willReturn($formatter);
 
         $output = new BufferedOutput();
-        $exit = $this->presenter($registry)->presentResults(
+        $exit = $this->publishRenderedResults(
+            $this->presenter($registry),
             [],
             $this->analysisResult(),
             $this->input(['--format' => 'text']),
@@ -207,7 +216,8 @@ final class ResultPresenterTest extends TestCase
         $registry->method('get')->willReturn($formatter);
         $finding = $this->finding(Severity::Warning);
 
-        $exit = $this->presenter($registry)->presentResults(
+        $exit = $this->publishRenderedResults(
+            $this->presenter($registry),
             [$finding],
             $this->analysisResult([$finding]),
             $this->input(),
@@ -232,7 +242,8 @@ final class ResultPresenterTest extends TestCase
         $registry->method('get')->willReturn($formatter);
         $finding = $this->finding(Severity::Warning);
 
-        self::assertSame(0, $this->presenter($registry)->presentResults(
+        self::assertSame(0, $this->publishRenderedResults(
+            $this->presenter($registry),
             [$finding],
             $this->analysisResult([$finding]),
             $this->input(),
@@ -269,7 +280,8 @@ final class ResultPresenterTest extends TestCase
             'Parse error in /project/src/Broken.php; dependency /external/project/shared.php',
         )]);
 
-        $this->presenter($registry)->presentResults(
+        $this->publishRenderedResults(
+            $this->presenter($registry),
             [],
             $this->analysisResult(coverage: $coverage),
             $this->input(),
@@ -401,7 +413,7 @@ final class ResultPresenterTest extends TestCase
                 $targets->judge('--output', $argv[3]);
                 $targets->claim();
                 try {
-                    $exit = $method('presenter', $registry)->presentResults(
+                    $exit = $method('publishRenderedResults', $method('presenter', $registry),
                         [$finding],
                         $method('analysisResult', [$finding]),
                         $method('input', ['--output' => $argv[3]]),
@@ -516,7 +528,8 @@ final class ResultPresenterTest extends TestCase
         $registry->method('get')->willReturn($formatter);
 
         try {
-            $this->presenter($registry)->presentResults(
+            $this->publishRenderedResults(
+                $this->presenter($registry),
                 [],
                 $this->analysisResult(metrics: $this->analyzedRepository()),
                 $this->input(['--namespace' => 'Zzz\\Nope', '--class' => 'Zzz\\Nope\\Thing']),
@@ -534,7 +547,7 @@ final class ResultPresenterTest extends TestCase
 
     private function targets(): RunTargets
     {
-        return new RunTargets(new LoggerFactory());
+        return new RunTargets(new LoggerFactory(), \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register());
     }
 
     #[Test]
@@ -549,7 +562,8 @@ final class ResultPresenterTest extends TestCase
             $registry = self::createStub(FormatterRegistryInterface::class);
             $registry->method('get')->willReturn($formatter);
             $output = new \Qualimetrix\Tests\Infrastructure\Console\Support\SplitStreamConsoleOutput(stderrDecorated: false);
-            $this->presenter($registry)->presentResults(
+            $this->publishRenderedResults(
+                $this->presenter($registry),
                 [],
                 $this->analysisResult(),
                 $this->input(),
@@ -659,6 +673,33 @@ final class ResultPresenterTest extends TestCase
         return $repository;
     }
 
+    /**
+     * @param list<Finding> $findings
+     * @param list<array{message: string, source: list<array<string, mixed>>}> $configurationDiagnostics
+     */
+    private function publishRenderedResults(
+        ResultPresenter $presenter,
+        array $findings,
+        AnalysisResult $analysisResult,
+        InputInterface $input,
+        OutputInterface $output,
+        AbsolutePath $projectRoot,
+        RunTargets $runTargets,
+        OutputFormat $outputFormat,
+        ExitPolicy $exitPolicy,
+        ?GitScope $reportScope = null,
+        ?FindingProjectionResult $filterResult = null,
+        ?FindingProjectionOptions $projectionOptions = null,
+        ?NamespacePattern $namespacePattern = null,
+        ?ReportProjectScope $projectScope = null,
+        array $configurationDiagnostics = [],
+    ): int {
+        $report = $presenter->renderResults($findings, $analysisResult, $input, $output, $projectRoot, $outputFormat, $exitPolicy, $reportScope, $filterResult, $projectionOptions, $namespacePattern, $projectScope, $configurationDiagnostics);
+        $presenter->publishReport($report, $input, $output, $runTargets);
+
+        return $report->exitCode;
+    }
+
     private function drillDownExit(string $option, string $value, ?NamespaceTree $namespaceTree = null): int
     {
         $formatter = self::createStub(FormatterInterface::class);
@@ -668,7 +709,8 @@ final class ResultPresenterTest extends TestCase
         $registry = self::createStub(FormatterRegistryInterface::class);
         $registry->method('get')->willReturn($formatter);
 
-        return $this->presenter($registry)->presentResults(
+        return $this->publishRenderedResults(
+            $this->presenter($registry),
             [],
             $this->analysisResult(metrics: $this->analyzedRepository(), namespaceTree: $namespaceTree),
             $this->input([$option => $option === '--namespace' ? 'subtree:' . $value : $value]),
@@ -723,11 +765,11 @@ final class ResultPresenterTest extends TestCase
             [],
             computedMetricEvaluation: $summary,
         );
-        foreach (['json' => $payload, 'metrics-json' => ''] as $format => $expected) {
+        foreach (['json', 'metrics-json'] as $format) {
             $output = new BufferedOutput(\Symfony\Component\Console\Output\OutputInterface::VERBOSITY_QUIET, true);
-            $exit = $this->presenter($registry)->presentResults([], $result, $this->input(['--format' => 'text']), $output, AbsolutePath::fromString('/project'), $this->targets(), new OutputFormat($format), new ExitPolicy());
+            $exit = $this->publishRenderedResults($this->presenter($registry), [], $result, $this->input(['--format' => 'text']), $output, AbsolutePath::fromString('/project'), $this->targets(), new OutputFormat($format), new ExitPolicy());
             self::assertSame(0, $exit);
-            self::assertSame($expected, $output->fetch());
+            self::assertSame($payload, $output->fetch());
         }
     }
 
@@ -777,7 +819,9 @@ final class ResultPresenterTest extends TestCase
                 '--config=qmx.yaml', '--workers=0', '--no-cache', '--no-progress', '--format=json', '--silent',
             ], \dirname(__DIR__, 4));
             self::assertSame(0, $silent->run(), $silent->getErrorOutput());
-            self::assertSame('', $silent->getOutput());
+            $silentDocument = json_decode($silent->getOutput(), true, 512, \JSON_THROW_ON_ERROR);
+            self::assertSame($document['computedMetricOutcomes'], $silentDocument['computedMetricOutcomes']);
+            self::assertSame($document['health'], $silentDocument['health']);
             self::assertSame('', $silent->getErrorOutput());
             self::assertNotFalse(file_put_contents($directory . '/qmx.yaml', "\nformat: json\n", \FILE_APPEND));
             $configured = new \Symfony\Component\Process\Process([
@@ -819,7 +863,7 @@ final class ResultPresenterTest extends TestCase
             foreach (['--quiet', '--silent'] as $flag) {
                 $muted = new \Symfony\Component\Process\Process([...$base, $flag], \dirname(__DIR__, 4));
                 self::assertSame(0, $muted->run(), $muted->getErrorOutput());
-                self::assertSame('', $muted->getOutput());
+                self::assertSame($normal->getOutput(), $muted->getOutput());
                 self::assertSame('', $muted->getErrorOutput());
             }
             $file = new \Symfony\Component\Process\Process([...$base, '-v', '--output=report.txt'], \dirname(__DIR__, 4));

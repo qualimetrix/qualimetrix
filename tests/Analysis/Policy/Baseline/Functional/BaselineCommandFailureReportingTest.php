@@ -280,7 +280,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
         $errorStream = new ErrorStream();
 
         return new RuntimeConfigurator(
-            new RuntimeLoggerConfigurator($loggerFactory, new LoggerHolder(), $errorStream, new RunTargets($loggerFactory)),
+            new RuntimeLoggerConfigurator($loggerFactory, new LoggerHolder(), $errorStream, new RunTargets($loggerFactory, \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register())),
             new ProgressConfigurator(new SwitchableProgressReporter(), $errorStream),
             new ProfileSession(),
             new AnalysisRuntimeConfigurator(

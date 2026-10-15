@@ -331,17 +331,10 @@ final class Application extends BaseApplication
      * the lowest of them — so once the output's own verbosity is silent, any
      * call, whatever verbosity it asked for, compares greater and is
      * dropped: there is no verbosity value a message can carry that survives
-     * it. That includes {@see RefusalPresenter}'s `VERBOSITY_QUIET` writes,
-     * the run-ending writes that must survive `-q`. Symfony's own docs read
-     * `--silent` as "no output
-     * at all", which is a legitimate request for the report — just not for
-     * the message that has to explain why there is no report. Treating it
-     * as `-q` keeps that promise and still drops everything `-q` already
-     * drops.
-     *
-     * This is a documented change to `--silent`'s external contract: see
-     * `CHANGELOG.md` (Unreleased, the `-q` entry) and
-     * `docs/adr/0051-refusal-is-not-routed-by-command.md` §3.
+     * it. That includes {@see RefusalPresenter}'s `VERBOSITY_QUIET` writes
+     * and {@see OutputHelper}'s answer writes. Treating `--silent` as `-q`
+     * keeps reports, command answers and refusals while dropping progress
+     * and status messages.
      */
     protected function configureIO(InputInterface $input, OutputInterface $output): void
     {

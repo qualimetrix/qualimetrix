@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Infrastructure\Console\Hook\PreCommitHook;
+use Qualimetrix\Infrastructure\Console\OutputHelper;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
@@ -15,7 +17,22 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 final class HookStatusCommand extends AbstractHookCommand
 {
+    protected function publishesAnswer(): bool
+    {
+        return true;
+    }
+
     protected function doExecute(InputInterface $input, OutputInterface $output): int
+    {
+        $buffer = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL, $output->isDecorated(), $output->getFormatter());
+        $exit = $this->renderAnswer($input, $buffer);
+        $this->appendDocsPointer($buffer);
+        OutputHelper::write($output, $buffer->fetch());
+
+        return $exit;
+    }
+
+    private function renderAnswer(InputInterface $input, OutputInterface $output): int
     {
         $hookPath = $this->hookPath();
 

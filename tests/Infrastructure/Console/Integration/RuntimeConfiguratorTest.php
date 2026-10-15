@@ -184,7 +184,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $errorStream = new ErrorStream();
 
         return new RuntimeConfigurator(
-            new RuntimeLoggerConfigurator($loggerFactory, new LoggerHolder(), $errorStream, new RunTargets($loggerFactory)),
+            new RuntimeLoggerConfigurator($loggerFactory, new LoggerHolder(), $errorStream, new RunTargets($loggerFactory, \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register())),
             new ProgressConfigurator($this->progress, $errorStream),
             $this->profile,
             $analysis,

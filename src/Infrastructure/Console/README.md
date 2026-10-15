@@ -59,6 +59,7 @@ Console/
 ├── ChannelExclusionKeyValidator.php  # Whether one suppress_namespace_channels key can exclude anything
 ├── ChannelExclusionKeyHints.php      # What to say when it cannot
 ├── ResultPresenter.php
+├── RenderedCheckReport.php          # rendered check answer awaiting profile and report publication
 ├── ReportCoverageProjection.php     # The run's coverage as a report publishes it, failures relative to the project
 ├── RunTarget/
 │   ├── RunTargets.php               # shared preparation, publication and teardown for report/profile/log
@@ -72,7 +73,7 @@ Console/
 ├── FormatOptionPairs.php            # The --format-opt door: every written pair judged, a repeated key and two spellings of one value refused
 ├── CheckCommandDefinition.php
 ├── FilteredInputDefinition.php      # InputDefinition that hides rule-specific options from --help
-├── OutputHelper.php                 # Line-by-line output with flush (avoids PTY truncation)
+├── OutputHelper.php                 # answer publication at quiet verbosity with checked stream writes
 ├── RunningBinaryLocator.php         # Where the qmx binary running this process lives on disk
 ├── RunningBinaryLocatorInterface.php
 ├── Hook/
@@ -275,10 +276,14 @@ access mode is left to the actual write and its typed environment refusal.
 
 Check and Graph report every judged directory exposure on stderr before claiming
 targets or entering analysis, naming the option, target, directory and actor.
-`OutputHelper` checks complete writes and flush for the actual borrowed
-`StreamOutput` resource and preserves raw bytes and the NORMAL verbosity
-threshold, including SILENT and QUIET. Other `OutputInterface` implementations
-retain their own write contract.
+`OutputHelper` publishes command answers at QUIET verbosity. `-q`, `--silent`
+and `SHELL_VERBOSITY=-1|-2` keep answers while muting progress and status.
+For a borrowed `StreamOutput` resource it checks complete writes and flush,
+preserving raw bytes; other `OutputInterface` implementations retain their own
+write contract. Multiline answers are assembled in a `BufferedOutput` with the
+caller's formatter and decoration before publication.
+The styled Docs pointer for `directives`, `hook:status`, and `baseline:explain`
+is included in that same answer publication, not written to the stream later.
 
 Preparation happens after configuration, scope, selector and baseline input
 checks, before cache clearing or analysis. Named regular report, profile and graph
@@ -308,8 +313,14 @@ Revolt's public callback inspection does not expose the signal number, so even a
 pending callback for another signal prevents guard installation. Replacing
 handlers during a guarded operation is unsupported. Without a safely attached
 guard, interruption may leave the private sibling; cleanup is also not guaranteed
-for SIGKILL, cleanup failure or an already published target. Each target has its own atomic
-publication; later profile failure does not roll back a published report.
+for SIGKILL, cleanup failure or an already published target. Each target has
+its own atomic publication. Check renders a report in memory, publishes its
+profile, and then publishes the report. A failed profile export therefore
+produces a run refusal in place of an unpublished report. Coordinator OOM
+before profile publication releases claimed unwritten targets without exporting
+a profile. If OOM occurs after a profile is atomically published but before
+the report is complete, that published profile remains; an existing profile
+is never removed to mimic a rollback.
 The shared logger buffers early records, attaches its claimed target, latches
 append failures and reports lost records at settle before report publication.
 `RunTargetSession` runs Check and Graph actions, attempts target cleanup, then

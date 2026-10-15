@@ -21,6 +21,13 @@ final readonly class CoverageNarrator
         $lines = [];
         if ($report->coverage !== null) {
             $lines[] = self::describe($report->coverage);
+            foreach (\array_slice($report->coverage->failures, 0, 10) as $failure) {
+                $lines[] = 'Failed file: ' . $failure->path;
+            }
+            $remaining = \count($report->coverage->failures) - 10;
+            if ($remaining > 0) {
+                $lines[] = \sprintf('and %d more failed files.', $remaining);
+            }
         }
 
         $projectScope = $report->projectScope?->describe();

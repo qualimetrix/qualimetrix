@@ -91,6 +91,11 @@ final class BaselineExplainCommand extends BaselineCommand
             ));
     }
 
+    protected function publishesAnswer(): bool
+    {
+        return true;
+    }
+
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $subjectKey = CommandLineSpelling::requiredArgument($input, 'subject');
@@ -102,6 +107,8 @@ final class BaselineExplainCommand extends BaselineCommand
 
         $context = $this->baselineRun->measure($input, $output);
         if ($context->result()->measured->coverage->isIntentionallyEmpty()) {
+            BaselineExplanationRenderer::renderEmptyScope($output);
+
             return self::SUCCESS;
         }
         $baseline = $document !== null ? $this->loader->load($document) : null;

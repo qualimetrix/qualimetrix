@@ -19,11 +19,13 @@ use Qualimetrix\Infrastructure\Console\AnalysisPreflightProfile;
 use Qualimetrix\Infrastructure\Console\AnalysisReportCommandDefinition;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Qualimetrix\Infrastructure\Console\LayerAssignmentResolver;
+use Qualimetrix\Infrastructure\Console\OutputHelper;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -186,7 +188,9 @@ final class LayerAssignmentCommand extends Command
         if ($format === 'json') {
             (new LayerAssignmentJsonPresenter($output))->render($assignment);
         } else {
-            (new LayerAssignmentTextPresenter($output))->render($declaredSpelling, $assignment);
+            $buffer = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL, $output->isDecorated(), $output->getFormatter());
+            (new LayerAssignmentTextPresenter($buffer))->render($declaredSpelling, $assignment);
+            OutputHelper::write($output, $buffer->fetch());
         }
 
         return self::SUCCESS;

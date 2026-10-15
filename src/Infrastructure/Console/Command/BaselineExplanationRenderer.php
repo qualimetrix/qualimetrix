@@ -11,6 +11,9 @@ use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationStatus;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\CurrentMeasurement;
 use Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundary;
 use Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundaryBaselineSource;
+use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Infrastructure\Console\OutputHelper;
+use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -22,6 +25,26 @@ final class BaselineExplanationRenderer
     private function __construct() {}
 
     public static function render(BoundaryExplanation $explanation, OutputInterface $output): void
+    {
+        self::publish($explanation, $output);
+    }
+
+    public static function renderEmptyScope(OutputInterface $output): void
+    {
+        self::publish(null, $output);
+    }
+
+    private static function publish(?BoundaryExplanation $explanation, OutputInterface $output): void
+    {
+        $buffer = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL, $output->isDecorated(), $output->getFormatter());
+        if ($explanation !== null) {
+            self::writeExplanation($explanation, $buffer);
+        }
+        $buffer->writeln(\sprintf('<comment>%s</comment>', ProductIdentity::pointerText()));
+        OutputHelper::write($output, $buffer->fetch());
+    }
+
+    private static function writeExplanation(BoundaryExplanation $explanation, OutputInterface $output): void
     {
         $output->writeln(\sprintf('Subject: <info>%s</info>', $explanation->subjectKey));
 

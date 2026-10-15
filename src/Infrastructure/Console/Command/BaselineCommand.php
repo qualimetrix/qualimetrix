@@ -59,7 +59,7 @@ abstract class BaselineCommand extends Command
             // four declare no `--format` and this stays `null` for them), which
             // is exactly the guard that keeps its machine-readable branch a
             // document a script can still parse.
-            if ($format !== 'json' && !\in_array($exitCode, [128 + \SIGINT, 128 + \SIGTERM], true)) {
+            if ($format !== 'json' && !$this->publishesAnswer() && !\in_array($exitCode, [128 + \SIGINT, 128 + \SIGTERM], true)) {
                 $output->writeln(\sprintf('<comment>%s</comment>', ProductIdentity::pointerText()));
             }
 
@@ -76,6 +76,11 @@ abstract class BaselineCommand extends Command
         } catch (Throwable $e) {
             return $this->refusalPresenter->unhandled($output, $format, $e);
         }
+    }
+
+    protected function publishesAnswer(): bool
+    {
+        return false;
     }
 
     /**

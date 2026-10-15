@@ -35,7 +35,7 @@ final class RuntimeLoggerConfiguratorTest extends TestCase
         $factory = self::createStub(LoggerFactoryInterface::class);
         $factory->method('create')->willReturn($expectedLogger);
 
-        $logger = (new RuntimeLoggerConfigurator($factory, $holder, new ErrorStream(), new RunTargets($factory)))->configure($input, $output);
+        $logger = (new RuntimeLoggerConfigurator($factory, $holder, new ErrorStream(), new RunTargets($factory, \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register())))->configure($input, $output);
 
         self::assertSame($expectedLogger, $logger);
         self::assertSame($logger, $holder->getLogger());
@@ -63,7 +63,7 @@ final class RuntimeLoggerConfiguratorTest extends TestCase
             ->with(self::anything(), null, 'warning')
             ->willReturn(new NullLogger());
 
-        (new RuntimeLoggerConfigurator($factory, new LoggerHolder(), new ErrorStream(), new RunTargets($factory)))
+        (new RuntimeLoggerConfigurator($factory, new LoggerHolder(), new ErrorStream(), new RunTargets($factory, \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register())))
             ->configure(self::logLevelInput('WARNING'), self::createStub(OutputInterface::class));
     }
 
@@ -77,7 +77,7 @@ final class RuntimeLoggerConfiguratorTest extends TestCase
             ->with(self::anything(), null, null)
             ->willReturn(new NullLogger());
 
-        (new RuntimeLoggerConfigurator($factory, new LoggerHolder(), new ErrorStream(), new RunTargets($factory)))
+        (new RuntimeLoggerConfigurator($factory, new LoggerHolder(), new ErrorStream(), new RunTargets($factory, \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register())))
             ->configure(
                 new ArrayInput([], new InputDefinition([new InputOption('log-level', null, InputOption::VALUE_REQUIRED)])),
                 self::createStub(OutputInterface::class),
@@ -97,7 +97,7 @@ final class RuntimeLoggerConfiguratorTest extends TestCase
         );
 
         try {
-            (new RuntimeLoggerConfigurator($factory, new LoggerHolder(), new ErrorStream(), new RunTargets($factory)))
+            (new RuntimeLoggerConfigurator($factory, new LoggerHolder(), new ErrorStream(), new RunTargets($factory, \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register())))
                 ->configure(self::logLevelInput('info'), self::createStub(OutputInterface::class));
             self::fail('An unwritable log file was accepted.');
         } catch (ConfigurationRefusal $refusal) {
@@ -117,7 +117,7 @@ final class RuntimeLoggerConfiguratorTest extends TestCase
         $holder->setLogger(self::createStub(\Psr\Log\LoggerInterface::class));
 
         $factory = self::createStub(LoggerFactoryInterface::class);
-        (new RuntimeLoggerConfigurator($factory, $holder, new ErrorStream(), new RunTargets($factory)))->reset();
+        (new RuntimeLoggerConfigurator($factory, $holder, new ErrorStream(), new RunTargets($factory, \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register())))->reset();
 
         self::assertInstanceOf(NullLogger::class, $holder->getLogger());
     }
@@ -127,7 +127,7 @@ final class RuntimeLoggerConfiguratorTest extends TestCase
         $factory = self::createStub(LoggerFactoryInterface::class);
         $factory->method('create')->willReturn(new NullLogger());
 
-        return new RuntimeLoggerConfigurator($factory, new LoggerHolder(), new ErrorStream(), new RunTargets($factory));
+        return new RuntimeLoggerConfigurator($factory, new LoggerHolder(), new ErrorStream(), new RunTargets($factory, \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register()));
     }
 
     private static function logLevelInput(string $level): ArrayInput

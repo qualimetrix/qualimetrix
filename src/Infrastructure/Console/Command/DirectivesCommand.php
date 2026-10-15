@@ -26,6 +26,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -233,8 +234,10 @@ final class DirectivesCommand extends Command
         if ($format === 'json') {
             OutputHelper::write($output, $presenter->json($exitCode));
         } else {
-            OutputHelper::write($output, $presenter->text());
-            $output->writeln(\sprintf('<comment>%s</comment>', ProductIdentity::pointerText()));
+            $buffer = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL, $output->isDecorated(), $output->getFormatter());
+            $buffer->write($presenter->text(), false, OutputInterface::OUTPUT_RAW);
+            $buffer->writeln(\sprintf('<comment>%s</comment>', ProductIdentity::pointerText()));
+            OutputHelper::write($output, $buffer->fetch());
         }
 
         return $exitCode;

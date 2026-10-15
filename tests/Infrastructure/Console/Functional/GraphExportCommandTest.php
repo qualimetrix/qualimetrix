@@ -78,7 +78,7 @@ final class GraphExportCommandTest extends TestCase
             new DependencyGraphProjector(),
             $this->preflight(),
             new ErrorStream(),
-            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
+            new RunTargetSession(new RunTargets(new LoggerFactory(), \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register()), new RefusalPresenter(new ErrorStream())),
             new NullLogger(),
         );
 
@@ -111,7 +111,7 @@ final class GraphExportCommandTest extends TestCase
             new DependencyGraphProjector(),
             $this->preflight(),
             new ErrorStream(),
-            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
+            new RunTargetSession(new RunTargets(new LoggerFactory(), \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register()), new RefusalPresenter(new ErrorStream())),
             $logger,
         );
         (new Application())->addCommand($command);
@@ -171,7 +171,7 @@ final class GraphExportCommandTest extends TestCase
             new DependencyGraphProjector(),
             $this->preflight(),
             new ErrorStream(),
-            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
+            new RunTargetSession(new RunTargets(new LoggerFactory(), \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register()), new RefusalPresenter(new ErrorStream())),
             new NullLogger(),
         );
 
@@ -208,7 +208,7 @@ final class GraphExportCommandTest extends TestCase
             new DependencyGraphProjector(),
             $this->preflight(),
             new ErrorStream(),
-            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
+            new RunTargetSession(new RunTargets(new LoggerFactory(), \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register()), new RefusalPresenter(new ErrorStream())),
             new NullLogger(),
         );
 
@@ -244,7 +244,7 @@ final class GraphExportCommandTest extends TestCase
             new DependencyGraphProjector(),
             $this->preflight(),
             new ErrorStream(),
-            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
+            new RunTargetSession(new RunTargets(new LoggerFactory(), \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register()), new RefusalPresenter(new ErrorStream())),
             new NullLogger(),
         );
 
@@ -283,7 +283,7 @@ final class GraphExportCommandTest extends TestCase
             new DependencyGraphProjector(),
             $this->preflight(),
             new ErrorStream(),
-            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
+            new RunTargetSession(new RunTargets(new LoggerFactory(), \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register()), new RefusalPresenter(new ErrorStream())),
             new NullLogger(),
         );
 
@@ -319,7 +319,7 @@ final class GraphExportCommandTest extends TestCase
             new DependencyGraphProjector(),
             $this->preflight(),
             new ErrorStream(),
-            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
+            new RunTargetSession(new RunTargets(new LoggerFactory(), \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register()), new RefusalPresenter(new ErrorStream())),
             new NullLogger(),
         );
 
@@ -356,7 +356,7 @@ final class GraphExportCommandTest extends TestCase
             new DependencyGraphProjector(),
             $this->preflight(),
             new ErrorStream(),
-            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
+            new RunTargetSession(new RunTargets(new LoggerFactory(), \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register()), new RefusalPresenter(new ErrorStream())),
             new NullLogger(),
         );
 
@@ -967,7 +967,7 @@ final class GraphExportCommandTest extends TestCase
             new DependencyGraphProjector(),
             $this->preflight(),
             new ErrorStream(),
-            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
+            new RunTargetSession(new RunTargets(new LoggerFactory(), \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register()), new RefusalPresenter(new ErrorStream())),
             new NullLogger(),
         );
         $application = new Application();

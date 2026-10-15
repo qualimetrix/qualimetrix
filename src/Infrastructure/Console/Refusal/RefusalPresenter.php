@@ -67,16 +67,6 @@ final class RefusalPresenter
         return ConsoleExitCode::Refusal->value;
     }
 
-    /**
-     * A refusal that ends the run after the command's report is already on
-     * stdout. Written to stderr whatever the format: an envelope appended to
-     * a JSON report would leave neither document parseable.
-     */
-    public function refusalAfterPublishedReport(OutputInterface $output, RefusalInterface $refusal): int
-    {
-        return $this->refusal($output, null, $refusal);
-    }
-
     public function unhandled(OutputInterface $output, ?string $format, Throwable $failure): int
     {
         if ($failure instanceof RefusalInterface) {

@@ -15,6 +15,7 @@ use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Subprocess\ChildProcess;
 use Qualimetrix\Tests\TestSupport\WorkingDirectory\RunsFromRepositoryRoot;
+use RuntimeException;
 use Symfony\Component\Console\Tester\CommandTester;
 
 require_once \dirname(__DIR__, 5) . '/scripts/subprocess/ChildProcess.php';
@@ -102,9 +103,9 @@ final class CheckCommandProfileExportTest extends TestCase
         self::assertSame(['p.json'], array_values(array_diff((array) scandir($sealed), ['.', '..'])));
     }
 
-    /** A native profile write can fail after the report; stdout remains one JSON document. */
+    /** A native profile write failure replaces the unpublished report with one refusal envelope. */
     #[Test]
-    public function itKeepsTheReportTheOnlyStdoutDocumentWhenTheExportFailsAfterIt(): void
+    public function itRefusesProfilePublicationBeforePublishingTheReport(): void
     {
         $target = $this->directory . '/p.json';
         $hits = $this->directory . '/profile-write-hits.txt';
@@ -164,10 +165,11 @@ final class CheckCommandProfileExportTest extends TestCase
         self::assertGreaterThan(0, (int) file_get_contents($hits), 'The native profile write hook was not reached.');
         /** @var array<string, mixed> $report */
         $report = json_decode($run['stdout'], true, flags: \JSON_THROW_ON_ERROR);
-        self::assertArrayNotHasKey('error', $report, 'The refusal was written to stdout as a second document.');
-        self::assertArrayHasKey('summary', $report);
-        self::assertStringContainsString('Environment error:', $run['stderr']);
-        self::assertStringContainsString('--profile', $run['stderr']);
+        self::assertArrayHasKey('error', $report);
+        self::assertArrayNotHasKey('summary', $report);
+        self::assertStringContainsString('Environment error:', $report['error']);
+        self::assertStringContainsString('--profile', $report['error']);
+        self::assertSame('', $run['stderr']);
         self::assertSame('old profile', file_get_contents($target));
         $entries = scandir($this->directory);
         self::assertIsArray($entries);
@@ -191,6 +193,116 @@ final class CheckCommandProfileExportTest extends TestCase
         self::assertNotSame(3, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
         self::assertFileExists($this->directory . '/p.json');
         self::assertStringContainsString('Profile exported to', $tester->getErrorOutput());
+    }
+
+    #[Test]
+    public function itPublishesAProfileForARefusalAfterAnalysis(): void
+    {
+        $tester = $this->runCheck(['--profile' => '{dir}/p.json', '--class' => 'AbsentClass']);
+
+        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
+        /** @var array{error: string, exit_code: int} $answer */
+        $answer = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(3, $answer['exit_code']);
+        self::assertStringContainsString('AbsentClass', $answer['error']);
+        self::assertSame('refused', self::exportedOutcome($this->directory . '/p.json'));
+    }
+
+    #[Test]
+    public function itDoesNotPublishAProfileForMalformedBaselinePreflight(): void
+    {
+        self::assertNotFalse(file_put_contents($this->directory . '/baseline.json', '{bad json'));
+        $tester = $this->runCheck([
+            '--baseline' => '{dir}/baseline.json',
+            '--profile' => '{dir}/p.json',
+        ]);
+
+        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
+        self::assertFileDoesNotExist($this->directory . '/p.json');
+    }
+
+    #[Test]
+    public function itPublishesACompleteProfileBeforeTheReport(): void
+    {
+        $tester = $this->runCheck(['--profile' => '{dir}/p.json']);
+
+        self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
+        self::assertSame('complete', self::exportedOutcome($this->directory . '/p.json'));
+        /** @var array{summary: array<string, mixed>} $answer */
+        $answer = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertArrayHasKey('summary', $answer);
+    }
+
+    #[Test]
+    public function itPublishesAnIncompleteProfileWithAnIncompleteReport(): void
+    {
+        self::assertNotFalse(file_put_contents($this->directory . '/Broken.php', '<?php function'));
+        $run = ChildProcess::run([
+            \PHP_BINARY,
+            \dirname(__DIR__, 5) . '/bin/qmx',
+            'check',
+            'Broken.php',
+            '--workers=0',
+            '--no-cache',
+            '--no-progress',
+            '--format=json',
+            '-q',
+            '--profile=' . $this->directory . '/p.json',
+        ], $this->directory);
+
+        self::assertSame(4, $run['exitCode'], $run['stdout'] . $run['stderr']);
+        self::assertSame('', $run['stderr']);
+        self::assertSame('incomplete', self::exportedOutcome($this->directory . '/p.json'));
+        /** @var array{coverage: array{complete: bool, failures: list<mixed>}} $answer */
+        $answer = json_decode($run['stdout'], true, flags: \JSON_THROW_ON_ERROR);
+        self::assertFalse($answer['coverage']['complete']);
+        self::assertNotEmpty($answer['coverage']['failures']);
+    }
+
+    #[Test]
+    public function itPublishesAnInternalProfileWhenAnalysisThrows(): void
+    {
+        $container = (new ContainerFactory())->configure();
+        $container->getDefinition('qmx.run.analysis_pipeline')->setSynthetic(true);
+        $container->compile();
+        $container->set('qmx.run.analysis_pipeline', new class implements \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface {
+            public function analyze(\Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration $configuration): \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult
+            {
+                throw new RuntimeException('injected pipeline failure');
+            }
+        });
+        /** @var CheckCommand $command */
+        $command = $container->get(CheckCommand::class);
+        /** @var RefusalPresenter $refusalPresenter */
+        $refusalPresenter = $container->get(RefusalPresenter::class);
+        $application = new Application(new ErrorStream(), $refusalPresenter, static fn() => new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
+        $application->addCommand($command);
+        $tester = new CommandTester($command);
+        $tester->execute([
+            'paths' => [self::FIXTURE],
+            '--format' => 'json',
+            '--no-cache' => true,
+            '--workers' => '0',
+            '--profile' => $this->directory . '/p.json',
+        ], ['capture_stderr_separately' => true]);
+
+        self::assertSame(5, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
+        /** @var array{error: string, exit_code: int} $answer */
+        $answer = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(5, $answer['exit_code']);
+        self::assertStringContainsString('injected pipeline failure', $answer['error']);
+        self::assertSame('internal', self::exportedOutcome($this->directory . '/p.json'));
+    }
+
+    private static function exportedOutcome(string $path): string
+    {
+        /** @var array{spans: list<array{name: string, attributes: array<string, string>, stopped: bool}>} $profile */
+        $profile = json_decode((string) file_get_contents($path), true, flags: \JSON_THROW_ON_ERROR);
+        $outcomes = array_values(array_filter($profile['spans'], static fn(array $span): bool => $span['name'] === 'run.outcome'));
+        self::assertCount(1, $outcomes);
+        self::assertTrue($outcomes[0]['stopped']);
+
+        return $outcomes[0]['attributes']['outcome'];
     }
 
     /** @return list<string> */

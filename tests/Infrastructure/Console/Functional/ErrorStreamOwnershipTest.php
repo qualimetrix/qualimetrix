@@ -53,7 +53,7 @@ final class ErrorStreamOwnershipTest extends TestCase
         $frame = self::frameOn($errorStream, $output);
 
         $factory = new LoggerFactory();
-        $logger = (new RuntimeLoggerConfigurator($factory, new LoggerHolder(), $errorStream, new RunTargets($factory)))
+        $logger = (new RuntimeLoggerConfigurator($factory, new LoggerHolder(), $errorStream, new RunTargets($factory, \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register())))
             ->configure(self::input(), $output);
         $logger->debug('a line from the collection phase');
 
@@ -70,7 +70,7 @@ final class ErrorStreamOwnershipTest extends TestCase
         $report = self::createStub(ProfileReportInterface::class);
         $report->method('isEnabled')->willReturn(true);
         $target = sys_get_temp_dir() . '/qmx-profile-frame-' . bin2hex(random_bytes(6)) . '.json';
-        $targets = new RunTargets(new LoggerFactory());
+        $targets = new RunTargets(new LoggerFactory(), \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register());
         $targets->judge('--profile', $target);
         $targets->claim();
 

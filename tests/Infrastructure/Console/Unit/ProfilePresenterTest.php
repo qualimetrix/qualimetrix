@@ -48,7 +48,7 @@ final class ProfilePresenterTest extends TestCase
                 require $argv[1];
                 $GLOBALS['qmx_profile_hit'] = 0;
                 $target = $argv[2];
-                $targets = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargets(new \Qualimetrix\Infrastructure\Logging\LoggerFactory());
+                $targets = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargets(new \Qualimetrix\Infrastructure\Logging\LoggerFactory(), \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register());
                 $targets->judge('--profile', $target);
                 $targets->claim();
                 $report = new class implements \Qualimetrix\Infrastructure\Profiler\Contract\ProfileReportInterface {
@@ -92,7 +92,7 @@ final class ProfilePresenterTest extends TestCase
     {
         $target = sys_get_temp_dir() . '/qmx-profile-' . bin2hex(random_bytes(6)) . '.json';
         $presenter = new ProfilePresenter($this->enabledReport(), new ErrorStream());
-        $targets = new RunTargets(new LoggerFactory());
+        $targets = new RunTargets(new LoggerFactory(), \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register());
 
         try {
             $targets->judge('--profile', $target);

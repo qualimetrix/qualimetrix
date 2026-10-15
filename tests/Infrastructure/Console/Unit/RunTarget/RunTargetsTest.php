@@ -129,7 +129,7 @@ final class RunTargetsTest extends TestCase
         $path = $this->directory . '/empty.log';
         $factory = new LoggerFactory();
         $factory->create(new \Symfony\Component\Console\Output\BufferedOutput(), $path, null);
-        $targets = new RunTargets($factory);
+        $targets = new RunTargets($factory, \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register());
         $targets->judge('--log-file', $path);
         $targets->claim();
         $targets->abandon();
@@ -150,6 +150,7 @@ require $argv[1];
 $directory = $argv[2];
 $targets = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargets(
     new \Qualimetrix\Infrastructure\Logging\LoggerFactory(),
+    \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register(),
 );
 $targets->judge('--output', $directory . '/report.json');
 $targets->claim();
@@ -251,7 +252,7 @@ PHP;
         $script = <<<'PHP'
 require $argv[1];
 $directory = $argv[2];
-$targets = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargets(new \Qualimetrix\Infrastructure\Logging\LoggerFactory());
+$targets = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargets(new \Qualimetrix\Infrastructure\Logging\LoggerFactory(), \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register());
 $targets->judge('--output', $directory . '/report.json');
 $targets->judge('--profile', $directory . '/profile.json');
 $targets->claim();
@@ -275,7 +276,7 @@ PHP;
     {
         $factory = self::createMock(LoggerFactoryInterface::class);
         $factory->expects(self::once())->method('reset');
-        $targets = new RunTargets($factory);
+        $targets = new RunTargets($factory, \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register());
         $targets->judge('--output', $this->directory . '/report.json');
         $targets->claim();
 
@@ -588,13 +589,14 @@ PHP;
     private static function childScript(string $spelling, string $content, string $before = ''): string
     {
         return \sprintf(
-            'require %s; %s $targets = new \\%s(new \\%s());'
+            'require %s; %s $targets = new \\%s(new \\%s(), \\%s::register());'
             . ' try { $targets->judge("--output", %s); $targets->claim(); $targets->write("--output", %s); $targets->abandon(); }'
             . ' catch (\\Throwable $failure) { fwrite(STDERR, $failure->getMessage()); exit(3); }',
             var_export(\dirname(__DIR__, 5) . '/vendor/autoload.php', true),
             $before,
             RunTargets::class,
             LoggerFactory::class,
+            \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::class,
             var_export($spelling, true),
             $content,
         );
@@ -602,7 +604,7 @@ PHP;
 
     private static function targets(): RunTargets
     {
-        return new RunTargets(new LoggerFactory());
+        return new RunTargets(new LoggerFactory(), \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register());
     }
 
     /** @return list<string> */
