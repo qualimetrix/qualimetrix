@@ -628,6 +628,10 @@
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\HealthDimensionExclusions"
+        },
+        {
+          "owner": "Infrastructure.Cache",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\CacheConfigurationResolver"
         }
       ]
     },
@@ -3721,7 +3725,7 @@
         },
         {
           "owner": "Infrastructure.Parallel",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\WorkerBootstrap"
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\WorkerComposition"
         }
       ]
     },
@@ -5896,7 +5900,7 @@
         },
         {
           "owner": "Infrastructure.Parallel",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\WorkerBootstrap"
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\WorkerComposition"
         }
       ]
     },
@@ -15069,7 +15073,9 @@
       "consumers": [
         {
           "owner": "Infrastructure.Parallel",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\Strategy\\AmphpParallelStrategy"
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\Strategy\\AmphpParallelStrategy",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Collection\\FileProcessingResult"
         }
       ]
     },
@@ -25490,12 +25496,6 @@
           "owner": "Infrastructure.Parallel",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\FileProcessingTaskFactory",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyTraversalParticipantInterface"
-        },
-        {
-          "owner": "Infrastructure.Parallel",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\WorkerBootstrap",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyTraversalParticipantInterface"
         },
         {

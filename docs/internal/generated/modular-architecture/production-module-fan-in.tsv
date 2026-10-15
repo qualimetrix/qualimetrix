@@ -10,7 +10,7 @@ Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument	Analysis.C
 Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface	Analysis.Configuration	13	6
 Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface	Analysis.Configuration	9	4
 Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaqueInterface	Analysis.Configuration	2	1
-Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface	Analysis.Configuration	27	8
+Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface	Analysis.Configuration	28	8
 Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedWriteHistoryInterface	Analysis.Configuration	6	2
 Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface	Analysis.Configuration	11	9
 Qualimetrix\Analysis\Configuration\Contract\Document\Schema\IntegerJudgement	Analysis.Configuration	1	1
@@ -303,7 +303,6 @@ Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface	A
 Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage	Analysis.Run	2	1
 Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface	Analysis.Run	3	2
 Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput	Analysis.Run	1	1
-Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind	Analysis.Run	1	1
 Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult	Analysis.Run	3	1
 Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface	Analysis.Run	2	2
 Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ExecutionStrategyInterface	Analysis.Run	3	1

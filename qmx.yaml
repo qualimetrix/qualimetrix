@@ -2144,7 +2144,6 @@ rules:
       - subtree: Qualimetrix\Analysis\Policy\Architecture\Layer
       - subtree: Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow
       - subtree: Qualimetrix\Analysis\Evidence\Prioritization\Debt
-      - subtree: Qualimetrix\Infrastructure\Serializer
       # Immutable score and coverage values carry health facts through the public
       # contract; exact namespace scope leaves future child namespaces judged.
       - exact: 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score'
@@ -2488,9 +2487,6 @@ rules:
       # Collector metadata operations and abstractness calculation use no shared
       # instance fields; the lifecycle concerns one stateless metric collector.
       - exact: src/Analysis/Evidence/Coupling/AbstractnessCollector.php
-      # Serializer identity, availability and native encode/decode implement one
-      # stateless codec protocol without shared instance fields.
-      - exact: src/Infrastructure/Serializer/IgbinarySerializer.php
       # Immutable spelling and namespace-prefix projections expose the same bound
       # type vocabulary through separate lookup maps.
       - exact: src/Analysis/Policy/Architecture/Layer/ClassContext/NameSpellingIndex.php
