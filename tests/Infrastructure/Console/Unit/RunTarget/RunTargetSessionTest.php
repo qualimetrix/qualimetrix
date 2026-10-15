@@ -173,12 +173,15 @@ PHP;
             self::assertNotSame(proc_get_status($process)['pid'], $workerB);
             self::assertTrue(proc_terminate($process, $signal));
             $deadline = microtime(true) + 2;
+            $status = proc_get_status($process);
             do {
-                $status = proc_get_status($process);
-                if (!$status['running']) {
+                if (!$status['running'] && (!\function_exists('posix_kill') || (!posix_kill($workerA, 0) && !posix_kill($workerB, 0)))) {
                     break;
                 }
                 usleep(10_000);
+                if ($status['running']) {
+                    $status = proc_get_status($process);
+                }
             } while (microtime(true) < $deadline);
             self::assertFalse($status['running'], 'The interrupted worker run waited for unreleased workers.');
             if (\function_exists('posix_kill')) {
