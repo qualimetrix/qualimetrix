@@ -1,0 +1,22 @@
+--- candidate
++++ reference (mapped)
+@@ -1,5 +1,4 @@
+-visible 782
+-Qualimetrix dev-main — 1 file analyzed, <normalized>s
+-
+-Analysis incomplete: 1 of 2 discovered entries failed (1 directory-symlink); policy results are not authoritative.
+-Failed file: src/linked
++visible 758
++Qualimetrix dev-main — 1 file analyzed, <normalized>s
++
++Analysis incomplete: 1 of 2 discovered entries failed (1 directory-symlink); policy results are not authoritative.
+@@ -19,5 +18,4 @@
+-invocation-format:summary 782
+-Qualimetrix dev-main — 1 file analyzed, <normalized>s
+-
+-Analysis incomplete: 1 of 2 discovered entries failed (1 directory-symlink); policy results are not authoritative.
+-Failed file: src/linked
++invocation-format:summary 758
++Qualimetrix dev-main — 1 file analyzed, <normalized>s
++
++Analysis incomplete: 1 of 2 discovered entries failed (1 directory-symlink); policy results are not authoritative.

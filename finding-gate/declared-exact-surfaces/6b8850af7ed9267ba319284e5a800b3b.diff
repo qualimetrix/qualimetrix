@@ -1,0 +1,26 @@
+--- candidate
++++ reference (mapped)
+@@ -1,13 +1,10 @@
+-visible 53
+-digraph Dependencies {
+-    // No classes to display
+-}
+-invocation-graph:export 53
+-digraph Dependencies {
+-    // No classes to display
+-}
+-invocation-stderr 30
+-No PHP files were discovered.
+-
+-invocation-exit 1
+-0
++visible 26
++No files found to analyze
++
++invocation-graph:export 26
++No files found to analyze
++
++invocation-stderr 0
++
++invocation-exit 1
++1
