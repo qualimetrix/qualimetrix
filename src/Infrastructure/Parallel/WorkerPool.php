@@ -50,19 +50,19 @@ final class WorkerPool
     {
         $future = async(fn(): mixed => $this->pool->submit($task)->getFuture()->await());
         try {
-            if ($future->await(new TimeoutCancellation(WorkerContextFactory::START_DEADLINE_SECONDS)) !== true) {
+            if ($future->await(new TimeoutCancellation(WorkerRequest::START_DEADLINE_SECONDS)) !== true) {
                 throw WorkerStartFailure::failedToStart('the bootstrap probe refused the worker', '', $request);
             }
         } catch (CancelledException $failure) {
             $log = $this->contexts->startupExcerpt();
             $this->pool->kill();
             try {
-                $future->await(new TimeoutCancellation(WorkerContextFactory::START_DEADLINE_SECONDS));
+                $future->await(new TimeoutCancellation(WorkerRequest::START_DEADLINE_SECONDS));
             } catch (Throwable) {
                 $future->ignore();
             }
             $this->close();
-            throw WorkerStartFailure::noWorkerWithin(WorkerContextFactory::START_DEADLINE_SECONDS, $log, $request);
+            throw WorkerStartFailure::noWorkerWithin(WorkerRequest::START_DEADLINE_SECONDS, $log, $request);
         } catch (WorkerStartFailure $failure) {
             throw $failure;
         } catch (Throwable $failure) {

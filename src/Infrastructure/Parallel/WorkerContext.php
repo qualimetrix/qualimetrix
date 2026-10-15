@@ -71,7 +71,7 @@ final readonly class WorkerContext implements Context
     {
         // amphp kills the context on IPC failure. Drain the dying process's
         // shutdown note before exposing that failure to the worker pool.
-        $deadline = new TimeoutCancellation(WorkerContextFactory::START_DEADLINE_SECONDS);
+        $deadline = new TimeoutCancellation(WorkerRequest::START_DEADLINE_SECONDS);
         foreach ($this->readers as $reader) {
             try {
                 $reader->await($deadline);

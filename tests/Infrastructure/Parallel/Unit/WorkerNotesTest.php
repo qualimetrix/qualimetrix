@@ -25,13 +25,13 @@ final class WorkerNotesTest extends TestCase
         $notes = new WorkerNotes($owner);
         $death = ['kind' => 'death', 'file' => '/project/Real.php', 'message' => 'Allowed memory size of 1 bytes exhausted', 'limit' => '48M'];
         $foreign = 'QMX-WORKER-NOTE foreign ' . base64_encode(json_encode($death, \JSON_THROW_ON_ERROR));
-        $notes->line('trusted', $foreign, true);
-        $notes->line('trusted', 'QMX-WORKER-NOTE misleading warning', true);
-        $notes->line('trusted', "payload bytes", false);
+        $notes->stderrLine('trusted', $foreign);
+        $notes->stderrLine('trusted', 'QMX-WORKER-NOTE misleading warning');
+        $notes->stdoutLine('payload bytes');
         self::assertSame([], (new ReflectionProperty($notes, 'deaths'))->getValue($notes));
-        $notes->line('trusted', 'QMX-WORKER-NOTE trusted ' . base64_encode(json_encode($death, \JSON_THROW_ON_ERROR)), true);
+        $notes->stderrLine('trusted', 'QMX-WORKER-NOTE trusted ' . base64_encode(json_encode($death, \JSON_THROW_ON_ERROR)));
         self::assertStringContainsString('Allowed memory size', $notes->deathFor('/project/Real.php') ?? '');
-        $notes->line('trusted', 'QMX-WORKER-NOTE trusted ' . base64_encode(json_encode(['kind' => 'diagnostic', 'file' => '/collector.php', 'line' => 7, 'message' => 'visible warning', 'severity' => 'Warning'], \JSON_THROW_ON_ERROR)), true);
+        $notes->stderrLine('trusted', 'QMX-WORKER-NOTE trusted ' . base64_encode(json_encode(['kind' => 'diagnostic', 'file' => '/collector.php', 'line' => 7, 'message' => 'visible warning', 'severity' => 'Warning'], \JSON_THROW_ON_ERROR)));
         $text = $stderr->fetch();
         self::assertStringContainsString('worker: ' . $foreign, $text);
         self::assertStringContainsString('worker: QMX-WORKER-NOTE misleading warning', $text);

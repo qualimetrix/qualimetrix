@@ -9,7 +9,6 @@ use Closure;
 use LogicException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ExecutionStrategyInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ParallelCapableInterface;
@@ -31,7 +30,8 @@ use Throwable;
  * Executes process workers after a bounded bootstrap probe, with in-process
  * fallback below the threshold and for an unavailable automatic request.
  *
- * @qmx-threshold coupling.instability warning=0.857143 -- This execution adapter binds worker, cancellation and collection contracts with few strategy consumers; splitting it transfers the same transport dependencies.
+ * @qmx-threshold coupling.cbo 21 -- This adapter coordinates process transport, worker requests and collection results; extracting submission or result handling transfers those same dependencies.
+ * @qmx-threshold coupling.instability warning=0.900001 -- This execution adapter binds worker, cancellation and collection contracts with few strategy consumers; splitting it transfers the same transport dependencies.
  */
 final class AmphpParallelStrategy implements ExecutionStrategyInterface, ParallelCapableInterface
 {
@@ -205,6 +205,18 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
      */
     private function processBatch(WorkerPool $pool, array $batch): array
     {
+        [$executions, $pending, $failure] = $this->submitBatch($pool, $batch);
+
+        return $this->collectBatch($pool, $executions, $pending, $failure);
+    }
+
+    /**
+     * @param list<SplFileInfo> $batch
+     *
+     * @return array{list<array{file: SplFileInfo, await: Closure(): FileProcessingResult}>, list<SplFileInfo>, ?WorkerStartFailure}
+     */
+    private function submitBatch(WorkerPool $pool, array $batch): array
+    {
         $root = $this->projectRoot ?? throw new LogicException('Parallel collection requires a configured project root.');
         /** @var list<array{file: SplFileInfo, await: Closure(): FileProcessingResult}> $executions */
         $executions = [];
@@ -223,6 +235,18 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
                 break;
             }
         }
+
+        return [$executions, $pending, $failure];
+    }
+
+    /**
+     * @param list<array{file: SplFileInfo, await: Closure(): FileProcessingResult}> $executions
+     * @param list<SplFileInfo> $pending
+     *
+     * @return array{list<FileProcessingResult>, list<SplFileInfo>, ?WorkerStartFailure}
+     */
+    private function collectBatch(WorkerPool $pool, array $executions, array $pending, ?WorkerStartFailure $failure): array
+    {
         $results = [];
         foreach ($executions as $item) {
             try {
@@ -238,7 +262,7 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
                 }
                 $message = $pool->failureMessage($thrown, $this->absolutePath($item['file'])->value());
                 $this->logger->warning('AmphpParallelStrategy: file processing failed', ['file' => $item['file']->getPathname(), 'error' => $message]);
-                $results[] = FileProcessingResult::failure($this->relativePathFor($item['file']), $message, FileProcessingFailureKind::Processing);
+                $results[] = FileProcessingResult::failure($this->relativePathFor($item['file']), $message);
             }
         }
         return [$results, $pending, $failure];

@@ -10,6 +10,7 @@ use Amp\DeferredCancellation;
 use Amp\DeferredFuture;
 use Amp\Future;
 use Amp\TimeoutCancellation;
+use Closure;
 use JsonException;
 use Qualimetrix\Infrastructure\Parallel\Contract\WorkerDiagnosticsInterface;
 use Throwable;
@@ -33,50 +34,102 @@ final class WorkerNotes
     }
 
     /** @return Future<void> */
-    public function capture(ReadableResourceStream $stream, string $nonce, bool $notes): Future
+    public function captureStdout(ReadableResourceStream $stream): Future
     {
-        return $this->readers[] = async(function () use ($stream, $nonce, $notes): void {
+        return $this->capture($stream, $this->stdoutLine(...));
+    }
+
+    /** @return Future<void> */
+    public function captureStderr(ReadableResourceStream $stream, string $nonce): Future
+    {
+        return $this->capture($stream, fn(string $line) => $this->stderrLine($nonce, $line));
+    }
+
+    /** @param Closure(string): void $consume
+     * @return Future<void>
+     */
+    private function capture(ReadableResourceStream $stream, Closure $consume): Future
+    {
+        return $this->readers[] = async(function () use ($stream, $consume): void {
             try {
                 foreach (splitLines($stream, $this->cancel->getCancellation()) as $line) {
-                    $this->line($nonce, $line, $notes);
+                    $consume($line);
                 }
             } catch (CancelledException) {
-                // Closing the pool cancels its own readers after bounded draining.
+                return;
             }
         });
     }
 
-    public function line(string $nonce, string $line, bool $notes): void
+    public function stdoutLine(string $line): void
+    {
+        $this->diagnostic('worker: ' . $line);
+    }
+
+    public function stderrLine(string $nonce, string $line): void
+    {
+        $note = $this->decodeNote($nonce, $line);
+        if ($note === null) {
+            $this->stdoutLine($line);
+            return;
+        }
+        if ($this->recordDeathIfPresent($note)) {
+            return;
+        }
+        if ($this->reportDiagnosticIfPresent($note)) {
+            return;
+        }
+        $this->stdoutLine($line);
+    }
+
+    /** @param array<string, mixed> $note */
+    private function recordDeathIfPresent(array $note): bool
+    {
+        if (($note['kind'] ?? null) !== 'death' || !\is_string($note['limit'] ?? null)) {
+            return false;
+        }
+        $this->recordDeath($note['file'], $note['message'], $note['limit']);
+        return true;
+    }
+
+    /** @param array<string, mixed> $note */
+    private function reportDiagnosticIfPresent(array $note): bool
+    {
+        if (($note['kind'] ?? null) !== 'diagnostic' || !\is_int($note['line'] ?? null) || !\is_string($note['severity'] ?? null)) {
+            return false;
+        }
+        $this->diagnostic(\sprintf('PHP %s:  %s in %s on line %d', $note['severity'], $note['message'], $note['file'], $note['line']));
+        return true;
+    }
+
+    /** @return array<string, mixed>|null */
+    private function decodeNote(string $nonce, string $line): ?array
     {
         $prefix = 'QMX-WORKER-NOTE ' . $nonce . ' ';
-        if (!$notes || !str_starts_with($line, $prefix)) {
-            $this->diagnostic('worker: ' . $line);
-            return;
+        if (!str_starts_with($line, $prefix)) {
+            return null;
         }
         $payload = base64_decode(substr($line, \strlen($prefix)), true);
         try {
             $note = $payload === false ? null : json_decode($payload, true, flags: \JSON_THROW_ON_ERROR);
         } catch (JsonException) {
-            $note = null;
+            return null;
         }
         if (!\is_array($note) || !\is_string($note['file'] ?? null) || !\is_string($note['message'] ?? null)) {
-            $this->diagnostic('worker: ' . $line);
-            return;
+            return null;
         }
-        if (($note['kind'] ?? null) === 'death' && \is_string($note['limit'] ?? null)) {
-            $message = $note['message'] . ' (worker file ' . $note['file'] . ', memory_limit="' . $note['limit'] . '").';
-            $this->deaths[$note['file']] = $message;
-            if (isset($this->awaitingDeaths[$note['file']])) {
-                $this->awaitingDeaths[$note['file']]->complete($message);
-                unset($this->awaitingDeaths[$note['file']]);
-            }
-            return;
+
+        return $note;
+    }
+
+    private function recordDeath(string $file, string $detail, string $limit): void
+    {
+        $message = $detail . ' (worker file ' . $file . ', memory_limit="' . $limit . '").';
+        $this->deaths[$file] = $message;
+        if (isset($this->awaitingDeaths[$file])) {
+            $this->awaitingDeaths[$file]->complete($message);
+            unset($this->awaitingDeaths[$file]);
         }
-        if (($note['kind'] ?? null) === 'diagnostic' && \is_int($note['line'] ?? null) && \is_string($note['severity'] ?? null)) {
-            $this->diagnostic(\sprintf('PHP %s:  %s in %s on line %d', $note['severity'], $note['message'], $note['file'], $note['line']));
-            return;
-        }
-        $this->diagnostic('worker: ' . $line);
     }
 
     public function diagnostic(string $message): void
@@ -91,7 +144,7 @@ final class WorkerNotes
         }
         $future = $this->awaitingDeaths[$file] ??= new DeferredFuture();
         try {
-            return $future->getFuture()->await(new TimeoutCancellation(WorkerContextFactory::START_DEADLINE_SECONDS));
+            return $future->getFuture()->await(new TimeoutCancellation(WorkerRequest::START_DEADLINE_SECONDS));
         } catch (CancelledException) {
             return null;
         } finally {
@@ -104,9 +157,9 @@ final class WorkerNotes
         try {
             foreach ($this->readers as $reader) {
                 try {
-                    $reader->await(new TimeoutCancellation(WorkerContextFactory::START_DEADLINE_SECONDS));
+                    $reader->await(new TimeoutCancellation(WorkerRequest::START_DEADLINE_SECONDS));
                 } catch (Throwable) {
-                    // A closed transport cannot prevent cleanup of the remaining streams.
+                    continue;
                 }
             }
         } finally {

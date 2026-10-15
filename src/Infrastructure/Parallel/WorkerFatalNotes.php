@@ -59,6 +59,7 @@ final class WorkerFatalNotes
         fwrite(\STDERR, 'QMX-WORKER-NOTE ' . $this->nonce . ' ' . base64_encode(json_encode($note, \JSON_THROW_ON_ERROR | \JSON_INVALID_UTF8_SUBSTITUTE)) . "\n");
     }
 
+    /** @qmx-ignore code-smell.unused-private -- PHP invokes this registered shutdown callback outside the visible call graph. */
     private function onShutdown(): void
     {
         $error = error_get_last();

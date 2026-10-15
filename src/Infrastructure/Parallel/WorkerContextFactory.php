@@ -18,9 +18,11 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Core\FileTarget\NativeCall;
 
+/**
+ * @qmx-threshold coupling.instability warning=0.894737 -- The process-context factory binds IPC startup, cancellation, diagnostics and private startup logs for the worker pool; these transport dependencies stay together for its few consumers.
+ */
 final class WorkerContextFactory implements ContextFactory
 {
-    public const int START_DEADLINE_SECONDS = 10;
     private readonly LocalIpcHub $hub;
     private readonly string $directory;
     /** @var list<string> */
@@ -60,18 +62,18 @@ final class WorkerContextFactory implements ContextFactory
             $binary[] = '-d';
             $binary[] = $setting . '=' . (string) \ini_get($setting);
         }
-        $deadline = new TimeoutCancellation(self::START_DEADLINE_SECONDS);
+        $deadline = new TimeoutCancellation(WorkerRequest::START_DEADLINE_SECONDS);
         $combined = $cancellation === null ? $deadline : new CompositeCancellation($cancellation, $deadline);
         try {
-            $context = ProcessContext::start($this->hub, $script, environment: $environment, cancellation: $combined, binary: $binary, childConnectTimeout: self::START_DEADLINE_SECONDS);
+            $context = ProcessContext::start($this->hub, $script, environment: $environment, cancellation: $combined, binary: $binary, childConnectTimeout: WorkerRequest::START_DEADLINE_SECONDS);
             $this->logger->debug('Worker process connected', ['pid' => $context->getPid()]);
-            $readers = [$this->notes->capture($context->getStdout(), $nonce, false), $this->notes->capture($context->getStderr(), $nonce, true)];
+            $readers = [$this->notes->captureStdout($context->getStdout()), $this->notes->captureStderr($context->getStderr(), $nonce)];
             return new WorkerContext($context, $readers, $file);
         } catch (CancelledException $failure) {
             if ($cancellation?->isRequested() === true) {
                 throw $failure;
             }
-            throw $this->failure = WorkerStartFailure::noWorkerWithin(self::START_DEADLINE_SECONDS, self::excerpt($file), $this->request);
+            throw $this->failure = WorkerStartFailure::noWorkerWithin(WorkerRequest::START_DEADLINE_SECONDS, self::excerpt($file), $this->request);
         } catch (ContextException $failure) {
             throw $this->failure = WorkerStartFailure::failedToStart($failure->getMessage(), self::excerpt($file), $this->request);
         } finally {

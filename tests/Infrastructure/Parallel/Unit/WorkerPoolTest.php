@@ -57,7 +57,7 @@ exit($code);
 PHP;
         try {
             $process = new Process([\PHP_BINARY, '-r', $script, \dirname(__DIR__, 4) . '/vendor/autoload.php', $prepend]);
-            $process->setTimeout(WorkerContextFactory::START_DEADLINE_SECONDS * 3);
+            $process->setTimeout(WorkerRequest::START_DEADLINE_SECONDS * 3);
             $process->run();
             self::assertSame(3, $process->getExitCode(), $process->getErrorOutput());
             $record = json_decode($process->getOutput(), true, flags: \JSON_THROW_ON_ERROR);

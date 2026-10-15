@@ -47,13 +47,16 @@ that service. Bootstrap takes the already serialized `WorkerComposition` as
 its metadata argument, rather than separate collector, derived-collector,
 traversal and rule class arguments. Processor reuse includes its serialized class and state in the
 cache identity, alongside the existing project and collector configuration.
+`WorkerComposition` validates its own collector and traversal class names
+before startup; bootstrap applies the same checks when rebuilding a processor.
 
 **Worker startup.** `WorkerRequest` keeps the accepted count and whether it was
 explicitly requested. Before collecting files, `WorkerPool` runs a
 `WorkerProbeTask` through the same serialized configuration as real tasks.
 Only process workers are supported; `ext-parallel` threads and forks are not
 alternative transports.
-`WorkerContextFactory` gives process startup one ten-second deadline and
+`WorkerRequest` owns the shared ten-second startup and diagnostic-drain bound.
+`WorkerContextFactory` gives process startup that deadline and
 returns a `WorkerStartFailure` with the request and native cause when it cannot
 connect. `WorkerPhpFailure` carries a worker's private PHP fatal diagnostic back
 through IPC so the failed file retains its actual cause.
@@ -73,7 +76,9 @@ crash notices to the log instead of stdout. The private log is removed when
 the pool closes.
 `WorkerNotes` sends child diagnostics through the Parallel-owned
 `WorkerDiagnosticsInterface`; Console's run-bound `ErrorStream` implements this
-one-method port. `WorkerFatalNotes` owns the worker's nonce, active-file state,
+one-method port. Its separate stdout and stderr readers decode nonce-bearing
+PHP notes only on stderr; other lines remain visible as worker diagnostics.
+`WorkerFatalNotes` owns the worker's nonce, active-file state,
 error handler and shutdown note. Console retains only the coordinator's memory
 refusal, keeping dependencies in the Console-to-Parallel direction.
 
