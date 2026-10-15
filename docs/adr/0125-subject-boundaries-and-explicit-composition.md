@@ -123,20 +123,20 @@ Existing callers of the internal Console services must also select the completed
 operation instead of replacing a facade name alone. All names in this table are
 relative to `Infrastructure\Console\`.
 
-| Old call                                                             | New operation                                                                                                                                                     |
-| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `RuleInputValidator::resolve(document, input)`                       | `RunSetup\FindingConfigurationPreparation::resolve(document)`                                                                                                     |
-| `RuleInputValidator::validate(input, configuration, definitions)`    | Read the mandatory channel universe from the prepared Finding configuration; worker spelling is judged by `Invocation\WorkerCountParser` during input adaptation. |
-| `RuleInputValidator::configureCheckCommand(command)`                 | `Invocation\CommandDefinition\CheckCommandDefinition::configure(command)` on the composed instance.                                                               |
-| `FindingFilterOrchestrator::projectionOptions(...)`                  | `CheckScope\FindingProjectionOptionsResolver::resolve(...)`                                                                                                       |
-| `FindingFilterOrchestrator::filterAndReport(...)`                    | `CheckReport\CheckFindingProjection::project(...)`, which combines late projection and its diagnostics.                                                           |
-| `FindingFilterOrchestrator::projectScope(...)`                       | `CheckScope\ProjectScopePresenter::project(...)`                                                                                                                  |
-| `ResultPresenter::renderResults(...)`                                | `CheckReport\ReportAssembler::assemble(...)` builds the report only; the check response uses `CheckReportRenderer` for formatting and exit status.                |
-| `ResultPresenter::bindOutputOptions(...)`, `bindOutputFormat(...)`   | `CheckReport\FormatterContextFactory::bindBeforeAnalysis(...)`, `bindFormatBeforeAnalysis(...)`                                                                   |
-| `ResultPresenter::publishReport(...)`, `assertOutputIsWritable(...)` | `Terminal\ReportPublication\ReportPublication` operations of the same names.                                                                                      |
-| `ResultPresenter::presentProfile(...)`                               | `Profile\ProfilePresenter::outcome(...)` for one terminal outcome.                                                                                                |
-| `ResultPresenter::writeDiagnostic(...)`                              | The composed `Terminal\ErrorStream::write(...)` operation.                                                                                                        |
-| `RuntimeConfigurator::clearCacheIfRequested(...)`, `finishRun()`     | `CacheLifecycle\CacheRunLifecycle` operations of the same names.                                                                                                  |
+| Old call                                                             | New operation                                                                                                                                                                   |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `RuleInputValidator::resolve(document, input)`                       | `RunSetup\FindingConfigurationPreparation::resolve(document)`                                                                                                                   |
+| `RuleInputValidator::validate(input, configuration, definitions)`    | Read the mandatory channel universe from the prepared Finding configuration; worker spelling is judged by `Invocation\Configuration\WorkerCountParser` during input adaptation. |
+| `RuleInputValidator::configureCheckCommand(command)`                 | `Invocation\CommandDefinition\CheckCommandDefinition::configure(command)` on the composed instance.                                                                             |
+| `FindingFilterOrchestrator::projectionOptions(...)`                  | `CheckScope\FindingProjectionOptionsResolver::resolve(...)`                                                                                                                     |
+| `FindingFilterOrchestrator::filterAndReport(...)`                    | `CheckReport\CheckFindingProjection::project(...)`, which combines late projection and its diagnostics.                                                                         |
+| `FindingFilterOrchestrator::projectScope(...)`                       | `CheckScope\ProjectScopePresenter::project(...)`                                                                                                                                |
+| `ResultPresenter::renderResults(...)`                                | `CheckReport\ReportAssembler::assemble(...)` builds the report only; the check response uses `CheckReportRenderer` for formatting and exit status.                              |
+| `ResultPresenter::bindOutputOptions(...)`, `bindOutputFormat(...)`   | `CheckReport\FormatterContextFactory::bindBeforeAnalysis(...)`, `bindFormatBeforeAnalysis(...)`                                                                                 |
+| `ResultPresenter::publishReport(...)`, `assertOutputIsWritable(...)` | `Terminal\ReportPublication\ReportPublication` operations of the same names.                                                                                                    |
+| `ResultPresenter::presentProfile(...)`                               | `Profile\ProfilePresenter::outcome(...)` for one terminal outcome.                                                                                                              |
+| `ResultPresenter::writeDiagnostic(...)`                              | The composed `Terminal\ErrorStream::write(...)` operation.                                                                                                                      |
+| `RuntimeConfigurator::clearCacheIfRequested(...)`, `finishRun()`     | `CacheLifecycle\CacheRunLifecycle` operations of the same names.                                                                                                                |
 
 `Command\CheckCommand` becomes `Check\CheckCommand`; graph export, hook,
 directives and rule-listing command classes likewise join their named subjects.
@@ -144,6 +144,23 @@ The CLI spellings are unchanged. Resolve the commands from the container rather
 than reconstructing their former constructor arguments. A complete check
 response is prepared by `CheckReportDelivery` and finished by its invocation-local
 `CheckResponse`; neither assembling a report nor formatting its body publishes it.
+
+### Graph worker input
+
+`graph:export --workers` changes from permissive integer coercion to an input
+refusal. Previously `abc`, `1.5` and an out-of-range integer could be coerced or
+ignored, allowing analysis and a graph with exit 0 despite the invalid request.
+`Infrastructure\Console\Invocation\Configuration\WorkerCountParser` now judges
+the supplied spelling during input adaptation and refuses these values with
+exit 3 before analysis. Worker validation belongs at this shared input boundary:
+graph export must not depend on Finding configuration validation to reject an
+invalid parallelism request.
+
+For migration, omit `--workers` to retain `parallel.workers` from configuration
+(automatic detection by default), or pass a non-negative decimal integer in
+`0..PHP_INT_MAX` for the running PHP platform. Explicit `--workers=0` preserves
+sequential execution, as does `--workers=1`; zero is not an auto-detection request.
+The option name and valid-value behavior are unchanged.
 
 ## Consequences
 
