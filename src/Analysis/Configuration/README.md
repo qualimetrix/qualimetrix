@@ -333,7 +333,7 @@ all authored feature values are consumed through their declared resolved section
 ## CLI option aliases
 
 This is the canonical internal reference for aliases discovered from current
-rule classes. `DocumentationConsistencyTest` requires every alias to remain in
+rule classes. `DocumentationRuleSurfaceTest` requires every alias to remain in
 this moved README; the user-facing CLI reference remains under `website/docs/`.
 
 | Option                                  | Rule                                 | Field                 |

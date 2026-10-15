@@ -60,7 +60,7 @@ Every test, support file, and fixture directory is governed by the same
 manifest; `test-topology.tsv` in the generated directory reports how many of
 each. Self-analysis runs against the versioned v14 root baseline, whose
 275 groups across 231 subjects are checked against the file itself by
-`DocumentationConsistencyTest`, and the current dogfood result is zero findings.
+`BaselineCountPublicationTest`, and the current dogfood result is zero findings.
 
 The manifest checker is the exact owner/visibility/import authority. It runs as
 `composer architecture:check` before selfcheck and rejects unlisted imports even

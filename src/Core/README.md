@@ -471,7 +471,7 @@ optional level — and the name half of it is this type: the three inline
 suppression directives, the `suppress_namespace_channels` keys, and rule selection
 (`only_rules` / `disabled_rules` / `--only-rule` / `--disable-rule`), which also
 matches a producer name. `@qmx-threshold` addresses a rule rather than a channel,
-takes no level (ADR 0024 §2), and reads this grammar for rule names.
+takes no level (ADR 0024, section 2), and reads this grammar for rule names.
 
 ### ChannelLevelSelector
 
@@ -859,9 +859,9 @@ overrides. Its cases are `Hook`, `Property`, `Callable`, and `Class_`;
 file and next-line controls remain represented by `SuppressionType` and never
 enter this precedence enum.
 
-`ControlScope` has no dependencies beyond PHP. `DeclarationBindingsTest` and
+`ControlScope` has no dependencies beyond PHP. `DeclarationControlBindingsTest` and
 `PropertyHookControlPrecedenceTest` cover production binding and the exact
-hook-over-property-over-class precedence, while `SourceControlsTest` verifies
+hook-over-property-over-class precedence, while `SourceControlExtractorTest` verifies
 that controls with different declaration scopes remain distinct.
 
 ### Suppression
