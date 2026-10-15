@@ -1,21 +1,13 @@
 # Active internal plans
 
-This index lists only work that is executable on the current tree.
+This index lists plans with work still outstanding on the current tree.
 
-| Campaign                                                                                 | Status                                                                                                            |
-| ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| [Anonymous class inheritance](anonymous-class-inheritance/00-overview.md)                | Two plan-review rounds and a code review; all packages landed, findings closed                                    |
-| [Builtin class census](builtin-class-census/01-census.md)                                | Planned; one stage; not started                                                                                   |
-| [Control tooling](control-tooling/00-overview.md)                                        | Planned; three review rounds; stage 01 not started                                                                |
-| [Agent discoverability](agent-discoverability/00-overview.md)                            | Two plan-review rounds; stages 01 and 02 landed with a declared gate delta. Stages 03 and 04 written, not started |
-| [DIT external ancestry](dit-external-ancestry/00-overview.md)                            | Stages 01 (#119), 02 (#135, ADR 0074) and 03 (ADR 0076) landed; campaign complete                                 |
-| [Drill-down ownership](drill-down-ownership/01-ownership.md)                             | Reviewed; landed: the drill-down counter moved to the filter it must agree with                                   |
-| [Duplicate declaration depth](duplicate-declaration-depth/01-declaration-exact-depth.md) | Two plan-review rounds and a code review; landed with a declared gate delta                                       |
-| [Phar distribution](phar-distribution/00-overview.md)                                    | Stage 01 P0-P3 landed, pending review and one branch-protection setting; stage 02 written when 01 ships           |
-| [Rules listing](rules-listing/01-one-declaration-two-readers.md)                         | Three review rounds; landed, pending review                                                                       |
-| [Selector language](selector-language/00-overview.md)                                    | Planned and reviewed in three rounds; implementation authorized                                                   |
-| [Shorthand scope](shorthand-scope/00-overview.md)                                        | P0 landed (#145): the stand can now tell which of two keys won, axis B 81 to 111. P1-P6 written, not started      |
-| [Subprocess drain](subprocess-drain/00-overview.md)                                      | Landed: three stages, two plan-review rounds and a code review, all findings closed                               |
+| Plan                                                      | Status                                                                                                                                                                                                                                   |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Builtin class census](builtin-class-census/01-census.md) | The registry census and case-insensitive lookup landed. A finding-gate corpus witness extending `\SessionHandler` remains outstanding.                                                                                                   |
+| [Control tooling](control-tooling/00-overview.md)         | The proposed ledger, budget, retirement, relocation, and substrate work has not started.                                                                                                                                                 |
+| [Phar distribution](phar-distribution/00-overview.md)     | The phar and release attachment landed. The Docker image still copies the source tree; its phar-based stage is unwritten and outside the current campaign.                                                                               |
+| [Shorthand scope](shorthand-scope/00-overview.md)         | The historical deeper-wins cure was superseded by the per-layer policy in ADR 0086. Published coupling precedence examples still contradict that policy, its corpus witness is missing, and the promise-effect ledger needs realignment. |
 
 Completed plans are removed after their durable decisions, obligations, and
 verification assets move to their permanent owners. Current architectural
