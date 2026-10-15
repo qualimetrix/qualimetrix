@@ -30,8 +30,8 @@ Judge each finding by what it measures, at its exact subject and channel:
    regenerate the entire baseline to accept incidental changes, raise a global
    rule threshold for local debt, or move a bounded quality signal to an
    unbounded `suppress_*` entry.
-2. Exclude an intentionally popular contract hub only from the exact incoming
-   popularity signal, at an exact path or namespace. The exemption can cover a
+2. Exclude an intentionally popular contract hub only at the exact subject and
+   channel where incoming readership explains the finding. The exemption can cover a
    namespace whose own declarations all belong to its `Contract` subject. It
    does not cover outgoing breadth of an implementation merely because that
    implementation sits in a `Contract` directory. The shared configuration
@@ -49,6 +49,14 @@ Judge each finding by what it measures, at its exact subject and channel:
    Record the current affected classes and hidden findings when choosing its
    scope. A directory label alone is not sufficient evidence; Console, for
    example, contains both composition adapters and ordinary value objects.
+
+An exact `coupling.cbo` exception has a directional cost. CBO judges the union
+of incoming and outgoing dependencies, even though its finding describes Ca
+and Ce separately. For a popular shared type such as `ConfigSchema` or
+`CommandLineSpelling`, excluding the whole channel also hides future outgoing
+growth on that subject from the CBO verdict. Exact scope limits which subject
+is hidden, not which edge direction is hidden. A separately judged outgoing
+signal could restore that visibility; it is a candidate, not a current guard.
 
 Remove an exception when it no longer hides a finding. Check both suppression
 composition (`neverMatched`) and inline directive audit (`inert`); do not retain
