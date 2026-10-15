@@ -1,1 +1,2 @@
 case	surface	file	reason
+tree	graph:export	declared-exact-surfaces/neutral-graph.diff	An empty discovery publishes an empty graph with a diagnostic and succeeds; this graph publication is a whole invocation.
