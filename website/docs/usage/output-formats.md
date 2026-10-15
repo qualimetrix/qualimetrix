@@ -1396,7 +1396,7 @@ All formats use the same exit codes:
 | 4         | Analysis incomplete or coordinator OOM; policy result is not authoritative |
 | `5`       | Internal tool error                                                        |
 
-By default (`--fail-on=error`), warnings no longer cause exit code 1 — only errors trigger a non-zero exit. Use `--fail-on=warning` for the stricter behavior where warnings also fail. Exit 4 takes precedence over warning/error policy codes. Text and summary list up to ten unprocessed files, then say “and N more.” Worker stdout/stderr are captured rather than passed through raw; a worker death reason names its file. A bound coordinator OOM uses a JSON error envelope under JSON formats. `graph:export` with no PHP files writes an empty graph, exits 0 and explains the empty input on stderr.
+By default (`--fail-on=error`), warnings no longer cause exit code 1 — only errors trigger a non-zero exit. Use `--fail-on=warning` for the stricter behavior where warnings also fail. Exit 4 takes precedence over warning/error policy codes. Text, summary and health list up to ten unprocessed files, then say “and N more.” Worker stdout/stderr are captured rather than passed through raw; a worker death reason names its file. A bound coordinator OOM uses a JSON error envelope under JSON formats. `graph:export` with no PHP files writes an empty graph, exits 0 and explains the empty input on stderr.
 
 A run is incomplete when it could not read part of the tree it was pointed at: a file it failed to parse, a directory it may not list, a symbolic link to a directory found inside the tree, or a `*.php` entry that is not a regular file. Such an entry used to be dropped silently, so these runs used to answer 0 or 2.
 

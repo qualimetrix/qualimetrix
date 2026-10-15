@@ -627,7 +627,7 @@ terminal entries. Named exclusions are outside that sum; failures may name
 directories, links or special entries rather than PHP files. A complete
 intentionally empty run and an incomplete run remain distinct; failure has
 priority and its policy/health result is not authoritative.
-Text and summary name the first ten failed paths in report order, then count
+Text, summary and health name the first ten failed paths in report order, then count
 the remainder. The published prose path encoding keeps those names readable
 even when a filesystem path contains bytes outside UTF-8.
 

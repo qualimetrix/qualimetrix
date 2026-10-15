@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `bin/qmx` on PHP older than 8.4 or without its autoloader now exits 3. Update PHP/install dependencies before invoking the binary.
 - Baseline lock timeouts, a changed baseline during update, and unreadable baseline input now report environment exit 3; unrelated `RuntimeException` defects exit 5 instead of being treated as refusals.
 - `--profile` is published after an analysis run completes through its command and before the report. A profile-write failure follows the run error envelope; parallel runs include `collection.workers`. Coordinator shutdown OOM before publication writes no new profile, while a profile already published before a later report OOM remains.
-- Text and summary reports now identify at most the first ten unprocessed files and say “and N more” for the remainder. Consumers comparing prose output should accept this bounded list.
+- Text, summary and health reports now identify at most the first ten unprocessed files and say “and N more” for the remainder. Consumers comparing prose output should accept this bounded list.
 - Worker stdout and stderr no longer pass through raw to coordinator streams. PHP warnings are rendered as in sequential runs, and a worker death reason appears with the affected file.
 - A worker composition defect now produces one internal error with exit 5, instead of reporting one failure per file with incomplete-analysis exit 4.
 
