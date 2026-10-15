@@ -43,12 +43,21 @@ final class QuietKeepsTheAnswerTest extends TestCase
     {
         $directory = self::fixtureDirectory();
         try {
-            $normal = self::runCheckThroughApplication($directory, $format);
+            $tester = null;
+            $input = [
+                'command' => 'check',
+                'paths' => ['Source.php'],
+                '--workers' => '0',
+                '--no-cache' => true,
+                '--no-progress' => true,
+                '--format' => $format,
+            ];
+            $normal = self::runThroughApplication($directory, $input, $tester);
             self::assertSame(0, $normal['exitCode'], $normal['stdout'] . $normal['stderr']);
             self::assertNotSame('', $normal['stdout']);
             self::assertSame('', $normal['stderr']);
             foreach (['-q', '--silent'] as $flag) {
-                $quiet = self::runCheckThroughApplication($directory, $format, $flag);
+                $quiet = self::runThroughApplication($directory, [...$input, $flag => true], $tester);
                 self::assertSame(0, $quiet['exitCode'], $quiet['stdout'] . $quiet['stderr']);
                 self::assertSame('', $quiet['stderr']);
                 self::assertSame(self::stableAnswer($normal['stdout'], $format), self::stableAnswer($quiet['stdout'], $format));
@@ -112,28 +121,28 @@ final class QuietKeepsTheAnswerTest extends TestCase
             $init = ChildProcess::run(['git', 'init', '-q'], $directory);
             self::assertSame(0, $init['exitCode'], $init['stdout'] . $init['stderr']);
             foreach ([
-                ['rules'],
-                ['directives', 'Source.php', '--no-progress'],
-                ['graph:export', 'Source.php', '--workers=0', '--no-cache', '--format=json'],
-                ['hook:status'],
-                ['baseline:explain', 'declaration:class:Source@Source.php', 'Source.php', '--workers=0', '--no-cache', '--no-progress'],
-                ['debug:layer-assignment', 'Source', '--no-progress'],
+                ['command' => 'rules'],
+                ['command' => 'directives', 'paths' => ['Source.php'], '--no-progress' => true],
+                ['command' => 'graph:export', 'paths' => ['Source.php'], '--workers' => '0', '--no-cache' => true, '--format' => 'json'],
+                ['command' => 'hook:status'],
+                ['command' => 'baseline:explain', 'subject' => 'declaration:class:Source@Source.php', 'paths' => ['Source.php'], '--workers' => '0', '--no-cache' => true, '--no-progress' => true],
+                ['command' => 'debug:layer-assignment', 'fqn' => 'Source', '--no-progress' => true],
             ] as $args) {
-                $normal = self::runCommand($directory, $args);
-                $quiet = self::runCommand($directory, [...$args, '-q']);
+                $normal = self::runThroughApplication($directory, $args);
+                $quiet = self::runThroughApplication($directory, [...$args, '-q' => true]);
                 self::assertSame($normal['exitCode'], $quiet['exitCode']);
                 self::assertNotSame('', $normal['stdout']);
-                $answerFormat = $args[0] === 'graph:export' ? 'graph' : 'exact';
+                $answerFormat = $args['command'] === 'graph:export' ? 'graph' : 'exact';
                 self::assertSame(self::stableAnswer($normal['stdout'], $answerFormat), self::stableAnswer($quiet['stdout'], $answerFormat));
             }
 
             $baseline = $directory . '/baseline.json';
-            $action = self::runCommand($directory, ['baseline:generate', $baseline, 'Source.php', '--workers=0', '--no-cache', '--no-progress', '-q']);
+            $action = self::runThroughApplication($directory, ['command' => 'baseline:generate', 'baseline' => $baseline, 'paths' => ['Source.php'], '--workers' => '0', '--no-cache' => true, '--no-progress' => true, '-q' => true]);
             self::assertSame(0, $action['exitCode'], $action['stdout'] . $action['stderr']);
             self::assertSame('', $action['stdout']);
             self::assertSame('', $action['stderr']);
             self::assertFileExists($baseline);
-            self::assertSame('', self::runCommand($directory, ['list', '-q'])['stdout']);
+            self::assertSame('', self::runThroughApplication($directory, ['command' => 'list', '-q' => true])['stdout']);
         } finally {
             self::removeFixture($directory);
         }
@@ -146,12 +155,12 @@ final class QuietKeepsTheAnswerTest extends TestCase
         try {
             self::assertSame(0, ChildProcess::run(['git', 'init', '-q'], $directory)['exitCode']);
             foreach ([
-                ['directives', 'Source.php'],
-                ['hook:status'],
-                ['baseline:explain', 'declaration:class:Source@Source.php', 'Source.php', '--workers=0', '--no-cache', '--no-progress'],
+                ['command' => 'directives', 'paths' => ['Source.php']],
+                ['command' => 'hook:status'],
+                ['command' => 'baseline:explain', 'subject' => 'declaration:class:Source@Source.php', 'paths' => ['Source.php'], '--workers' => '0', '--no-cache' => true, '--no-progress' => true],
             ] as $args) {
-                $normal = self::runCommand($directory, [...$args, '--ansi']);
-                $quiet = self::runCommand($directory, [...$args, '--ansi', '-q']);
+                $normal = self::runThroughApplication($directory, [...$args, '--ansi' => true]);
+                $quiet = self::runThroughApplication($directory, [...$args, '--ansi' => true, '-q' => true]);
                 self::assertSame(0, $normal['exitCode'], $normal['stdout'] . $normal['stderr']);
                 self::assertSame(0, $quiet['exitCode'], $quiet['stdout'] . $quiet['stderr']);
                 self::assertSame($normal['stdout'], $quiet['stdout']);
@@ -169,6 +178,9 @@ final class QuietKeepsTheAnswerTest extends TestCase
         $directory = self::fixtureDirectory();
         $previous = getcwd();
         self::assertNotFalse($previous);
+        $previousErrorReporting = error_reporting();
+        $previousDisplayErrors = \ini_get('display_errors');
+        $hint = OutOfMemoryHint::register();
         try {
             self::assertSame(0, ChildProcess::run(['git', 'init', '-q'], $directory)['exitCode']);
             self::assertTrue(chdir($directory));
@@ -209,6 +221,11 @@ final class QuietKeepsTheAnswerTest extends TestCase
                 }
             }
         } finally {
+            $hint->unbind();
+            error_reporting($previousErrorReporting);
+            if ($previousDisplayErrors !== false) {
+                ini_set('display_errors', $previousDisplayErrors);
+            }
             chdir($previous);
             self::removeFixture($directory);
         }
@@ -225,39 +242,35 @@ final class QuietKeepsTheAnswerTest extends TestCase
     }
 
     /**
-     * The eleven-format matrix exercises Symfony's quiet/silent input path,
-     * while the process-only cases retain their native binary coverage.
+     * Application input parsing and real commands own answer parity; native
+     * processes remain for inherited verbosity and non-success reports.
+     *
+     * CheckCommand resets runtime state and the application refreshes its manifest
+     * snapshot on every run, so one format's three invocations may share a tester.
+     *
+     * @param array<string, mixed> $input
      *
      * @return array{stdout: string, stderr: string, exitCode: int}
      */
-    private static function runCheckThroughApplication(string $directory, string $format, ?string $quietFlag = null): array
+    private static function runThroughApplication(string $directory, array $input, ?ApplicationTester &$tester = null): array
     {
         $previousDirectory = getcwd();
         $previousErrorReporting = error_reporting();
         $previousDisplayErrors = \ini_get('display_errors');
         if ($previousDirectory === false || !chdir($directory)) {
-            throw new RuntimeException('Could not enter the check fixture directory.');
+            throw new RuntimeException('Could not enter the command fixture directory.');
         }
 
+        $hint = OutOfMemoryHint::register();
         try {
-            $application = Application::forProduct(
-                static fn(ConsoleDiagnostics $diagnostics) => (new ContainerFactory())->create($diagnostics),
-                OutOfMemoryHint::register(),
-            );
-            $application->setAutoExit(false);
-            $tester = new ApplicationTester($application);
-            $input = [
-                'command' => 'check',
-                'paths' => ['Source.php'],
-                '--workers' => '0',
-                '--no-cache' => true,
-                '--no-progress' => true,
-                '--format' => $format,
-            ];
-            if ($quietFlag !== null) {
-                $input[$quietFlag] = true;
+            if ($tester === null) {
+                $application = Application::forProduct(
+                    static fn(ConsoleDiagnostics $diagnostics) => (new ContainerFactory())->create($diagnostics),
+                    $hint,
+                );
+                $application->setAutoExit(false);
+                $tester = new ApplicationTester($application);
             }
-
             $tester->run($input, ['capture_stderr_separately' => true]);
 
             return [
@@ -266,6 +279,7 @@ final class QuietKeepsTheAnswerTest extends TestCase
                 'exitCode' => $tester->getStatusCode(),
             ];
         } finally {
+            $hint->unbind();
             error_reporting($previousErrorReporting);
             if ($previousDisplayErrors !== false) {
                 ini_set('display_errors', $previousDisplayErrors);

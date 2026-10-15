@@ -7,7 +7,14 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Infrastructure\Console\ConsoleDiagnostics;
+use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
+use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Infrastructure\Console\Support\SplitStreamConsoleOutput;
+use RuntimeException;
+use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Process\Process;
 
 #[CoversClass(CheckCommand::class)]
@@ -76,7 +83,7 @@ final class OffenderSelectionTest extends TestCase
         self::assertSame(1, $namespaced['worstNamespaces'][0]['size.class-count.sum']);
         self::assertArrayNotHasKey('size.class-count', $namespaced['worstNamespaces'][0]);
         foreach ([3 => 12, 12 => 3] as $top => $remaining) {
-            $summary = $this->runCli(['--format=summary', '--format-opt=top=' . $top])->getOutput();
+            $summary = $this->runApplication(['--format=summary', '--format-opt=top=' . $top])['stdout'];
             self::assertSame(2, substr_count($summary, '+' . $remaining . ' more (use --format-opt=top=15)'));
             self::assertStringNotContainsString('+' . $remaining . ' more (use --format=html', $summary);
         }
@@ -93,8 +100,8 @@ final class OffenderSelectionTest extends TestCase
             self::assertStringNotContainsString('does not exist', $output);
         }
         foreach (['score', 'density'] as $ranking) {
-            $process = $this->runCli(['--format=json', '--format-opt', 'rank-by=' . $ranking]);
-            self::assertSame(0, $process->getExitCode(), $process->getOutput() . $process->getErrorOutput());
+            $result = $this->runApplication(['--format=json', '--format-opt', 'rank-by=' . $ranking]);
+            self::assertSame(0, $result['exitCode'], $result['stdout'] . $result['stderr']);
         }
     }
 
@@ -117,7 +124,7 @@ final class OffenderSelectionTest extends TestCase
                 self::assertCount(5, $global[$kind][0]['healthScores']);
                 self::assertArrayNotHasKey('overall', $global[$kind][0]['healthScores']);
             }
-            $summary = $this->runCli(['--config=' . $config, '--format=summary', '--ansi'])->getOutput();
+            $summary = $this->runApplication(['--config=' . $config, '--format=summary', '--ansi'])['stdout'];
             self::assertStringContainsString("\033[31m82.8\033[0m", $summary);
             file_put_contents($config, str_replace("formula: '82.8'", "formula: 'min(m[\"health.complexity\"], 82.8)'", $definitions));
             $minimum = $this->json(['--config=' . $config]);
@@ -133,12 +140,57 @@ final class OffenderSelectionTest extends TestCase
      */
     private function json(array $options): array
     {
-        $process = $this->runCli(['--format=json', ...$options]);
-        self::assertSame(0, $process->getExitCode(), $process->getOutput() . $process->getErrorOutput());
-        $decoded = json_decode($process->getOutput(), true, flags: \JSON_THROW_ON_ERROR);
+        $result = $this->runApplication(['--format=json', ...$options]);
+        self::assertSame(0, $result['exitCode'], $result['stdout'] . $result['stderr']);
+        $decoded = json_decode($result['stdout'], true, flags: \JSON_THROW_ON_ERROR);
         self::assertIsArray($decoded);
 
         return $decoded;
+    }
+
+    /**
+     * Keep collection, configuration and presentation real for every invocation;
+     * only the native entrypoint refusals need another interpreter process.
+     *
+     * @param list<string> $options
+     *
+     * @return array{stdout: string, stderr: string, exitCode: int}
+     */
+    private function runApplication(array $options): array
+    {
+        $previousDirectory = getcwd();
+        if ($previousDirectory === false) {
+            throw new RuntimeException('Cannot determine the current directory.');
+        }
+        $previousErrorReporting = error_reporting();
+        $previousDisplayErrors = \ini_get('display_errors');
+        $terminalEnvironment = ['LINES' => getenv('LINES'), 'COLUMNS' => getenv('COLUMNS')];
+
+        try {
+            $application = Application::forProduct(
+                static fn(ConsoleDiagnostics $diagnostics) => (new ContainerFactory())->create($diagnostics),
+                OutOfMemoryHint::register(),
+            );
+            $application->setAutoExit(false);
+            $output = new SplitStreamConsoleOutput(stderrDecorated: false);
+            $input = new ArgvInput(['qmx', 'check', 'src', '--working-dir=' . $this->root, '--no-cache', '--workers=0', '--fail-on=none', ...$options]);
+            $exitCode = $application->run($input, $output);
+
+            return [
+                'stdout' => $output->standardOutputContent(),
+                'stderr' => $output->errorOutputContent(),
+                'exitCode' => $exitCode,
+            ];
+        } finally {
+            error_reporting($previousErrorReporting);
+            if ($previousDisplayErrors !== false) {
+                ini_set('display_errors', $previousDisplayErrors);
+            }
+            foreach ($terminalEnvironment as $name => $value) {
+                putenv($name . ($value === false ? '' : '=' . $value));
+            }
+            chdir($previousDirectory);
+        }
     }
 
     /** @param list<string> $options */
