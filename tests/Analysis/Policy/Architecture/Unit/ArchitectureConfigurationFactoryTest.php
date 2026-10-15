@@ -18,8 +18,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
 
 /**
- * Orchestration-level coverage for the factory. Per-concern validator details
- * live in {@see \Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation}.
+ * Orchestration-level coverage for the factory, complementing focused validator
+ * cases such as {@see \Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\LayersValidatorTest}.
  *
  * Cases retained here verify that:
  * - The factory composes its validation pipeline in the expected order.

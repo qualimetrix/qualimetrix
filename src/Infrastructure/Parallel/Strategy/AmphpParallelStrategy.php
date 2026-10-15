@@ -29,7 +29,6 @@ use Throwable;
  * Executes process workers after a bounded bootstrap probe, with in-process
  * fallback below the threshold and for an unavailable automatic request.
  *
- * @qmx-threshold coupling.cbo 21 -- This adapter coordinates process transport, worker requests and collection results; extracting submission or result handling transfers those same dependencies.
  * @qmx-threshold coupling.instability warning=0.900001 -- This execution adapter binds worker, cancellation and collection contracts with few strategy consumers; splitting it transfers the same transport dependencies.
  */
 final class AmphpParallelStrategy implements ExecutionStrategyInterface
