@@ -359,7 +359,9 @@ final class AnalysisPipelineTest extends TestCase
 
         $rules = self::createStub(RuleExecutionInterface::class);
         $rules->method('execute')->willReturn(new RuleExecutionResult([], [], new RuleExclusionStats(), LevelActivity::empty()));
-        $rules->method('publication')->willReturn(new ChannelPublication(new RuleEnablement([], null)));
+        $publication = self::createStub(\Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface::class);
+        $publication->method('publication')->willReturn(new ChannelPublication(new RuleEnablement([], null)));
+        $publication->method('publishable')->willReturnArgument(0);
         $rules->method('allRules')->willReturn([]);
 
         return new AnalysisPipeline(
@@ -367,6 +369,7 @@ final class AnalysisPipelineTest extends TestCase
             new UnmatchedExcludeAudit(new UnmatchedExcludeOptions()),
             $collection,
             $rules,
+            $publication,
             $preparation,
             $inlineDirectives,
             $aggregation,

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Run\Integration;
 
-use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -21,7 +20,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInt
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
-use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
@@ -154,15 +152,6 @@ final class DirectiveAuditUniverseTest extends TestCase
             },
         );
         $rules->method('allRules')->willReturn([]);
-        $rules->method('publication')->willReturnCallback(static fn(): ChannelPublication => new ChannelPublication(
-            $configuration->enablement() ?? throw new LogicException('The native invocation enablement must be captured before publication.'),
-        ));
-
-        // The native captured publication already selected the audit. The stub
-        // keeps its resulting late findings — it must be written down: a stub's
-        // default empty array would drop the very finding both cases are about
-        // and make the pair pass and fail for reasons that are not the subject.
-        $rules->method('publishable')->willReturnArgument(0);
 
         $profiler = self::createStub(ProfilerInterface::class);
         $aggregation = self::createStub(MeasurementAggregationInterface::class);

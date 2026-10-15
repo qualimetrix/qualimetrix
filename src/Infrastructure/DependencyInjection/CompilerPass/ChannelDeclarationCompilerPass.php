@@ -24,7 +24,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleShapeReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader;
-use Qualimetrix\Analysis\Finding\RuleExecution;
+use Qualimetrix\Analysis\Finding\RuleMaterialization;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -142,7 +142,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface, Con
     {
         return [
             ChannelUniverse::class,
-            RuleExecution::class,
+            RuleMaterialization::class,
             ChannelPresentationView::class,
             RemediationTimeRegistry::class,
         ];
@@ -189,8 +189,8 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface, Con
             ->setArgument('$staticChannelKeysByProducer', $channelKeysByProducer)
             ->setArgument('$thresholdOverrideSupportByRule', $thresholdOverrideSupport);
 
-        if ($container->hasDefinition(RuleExecution::class)) {
-            $container->getDefinition(RuleExecution::class)
+        if ($container->hasDefinition(RuleMaterialization::class)) {
+            $container->getDefinition(RuleMaterialization::class)
                 ->setArgument('$classlessProducers', $classlessProducers);
         }
 

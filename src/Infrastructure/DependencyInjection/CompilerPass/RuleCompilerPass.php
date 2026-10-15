@@ -38,7 +38,7 @@ final class RuleCompilerPass implements CompilerPassInterface, ConsumerBoundPass
      * an edge the manifest cannot declare.
      */
     private const array CONSUMERS = [
-        'Qualimetrix\\Analysis\\Finding\\RuleExecution' => 0,
+        'Qualimetrix\\Analysis\\Finding\\RuleMaterialization' => 0,
     ];
 
     public static function consumerServiceIds(): array

@@ -8,6 +8,7 @@ The Finding capability owns analysis-rule vocabulary, rule execution, rule confi
 Finding/
 ├── Contract/             # Published metadata, configuration, finding, channel, and filter contracts
 │   ├── ThresholdCrossing.php # Raw value against selected effective threshold
+│   ├── RulePublicationInterface.php # External selection and activity projection
 │   ├── Configuration/    # completed carrier and public typed options construction
 │   │   ├── FindingConfiguration.php
 │   │   └── RuleOptionsBuild.php
@@ -76,13 +77,19 @@ Finding/
 │   └── UnboundSuppressionFinding.php # Messages for values that bind to nothing
 ├── RuleExecution.php     # Selects producers, executes them, and returns what happened as a value
 ├── RuleMaterialization.php # Ordered deferred rules and validators for one snapshot identity
-├── FindingPublication.php # Exclusion accounting and channel-selection projection
+├── FindingPublication.php # Exclusion accounting and channel-selection projection behind RulePublicationInterface
 └── ChannelPresentationView.php # Joins a channel to its description and its producer's docs page
 ```
 
 `RuleMaterialization` owns lazy instance caches and ordered producer metadata;
-`FindingPublication` owns the one execution exclusion ledger. Late publication
-uses the same channel selection without mutating the completed ledger.
+`FindingPublication` owns the one execution exclusion ledger and reads the live
+configuration registry. Execution and publication share this materialization;
+the executor asks the publisher for the current enablement and snapshot.
+Late publication uses the same channel selection without mutating the completed
+ledger. External readers use `RulePublicationInterface` for `publishable()`,
+`publication()` and `levelActivity()`; `RuleExecutionInterface` exposes
+`execute()` and `allRules()`. Population sessions, per-rule publication and
+ledger completion remain internal to Finding.
 
 `ThresholdCrossing` supplies wording from a raw numeric value and the selected
 effective threshold: equality reaches it and a strictly greater value exceeds
@@ -173,12 +180,12 @@ Baseline and Inline use this same Finding-owned answer instead of deriving
 separate scope heuristics.
 
 `LevelActivity` records the producer/level cells admitted by the committed
-`RuleEnablement`. `RuleExecutionInterface::levelActivity()` reads that immutable
+`RuleEnablement`. `RulePublicationInterface::levelActivity()` reads that immutable
 answer without running rules. Rule instances no longer provide a second activity
 algorithm or reconstruct selection from their options. The directive audit keeps
 the distinction between a level not declared and a declared level switched off.
 
-`RuleExecutionInterface::publication()` returns `ChannelPublication`; its
+`RulePublicationInterface::publication()` returns `ChannelPublication`; its
 `publishes(producer, channel, level, addressedProducer)` query reads the same
 completed enablement for Baseline cleanup/explain and other identity-only readers.
 Channel/level selection, option activity and declared diagnostic roles therefore

@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorVerdict;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineAuditChannels;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
@@ -76,7 +77,7 @@ final class HostedPopulationTest extends TestCase
         $identity = new BaselineIdentity('file:src/A.php', new FindingChannel('code-smell.goto'));
         $duplicate = InertBaselineEntry::forIdentity($identity, InertEntryReason::DuplicateIdentity, 'duplicate', ['count' => 1]);
         $malformed = InertBaselineEntry::forRaw('file:bad.php', null, InertEntryReason::Malformed, 'bad', ['count' => -1]);
-        $execution = self::createStub(RuleExecutionInterface::class);
+        $execution = self::createStub(RulePublicationInterface::class);
         $execution->method('publishable')->willReturnArgument(0);
         $result = (new UnusedEntryAudit($execution))->auditResult(new CeilingOutcome(
             new FindingFilterStageResult(FindingFilterStage::Baseline, [], []),
@@ -129,7 +130,7 @@ final class HostedPopulationTest extends TestCase
         $namespace = new \Qualimetrix\Core\Pattern\NamespacePattern(SelectorDefinition::fromKindAndValue('regex', 'Gone.*'));
         $configuration = self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface::class);
         $configuration->method('resolvedOptions')->willReturn(new \Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions([$producer => new \Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions(), 'code-smell.goto' => new \Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellOptions()], [$producer => new \Qualimetrix\Analysis\Finding\Contract\RuleSuppression(), 'code-smell.goto' => new \Qualimetrix\Analysis\Finding\Contract\RuleSuppression(namespaces: [$namespace], paths: [$path, $path])]));
-        $execution = self::createStub(RuleExecutionInterface::class);
+        $execution = self::createStub(RulePublicationInterface::class);
         $execution->method('publishable')->willReturnArgument(0);
         $audit = new \Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit($execution, $configuration);
         $scope = new \Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement(__DIR__, [], [__DIR__], true, new ProjectScopeJudgement());

@@ -40,7 +40,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * execution for it. So the findings are assembled by
  * {@see UnboundSuppressionAudit} at the one seam where the configured values
  * and the run's universes meet, and passed through
- * `RuleExecutionInterface::publishable()`, exactly as
+ * `RulePublicationInterface::publishable()`, exactly as
  * `annotation.unused-directive` and `discovery.unmatched-exclude` are. This
  * class is what makes those assembled findings *channels*: without a
  * registered rule there is no entry in `qmx rules`, no `--disable-rule`, no

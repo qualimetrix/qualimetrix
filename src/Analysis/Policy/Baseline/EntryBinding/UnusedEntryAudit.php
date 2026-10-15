@@ -10,7 +10,7 @@ use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 
 use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
-use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineAuditChannels;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
 use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
@@ -19,7 +19,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 
 final readonly class UnusedEntryAudit
 {
-    public function __construct(private RuleExecutionInterface $execution) {}
+    public function __construct(private RulePublicationInterface $publication) {}
 
     /** @return array{findings: list<Finding>, population: JudgedPopulation} */
     public function auditResult(CeilingOutcome $outcome, string $baselinePath, ChannelPublication $publication): array
@@ -66,7 +66,7 @@ final readonly class UnusedEntryAudit
         })();
         $population = $publication->measure(UnusedEntryRule::NAME, $channel, SymbolLevel::Project, UnusedEntryRule::channelDeclarations()[BaselineAuditChannels::UNUSED_ENTRY], $members);
 
-        return ['findings' => $this->execution->publishable($findings), 'population' => $population];
+        return ['findings' => $this->publication->publishable($findings), 'population' => $population];
     }
 
     /**

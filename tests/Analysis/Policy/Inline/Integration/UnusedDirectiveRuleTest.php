@@ -22,7 +22,6 @@ use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
-use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
@@ -865,7 +864,7 @@ final class UnusedDirectiveRuleTest extends TestCase
             self::$metadata,
             channels: $identity,
         ));
-        $execution = new RuleExecution(
+        $execution = ResolvedOptionsFixture::executionFromLookups(
             [ResolvedOptionsFixture::lookup(new UnusedDirectiveRule($options, $policy))],
             self::createStub(ProfilerInterface::class),
             $registry,

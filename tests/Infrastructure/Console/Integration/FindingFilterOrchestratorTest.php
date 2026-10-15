@@ -15,7 +15,6 @@ use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
-use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
@@ -539,7 +538,7 @@ final class FindingFilterOrchestratorTest extends TestCase
                 }
             },
             unusedEntryAudit: new UnusedEntryAudit((function () {
-                $execution = self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+                $execution = self::createStub(\Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface::class);
                 $execution->method('publishable')->willReturnCallback(static fn(array $findings): array => $findings);
 
                 return $execution;
@@ -572,7 +571,7 @@ final class FindingFilterOrchestratorTest extends TestCase
             [new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata(\Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::NAME, UnboundSuppressionOptions::class, '', [], false)],
         );
         $configuration->method('resolvedOptions')->willReturn($snapshot);
-        return new UnboundSuppressionAudit(self::createStub(RuleExecutionInterface::class), $configuration);
+        return new UnboundSuppressionAudit(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface::class), $configuration);
     }
 
     private static function diagnosticConsole(BufferedOutput $diagnostics): ConsoleOutput

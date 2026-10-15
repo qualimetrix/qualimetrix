@@ -58,41 +58,6 @@ interface RuleExecutionInterface
     public function execute(AnalysisContext $context, ?string $restrictToProducer = null): RuleExecutionResult;
 
     /**
-     * The subset of `$findings` this run's selection publishes, for findings a
-     * caller assembles **outside** {@see execute()}.
-     *
-     * One channel is assembled that way today — the directive-usage audit's
-     * `annotation.unused-directive`, which can only be answered once every rule
-     * has produced its findings. Being assembled late used to mean being
-     * assembled past the filter: naming that channel in `--disable-rule` left it
-     * reported, and an `only_rules` that never named it reported it anyway.
-     * Both halves leaked, and both leaked silently.
-     *
-     * The predicate is the same selection projection used by execution,
-     * not a second reading of the selection: the union-quantified half of the
-     * grammar (a producer stopped because its disable selectors together cover
-     * every declared level of every channel it emits) lives in
-     * {@see RuleEnablement} and must not be re-derived per selector by a
-     * caller.
-     *
-     * The per-rule exclusion ledger is deliberately **not** applied here; see
-     * the implementation for the accounting that forbids it.
-     *
-     * @param list<Finding> $findings
-     *
-     * @return list<Finding>
-     */
-    public function publishable(array $findings): array;
-
-    /**
-     * What this run's selection and configuration publish, for a reader that
-     * holds an identity rather than a finding — a baseline entry the run did
-     * not report. Built once and asked per channel and level; see
-     * {@see ChannelPublication} for why both switches are asked.
-     */
-    public function publication(): ChannelPublication;
-
-    /**
      * Every registered producer, each carrying whether the resolved selection
      * leaves it enabled.
      *
@@ -104,16 +69,4 @@ interface RuleExecutionInterface
      * @return list<RuleMetadata>
      */
     public function allRules(): array;
-
-    /**
-     * What this configuration lets each producer do, per declared level.
-     *
-     * A fact about configuration rather than about a run, which is why it can
-     * be asked without executing anything: {@see execute()} records the same
-     * answer on its result so consumers read it beside the findings it
-     * explains. Asked separately, it is also what lets a guard check the
-     * snapshot against the channel declarations without needing a prepared
-     * policy for every producer.
-     */
-    public function levelActivity(): LevelActivity;
 }

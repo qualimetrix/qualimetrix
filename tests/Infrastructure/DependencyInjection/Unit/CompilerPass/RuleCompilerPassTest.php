@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountRule;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
-use Qualimetrix\Analysis\Finding\RuleExecution;
+use Qualimetrix\Analysis\Finding\RuleMaterialization;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass;
 use ReflectionClass;
@@ -26,7 +26,7 @@ final class RuleCompilerPassTest extends TestCase
     public function itCollectsTaggedRulesIntoRuleExecution(): void
     {
         $container = new ContainerBuilder();
-        $container->register(RuleExecution::class);
+        $container->register(RuleMaterialization::class);
         $container->register(ComplexityRule::class, ComplexityRule::class)
             ->addTag(RuleCompilerPass::TAG);
         $container->register(ClassCountRule::class, ClassCountRule::class)
@@ -35,7 +35,7 @@ final class RuleCompilerPassTest extends TestCase
         $pass = new RuleCompilerPass();
         $pass->process($container);
 
-        $definition = $container->getDefinition(RuleExecution::class);
+        $definition = $container->getDefinition(RuleMaterialization::class);
         self::assertFalse($container->getDefinition(ComplexityRule::class)->isShared());
         self::assertFalse($container->getDefinition(ClassCountRule::class)->isShared());
 
@@ -55,7 +55,7 @@ final class RuleCompilerPassTest extends TestCase
         $pass = new RuleCompilerPass();
         $pass->process($container);
 
-        self::assertFalse($container->hasDefinition(RuleExecution::class));
+        self::assertFalse($container->hasDefinition(RuleMaterialization::class));
         self::assertFalse($container->hasDefinition(RulesCommand::class));
     }
 
@@ -101,12 +101,12 @@ final class RuleCompilerPassTest extends TestCase
     public function itSetsAnEmptyArrayWhenNoRulesAreTagged(): void
     {
         $container = new ContainerBuilder();
-        $container->register(RuleExecution::class);
+        $container->register(RuleMaterialization::class);
 
         $pass = new RuleCompilerPass();
         $pass->process($container);
 
-        $definition = $container->getDefinition(RuleExecution::class);
+        $definition = $container->getDefinition(RuleMaterialization::class);
 
         self::assertSame([], $definition->getArgument(0));
     }

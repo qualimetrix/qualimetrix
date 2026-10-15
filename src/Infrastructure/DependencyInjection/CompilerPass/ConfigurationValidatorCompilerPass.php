@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 
 use LogicException;
-use Qualimetrix\Analysis\Finding\RuleExecution;
+use Qualimetrix\Analysis\Finding\RuleMaterialization;
 use Qualimetrix\Infrastructure\Rule\ConfigurationValidatorRegistry;
 use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
@@ -29,7 +29,7 @@ final class ConfigurationValidatorCompilerPass implements CompilerPassInterface,
 
     public static function consumerServiceIds(): array
     {
-        return [ConfigurationValidatorRegistry::class, RuleExecution::class];
+        return [ConfigurationValidatorRegistry::class, RuleMaterialization::class];
     }
 
     public function process(ContainerBuilder $container): void
@@ -77,11 +77,11 @@ final class ConfigurationValidatorCompilerPass implements CompilerPassInterface,
                 ->setArgument('$validatorClasses', $validatorClasses);
         }
 
-        if (!$container->hasDefinition(RuleExecution::class)) {
+        if (!$container->hasDefinition(RuleMaterialization::class)) {
             return;
         }
 
-        $container->getDefinition(RuleExecution::class)
-            ->setArgument('$configurationValidators', $validators);
+        $container->getDefinition(RuleMaterialization::class)
+            ->setArgument('$validators', $validators);
     }
 }

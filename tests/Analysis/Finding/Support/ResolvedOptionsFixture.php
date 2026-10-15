@@ -27,6 +27,8 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
+use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
+use Qualimetrix\Analysis\Finding\Contract\ProducerDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
@@ -35,19 +37,25 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
+use Qualimetrix\Analysis\Finding\FindingPublication;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection;
 use Qualimetrix\Analysis\Finding\RuleExecution;
+use Qualimetrix\Analysis\Finding\RuleMaterialization;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
+use WeakMap;
 
 /** Builds test snapshots with the product builder and explicit producer metadata. */
 final class ResolvedOptionsFixture
 {
+    /** @var WeakMap<RuleExecution, FindingPublication>|null */
+    private static ?WeakMap $publications = null;
+
     /** @var array<string, mixed> */
     private array $fileValues = [];
 
@@ -187,10 +195,38 @@ final class ResolvedOptionsFixture
         foreach ($metadata as $producer) {
             $lookups[] = ['metadata' => $producer, 'create' => static fn(): RuleInterface => throw new LogicException('Metadata lookup constructed a rule.')];
         }
-        return new RuleExecution($lookups, new class implements ProfilerInterface {
+        return self::executionFromLookups($lookups, new class implements ProfilerInterface {
             public function start(string $name, ?string $category = null, array $attributes = []): void {}
             public function stop(string $name): void {}
         }, new RuleOptionsRegistry());
+    }
+
+    /**
+     * @param iterable<array{metadata: RuleMetadata, create: Closure(): RuleInterface}> $lookups
+     * @param iterable<array{producer: string, create: Closure(): ConfigurationValidatorInterface}> $configurationValidators
+     * @param iterable<ProducerDeclaration> $classlessProducers
+     */
+    public static function executionFromLookups(
+        iterable $lookups,
+        ProfilerInterface $profiler,
+        RuleOptionsRegistry $registry,
+        iterable $configurationValidators = [],
+        iterable $classlessProducers = [],
+    ): RuleExecution {
+        $materialization = new RuleMaterialization($lookups, $configurationValidators, $classlessProducers);
+
+        $publication = new FindingPublication($registry, $materialization);
+        $execution = new RuleExecution($materialization, $profiler, $publication);
+        $publications = self::$publications ??= new WeakMap();
+        $publications[$execution] = $publication;
+
+        return $execution;
+    }
+
+    public static function publicationFor(RuleExecution $execution): FindingPublication
+    {
+        $publications = self::$publications ??= new WeakMap();
+        return $publications[$execution];
     }
 
     /**

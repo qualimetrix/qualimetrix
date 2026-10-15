@@ -14,7 +14,7 @@ use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStageResult;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
@@ -39,7 +39,7 @@ final class UnusedEntryAuditTest extends TestCase
         $identity = new BaselineIdentity('file:src/Legacy.php', new FindingChannel('code-smell.goto'));
         $first = InertBaselineEntry::forIdentity($identity, InertEntryReason::DuplicateIdentity, 'first contender', ['count' => 1]);
         $second = InertBaselineEntry::forIdentity($identity, InertEntryReason::DuplicateIdentity, 'second contender', ['count' => 2]);
-        $execution = self::createMock(RuleExecutionInterface::class);
+        $execution = self::createMock(RulePublicationInterface::class);
         $execution->expects(self::once())->method('publishable')->willReturnCallback(static fn(array $findings): array => $findings);
 
         $findings = (new UnusedEntryAudit($execution))->auditResult(new CeilingOutcome(
@@ -62,7 +62,7 @@ final class UnusedEntryAuditTest extends TestCase
         $unmeasured = self::entry('file:src/Disabled.php');
         $outside = self::entry('file:tests/Outside.php');
         $uncompared = self::entry('project:');
-        $execution = self::createMock(RuleExecutionInterface::class);
+        $execution = self::createMock(RulePublicationInterface::class);
         $execution->expects(self::once())->method('publishable')->willReturnCallback(static fn(array $findings): array => $findings);
         $findings = (new UnusedEntryAudit($execution))->auditResult(new CeilingOutcome(
             new FindingFilterStageResult(FindingFilterStage::Baseline, [], []),
@@ -96,7 +96,7 @@ final class UnusedEntryAuditTest extends TestCase
     #[Test]
     public function itHonoursTheCommittedAuditSelection(): void
     {
-        $execution = self::createMock(RuleExecutionInterface::class);
+        $execution = self::createMock(RulePublicationInterface::class);
         $execution->expects(self::once())->method('publishable')->with(self::callback(static fn(array $findings): bool => \count($findings) === 1))->willReturn([]);
         self::assertSame([], (new UnusedEntryAudit($execution))->auditResult(new CeilingOutcome(
             new FindingFilterStageResult(FindingFilterStage::Baseline, [], []),

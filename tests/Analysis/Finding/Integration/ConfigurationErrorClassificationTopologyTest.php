@@ -21,7 +21,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
-use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -116,7 +115,7 @@ final class ConfigurationErrorClassificationTopologyTest extends TestCase
         $registry = new RuleOptionsRegistry();
         $configuration = \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::none();
         $registry->replace(ResolvedOptionsFixture::ready($configuration, [$lookup['metadata']]));
-        $execution = new RuleExecution(
+        $execution = ResolvedOptionsFixture::executionFromLookups(
             [$lookup],
             self::createStub(ProfilerInterface::class),
             $registry,

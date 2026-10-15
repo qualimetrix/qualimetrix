@@ -8,11 +8,14 @@ use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
+use Qualimetrix\Analysis\Finding\FindingPublication;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection;
 use Qualimetrix\Analysis\Finding\RuleExecution;
+use Qualimetrix\Analysis\Finding\RuleMaterialization;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -39,13 +42,24 @@ final class FindingConfigurator implements ContainerConfiguratorInterface
             ])
             ->setPublic(true);
 
-        $container->register(RuleExecution::class)
+        $container->register(RuleMaterialization::class)
             ->setArguments([
                 '$rules' => [],
-                '$profiler' => new Reference(ProfilerInterface::class),
-                '$ruleOptionsRegistry' => new Reference(RuleOptionsRegistry::class),
-                '$configurationValidators' => [],
+                '$validators' => [],
                 '$classlessProducers' => [],
+            ]);
+        $container->register(FindingPublication::class)
+            ->setArguments([
+                new Reference(RuleOptionsRegistry::class),
+                new Reference(RuleMaterialization::class),
+            ]);
+        $container->setAlias(RulePublicationInterface::class, FindingPublication::class)
+            ->setPublic(true);
+        $container->register(RuleExecution::class)
+            ->setArguments([
+                '$materialization' => new Reference(RuleMaterialization::class),
+                '$profiler' => new Reference(ProfilerInterface::class),
+                '$publication' => new Reference(FindingPublication::class),
             ]);
         $container->setAlias(RuleExecutionInterface::class, RuleExecution::class)
             ->setPublic(true);
@@ -74,7 +88,7 @@ final class FindingConfigurator implements ContainerConfiguratorInterface
     {
         $container->register(self::UNBOUND_SUPPRESSION_AUDIT_CLASS, self::UNBOUND_SUPPRESSION_AUDIT_CLASS)
             ->setArguments([
-                new Reference(RuleExecutionInterface::class),
+                new Reference(RulePublicationInterface::class),
                 new Reference(RuleOptionsRegistry::class),
             ])
             ->setLazy(true);

@@ -18,7 +18,9 @@ use Qualimetrix\Analysis\Evidence\Measurement\Repository\DefaultMetricRepository
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\FindingPublication;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Analysis\Finding\RuleMaterialization;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureFactoryResult;
@@ -277,6 +279,7 @@ final class TestPipelineBuilder
                 'TestPipelineBuilder: collectionOrchestrator is required (call withCollectionOrchestrator())',
             ),
             ruleExecutor: $execution,
+            rulePublication: new FindingPublication($configuration, new RuleMaterialization([], [], [])),
             ruleProducerPreparation: new RuleProducerPreparation(
                 $this->resolveLayerPolicyPreparation(),
                 $this->circularDependencyPreparation ?? throw new LogicException(

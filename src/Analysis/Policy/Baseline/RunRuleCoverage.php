@@ -6,7 +6,7 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
@@ -28,7 +28,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 final readonly class RunRuleCoverage
 {
     public function __construct(
-        private RuleExecutionInterface $execution,
+        private RulePublicationInterface $publication,
         private ChannelIdentityInterface $channels,
     ) {}
 
@@ -36,7 +36,7 @@ final readonly class RunRuleCoverage
     {
         $producer = $this->channels->producerOf($channel->code);
 
-        return $producer !== null && $this->execution->publication()->publishes($producer, $channel, $level);
+        return $producer !== null && $this->publication->publication()->publishes($producer, $channel, $level);
     }
 
     /**
@@ -51,7 +51,7 @@ final readonly class RunRuleCoverage
      */
     public function classify(iterable $identities): array
     {
-        $publication = $this->execution->publication();
+        $publication = $this->publication->publication();
         $gaps = [];
 
         foreach ($identities as $identity) {

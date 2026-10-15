@@ -162,6 +162,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0121 — Parallel Collection Is Judged by Worker Start](0121-parallel-collection-judged-by-worker-start.md) — process-worker selection is judged by a bounded first probe and explicit-start refusals.
 - [0122 — Self-Analysis Exceptions Remain Bounded](0122-self-analysis-exceptions-remain-bounded.md) — accepted quality debt keeps exact finite ceilings; live structural and contract-hub exclusions remain narrow.
 - [0123 — Worker Process Boundary and Strategy Port](0123-worker-process-boundary-and-strategy-port.md) — Parallel owns both sides of its task protocol, and runtime startup determines worker availability.
+- [0124 — Finding Publication and Rule Execution Contracts](0124-finding-publication-and-rule-execution-contracts.md) — publication readers use a narrow contract over the shared invocation snapshot and ledger.
 
 ## Superseded history
 

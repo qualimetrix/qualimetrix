@@ -60,7 +60,7 @@ final class BooleanArgumentSelectionTest extends TestCase
         $universe->method('producerOf')->willReturn(BooleanArgumentRule::NAME);
         $configuration = self::createStub(RuleConfigurationInterface::class);
         $configuration->method('channelUniverse')->willReturn($universe);
-        $publication = new FindingPublication($configuration);
+        $publication = new FindingPublication($configuration, new \Qualimetrix\Analysis\Finding\RuleMaterialization([], [], []));
         $publication->begin();
         $removed = [];
         self::assertSame($findings, $publication->published(BooleanArgumentRule::NAME, $findings, $enablement, null, $removed));

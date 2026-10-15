@@ -67,7 +67,9 @@ final class LevelActivityCoversEveryDeclaredLevelTest extends TestCase
         self::assertInstanceOf(RuleExecutionInterface::class, $executor);
 
         self::prepareEmptyInvocation($container, $executor, $universe);
-        $activity = $executor->levelActivity();
+        $publication = $container->get(\Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface::class, $publication);
+        $activity = $publication->levelActivity();
 
         $missing = [];
 
@@ -125,7 +127,9 @@ final class LevelActivityCoversEveryDeclaredLevelTest extends TestCase
 
         $off = [];
 
-        foreach ($executor->levelActivity()->toMap() as $producer => $levels) {
+        $publication = $container->get(\Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface::class, $publication);
+        foreach ($publication->levelActivity()->toMap() as $producer => $levels) {
             foreach ($levels as $level => $ran) {
                 if (!$ran) {
                     $off[] = $producer . ' at ' . $level;

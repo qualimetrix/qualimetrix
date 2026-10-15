@@ -153,7 +153,7 @@ final class ProjectScopedChannelProjectionTest extends TestCase
             $declarations,
             new ReportingGitScopeQuery(),
             unusedEntryAudit: new UnusedEntryAudit((function () {
-                $execution = self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+                $execution = self::createStub(\Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface::class);
                 $execution->method('publishable')->willReturnCallback(static fn(array $findings): array => $findings);
 
                 return $execution;

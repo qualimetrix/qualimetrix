@@ -20,6 +20,7 @@ use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\DirectiveObservations;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
@@ -70,6 +71,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         private readonly UnmatchedExcludeAudit $unmatchedExcludeAudit,
         private readonly CollectionOrchestratorInterface $collectionOrchestrator,
         private readonly RuleExecutionInterface $ruleExecutor,
+        private readonly RulePublicationInterface $rulePublication,
         private readonly RuleProducerPreparation $ruleProducerPreparation,
         private readonly InlineDirectiveRun $inlineDirectiveRun,
         private readonly MeasurementAggregationInterface $measurementAggregation,
@@ -183,7 +185,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             'paths' => array_map(static fn(AbsolutePath $p): string => $p->value(), $pathList),
         ]);
 
-        $populationPublication = $this->ruleExecutor->publication();
+        $populationPublication = $this->rulePublication->publication();
         $repository = $this->repositoryFactory->create();
         // Phase 1: Discovery
         $profiler->start('discovery', 'pipeline');
@@ -310,7 +312,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         $ruleExecution = $this->ruleExecutor->execute($context);
         $unmatchedTypeWarning = $this->ruleProducerPreparation->unmatchedTypeWarning(
             $measuredScope->judgement(),
-            $this->ruleExecutor->publication(),
+            $this->rulePublication->publication(),
         );
         if ($unmatchedTypeWarning !== null) {
             $this->logger->warning($unmatchedTypeWarning);
@@ -390,7 +392,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
      * **What is asked and what is reported are still two questions.** The
      * verdict is reached over `produced`; whether the verdict is *published*
      * obeys the same channel selection as every other finding, asked through
-     * {@see RuleExecutionInterface::publishable()}. Being assembled after
+     * {@see RulePublicationInterface::publishable()}. Being assembled after
      * `execute()` used to mean being assembled past that filter, which made
      * `--disable-rule annotation.unused-directive` inert and let an
      * `--only-rule` naming a sibling channel publish this one.
@@ -407,7 +409,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             $prepared->populationPublication,
         );
         return [
-            'findings' => $this->ruleExecutor->publishable([...$inline['findings'], ...$prepared->unmatchedExcludeFindings]),
+            'findings' => $this->rulePublication->publishable([...$inline['findings'], ...$prepared->unmatchedExcludeFindings]),
             'population' => $inline['population'],
         ];
     }

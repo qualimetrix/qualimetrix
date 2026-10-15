@@ -213,7 +213,7 @@ final class BaselineIncompleteAnalysisTest extends TestCase
             $container = $factory->configure();
             $container->register('test.late_duplication_logger')->setSynthetic(true)->setPublic(true);
             $container->getDefinition('qmx.run.analysis_pipeline')
-                ->setArgument(11, new Reference('test.late_duplication_logger'));
+                ->setArgument(12, new Reference('test.late_duplication_logger'));
             $container->compile();
             $container->set('test.late_duplication_logger', $logger);
         }

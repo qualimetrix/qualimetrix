@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Support;
 
-use LogicException;
-use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
@@ -13,11 +11,8 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\OptionActivity;
-use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
-use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
-use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
-use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
+use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision;
 use Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission;
 use Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch;
@@ -61,7 +56,7 @@ final class StubRuleCoverage
     public static function withSkipped(array $notSelected = [], array $disabledEverywhere = []): RunRuleCoverage
     {
         return new RunRuleCoverage(
-            self::execution($notSelected, $disabledEverywhere),
+            self::publicationFor($notSelected, $disabledEverywhere),
             self::universe(),
         );
     }
@@ -70,7 +65,7 @@ final class StubRuleCoverage
      * @param list<string> $notSelected
      * @param list<string> $disabledEverywhere
      */
-    private static function execution(array $notSelected, array $disabledEverywhere): RuleExecutionInterface
+    private static function publicationFor(array $notSelected, array $disabledEverywhere): RulePublicationInterface
     {
         $decisions = [];
         $universe = self::universe();
@@ -92,19 +87,9 @@ final class StubRuleCoverage
         }
         $enablement = new RuleEnablement($decisions, null);
 
-        return new readonly class ($notSelected, $disabledEverywhere, $enablement) implements RuleExecutionInterface {
-            public function __construct(
-                /** @var list<string> */
-                private array $notSelected,
-                /** @var list<string> */
-                private array $disabledEverywhere,
-                private RuleEnablement $enablement,
-            ) {}
-
-            public function execute(AnalysisContext $context, ?string $restrictToProducer = null): RuleExecutionResult
-            {
-                throw new LogicException('A coverage stub executes nothing.');
-            }
+        return new readonly class ($disabledEverywhere, $enablement) implements RulePublicationInterface {
+            /** @param list<string> $disabledEverywhere */
+            public function __construct(private array $disabledEverywhere, private RuleEnablement $enablement) {}
 
             public function publishable(array $findings): array
             {
@@ -114,14 +99,6 @@ final class StubRuleCoverage
             public function publication(): ChannelPublication
             {
                 return new ChannelPublication($this->enablement);
-            }
-
-            public function allRules(): array
-            {
-                return array_map(
-                    static fn(string $name): RuleMetadata => new RuleMetadata($name, ComplexityOptions::class, '', [], false),
-                    $this->notSelected,
-                );
             }
 
             public function levelActivity(): LevelActivity
