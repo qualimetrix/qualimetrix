@@ -22,6 +22,22 @@ final class EvidenceRegistration
         return (new Definition())->setAutoconfigured(true)->setAutowired(true);
     }
 
+    /** @param array<string, string> $roots namespace suffix => resource stem */
+    public static function registerCollectorRoots(
+        PhpFileLoader $loader,
+        string $namespace,
+        string $resourceDir,
+        array $roots,
+    ): void {
+        foreach ($roots as $namespaceSuffix => $resourceStem) {
+            $loader->registerClasses(
+                self::collectors(),
+                $namespace . $namespaceSuffix,
+                $resourceDir . '/' . $resourceStem . 'Collector.php',
+            );
+        }
+    }
+
     public static function rules(): Definition
     {
         return (new Definition())->setAutoconfigured(true)->setAutowired(false)->setLazy(true);

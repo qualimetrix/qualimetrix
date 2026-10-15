@@ -17,13 +17,12 @@ final class MaintainabilityConfigurator implements ContainerConfiguratorInterfac
     public function configure(ContainerBuilder $container): void
     {
         $loader = EvidenceRegistration::loader($container, $this->srcDir);
-        foreach (['Halstead\\' => 'Halstead/*', '' => '*'] as $namespace => $root) {
-            $loader->registerClasses(
-                EvidenceRegistration::collectors(),
-                self::NAMESPACE . $namespace,
-                $this->srcDir . '/Analysis/Evidence/Maintainability/' . $root . 'Collector.php',
-            );
-        }
+        EvidenceRegistration::registerCollectorRoots(
+            $loader,
+            self::NAMESPACE,
+            $this->srcDir . '/Analysis/Evidence/Maintainability',
+            ['Halstead\\' => 'Halstead/*', '' => '*'],
+        );
         $loader->registerClasses(
             EvidenceRegistration::rules(),
             self::NAMESPACE,
