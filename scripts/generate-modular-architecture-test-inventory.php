@@ -384,7 +384,6 @@ const P6_RENAMED_TEST_IDS = [
     'Qualimetrix\\Tests\\Unit\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleCompilerPassTest::itCollectsTaggedRulesIntoRuleExecutor' => 'Qualimetrix\\Tests\\Infrastructure\\DependencyInjection\\Unit\\RuleCatalog\\RuleCompilerPassTest::itCollectsTaggedRulesIntoRuleExecution',
     'Qualimetrix\\Tests\\Integration\\DependencyInjection\\ContainerFactoryTest::itInjectsRulesIntoRuleExecutor' => 'Qualimetrix\\Tests\\Infrastructure\\DependencyInjection\\Integration\\ContainerFactoryTest::itInjectsRulesIntoRuleExecution',
     'Qualimetrix\\Tests\\Integration\\Infrastructure\\Console\\RuleExclusionStatsWiringTest::itSharesTheSameRuleExecutorInstanceBetweenThePipelineAndTheOrchestrator' => 'Qualimetrix\\Tests\\Infrastructure\\Integration\\RuleExclusionStatsWiringTest::itSharesTheSameRuleExecutionInstanceBetweenThePipelineAndTheOrchestrator',
-    'Qualimetrix\\Tests\\Infrastructure\\Console\\Functional\\Command\\CheckCommandBaselineTest::itDoesNotPromoteAnAnnotatedFindingTheBaselineNeverMeasured' => 'Qualimetrix\\Tests\\Infrastructure\\Console\\Functional\\Check\\CheckCommandBaselineTest::itCombinesConfiguredAndCliExclusionsWithoutLosingBaselineAnnotationOrGit',
 ];
 
 /** @var array<string, array{string, string, string}> Exact A03 orphan-probe dispositions. */
