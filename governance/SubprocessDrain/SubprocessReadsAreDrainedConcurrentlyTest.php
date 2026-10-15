@@ -220,9 +220,9 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
         'tests/Infrastructure/Git/Integration/GitProcessAvailabilityTest.php:25' => 'An ini setting disables the process capability in the child; the string is configuration,'
             . ' not executable source.',
         'tests/Infrastructure/Git/Integration/GitProcessAvailabilityTest.php:31' => 'The expected unavailable-capability diagnostic, never evaluated as source.',
-        'tests/Infrastructure/Parallel/Unit/Strategy/AmphpParallelStrategyTest.php:367' => 'The expected unavailable-capability diagnostic, never evaluated as source.',
-        'tests/Infrastructure/Parallel/Unit/Strategy/AmphpParallelStrategyTest.php:380' => 'The expected unavailable-capability diagnostic, never evaluated as source.',
-        'tests/Infrastructure/Parallel/Unit/Strategy/AmphpParallelStrategyTest.php:412' => 'An ini setting disables the process capability in the child; the string is configuration, not executable source.',
+        'tests/Infrastructure/Parallel/Unit/Strategy/AmphpParallelStrategyTest.php:362' => 'The expected unavailable-capability diagnostic, never evaluated as source.',
+        'tests/Infrastructure/Parallel/Unit/Strategy/AmphpParallelStrategyTest.php:375' => 'The expected unavailable-capability diagnostic, never evaluated as source.',
+        'tests/Infrastructure/Parallel/Unit/Strategy/AmphpParallelStrategyTest.php:407' => 'An ini setting disables the process capability in the child; the string is configuration, not executable source.',
 
         'src/Core/FileTarget/NativeNssEnumerator.php:17' => 'A function_exists probe, not a spawn; the actual'
             . ' child invocation is declared separately below.',

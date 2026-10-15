@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
+use RuntimeException;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -26,16 +27,36 @@ final class CodeSmellConfigurator implements ContainerConfiguratorInterface
                 $this->srcDir . '/Analysis/Evidence/CodeSmell/' . $root . 'Collector.php',
             );
         }
-        foreach (['' => '*', 'ParameterCount\\' => 'ParameterCount/*', 'UnreachableCode\\' => 'UnreachableCode/*', 'UnusedPrivate\\' => 'UnusedPrivate/*'] as $namespace => $root) {
-            $exclude = $namespace === ''
-                ? $this->srcDir . '/Analysis/Evidence/CodeSmell/Abstract*Rule.php'
-                : null;
+        foreach ($this->ruleResources() as $resource) {
+            // Keep a glob prefix so the loader derives the file's PSR-4 directory.
             $loader->registerClasses(
                 (new Definition())->setAutoconfigured(true)->setAutowired(false)->setLazy(true),
-                self::NAMESPACE . $namespace,
-                $this->srcDir . '/Analysis/Evidence/CodeSmell/' . $root . 'Rule.php',
-                $exclude,
+                self::NAMESPACE . $resource['namespace'],
+                \dirname($resource['path']) . '/{' . $resource['name'] . '}',
             );
         }
+    }
+
+    /** @return list<array{namespace: string, path: string, name: string}> */
+    private function ruleResources(): array
+    {
+        $resources = [];
+        foreach (['' => '*', 'ParameterCount\\' => 'ParameterCount/*', 'UnreachableCode\\' => 'UnreachableCode/*', 'UnusedPrivate\\' => 'UnusedPrivate/*'] as $namespace => $root) {
+            $files = glob($this->srcDir . '/Analysis/Evidence/CodeSmell/' . $root . 'Rule.php');
+            if ($files === false) {
+                throw new RuntimeException('Could not enumerate the configured CodeSmell rule roots.');
+            }
+            foreach ($files as $path) {
+                $name = basename($path);
+                if (str_starts_with($name, 'Abstract')) {
+                    continue;
+                }
+                $resources[] = ['namespace' => $namespace, 'path' => $path, 'name' => $name];
+            }
+        }
+        // Channel order breaks ties in published directive-name suggestions.
+        usort($resources, static fn(array $left, array $right): int => $left['name'] <=> $right['name']);
+
+        return $resources;
     }
 }
