@@ -98,6 +98,15 @@ final class Controls
                 'src/Core/Symbol/SymbolInfo.php',
                 ['$this->subject = $symbolPath instanceof MetricSubject ? $symbolPath : null;' => '$this->subject = null;'],
                 ['Qualimetrix.Tests.Core.Symbol.Unit.SymbolInfoTest::itKeepsTheExactSubjectItWasConstructedFrom'],
+            )->alsoReddens(
+                'the stored ownership case also checks that SymbolInfo retains its exact subject',
+                ['Qualimetrix.Tests.Core.Symbol.Unit.SymbolInfoTest::itStoresOnlyExactNamedMemberOwnership'],
+            )->alsoReddens(
+                'both configured-container cases add exact declaration metrics through MetricSubjectIndex, which refuses SymbolInfo without its subject',
+                [
+                    'Qualimetrix.Tests.Infrastructure.DependencyInjection.Integration.ContainerFactoryTest::itCapturesFreshOffenderDefinitionsInOneConfiguredContainer',
+                    'Qualimetrix.Tests.Infrastructure.DependencyInjection.Integration.ContainerFactoryTest::itCreatesFreshRepositoriesFromTheConfiguredComputedCatalog',
+                ],
             ),
 
             Control::breaking(
