@@ -75,6 +75,15 @@ The verdict label and `defect` bit are separate. A framed refusal can still be
 a defect when the ledger promised acceptance; all floors and controls compare
 `VERDICT|defect`, never the label alone.
 
+The live form and pair populations contain only addresses writable through the
+native declaration API. Historical ledger addresses with no writable declaration
+remain explicit `NOT OBSERVABLE` cells, with their exclusion reason; they are not
+judged as repaired promises. The frozen ledger and its historical observations
+remain unchanged. Retired Distance `min-class-count` spellings are covered by
+`DistanceRuleTest::itRefusesEveryRetiredClassCountSpelling`; removed architecture
+severity options are covered by
+`UnknownRuleOptionKeyRefusalTest::itLeavesAKeyTheClassAnswersForToTheClassItself`.
+
 ## Composition and neighbourhood
 
 Axis C preserves both source composition and sibling loss. `LOST_SIBLING` is
