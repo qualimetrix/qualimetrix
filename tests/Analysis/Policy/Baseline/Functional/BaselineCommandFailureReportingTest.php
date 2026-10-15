@@ -87,6 +87,24 @@ use Throwable;
 #[CoversClass(BaselineCommand::class)]
 final class BaselineCommandFailureReportingTest extends TestCase
 {
+    #[Test]
+    public function itKeepsASuccessfulBaselineCommandSuccessfulWithoutRequiringSignalSupport(): void
+    {
+        $command = new class ('baseline:probe') extends BaselineCommand {
+            protected function doExecute(InputInterface $input, OutputInterface $output): int
+            {
+                return 0;
+            }
+        };
+        $command->setRefusalPresenter(new RefusalPresenter(new ErrorStream()));
+        $tester = new CommandTester($command);
+
+        $tester->execute([]);
+
+        self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringNotContainsString('Internal error:', $tester->getDisplay());
+    }
+
     /**
      * @return iterable<string, array{Throwable, string, int}>
      */
