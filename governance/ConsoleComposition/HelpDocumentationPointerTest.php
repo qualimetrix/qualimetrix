@@ -32,7 +32,7 @@ use Symfony\Component\Console\Command\Command;
  * **The population is not "every command a running `qmx` process answers
  * to."** Symfony adds `help`, `list`, `completion` and `_complete` to a live
  * `Application`; none of them carries an `#[AsCommand]` attribute under
- * `src/Infrastructure/Console/Command/`, so the filesystem sweep already
+ * `src/Infrastructure/Console/`, so the filesystem sweep already
  * leaves all four out on its own — named here so that silence is read as a
  * deliberate scope, not an oversight. (`list`'s own `Help:` section does
  * carry the pointer, appended by {@see \Qualimetrix\Infrastructure\Console\Application\Application::appendPointerToListCommandHelp()};
@@ -64,7 +64,7 @@ use Symfony\Component\Console\Command\Command;
 #[Group('integration')]
 final class HelpDocumentationPointerTest extends TestCase
 {
-    private const string COMMAND_DIRECTORY = __DIR__ . '/../../src/Infrastructure/Console/Command';
+    private const string COMMAND_DIRECTORY = __DIR__ . '/../../src/Infrastructure/Console';
 
     private const string BINARY_PATH = __DIR__ . '/../../src/Infrastructure/Console/Application/ProductCommandLoader.php';
 
