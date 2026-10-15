@@ -238,7 +238,7 @@ final class WorkerBootstrap
         $collectors = [];
 
         foreach ($classNames as $className) {
-            self::assertInstantiable($className);
+            WorkerComposition::assertCollectorInstantiable($className);
 
             /** @var MetricCollectorInterface $collector */
             $collector = new $className();
@@ -266,7 +266,7 @@ final class WorkerBootstrap
         $collectors = [];
 
         foreach ($classNames as $className) {
-            self::assertInstantiable($className);
+            WorkerComposition::assertCollectorInstantiable($className);
 
             /** @var DerivedCollectorInterface $collector */
             $collector = new $className();
@@ -277,25 +277,6 @@ final class WorkerBootstrap
         return $collectors;
     }
 
-    /**
-     * Asserts that a collector class may be instantiated in a parallel worker.
-     *
-     * Only collectors implementing ParallelSafeCollectorInterface are allowed.
-     * This provides a compile-time contract instead of runtime reflection.
-     *
-     * Both mismatches refuse. Dropping the collector instead made `--workers=N`
-     * measure less than `--workers=0` with nothing said about it anywhere a
-     * caller looks: the metrics were simply absent, the rules reading them
-     * reported nothing, coverage stayed complete and the exit code stayed
-     * normal. The warning it wrote went to the worker's own STDERR.
-     *
-     * @param class-string $className
-     */
-    public static function assertInstantiable(string $className): void
-    {
-        WorkerComposition::assertCollectorInstantiable($className);
-    }
-
     private static function applyRuntimeConfiguration(
         object $collector,
         LcomCollectionConfiguration $configuration,
@@ -303,11 +284,5 @@ final class WorkerBootstrap
         if ($collector instanceof LcomCollectionConfigurableInterface) {
             $collector->applyLcomCollectionConfiguration($configuration);
         }
-    }
-
-    /** @return class-string<DependencyTraversalParticipantInterface> */
-    public static function validateDependencyTraversalParticipantClass(string $className): string
-    {
-        return WorkerComposition::validateDependencyTraversalParticipantClass($className);
     }
 }

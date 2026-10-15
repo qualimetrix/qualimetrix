@@ -41,7 +41,14 @@ final readonly class WorkerComposition
         }
     }
 
-    /** @param class-string $className */
+    /**
+     * Both mismatches refuse. Dropping a collector instead made parallel runs
+     * silently measure less than sequential runs: the metrics and findings
+     * disappeared while coverage and the exit code remained normal. The old
+     * warning went only to the worker's STDERR.
+     *
+     * @param class-string $className
+     */
     public static function assertCollectorInstantiable(string $className): void
     {
         if (!class_exists($className)) {
