@@ -11686,18 +11686,11 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itKeepsAProfileExportLineAboveTheFrame
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itKeepsAnUncaughtThrowableAboveNoFrameAtAll
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itRendersAnUncaughtThrowableIntoAnOutputThatHasNoErrorChannel
- - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itKeepsThePayloadFreeOfTheTerminal"-v"
- - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itKeepsThePayloadFreeOfTheTerminal"-vv"
- - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itKeepsThePayloadFreeOfTheTerminal"-vvv"
- - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itKeepsThePayloadFreeOfTheTerminal"default"
- - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesEveryDiagnosticLineOnTheScreen"-v"
- - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesEveryDiagnosticLineOnTheScreen"-vv"
- - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesEveryDiagnosticLineOnTheScreen"-vvv"
- - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"-v"
- - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"-vv"
- - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"-vvv"
- - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"default"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itPassesTheSuiteCacheHomeToTheTerminalProcess
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itPreservesDiagnosticsClearsTheFrameAndKeepsThePayloadClean"-v"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itPreservesDiagnosticsClearsTheFrameAndKeepsThePayloadClean"-vv"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itPreservesDiagnosticsClearsTheFrameAndKeepsThePayloadClean"-vvv"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itPreservesDiagnosticsClearsTheFrameAndKeepsThePayloadClean"default"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ExhaustionReleasesTargetsTest::itReleasesUnpublishedReportAndProfileTargetsWhenTheCoordinatorRunsOutOfMemory
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itClassifiesAnUnsupportedGraphTargetWithoutWritingAReport
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itClassifiesEnvironmentFailureBeforeCheckReport
