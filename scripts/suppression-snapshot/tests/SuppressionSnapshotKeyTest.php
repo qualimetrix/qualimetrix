@@ -173,13 +173,47 @@ final class SuppressionSnapshotKeyTest extends TestCase
     }
 
     #[Test]
-    public function itAcceptsEquivalentSequentialAndParallelMeasurements(): void
+    public function itRefusesInertSelfAnalysisBeforeReplacingTheSnapshot(): void
+    {
+        $path = tempnam(sys_get_temp_dir(), 'qmx-suppression-');
+        self::assertNotFalse($path);
+
+        try {
+            file_put_contents($path, 'original snapshot');
+            $inert = renderInert(["rule-path-suppression\tsrc/Absent.php"]);
+
+            self::assertSame(3, finishSuppressionSnapshot($path, 'replacement', $inert, 1, false));
+            self::assertSame('original snapshot', file_get_contents($path));
+            self::assertSame(3, finishSuppressionSnapshot($path, 'replacement', $inert, 1, true));
+            self::assertSame('original snapshot', file_get_contents($path));
+        } finally {
+            unlink($path);
+        }
+    }
+
+    #[Test]
+    public function itAcceptsAnEmptyInertSelfAnalysisSet(): void
+    {
+        $path = tempnam(sys_get_temp_dir(), 'qmx-suppression-');
+        self::assertNotFalse($path);
+
+        try {
+            self::assertSame(0, finishSuppressionSnapshot($path, 'replacement', renderInert([]), 1, false));
+            self::assertSame('replacement', file_get_contents($path));
+            self::assertSame(0, finishSuppressionSnapshot($path, 'replacement', renderInert([]), 1, true));
+        } finally {
+            unlink($path);
+        }
+    }
+
+    #[Test]
+    public function itAcceptsEquivalentSequentialAndParallelMeasurementsWithInertControls(): void
     {
         $measurement = [
             "suppression\tsrc/Foo.php\texample.channel\tsrc/Foo.php\tApp\\Foo\twarning\t1\n",
-            "mechanism\tsuppressor\n",
+            "mechanism\tsuppressor\nrule-path-suppression\tsrc/Absent.php\n",
             1,
-            0,
+            1,
             1,
         ];
 

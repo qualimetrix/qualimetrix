@@ -841,39 +841,44 @@ Run `bin/qmx check src/` after modifying metric collection or aggregation logic 
 
 ### Dogfooding: Finding Management Strategy
 
-We analyze ourselves with `bin/qmx check src/` using `qmx.yaml` and the
-versioned root `qmx-baseline.json`. That file is a v14 ratchet snapshot for
-residual, currently accepted magnitudes and occurrences; it is not a
-suppress-mode or legacy baseline. The generated qmx projection enforces coarse owner/seam topology.
-`composer selfcheck` first runs `composer architecture:check`, which validates
-the exact manifest policy and generated freshness, and then applies the qmx
-ratchet with `--fail-on=warning`. A direct `bin/qmx check` omits that first
-repository-governance step.
+We analyze `src/` with `qmx.yaml` and the versioned root
+`qmx-baseline.json`. The v14 baseline ratchets accepted residual magnitudes and
+occurrences. `composer selfcheck` first checks the exact manifest and generated
+architecture projection, then runs the ratchet with `--fail-on=warning`. A direct
+`bin/qmx check` omits repository governance.
 
-**Decision framework** (in priority order):
+Resolve each new finding in this order:
 
-| Situation                                  | Action                                                  |
-| ------------------------------------------ | ------------------------------------------------------- |
-| Real issue                                 | Fix the code                                            |
-| Structural (project nature)                | `suppress_paths` or `suppress_namespaces` in `qmx.yaml` |
-| Threshold mismatch                         | Tune threshold in `qmx.yaml`                            |
-| Legitimate exception for a specific symbol | `@qmx-threshold` on the class/method with reason        |
-| Genuinely inapplicable                     | `@qmx-ignore` with reason                               |
-| Generated or non-analyzable file           | `@qmx-ignore-file` with reason                          |
+1. Refactor a real quality problem, including high outgoing CBO, complexity,
+   poor cohesion, duplication or excessive size. Shared code in two rules or
+   commands deserves a shared subject-owned helper.
+2. Use an exact exception for intentional inbound contract popularity or a
+   structurally inapplicable metric. Every currently hidden finding must fit
+   the stated reason, and a category selector must also fit every member it
+   would enroll by construction. An exception that hides no finding is inert.
+3. Where the metric mis-models a specific design but still measures a quality
+   signal, keep a finite ceiling: `@qmx-threshold` for a class or method, or a
+   precise ratchet entry for a namespace or project finding.
+4. If an intended change increases an accepted magnitude, recalibrate only its
+   specific ratchet entry with a reviewed reason.
 
-**Key principles:**
-- **Refactoring is the default response, not threshold tweaking.** When a check signal flags real architectural debt (high WMC, low cohesion, complexity, coupling), prefer extracting a class, splitting responsibilities, or otherwise improving the architecture — that's why we measure. Refactoring cost is low for an AI agent; the metric is the signal. Threshold tweaking is reserved for cases where the metric mis-models the design (e.g., stateless utility classes have low cohesion *by construction*, not as a defect).
-- All `@qmx-*` inline tags are available for use — pick the right one for the situation
-- Every inline tag must include a reason explaining **why** the exception is acceptable
-- Prefer `qmx.yaml` configuration over inline tags when the exclusion applies to a category (e.g., all visitors, all DI configurators)
-- Prefer `@qmx-threshold` over `@qmx-ignore` — keeping the rule active with adjusted limits is better than silencing it
-- Prefer direct thresholds, scoped configuration exclusions, and justified
-  point suppressions over adding findings to the ratchet. Baseline lifecycle
-  and recalibration must be explicit and reviewed: regenerate
-  `qmx-baseline.json` only after an intentional change to accepted residual
-  debt, and review the resulting v14 snapshot diff
-- Never use suppress-mode or legacy baselines for dogfooding
+A quality signal must remain bounded. Never move it into an indefinite
+`suppress_paths`, `suppress_namespaces`, or `suppress_namespace_channels`
+exception. Before adding any suppression, evaluate a refactor and record why
+the exception is warranted. Inline tags need a reason. Prefer a category
+selector only when its reason holds for the entire category and it currently
+suppresses at least one finding; otherwise use an exact selector or a finite
+ceiling. A selector whose activity changes only because unrelated subjects
+change needs a different model or a precise ceiling.
 
+`composer suppression-snapshot:check` refuses every `neverMatched` suppressor
+in the current self-analysis and checks the suppression composition snapshot.
+An inert suppression or directive is removed in the same change that makes it
+inert; judge any returned finding afresh by the order above. Run
+`bin/qmx directives` for inline-directive usage. Never regenerate the full
+baseline as a routine response to self-analysis drift; review a targeted v14
+snapshot diff when an accepted residual magnitude intentionally changes.
+Never use suppress-mode or legacy baselines for dogfooding.
 ---
 
 ## Changelog
