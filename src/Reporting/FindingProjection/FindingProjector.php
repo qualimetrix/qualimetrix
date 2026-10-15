@@ -19,7 +19,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 
 /**
- * @qmx-ignore coupling.instability:class -- Finding projection intentionally composes the six ordered policy operations across Finding, Inline, Baseline, and Git contracts; its two callers and fifteen outgoing types are the reviewed Reporting orchestration boundary.
+ * @qmx-threshold coupling.instability warning=0.888890 error=0.95 -- The ordered projection composes separate Inline, Baseline, and Git policies for a small incoming population. A further single-reader split would move the same policy vocabulary; the ceiling keeps added dependencies visible.
  */
 final readonly class FindingProjector
 {
