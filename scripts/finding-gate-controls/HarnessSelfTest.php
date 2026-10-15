@@ -167,7 +167,7 @@ final class HarnessSelfTest
             Shell::replace($scratch->path('finding-gate/maps/channels.tsv'), Tsv::render(['old', 'new', 'reason'], [
                 ['code-smell.unused-private', 'code-smell.unused-privat2', 'A private inherited transition.'],
             ]));
-            $productPath = 'src/Analysis/Evidence/CodeSmell/UnusedPrivateRule.php';
+            $productPath = 'src/Analysis/Evidence/CodeSmell/UnusedPrivate/UnusedPrivateRule.php';
             $originalProduct = Shell::read($repository . '/' . $productPath);
             $dirtyProduct = $originalProduct . "\n// A private working-tree variation.\n";
             Shell::replace($scratch->path($productPath), $dirtyProduct);
