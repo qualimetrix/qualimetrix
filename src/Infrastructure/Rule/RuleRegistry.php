@@ -7,7 +7,6 @@ namespace Qualimetrix\Infrastructure\Rule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
-use Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException;
 
 /**
  * Registry of rule classes.

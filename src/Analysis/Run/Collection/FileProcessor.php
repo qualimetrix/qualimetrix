@@ -18,7 +18,7 @@ use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\SuccessfulFileProcessing;
 use Qualimetrix\Core\Ast\FileParserInterface;
-use Qualimetrix\Core\Exception\ParseException;
+use Qualimetrix\Core\Ast\ParseException;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;

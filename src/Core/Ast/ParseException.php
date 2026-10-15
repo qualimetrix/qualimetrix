@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Core\Exception;
+namespace Qualimetrix\Core\Ast;
 
 use Exception;
 use Qualimetrix\Core\Path\AbsolutePath;

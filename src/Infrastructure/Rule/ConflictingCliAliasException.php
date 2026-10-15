@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Infrastructure\Rule\Exception;
+namespace Qualimetrix\Infrastructure\Rule;
 
 use RuntimeException;
 

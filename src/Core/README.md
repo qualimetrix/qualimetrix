@@ -32,10 +32,9 @@ Core/
 ├── Ast/
 │   ├── FileParserInterface.php            # AST parsing contract
 │   ├── NameResolution.php                 # Class-name resolution before collection
+│   ├── ParseException.php                 # Parse error value
 │   ├── ResolvedName.php                   # Resolved declaration-name query
 │   └── SuperglobalRead.php               # Finite direct superglobal read shapes
-├── Exception/
-│   └── ParseException.php                 # Parse error value
 ├── Environment/
 │   └── EnvironmentFailureInterface.php    # Neutral delivery/storage failure marker
 ├── FileTarget/
@@ -1067,7 +1066,7 @@ Determines whether a namespace belongs to the project (not an external dependenc
 ### ParseException
 
 **Fields:**
-- `file: string` — path to the file with error
+- `filePath: AbsolutePath` — path to the file with error
 - `message: string` — parse error description
 
 ---

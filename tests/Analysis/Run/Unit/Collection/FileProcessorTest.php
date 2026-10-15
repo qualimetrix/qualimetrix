@@ -33,7 +33,7 @@ use Qualimetrix\Analysis\Policy\Inline\Extraction\SourceControlExtractor;
 use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
 use Qualimetrix\Core\Ast\FileParserInterface;
-use Qualimetrix\Core\Exception\ParseException;
+use Qualimetrix\Core\Ast\ParseException;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
