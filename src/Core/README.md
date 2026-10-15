@@ -205,7 +205,7 @@ Analogous to `CallableMetricsProviderInterface` but for class-level data. Allows
 **Methods:**
 - `getClassesWithMetrics(RelativePath $file): list<ClassWithMetrics>` — returns class metrics after AST traversal
 
-**Usage:** Implemented by collectors that gather class-level metrics (e.g., TccLccCollector, RfcCollector).
+**Usage:** Implemented by collectors that gather class-level metrics (e.g., TccLccCollector, [`RfcCollector`](../Analysis/Evidence/Coupling/Rfc/RfcCollector.php)).
 
 ### NamespaceMetricProviderInterface
 

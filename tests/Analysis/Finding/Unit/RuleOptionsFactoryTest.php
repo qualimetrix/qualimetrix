@@ -11,7 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
-use Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListOptions;
+use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\LongParameterListOptions;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface;
 use Qualimetrix\Analysis\Evidence\Coupling\CboOptions;

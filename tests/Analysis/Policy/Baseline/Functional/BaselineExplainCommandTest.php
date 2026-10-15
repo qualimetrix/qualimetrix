@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Functional;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\LongParameterListRule;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;

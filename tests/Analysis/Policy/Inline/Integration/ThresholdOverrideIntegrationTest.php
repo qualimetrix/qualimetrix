@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Policy\Inline\Integration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListOptions;
+use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\LongParameterListOptions;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomOptions;
 use Qualimetrix\Analysis\Evidence\Complexity\ClassNpathComplexityOptions;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;

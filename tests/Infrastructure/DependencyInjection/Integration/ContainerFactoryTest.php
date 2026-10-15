@@ -13,7 +13,6 @@ use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolution
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\BooleanArgumentRule;
-use Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\CountInLoopRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\DebugCodeRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\EmptyCatchRule;
@@ -22,10 +21,14 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\EvalRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\ExitRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\GotoRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\IdenticalSubExpressionRule;
-use Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ConstructorOverinjectionRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\LongParameterListRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ParameterCountCollector;
 use Qualimetrix\Analysis\Evidence\CodeSmell\SuperglobalsRule;
-use Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeRule;
-use Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCode\UnreachableCodeCollector;
+use Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCode\UnreachableCodeRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\UnusedPrivateCollector;
+use Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\UnusedPrivateRule;
 use Qualimetrix\Analysis\Evidence\Cohesion\CohesionCompositionCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurableInterface;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration;
@@ -56,7 +59,8 @@ use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfig
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
 use Qualimetrix\Analysis\Evidence\Coupling\DistanceRule;
 use Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule;
-use Qualimetrix\Analysis\Evidence\Coupling\RfcCollector;
+use Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcCollector;
+use Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcGlobalCollector;
 use Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceRule;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
@@ -72,7 +76,7 @@ use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
-use Qualimetrix\Analysis\Evidence\Maintainability\HalsteadCollector;
+use Qualimetrix\Analysis\Evidence\Maintainability\Halstead\HalsteadCollector;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityIndexCollector;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MeasurementAggregationService;
@@ -904,6 +908,9 @@ PHP;
             LcomCollector::class,
             TccLccCollector::class,
             RfcCollector::class,
+            ParameterCountCollector::class,
+            UnreachableCodeCollector::class,
+            UnusedPrivateCollector::class,
         ];
 
         foreach ($expectedCollectors as $expectedClass) {
@@ -962,6 +969,10 @@ PHP;
         self::assertContainsOnlyInstancesOf(GlobalContextCollectorInterface::class, $collectors);
         self::assertContains(
             DitGlobalCollector::class,
+            array_map(static fn(object $collector): string => $collector::class, $collectors),
+        );
+        self::assertContains(
+            RfcGlobalCollector::class,
             array_map(static fn(object $collector): string => $collector::class, $collectors),
         );
         $cohesion = array_values(array_filter($collectors, static fn(object $collector): bool => $collector instanceof CohesionCompositionCollector));

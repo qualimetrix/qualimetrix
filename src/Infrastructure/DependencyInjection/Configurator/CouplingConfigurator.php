@@ -20,15 +20,17 @@ final class CouplingConfigurator implements ContainerConfiguratorInterface
     public function configure(ContainerBuilder $container): void
     {
         $loader = EvidenceRegistration::loader($container, $this->srcDir);
-        $loader->registerClasses(
-            EvidenceRegistration::collectors(),
-            self::NAMESPACE,
-            $this->srcDir . '/Analysis/Evidence/Coupling/**/*Collector.php',
-        );
+        foreach (['' => '*', 'Rfc\\' => 'Rfc/*'] as $namespace => $root) {
+            $loader->registerClasses(
+                EvidenceRegistration::collectors(),
+                self::NAMESPACE . $namespace,
+                $this->srcDir . '/Analysis/Evidence/Coupling/' . $root . 'Collector.php',
+            );
+        }
         $loader->registerClasses(
             EvidenceRegistration::rules(),
             self::NAMESPACE,
-            $this->srcDir . '/Analysis/Evidence/Coupling/**/*Rule.php',
+            $this->srcDir . '/Analysis/Evidence/Coupling/*Rule.php',
         );
 
         $container->register(self::ANALYSIS, self::ANALYSIS);

@@ -16,7 +16,7 @@ use Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityVisitor;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageVisitor;
-use Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor;
+use Qualimetrix\Analysis\Evidence\Maintainability\Halstead\HalsteadVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Core\Ast\NameResolution;

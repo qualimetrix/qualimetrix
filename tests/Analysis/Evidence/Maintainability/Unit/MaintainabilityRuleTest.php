@@ -13,7 +13,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\Maintainability\HalsteadCollector;
+use Qualimetrix\Analysis\Evidence\Maintainability\Halstead\HalsteadCollector;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityIndexCollector;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityOptions;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;

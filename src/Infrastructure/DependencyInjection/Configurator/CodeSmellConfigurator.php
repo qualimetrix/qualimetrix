@@ -19,16 +19,23 @@ final class CodeSmellConfigurator implements ContainerConfiguratorInterface
     public function configure(ContainerBuilder $container): void
     {
         $loader = new PhpFileLoader($container, new FileLocator($this->srcDir));
-        $loader->registerClasses(
-            (new Definition())->setAutoconfigured(true)->setAutowired(true),
-            self::NAMESPACE,
-            $this->srcDir . '/Analysis/Evidence/CodeSmell/**/*Collector.php',
-        );
-        $loader->registerClasses(
-            (new Definition())->setAutoconfigured(true)->setAutowired(false)->setLazy(true),
-            self::NAMESPACE,
-            $this->srcDir . '/Analysis/Evidence/CodeSmell/**/*Rule.php',
-            $this->srcDir . '/Analysis/Evidence/CodeSmell/Abstract*Rule.php',
-        );
+        foreach (['' => '*', 'ParameterCount\\' => 'ParameterCount/*', 'UnreachableCode\\' => 'UnreachableCode/*', 'UnusedPrivate\\' => 'UnusedPrivate/*'] as $namespace => $root) {
+            $loader->registerClasses(
+                (new Definition())->setAutoconfigured(true)->setAutowired(true),
+                self::NAMESPACE . $namespace,
+                $this->srcDir . '/Analysis/Evidence/CodeSmell/' . $root . 'Collector.php',
+            );
+        }
+        foreach (['' => '*', 'ParameterCount\\' => 'ParameterCount/*', 'UnreachableCode\\' => 'UnreachableCode/*', 'UnusedPrivate\\' => 'UnusedPrivate/*'] as $namespace => $root) {
+            $exclude = $namespace === ''
+                ? $this->srcDir . '/Analysis/Evidence/CodeSmell/Abstract*Rule.php'
+                : null;
+            $loader->registerClasses(
+                (new Definition())->setAutoconfigured(true)->setAutowired(false)->setLazy(true),
+                self::NAMESPACE . $namespace,
+                $this->srcDir . '/Analysis/Evidence/CodeSmell/' . $root . 'Rule.php',
+                $exclude,
+            );
+        }
     }
 }
