@@ -15,10 +15,8 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader;
-use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
-use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
@@ -45,7 +43,6 @@ final readonly class FindingFilterOrchestrator
         private FindingProjector $findingProjector,
         private ErrorStream $errorStream,
         private UnboundSuppressionAudit $unboundSuppressionAudit,
-        private ComposerManifestReaderInterface $composerReader,
         private ObservedProjectScopeReasons $observedProjectScopeReasons,
         private BaselineDocumentReader $documentReader,
         private BaselineProjectionCoverage $baselineCoverage,
@@ -101,7 +98,8 @@ final readonly class FindingFilterOrchestrator
         $output = $this->errorStream->writer($output);
         $options = $this->baselineCoverage->withRunCoverage($options, $result, $configuration);
         $publication = $result->populationPublication ?? throw new LogicException('Late finding projection requires captured channel publication');
-        $suppression = $this->unboundSuppressions($result, $options, $this->valueScope($result, $resolvedScope));
+        $measurement = $result->measured->projectScope ?? throw new LogicException('A pipeline result requires measured project scope');
+        $suppression = $this->unboundSuppressions($result, $options, $measurement->valueScopeJudgement());
         $filterResult = $this->findingProjector->project(
             [...$result->findings(), ...$suppression['findings']],
             $result->directives->suppressions,
@@ -126,45 +124,18 @@ final readonly class FindingFilterOrchestrator
     }
 
     /**
-     * The per-value half of the run's shape, built from the scope the console
-     * already measured, or `null` on a run that judges no configured value at
-     * all. Both readers below build it from the same carried answer, so the
-     * findings and the report's list of skipped values cannot part.
-     *
-     * The PSR-4 map includes `autoload-dev` whatever the run's policy, unlike
-     * the coverage denominator: it is asked where a namespace lives, not which
-     * roots a whole-project run must reach, and a value naming test code is
-     * judged exactly by a run that analysed it. Without accepted PSR-4 roots
-     * there is no declared map to locate namespace values, so none is judged.
-     */
-    private function valueScope(AnalysisResult $result, ResolvedCheckScope $resolvedScope): ValueScopeJudgement
-    {
-        $scope = $resolvedScope->scope;
-        $measurement = $result->measured->projectScope ?? throw new LogicException('A pipeline result requires measured project scope');
-
-        return new ValueScopeJudgement(
-            $scope->projectRoot->value(),
-            $this->composerReader->read($scope->projectRoot)->psr4Roots(),
-            array_map(static fn(AbsolutePath $path): string => $path->value(), $scope->paths),
-            projectDeclared: $measurement->universe->namespaceMapUsable,
-            scope: $measurement->judgement(),
-        );
-    }
-
-    /**
      * The project scope as the report publishes it: the measurement taken
      * before the run, and — on a run that judged configured values — every
      * value it skipped, from the same enumeration the findings below come from.
      */
     public function projectScope(
-        ResolvedCheckScope $resolvedScope,
         AnalysisResult $result,
         FindingProjectionOptions $options,
     ): ReportProjectScope {
-        $valueScope = $this->valueScope($result, $resolvedScope);
         $measurement = $result->measured->projectScope ?? throw new LogicException('A pipeline result requires measured project scope');
+        $valueScope = $measurement->valueScopeJudgement();
         $judgement = $measurement->judgement();
-        $facts = $this->composerReader->read($measurement->universe->projectRoot);
+        $facts = $measurement->universe->manifestFacts;
         $reasons = $this->observedProjectScopeReasons->forMainSource($facts->source(), $facts->state, $measurement->universe->projectRoot);
         $namespaces = $result->measured->namespaceTree?->getAllNamespaces();
         $unjudged = $this->unboundSuppressionAudit->unjudgedValues(

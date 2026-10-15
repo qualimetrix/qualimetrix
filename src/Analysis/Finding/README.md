@@ -153,6 +153,9 @@ without a usable map namespace values remain unjudged.
 anchor is not judged. Path/ledger regex is unjudged when path completeness is
 withheld or authored removal could hide a match; a complete named PHP roster
 can satisfy that measured path question just as a directory selection can.
+Run constructs this immutable answer once in its final scope measurement from
+the captured manifest facts. Console uses that same answer for suppression
+findings and the report's skipped values; neither reader reconstructs it.
 Namespace regex also needs complete declaration evidence. Generated removal
 withholds that namespace question while leaving path completeness open. This
 conservative rule may leave an unrelated stale regex unjudged; rerun without the exclusion to settle it. The audit opens

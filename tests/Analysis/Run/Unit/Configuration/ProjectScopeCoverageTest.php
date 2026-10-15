@@ -14,8 +14,14 @@ use Qualimetrix\Analysis\Run\Configuration\ProjectScopePaths;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState;
+use Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles;
+use Qualimetrix\Analysis\Run\Discovery\ScopeFacts;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
 
 /**
@@ -102,6 +108,42 @@ final class ProjectScopeCoverageTest extends TestCase
         $wider = $final->narrowTo([$root]);
         self::assertFalse($wider->state()->coversProjectScope());
         self::assertSame($initial->universe, $wider->universe);
+    }
+
+    #[Test]
+    public function itCapturesOneValueJudgementFromTheOriginalManifestAndFinalPaths(): void
+    {
+        mkdir($this->tempDir . '/tests');
+        $this->writeManifest([
+            'autoload' => ['psr-4' => ['Fixture\\' => 'src/']],
+            'autoload-dev' => ['psr-4' => ['Fixture\\Tests\\' => 'tests/']],
+        ]);
+        $root = AbsolutePath::fromString($this->tempDir);
+        $source = $root->joinRelative(RelativePath::fromString('src'));
+        $reader = new ComposerManifestReader();
+        $initial = (new ProjectScopeCoverage($reader))->measure(
+            $root,
+            [$root],
+            AutoloadDevPolicy::Exclude,
+            \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored,
+        );
+
+        unlink($this->tempDir . '/composer.json');
+        self::assertSame(
+            \Qualimetrix\Analysis\ProjectManifest\Contract\ManifestReadState::Absent,
+            (new ComposerManifestReader())->read($root)->state,
+        );
+        $measured = $initial->narrowTo([$source])->withDiscoveredFiles(
+            new DiscoveredProjectFiles([], [], [], [], [], new ScopeFacts([], [], [], false), 0),
+        );
+        $valueScope = $measured->valueScopeJudgement();
+
+        self::assertSame($initial->universe->manifestFacts, $measured->universe->manifestFacts);
+        self::assertSame($valueScope, $measured->valueScopeJudgement());
+        self::assertFalse($valueScope->judgesNamespaceValue(new NamespacePattern(new SelectorDefinition(SelectorKind::Exact, 'Fixture\\Tests\\Gone'))));
+        self::assertTrue($valueScope->judgesNamespaceValue(new NamespacePattern(new SelectorDefinition(SelectorKind::Exact, 'Fixture\\Gone'))));
+        self::assertFalse($valueScope->judgesPathValue(new PathPattern(new SelectorDefinition(SelectorKind::Subtree, 'tests/Gone'))));
+        self::assertTrue($valueScope->judgesPathValue(new PathPattern(new SelectorDefinition(SelectorKind::Subtree, 'src/Gone'))));
     }
 
     #[Test]

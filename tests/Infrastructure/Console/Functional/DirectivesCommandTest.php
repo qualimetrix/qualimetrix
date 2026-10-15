@@ -1801,7 +1801,7 @@ final class DirectivesCommandTest extends TestCase
         $root = \Qualimetrix\Core\Path\AbsolutePath::fromString('/fixture');
 
         return new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(
-            new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse($root, true, [], [], [], true, []),
+            new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse($root, true, [], [], [], true, [], (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root)),
             [$root],
             \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered,
             [],

@@ -139,6 +139,9 @@ Finding's single `ProjectScopeJudgement` travels in the result/context and copie
 threshold contexts. Declaration absence and exclude-selector completeness are
 separate questions; Console does not synthesize another coverage boolean.
 `FindingFilterOrchestrator` uses that judgement for per-value suppression binding.
+It reads the final measurement's single `ValueScopeJudgement` for both late
+suppression findings and skipped-value reporting. The main manifest source and
+state also come from Run's captured facts, without another Console read.
 Reports preserve reasons and each skipped `{channel, option, pattern}` value.
 `AnalysisInputPathValidator` still refuses missing paths and explicitly named
 non-PHP regular files before discovery.

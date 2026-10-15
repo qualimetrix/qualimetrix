@@ -19,7 +19,8 @@ final readonly class ProjectScopeCoverage
     /** @param list<AbsolutePath> $analyzedPaths */
     public function measure(AbsolutePath $projectRoot, array $analyzedPaths, AutoloadDevPolicy $autoloadDev, PathsAuthorship $authorship): ProjectScopeMeasurement
     {
-        $evidence = new ManifestScopeEvidence($this->composerReader->read($projectRoot), $autoloadDev);
+        $manifestFacts = $this->composerReader->read($projectRoot);
+        $evidence = new ManifestScopeEvidence($manifestFacts, $autoloadDev);
         $targets = $evidence->targets();
         [$reachable, $pruned] = ProjectScopePaths::partition($projectRoot, $targets);
         $reasons = $evidence->sourceReasons($pruned);
@@ -35,6 +36,7 @@ final readonly class ProjectScopeCoverage
             $reasons,
             $evidence->hasDeclaredNamespaces(),
             ProjectScopePaths::captureResolutions($projectRoot, $root, $analyzedPaths),
+            $manifestFacts,
         );
         $uncovered = $universe->uncoveredBy($analyzedPaths);
 

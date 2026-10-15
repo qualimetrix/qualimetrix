@@ -9,12 +9,15 @@ use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorOutcome;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorVerdict;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
+use Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement;
 use Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles;
 use Qualimetrix\Core\Path\AbsolutePath;
 
 /** Current selection and verdict over one captured source universe. */
 final readonly class ProjectScopeMeasurement
 {
+    private ?ValueScopeJudgement $valueScopeJudgement;
+
     /**
      * @param list<AbsolutePath> $paths
      * @param list<string> $uncoveredRoots
@@ -27,7 +30,17 @@ final readonly class ProjectScopeMeasurement
         public array $uncoveredRoots,
         private ?ProjectScopeJudgement $judgement = null,
         private array $measuredReasons = [],
-    ) {}
+    ) {
+        $this->valueScopeJudgement = $judgement !== null
+            ? new ValueScopeJudgement(
+                $universe->projectRoot->value(),
+                $universe->manifestFacts->psr4Roots(),
+                array_map(static fn(AbsolutePath $path): string => $path->value(), $paths),
+                $universe->namespaceMapUsable,
+                $judgement,
+            )
+            : null;
+    }
 
     public function state(): ProjectScopeState
     {
@@ -37,6 +50,11 @@ final readonly class ProjectScopeMeasurement
     public function judgement(): ProjectScopeJudgement
     {
         return $this->judgement ?? throw new LogicException('Project scope has not been measured against discovered files');
+    }
+
+    public function valueScopeJudgement(): ValueScopeJudgement
+    {
+        return $this->valueScopeJudgement ?? throw new LogicException('Value scope requires measured project scope');
     }
 
     /** @return list<ProjectScopeReason> */

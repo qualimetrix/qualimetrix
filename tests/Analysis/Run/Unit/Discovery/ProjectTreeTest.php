@@ -104,6 +104,7 @@ final class ProjectTreeTest extends TestCase
             [],
             true,
             [],
+            (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root),
         ))->complete());
     }
 
@@ -149,8 +150,17 @@ final class ProjectTreeTest extends TestCase
     {
         $root = AbsolutePath::fromString($this->root);
 
-        return new ProjectScopeUniverse($root, true, [
-            ['target' => 'src', 'path' => AbsolutePath::fromString($this->root . '/src')],
-        ], [], [], true, []);
+        return new ProjectScopeUniverse(
+            $root,
+            true,
+            [
+                ['target' => 'src', 'path' => AbsolutePath::fromString($this->root . '/src')],
+            ],
+            [],
+            [],
+            true,
+            [],
+            (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root),
+        );
     }
 }

@@ -107,9 +107,8 @@ final class FindingFilterOrchestratorTest extends TestCase
             $anchor->pointAt($root, ['/qmx-missing-' . bin2hex(random_bytes(6)) . '/src']);
             $measurement = (new \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage($reader))->measure(AbsolutePath::fromString($root), [AbsolutePath::fromString($root . '/dependency')], \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude, \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored);
             $reader->read(AbsolutePath::fromString($root . '/dependency'));
-            $scope = new GitScopeResolution($measurement->paths, null, null, AbsolutePath::fromString($root));
             $measured = $measurement->withDiscoveredFiles(new \Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles([], [], [], [], [], new \Qualimetrix\Analysis\Run\Discovery\ScopeFacts([RelativePath::fromString('src/A.php')], [], [], false), 0));
-            $report = $this->createOrchestrator($reader, $anchor)->projectScope(new ResolvedCheckScope($scope, [], $measurement), $this->createAnalysisResult(projectScope: $measured), new FindingProjectionOptions());
+            $report = $this->createOrchestrator($reader, $anchor)->projectScope($this->createAnalysisResult(projectScope: $measured), new FindingProjectionOptions());
             self::assertSame('narrowed', $report->state);
             self::assertCount(10, $report->unjudgedChannels);
             self::assertSame([
@@ -550,7 +549,6 @@ final class FindingFilterOrchestratorTest extends TestCase
             $pipeline,
             new ErrorStream(),
             self::silentSuppressionAudit(),
-            $reader,
             new \Qualimetrix\Infrastructure\Console\ObservedProjectScopeReasons($reader, $anchor),
             new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
             new \Qualimetrix\Infrastructure\Console\BaselineProjectionCoverage($reader, new ProjectTree(new EntryInspector()), StubRuleCoverage::everyRuleRan()),
@@ -615,7 +613,7 @@ final class FindingFilterOrchestratorTest extends TestCase
                 repository: $repository,
                 coverage: new AnalysisCoverage([RelativePath::fromString('src/Service/UserService.php')], [], []),
                 namespaceTree: null,
-                projectScope: $projectScope ?? new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(AbsolutePath::fromString($this->tempRoot), true, [], [], [], true, []), [AbsolutePath::fromString($this->tempRoot)], \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, [], new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement()),
+                projectScope: $projectScope ?? new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(AbsolutePath::fromString($this->tempRoot), true, [], [], [], true, [], (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read(AbsolutePath::fromString($this->tempRoot))), [AbsolutePath::fromString($this->tempRoot)], \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, [], new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement()),
                 duration: 0.1,
                 subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [RelativePath::fromString('src/Service/UserService.php')], []),
             ),

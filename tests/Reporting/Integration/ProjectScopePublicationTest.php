@@ -253,6 +253,7 @@ final class ProjectScopePublicationTest extends TestCase
                     [],
                     true,
                     [],
+                    (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read(\Qualimetrix\Core\Path\AbsolutePath::fromString('/fixture')),
                 ),
                 [],
                 \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered,

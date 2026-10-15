@@ -289,7 +289,7 @@ final class CheckCommand extends Command
                 filterResult: $filterResult,
                 projectionOptions: $projectionOptions,
                 namespacePattern: $namespacePattern,
-                projectScope: $this->findingFilterOrchestrator->projectScope($resolvedScope, $result, $projectionOptions),
+                projectScope: $this->findingFilterOrchestrator->projectScope($result, $projectionOptions),
                 configurationDiagnostics: $this->configurationInputAdapter->publishedDiagnostics($document, $findingConfiguration->diagnostics),
             );
 

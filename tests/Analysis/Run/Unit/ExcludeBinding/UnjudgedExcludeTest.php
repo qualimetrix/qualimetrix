@@ -136,7 +136,7 @@ final class UnjudgedExcludeTest extends TestCase
     private function walk(array $selectors): WalkedProject
     {
         $root = AbsolutePath::fromString($this->root);
-        $universe = new ProjectScopeUniverse($root, true, [], [], [], true, []);
+        $universe = new ProjectScopeUniverse($root, true, [], [], [], true, [], (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root));
         $run = new RunConfiguration(
             pathExcludes: array_map(static fn(AuthoredExclude $selector): PathPattern => $selector->pattern, $selectors),
             projectRoot: $root,

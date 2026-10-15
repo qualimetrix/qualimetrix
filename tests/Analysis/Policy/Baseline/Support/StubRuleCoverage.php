@@ -178,6 +178,7 @@ final class StubRuleCoverage
                 [],
                 true,
                 [],
+                (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root),
             ),
             ['App\\' => ['src/']],
             $tree,

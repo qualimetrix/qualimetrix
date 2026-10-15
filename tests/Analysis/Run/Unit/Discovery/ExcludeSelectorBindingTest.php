@@ -232,7 +232,7 @@ final class ExcludeSelectorBindingTest extends TestCase
     {
         $root = AbsolutePath::fromString($this->root);
         $absolutePaths = array_map(AbsolutePath::fromString(...), $paths ?? [$this->root]);
-        $universe = new ProjectScopeUniverse($root, true, [['target' => '.', 'path' => $root]], [], [], true, []);
+        $universe = new ProjectScopeUniverse($root, true, [['target' => '.', 'path' => $root]], [], [], true, [], (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root));
         $run = new RunConfiguration(
             pathExcludes: array_map(static fn(AuthoredExclude $selector): PathPattern => $selector->pattern, $selectors),
             projectRoot: $root,

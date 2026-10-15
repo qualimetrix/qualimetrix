@@ -181,6 +181,7 @@ final class RunCoverageLookupTest extends TestCase
                 [],
                 true,
                 [],
+                (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root),
             ),
             [],
             $tree,

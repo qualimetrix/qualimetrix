@@ -256,7 +256,7 @@ final class GeneratedFileFilterTest extends TestCase
     {
         $root = AbsolutePath::fromString($this->tempDir);
         $paths = array_map(static fn(SplFileInfo $file): AbsolutePath => AbsolutePath::fromString($file->getPathname()), $files);
-        $universe = new ProjectScopeUniverse($root, true, [], [], [], true, []);
+        $universe = new ProjectScopeUniverse($root, true, [], [], [], true, [], (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root));
         $configuration = new RunConfiguration(
             pathExcludes: [],
             projectRoot: $root,

@@ -209,7 +209,7 @@ final class FinderFileDiscoveryTest extends TestCase
     {
         $root = AbsolutePath::fromString($this->fixturesDir);
         $paths = \is_array($paths) ? $paths : [$paths];
-        $universe = new ProjectScopeUniverse($root, true, [], [], [], true, []);
+        $universe = new ProjectScopeUniverse($root, true, [], [], [], true, [], (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root));
         $run = new RunConfiguration(
             pathExcludes: array_map(static fn(AuthoredExclude $selector): PathPattern => $selector->pattern, $selectors),
             projectRoot: $root,

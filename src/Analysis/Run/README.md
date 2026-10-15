@@ -86,6 +86,11 @@ preparation -> FileSet inspection -> Rule execution -> result projection
 autoload-development policies, and the invocation's captured `ProjectScopeUniverse`.
 Composer facts, authored paths, source reasons and accepted aliases are captured
 once. Pure `narrowTo()` retains that evidence without another manifest or IO read.
+After discovery, the final measurement captures one Finding-owned
+`ValueScopeJudgement` from the original production and development PSR-4 map,
+its final paths and its `ProjectScopeJudgement`. Repeated readers of the result
+receive that same value; development roots locate values even when excluded
+from the coverage denominator.
 
 `ProjectFilesInterface::discover(RunConfiguration)` returns `DiscoveredProjectFiles`.
 One `ProjectWalk` and `EntryInspector` own entry inspection and listing. Eligible

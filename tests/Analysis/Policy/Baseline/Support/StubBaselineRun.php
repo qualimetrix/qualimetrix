@@ -121,6 +121,7 @@ final readonly class StubBaselineRun implements BaselineRunInterface
                     reasons: [],
                     namespaceMapUsable: false,
                     pathResolutions: [],
+                    manifestFacts: (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($this->projectRoot),
                 ),
                 paths: $paths,
                 scopeState: ProjectScopeState::Narrowed,
