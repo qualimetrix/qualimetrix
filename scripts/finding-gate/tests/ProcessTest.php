@@ -21,6 +21,9 @@ final class ProcessTest extends TestCase
     public function itPassesAdditionsToTheChildWhilePreservingFixedAndParentEnvironment(): void
     {
         $before = getenv('XDG_CACHE_HOME');
+        $inherited = Process::run([\PHP_BINARY, '-r', 'echo getenv("XDG_CACHE_HOME");'], __DIR__);
+        self::assertSame(0, $inherited['exit'], $inherited['stderr']);
+        self::assertSame($before, $inherited['stdout']);
         $run = Process::run([\PHP_BINARY, '-r', 'echo json_encode([getenv("XDG_CACHE_HOME"),getenv("LC_ALL"),getenv("TZ")]);'], __DIR__, environmentAdditions: ['XDG_CACHE_HOME' => '/tmp/gate-child-cache']);
         self::assertSame(0, $run['exit'], $run['stderr']);
         self::assertSame('["\/tmp\/gate-child-cache","C","UTC"]', $run['stdout']);

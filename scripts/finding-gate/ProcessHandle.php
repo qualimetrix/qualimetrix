@@ -79,6 +79,10 @@ final class ProcessHandle
                 throw new GateError('Cannot replace the fixed child environment key ' . $key . '.');
             }
         }
+        $cacheHome = getenv('XDG_CACHE_HOME');
+        if ($cacheHome !== false) {
+            $environment['XDG_CACHE_HOME'] = $cacheHome;
+        }
         $handle = proc_open(self::groupedCommand($command), $descriptors, $pipes, $workingDirectory, [...$environment, ...$environmentAdditions]);
 
         if (!\is_resource($handle)) {
