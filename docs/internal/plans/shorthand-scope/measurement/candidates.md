@@ -117,7 +117,7 @@ candidate (a), which would extend the same idea to a cross-level clash
   **existing precedent already in the project**: the memory note "Инертное
   подавление" / `inert_suppression.md` and `bin/qmx directives` describe an
   existing family of loud-signals-for-inert-configuration mechanisms
-  (`inert.tsv`, directive audit exit codes) that this candidate would extend
+  (snapshot refusal on `neverMatched`, directive audit exit codes) that this candidate would extend
   by one more instance rather than invent from scratch. Whether the signal
   should be a hard exit-code change (like the removed
   `unreachable_layer_severity` refusal in `LayerViolationOptions`) or a

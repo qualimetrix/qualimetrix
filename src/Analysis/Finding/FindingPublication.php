@@ -19,7 +19,7 @@ use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 /**
  * Projects produced findings through the existing exclusion ledger and selection.
  *
- * @qmx-threshold coupling.instability warning=0.86 -- Publication joins rule selection, exclusion, population and snapshot vocabulary for its executor and external readers; Ca=2 understates those distinct uses, and this ceiling keeps another outgoing dependency visible.
+ * @qmx-threshold coupling.instability warning=0.86 -- Publication joins rule selection, exclusion, population and snapshot vocabulary for its executor and external readers; the small incoming population understates those distinct uses, and this ceiling keeps another outgoing dependency visible.
  */
 final readonly class FindingPublication implements RulePublicationInterface
 {

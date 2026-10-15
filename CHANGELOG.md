@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- `ProjectScopeUniverse` now requires the captured `ComposerManifestFacts`. Read the final `ValueScopeJudgement` through `ProjectScopeMeasurement::valueScopeJudgement()` after discovery; do not rebuild it from a later manifest read. `FindingFilterOrchestrator` no longer takes a Composer reader, and `projectScope()` takes only the result and projection options. See ADR 0093.
 - `RuleExecutionInterface` now exposes only `execute()` and `allRules()`. Inject `RulePublicationInterface` for `publishable()`, `publication()` and `levelActivity()`; both services share the resolved invocation snapshot and publication ledger. Replace direct `RuleExecution` construction with shared `RuleMaterialization`, `FindingPublication` and rule configuration. See ADR 0124.
 - `Dependency::isCrossNamespace()` is removed. Compare `sourceLogical()->namespace` and `targetLogical()->namespace` when that distinction is needed; the graph's coupling views remain the source for measured cross-namespace coupling.
 - The Run execution strategy port now exposes only `execute(files, processor)`. Replace `execute(files, processor, canParallelize)` calls with the two-argument form, remove `isParallelAvailable()` preflight queries and references to `ParallelCapableInterface`, and configure the worker request through the existing selector or parallel strategy. Process capability is checked by the parallel strategy and actual worker startup is probed by its pool during execution.

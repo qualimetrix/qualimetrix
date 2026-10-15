@@ -3,14 +3,11 @@
 # We analyze ourselves with our own tool. This config tunes thresholds
 # and documents structural exceptions; qmx-baseline.json ratchets residual debt.
 #
-# Decision framework for violations:
-# 1. Real issue? → Fix the code
-# 2. Structural (project nature)? → suppress_paths or suppress_namespaces
-# 3. Threshold mismatch? → Tune threshold
-# 4. One-off exception? → @qmx-threshold on the class/method
-# 5. Genuinely inapplicable? → @qmx-ignore with reason
+# Refactor real quality debt first. Use exact, active exclusions only for
+# intentional contract popularity or structural inapplicability. Keep other
+# accepted quality signals under a finite @qmx-threshold or ratchet ceiling.
 
-# Fail CI on errors only (warnings are informational)
+# Direct invocations default to error; composer selfcheck judges warnings too.
 failOn: error
 
 # Self-analysis with duplication detection needs more memory
@@ -151,8 +148,6 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellLocation'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellOptions'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellVisitor'
-        - 'Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionOptions'
-        - 'Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionRule'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\ControlFlow\AttemptWork'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\ControlFlow\ChainOfAttempts'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\ControlFlow\ControlFlowSmells'
@@ -168,12 +163,12 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\GotoRule'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\IdenticalSubExpressionOptions'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\IdenticalSubExpressionRule'
-        - 'Qualimetrix\Analysis\Evidence\CodeSmell\LiteralCallableUse'
-        - 'Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListOptions'
-        - 'Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule'
-        - 'Qualimetrix\Analysis\Evidence\CodeSmell\OwnClassReference'
-        - 'Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCountCollector'
-        - 'Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCountVisitor'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ConstructorOverinjectionOptions'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ConstructorOverinjectionRule'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\LongParameterListOptions'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\LongParameterListRule'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ParameterCountCollector'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ParameterCountVisitor'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionCollector'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionFinding'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionVisitor'
@@ -181,17 +176,19 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\RepeatedConditions'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\RepeatedExpressions'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\SuperglobalsRule'
-        - 'Qualimetrix\Analysis\Evidence\CodeSmell\TraitUsageResolver'
-        - 'Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeCollector'
-        - 'Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeOptions'
-        - 'Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeRule'
-        - 'Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeVisitor'
-        - 'Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateClassData'
-        - 'Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateCollector'
-        - 'Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateOptions'
-        - 'Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateRule'
-        - 'Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateVisitor'
-        - 'Qualimetrix\Analysis\Evidence\CodeSmell\UsageTrackingTrait'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCode\UnreachableCodeCollector'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCode\UnreachableCodeOptions'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCode\UnreachableCodeRule'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCode\UnreachableCodeVisitor'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\LiteralCallableUse'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\OwnClassReference'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\TraitUsageResolver'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\UnusedPrivateClassData'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\UnusedPrivateCollector'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\UnusedPrivateOptions'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\UnusedPrivateRule'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\UnusedPrivateVisitor'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\UsageTrackingTrait'
     - name: analysis-evidence-cohesion
       patterns:
         - 'Qualimetrix\Analysis\Evidence\Cohesion\ClassVisitorStackTrait'
@@ -343,18 +340,18 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule'
         - 'Qualimetrix\Analysis\Evidence\Coupling\NamespaceCboOptions'
         - 'Qualimetrix\Analysis\Evidence\Coupling\NamespaceInstabilityOptions'
-        - 'Qualimetrix\Analysis\Evidence\Coupling\RfcBodyResponses'
-        - 'Qualimetrix\Analysis\Evidence\Coupling\RfcClassFacts'
-        - 'Qualimetrix\Analysis\Evidence\Coupling\RfcCollector'
-        - 'Qualimetrix\Analysis\Evidence\Coupling\RfcDeclarationFacts'
-        - 'Qualimetrix\Analysis\Evidence\Coupling\RfcDeclarationIndex'
-        - 'Qualimetrix\Analysis\Evidence\Coupling\RfcEffectiveMembers'
-        - 'Qualimetrix\Analysis\Evidence\Coupling\RfcGlobalCollector'
-        - 'Qualimetrix\Analysis\Evidence\Coupling\RfcLocalFlow'
-        - 'Qualimetrix\Analysis\Evidence\Coupling\RfcPropertyTypes'
-        - 'Qualimetrix\Analysis\Evidence\Coupling\RfcReceiverTypes'
-        - 'Qualimetrix\Analysis\Evidence\Coupling\RfcResponseResolver'
-        - 'Qualimetrix\Analysis\Evidence\Coupling\RfcVisitor'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcBodyResponses'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcClassFacts'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcCollector'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcDeclarationFacts'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcDeclarationIndex'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcEffectiveMembers'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcGlobalCollector'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcLocalFlow'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcPropertyTypes'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcReceiverTypes'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcResponseResolver'
+        - 'Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcVisitor'
         - 'Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkFinding'
         - 'Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceOptions'
         - 'Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceRule'
@@ -455,9 +452,9 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenStream'
     - name: analysis-evidence-maintainability
       patterns:
-        - 'Qualimetrix\Analysis\Evidence\Maintainability\HalsteadCollector'
-        - 'Qualimetrix\Analysis\Evidence\Maintainability\HalsteadMetrics'
-        - 'Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor'
+        - 'Qualimetrix\Analysis\Evidence\Maintainability\Halstead\HalsteadCollector'
+        - 'Qualimetrix\Analysis\Evidence\Maintainability\Halstead\HalsteadMetrics'
+        - 'Qualimetrix\Analysis\Evidence\Maintainability\Halstead\HalsteadVisitor'
         - 'Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityIndexCalculator'
         - 'Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityIndexCollector'
         - 'Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityOptions'
@@ -651,6 +648,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult'
         - 'Qualimetrix\Analysis\Finding\Contract\RuleMetadata'
         - 'Qualimetrix\Analysis\Finding\Contract\RuleOptionForms'
+        - 'Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\RuleSuppression'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext'
@@ -1048,7 +1046,6 @@ architecture:
         - 'Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ExecutionStrategyInterface'
-        - 'Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ParallelCapableInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\SuccessfulFileProcessing'
         - 'Qualimetrix\Analysis\Run\Contract\Configuration\AuthoredExclude'
@@ -1146,9 +1143,9 @@ architecture:
       patterns:
         - 'Qualimetrix\Core\Ast\FileParserInterface'
         - 'Qualimetrix\Core\Ast\NameResolution'
+        - 'Qualimetrix\Core\Ast\ParseException'
         - 'Qualimetrix\Core\Ast\ResolvedName'
         - 'Qualimetrix\Core\Ast\SuperglobalRead'
-        - 'Qualimetrix\Core\Exception\ParseException'
         - 'Qualimetrix\Core\Observation\WorseDirection'
         - 'Qualimetrix\Core\Pattern\CompiledSelector'
         - 'Qualimetrix\Core\Pattern\NamespaceMatcher'
@@ -1478,8 +1475,8 @@ architecture:
         - 'Qualimetrix\Infrastructure\Rule\ChannelUniverse'
         - 'Qualimetrix\Infrastructure\Rule\ComputedMetricChannelPresentation'
         - 'Qualimetrix\Infrastructure\Rule\ConfigurationValidatorRegistry'
+        - 'Qualimetrix\Infrastructure\Rule\ConflictingCliAliasException'
         - 'Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface'
-        - 'Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException'
         - 'Qualimetrix\Infrastructure\Rule\RuleRegistry'
         - 'Qualimetrix\Infrastructure\Rule\RuleRegistryInterface'
     - name: reporting
@@ -1928,76 +1925,62 @@ rules:
 
   # Core value objects are coupling magnets by design — every domain depends on them.
   coupling.cbo:
-    suppress_namespaces:
-      - subtree: Qualimetrix\Analysis\Finding\Contract
-      # The refusal carrier and its origin/position values preserve authored provenance
-      # across owner sections and Console adapters. This subtree is limited to that
-      # public refusal vocabulary; other Configuration contracts remain judged.
-      - subtree: Qualimetrix\Analysis\Configuration\Contract\Refusal
-      # Exact declaration identities, logical symbols and level projections are shared
-      # by evidence repositories, finding channels and publication. This subtree binds
-      # only that neutral identity language; unrelated Core subjects stay measured.
-      - subtree: Qualimetrix\Core\Symbol
-      - subtree: Qualimetrix\Core\Path
     suppress_namespace_channels:
-      # The exact declaration census exposes these orchestration namespace unions.
-      # Their required capability composition spans the exact subject contracts;
-      # moving the wiring only moves the signal. Declaration checks remain active.
       coupling.cbo:
         # Contract readership is intentional; declaration quality stays measured.
         - exact: 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition'
-        - exact: 'Qualimetrix\Analysis\Run\Pipeline'
-        - exact: 'Qualimetrix\Infrastructure\Console'
-        - exact: 'Qualimetrix\Infrastructure\Console\Command'
-        - exact: 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass'
-        - exact: 'Qualimetrix\Infrastructure\DependencyInjection\Configurator'
       coupling.cbo:namespace:
+        # Exact inbound contract vocabulary; descendant namespaces remain judged.
+        - exact: 'Qualimetrix\Analysis\Configuration\Contract\Refusal'
+        - exact: 'Qualimetrix\Analysis\Finding\Contract\ProjectScope'
         # These exact contract namespaces grow with their intended named readers.
         - exact: 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract'
         - exact: 'Qualimetrix\Analysis\Policy\Architecture\Contract'
-        # Baseline joins acceptance, scope, measurement and finding contracts.
-        - exact: 'Qualimetrix\Analysis\Policy\Baseline'
         # Authored directive values are shared contracts read by their named consumers.
         - exact: 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive'
         # Shared run policies and scope records are read across capability owners.
         - exact: 'Qualimetrix\Analysis\Run\Contract\Configuration'
-        # Own declarations are shared Run phase ports and result/coverage contracts.
-        - exact: 'Qualimetrix\Analysis\Run\Contract\Pipeline'
-        # The document schema is a shared authored-value vocabulary.
-        - exact: 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema'
-        # Shared authored-value contracts have intentional inbound reach from
-        # named section owners.
-        - exact: 'Qualimetrix\Analysis\Configuration\Contract\Document'
-        # Authored directive parsing and suppression consumers read the same public
-        # Inline facts. Only this exact namespace channel is excluded; declaration
-        # quality and descendant namespaces remain judged.
-        - exact: 'Qualimetrix\Analysis\Policy\Inline\Contract'
-        # Exact/subtree/regex values define one separator-bound selector language for
-        # configuration, evidence and publication. Exact namespace scope leaves their
-        # declarations and future child namespaces measured.
-        - exact: 'Qualimetrix\Core\Pattern'
-        # Summary composes finding/debt narration, health projection and terminal output
-        # through the shared Report and FormatterContext boundary. Exact namespace scope
-        # does not exclude the individual renderers or other coupling channels.
-        - exact: 'Qualimetrix\Reporting\Formatter\Summary'
-        # Report, context and grouping values are shared by renderers in distinct
-        # publication subjects. Keeping Detail and Ordering separate changes the namespace
-        # census without adding a new responsibility to those public values.
-        - exact: 'Qualimetrix\Reporting'
-        # Capability-owned resolvers read the shared document vocabulary and translate
-        # configuration refusals through their authored origins. Removing those imports
-        # would disconnect the common refusal and document contracts from their consumers.
-        - exact: 'Qualimetrix\Analysis\Configuration'
-        # OutputFormatResolver consults FormatterRegistryInterface to refuse an unknown
-        # format before publication. The incoming registry reader is required to judge
-        # that authored value; exact scope leaves formatter implementations judged.
-        - exact: 'Qualimetrix\Reporting\Formatter'
-        # Collectors, evidence rules and health/publication consumers share MetricName,
-        # metric bags and the repository read port. The channel compiler validates judged
-        # metric keys against that same vocabulary. Exact namespace scope leaves each
-        # contract declaration and future child namespaces judged.
-        - exact: 'Qualimetrix\Analysis\Evidence\Measurement\Contract'
     suppress_paths:
+      # Exact inbound contract and neutral-value hubs; sibling implementations remain judged.
+      - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationOrigin.php
+      - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php
+      - exact: src/Analysis/Configuration/Contract/Refusal/RefusedPosition.php
+      - exact: src/Analysis/Finding/Contract/ChannelDeclaration.php
+      - exact: src/Analysis/Finding/Contract/ChannelDeclarationRegistryInterface.php
+      - exact: src/Analysis/Finding/Contract/ChannelPublication.php
+      - exact: src/Analysis/Finding/Contract/ChannelShape.php
+      - exact: src/Analysis/Finding/Contract/Configuration/FindingConfiguration.php
+      - exact: src/Analysis/Finding/Contract/Finding.php
+      - exact: src/Analysis/Finding/Contract/FindingChannel.php
+      - exact: src/Analysis/Finding/Contract/Location.php
+      - exact: src/Analysis/Finding/Contract/Population/GateInput.php
+      - exact: src/Analysis/Finding/Contract/Population/JudgedPopulation.php
+      - exact: src/Analysis/Finding/Contract/Population/PopulationIdentity.php
+      - exact: src/Analysis/Finding/Contract/Rule/AnalysisContext.php
+      - exact: src/Analysis/Finding/Contract/Rule/Attribute/CliAlias.php
+      - exact: src/Analysis/Finding/Contract/Rule/BandDirection.php
+      - exact: src/Analysis/Finding/Contract/Rule/LevelOptionsInterface.php
+      - exact: src/Analysis/Finding/Contract/Rule/ResolvedRuleOptionValues.php
+      - exact: src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php
+      - exact: src/Analysis/Finding/Contract/Rule/RuleOptionShape.php
+      - exact: src/Analysis/Finding/Contract/Rule/RuleOptionSurface.php
+      - exact: src/Analysis/Finding/Contract/Rule/RuleOptionsInterface.php
+      - exact: src/Analysis/Finding/Contract/Rule/ThresholdAwareOptionsInterface.php
+      - exact: src/Analysis/Finding/Contract/RuleConfigurationInterface.php
+      - exact: src/Analysis/Finding/Contract/Severity.php
+      - exact: src/Core/Path/AbsolutePath.php
+      - exact: src/Core/Path/RelativePath.php
+      - exact: src/Core/Symbol/ClassNameSpelling.php
+      - exact: src/Core/Symbol/DeclarationPath.php
+      - exact: src/Core/Symbol/MetricSubject.php
+      - exact: src/Core/Symbol/SymbolInfo.php
+      - exact: src/Core/Symbol/SymbolLevel.php
+      - exact: src/Core/Symbol/SymbolPath.php
+      - exact: src/Core/Symbol/SymbolType.php
+      # These declared adapter contracts are popular because their named
+      # consumers share one input spelling and one container registration port.
+      - exact: src/Infrastructure/Console/CommandLineSpelling.php
+      - exact: src/Infrastructure/DependencyInjection/Configurator/ContainerConfiguratorInterface.php
       # The dependency-kind vocabulary is a shared inbound contract.
       - exact: src/Analysis/Evidence/DependencyModel/Contract/DependencyType.php
       # The metric-value contract is read across capability owners.
@@ -2005,9 +1988,6 @@ rules:
       # Collection, global derivation and finding consumers share this repository
       # contract; its incoming readership is intentional.
       - exact: src/Analysis/Evidence/Measurement/Contract/MetricRepositoryInterface.php
-      # RunCoverage retains analyzed-source coverage and memoized scope queries for
-      # baseline admission; its inbound reach follows that shared evidence contract.
-      - exact: src/Analysis/Policy/Baseline/Contract/RunCoverage.php
       # Baseline, entry and identity values are read by capture, matching and ceiling
       # judgement within the acceptance lifecycle; their reach follows those uses.
       - exact: src/Analysis/Policy/Baseline/Baseline.php
@@ -2037,11 +2017,8 @@ rules:
       # File-target readers share one typed failure cause so refusal and cleanup
       # retain the same filesystem outcome.
       - exact: src/Core/FileTarget/FileTargetFailure.php
-      # ResolvedTarget retains judged path membership and identity facts; TargetPath
-      # provides their shared resolution facade. Splitting the facade adds a forwarding
-      # dependency without separating that filesystem responsibility.
+      # ResolvedTarget retains judged path membership and identity facts.
       - exact: src/Core/FileTarget/ResolvedTarget.php
-      - exact: src/Core/FileTarget/TargetPath.php
       # NamespacePattern binds the shared selector definition to namespace separators
       # for authored configuration, finding exclusion and reporting drill-down.
       - exact: src/Core/Pattern/NamespacePattern.php
@@ -2061,11 +2038,6 @@ rules:
       - regex: 'src/Analysis/Evidence/Complexity/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Maintainability/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Size/.*Visitor\.php'
-      # DI configurators wire all services (coupling is their job)
-      - subtree: src/Infrastructure/DependencyInjection
-      # Infrastructure console commands and pipeline orchestrators need many deps
-      - subtree: src/Infrastructure/Console
-      - subtree: src/Analysis/Run/Pipeline
       # ConfigurationDocument is the shared resolved authored document read by each
       # capability resolver. This exact path remains separate from the Refusal subtree
       # and does not enroll unrelated Configuration contracts.
@@ -2080,6 +2052,17 @@ rules:
   # Core contracts and value objects are coupling hubs by design.
   coupling.class-rank:
     suppress_paths:
+      # Exact shared contract and neutral-value hubs retain intentional inbound ranking.
+      - exact: src/Analysis/Finding/Contract/Finding.php
+      - exact: src/Analysis/Finding/Contract/FindingChannel.php
+      - exact: src/Analysis/Finding/Contract/Population/GateInput.php
+      - exact: src/Analysis/Finding/Contract/Rule/ResolvedRuleOptionValues.php
+      - exact: src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php
+      - exact: src/Core/Path/AbsolutePath.php
+      - exact: src/Core/Path/RelativePath.php
+      - exact: src/Core/Symbol/DeclarationPath.php
+      - exact: src/Core/Symbol/MetricSubject.php
+      - exact: src/Core/Symbol/SymbolPath.php
       # Shared document provenance is a contract hub consumed across capabilities.
       - exact: src/Analysis/Configuration/Contract/Document/Provenance.php
       # Shared document schema is a contract hub consumed across capabilities.
@@ -2096,22 +2079,13 @@ rules:
       - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php
       # Refusal position metadata carries the same source facts to configuration consumers.
       - exact: src/Analysis/Configuration/Contract/Refusal/RefusedPosition.php
-    suppress_namespaces:
-      - subtree: Qualimetrix\Analysis\Finding\Contract
-      # Shared symbol and level vocabulary intentionally connects evidence and finding consumers.
-      - subtree: Qualimetrix\Core\Symbol
-      - subtree: Qualimetrix\Core\Path
-
   # Distance: leaf namespaces holding pure value objects, enums, and exceptions
   # are maximally concrete with few abstractions — that is the point of a
   # domain-VO sub-namespace. The Analysis.Policy.Architecture Layer root holds
   # that leaf's immutable layer values and its expansion implementation
   # (ADR 0022).
   #
-  # Note on scope: plain `suppress_namespaces` entries match by prefix, so the two
-  # entries below are blankets — `Qualimetrix\Core` covers the whole
-  # Core tree and the Architecture Layer subtree including its Expansion child.
-  # Configuration/Allow owns a separate concrete selector/value/parser leaf.
+  # Exact namespace entries keep unrelated future subjects under judgement.
   coupling.distance:
     suppress_namespaces:
       # The concrete population language is a shared contract hub for judging rules and publication consumers.
@@ -2140,10 +2114,13 @@ rules:
       # Internal override parsing and validation implement Finding contracts outside
       # this namespace; local abstractness omits the promise they implement.
       - exact: 'Qualimetrix\Analysis\Finding\Rule\Override'
-      - subtree: Qualimetrix\Core
-      - subtree: Qualimetrix\Analysis\Policy\Architecture\Layer
-      - subtree: Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow
-      - subtree: Qualimetrix\Analysis\Evidence\Prioritization\Debt
+      - exact: 'Qualimetrix\Core\FileTarget'
+      - exact: 'Qualimetrix\Core\Path'
+      - exact: 'Qualimetrix\Core\Pattern'
+      - exact: 'Qualimetrix\Core\Symbol'
+      - exact: 'Qualimetrix\Analysis\Policy\Architecture\Layer'
+      - exact: 'Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow'
+      - exact: 'Qualimetrix\Analysis\Evidence\Prioritization\Debt'
       # Immutable score and coverage values carry health facts through the public
       # contract; exact namespace scope leaves future child namespaces judged.
       - exact: 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score'
@@ -2182,99 +2159,7 @@ rules:
     max_distance_warning: 0.5
     max_distance_error: 0.7
 
-  size.class-count:
-    suppress_namespaces:
-      # Temporary until this exact subject is split.
-      - exact: 'Qualimetrix\Analysis\Evidence\CodeSmell'
-      # Temporary until this exact subject is split.
-      - exact: 'Qualimetrix\Analysis\Finding\Contract\Rule'
-      # Temporary until this exact subject is split.
-      - exact: 'Qualimetrix\Analysis\Policy\Baseline'
-      # Temporary until this exact subject is split.
-      - exact: 'Qualimetrix\Infrastructure\Console'
-
   coupling.instability:
-    suppress_namespace_channels:
-      # Console composes configuration, analysis and publication through capability
-      # contracts; its delivery direction is outward to those subjects.
-      coupling.instability:
-        - exact: 'Qualimetrix\Infrastructure\Console'
-      coupling.instability:namespace:
-        # Container assembly reads the registered Finding forms service to compose
-        # the declared option language; moving that wiring only moves the same dependency.
-        - exact: 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass'
-        # Only two orchestration/composition readers consume this directive policy leaf.
-        - exact: 'Qualimetrix\Analysis\Policy\Inline\Directive'
-        # Coupling rules and collectors read judged-metric declarations, Measurement
-        # contracts and Core symbols. Composition consumes that evidence capability;
-        # its outward direction follows those required metric and rule vocabularies.
-        - exact: 'Qualimetrix\Analysis\Evidence\Coupling'
-        # UnboundSuppressionRule reads Finding and Configuration vocabulary to audit
-        # authored suppressions; Console and container registration consume that leaf.
-        - exact: 'Qualimetrix\Analysis\Finding\SuppressionBinding'
-        # Scope checking and composition adapters read the internal run-configuration
-        # operations that translate resolved policies into one invocation.
-        - exact: 'Qualimetrix\Analysis\Run\Configuration'
-        # Exact DI configurators name the capability services they assemble. Moving an
-        # incoming composition edge does not remove those registration dependencies.
-        - exact: 'Qualimetrix\Infrastructure\DependencyInjection\Configurator'
-    suppress_paths:
-      - exact: src/Analysis/Evidence/DependencyModel/Extraction/DependencyRecorder.php
-      - exact: src/Analysis/Policy/Architecture/Layer/ClassContext/Ancestry.php
-      - exact: src/Analysis/Policy/Architecture/Layer/ClassContext/ClassContextFactory.php
-      - exact: src/Analysis/Policy/Architecture/Layer/ClassContext/KnownTypes.php
-      - exact: src/Infrastructure/Composer/ComposerAutoloadMap.php
-      - exact: src/Infrastructure/Composer/DeclaredSupertypeReader.php
-      # Credential classifiers share native value interpretation through CredentialValue;
-      # its outgoing type policy follows that classification responsibility.
-      - exact: src/Analysis/Evidence/Security/Credential/CredentialValue.php
-      # Baseline parsing, capture, update and comparability each compose the acceptance
-      # vocabulary; ChannelUniverse composes registered channel declarations. These
-      # exact operations remain distinct from sibling and future operations.
-      - exact: src/Analysis/Policy/Baseline/BaselineEntryParser.php
-      - exact: src/Analysis/Policy/Baseline/BaselineGenerator.php
-      - exact: src/Analysis/Policy/Baseline/BaselineUpdater.php
-      - exact: src/Analysis/Policy/Baseline/Ceiling/EntryComparability.php
-      - exact: src/Infrastructure/Rule/ChannelUniverse.php
-      # FileCache implements serialized entry persistence over the judged file-target
-      # lifecycle; directory management remains a separate storage operation.
-      - exact: src/Infrastructure/Cache/FileCache.php
-      # BaselineDocumentWriter guards the held document identity and atomic write
-      # lifecycle used by baseline capture and update.
-      - exact: src/Analysis/Policy/Baseline/BaselineDocumentWriter.php
-      # BaselineCleaner joins loaded acceptance entries, measured scope and channel
-      # declarations to judge stale/inert entries before replacement.
-      - exact: src/Analysis/Policy/Baseline/BaselineCleaner.php
-      # FrameworkNamespaceSelectorParser judges framework namespace selectors;
-      # LayersValidator judges authored layer declarations; RuleOptionDocumentForms
-      # builds owner-provided option forms. Their outgoing vocabularies belong to
-      # those separate exact configuration responsibilities.
-      - exact: src/Analysis/Evidence/Coupling/Configuration/FrameworkNamespaceSelectorParser.php
-      - exact: src/Analysis/Policy/Architecture/Configuration/LayersValidator.php
-      - exact: src/Analysis/Finding/RuleConfiguration/OptionForms/RuleOptionDocumentForms.php
-      # InlineDirectivePolicy joins authored directives, producer declarations and
-      # source locations before rule execution; its dependencies establish that judgement.
-      - exact: src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php
-      # LayerReading composes authored document layers; class/namespace options
-      # implement their required band and override language; SelectionSpecificity
-      # orders authored selectors; ConfigurationConfigurator composes that document
-      # engine. These are exact operations rather than a blanket over their owners.
-      - exact: src/Analysis/Configuration/Document/LayerReading.php
-      - exact: src/Analysis/Evidence/Complexity/ClassCognitiveComplexityOptions.php
-      - exact: src/Analysis/Evidence/Complexity/ClassComplexityOptions.php
-      - exact: src/Analysis/Evidence/Coupling/ClassCboOptions.php
-      - exact: src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php
-      - exact: src/Analysis/Evidence/Coupling/NamespaceCboOptions.php
-      - exact: src/Analysis/Finding/Selection/SelectionSpecificity.php
-      - exact: src/Infrastructure/DependencyInjection/Configurator/ConfigurationConfigurator.php
-      # UsageTrackingTrait records private member usage during AST traversal; the
-      # exact trait does not enroll other visitors or future capability siblings.
-      - exact: src/Analysis/Evidence/CodeSmell/UsageTrackingTrait.php
-      # Console commands/orchestrators sit at the top of the stack: I→1 is correct there
-      - subtree: src/Infrastructure/Console
-      # AbstractTypeCoverageRule joins the shared type-coverage judgement used by
-      # its concrete parameter, return and property producers.
-      - exact: src/Analysis/Evidence/Design/TypeCoverage/AbstractTypeCoverageRule.php
     class:
       min_afferent: 2
     namespace:
@@ -2377,8 +2262,7 @@ rules:
       - igbinary_unserialize
       - unserialize
 
-  # Data-carrying objects and pipeline services need many constructor params.
-  # This is a natural pattern for immutable VOs, not a design smell.
+  # Immutable records carry independent authored and measured facts as arguments.
   code-smell.long-parameter-list:
     warning: 8
     error: 12
@@ -2407,9 +2291,6 @@ rules:
       - exact: src/Reporting/FormatterContext.php
       - exact: src/Analysis/Evidence/DependencyModel/DependencyGraph.php
       - exact: src/Analysis/Run/Contract/Collection/SuccessfulFileProcessing.php
-      - exact: src/Analysis/Run/Pipeline/AnalysisPipeline.php
-      - exact: src/Infrastructure/Console/Command/CheckCommand.php
-      - exact: src/Infrastructure/Console/ResultPresenter.php
       - exact: src/Analysis/Finding/Contract/Finding.php
 
   code-smell.constructor-overinjection:
@@ -2467,10 +2348,6 @@ rules:
   design.dit:
     warning: 4
     error: 4
-
-  design.god-class:
-    suppress_paths:
-      - subtree: src/Reporting/Formatter/Health
 
   # --- Maintainability ---
   maintainability.mi:

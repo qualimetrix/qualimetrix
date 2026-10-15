@@ -2836,23 +2836,23 @@ A	form|yaml|rules.code-smell.identical-subexpression.suppress-namespace-channels
 A	form|yaml|rules.code-smell.identical-subexpression.suppress-namespace-channels|int	int	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.code-smell.identical-subexpression.suppress-namespace-channels|list	list	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.code-smell.identical-subexpression.suppress-namespace-channels|map	map	optionsObject	NOT OBSERVABLE	no	PROMISED	the key is a map of channel selectors: `{a: 7331}` names no channel and no namespace list, so the refusal is about the domain; lost at nowhere
-A	form|yaml|rules.code-smell.identical-subexpression.suppress-namespace-channels|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
+A	form|yaml|rules.code-smell.identical-subexpression.suppress-namespace-channels|null	null	optionsObject	NOT OBSERVABLE	no	PROMISED	no reachability witness for the producer; lost at optionsObject
 A	form|yaml|rules.code-smell.identical-subexpression.suppress-namespace-channels|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.code-smell.identical-subexpression.suppress-namespace-channels|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.code-smell.identical-subexpression.suppress-namespaces|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.code-smell.identical-subexpression.suppress-namespaces|float	float	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a namespace list; every other form still writes 7331, which names no namespace; lost at nowhere
 A	form|yaml|rules.code-smell.identical-subexpression.suppress-namespaces|int	int	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a namespace list; every other form still writes 7331, which names no namespace; lost at nowhere
-A	form|yaml|rules.code-smell.identical-subexpression.suppress-namespaces|list	list	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.code-smell.identical-subexpression.suppress-namespaces|list	list	optionsObject	NOT OBSERVABLE	no	PROMISED	no reachability witness for the producer; lost at nowhere
 A	form|yaml|rules.code-smell.identical-subexpression.suppress-namespaces|map	map	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a namespace list; `{a: 7331}` names no namespace; lost at nowhere
-A	form|yaml|rules.code-smell.identical-subexpression.suppress-namespaces|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
+A	form|yaml|rules.code-smell.identical-subexpression.suppress-namespaces|null	null	optionsObject	NOT OBSERVABLE	no	PROMISED	no reachability witness for the producer; lost at optionsObject
 A	form|yaml|rules.code-smell.identical-subexpression.suppress-namespaces|string-nonnumber	string-nonnumber	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a namespace list; `abc` names no namespace in the fixture; lost at nowhere
 A	form|yaml|rules.code-smell.identical-subexpression.suppress-namespaces|string-number	string-number	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a namespace list; every other form still writes 7331, which names no namespace; lost at nowhere
 A	form|yaml|rules.code-smell.identical-subexpression.suppress-paths|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.code-smell.identical-subexpression.suppress-paths|float	float	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a path list; every other form still writes 7331, which names no file; lost at nowhere
 A	form|yaml|rules.code-smell.identical-subexpression.suppress-paths|int	int	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a path list; every other form still writes 7331, which names no file; lost at nowhere
-A	form|yaml|rules.code-smell.identical-subexpression.suppress-paths|list	list	optionsObject	OK	no	PROMISED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.code-smell.identical-subexpression.suppress-paths|list	list	optionsObject	NOT OBSERVABLE	no	PROMISED	no reachability witness for the producer; lost at nowhere
 A	form|yaml|rules.code-smell.identical-subexpression.suppress-paths|map	map	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a path list; `{a: 7331}` names no file; lost at nowhere
-A	form|yaml|rules.code-smell.identical-subexpression.suppress-paths|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
+A	form|yaml|rules.code-smell.identical-subexpression.suppress-paths|null	null	optionsObject	NOT OBSERVABLE	no	PROMISED	no reachability witness for the producer; lost at optionsObject
 A	form|yaml|rules.code-smell.identical-subexpression.suppress-paths|string-nonnumber	string-nonnumber	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a path list; `abc` names no file in the fixture; lost at nowhere
 A	form|yaml|rules.code-smell.identical-subexpression.suppress-paths|string-number	string-number	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a path list; every other form still writes 7331, which names no file; lost at nowhere
 A	form|yaml|rules.code-smell.long-parameter-list.enabled|bool	bool	optionsObject	NOT OBSERVABLE	no	PROMISED	omitted == equivalent; lost at optionsObject
