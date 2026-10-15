@@ -135,6 +135,12 @@ Reporting/
 
 ## Contracts
 
+`Report` is the Reporting-owned value passed to `FormatterInterface::format()`
+and produced by `ReportBuilder` and summary enrichment. Console's named
+`CheckReport/ReportAssembler` and `CheckReport/ReportFormatter` consumers use
+that existing typed boundary. Suppression-composition internals remain behind
+their public builder operations.
+
 ### Published finding records
 
 `Formatter\FindingRecord` builds the same twenty fields for JSON violations,

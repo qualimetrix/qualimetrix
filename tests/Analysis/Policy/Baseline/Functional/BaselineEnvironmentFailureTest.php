@@ -7,10 +7,10 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Functional;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentWriter;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineLockFailure;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineReadFailure;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentWriter;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineLockFailure;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineReadFailure;
 
 #[CoversClass(BaselineDocumentReader::class)]
 #[CoversClass(BaselineDocumentWriter::class)]

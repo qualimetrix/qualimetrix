@@ -10,9 +10,9 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\CacheConfigurationStore;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
-use Qualimetrix\Infrastructure\Cache\CacheSource;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
-use Qualimetrix\Infrastructure\Cache\DefaultCacheDirectory;
+use Qualimetrix\Infrastructure\Cache\Root\CacheSource;
+use Qualimetrix\Infrastructure\Cache\Root\DefaultCacheDirectory;
 use Symfony\Component\Process\Process;
 
 #[CoversClass(DefaultCacheDirectory::class)]
@@ -46,7 +46,7 @@ final class DefaultCacheDirectoryTest extends TestCase
     public function itDisablesADefaultWhoseCanonicalPathBecomesANativeDrivePath(): void
     {
         $script = <<<'PHP'
-namespace Qualimetrix\Infrastructure\Cache {
+namespace Qualimetrix\Infrastructure\Cache\Root {
     function realpath(string $path): string|false { return 'C:\\cache'; }
 }
 namespace {
@@ -54,7 +54,7 @@ namespace {
     $store = new \Qualimetrix\Infrastructure\Cache\CacheConfigurationStore();
     $store->replace(new \Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration(
         \Qualimetrix\Core\Path\AbsolutePath::fromString($argv[2]),
-        source: \Qualimetrix\Infrastructure\Cache\CacheSource::default(),
+        source: \Qualimetrix\Infrastructure\Cache\Root\CacheSource::default(),
     ));
     $logger = new class extends \Psr\Log\AbstractLogger {
         public array $warnings = [];

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Logging\Contract;
 
 use Psr\Log\LoggerInterface;
-use Qualimetrix\Core\FileTarget\HeldTarget;
+use Qualimetrix\Core\FileTarget\Publication\HeldTarget;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**

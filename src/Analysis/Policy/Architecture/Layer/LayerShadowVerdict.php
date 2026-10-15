@@ -6,6 +6,8 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ShadowExemption;
 
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\LayerMatch;
+
 /** A shadow is reported exactly when no first-match exemption applies. */
 final readonly class LayerShadowVerdict
 {

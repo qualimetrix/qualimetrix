@@ -43,7 +43,7 @@ declare(strict_types=1);
  */
 
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
-use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 
 const GUARD_CLASS = 'Qualimetrix\\Governance\\RuleDeclaration\\RuleIdentifierLiteralGuardTest';

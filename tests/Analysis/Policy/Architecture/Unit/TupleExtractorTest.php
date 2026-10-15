@@ -16,8 +16,8 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContextFact
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\TupleExtractor;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerCriteriaMatcher;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\LayerCriteriaMatcher;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
 use Qualimetrix\Core\Path\RelativePath;

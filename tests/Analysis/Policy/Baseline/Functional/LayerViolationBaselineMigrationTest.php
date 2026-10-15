@@ -7,12 +7,12 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Functional;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Policy\Baseline\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
-use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Maintenance\BaselineCleanupCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Maintenance\BaselineUpdateCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory;
 use ReflectionProperty;
@@ -58,7 +58,7 @@ final class LayerViolationBaselineMigrationTest extends TestCase
     public function itKeepsAcceptedLayerOccurrencesWhenOnlyTheSourceIsSelected(): void
     {
         $generated = $this->command(
-            \Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand::class,
+            \Qualimetrix\Infrastructure\Console\Command\Baseline\Generation\BaselineGenerateCommand::class,
             ['baseline' => 'fresh.json', '--only-rule' => [self::CHANNEL]],
         );
         self::assertSame(0, $generated->getStatusCode(), $generated->getDisplay());

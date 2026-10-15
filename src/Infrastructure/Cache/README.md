@@ -67,6 +67,12 @@ an environment failure without importing Console. A default failure instead
 disables caching with one warning on opening. Ancestor ownership and permissions
 are not additional cache-root trust checks.
 
+`Root/` owns `DefaultCacheDirectory`, `CacheDirectoryEligibility`,
+`CacheLocationJudgement`, `CacheRootUntrusted` and `CacheSource`: choosing a
+location, retaining its provenance and deciding access trust. Configuration,
+opening, sweeping and clearing consume that same root judgement; they do not
+repeat its policy.
+
 ## Entry producer
 
 Only `ast-v<N>/` is created inside the supplied root. Entries are

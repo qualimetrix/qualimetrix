@@ -9,9 +9,9 @@ use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface;
 use Qualimetrix\Core\Environment\EnvironmentFailureInterface;
+use Qualimetrix\Infrastructure\Console\CacheLifecycle\CacheRunLifecycle;
 use Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
-use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
 
@@ -23,7 +23,7 @@ final class RunTargetSession
     public function __construct(
         private readonly RunTargets $runTargets,
         private readonly RefusalPresenter $refusalPresenter,
-        private readonly ?RuntimeConfigurator $runtimeConfigurator = null,
+        private readonly ?CacheRunLifecycle $cacheLifecycle = null,
     ) {}
 
     public function targets(): RunTargets
@@ -46,7 +46,7 @@ final class RunTargetSession
         }
 
         try {
-            $this->runtimeConfigurator?->finishRun();
+            $this->cacheLifecycle?->finishRun();
             $this->runTargets->settle();
         } catch (Throwable $failure) {
             $cleanup = $failure;

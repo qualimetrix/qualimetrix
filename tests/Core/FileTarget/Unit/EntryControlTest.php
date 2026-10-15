@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\FileTarget\DirectoryFacts;
 use Qualimetrix\Core\FileTarget\EntryControl;
 use Qualimetrix\Core\FileTarget\EntryFacts;
-use Qualimetrix\Core\FileTarget\PrivateGroupMembership;
+use Qualimetrix\Core\FileTarget\PrivateGroup\PrivateGroupMembership;
 
 #[CoversClass(EntryControl::class)]
 final class EntryControlTest extends TestCase

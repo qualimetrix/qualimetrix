@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Baseline\Ceiling;
 
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\Capture\UncapturedReason;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineAuditChannels;
-use Qualimetrix\Analysis\Policy\Baseline\UncapturedReason;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
 
 /** Captures only a declared, complete measured group. */
 final readonly class GroupCapture

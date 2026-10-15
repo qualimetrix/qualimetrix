@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Cache;
 
 use Qualimetrix\Core\Path\AbsolutePath;
+
+use Qualimetrix\Infrastructure\Cache\Root\CacheRootUntrusted;
 use Throwable;
 
 final readonly class CacheSweep

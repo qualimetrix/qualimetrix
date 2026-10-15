@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline\Contract;
 
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStageResult;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
-use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\InertBaselineEntry;
 
 /**
  * Everything {@see BaselineCeilingStage::judgeAll()} learns from one pass
@@ -54,12 +54,12 @@ final readonly class CeilingOutcome
         public array $reasons = [],
     ) {}
 
-    public function statusFor(\Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity $identity): ?string
+    public function statusFor(\Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity $identity): ?string
     {
         return $this->statuses[$identity->key()] ?? null;
     }
 
-    public function reasonFor(\Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity $identity): ?string
+    public function reasonFor(\Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity $identity): ?string
     {
         return $this->reasons[$identity->key()] ?? null;
     }

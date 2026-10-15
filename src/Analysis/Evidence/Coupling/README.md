@@ -20,10 +20,28 @@ state.
 
 ```text
 Coupling/
+├── Cbo/
+│   ├── CboFindingText.php
+│   ├── CboOptions.php
+│   ├── CboRule.php
+│   ├── ClassCboOptions.php
+│   └── NamespaceCboOptions.php
+├── ClassRank/
+│   ├── ClassRankCollector.php
+│   ├── ClassRankOptions.php
+│   └── ClassRankRule.php
+├── Distance/
+│   ├── DistanceCollector.php
+│   ├── DistanceOptions.php
+│   └── DistanceRule.php
 └── Configuration/
-    ├── CouplingSection.php # owner-declared coupling map; replaced selector list
-    └── FrameworkNamespaceSelectorParser.php # shared authored/effective grammar
+    ├── CouplingSection.php
+    └── FrameworkNamespaceSelectorParser.php
 ```
+
+`CouplingCollector` remains the shared producer of Ca, Ce, CBO and instability;
+`Cbo/` owns interpretation, while `Distance/` and `ClassRank/` keep each derived
+collector with its options and rule. These are internal subjects of one capability.
 
 ## Metrics
 

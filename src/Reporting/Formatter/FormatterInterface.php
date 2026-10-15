@@ -9,7 +9,7 @@ use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
 
 /**
- * @qmx-threshold coupling.cbo 21 -- Formatters and publication composition share one provider-owned rendering promise; moving it distributes the same signature dependencies.
+ * @qmx-threshold coupling.cbo 22 -- Formatters and publication composition share one provider-owned rendering promise; moving it distributes the same signature dependencies.
  */
 interface FormatterInterface
 {

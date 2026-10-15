@@ -7,7 +7,7 @@ namespace Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms;
 use LogicException;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape;
 
 /** The four disjoint recognition states of an option key. */
 final readonly class RuleOptionDeclarations

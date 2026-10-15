@@ -71,8 +71,8 @@ final class UnassignedClassOptionsTest extends TestCase
         );
         self::assertSame(['mode'], UnassignedClassOptions::acceptedOptionKeys()->acceptedForDisplay());
         self::assertFalse(UnassignedClassOptions::acceptedOptionKeys()->knows('enabled'));
-        self::assertContains('enabled', \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface::of(UnassignedClassOptions::class)->writableAt(null));
-        self::assertTrue(\Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys::declared()->accepts('enabled'));
+        self::assertContains('enabled', \Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface::of(UnassignedClassOptions::class)->writableAt(null));
+        self::assertTrue(\Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\FrameworkOptionKeys::declared()->accepts('enabled'));
         self::assertFalse(UnassignedClassOptions::acceptedOptionKeys()->accepts('enabled'));
     }
 

@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\TestSupport\WorkingDirectory\RunsFromRepositoryRoot;
 use ReflectionClass;
@@ -258,17 +258,14 @@ final class CheckCommandProjectionOptionsBeforeAnalysisTest extends TestCase
 
         $pipeline = new CountingAnalysisPipeline($property('analyzer'));
 
-        $command = new CheckCommand(
-            $pipeline,
-            $property('findingFilterOrchestrator'),
-            $property('runtimeConfigurator'),
-            $property('resultPresenter'),
-            $property('ruleInputValidator'),
-            $property('checkScopeResolver'),
-            $property('configurationInputAdapter'),
-            $property('configurationResolvers'),
-            $property('runTargetSession'),
-        );
+        $command = \Qualimetrix\Tests\Infrastructure\Console\Support\CheckCommandFixture::replace($original, [
+            'analyzer' => $pipeline,
+            'runtimeConfigurator' => $property('runtimeConfigurator'),
+            'checkScopeResolver' => $property('checkScopeResolver'),
+            'configurationInputAdapter' => $property('configurationInputAdapter'),
+            'configurationResolvers' => $property('configurationResolvers'),
+            'runTargetSession' => $property('runTargetSession'),
+        ]);
 
         return [$command, $pipeline];
     }

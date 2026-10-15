@@ -18,8 +18,8 @@ use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
@@ -28,7 +28,7 @@ use RecursiveIteratorIterator;
  * {@see ChannelDeclaration} onto the producer. This guard is the durability
  * of that move — it does not re-check that `ChannelDeclaration` has no
  * `$shape` property (a constructor signature already makes that unstatable,
- * per {@see \Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest}),
+ * per {@see \Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Channel\ChannelDeclarationTest}),
  * it checks that a channel-declaring call site never independently computes
  * one either, which the type system cannot rule out on its own.
  *
@@ -45,8 +45,8 @@ use RecursiveIteratorIterator;
  * no reason left to name the enum at all.
  *
  * **The two exemptions the plan names are structurally out of scope, not
- * allow-listed.** {@see \Qualimetrix\Analysis\Finding\Contract\AcceptedLevel::shape()}
- * and {@see \Qualimetrix\Analysis\Policy\Baseline\BaselineEntry::shape()}
+ * allow-listed.** {@see \Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel::shape()}
+ * and {@see \Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry::shape()}
  * derive a {@see ChannelShape} from their own stored data — neither method
  * calls `ChannelDeclaration::magnitude()` or `::occurrence()`, so this guard
  * never inspects them; excluding them by name would make the guard trust a

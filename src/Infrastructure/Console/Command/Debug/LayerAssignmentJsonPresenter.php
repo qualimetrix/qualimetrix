@@ -8,7 +8,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignment;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentShadowVerdict;
 use Qualimetrix\Core\ProductIdentity;
-use Qualimetrix\Infrastructure\Console\OutputHelper;
+use Qualimetrix\Infrastructure\Console\Terminal\ReportPublication\OutputHelper;
 use Qualimetrix\Reporting\Formatter\PublishedUtf8;
 use Symfony\Component\Console\Output\OutputInterface;
 

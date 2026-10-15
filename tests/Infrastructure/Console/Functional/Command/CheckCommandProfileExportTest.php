@@ -8,10 +8,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\Application;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Application\Application;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Subprocess\ChildProcess;
 use Qualimetrix\Tests\TestSupport\WorkingDirectory\RunsFromRepositoryRoot;
@@ -130,13 +130,13 @@ final class CheckCommandProfileExportTest extends TestCase
                     return 0;
                 }
             }
-            namespace Qualimetrix\Infrastructure\Console {
+            namespace Qualimetrix\Infrastructure\Console\RuntimePolicy {
                 function fwrite($stream, string $bytes): int|false
                 {
                     return \qmxProfileWrite($stream, $bytes);
                 }
             }
-            namespace Qualimetrix\Core\FileTarget {
+            namespace Qualimetrix\Core\FileTarget\Publication {
                 function fwrite($stream, string $bytes): int|false
                 {
                     return \qmxProfileWrite($stream, $bytes);

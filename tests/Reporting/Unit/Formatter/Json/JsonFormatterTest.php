@@ -96,7 +96,7 @@ final class JsonFormatterTest extends TestCase
     public function itRepairsBinaryPopulationExamplesOnlyAtPublication(): void
     {
         $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
-        $channel = new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('complexity.ccn');
+        $channel = new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel('complexity.ccn');
         for ($ordinal = 0; $ordinal < 6; ++$ordinal) {
             $trace->record(
                 'complexity.ccn',
@@ -121,7 +121,7 @@ final class JsonFormatterTest extends TestCase
     public function itPublishesUnjudgedPopulationOnAnEmptyFindingReportWithoutAFailure(): void
     {
         $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
-        $channel = new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('complexity.ccn');
+        $channel = new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel('complexity.ccn');
         $trace->record(
             'complexity.ccn',
             $channel,
@@ -167,7 +167,7 @@ final class JsonFormatterTest extends TestCase
     #[Test]
     public function itCarriesTheFindingRecordAndAcceptedLevelIntoTopIssues(): void
     {
-        $finding = self::finding(Location::none(), SymbolPath::forNamespace('Shop'), 'computed', 'health.cohesion', 'Low cohesion', Severity::Warning, 20, recommendation: 'Split the namespace.', threshold: 30)->reportedAsBreach(new \Qualimetrix\Analysis\Finding\Contract\AcceptedLevel([25], 1));
+        $finding = self::finding(Location::none(), SymbolPath::forNamespace('Shop'), 'computed', 'health.cohesion', 'Low cohesion', Severity::Warning, 20, recommendation: 'Split the namespace.', threshold: 30)->reportedAsBreach(new \Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel([25], 1));
         $issue = new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($finding, 10, null, 5, 3);
         $data = json_decode($this->formatter->format(new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [$finding], 1, 0, 0, 1, 0, topIssues: [$issue]), new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
 
@@ -1968,7 +1968,7 @@ final class JsonFormatterTest extends TestCase
         int|float|null $threshold = null,
         ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null,
         ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null,
-        ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null,
+        ?\Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel $acceptedLevel = null,
         ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null,
         ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null,
     ): Finding {

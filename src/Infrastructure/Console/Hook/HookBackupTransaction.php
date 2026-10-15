@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Hook;
 
-use Qualimetrix\Core\FileTarget\FileReplacement;
 use Qualimetrix\Core\FileTarget\FileTargetFailure;
 use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
-use Qualimetrix\Core\FileTarget\NewName;
+use Qualimetrix\Core\FileTarget\Publication\FileReplacement;
+use Qualimetrix\Core\FileTarget\Publication\NewName;
 use Qualimetrix\Core\FileTarget\ResolvedTarget;
 use Symfony\Component\Console\Output\OutputInterface;
 

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract;
 
 use LogicException;
+
+use Qualimetrix\Analysis\Finding\Contract\Channel\OptionActivity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 
 final readonly class ResolvedRuleOptions

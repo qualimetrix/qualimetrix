@@ -22,7 +22,7 @@ use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
-use Qualimetrix\Infrastructure\Console\RuleInputValidator;
+use Qualimetrix\Infrastructure\Console\RunSetup\FindingConfigurationPreparation;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
@@ -31,7 +31,7 @@ use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 
-#[CoversClass(RuleInputValidator::class)]
+#[CoversClass(FindingConfigurationPreparation::class)]
 final class RuleInputValidatorTest extends TestCase
 {
     #[Test]
@@ -290,9 +290,7 @@ final class RuleInputValidatorTest extends TestCase
         $rules = self::createStub(RuleRegistryInterface::class);
         $rules->method('getClasses')->willReturn([ComputedMetricRule::class]);
         $static = self::universe($rules);
-        $validator = new RuleInputValidator(
-            new RuleOptionDocumentForms(),
-            $rules,
+        $validator = new FindingConfigurationPreparation(
             $static,
             new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
             self::createStub(ComputedMetricConfiguratorInterface::class),
@@ -366,7 +364,7 @@ final class RuleInputValidatorTest extends TestCase
         );
     }
 
-    private function validatorForComputedHealth(): RuleInputValidator
+    private function validatorForComputedHealth(): FindingConfigurationPreparation
     {
         $rules = self::createStub(RuleRegistryInterface::class);
         $rules->method('getClasses')->willReturn([ComputedMetricRule::class]);
@@ -397,13 +395,11 @@ final class RuleInputValidatorTest extends TestCase
         ];
     }
 
-    private function validator(RuleRegistryInterface $rules): RuleInputValidator
+    private function validator(RuleRegistryInterface $rules): FindingConfigurationPreparation
     {
         $static = self::universe($rules);
 
-        return new RuleInputValidator(
-            new RuleOptionDocumentForms(),
-            $rules,
+        return new FindingConfigurationPreparation(
             $static,
             new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
             self::createStub(ComputedMetricConfiguratorInterface::class),
@@ -414,7 +410,7 @@ final class RuleInputValidatorTest extends TestCase
 
     /** @param array<string, mixed> $rules */
     private function validate(
-        RuleInputValidator $validator,
+        FindingConfigurationPreparation $validator,
         InputInterface $input,
         array $rules,
         ResolvedComputedMetricDefinitions $definitions,
@@ -423,21 +419,19 @@ final class RuleInputValidatorTest extends TestCase
         $channels = new ChannelUniverse([], [], array_fill_keys($names, false), $definitions, ...self::unusedReachPorts());
         $execution = (new \Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory())->create()->get(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
         \assert($execution instanceof \Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface);
-        $cliWrites = (new \Qualimetrix\Infrastructure\Console\CliOptionsParser(new RuleOptionDocumentForms(), (new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory())->createFromMetadata($execution->allRules())))->pathWrites($input);
+        $cliWrites = (new \Qualimetrix\Infrastructure\Console\Invocation\RuleOptions\CliOptionsParser(new RuleOptionDocumentForms(), (new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory())->createFromMetadata($execution->allRules())))->pathWrites($input);
         $authored = ResolvedOptionsFixture::authoredConfiguration($rules === [] ? [] : ['rules' => $rules], $execution->allRules(), $cliWrites);
         $document = new \Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument([], AbsolutePath::fromString('/project'), $authored->document);
         $computed = self::createStub(ComputedMetricConfiguratorInterface::class);
         $computed->method('resolve')->willReturn($definitions);
-        $resolved = (new RuleInputValidator(
-            new RuleOptionDocumentForms(),
-            self::createStub(RuleRegistryInterface::class),
+        $resolved = (new FindingConfigurationPreparation(
             $channels,
             new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild($execution),
             $computed,
             new RuleEnablementResolver(),
             self::createStub(\Qualimetrix\Analysis\Policy\Architecture\Contract\UnassignedClassLayerRequirementInterface::class),
-        ))->resolve($document, $input);
-        $snapshot = $validator->validate($input, $resolved, $definitions);
+        ))->resolve($document);
+        $snapshot = $resolved->channels ?? throw new LogicException('Rule channels must be decided before validation.');
         \assert($snapshot instanceof ChannelUniverse);
         return $snapshot;
     }

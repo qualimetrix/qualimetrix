@@ -2,28 +2,32 @@
 
 declare(strict_types=1);
 
+use QmxFindingGate\ProductProbeTypes;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
+use Qualimetrix\Analysis\Policy\Baseline\Capture\BaselineGenerator;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Time\SystemClock;
-use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
-use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Invocation\CommandDefinition\CheckCommandDefinition;
+use Qualimetrix\Infrastructure\Console\Invocation\Configuration\ConfigurationInputAdapter;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArgvInput;
+
+require __DIR__ . '/classes.php';
 
 $probeArguments = $_SERVER['argv'] ?? [];
 [$self, $treeRoot, $directory, $encodedArguments, $input] = $probeArguments + [null, null, null, null, null];
@@ -46,7 +50,7 @@ $container = (new ContainerFactory())->create();
 $pipeline = $container->get(ConfigurationPipelineInterface::class);
 $computed = $container->get(ComputedMetricConfiguratorInterface::class);
 $rules = $container->get(RuleRegistryInterface::class);
-$snapshot = $container->get(ChannelUniverseInterface::class);
+$snapshot = $container->get(ProductProbeTypes::existing(ChannelUniverseInterface::class));
 assert($pipeline instanceof ConfigurationPipelineInterface);
 assert($computed instanceof ComputedMetricConfiguratorInterface);
 assert($rules instanceof RuleRegistryInterface);
@@ -54,7 +58,7 @@ assert($snapshot instanceof RuleChannelSnapshotFactoryInterface);
 $command = new Command('check');
 $command->setApplication(new Application());
 $optionDependencies = [$command, $rules];
-$optionConstructor = new ReflectionMethod(CheckCommandDefinition::class, 'addOptions');
+$optionConstructor = new ReflectionMethod(ProductProbeTypes::existing(CheckCommandDefinition::class), 'addOptions');
 if ($optionConstructor->getNumberOfRequiredParameters() === 3) {
     array_unshift($optionDependencies, new RuleOptionDocumentForms());
 } elseif ($optionConstructor->getNumberOfRequiredParameters() !== 2) {
@@ -63,11 +67,12 @@ if ($optionConstructor->getNumberOfRequiredParameters() === 3) {
 $optionConstructor->invokeArgs(null, $optionDependencies);
 $command->mergeApplicationDefinition(false);
 $arguments = new ArgvInput(['probe', ...array_slice($arguments, 1)], $command->getDefinition());
-$constructor = new ReflectionMethod(ConfigurationInputAdapter::class, '__construct');
-$dependencies = [$pipeline, new ErrorStream()];
+$adapterType = ProductProbeTypes::existing(ConfigurationInputAdapter::class);
+$constructor = new ReflectionMethod($adapterType, '__construct');
+$dependencies = [$pipeline, new (ProductProbeTypes::existing(ErrorStream::class))()];
 $parameters = $constructor->getParameters();
 $firstType = $parameters[0]->getType();
-if ($firstType instanceof ReflectionNamedType && $firstType->getName() === \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface::class) {
+if ($firstType instanceof ReflectionNamedType && ProductProbeTypes::isName($firstType->getName(), \Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionDocumentFormsInterface::class)) {
     array_unshift($dependencies, new RuleOptionDocumentForms());
 }
 $next = $parameters[count($dependencies)] ?? null;
@@ -80,9 +85,12 @@ if ($next !== null && $next->getType() instanceof ReflectionNamedType
 if ($constructor->getNumberOfRequiredParameters() !== count($dependencies)) {
     throw new RuntimeException('The probe does not support this configuration adapter constructor.');
 }
-$adapter = (new ReflectionClass(ConfigurationInputAdapter::class))->newInstanceArgs($dependencies);
-$document = $pipeline->resolve($adapter->adapt($arguments, $directory));
-$generator = new BaselineGenerator($snapshot->snapshot($computed->resolve($document)), new SystemClock());
+$adapter = (new ReflectionClass($adapterType))->newInstanceArgs($dependencies);
+$request = (new ReflectionMethod($adapter, 'adapt'))->invoke($adapter, $arguments, $directory);
+assert($request instanceof ConfigurationResolutionRequest);
+$document = $pipeline->resolve($request);
+$generatorType = ProductProbeTypes::existing(BaselineGenerator::class);
+$generator = new $generatorType($snapshot->snapshot($computed->resolve($document)), new SystemClock());
 
 $findings = [];
 $identities = [];

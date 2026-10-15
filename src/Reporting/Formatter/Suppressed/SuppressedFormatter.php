@@ -24,7 +24,7 @@ use Qualimetrix\Reporting\Report;
  * never moves for a feature it did not ask for (ADR 0037).
  *
  * Not registered as a `--show-suppressed`-only view: selecting this format
- * is itself the request, and {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator}
+ * is itself the request, and {@see \Qualimetrix\Infrastructure\Console\RunSetup\RuntimeConfigurator}
  * arms the same per-rule ledger capture for it that the flag arms, so the
  * two routes to capture never disagree (decision (д)).
  */
@@ -69,7 +69,7 @@ final class SuppressedFormatter implements FormatterInterface
             'byMechanism' => $byMechanism,
             'suppressed' => $suppressed,
             'neverMatched' => $neverMatched,
-            'notRun' => array_map(static fn(\Qualimetrix\Analysis\Finding\Contract\SelectionRecord $record): array => [
+            'notRun' => array_map(static fn(\Qualimetrix\Analysis\Finding\Contract\Selection\SelectionRecord $record): array => [
                 'producer' => $record->producer,
                 'reason' => $record->reason,
                 'statement' => $record->statement,

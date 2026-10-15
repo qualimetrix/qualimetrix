@@ -10,9 +10,9 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusal;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
@@ -31,7 +31,7 @@ use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
  * Round-11 regressions on the two refusal texts this class builds.
  *
  * `problemWithThreshold` used to run its own `channel:level` arithmetic
- * instead of asking {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing::problemWithRulePair()},
+ * instead of asking {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevel\ChannelLevelAddressing::problemWithRulePair()},
  * so an invalid level half and an invalid rule half both got the same
  * "addresses a channel at a level" wording, and the `--rule-opt` advice
  * printed even though neither half had been checked. `problemWithSuppression`

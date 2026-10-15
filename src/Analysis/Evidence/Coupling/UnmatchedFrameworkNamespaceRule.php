@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Coupling;
 
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Evidence\Coupling\Cbo\CboRule;
+
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
 
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
@@ -35,7 +37,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * **A rule of its own rather than a second channel on {@see CboRule}.** That
  * was the first shape tried and the container refuses it: a magnitude producer
  * must give every channel a `WorseDirection`
- * ({@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass}),
+ * ({@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\ChannelDeclarationCompilerPass}),
  * and this finding judges no measured value — it reports that a configured
  * name classified nothing. The subjects differ too: `coupling.cbo` is about
  * one class's coupling, this is about the run's configuration.
@@ -67,7 +69,7 @@ final class UnmatchedFrameworkNamespaceRule extends AbstractRule
     public const ChannelShape SHAPE = ChannelShape::Occurrence;
 
     /**
-     * The configured selectors are injected by {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass::resolveExtraDependencies()}.
+     * The configured selectors are injected by {@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\RuleOptionsCompilerPass::resolveExtraDependencies()}.
      * Rules cannot use plain constructor autowiring (Critical Rule 7), so the
      * compiler-pass injection is the supported flow. It binds the same
      * instance the console configures before the run and the same one

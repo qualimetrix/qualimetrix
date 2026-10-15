@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
 
 /**
@@ -47,7 +47,7 @@ final readonly class DirectiveNameHints
      * The two views this class reads, and not the composite that joins them:
      * an intersection because a single object answers both — the run's channel
      * universe — while naming
-     * {@see \Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface}
+     * {@see \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface}
      * here would additionally hand this class the producer-expansion view it
      * has no business asking.
      */

@@ -7,7 +7,7 @@ namespace Qualimetrix\Governance\Channel;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameMap;
+use Qualimetrix\Analysis\Policy\Baseline\ChannelRename\ChannelRenameMap;
 
 /**
  * The tracked map of this repository is a live input of the carry, not

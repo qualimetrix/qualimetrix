@@ -6,6 +6,8 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 
 use InvalidArgumentException;
 
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CapturePattern;
+
 /**
  * A layer entry parameterised by capture variables. Expanded into one or more
  * concrete {@see LayerDefinition} instances by
@@ -20,7 +22,7 @@ use InvalidArgumentException;
  *
  * **How the criteria combine.** Exactly as they do for a static layer:
  * {@see MembershipSpec::$mode} governs cross-kind combination, and
- * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\CriteriaEvaluation::outcome()}
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CriteriaEvaluation::outcome()}
  * is the one place that applies it — for template observation and for runtime
  * membership alike. An earlier docblock here claimed an invariant in the
  * opposite direction, that non-capturing criteria always AND regardless of

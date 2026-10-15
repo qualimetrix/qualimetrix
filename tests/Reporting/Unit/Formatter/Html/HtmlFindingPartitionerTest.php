@@ -54,7 +54,7 @@ final class HtmlFindingPartitionerTest extends TestCase
     {
         $node = new HtmlTreeNode('Shop', 'Shop', 'namespace');
         $finding = self::finding(Location::none(), SymbolPath::forNamespace('Shop'), 'computed', 'health.cohesion', 'Low cohesion', Severity::Warning, 20, recommendation: 'Split the namespace.', threshold: 30);
-        $finding = $finding->reportedAsBreach(new \Qualimetrix\Analysis\Finding\Contract\AcceptedLevel([25], 1));
+        $finding = $finding->reportedAsBreach(new \Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel([25], 1));
         $this->partitioner->attach(['Shop' => $node], ['Shop' => [$finding]], new FormatterContext(), \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
         $registry = new \Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry(\Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry::alwaysHigherMagnitude(), \Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes::withRealValues());
         $json = new \Qualimetrix\Reporting\Formatter\Json\JsonFindingSection($registry, new \Qualimetrix\Reporting\Formatter\Json\JsonSanitizer());
@@ -68,7 +68,7 @@ final class HtmlFindingPartitionerTest extends TestCase
     {
         $node = new HtmlTreeNode('(project)', '(project)', 'project');
         $base = self::finding(location: Location::none(), symbolPath: SymbolPath::forProject(), ruleName: 'computed', code: 'health.overall', message: 'low health', severity: Severity::Warning, metricValue: 20);
-        $accepted = new \Qualimetrix\Analysis\Finding\Contract\AcceptedLevel([30], 1);
+        $accepted = new \Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel([30], 1);
         $this->partitioner->attach(['(project)' => $node], ['(project)' => [$base, $base->reportedAsBreach($accepted), $base->reportedUncompared($accepted, 'exclusions-differ')]], new FormatterContext(), \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
         self::assertNull($node->findings[0]['acceptedLevel']);
         self::assertNull($node->findings[0]['baselineVerdict']);
@@ -544,7 +544,7 @@ final class HtmlFindingPartitionerTest extends TestCase
     }
 
     /** @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations */
-    private static function finding(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $code, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Finding
+    private static function finding(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $code, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Finding
     {
         $subject ??= match ($symbolPath->getType()) {
             \Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),

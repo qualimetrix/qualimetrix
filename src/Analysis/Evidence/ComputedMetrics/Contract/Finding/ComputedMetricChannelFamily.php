@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
 use Qualimetrix\Analysis\Finding\Contract\Population\KindIn;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
@@ -23,10 +23,10 @@ use Qualimetrix\Core\Symbol\SymbolType;
  *
  * A producer here is not a rule class, and cannot become one: two classes
  * declaring one `NAME` are refused by
- * {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass},
+ * {@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\RuleRegistryCompilerPass},
  * and six classes over one shared body would be six copies of the same rule.
  * So the facts a rule class would carry as constants are carried here, and
- * {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass}
+ * {@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\ChannelDeclarationCompilerPass}
  * reads them at container-build time exactly where it reads a class's own.
  *
  * **The split is not a preference, it is what the name spaces allow.** The six
@@ -150,7 +150,7 @@ final class ComputedMetricChannelFamily
      *
      * A function rather than a fourth copy of the rule as a map, because four
      * seams ask it — finding emission, the reverse lookup
-     * ({@see \Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface::producerOf()}),
+     * ({@see \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelIdentityInterface::producerOf()}),
      * the forward lookup (`channelsProducedBy()`), and the run-time snapshot's
      * name-collision guard — and a map copied four times is a rule stated four
      * times.

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms;
 
 use LogicException;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape;
 
 /** Evaluates one declared option form, including nested containers. */
 final readonly class RuleOptionShapeMatcher

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
@@ -15,14 +16,15 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
-use Qualimetrix\Infrastructure\Console\AnalysisPreflightProfile;
-use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Invocation\Configuration\ConfigurationInputAdapter;
+use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisPreflightProfile;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
 
 #[CoversClass(ConfigurationInputAdapter::class)]
+#[CoversClass(\Qualimetrix\Infrastructure\Console\Invocation\Configuration\WorkerCountParser::class)]
 final class ConfigurationInputAdapterTest extends TestCase
 {
     #[Test]
@@ -75,6 +77,37 @@ final class ConfigurationInputAdapterTest extends TestCase
         $document = $this->adapter()->resolve(new ArrayInput([], $this->definition()), AnalysisPreflightProfile::graph());
 
         self::assertSame([], $document->resolved()->roots());
+    }
+
+    #[Test]
+    #[DataProvider('invalidWorkerSpellings')]
+    public function itRefusesInvalidWorkersBeforeBuildingAGraphRequest(mixed $workers): void
+    {
+        $input = new ArrayInput(['--workers' => $workers], new InputDefinition([new InputOption('workers', null, InputOption::VALUE_REQUIRED)]));
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('--workers');
+        $this->adapter()->adapt($input, '/project', AnalysisPreflightProfile::graph());
+    }
+
+    /** @return iterable<string, array{mixed}> */
+    public static function invalidWorkerSpellings(): iterable
+    {
+        yield 'text' => ['abc'];
+        yield 'fraction' => ['1.5'];
+        yield 'overflow' => [(string) \PHP_INT_MAX . '0'];
+        yield 'boolean' => [true];
+        yield 'array' => [[]];
+    }
+
+    #[Test]
+    public function itPreservesAbsentZeroAndPositiveGraphWorkers(): void
+    {
+        $definition = new InputDefinition([new InputOption('workers', null, InputOption::VALUE_REQUIRED)]);
+        foreach ([null, '0', '2'] as $value) {
+            $input = new ArrayInput($value === null ? [] : ['--workers' => $value], $definition);
+            $request = $this->adapter()->adapt($input, '/project', AnalysisPreflightProfile::graph());
+            self::assertSame($value === null ? null : (int) $value, $request->cliValues['parallel.workers'] ?? null);
+        }
     }
 
     private function adapter(): ConfigurationInputAdapter

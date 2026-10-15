@@ -10,10 +10,10 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
-use Qualimetrix\Analysis\Evidence\Coupling\CboRule;
-use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Evidence\Coupling\Cbo\CboRule;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
@@ -190,7 +190,7 @@ final class ChannelUniverseCoverageTest extends TestCase
             self::assertSame($name, $universe->producerOf($name), $facet);
         }
 
-        $boolean = new ReflectionClass(\Qualimetrix\Analysis\Evidence\CodeSmell\BooleanArgumentRule::class);
+        $boolean = new ReflectionClass(\Qualimetrix\Analysis\Evidence\CodeSmell\BooleanArgument\BooleanArgumentRule::class);
         self::assertSame($boolean->getName(), $boolean->getMethod('channelDeclarations')->getDeclaringClass()->getName());
         self::assertSame('code-smell.boolean-argument', $universe->producerOf('code-smell.boolean-argument'));
 

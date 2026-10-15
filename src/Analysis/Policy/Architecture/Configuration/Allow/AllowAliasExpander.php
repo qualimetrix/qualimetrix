@@ -30,7 +30,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
  *
  * Only the vocabulary lives here. Reading the written list and refusing it
  * through the layer that wrote it belongs to the configuration zone
- * ({@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\LongFormAllowEntryNormalizer}),
+ * ({@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LongFormAllowEntryNormalizer}),
  * which this zone may not import.
  */
 final class AllowAliasExpander

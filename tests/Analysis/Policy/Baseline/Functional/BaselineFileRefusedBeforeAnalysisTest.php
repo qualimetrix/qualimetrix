@@ -10,26 +10,26 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
-use Qualimetrix\Analysis\Policy\Baseline\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineCleaner;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
-use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineEntryParser;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineWriter;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance\BaselineCleaner;
+use Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance\BaselineUpdater;
+use Qualimetrix\Analysis\Policy\Baseline\Explanation\BoundaryExplanationService;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds;
-use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Explanation\BaselineConfiguredThresholds;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Explanation\BaselineExplainCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Maintenance\BaselineCleanupCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Maintenance\BaselineUpdateCommand;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
@@ -210,8 +210,8 @@ final class BaselineFileRefusedBeforeAnalysisTest extends TestCase
         $link = $this->tempDir . '/link.json';
         symlink($present, $link);
 
-        (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->assertReadable($link);
-        $baseline = (new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults())))->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($link));
+        (new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->assertReadable($link);
+        $baseline = (new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults())))->load((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($link));
 
         self::assertSame([], $baseline->entries);
     }
@@ -226,13 +226,13 @@ final class BaselineFileRefusedBeforeAnalysisTest extends TestCase
         $late = null;
 
         try {
-            (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->assertReadable($this->missing);
+            (new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->assertReadable($this->missing);
         } catch (ConfigurationRefusal $refusal) {
             $early = $refusal->getMessage();
         }
 
         try {
-            (new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults())))->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->missing));
+            (new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults())))->load((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($this->missing));
         } catch (ConfigurationRefusal $refusal) {
             $late = $refusal->getMessage();
         }
@@ -256,12 +256,12 @@ final class BaselineFileRefusedBeforeAnalysisTest extends TestCase
         $clock = new FixedClock('2026-09-01T00:00:00+00:00');
 
         $command = match ($name) {
-            'cleanup' => new BaselineCleanupCommand($run, $loader, new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(), new BaselineCleaner($clock), new BaselineWriter(), $declarations, StubRuleCoverage::everyRuleRan()),
-            'update' => new BaselineUpdateCommand($run, $loader, new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(), new BaselineUpdater($declarations, $clock), new BaselineWriter(), StubRuleCoverage::everyRuleRan()),
+            'cleanup' => new BaselineCleanupCommand($run, $loader, new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader(), new BaselineCleaner($clock), new BaselineWriter(), $declarations, StubRuleCoverage::everyRuleRan()),
+            'update' => new BaselineUpdateCommand($run, $loader, new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader(), new BaselineUpdater($declarations, $clock), new BaselineWriter(), StubRuleCoverage::everyRuleRan()),
             'explain' => new BaselineExplainCommand(
                 $run,
                 $loader,
-                new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
+                new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader(),
                 new BoundaryExplanationService(self::createStub(ChannelIdentityInterface::class), StubRuleCoverage::everyRuleRan(), $declarations),
                 new BaselineConfiguredThresholds(self::emptyRuleRegistry(), new RuleOptionsRegistry()),
                 $declarations,
@@ -307,17 +307,14 @@ final class BaselineFileRefusedBeforeAnalysisTest extends TestCase
             }
         };
 
-        $command = new CheckCommand(
-            $pipeline,
-            $property('findingFilterOrchestrator'),
-            $property('runtimeConfigurator'),
-            $property('resultPresenter'),
-            $property('ruleInputValidator'),
-            $property('checkScopeResolver'),
-            $property('configurationInputAdapter'),
-            $property('configurationResolvers'),
-            $property('runTargetSession'),
-        );
+        $command = \Qualimetrix\Tests\Infrastructure\Console\Support\CheckCommandFixture::replace($original, [
+            'analyzer' => $pipeline,
+            'runtimeConfigurator' => $property('runtimeConfigurator'),
+            'checkScopeResolver' => $property('checkScopeResolver'),
+            'configurationInputAdapter' => $property('configurationInputAdapter'),
+            'configurationResolvers' => $property('configurationResolvers'),
+            'runTargetSession' => $property('runTargetSession'),
+        ]);
 
         $tester = new CommandTester($command);
         $tester->execute(

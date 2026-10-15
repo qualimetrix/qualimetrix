@@ -17,7 +17,7 @@ use ReflectionClassConstant;
  * "On itself" is the check both readers exist for: a code-smell or security
  * rule that declares nothing of its own would otherwise silently inherit
  * {@see \Qualimetrix\Analysis\Evidence\CodeSmell\AbstractCodeSmellRule}'s or
- * {@see \Qualimetrix\Analysis\Evidence\Security\AbstractSecurityPatternRule}'s
+ * {@see \Qualimetrix\Analysis\Evidence\Security\DirectSinks\AbstractSecurityPatternRule}'s
  * placeholder, so this rejects a constant whose declaring class differs from
  * the class asked about, regardless of the placeholder's own value.
  */

@@ -45,7 +45,7 @@ final class FileCacheTest extends TestCase
         }
         $root = \dirname(__DIR__, 4);
         $script = <<<'PHP'
-            namespace Qualimetrix\Core\FileTarget {
+            namespace Qualimetrix\Core\FileTarget\PrivateGroup {
                 function posix_geteuid(): int {
                     foreach (debug_backtrace(0) as $frame) {
                         if (($frame['function'] ?? '') === 'effectiveUid') {
@@ -102,7 +102,7 @@ final class FileCacheTest extends TestCase
                 'files:group' => "owner:x:$gid:\n",
                 'systemd:group' => '',
             ];
-            $membership = \Qualimetrix\Core\FileTarget\NativePrivateGroupMembership::forProcess();
+            $membership = \Qualimetrix\Core\FileTarget\PrivateGroup\NativePrivateGroupMembership::forProcess();
             foreach ([
                 'readConfiguration' => static fn(): string => "passwd: files systemd\ngroup: files systemd\n",
                 'enumerate' => static function (string $source, string $database) use (&$queries, $records): array {
@@ -386,7 +386,7 @@ namespace Qualimetrix\Infrastructure\Cache {
         return \file_put_contents($path, $data);
     }
 }
-namespace Qualimetrix\Core\FileTarget {
+namespace Qualimetrix\Core\FileTarget\Publication {
     function fwrite($handle, string $data): int|false {
         $uri = \stream_get_meta_data($handle)['uri'] ?? '';
         if (($GLOBALS['qmx_fault'] ?? null) !== null && str_starts_with($uri, $GLOBALS['qmx_shard_real'] . '/.qmx-')) {

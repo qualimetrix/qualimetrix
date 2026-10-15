@@ -6,7 +6,10 @@ namespace Qualimetrix\Infrastructure\Git;
 
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Git\ChangeListing\ChangedFile;
+use Qualimetrix\Infrastructure\Git\ChangeListing\NameStatusListing;
 use RuntimeException;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;

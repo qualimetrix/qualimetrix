@@ -8,7 +8,7 @@ use FilesystemIterator;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
-use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleFamily;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
@@ -47,7 +47,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * producing rule's owner, read via
  * {@see ChannelUniverseInterface::producerOf()} — never its own `ruleName`
  * half, which for architecture/annotation diagnostics names no rule class at
- * all (see {@see \Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface}).
+ * all (see {@see \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelIdentityInterface}).
  */
 final class RuleIdentifierLiteralGuardTest extends TestCase
 {

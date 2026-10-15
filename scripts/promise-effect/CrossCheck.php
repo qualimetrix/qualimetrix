@@ -44,10 +44,10 @@ declare(strict_types=1);
 namespace Qualimetrix\PromiseEffect;
 
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
-use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\FrameworkOptionKeys;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionShapeMatcher;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionShapeWording;
@@ -506,7 +506,7 @@ final class CrossCheck
     {
         return array_values(array_map(
             static fn(string $key): string => ConfigKeySpelling::normalize($key),
-            \Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys::all(),
+            \Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\FrameworkOptionKeys::all(),
         ));
     }
 }

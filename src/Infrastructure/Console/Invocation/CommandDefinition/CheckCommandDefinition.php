@@ -1,0 +1,429 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Infrastructure\Console\Invocation\CommandDefinition;
+
+use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionDocumentFormsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface;
+use Qualimetrix\Infrastructure\Console\Invocation\RuleOptions\CliRuleOptionAddressing;
+use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
+
+/**
+ * Defines all arguments and options for the check command.
+ *
+ * Extracted from CheckCommand::configure() to keep the command class focused
+ * on orchestration logic.
+ */
+final class CheckCommandDefinition
+{
+    public function __construct(private readonly RuleOptionDocumentFormsInterface $documentForms, private readonly RuleRegistryInterface $ruleRegistry) {}
+
+    /** @return list<string> */
+    public function configure(Command $command): array
+    {
+        return self::addOptions($this->documentForms, $command, $this->ruleRegistry);
+    }
+
+    /**
+     * Adds all arguments and options to the check command.
+     *
+     * @return list<string> Names of rule-specific options (to be hidden from --help)
+     */
+    public static function addOptions(RuleOptionDocumentFormsInterface $documentForms, Command $command, RuleRegistryInterface $ruleRegistry): array
+    {
+        self::addPresetOptions($command);
+        self::addPathArgument($command);
+        self::addFileOptions($command);
+        self::addOutputOptions($command);
+        self::addCacheOptions($command);
+        self::addBaselineOptions($command);
+        self::addSuppressionOptions($command);
+        self::addGitScopeOptions($command);
+        self::addRuntimeOptions($command);
+        self::addProfileOptions($command);
+        self::addFormatterOptions($command);
+        self::addHealthOptions($command);
+        $ruleOptionNames = self::addDynamicRuleOptions($command, $ruleRegistry, $documentForms);
+        self::addGenericRuleOptions($command);
+
+        return $ruleOptionNames;
+    }
+
+    private static function addPresetOptions(Command $command): void
+    {
+        $command->addOption(
+            'preset',
+            null,
+            InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+            'Apply a named preset (strict, legacy, ci) or path to preset file (can be repeated or comma-separated)',
+            [],
+        );
+    }
+
+    private static function addPathArgument(Command $command): void
+    {
+        $command->addArgument(
+            'paths',
+            InputArgument::OPTIONAL | InputArgument::IS_ARRAY,
+            'Paths to analyze [default: auto-detect from composer.json]',
+            [],
+        );
+    }
+
+    private static function addFileOptions(Command $command): void
+    {
+        $command
+            ->addOption(
+                'exclude',
+                null,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Directories to exclude with exact:, subtree:, or regex: (repeatable). An unused selector is reported as discovery.unmatched-exclude',
+                [],
+            )
+            ->addOption(
+                'suppress-path',
+                null,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Suppress violations for files selected by exact:, subtree:, or regex: (repeatable, e.g., subtree:src/Entity)',
+                [],
+            )
+            ->addOption(
+                'suppress-namespace',
+                null,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Suppress violations for namespaces selected by exact:, subtree:, or regex: (repeatable, e.g., subtree:App\Entity)',
+                [],
+            )
+            ->addOption(
+                'include-generated',
+                null,
+                InputOption::VALUE_NONE,
+                'Include files marked with @generated annotation (skipped by default)',
+            )
+            ->addOption(
+                'include-autoload-dev',
+                null,
+                InputOption::VALUE_NONE,
+                'Count composer.json autoload-dev code as part of the project: analysed when no paths are given, and part of the scope a run is judged against (left out by default)',
+            )
+            ->addOption(
+                'config',
+                'c',
+                InputOption::VALUE_REQUIRED,
+                'Path to configuration file',
+            );
+    }
+
+    private static function addOutputOptions(Command $command): void
+    {
+        $command
+            ->addOption(
+                'format',
+                'f',
+                InputOption::VALUE_REQUIRED,
+                'Output format (summary, text, json, checkstyle, sarif, gitlab, github, metrics, health, html, suppressed). Default: summary',
+            )
+            ->addOption(
+                'output',
+                'o',
+                InputOption::VALUE_REQUIRED,
+                'Write output to file instead of stdout; an existing file is written in place',
+            )
+            ->addOption(
+                'fail-on',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Minimum severity to trigger non-zero exit code (none, warning, error). Default: error. Exit codes: 0 = clean, 1 = warnings, 2 = errors, 3 = input/configuration/environment refusal, 4 = incomplete analysis, 5 = internal error',
+            )
+            ->addOption(
+                'namespace',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Filter results by namespace selector (exact:, subtree:, or regex:). Refused when it selects no namespace',
+            )
+            ->addOption(
+                'class',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Filter results by class FQCN (exact match). Refused when it selects no class',
+            );
+    }
+
+    private static function addCacheOptions(Command $command): void
+    {
+        $command
+            ->addOption(
+                'no-cache',
+                null,
+                InputOption::VALUE_NONE,
+                'Disable caching',
+            )
+            ->addOption(
+                'cache-dir',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Writable private cache directory outside the project root (default: user cache directory)',
+            )
+            ->addOption(
+                'clear-cache',
+                null,
+                InputOption::VALUE_NONE,
+                "Delete qmx's cached entries for all projects of this user before analysis",
+            );
+    }
+
+    /**
+     * `check` reads a baseline; it never writes one.
+     *
+     * Capture lives in `bin/qmx baseline:generate`, which is why there is no
+     * inline baseline-generation option here and deliberately no alias for it: a command
+     * whose job is to report can quietly write the file that decides what it
+     * reports, and the two runs a user then has — one that captures, one that
+     * checks — are the two the ceiling exists to keep identical.
+     */
+    private static function addBaselineOptions(Command $command): void
+    {
+        $command
+            ->addOption(
+                'baseline',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Path to baseline file for filtering known violations',
+            )
+            ->addOption(
+                'show-resolved',
+                null,
+                InputOption::VALUE_NONE,
+                'Show count of baseline entries resolved since baseline',
+            );
+    }
+
+    private static function addSuppressionOptions(Command $command): void
+    {
+        $command
+            ->addOption(
+                'show-suppressed',
+                null,
+                InputOption::VALUE_NONE,
+                'Show suppressed violations as prose; --format=suppressed reports the same composition as machine-readable JSON',
+            )
+            ->addOption(
+                'no-suppression-annotations',
+                null,
+                InputOption::VALUE_NONE,
+                'Report findings that `@qmx-ignore` annotations suppress (does not change what a baseline measures)',
+            );
+    }
+
+    private static function addGitScopeOptions(Command $command): void
+    {
+        $command
+            ->addOption(
+                'report',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Scope of violations to report (e.g., git:main..HEAD)',
+            )
+            ->addOption(
+                'report-strict',
+                null,
+                InputOption::VALUE_NONE,
+                'Only show violations exactly in changed files (exclude parent namespaces)',
+            );
+    }
+
+    private static function addRuntimeOptions(Command $command): void
+    {
+        $command
+            ->addOption(
+                'workers',
+                'w',
+                InputOption::VALUE_REQUIRED,
+                'Number of parallel workers (0 = disable parallel, default: auto-detect)',
+            )
+            ->addOption(
+                'log-file',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Write run log to file (default level: info)',
+            )
+            ->addOption(
+                'log-level',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Minimum log level (debug, info, warning, error) for --log-file and, with -v or more, the console; '
+                . 'without -v it can only narrow the console below warnings. Not given: the console shows warnings, '
+                . 'info with -v, debug with -vv, and the log file takes info. Refused when the value is none of them',
+            )
+            ->addOption(
+                'no-progress',
+                null,
+                InputOption::VALUE_NONE,
+                'Disable progress bar',
+            )
+            ->addOption(
+                'memory-limit',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'PHP memory limit (e.g., 512M, 1G, -1 for unlimited)',
+            );
+    }
+
+    private static function addProfileOptions(Command $command): void
+    {
+        $command
+            ->addOption(
+                'profile',
+                null,
+                InputOption::VALUE_OPTIONAL,
+                'Enable profiling and export to file (or show summary if no file specified). Refused before analysis when the file cannot be written',
+                false,
+            )
+            ->addOption(
+                'profile-format',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Profile export format: json or chrome-tracing. Refused before analysis when it is anything else',
+                'json',
+            );
+    }
+
+    private static function addFormatterOptions(Command $command): void
+    {
+        $command
+            ->addOption(
+                'group-by',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Group violations by: none, file, rule, severity, class, namespace (default: formatter-specific)',
+            )
+            ->addOption(
+                'format-opt',
+                null,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Formatter-specific option (format: key=value)',
+                [],
+            )
+            ->addOption(
+                'detail',
+                null,
+                InputOption::VALUE_OPTIONAL,
+                'Add the grouped violation list after the summary, capped at 200 entries: --detail=N caps it at N, --detail=all or --detail=0 removes the cap. Omitted, the list is not shown unless --namespace or --class is used',
+                false, // false = not passed, null = passed without value
+            )
+            ->addOption(
+                'top',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Number of top impact issues to show (default 10, 0 to disable)',
+            )
+            ->addOption(
+                'all',
+                null,
+                InputOption::VALUE_NONE,
+                'Show all violations without truncation (alias for --format-opt=violations=all --detail=all)',
+            );
+    }
+
+    /**
+     * @return list<string> Names of dynamically registered rule options
+     */
+    private static function addDynamicRuleOptions(Command $command, RuleRegistryInterface $ruleRegistry, RuleOptionDocumentFormsInterface $documentForms): array
+    {
+        $booleanAliases = self::detectBooleanAliases($ruleRegistry, $documentForms);
+        $optionNames = [];
+
+        foreach ($ruleRegistry->getAllCliAliases() as $alias => $info) {
+            $optionNames[] = $alias;
+
+            if (\in_array($alias, $booleanAliases, true)) {
+                $command->addOption(
+                    $alias,
+                    null,
+                    InputOption::VALUE_NONE,
+                    \sprintf('[%s] %s', $info['rule'], $info['option']),
+                );
+            } else {
+                $command->addOption(
+                    $alias,
+                    null,
+                    InputOption::VALUE_REQUIRED,
+                    \sprintf('[%s] %s', $info['rule'], $info['option']),
+                );
+            }
+        }
+
+        return $optionNames;
+    }
+
+    /**
+     * Detects CLI aliases that map to boolean options.
+     *
+     * Uses the same declared scalar form as the document and CLI reader.
+     *
+     * @return list<string>
+     */
+    private static function detectBooleanAliases(RuleRegistryInterface $ruleRegistry, RuleOptionDocumentFormsInterface $documentForms): array
+    {
+        $booleanAliases = [];
+
+        foreach ($ruleRegistry->getClasses() as $ruleClass) {
+            $aliases = CliAliasReader::read($ruleClass);
+            if ($aliases === []) {
+                continue;
+            }
+
+            $optionsClass = $ruleClass::getOptionsClass();
+            $surface = RuleOptionSurface::of($optionsClass);
+
+            foreach ($aliases as $alias => $optionName) {
+                if (CliRuleOptionAddressing::acceptsText($surface, $optionName, $documentForms) === false) {
+                    $booleanAliases[] = $alias;
+                }
+            }
+        }
+
+        return $booleanAliases;
+    }
+
+    private static function addHealthOptions(Command $command): void
+    {
+        $command
+            ->addOption(
+                'exclude-health',
+                null,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Exclude health dimension from scoring (complexity, cohesion, coupling, typing, maintainability)',
+                [],
+            );
+    }
+
+    private static function addGenericRuleOptions(Command $command): void
+    {
+        $command
+            ->addOption(
+                'disable-rule',
+                null,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Disable a rule or channel by exact name, or every rule under a group with NAME.* (e.g., complexity.*, size.class-count). Disabling duplication.clone also skips the memory-intensive detection phase',
+            )
+            ->addOption(
+                'only-rule',
+                null,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Run only the named rule or channel, or every rule under a group with NAME.* (e.g., complexity.*, code-smell.*)',
+            )
+            ->addOption(
+                'rule-opt',
+                null,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Rule-specific option (format: rule-name:option=value). Refused when the format, the rule or the option name is unknown',
+            );
+    }
+}

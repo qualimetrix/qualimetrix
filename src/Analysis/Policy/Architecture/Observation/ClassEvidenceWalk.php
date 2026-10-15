@@ -9,8 +9,8 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ShadowExemption;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerShadowing;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\LayerMatch;
 
 /** Collects class-side layer evidence from one prepared run. */
 final readonly class ClassEvidenceWalk

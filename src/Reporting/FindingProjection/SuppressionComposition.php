@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\FindingProjection;
 
-use Qualimetrix\Analysis\Finding\Contract\SelectionRecord;
+use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionRecord;
 
 /**
  * Everything the `suppressed` format publishes: what was kept out of the

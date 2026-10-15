@@ -224,9 +224,9 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
         'tests/Infrastructure/Parallel/Unit/Strategy/AmphpParallelStrategyTest.php:375' => 'The expected unavailable-capability diagnostic, never evaluated as source.',
         'tests/Infrastructure/Parallel/Unit/Strategy/AmphpParallelStrategyTest.php:407' => 'An ini setting disables the process capability in the child; the string is configuration, not executable source.',
 
-        'src/Core/FileTarget/NativeNssEnumerator.php:17' => 'A function_exists probe, not a spawn; the actual'
+        'src/Core/FileTarget/PrivateGroup/NativeNssEnumerator.php:17' => 'A function_exists probe, not a spawn; the actual'
             . ' child invocation is declared separately below.',
-        'src/Core/FileTarget/NativeNssEnumerator.php:35' => 'Core cannot depend on the development-only'
+        'src/Core/FileTarget/PrivateGroup/NativeNssEnumerator.php:35' => 'Core cannot depend on the development-only'
             . ' ChildProcess module. NSS enumeration opens only stdout as a pipe, sends stdin and stderr to'
             . ' /dev/null, drains stdout non-blockingly, and enforces a deadline and output bound.',
         'tests/Analysis/Policy/Baseline/Functional/BaselineGenerateCommandTest.php:162' => 'The signal'
@@ -241,7 +241,7 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . ' worker-signal child uses files for readiness and waits until termination; the test reads stderr'
             . ' only after exit for an assertion. This is a bounded interruption witness, not a concurrent'
             . ' drain suitable for arbitrary child output.',
-        'tests/Core/FileTarget/Unit/HeldTargetTest.php:219' => 'The descriptor regression binds stdout directly to '
+        'tests/Core/FileTarget/Unit/Publication/HeldTargetTest.php:219' => 'The descriptor regression binds stdout directly to '
             . 'the existing append-mode file under test, which ChildProcess does not accept as a descriptor map. '
             . 'Only stderr is a pipe and it is drained before reaping; stdout writes to the file, so no second '
             . 'read stream can be left unserviced.',
@@ -285,28 +285,28 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . 'repository for the case under test: both streams go to `/dev/null` and no pipe is opened, so only '
             . 'the exit status is read.',
 
-        'src/Analysis/Evidence/Security/CommandInjectionDetector.php:27' => 'Rule data: the name of one of the '
+        'src/Analysis/Evidence/Security/DirectSinks/CommandInjectionDetector.php:27' => 'Rule data: the name of one of the '
             . 'functions the command-injection rule detects.',
 
-        'src/Analysis/Evidence/Security/CommandInjectionDetector.php:28' => 'Rule data, the single-stream spawner: '
+        'src/Analysis/Evidence/Security/DirectSinks/CommandInjectionDetector.php:28' => 'Rule data, the single-stream spawner: '
             . 'the next name in the same list.',
 
-        'tests/Analysis/Evidence/Security/Unit/CommandInjectionDetectorTest.php:59' => 'The data-provider case for '
+        'tests/Analysis/Evidence/Security/Unit/DirectSinks/CommandInjectionDetectorTest.php:59' => 'The data-provider case for '
             . 'that rule, naming the detected function twice on one line — as the case label and as the case value.',
 
-        'tests/Analysis/Evidence/Security/Unit/CommandInjectionDetectorTest.php:60' => 'The same shape for the '
+        'tests/Analysis/Evidence/Security/Unit/DirectSinks/CommandInjectionDetectorTest.php:60' => 'The same shape for the '
             . 'single-stream spawner: the case label and the case value on one line.',
 
-        'tests/Analysis/Evidence/Security/Unit/SecurityPatternVisitorTest.php:351' => 'The data-provider case label '
+        'tests/Analysis/Evidence/Security/Unit/DirectSinks/SecurityPatternVisitorTest.php:351' => 'The data-provider case label '
             . 'for the command-injection visitor.',
 
-        'tests/Analysis/Evidence/Security/Unit/SecurityPatternVisitorTest.php:352' => 'PHP source inside the '
+        'tests/Analysis/Evidence/Security/Unit/DirectSinks/SecurityPatternVisitorTest.php:352' => 'PHP source inside the '
             . 'fixture string that case hands to the parser — embedded source, never executed by this process.',
 
-        'tests/Analysis/Evidence/Security/Unit/SecurityPatternVisitorTest.php:356' => 'The case label for the same '
+        'tests/Analysis/Evidence/Security/Unit/DirectSinks/SecurityPatternVisitorTest.php:356' => 'The case label for the same '
             . 'visitor, naming the single-stream spawner.',
 
-        'tests/Analysis/Evidence/Security/Unit/SecurityPatternVisitorTest.php:357' => 'PHP source inside that '
+        'tests/Analysis/Evidence/Security/Unit/DirectSinks/SecurityPatternVisitorTest.php:357' => 'PHP source inside that '
             . 'case\'s fixture string — embedded source, never executed by this process.',
 
         'tests/Analysis/Evidence/Duplication/Unit/Normalization/DataDeclarationTaggerTest.php:380' => 'Not a spawn and not the '

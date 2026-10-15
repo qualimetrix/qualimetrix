@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract\Selection;
 
-use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /** The producer and declared channel-level cell whose selection is decided. */

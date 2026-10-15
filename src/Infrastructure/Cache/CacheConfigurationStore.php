@@ -6,7 +6,10 @@ namespace Qualimetrix\Infrastructure\Cache;
 
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
+
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationStoreInterface;
+use Qualimetrix\Infrastructure\Cache\Root\CacheSource;
+use Qualimetrix\Infrastructure\Cache\Root\DefaultCacheDirectory;
 
 final class CacheConfigurationStore implements CacheConfigurationStoreInterface
 {

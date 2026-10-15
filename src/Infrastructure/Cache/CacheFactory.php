@@ -6,11 +6,14 @@ namespace Qualimetrix\Infrastructure\Cache;
 
 use LogicException;
 use Psr\Log\LoggerInterface;
+
 use Psr\Log\NullLogger;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationStoreInterface;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheOpener;
+use Qualimetrix\Infrastructure\Cache\Root\CacheLocationJudgement;
+use Qualimetrix\Infrastructure\Cache\Root\CacheRootUntrusted;
 
 final class CacheFactory implements CacheOpener
 {

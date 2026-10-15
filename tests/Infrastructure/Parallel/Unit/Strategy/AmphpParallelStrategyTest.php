@@ -390,7 +390,7 @@ $logger = new class extends \Psr\Log\AbstractLogger {
     }
 };
 $factory = new \Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory(new \Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore(),new \Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms(),\Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor::class,[\Qualimetrix\Analysis\Evidence\Size\LocCollector::class]);
-$strategy = new \Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy($factory,new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy($profiler),$profiler,new \Qualimetrix\Infrastructure\Console\ErrorStream(),$logger);
+$strategy = new \Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy($factory,new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy($profiler),$profiler,new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream(),$logger);
 $strategy->setWorkerRequest(new \Qualimetrix\Infrastructure\Parallel\WorkerRequest(2,$argv[3] === '1' ? '--workers=2' : null));
 $strategy->setProjectRoot(\Qualimetrix\Core\Path\AbsolutePath::fromString($argv[2]));
 $strategy->setMinFilesForParallel(1);
@@ -487,7 +487,7 @@ PHP;
             ),
             new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()),
             new \Qualimetrix\Infrastructure\Profiler\ProfileSession(),
-            new \Qualimetrix\Infrastructure\Console\ErrorStream(),
+            new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream(),
             $logger,
         );
     }

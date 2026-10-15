@@ -1,0 +1,254 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Analysis\Policy\Baseline\DocumentReading;
+
+use InvalidArgumentException;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineAuditChannels;
+
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEdge;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\InertBaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\InertEntryReason;
+use Qualimetrix\Core\Symbol\MetricSubject;
+
+/**
+ * Turns one decoded entry of a baseline file into either an applicable
+ * {@see BaselineEntry} or an {@see InertBaselineEntry} explaining why it is
+ * not one.
+ *
+ * It never throws for bad input. Refusing to load punishes a whole run for
+ * one bad line (ADR 0017), so every defect this class
+ * can find resolves to an inert entry — which does not suppress, and which
+ * `check` reports.
+ *
+ * The channel declaration is consulted here rather than at comparison time
+ * because both shape checks are facts about the *file*: a channel whose
+ * direction says `magnitude` but whose entry stores no magnitudes, and one
+ * whose direction is absent (`occurrence`) but whose entry stores some, are
+ * each unusable before any run is compared against them. Catching them at
+ * load also means the reason survives into the report with the line still
+ * in hand.
+ */
+final readonly class BaselineEntryParser
+{
+    public function __construct(
+        private ChannelDeclarationRegistryInterface $declarations,
+    ) {}
+
+    /**
+     * @param string $subjectKey the file key this entry sits under
+     * @param mixed $raw the decoded entry
+     */
+    public function parse(string $subjectKey, mixed $raw): BaselineEntry|InertBaselineEntry
+    {
+        if (!\is_array($raw) || array_is_list($raw)) {
+            return InertBaselineEntry::forRaw(
+                $subjectKey,
+                null,
+                InertEntryReason::Malformed,
+                'entry must be a JSON object',
+                $raw,
+            );
+        }
+
+        try {
+            $identity = $this->parseIdentity($subjectKey, $raw);
+        } catch (BaselineEntryRejection $rejection) {
+            $channel = $raw['channel'] ?? null;
+
+            return InertBaselineEntry::forRaw(
+                $subjectKey,
+                \is_string($channel) ? $channel : null,
+                $rejection->reason,
+                $rejection->getMessage(),
+                $raw,
+            );
+        }
+
+        try {
+            return $this->parseEntry($identity, $raw);
+        } catch (BaselineEntryRejection $rejection) {
+            return InertBaselineEntry::forIdentity(
+                $identity,
+                $rejection->reason,
+                $rejection->getMessage(),
+                $raw,
+            );
+        }
+    }
+
+    /**
+     * @param array<mixed, mixed> $raw
+     *
+     * @throws BaselineEntryRejection
+     */
+    private function parseIdentity(string $subjectKey, array $raw): BaselineIdentity
+    {
+        $channel = self::readRequiredNonEmptyString(
+            $raw,
+            'channel',
+            '"channel" must be a non-empty channel name',
+        );
+
+        try {
+            $identity = new BaselineIdentity(
+                $subjectKey,
+                new FindingChannel($channel),
+                self::readOptionalNonEmptyString(
+                    $raw,
+                    'occurrence',
+                    '"occurrence" must be a non-empty string when present',
+                ),
+                self::readEdge($raw),
+            );
+
+            // A key no subject is written as could never meet a finding, and
+            // the level it measures at is what decides whether a run that did
+            // not report it had looked.
+            MetricSubject::levelOfCanonical($subjectKey);
+
+            return $identity;
+        } catch (InvalidArgumentException $e) {
+            throw new BaselineEntryRejection(InertEntryReason::Malformed, $e->getMessage());
+        }
+    }
+
+    /**
+     * @param array<mixed, mixed> $object
+     *
+     * @throws BaselineEntryRejection
+     */
+    private static function readRequiredNonEmptyString(array $object, string $field, string $label): string
+    {
+        $value = $object[$field] ?? null;
+        if (!\is_string($value) || $value === '') {
+            throw new BaselineEntryRejection(InertEntryReason::Malformed, $label);
+        }
+
+        return $value;
+    }
+
+    /**
+     * @param array<mixed, mixed> $object
+     *
+     * @throws BaselineEntryRejection
+     */
+    private static function readOptionalNonEmptyString(array $object, string $field, string $label): ?string
+    {
+        $value = $object[$field] ?? null;
+        if ($value === null) {
+            return null;
+        }
+
+        return self::readRequiredNonEmptyString([$field => $value], $field, $label);
+    }
+
+    /**
+     * @param array<mixed, mixed> $raw
+     *
+     * @throws BaselineEntryRejection
+     */
+    private function parseEntry(BaselineIdentity $identity, array $raw): BaselineEntry
+    {
+        $values = BaselineEntryValues::decode($raw);
+
+        $declaration = $this->acceptanceDeclaration($identity);
+        $entry = self::entryFromValues($identity, $values);
+        self::assertShape($entry, $declaration);
+
+        return $entry;
+    }
+
+    /** @throws BaselineEntryRejection */
+    private function acceptanceDeclaration(BaselineIdentity $identity): ChannelDeclaration
+    {
+        if ($identity->channel->code === BaselineAuditChannels::UNUSED_ENTRY) {
+            throw new BaselineEntryRejection(
+                InertEntryReason::BaselineAuditChannel,
+                'baseline audit findings cannot be accepted as debt',
+            );
+        }
+
+        $declaration = $this->declarations->declarationFor($identity->channel);
+        if ($declaration === null) {
+            throw new BaselineEntryRejection(
+                InertEntryReason::UndeclaredChannel,
+                \sprintf('no rule declares the channel "%s"', $identity->channel->code),
+            );
+        }
+
+        // A hand-written entry is refused here for the same reason a
+        // generated one is never written: the channel says it reports a
+        // configuration mistake, and an accepted amount of "your
+        // configuration does not describe your code" is not a state the
+        // ratchet may hold. Refused with its own reason, never as
+        // "undeclared" — the two ask the user for opposite fixes.
+        if ($declaration->isConfigurationError()) {
+            throw new BaselineEntryRejection(
+                InertEntryReason::ConfigurationErrorChannel,
+                \sprintf(
+                    'the channel "%s" reports a configuration error, which cannot be accepted as debt',
+                    $identity->channel->code,
+                ),
+            );
+        }
+
+        $level = MetricSubject::levelOfCanonical($identity->subjectKey);
+        if (!\in_array($level, $declaration->levels, true)) {
+            throw new BaselineEntryRejection(
+                InertEntryReason::LevelNotDeclared,
+                \sprintf('the channel "%s" does not declare level "%s" in this configuration', $identity->channel->code, $level->value),
+            );
+        }
+
+        return $declaration;
+    }
+
+    /** @throws BaselineEntryRejection */
+    private static function entryFromValues(BaselineIdentity $identity, BaselineEntryValues $values): BaselineEntry
+    {
+        try {
+            return new BaselineEntry($identity, $values->magnitudes, $values->count, $values->mode);
+        } catch (InvalidArgumentException $e) {
+            throw new BaselineEntryRejection(InertEntryReason::Malformed, $e->getMessage());
+        }
+    }
+
+    /** @throws BaselineEntryRejection */
+    private static function assertShape(BaselineEntry $entry, ChannelDeclaration $declaration): void
+    {
+        // The channel's own shape is not stored here — it moved to the
+        // producer (ADR 0031) — but `$declaration->direction` is null exactly
+        // when the producer declared `occurrence`, since registry assembly
+        // refuses any other combination, and an entry is occurrence-shaped
+        // exactly when it stores no magnitudes. The two nullabilities agree
+        // or the entry is refused.
+        if (($declaration->direction === null) !== ($entry->magnitudes === null)) {
+            throw new BaselineEntryRejection(InertEntryReason::ShapeMismatch, \sprintf(
+                'the channel declares shape "%s" but the entry stores %s',
+                $declaration->direction === null ? 'occurrence' : 'magnitude',
+                $entry->magnitudes !== null ? 'magnitudes' : 'no magnitudes',
+            ));
+        }
+    }
+
+    /**
+     * @param array<mixed, mixed> $raw
+     *
+     * @throws BaselineEntryRejection
+     */
+    private static function readEdge(array $raw): ?BaselineEdge
+    {
+        try {
+            return BaselineEdge::fromArray($raw['edge'] ?? null);
+        } catch (InvalidArgumentException $e) {
+            throw new BaselineEntryRejection(InertEntryReason::Malformed, $e->getMessage());
+        }
+    }
+}

@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Git;
 
 use Psr\Log\LoggerInterface;
+
 use Psr\Log\NullLogger;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Git\ChangeListing\ChangedFile;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeResult;

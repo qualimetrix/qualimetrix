@@ -8,10 +8,15 @@ use Closure;
 use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\BareElementPolicy;
+
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\IntegerJudgement;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Document\NameBinding\KeyClaims;
+use Qualimetrix\Analysis\Configuration\Document\NameBinding\NamedEntryReading;
+use Qualimetrix\Analysis\Configuration\Document\NameBinding\PendingName;
+use Qualimetrix\Analysis\Configuration\Document\NameBinding\WrittenNames;
 use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedBareName;
 use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedList;
 use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedMap;

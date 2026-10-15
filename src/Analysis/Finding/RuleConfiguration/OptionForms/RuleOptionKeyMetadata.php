@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms;
 
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionBand;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionBand;
 
 /** Band, shorthand, override and retired-key facts for one declaration. */
 final readonly class RuleOptionKeyMetadata

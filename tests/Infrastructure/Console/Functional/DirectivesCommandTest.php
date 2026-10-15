@@ -20,12 +20,12 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\ProductIdentity;
-use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
-use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
-use Qualimetrix\Infrastructure\Console\Command\DirectivesCommand;
-use Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Generation\BaselineGenerateCommand;
+use Qualimetrix\Infrastructure\Console\Directives\DirectiveAuditPresenter;
+use Qualimetrix\Infrastructure\Console\Directives\DirectivesCommand;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisPreflight;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use ReflectionMethod;
 use ReflectionProperty;
@@ -1097,7 +1097,7 @@ final class DirectivesCommandTest extends TestCase
     /**
      * A path that never existed is a distinct refusal from a scope that
      * existed but analysed nothing (the case directly above): the preflight
-     * ({@see \Qualimetrix\Infrastructure\Console\AnalysisPreflight::refuseMissingPaths()},
+     * ({@see \Qualimetrix\Infrastructure\Console\RunSetup\AnalysisPreflight::refuseMissingPaths()},
      * shared with `check`) rejects it before any discovery or measurement
      * runs, and this command has no test pinning that it inherits the check.
      */

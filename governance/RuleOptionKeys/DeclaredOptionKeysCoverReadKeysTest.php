@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
@@ -46,8 +46,8 @@ final class DeclaredOptionKeysCoverReadKeysTest extends TestCase
 
         $undeclared = [];
         foreach (array_keys(array_filter($reading->keys)) as $key) {
-            if (!\Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface::declaredFor($optionsClass)->knows(ConfigKeySpelling::normalize($key))
-                && !(is_a($optionsClass, RuleOptionsInterface::class, true) && \Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys::declared()->knows($key))) {
+            if (!\Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface::declaredFor($optionsClass)->knows(ConfigKeySpelling::normalize($key))
+                && !(is_a($optionsClass, RuleOptionsInterface::class, true) && \Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\FrameworkOptionKeys::declared()->knows($key))) {
                 $undeclared[] = $key;
             }
         }

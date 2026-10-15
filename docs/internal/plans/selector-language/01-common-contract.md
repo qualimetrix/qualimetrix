@@ -99,10 +99,10 @@ heuristic); runtime PCRE resource failure is typed and controlled.
   `ConfigurationInputAdapter`
 - change `src/Analysis/Configuration/ConfigSchema.php` and relevant pipeline
   normalization so migrated list entries preserve their one-entry mappings
-- change `src/Infrastructure/Console/ConfigurationInputAdapter.php`,
+- change `src/Infrastructure/Console/Invocation/Configuration/ConfigurationInputAdapter.php`,
   `CheckConfigurationResolvers.php`, and command option readers that own migrated
   repeatable values
-- change `src/Infrastructure/Console/CliOptionsParser.php` so the Finding-owned
+- change `src/Infrastructure/Console/Invocation/RuleOptions/CliOptionsParser.php` so the Finding-owned
   `RuleOptionsParser` continues to parse only `RULE:OPTION=VALUE`, after which the
   Console adapter applies its scalar selector decoder to the known
   selector-valued rule options before owner options are constructed

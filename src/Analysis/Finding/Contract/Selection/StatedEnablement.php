@@ -6,7 +6,6 @@ namespace Qualimetrix\Analysis\Finding\Contract\Selection;
 
 use Qualimetrix\Analysis\Configuration\Contract\Document\ConfigurationDiagnostic;
 use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
-use Qualimetrix\Analysis\Finding\Contract\SelectionFilter;
 use Qualimetrix\Analysis\Finding\Selection\EnablementIndex;
 
 /** Decisions from authored statements, before options decide level activity. */

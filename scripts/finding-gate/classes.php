@@ -24,6 +24,7 @@ declare(strict_types=1);
 foreach (
     [
         'CommandLine',
+        'ProductProbeTypes',
         'FailureClass',
         'GateError',
         'MissingStructuralRecordList',

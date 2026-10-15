@@ -8,11 +8,11 @@ use Closure;
 use InvalidArgumentException;
 use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Channel\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Population\ContextGuard;
 use Qualimetrix\Analysis\Finding\Contract\Population\FlagExcludes;
@@ -50,7 +50,7 @@ abstract class AbstractRule implements RuleInterface
      * from a container declares its own `SHAPE` (ADR 0031), directly or
      * through one of the three shared abstract bases
      * ({@see \Qualimetrix\Analysis\Evidence\CodeSmell\AbstractCodeSmellRule},
-     * {@see \Qualimetrix\Analysis\Evidence\Security\AbstractSecurityPatternRule},
+     * {@see \Qualimetrix\Analysis\Evidence\Security\DirectSinks\AbstractSecurityPatternRule},
      * {@see \Qualimetrix\Analysis\Evidence\Design\TypeCoverage\AbstractTypeCoverageRule}).
      * `ChannelDeclarationCompilerPass` refuses a rule class whose `SHAPE`
      * constant resolves to this one — the same "declaring class" check

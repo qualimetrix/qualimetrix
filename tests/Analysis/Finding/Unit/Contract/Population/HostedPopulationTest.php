@@ -10,22 +10,22 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStageResult;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorVerdict;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineAuditChannels;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\InertBaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\InertEntryReason;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule;
-use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeOptions;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeRule;
@@ -95,7 +95,7 @@ final class HostedPopulationTest extends TestCase
     {
         $container = (new \Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory())->create();
         $execution = $container->get(RuleExecutionInterface::class);
-        $factory = $container->get(\Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface::class);
+        $factory = $container->get(\Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface::class);
         if (!$execution instanceof RuleExecutionInterface || !$factory instanceof \Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface) {
             throw new LogicException('Native inline fixture requires execution and channel snapshot services.');
         }
@@ -117,7 +117,7 @@ final class HostedPopulationTest extends TestCase
         self::assertSame(2, $result['population']->judgedCount());
         self::assertSame(1, $result['population']->unjudgedCount());
         self::assertSame('directive-site', $result['population']->abstentions()[0]->unit);
-        $disabled = $usage->usageResult([$file->value() => $directives], [$finding], \Qualimetrix\Analysis\Finding\Contract\Severity::Warning, \Qualimetrix\Analysis\Finding\Contract\LevelActivity::empty(), $coverage, self::publication(\Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule::NAME, $declarations, false));
+        $disabled = $usage->usageResult([$file->value() => $directives], [$finding], \Qualimetrix\Analysis\Finding\Contract\Severity::Warning, \Qualimetrix\Analysis\Finding\Contract\Channel\LevelActivity::empty(), $coverage, self::publication(\Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule::NAME, $declarations, false));
         self::assertSame([], $disabled['findings']);
         self::assertTrue($disabled['population']->isEmpty());
     }
@@ -168,11 +168,11 @@ final class HostedPopulationTest extends TestCase
             foreach ($rules as $rule) {
                 foreach ($rule::channelDeclarations() as $name => $declaration) {
                     foreach ($declaration->levels as $level) {
-                        $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress($rule->getName(), new FindingChannel($name), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
+                        $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress($rule->getName(), new FindingChannel($name), $level, \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
                     }
                 }
             }
-            $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
+            $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
             $context = (new \Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext($repository, $contextGraph))->withPopulationTrace($session);
             foreach ($rules as $rule) {
                 self::assertSame([], $rule->analyze($context));
@@ -210,18 +210,18 @@ final class HostedPopulationTest extends TestCase
         }
     }
 
-    /** @param array<string, \Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration> $declarations */
-    private static function publication(string $producer, array $declarations, bool $selected = true): \Qualimetrix\Analysis\Finding\Contract\ChannelPublication
+    /** @param array<string, \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration> $declarations */
+    private static function publication(string $producer, array $declarations, bool $selected = true): \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication
     {
         $decisions = [];
         foreach ($declarations as $name => $declaration) {
             foreach ($declaration->levels as $level) {
                 $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
-                    new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress($producer, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($name), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable),
+                    new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress($producer, new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel($name), $level, \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole::Selectable),
                     new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision($selected ? \Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On : \Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::Off, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
                 );
             }
         }
-        return new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null));
+        return new \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null));
     }
 }

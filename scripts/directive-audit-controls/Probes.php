@@ -54,15 +54,15 @@ final class Probes
 
     private const string ELIGIBILITY = 'src/Analysis/Policy/Inline/Directive/Audit/ThresholdDirectiveEligibility.php';
 
-    private const string COMMAND = 'src/Infrastructure/Console/Command/DirectivesCommand.php';
+    private const string COMMAND = 'src/Infrastructure/Console/Directives/DirectivesCommand.php';
 
-    private const string PRESENTER = 'src/Infrastructure/Console/DirectiveAuditTextPresenter.php';
+    private const string PRESENTER = 'src/Infrastructure/Console/Directives/DirectiveAuditTextPresenter.php';
 
     private const string DISCOVERY = 'src/Analysis/Run/Discovery/WalkedEntrySelection.php';
 
     private const string CONFIG_FILE_STAGE = 'src/Analysis/Configuration/Pipeline/Stage/ConfigFileStage.php';
 
-    private const string TALLY = 'src/Infrastructure/Console/DirectiveVerdictTally.php';
+    private const string TALLY = 'src/Infrastructure/Console/Directives/DirectiveVerdictTally.php';
 
     private const string FLOOR = 'scripts/directive-audit/MeasuredEffects.php';
 
@@ -1970,7 +1970,7 @@ final class Probes
             Probe::breaking(
                 'missing-path-not-refused',
                 'a path that does not exist is not refused by name before the run',
-                'src/Infrastructure/Console/AnalysisPreflight.php',
+                'src/Infrastructure/Console/RunSetup/AnalysisPreflight.php',
                 ['        $this->pathValidator->validate($runConfiguration->paths, $document);' => ''],
                 ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesANonExistentPath'],
             )->alsoReddens(

@@ -6,7 +6,7 @@ namespace Qualimetrix\Analysis\Finding\Exclusion;
 
 use LogicException;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
-use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\FrameworkOptionKeys;
 
 /**
  * Canonical spellings for the three per-rule suppression options.
@@ -61,7 +61,7 @@ final readonly class ConfiguredSuppression
      * The `suppress_namespace_channels` map as configured: channel selector to
      * its raw patterns. The selector is left uninterpreted — deciding whether
      * it addresses a given channel is
-     * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector}'s
+     * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevel\ChannelLevelSelector}'s
      * job, and only the applying side has a channel to ask about.
      *
      * @param array<mixed> $options one producer's raw options

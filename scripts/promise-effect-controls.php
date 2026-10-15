@@ -47,7 +47,7 @@ namespace Qualimetrix\PromiseEffectControls;
 
 use FilesystemIterator;
 use PromiseEffectP1Set;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\PromiseEffect\Cell;
@@ -815,7 +815,7 @@ function runProbeCase(ProbeCase $case, string $root, InProcess $inProcess, Proce
             [
                 'PLANTED' => [
                     'src/Analysis/Configuration/YamlConfigLoader.php',
-                    'src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php',
+                    'src/Analysis/Finding/Contract/Rule/OptionLanguage/RuleOptionKeySet.php',
                 ],
             ],
             $root . '/',

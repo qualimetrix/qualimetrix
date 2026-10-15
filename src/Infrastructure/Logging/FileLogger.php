@@ -7,7 +7,7 @@ namespace Qualimetrix\Infrastructure\Logging;
 use Psr\Log\AbstractLogger;
 use Psr\Log\LogLevel;
 use Qualimetrix\Core\FileTarget\FileTargetFailure;
-use Qualimetrix\Core\FileTarget\HeldTarget;
+use Qualimetrix\Core\FileTarget\Publication\HeldTarget;
 use RuntimeException;
 use Stringable;
 

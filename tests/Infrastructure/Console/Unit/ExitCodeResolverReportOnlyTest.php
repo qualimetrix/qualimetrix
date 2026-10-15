@@ -12,8 +12,8 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\Console\ExitCodeResolver;
-use Qualimetrix\Infrastructure\Console\ExitPolicy;
+use Qualimetrix\Infrastructure\Console\RuntimePolicy\ExitCodeResolver;
+use Qualimetrix\Infrastructure\Console\RuntimePolicy\ExitPolicy;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
 /**

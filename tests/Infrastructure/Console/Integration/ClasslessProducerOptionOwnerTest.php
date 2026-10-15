@@ -12,21 +12,18 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
-use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
-use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Core\Symbol\SymbolLevel;
-use Qualimetrix\Infrastructure\Console\CliOptionsParser;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
-use Qualimetrix\Infrastructure\Console\RuleInputValidator;
+use Qualimetrix\Infrastructure\Console\Invocation\RuleOptions\CliOptionsParser;
+use Qualimetrix\Infrastructure\Console\RunSetup\FindingConfigurationPreparation;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
-use ReflectionProperty;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputInterface;
@@ -60,7 +57,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * that has no rule class. A hand-built universe would agree with whatever this
  * test wrote into it.
  */
-#[CoversClass(RuleInputValidator::class)]
+#[CoversClass(FindingConfigurationPreparation::class)]
 final class ClasslessProducerOptionOwnerTest extends TestCase
 {
     private static ?ContainerBuilder $container = null;
@@ -103,11 +100,7 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
     #[DataProvider('provideFamilyProducers')]
     public function itLetsARulesSectionKeyNameAnyProducerOfTheFamily(string $producerRuleName): void
     {
-        $snapshot = self::validator()->validate(
-            self::inputWithoutRuleOpt(),
-            self::configurationOwning($producerRuleName),
-            new ResolvedComputedMetricDefinitions([]),
-        );
+        $snapshot = self::preparedChannels(self::configurationOwning($producerRuleName));
 
         self::assertInstanceOf(ChannelUniverseInterface::class, $snapshot);
         self::assertTrue($snapshot->hasRule($producerRuleName));
@@ -122,11 +115,7 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
     #[DataProvider('provideFamilyProducers')]
     public function itLetsARuleOptOwnerNameAnyProducerOfTheFamily(string $producerRuleName): void
     {
-        $snapshot = self::validator()->validate(
-            self::inputWithRuleOpt($producerRuleName . ':enabled=false'),
-            self::emptyConfiguration(self::inputWithRuleOpt($producerRuleName . ':enabled=false')),
-            new ResolvedComputedMetricDefinitions([]),
-        );
+        $snapshot = self::preparedChannels(self::emptyConfiguration(self::inputWithRuleOpt($producerRuleName . ':enabled=false')));
 
         self::assertInstanceOf(ChannelUniverseInterface::class, $snapshot);
         self::assertTrue($snapshot->hasRule($producerRuleName));
@@ -190,11 +179,7 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
         $definitions = self::twoNamespaceDimensions();
         $owner = self::producerOf('health.cohesion', $definitions);
 
-        $snapshot = self::validator()->validate(
-            self::inputWithoutRuleOpt(),
-            self::configurationExcluding($owner, 'health.cohesion', $definitions),
-            $definitions,
-        );
+        $snapshot = self::preparedChannels(self::configurationExcluding($owner, 'health.cohesion', $definitions));
 
         self::assertInstanceOf(ChannelUniverseInterface::class, $snapshot);
         self::assertContains(
@@ -225,11 +210,7 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
         $owner = self::producerOf('health.cohesion', $definitions);
 
         try {
-            self::validator()->validate(
-                self::inputWithoutRuleOpt(),
-                self::configurationExcluding($owner, 'health.typing', $definitions),
-                $definitions,
-            );
+            self::preparedChannels(self::configurationExcluding($owner, 'health.typing', $definitions));
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString(
                 \sprintf('addresses none of the channels of "%s"', $owner),
@@ -303,11 +284,7 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
     private static function refusalFor(string $owner): string
     {
         try {
-            self::validator()->validate(
-                self::inputWithoutRuleOpt(),
-                self::configurationOwning($owner),
-                new ResolvedComputedMetricDefinitions([]),
-            );
+            self::preparedChannels(self::configurationOwning($owner));
         } catch (ConfigurationRefusal $refusal) {
             return $refusal->getMessage();
         }
@@ -338,11 +315,6 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
         return ResolvedOptionsFixture::ready($authored, $metadata, channels: self::universe()->snapshot($definitions));
     }
 
-    private static function inputWithoutRuleOpt(): InputInterface
-    {
-        return new ArrayInput([], new InputDefinition());
-    }
-
     private static function inputWithRuleOpt(string $option): InputInterface
     {
         return new ArrayInput(['--rule-opt' => [$option]], new InputDefinition([
@@ -350,19 +322,9 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
         ]));
     }
 
-    private static function validator(): RuleInputValidator
+    private static function preparedChannels(FindingConfiguration $configuration): \Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface
     {
-        $container = self::container();
-        $manifest = $container->get(ManifestSnapshotControlInterface::class);
-        if (!$manifest instanceof ManifestSnapshotControlInterface) {
-            throw new LogicException('The option-owner fixture has no manifest snapshot lifetime owner.');
-        }
-        $manifest->beginInvocation();
-        $command = $container->get(CheckCommand::class);
-        $validator = (new ReflectionProperty(CheckCommand::class, 'ruleInputValidator'))->getValue($command);
-        \assert($validator instanceof RuleInputValidator);
-
-        return $validator;
+        return $configuration->channels ?? throw new LogicException('Rule channels must be decided before validation.');
     }
 
     private static function universe(): ChannelUniverse

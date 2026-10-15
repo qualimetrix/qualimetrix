@@ -10,20 +10,20 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Policy\Baseline\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineCleaner;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineCleanupReason;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEdge;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
-use Qualimetrix\Analysis\Policy\Baseline\EntrySelector;
-use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
-use Qualimetrix\Analysis\Policy\Baseline\RunCoverageGap;
-use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEdge;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\EntrySelector;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\InertBaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\InertEntryReason;
+use Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance\BaselineCleaner;
+use Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance\BaselineCleanupReason;
+use Qualimetrix\Analysis\Policy\Baseline\RunCoverage\RunCoverageGap;
+use Qualimetrix\Analysis\Policy\Baseline\RunCoverage\RunRuleCoverage;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface;
@@ -531,12 +531,12 @@ final class BaselineCleanerTest extends TestCase
      * @param list<\Qualimetrix\Analysis\Finding\Contract\Finding> $measured
      * @param array<string, RunCoverageGap> $gaps
      *
-     * @return list<\Qualimetrix\Analysis\Policy\Baseline\BaselineCleanupCandidate>
+     * @return list<\Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance\BaselineCleanupCandidate>
      */
     private function candidates(
         Baseline $baseline,
         array $measured,
-        \Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface $declarations,
+        \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface $declarations,
         array $gaps,
     ): array {
         return $this->cleaner()->candidates(

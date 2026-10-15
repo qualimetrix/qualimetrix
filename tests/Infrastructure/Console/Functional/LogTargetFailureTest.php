@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
 use Qualimetrix\Subprocess\ChildProcess;
 
 require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
@@ -22,7 +22,7 @@ final class LogTargetFailureTest extends TestCase
         mkdir($directory);
         file_put_contents($directory . '/Source.php', '<?php namespace Demo; final class Source {}');
         $script = <<<'PHP'
-            namespace Qualimetrix\Core\FileTarget {
+            namespace Qualimetrix\Core\FileTarget\Publication {
                 function fwrite($stream, string $bytes): int|false
                 {
                     if (str_contains($bytes, '"message":"Parsing file"')) {
@@ -38,7 +38,7 @@ final class LogTargetFailureTest extends TestCase
                 chdir($directory);
                 $GLOBALS['qmx_log_target'] = $directory . '/run.log';
                 $GLOBALS['qmx_log_hit'] = 0;
-                $command = (new \Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory())->create()->get(\Qualimetrix\Infrastructure\Console\Command\CheckCommand::class);
+                $command = (new \Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory())->create()->get(\Qualimetrix\Infrastructure\Console\Check\CheckCommand::class);
                 $tester = new \Symfony\Component\Console\Tester\CommandTester($command);
                 $tester->execute([
                     'paths' => [$directory . '/Source.php'],

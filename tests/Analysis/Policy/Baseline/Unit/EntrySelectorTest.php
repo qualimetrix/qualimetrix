@@ -8,7 +8,7 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Policy\Baseline\EntrySelector;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\EntrySelector;
 
 #[CoversClass(EntrySelector::class)]
 final class EntrySelectorTest extends TestCase

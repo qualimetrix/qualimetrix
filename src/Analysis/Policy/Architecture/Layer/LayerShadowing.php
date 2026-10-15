@@ -5,6 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ShadowExemption;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\LayerMatch;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchedCriterion;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchedCriterionKind;
+
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\PatternScope;
 
 /**
  * Judges established matches in declaration order using the criteria that fired.

@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\FileTarget;
 
+use Qualimetrix\Core\FileTarget\PrivateGroup\CreatedDirectoryOwnership;
+use Qualimetrix\Core\FileTarget\PrivateGroup\NativePrivateGroupMembership;
+use Qualimetrix\Core\FileTarget\PrivateGroup\PrivateGroupMembership;
+
 final class TargetPath
 {
     public static function resolve(string $spelling, ?PrivateGroupMembership $membership = null): ResolvedTarget

@@ -22,10 +22,9 @@ use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationSt
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface;
@@ -37,17 +36,17 @@ use Qualimetrix\Infrastructure\Cache\CacheConfigurationStore;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
 use Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap;
-use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
 use Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter;
 use Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal;
-use Qualimetrix\Infrastructure\Console\RuleInputValidator;
+use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisRuntimeConfigurator;
+use Qualimetrix\Infrastructure\Console\RunSetup\FindingConfigurationPreparation;
+use Qualimetrix\Infrastructure\Console\RunSetup\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
-use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
-use Qualimetrix\Infrastructure\Console\RuntimeLimits;
-use Qualimetrix\Infrastructure\Console\RuntimeLimitsController;
-use Qualimetrix\Infrastructure\Console\RuntimeLoggerConfigurator;
+use Qualimetrix\Infrastructure\Console\RuntimePolicy\RuntimeLimits;
+use Qualimetrix\Infrastructure\Console\RuntimePolicy\RuntimeLimitsController;
+use Qualimetrix\Infrastructure\Console\RuntimePolicy\RuntimeLoggerConfigurator;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
 use Qualimetrix\Infrastructure\Parallel\Configuration\ParallelConfigurationResolver;
@@ -71,6 +70,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
 
 #[CoversClass(RuntimeConfigurator::class)]
+#[CoversClass(\Qualimetrix\Infrastructure\Console\RuntimePolicy\RuntimeEffects::class)]
+#[CoversClass(\Qualimetrix\Infrastructure\Console\CacheLifecycle\CacheRunLifecycle::class)]
 #[CoversClass(RuntimeLimitsController::class)]
 final class RuntimeConfiguratorTest extends TestCase
 {
@@ -82,6 +83,8 @@ final class RuntimeConfiguratorTest extends TestCase
     private ProfileSession $profile;
     private SwitchableProgressReporter $progress;
     private RuntimeConfigurator $configurator;
+    private \Qualimetrix\Infrastructure\Console\CacheLifecycle\CacheRunLifecycle $cacheLifecycle;
+    private object $findingPreparation;
     private RuleChannelSnapshotFactoryInterface $snapshotFactory;
     private ResolvedComputedMetricDefinitions $snapshotDefinitions;
 
@@ -162,9 +165,7 @@ final class RuntimeConfiguratorTest extends TestCase
         );
         $this->snapshotFactory = $snapshotFactoryOverride ?? $staticChannels;
         $metadata = [new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata(LcomRule::NAME, LcomRule::getOptionsClass(), LcomRule::getDescription(), [], false)];
-        $ruleInputValidator = new RuleInputValidator(
-            new RuleOptionDocumentForms(),
-            $ruleRegistry,
+        $ruleInputValidator = $this->findingPreparation = new FindingConfigurationPreparation(
             $this->snapshotFactory,
             new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::execution($metadata)),
             $computedMetrics,
@@ -178,24 +179,22 @@ final class RuntimeConfiguratorTest extends TestCase
             $architecture,
             $computedMetrics,
             $coupling,
-            $ruleInputValidator,
         );
 
         $errorStream = new ErrorStream();
 
+        $this->cacheLifecycle = new \Qualimetrix\Infrastructure\Console\CacheLifecycle\CacheRunLifecycle($this->cacheFactory);
         return new RuntimeConfigurator(
-            new RuntimeLoggerConfigurator($loggerFactory, new LoggerHolder(), $errorStream, new RunTargets($loggerFactory, \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register())),
-            new ProgressConfigurator($this->progress, $errorStream),
-            $this->profile,
             $analysis,
             $this->cacheFactory,
             $this->parallelStore,
-            new RuntimeLimitsController(\Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register()),
-            new \Qualimetrix\Infrastructure\Console\ProjectSourceConfigurator(
+            new \Qualimetrix\Infrastructure\Console\RunSetup\ProjectSourceConfigurator(
                 new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(),
                 new \Qualimetrix\Analysis\Evidence\Measurement\Namespace_\ProjectNamespaceResolver(),
                 new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()),
             ),
+            new \Qualimetrix\Infrastructure\Console\RuntimePolicy\RuntimeEffects(new RuntimeLoggerConfigurator($loggerFactory, new LoggerHolder(), $errorStream, new RunTargets($loggerFactory, \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register())), new ProgressConfigurator($this->progress, $errorStream), $this->profile, new RuntimeLimitsController(\Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register()), $this->cacheFactory),
+            $this->cacheLifecycle,
         );
     }
 
@@ -231,7 +230,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $this->cacheFactory->create()->set(str_repeat('a', 64), []);
         chmod($directory . '/ast-v1/aa', 0500);
         try {
-            $this->configurator->clearCacheIfRequested($this->input(['--clear-cache' => true]));
+            $this->cacheLifecycle->clearCacheIfRequested($this->input(['--clear-cache' => true]));
             self::fail('An incomplete cache clear must refuse the run.');
         } catch (EnvironmentRefusal $refusal) {
             self::assertStringContainsString($directory, $refusal->summary());
@@ -256,7 +255,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $configurator = $this->createConfigurator(loggerFactoryOverride: $factory);
         $document = $this->customDocument();
         $root = AbsolutePath::fromString($this->projectRoot);
-        $run = new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration(
+        $run = new \Qualimetrix\Infrastructure\Console\RunSetup\ResolvedRunConfiguration(
             $this->runConfigurationFor($document),
             new CacheConfiguration(AbsolutePath::fromString($this->projectRoot . '/cache'), false, $reason),
             (new ParallelConfigurationResolver())->resolve($document),
@@ -271,7 +270,7 @@ final class RuntimeConfiguratorTest extends TestCase
     public function itDoesNotClaimAClearWhenTheDefaultLocationIsUnavailable(): void
     {
         $this->cacheFactory->replaceConfiguration(new CacheConfiguration(null, false));
-        self::assertFalse($this->configurator->clearCacheIfRequested($this->input(['--clear-cache' => true])));
+        self::assertFalse($this->cacheLifecycle->clearCacheIfRequested($this->input(['--clear-cache' => true])));
     }
 
     #[Test]
@@ -284,7 +283,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $configurator = $this->createConfigurator(loggerFactoryOverride: $factory);
         $document = $this->customDocument();
         $root = AbsolutePath::fromString($this->projectRoot);
-        $run = new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, $root), (new ParallelConfigurationResolver())->resolve($document));
+        $run = new \Qualimetrix\Infrastructure\Console\RunSetup\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, $root), (new ParallelConfigurationResolver())->resolve($document));
         $configurator->configure($document, $run, $this->findingConfigurationFor($document), $this->input(), new BufferedOutput());
         $directory = $this->projectRoot . '/cache';
         $this->cacheFactory->replaceConfiguration(new CacheConfiguration(AbsolutePath::fromString($directory)));
@@ -294,8 +293,8 @@ final class RuntimeConfiguratorTest extends TestCase
             file_put_contents($directory . '/ast-v1/' . $prefix . $prefix . '/' . $key, 'invalid');
             $this->cacheFactory->create()->get($key);
         }
-        $configurator->finishRun();
-        $configurator->finishRun();
+        $this->cacheLifecycle->finishRun();
+        $this->cacheLifecycle->finishRun();
     }
 
     #[Test]
@@ -307,7 +306,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $configurator = $this->createConfigurator(loggerFactoryOverride: $factory);
         $document = $this->customDocument();
         $root = AbsolutePath::fromString($this->projectRoot);
-        $run = new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, $root), (new ParallelConfigurationResolver())->resolve($document));
+        $run = new \Qualimetrix\Infrastructure\Console\RunSetup\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, $root), (new ParallelConfigurationResolver())->resolve($document));
         $configurator->configure($document, $run, $this->findingConfigurationFor($document), $this->input(), new BufferedOutput());
         self::assertSame($logger, (new ReflectionProperty($this->cacheFactory, 'logger'))->getValue($this->cacheFactory));
         $configurator->resetRunState();
@@ -403,7 +402,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $secondCache = $this->cacheFactory->create();
 
         self::assertNotSame($firstCache, $secondCache);
-        self::assertSame(\Qualimetrix\Infrastructure\Cache\DefaultCacheDirectory::for(getenv(), \PHP_OS_FAMILY)?->value(), $this->cacheStore->current()->directory?->value());
+        self::assertSame(\Qualimetrix\Infrastructure\Cache\Root\DefaultCacheDirectory::for(getenv(), \PHP_OS_FAMILY)?->value(), $this->cacheStore->current()->directory?->value());
         self::assertTrue($this->cacheStore->current()->enabled);
         self::assertNull($this->parallelStore->current()->workers);
         $secondSnapshot = $this->rules->resolvedOptions();
@@ -428,8 +427,8 @@ final class RuntimeConfiguratorTest extends TestCase
     {
         $analysis = (new ReflectionClass($this->configurator))->getProperty('analysisRuntimeConfigurator')->getValue($this->configurator);
         self::assertInstanceOf(AnalysisRuntimeConfigurator::class, $analysis);
-        $validator = (new ReflectionClass($analysis))->getProperty('ruleInputValidator')->getValue($analysis);
-        self::assertInstanceOf(RuleInputValidator::class, $validator);
+        $validator = $this->findingPreparation;
+        self::assertInstanceOf(FindingConfigurationPreparation::class, $validator);
         self::assertSame($this->snapshotFactory, (new ReflectionClass($validator))->getProperty('ruleChannelSnapshotFactory')->getValue($validator));
         $root = AbsolutePath::fromString($this->projectRoot);
         $this->configure($this->customDocument(), $root, $this->input(['--show-suppressed' => true, '--profile' => null]), new BufferedOutput());
@@ -595,7 +594,7 @@ final class RuntimeConfiguratorTest extends TestCase
     public function itPreservesTheMemoryLimitAuthorAndRuntimeCauseWhenIniSetThrows(): void
     {
         $script = \sprintf(<<<'PHP'
-namespace Qualimetrix\Infrastructure\Console {
+namespace Qualimetrix\Infrastructure\Console\RuntimePolicy {
     function ini_set(string $option, string $value): string|false
     {
         throw new \RuntimeException('the runtime refused this limit');
@@ -610,8 +609,8 @@ namespace {
     ], \Qualimetrix\Core\Path\AbsolutePath::fromString('/project'));
 
     try {
-        (new \Qualimetrix\Infrastructure\Console\RuntimeLimitsController(\Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register()))->apply(
-            \Qualimetrix\Infrastructure\Console\RuntimeLimits::fromResolvedValue(
+        (new \Qualimetrix\Infrastructure\Console\RuntimePolicy\RuntimeLimitsController(\Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register()))->apply(
+            \Qualimetrix\Infrastructure\Console\RuntimePolicy\RuntimeLimits::fromResolvedValue(
                 $document->resolved()->get('memory_limit'),
             ),
         );
@@ -726,7 +725,7 @@ PHP, var_export(\dirname(__DIR__, 4) . '/vendor/autoload.php', true));
         $this->configurator->resetRunState();
 
         $document = $this->customDocument();
-        $this->configurator->configure($document, new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, AbsolutePath::fromString($this->projectRoot)), (new ParallelConfigurationResolver())->resolve($document)), $this->findingConfigurationFor($document), $input, $output);
+        $this->configurator->configure($document, new \Qualimetrix\Infrastructure\Console\RunSetup\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, AbsolutePath::fromString($this->projectRoot)), (new ParallelConfigurationResolver())->resolve($document)), $this->findingConfigurationFor($document), $input, $output);
     }
 
     private function configure(
@@ -735,7 +734,7 @@ PHP, var_export(\dirname(__DIR__, 4) . '/vendor/autoload.php', true));
         ArrayInput $input,
         BufferedOutput $output,
     ): void {
-        $this->configurator->configure($document, new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, $projectRoot), (new ParallelConfigurationResolver())->resolve($document)), $this->findingConfigurationFor($document), $input, $output);
+        $this->configurator->configure($document, new \Qualimetrix\Infrastructure\Console\RunSetup\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, $projectRoot), (new ParallelConfigurationResolver())->resolve($document)), $this->findingConfigurationFor($document), $input, $output);
     }
 
     private function customDocument(): ConfigurationDocument

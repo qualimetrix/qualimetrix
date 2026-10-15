@@ -131,7 +131,7 @@ final class WorkerMemoryLimitTest extends TestCase
             new RuleOptionDocumentForms(),
             DependencyVisitor::class,
             [LocCollector::class, CyclomaticComplexityCollector::class],
-        ), new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()), new \Qualimetrix\Infrastructure\Profiler\ProfileSession(), new \Qualimetrix\Infrastructure\Console\ErrorStream());
+        ), new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()), new \Qualimetrix\Infrastructure\Profiler\ProfileSession(), new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream());
         if (WorkerPool::unavailableCapability() !== null) {
             self::markTestSkipped('Requires process workers.');
         }

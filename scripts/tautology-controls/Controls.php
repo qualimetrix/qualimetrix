@@ -149,7 +149,7 @@ final class Controls
                 'channel-rename-map-reads-its-rows',
                 'R270',
                 'ChannelRenameMap produces the map the corpus declares, rather than one derived from itself',
-                'src/Analysis/Policy/Baseline/ChannelRenameMap.php',
+                'src/Analysis/Policy/Baseline/ChannelRename/ChannelRenameMap.php',
                 ['$renames[$old] = $new;' => '$renames[$new] = $new;'],
                 [
                     'Qualimetrix.Tests.Analysis.Policy.Baseline.Unit.ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared with data set "one-row"',
@@ -202,7 +202,7 @@ final class Controls
                 'rule-compiler-pass-injects-its-consumers',
                 'R184',
                 'RuleCompilerPass injects the tagged rules into every consumer it declares',
-                'src/Infrastructure/DependencyInjection/CompilerPass/RuleCompilerPass.php',
+                'src/Infrastructure/DependencyInjection/RuleCatalog/RuleCompilerPass.php',
                 ['$container->getDefinition($consumerId)->setArgument($argumentIndex, $rules);' => '$container->getDefinition($consumerId)->setArgument($argumentIndex, []);'],
                 ['Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.CompilerPass.RuleCompilerPassTest::itInjectsIntoEveryConsumerItDeclaresAndIntoNothingElse'],
             )->alsoReddens(
@@ -218,7 +218,7 @@ final class Controls
                 'known-rule-names-carry-the-classless-producers',
                 'R183',
                 'the rules vocabulary the configuration pipeline validates against carries producers no rule class declares',
-                'src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php',
+                'src/Infrastructure/DependencyInjection/RuleCatalog/ChannelDeclarationCompilerPass.php',
                 [
                     "->setArgument('\$classlessProducers', \$classlessProducers);"
                         => "->setArgument('\$classlessProducers', array_filter(\$classlessProducers, static fn(ProducerDeclaration \$producer): bool => !str_starts_with(\$producer->name, 'health.')));",

@@ -7,8 +7,8 @@ namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\Channel\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionAttribution;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
@@ -29,8 +29,8 @@ final class RuleExecutionResultTest extends TestCase
         foreach (['zeta', 'alpha'] as $producer) {
             foreach (range(0, 5) as $ordinal) {
                 $identity = \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::occurrence($producer, $ordinal);
-                $left->record($producer, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($producer), \Qualimetrix\Core\Symbol\SymbolLevel::Project, $identity, 'present', 'Missing publication.');
-                $right->record($producer, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($producer), \Qualimetrix\Core\Symbol\SymbolLevel::Project, $identity, 'present', 'Missing publication.');
+                $left->record($producer, new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel($producer), \Qualimetrix\Core\Symbol\SymbolLevel::Project, $identity, 'present', 'Missing publication.');
+                $right->record($producer, new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel($producer), \Qualimetrix\Core\Symbol\SymbolLevel::Project, $identity, 'present', 'Missing publication.');
             }
         }
         $first = new RuleExecutionResult([], [], new RuleExclusionStats(), LevelActivity::empty(), population: $left->freeze());

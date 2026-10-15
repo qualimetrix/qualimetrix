@@ -149,10 +149,10 @@ As of base `0465fdd8`: 30 rows — 19 `D` (one of them production), 4 `S`, 7 `C`
 
 Listed so nothing is silently dropped: `scripts/collect-benchmark-data.php:158`,
 `scripts/directive-narrow-control.php:72`, `scripts/finding-gate/SelfTest.php:2802`,
-`src/Analysis/Evidence/Security/CommandInjectionDetector.php:15` and `:27`,
-`src/Analysis/Evidence/Security/CommandInjectionRule.php:11`,
-`tests/Analysis/Evidence/Security/Unit/CommandInjectionDetectorTest.php:59`,
-`tests/Analysis/Evidence/Security/Unit/SecurityPatternVisitorTest.php:351` and `:352`,
+`src/Analysis/Evidence/Security/DirectSinks/CommandInjectionDetector.php:15` and `:27`,
+`src/Analysis/Evidence/Security/DirectSinks/CommandInjectionRule.php:11`,
+`tests/Analysis/Evidence/Security/Unit/DirectSinks/CommandInjectionDetectorTest.php:59`,
+`tests/Analysis/Evidence/Security/Unit/DirectSinks/SecurityPatternVisitorTest.php:351` and `:352`,
 `tests/Infrastructure/Console/Functional/ErrorStreamPseudoTerminalTest.php:31`,
 `tests/Infrastructure/Console/Support/RestoresShellVerbosityEnvironment.php:20`.
 

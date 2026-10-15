@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Qualimetrix\Infrastructure\Parallel\WorkerContextFactory;
 use Qualimetrix\Infrastructure\Parallel\WorkerNotes;
 use Qualimetrix\Infrastructure\Parallel\WorkerPool;
@@ -45,7 +45,7 @@ final class WorkerPoolTest extends TestCase
         $factoryScript = <<<'PHP'
 require $argv[1];
 $request = new \Qualimetrix\Infrastructure\Parallel\WorkerRequest(2, '--workers=2');
-$notes = new \Qualimetrix\Infrastructure\Parallel\WorkerNotes(new \Qualimetrix\Infrastructure\Console\ErrorStream());
+$notes = new \Qualimetrix\Infrastructure\Parallel\WorkerNotes(new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream());
 $factory = new \Qualimetrix\Infrastructure\Parallel\WorkerContextFactory($request, $notes, [PHP_BINARY, '-d', 'auto_prepend_file=' . $argv[2]]);
 $directory = (new \ReflectionProperty($factory, 'directory'))->getValue($factory);
 $record = ['code' => 0, 'message' => '', 'closed' => false];
@@ -64,7 +64,7 @@ PHP;
         $poolScript = <<<'PHP'
 require $argv[1];
 $request = new \Qualimetrix\Infrastructure\Parallel\WorkerRequest(2, '--workers=2');
-$notes = new \Qualimetrix\Infrastructure\Parallel\WorkerNotes(new \Qualimetrix\Infrastructure\Console\ErrorStream());
+$notes = new \Qualimetrix\Infrastructure\Parallel\WorkerNotes(new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream());
 $contexts = new \Qualimetrix\Infrastructure\Parallel\WorkerContextFactory($request, $notes, [PHP_BINARY, '-d', 'auto_prepend_file=' . $argv[2]]);
 $pool = \Qualimetrix\Infrastructure\Parallel\WorkerPool::open(2, new \Psr\Log\NullLogger(), $contexts, $notes);
 $factory = new \Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory(new \Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore(),new \Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms(),\Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor::class,[\Qualimetrix\Analysis\Evidence\Size\LocCollector::class]);

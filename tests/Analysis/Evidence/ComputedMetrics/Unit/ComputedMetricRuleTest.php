@@ -46,9 +46,9 @@ final class ComputedMetricRuleTest extends TestCase
     public function itAccountsTheEmptyProjectCoordinateWithoutInventingClassSubjects(): void
     {
         $definition = new ComputedMetricDefinition('computed.empty-project', ['project' => 'throw_if_evaluated()'], 'Project', [SymbolLevel::Project], warningThreshold: 5);
-        $channel = new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($definition->name);
-        $publication = new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement([
-            new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(ComputedMetricRule::NAME, $channel, SymbolLevel::Project, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct)),
+        $channel = new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel($definition->name);
+        $publication = new \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement([
+            new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(ComputedMetricRule::NAME, $channel, SymbolLevel::Project, \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct)),
         ], null));
         $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(($publication)->publishes(...));
         $repository = new InMemoryMetricRepository();
@@ -88,10 +88,10 @@ final class ComputedMetricRuleTest extends TestCase
         foreach ($definitions as $definition) {
             $declaration = ComputedMetricChannelFamily::declarationFor($definition->name, $definition->reportingLevels(), $definition->inverted) ?? throw new LogicException('Fixture requires a reporting coordinate.');
             foreach ($declaration->levels as $level) {
-                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress($definition->producerRuleName(), new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($definition->name), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress($definition->producerRuleName(), new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel($definition->name), $level, \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
             }
         }
-        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
         $context = (new AnalysisContext($repository))->withPopulationTrace($session);
         self::assertSame([], $this->createRuleWithDefinitions($definitions)->analyze($context));
         self::assertSame(4, $session->freeze()->judgedCount());

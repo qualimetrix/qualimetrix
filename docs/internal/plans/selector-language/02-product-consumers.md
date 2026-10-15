@@ -29,8 +29,8 @@ constructor overload.
 - `src/Reporting/FindingProjection/FindingProjector.php`
 - `src/Reporting/FindingProjection/SuppressionCompositionBuilder.php`
 - `src/Reporting/FindingProjection/RuleExclusionLedgerAttributor.php`
-- `src/Infrastructure/Console/FindingFilterOrchestrator.php`
-- `src/Infrastructure/Console/Command/BaselineRun.php`
+- `src/Infrastructure/Console/CheckReport/FindingProjection.php`
+- `src/Infrastructure/Console/Command/Baseline/Measurement/BaselineRun.php`
 - `src/Analysis/Finding/README.md` and `src/Reporting/README.md`
 
 **Test files:** Finding exclusion/suppression-binding tests, Reporting finding
@@ -55,8 +55,8 @@ application matcher and binding matcher are the same object/value path.
 - `src/Reporting/DrillDown/FindingFilter.php`
 - `src/Reporting/DrillDown/DrillDownBinding.php`
 - `src/Reporting/FormatterContext.php`
-- `src/Infrastructure/Console/FormatterContextFactory.php`
-- `src/Infrastructure/Console/ResultPresenter.php`
+- `src/Infrastructure/Console/CheckReport/FormatterContextFactory.php`
+- `src/Infrastructure/Console/CheckReport/ReportAssembler.php`
 - `src/Reporting/Formatter/Summary/TopIssuesRenderer.php`
 - `src/Reporting/Formatter/Json/JsonFormatter.php`
 - `src/Reporting/Formatter/Summary/HealthBarRenderer.php`
@@ -73,7 +73,7 @@ application matcher and binding matcher are the same object/value path.
 - `src/Reporting/GraphProjection/DotExporter.php`
 - `src/Reporting/GraphProjection/JsonGraphExporter.php`
 - `src/Reporting/GraphProjection/DependencyGraphProjector.php`
-- `src/Infrastructure/Console/Command/GraphExportCommand.php`
+- `src/Infrastructure/Console/GraphExport/GraphExportCommand.php`
 - Console check/directives request construction for `--namespace`
 - Reporting/GraphProjection and Console README sections
 
@@ -97,10 +97,10 @@ weighted aggregate over all selected namespaces and have no invented single
 
 - `src/Analysis/Evidence/Coupling/CouplingAnalysis.php`
 - `src/Analysis/Evidence/Coupling/Contract/Configuration/CouplingConfiguratorInterface.php`
-- `src/Analysis/Evidence/Coupling/DistanceOptions.php`
-- `src/Analysis/Evidence/Coupling/DistanceRule.php`
+- `src/Analysis/Evidence/Coupling/Distance/DistanceOptions.php`
+- `src/Analysis/Evidence/Coupling/Distance/DistanceRule.php`
 - `src/Analysis/Evidence/Coupling/UnmatchedFrameworkNamespaceRule.php`
-- `src/Infrastructure/Console/AnalysisRuntimeConfigurator.php`
+- `src/Infrastructure/Console/RunSetup/AnalysisRuntimeConfigurator.php`
 - Coupling README and owning website rule pages in both languages
 
 **Test files:** Coupling Unit/Integration tests and Console runtime-configurator

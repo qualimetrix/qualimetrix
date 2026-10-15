@@ -8,7 +8,7 @@ use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedWriteHistoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusal;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionRefusal;
 
 /** Keeps authored winning halves and default halves distinct in a band refusal. */
 final class ThresholdBandRefusal

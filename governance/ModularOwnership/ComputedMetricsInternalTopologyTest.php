@@ -87,7 +87,7 @@ final class ComputedMetricsInternalTopologyTest extends TestCase
         $projectDeclarations = $this->projectDeclarations();
         self::assertNotContains(
             'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricRule',
-            $this->imports($projectDeclarations['Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ChannelDeclarationCompilerPass']),
+            $this->imports($projectDeclarations['Qualimetrix\\Infrastructure\\DependencyInjection\\RuleCatalog\\ChannelDeclarationCompilerPass']),
         );
         self::assertNotContains(
             'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricFormulaValidator',

@@ -13,8 +13,8 @@ use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineIn
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Invocation\Configuration\ConfigurationInputAdapter;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
@@ -36,8 +36,8 @@ final class EmptyCliValueReachesItsOwnerTest extends TestCase
         file_put_contents($root . '/A.php', '<?php namespace App; final class A {}');
         file_put_contents($root . '/qmx.yaml', '{}');
         try {
-            $app = \Qualimetrix\Infrastructure\Console\Application::forProduct(
-                static fn(\Qualimetrix\Infrastructure\Console\ConsoleDiagnostics $diagnostics) => (new \Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory())->create($diagnostics),
+            $app = \Qualimetrix\Infrastructure\Console\Application\Application::forProduct(
+                static fn(\Qualimetrix\Infrastructure\Console\Application\ConsoleDiagnostics $diagnostics) => (new \Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory())->create($diagnostics),
                 \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register(),
             );
             $app->setAutoExit(false);

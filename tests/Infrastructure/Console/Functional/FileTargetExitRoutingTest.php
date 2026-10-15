@@ -16,15 +16,14 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
 use Qualimetrix\Core\Environment\EnvironmentFailureInterface;
 use Qualimetrix\Core\FileTarget\FileTargetFailure;
 use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
-use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
-use Qualimetrix\Infrastructure\Console\Command\DirectivesCommand;
-use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
-use Qualimetrix\Infrastructure\Console\ProfilePresenter;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Directives\DirectivesCommand;
+use Qualimetrix\Infrastructure\Console\GraphExport\GraphExportCommand;
+use Qualimetrix\Infrastructure\Console\Profile\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
-use Qualimetrix\Infrastructure\Console\ResultPresenter;
+use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Profiler\Contract\ProfileReportInterface;
 use Qualimetrix\Reporting\GraphProjection\DependencyGraphProjector;
@@ -313,17 +312,14 @@ final class FileTargetExitRoutingTest extends TestCase
         $original = (new ContainerFactory())->create()->get(CheckCommand::class);
         self::assertInstanceOf(CheckCommand::class, $original);
         $property = static fn(string $name): mixed => (new ReflectionProperty(CheckCommand::class, $name))->getValue($original);
-        $command = new CheckCommand(
-            $analyzer,
-            $property('findingFilterOrchestrator'),
-            $property('runtimeConfigurator'),
-            $property('resultPresenter'),
-            $property('ruleInputValidator'),
-            $property('checkScopeResolver'),
-            $property('configurationInputAdapter'),
-            $property('configurationResolvers'),
-            $property('runTargetSession'),
-        );
+        $command = \Qualimetrix\Tests\Infrastructure\Console\Support\CheckCommandFixture::replace($original, [
+            'analyzer' => $analyzer,
+            'runtimeConfigurator' => $property('runtimeConfigurator'),
+            'checkScopeResolver' => $property('checkScopeResolver'),
+            'configurationInputAdapter' => $property('configurationInputAdapter'),
+            'configurationResolvers' => $property('configurationResolvers'),
+            'runTargetSession' => $property('runTargetSession'),
+        ]);
 
         $this->assertRefusalRoutes($command, ['--workers' => '0', '--no-cache' => true]);
     }
@@ -338,34 +334,24 @@ final class FileTargetExitRoutingTest extends TestCase
         $profile->method('export')->willThrowException(self::fileFailure($target));
         $original = (new ContainerFactory())->create()->get(CheckCommand::class);
         self::assertInstanceOf(CheckCommand::class, $original);
-        $presenter = (new ReflectionProperty(CheckCommand::class, 'resultPresenter'))->getValue($original);
-        self::assertInstanceOf(ResultPresenter::class, $presenter);
-        $part = static fn(string $name): mixed => (new ReflectionProperty(ResultPresenter::class, $name))->getValue($presenter);
-        $errorStream = $part('errorStream');
+        $delivery = (new ReflectionProperty(CheckCommand::class, 'reportDelivery'))->getValue($original);
+        self::assertInstanceOf(\Qualimetrix\Infrastructure\Console\CheckReport\CheckReportDelivery::class, $delivery);
+        $part = static fn(string $name): mixed => (new ReflectionProperty($delivery::class, $name))->getValue($delivery);
+        $errorStream = (new ReflectionProperty(CheckCommand::class, 'errorStream'))->getValue($original);
         self::assertInstanceOf(ErrorStream::class, $errorStream);
-        $replacement = new ResultPresenter(
-            $part('formatterRegistry'),
-            $part('profiler'),
-            $part('summaryEnricher'),
-            new ProfilePresenter($profile, $errorStream),
-            $part('exitCodeResolver'),
-            $part('findingFilter'),
-            $part('formatterContextFactory'),
-            $part('ruleConfiguration'),
-            $errorStream,
-        );
+        $profilePresenter = $part('profile');
+        $profiler = (new ReflectionProperty($profilePresenter::class, 'profiler'))->getValue($profilePresenter);
+        $replacement = new \Qualimetrix\Infrastructure\Console\CheckReport\CheckReportDelivery($part('contexts'), $part('projection'), $part('renderer'), $part('publication'), new ProfilePresenter($profile, $errorStream, $profiler));
         $dependency = static fn(string $name): mixed => (new ReflectionProperty(CheckCommand::class, $name))->getValue($original);
-        $command = new CheckCommand(
-            $dependency('analyzer'),
-            $dependency('findingFilterOrchestrator'),
-            $dependency('runtimeConfigurator'),
-            $replacement,
-            $dependency('ruleInputValidator'),
-            $dependency('checkScopeResolver'),
-            $dependency('configurationInputAdapter'),
-            $dependency('configurationResolvers'),
-            $dependency('runTargetSession'),
-        );
+        $command = \Qualimetrix\Tests\Infrastructure\Console\Support\CheckCommandFixture::replace($original, [
+            'analyzer' => $dependency('analyzer'),
+            'runtimeConfigurator' => $dependency('runtimeConfigurator'),
+            'checkScopeResolver' => $dependency('checkScopeResolver'),
+            'configurationInputAdapter' => $dependency('configurationInputAdapter'),
+            'configurationResolvers' => $dependency('configurationResolvers'),
+            'runTargetSession' => $dependency('runTargetSession'),
+            'reportDelivery' => $replacement,
+        ]);
         $tester = new CommandTester($command);
         $tester->execute([
             'paths' => [$this->directory . '/Source.php'],
@@ -404,11 +390,13 @@ final class FileTargetExitRoutingTest extends TestCase
             $parent = $argv[2];
             $target = $argv[3];
             $container = (new \Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory())->create();
-            $original = $container->get(\Qualimetrix\Infrastructure\Console\Command\CheckCommand::class);
-            $part = static fn(string $name): mixed => (new \ReflectionProperty(\Qualimetrix\Infrastructure\Console\Command\CheckCommand::class, $name))->getValue($original);
-            $presenter = $part('resultPresenter');
-            $presenterPart = static fn(string $name): mixed => (new \ReflectionProperty(\Qualimetrix\Infrastructure\Console\ResultPresenter::class, $name))->getValue($presenter);
-            $errorStream = $presenterPart('errorStream');
+            $original = $container->get(\Qualimetrix\Infrastructure\Console\Check\CheckCommand::class);
+            $part = static fn(string $name): mixed => (new \ReflectionProperty(\Qualimetrix\Infrastructure\Console\Check\CheckCommand::class, $name))->getValue($original);
+            $delivery = $part('reportDelivery');
+            $deliveryPart = static fn(string $name): mixed => (new \ReflectionProperty($delivery::class, $name))->getValue($delivery);
+            $errorStream = $part('errorStream');
+            $profilePresenter = $deliveryPart('profile');
+            $profiler = (new \ReflectionProperty($profilePresenter::class, 'profiler'))->getValue($profilePresenter);
             $profile = new class ($parent, $target) implements \Qualimetrix\Infrastructure\Profiler\Contract\ProfileReportInterface {
                 public function __construct(private readonly string $parent, private readonly string $target) {}
 
@@ -433,29 +421,9 @@ final class FileTargetExitRoutingTest extends TestCase
                     );
                 }
             };
-            $replacement = new \Qualimetrix\Infrastructure\Console\ResultPresenter(
-                $presenterPart('formatterRegistry'),
-                $presenterPart('profiler'),
-                $presenterPart('summaryEnricher'),
-                new \Qualimetrix\Infrastructure\Console\ProfilePresenter($profile, $errorStream),
-                $presenterPart('exitCodeResolver'),
-                $presenterPart('findingFilter'),
-                $presenterPart('formatterContextFactory'),
-                $presenterPart('ruleConfiguration'),
-                $errorStream,
-            );
-            $command = new \Qualimetrix\Infrastructure\Console\Command\CheckCommand(
-                $part('analyzer'),
-                $part('findingFilterOrchestrator'),
-                $part('runtimeConfigurator'),
-                $replacement,
-                $part('ruleInputValidator'),
-                $part('checkScopeResolver'),
-                $part('configurationInputAdapter'),
-                $part('configurationResolvers'),
-                $part('runTargetSession'),
-            );
-            $app = new \Qualimetrix\Infrastructure\Console\Application(
+            $replacement = new \Qualimetrix\Infrastructure\Console\CheckReport\CheckReportDelivery($deliveryPart('contexts'), $deliveryPart('projection'), $deliveryPart('renderer'), $deliveryPart('publication'), new \Qualimetrix\Infrastructure\Console\Profile\ProfilePresenter($profile, $errorStream, $profiler));
+            $command = \Qualimetrix\Tests\Infrastructure\Console\Support\CheckCommandFixture::replace($original, ['reportDelivery' => $replacement]);
+            $app = new \Qualimetrix\Infrastructure\Console\Application\Application(
                 $errorStream,
                 $container->get(\Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter::class),
                 static fn() => new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(),
@@ -530,8 +498,8 @@ final class FileTargetExitRoutingTest extends TestCase
             require $argv[1];
 
             $container = (new \Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory())->create();
-            $original = $container->get(\Qualimetrix\Infrastructure\Console\Command\GraphExportCommand::class);
-            $part = static fn(string $name): mixed => (new \ReflectionProperty(\Qualimetrix\Infrastructure\Console\Command\GraphExportCommand::class, $name))->getValue($original);
+            $original = $container->get(\Qualimetrix\Infrastructure\Console\GraphExport\GraphExportCommand::class);
+            $part = static fn(string $name): mixed => (new \ReflectionProperty(\Qualimetrix\Infrastructure\Console\GraphExport\GraphExportCommand::class, $name))->getValue($original);
             $errorStream = $part('errorStream');
             $presenter = new \Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter($errorStream);
             $factory = new class implements \Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface {
@@ -540,7 +508,7 @@ final class FileTargetExitRoutingTest extends TestCase
                     return new \Psr\Log\NullLogger();
                 }
 
-                public function attachFileTarget(\Qualimetrix\Core\FileTarget\HeldTarget $target): void {}
+                public function attachFileTarget(\Qualimetrix\Core\FileTarget\Publication\HeldTarget $target): void {}
 
                 public function settle(): void {}
 
@@ -553,14 +521,14 @@ final class FileTargetExitRoutingTest extends TestCase
                 new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargets($factory, \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register()),
                 $presenter,
             );
-            $command = new \Qualimetrix\Infrastructure\Console\Command\GraphExportCommand(
+            $command = new \Qualimetrix\Infrastructure\Console\GraphExport\GraphExportCommand(
                 $part('analyzer'),
                 $part('projection'),
                 $part('preflight'),
                 $errorStream,
                 $session,
             );
-            $app = new \Qualimetrix\Infrastructure\Console\Application(
+            $app = new \Qualimetrix\Infrastructure\Console\Application\Application(
                 $errorStream,
                 $presenter,
                 static fn() => new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(),

@@ -22,19 +22,19 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellOptions;
 use Qualimetrix\Analysis\Evidence\CodeSmell\GotoRule;
 use Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityOptions;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
-use Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityOptions;
-use Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityRule;
-use Qualimetrix\Analysis\Evidence\Coupling\CboOptions;
+use Qualimetrix\Analysis\Evidence\Complexity\Npath\NpathComplexityOptions;
+use Qualimetrix\Analysis\Evidence\Complexity\Npath\NpathComplexityRule;
+use Qualimetrix\Analysis\Evidence\Coupling\Cbo\CboOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\InstabilityOptions;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityOptions;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -105,7 +105,7 @@ final class RuleOptionsBuildTest extends TestCase
     {
         $origin = ConfigurationOrigin::of(ConfigurationSource::CommandLine)->locatedAtAuthoredWrite('--only-rule', '--only-rule=complexity.ccn');
         $writer = new \Qualimetrix\Analysis\Configuration\Contract\Document\Provenance($origin, null, 0);
-        $filter = new \Qualimetrix\Analysis\Finding\Contract\SelectionFilter(['complexity.ccn'], $writer);
+        $filter = new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionFilter(['complexity.ccn'], $writer);
         self::assertSame(['--only-rule=complexity.ccn', $writer], \Qualimetrix\Analysis\Finding\Selection\SelectionCauses::filter($filter));
     }
 

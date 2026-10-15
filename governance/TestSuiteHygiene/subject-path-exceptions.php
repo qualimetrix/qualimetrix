@@ -38,7 +38,7 @@ return [
             'tests/Analysis/Finding/Unit/FindingConfigurationResolverTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Finding/Unit/RuleConfiguration/LevelActivityReadsBothDisablingSpellingsTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Finding/Unit/RuleConfigurationIsolationTest.php' => 'declares no coverage attribute',
-            'tests/Analysis/Finding/Unit/ThresholdParserTest.php' => 'declares no coverage attribute',
+            'tests/Analysis/Finding/Unit/Contract/Rule/OptionLanguage/ThresholdParserTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Policy/Architecture/Integration/CaptureBindingIntegrationTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Policy/Architecture/Integration/FailClosedModularTopologyIntegrationTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Policy/Architecture/Integration/LayerCriteriaIntegrationTest.php' => 'declares no coverage attribute',

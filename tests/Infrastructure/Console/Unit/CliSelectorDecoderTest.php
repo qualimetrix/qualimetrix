@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Infrastructure\Console\CliSelectorDecoder;
+use Qualimetrix\Infrastructure\Console\Invocation\CliSelectorDecoder;
 
 #[CoversClass(CliSelectorDecoder::class)]
 final class CliSelectorDecoderTest extends TestCase

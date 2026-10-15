@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\UnassignedClass;
 
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Population\ContextGuard;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
@@ -54,7 +54,7 @@ final class UnassignedClassRule extends AbstractRule
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
 
     /**
-     * The collector is injected by {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass::resolveExtraDependencies()}.
+     * The collector is injected by {@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\RuleOptionsCompilerPass::resolveExtraDependencies()}.
      * Rules cannot use plain constructor autowiring (Critical Rule 7) so the
      * compiler-pass injection is the supported flow.
      */

@@ -137,7 +137,7 @@ final readonly class SuppressionCompositionBuilder
     /**
      * `BaselineIdentity` itself is Baseline-internal (no cross-owner consumer
      * is declared for it), so its `describe()` is replicated here from the
-     * same public `Finding` fields {@see \Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity::forFinding()}
+     * same public `Finding` fields {@see \Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity::forFinding()}
      * builds from, rather than by constructing that type directly.
      *
      * Must stay byte-for-byte what `describe()` produces: the two occurrence

@@ -8,9 +8,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\ProductIdentity;
-use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
-use Qualimetrix\Infrastructure\Console\RunningBinaryLocator;
+use Qualimetrix\Infrastructure\Console\Application\RunningBinaryLocator;
+use Qualimetrix\Infrastructure\Console\Hook\HookStatusCommand;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 
 /**
@@ -53,7 +53,7 @@ final class HookStatusCommandTest extends TestCase
 
     /**
      * `hook:status` never overrides `configure()`, so this pins that it
-     * inherits {@see \Qualimetrix\Infrastructure\Console\Command\AbstractHookCommand}'s
+     * inherits {@see \Qualimetrix\Infrastructure\Console\Hook\AbstractHookCommand}'s
      * own `--help` rather than silently losing it to a future override.
      */
     #[Test]

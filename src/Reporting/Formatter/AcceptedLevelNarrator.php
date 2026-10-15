@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter;
 
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 
 /**
@@ -51,7 +51,7 @@ final class AcceptedLevelNarrator
     }
 
     /**
-     * Same trailing-zero trim as {@see \Qualimetrix\Analysis\Finding\Contract\AcceptedLevel::describe()}
+     * Same trailing-zero trim as {@see \Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel::describe()}
      * applies to the accepted side, so "40.0" and "40" don't print differently
      * depending on which side of "now" they land on.
      */

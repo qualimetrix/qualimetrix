@@ -56,7 +56,7 @@ final class RuleOptionKeyEnumeration
     {
         return array_map(
             ConfigKeySpelling::normalize(...),
-            \Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys::all(),
+            \Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\FrameworkOptionKeys::all(),
         );
     }
 
@@ -287,7 +287,7 @@ final class RuleOptionKeyEnumeration
      */
     private function declaredKeys(string $optionsClass, array $read): array
     {
-        $keySet = \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface::declaredFor($optionsClass);
+        $keySet = \Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface::declaredFor($optionsClass);
 
         $declared = [];
         foreach ($keySet->acceptedForDisplay() as $key) {

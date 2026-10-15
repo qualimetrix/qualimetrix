@@ -12,8 +12,8 @@ use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineEntryParser;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
 use Qualimetrix\Analysis\Policy\Inline\Contract\DirectiveObservations;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
@@ -35,7 +35,7 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\Console\MeasuredFindingSet;
+use Qualimetrix\Infrastructure\Console\BaselineCommand\MeasuredFindingSet;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeResult;
@@ -282,19 +282,19 @@ final class MeasuredFindingSetTest extends TestCase
         return new NamespacePattern(SelectorDefinition::fromKindAndValue(SelectorKind::Subtree->value, $value));
     }
 
-    private static function populationPublication(): \Qualimetrix\Analysis\Finding\Contract\ChannelPublication
+    private static function populationPublication(): \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication
     {
         $decisions = [];
         foreach ([\Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule::class, \Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::class] as $rule) {
             foreach ($rule::channelDeclarations() as $name => $declaration) {
                 foreach ($declaration->levels as $level) {
                     $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
-                        new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress($rule::NAME, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel($name), $level, \Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::Selectable),
+                        new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress($rule::NAME, new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel($name), $level, \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole::Selectable),
                         new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
                     );
                 }
             }
         }
-        return new \Qualimetrix\Analysis\Finding\Contract\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null));
+        return new \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null));
     }
 }

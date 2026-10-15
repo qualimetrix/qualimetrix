@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Cache\Contract;
 
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Infrastructure\Cache\CacheSource;
+use Qualimetrix\Infrastructure\Cache\Root\CacheSource;
 
 final readonly class CacheConfiguration
 {

@@ -9,8 +9,8 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
-use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Generation\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use RuntimeException;
 use Symfony\Component\Console\Application;
@@ -333,11 +333,11 @@ final class CheckCommandBaselineTest extends TestCase
             ],
         ], \JSON_THROW_ON_ERROR));
         $container = (new ContainerFactory())->create();
-        $declarations = $container->get(\Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface::class);
-        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface::class, $declarations);
-        $baseline = (new \Qualimetrix\Analysis\Policy\Baseline\BaselineLoader(
-            new \Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser($declarations),
-        ))->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->baselinePath));
+        $declarations = $container->get(\Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface::class, $declarations);
+        $baseline = (new \Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader(
+            new \Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineEntryParser($declarations),
+        ))->load((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($this->baselinePath));
         $selectors = [$baseline->entries[0]->selector()->value, $baseline->inertEntries[0]->selector->value];
         $this->git('git init -q');
         $this->git('git config user.email test@example.com');

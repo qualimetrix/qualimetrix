@@ -73,8 +73,35 @@ Architecture/
 │   ├── UnassignedClassLayerRequirementInterface.php
 │   └── UnmatchedTypeWarningInterface.php
 ├── Configuration/              # the `architecture:` section: its schema and validators
-│   └── Allow/                  # allow selectors and binding values
-├── Layer/                      # membership, capture-pattern compilation, and registry primitives
+│   └── Allow/                  # allow selectors, binding values, validation, cycle and wildcard judgement
+│       ├── AllowAliasExpander.php
+│       ├── AllowListEntry.php
+│       ├── AllowTarget.php
+│       ├── AllowValidator.php
+│       ├── CaptureBinding.php
+│       ├── ExactAllowCycleValidator.php
+│       ├── InvalidSelectorException.php
+│       ├── LayerSelector.php
+│       ├── LayerSelectorParser.php
+│       ├── LongFormAllowEntryNormalizer.php
+│       ├── ParseCapturedState.php
+│       ├── SelectorKind.php
+│       ├── SelectorSegment.php
+│       └── WildcardSelfAllowDetector.php
+├── Layer/                      # layer policy, declaration facts and registry primitives
+│   ├── Matching/               # capture compilation, criteria evaluation and membership results
+│   │   ├── CapturePattern.php
+│   │   ├── CapturePatternCompiler.php
+│   │   ├── CriteriaEvaluation.php
+│   │   ├── CriterionListValidator.php
+│   │   ├── CriterionOutcome.php
+│   │   ├── LayerCriteriaMatcher.php
+│   │   ├── LayerMatch.php
+│   │   ├── MatchMode.php
+│   │   ├── MatchedCriterion.php
+│   │   ├── MatchedCriterionKind.php
+│   │   ├── MembershipResult.php
+│   │   └── PatternScope.php
 │   ├── ClassContext/           # one run's declaration relations, ancestry and observed names
 │   │   ├── Ancestry.php
 │   │   ├── ClassContext.php
@@ -100,7 +127,7 @@ Architecture/
 └── ArchitecturePolicy.php      # instance-owned configuration/preparation
 ```
 
-`Configuration/`, `Layer/`, `Layer/ClassContext/`, `Layer/Expansion/`,
+`Configuration/`, `Configuration/Allow/`, `Layer/Matching/`, `Layer/`, `Layer/ClassContext/`, `Layer/Expansion/`,
 `LayerAssignment/`, `Observation/`,
 `LayerViolation/`, `LayerDeclaration/`, `UnassignedClass/`, and the policy coordinator are internal zones of one leaf. The
 manifest-backed Architecture topology test enforces their exact DAG; sibling

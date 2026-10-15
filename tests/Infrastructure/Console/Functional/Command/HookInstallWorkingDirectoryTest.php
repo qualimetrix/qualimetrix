@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Functional\Command;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\Command\HookInstallCommand;
+use Qualimetrix\Infrastructure\Console\Hook\HookInstallCommand;
 use Qualimetrix\Infrastructure\Console\Hook\PreCommitHook;
 use Qualimetrix\Subprocess\ChildProcess;
 

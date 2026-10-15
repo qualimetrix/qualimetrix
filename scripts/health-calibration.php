@@ -142,7 +142,7 @@ const USAGE = <<<'TEXT'
  * no class carries them; it is an aggregate over namespaces, which is exactly
  * the aggregation this bench has to be able to vary. The list is the set of
  * `collectedAt: SymbolLevel::Namespace_` definitions —
- * {@see \Qualimetrix\Analysis\Evidence\Coupling\DistanceCollector},
+ * {@see \Qualimetrix\Analysis\Evidence\Coupling\Distance\DistanceCollector},
  * {@see \Qualimetrix\Analysis\Evidence\Coupling\AbstractnessCollector} and the
  * namespace instability the latter's sibling writes.
  *
