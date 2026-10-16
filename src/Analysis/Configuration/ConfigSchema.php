@@ -214,7 +214,7 @@ final class ConfigSchema
      * coverage-invariant test asserts exact equality between
      * {@see self::allowedRootKeys()} and the keys of this map.
      *
-     * See [ADR 0009](../../docs/adr/0009-yaml-loader-normalization-model.md).
+     * See [ADR 0009](docs/adr/0009-yaml-loader-normalization-model.md).
      *
      * @return array<string, SectionNormalizationPolicy>
      */

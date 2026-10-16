@@ -239,7 +239,7 @@ the command into the Architecture slice would force the slice to depend on
 - **Architecture**: Layer Policy Enforcement (multi-criterion membership, template layers, `exclude:`, `relations:` whitelist — deptrac replacement), Circular Dependency Detection, Dependency Graph Export (DOT)
 - **Code Smell**: Boolean Argument, Debug Code, Empty Catch, eval, exit/die, goto, Superglobals, Error Suppression, Count in Loop, Long Parameter List, Unreachable Code, Identical Sub-expression
 - **Security**: Hardcoded Credentials, SQL Injection, XSS, Command Injection, Sensitive Parameter Detection
-- **Computed Metrics**: 6 built-in health scores (complexity, cohesion, coupling, design, maintainability, overall), user-definable metrics via Symfony Expression Language formulas, per-level formulas, threshold-based findings
+- **Computed Metrics**: 6 built-in health scores (complexity, cohesion, coupling, typing, maintainability, overall), user-definable metrics via Symfony Expression Language formulas, per-level formulas, threshold-based findings
 
 ### Infrastructure
 - **Parallel Processing**: Multi-worker file processing via amphp/parallel
@@ -692,7 +692,7 @@ bin/qmx check --help
 resolves relative test arguments and data providers before execution starts.
 The extension enters `<root>/cwd` on execution start and restores the launch
 directory on execution finish, before relative JUnit and coverage reports are
-written. A focused `vendor/bin/phpunit tests/.../ExampleTest.php` and its
+written. A focused `vendor/bin/phpunit tests/Core/Unit/SourceText/SourceBytesTest.php` and its
 `--list-tests` form keep resolving from the launch directory.
 
 A test requiring the repository's configuration uses
@@ -842,7 +842,7 @@ Run `bin/qmx check src/` after modifying metric collection or aggregation logic 
 ### Dogfooding: Finding Management Strategy
 
 We analyze `src/` with `qmx.yaml` and the versioned root
-`qmx-baseline.json`. The v14 baseline ratchets accepted residual magnitudes and
+`qmx-baseline.json`. The ratchet snapshot tracks accepted residual magnitudes and
 occurrences. `composer selfcheck` first checks the exact manifest and generated
 architecture projection, then runs the ratchet with `--fail-on=warning`. A direct
 `bin/qmx check` omits repository governance.
@@ -876,7 +876,7 @@ in the current self-analysis and checks the suppression composition snapshot.
 An inert suppression or directive is removed in the same change that makes it
 inert; judge any returned finding afresh by the order above. Run
 `bin/qmx directives` for inline-directive usage. Never regenerate the full
-baseline as a routine response to self-analysis drift; review a targeted v14
+baseline as a routine response to self-analysis drift; review a targeted
 snapshot diff when an accepted residual magnitude intentionally changes.
 Never use suppress-mode or legacy baselines for dogfooding.
 ---

@@ -385,7 +385,7 @@ final class UnusedDirectiveRuleTest extends TestCase
     }
 
     /**
-     * A threshold takes no level (ADR 0024 §2). The pair is captured by the
+     * A threshold takes no level (ADR 0024, section 2). The pair is captured by the
      * grammar so that it is *refused*: truncated to its left half it would
      * silently retune the whole rule, which is worse than either outcome.
      */
@@ -536,7 +536,7 @@ final class UnusedDirectiveRuleTest extends TestCase
     }
 
     /**
-     * The other side of the same coin, and §5's eighth breaking change:
+     * A removed computed metric must not leave a silently ineffective directive:
      * dropping a metric from `computed_metrics:` makes every annotation that
      * named it a dangling reference, which is the same mistake as a typo.
      */

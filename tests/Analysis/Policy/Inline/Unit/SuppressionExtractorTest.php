@@ -1163,7 +1163,7 @@ final class SuppressionExtractorTest extends TestCase
     }
 
     /**
-     * The escape promised by AGENTS.md §8 has to hold wherever the prose above
+     * The escape promised by AGENTS.md, section 8 has to hold wherever the prose above
      * it happens to put a backtick. It did not: pairing ran across the whole
      * comment, so one stray backtick made the example's own opening backtick
      * close the stray one and left the tag exposed.

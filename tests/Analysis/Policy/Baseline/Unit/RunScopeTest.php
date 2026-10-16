@@ -121,7 +121,7 @@ final class RunScopeTest extends TestCase
      * **The absolute machine path that must never reach a tracked file.**
      * `bin/qmx baseline:generate baseline.json .` analyses the project root,
      * which has no relative form — it used to be recorded verbatim, putting
-     * a developer's home directory into a committed baseline (CLAUDE.md §10)
+     * a developer's home directory into a committed baseline (CLAUDE.md, section 10)
      * and making the widest possible run read as the narrowest.
      */
     #[Test]

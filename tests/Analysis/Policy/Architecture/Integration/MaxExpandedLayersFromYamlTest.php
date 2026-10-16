@@ -24,7 +24,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
 
 /**
- * Consumer-expectation test for the ADR 0009 §5 two-layer test discipline.
+ * Consumer-expectation test for the ADR 0009, section 5 two-layer test discipline.
  *
  * The characterization test
  * ({@see \Qualimetrix\Governance\ConfigurationVocabulary\YamlNormalizationCharacterizationTest})

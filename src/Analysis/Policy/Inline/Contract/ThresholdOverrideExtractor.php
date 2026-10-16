@@ -57,7 +57,7 @@ final readonly class ThresholdOverrideExtractor
      * it as one that names no rule.
      *
      * `#` and `:` are admitted so that the retired `rule#code` spelling and a
-     * `channel:level` pair — which a threshold never addresses, ADR 0024 §2 —
+     * `channel:level` pair — which a threshold never addresses, ADR 0024, section 2 —
      * are *captured* and then refused by name
      * ({@see \Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability::problemWithThreshold()}).
      * Without it the pattern stops at the separator and silently retunes the

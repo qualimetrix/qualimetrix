@@ -17,7 +17,7 @@ own one synthetic statement. Declarations, empty statements, comments, and blank
 lines are excluded, so the metric is independent of formatting.
 
 Maintainability Index uses this metric as its method-size input. See
-[ADR 0020](../../../docs/adr/0020-method-size-and-npath-semantics.md).
+[ADR 0020](../../../../docs/adr/0020-method-size-and-npath-semantics.md).
 
 ---
 

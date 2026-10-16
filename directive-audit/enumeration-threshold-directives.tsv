@@ -13,17 +13,15 @@
 # HOW THIS WAS PRODUCED
 # Token-level, not line-level: only T_DOC_COMMENT tokens are read, backtick-
 # delimited regions are blanked first — every character of them but the line
-# breaks becomes a space, which is what the product does too (AGENTS.md §8) —
+# breaks becomes a space, which is what the product does too (AGENTS.md, section 8) —
 # and what remains is read word by word: a word ending in the tag, then the
 # next word cut to the characters a channel is made of. The measure is
 # deliberately not the product's own pattern: a copy of it could not disagree
 # with the original, and disagreeing is the only reason a second measure of the
 # same population is run at all.
 # Two cruder probes were run first and both were wrong in both directions. A
-# plain grep counts 127 occurrences of the tag in `src/**/*.php` and 136 in
-# `src/**` — the second number is the one AUDIT.md quotes as "136 directives",
-# and most of it is docblock prose, format documentation, README text and
-# error-message literals; over `tests/` the same grep counts 102. A second grep
+# plain grep over PHP files and component READMEs admits docblock prose,
+# format documentation, README text and error-message literals. A second grep
 # filtered on "the next token looks like a channel" counts 49 in src and 73 in
 # tests, admitting the backticked examples in DataClassOptions and GodClassOptions
 # that the product does not treat as directives. Neither number is a count of

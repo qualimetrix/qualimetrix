@@ -36,8 +36,7 @@ const OPTIONS_PATH = 'docs/internal/generated/input-doors/command-options.tsv';
 /**
  * Configuration doors are the leaf keys a user can write, not their roots:
  * `cache.dir` and `cache.enabled` are two things to get wrong, and a probe
- * needs a leaf to miss on. The plan's §3 counts 17 roots; leaf granularity
- * gives 18 and the difference is named in `input-doors/README.md`.
+ * needs a leaf to miss on. A root count cannot distinguish those inputs.
  *
  * DOCUMENT_ROOTS is read alongside ENTRIES on purpose: `exclude_health` and
  * `computed_metrics` have no ENTRIES row, and a generator reading ENTRIES alone

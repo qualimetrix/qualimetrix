@@ -13,7 +13,7 @@ use SimpleXMLElement;
  * Binds the output-format schemas `website/docs/usage/output-formats.md`
  * publishes to what the formatters actually emit.
  *
- * `DocumentationConsistencyTest` binds rule names and CLI aliases;
+ * `DocumentationRuleSurfaceTest` binds rule names and CLI aliases;
  * `RuleDocsPageCoverageTest` binds a rule's page and its anchor. Neither reads
  * a format's key set, so `composer check` stayed green while four published
  * schema facts were wrong — on exactly the surfaces users parse with scripts,

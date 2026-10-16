@@ -13,7 +13,7 @@ use Qualimetrix\Core\Path\RelativePath;
 /**
  * Guards the fast path in `AbsolutePath::normalize()` / `RelativePath::normalize()`:
  * an already-canonical input must skip splitting the value into segments and
- * rebuilding it, which is what makes ADR 0015 §R3's per-construction budget
+ * rebuilding it, which is what makes ADR 0015, section R3's per-construction budget
  * reachable at all.
  *
  * Both sides of the measurement are the *same* `fromString()` call, differing
@@ -22,7 +22,7 @@ use Qualimetrix\Core\Path\RelativePath;
  *
  * - wall-clock nanoseconds (`≤500ns/call`) measured the machine's spare
  *   capacity, so it reddened under concurrent load with nothing regressed;
- * - a ratio against the `str_starts_with`/`substr` ops ADR 0015 §R3 names
+ * - a ratio against the `str_starts_with`/`substr` ops ADR 0015, section R3 names
  *   cancelled machine load but not architecture — `preg_match` is priced
  *   differently against those builtins per ISA and PCRE build, so the healthy
  *   value moved from 2.8× on arm64 to 5.7× on an x86 CI runner, straight into

@@ -14,7 +14,7 @@ use Symfony\Component\Console\Input\InputOption;
  *
  * Declared once rather than per command because these are a contract with the
  * user, not a detail of any one command: `--format` must be the way a machine
- * representation is asked for everywhere (`CLI_CONVENTIONS.md`), and a second
+ * representation is asked for everywhere (`docs/internal/CLI_CONVENTIONS.md`), and a second
  * spelling of `--config` in one command would be a second place to forget the
  * shortcut or the default.
  *

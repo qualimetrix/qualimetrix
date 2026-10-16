@@ -153,7 +153,6 @@ and named in the output. A dropped group is written nowhere, so nothing downstre
 report it otherwise, and "Baseline with 0 entries written" would read as success.
 
 **Version history:**
-- **Version 14**: Required recorded discovery exclusions and closed document grammar
 - **Version 2**: Introduced canonical symbol path keys
 - **Version 3**: Rule naming scheme update (`group.rule-name` format)
 - **Version 4**: 16-char finding hashes (was 8-char in v3)
@@ -166,6 +165,7 @@ report it otherwise, and "Baseline with 0 entries written" would read as success
   is 16 hex characters instead of 64
 - **Version 13**: A declaration key carries an assigned ordinal instead of a
   byte offset, so editing text above a declaration no longer moves its key
+- **Version 14**: Required recorded discovery exclusions and closed document grammar
 
 An ordinal is a rank, so the three identities that carry a non-trivial one — a
 closure, the members of an anonymous class, and a declaration sharing its logical

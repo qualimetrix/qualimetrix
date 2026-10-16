@@ -510,8 +510,8 @@ if ($classificationProbeArguments !== []) {
     //
     // The proxy is the basename and deliberately not isTestClassPath(), which is
     // `tests/`-scoped because it answers the owner parse — a different question.
-    // A test class outside that root (`governance/Other/ProbeTest.php`,
-    // `tools/phpstan/tests/Unit/FooTest.php`) would fall to classifyKind(), whose
+    // A test class outside that root (under `governance/Other/` or
+    // `tools/phpstan/tests/Unit/`, with a `*Test.php` basename) would fall to classifyKind(), whose
     // support branch excludes `*Test.php` by name, and be refused as an
     // unclassified kind. Those are the probes the unregistered-group claim in
     // AGENTS.md is checked with.
