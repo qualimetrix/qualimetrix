@@ -12,10 +12,11 @@ namespace Qualimetrix\Governance\DocumentationCensus;
  * calls it, and so does the measurement that sized that test's declarations.
  * The caller supplies tracked, non-symlink, non-binary paths and their content.
  *
- * A generated artifact is outside the sweep because its generator writes the
- * number from the constant or from its own sources, which are swept instead; a
- * row that names a hand-written file would hide a statement, so every row
- * names the generator that writes it.
+ * Fully rendered artifacts are outside the sweep because their writers' tracked
+ * sources are swept instead. Retained rename decisions and historical run
+ * records are a separate, explicit scope exclusion: their authored text is not
+ * re-derived. Neither category covers arbitrary live prose in a preserved
+ * report header, benchmark metadata or a hand-maintained channel inventory.
  */
 final class BaselineVersionSweep
 {
@@ -25,21 +26,27 @@ final class BaselineVersionSweep
      * @var array<string, string>
      */
     public const array GENERATED = [
-        'docs/internal/generated/' => 'the composer generators of check:artifacts',
-        'docs/internal/benchmark-baselines.json' => 'composer benchmark:update',
         'docs/internal/benchmark-namespace-class-distribution.json' => 'composer benchmark:update',
         'qmx-baseline.json' => 'bin/qmx baseline:generate',
         'qmx.yaml' => 'composer architecture:generate',
-        'finding-gate/enumeration-renames.tsv' => 'composer enumeration:renames',
-        'finding-gate/enumeration-renames-executed.tsv' => 'composer enumeration:renames',
-        'finding-gate/enumeration-static-channels.tsv' => 'composer enumeration:renames',
         'finding-gate/enumeration-runtime-channels.tsv' => 'composer enumeration:runtime-channels',
         'finding-gate/normalization.tsv' => 'composer gate -- --derive-normalization',
         'finding-gate/equivalence-tuple.tsv' => 'composer gate -- --derive-tuple',
-        'directive-audit/enumeration-threshold-directives.tsv' => 'composer enumeration:directives',
         'promise-effect/p1-file-set.tsv' => 'php scripts/promise-effect-p1-set.php --write',
         'promise-effect/promise-ledger-frozen-ranges.tsv' => 'composer promise-ledger:freeze',
         'html-report/dist/' => 'composer build:js',
+    ];
+
+    /**
+     * Exact retained records => why their authored text is outside this census.
+     * Regeneration alone does not establish the provenance of these bytes.
+     *
+     * @var array<string, string>
+     */
+    public const array RETAINED_RECORDS = [
+        'docs/internal/generated/' => 'Repository generators retain historical run snapshots, including authored reason text.',
+        'finding-gate/enumeration-renames.tsv' => 'composer enumeration:renames refreshes measured columns but preserves authored new/step decisions.',
+        'finding-gate/enumeration-renames-executed.tsv' => 'composer enumeration:renames carries completed rename history forward.',
     ];
 
     /** Records that state versions as history, and the constant itself. */
@@ -61,7 +68,7 @@ final class BaselineVersionSweep
             return false;
         }
 
-        foreach ([...self::HISTORICAL_OR_SOURCE, ...array_keys(self::GENERATED)] as $excluded) {
+        foreach ([...self::HISTORICAL_OR_SOURCE, ...array_keys(self::GENERATED), ...array_keys(self::RETAINED_RECORDS)] as $excluded) {
             if ($path === $excluded || (str_ends_with($excluded, '/') && str_starts_with($path, $excluded))) {
                 return false;
             }

@@ -19,8 +19,10 @@ require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
  *
  * BaselineVersionSweep owns the population and lexical limits. The census
  * does not see numbers written as words or ordinals, version words beyond
- * its window, or historical, test and generated text. Generated declarations
- * name their writers; listing a hand-written file there would hide a claim.
+ * its window, test roots, rendered artifacts or retained decision/history text.
+ * Rendered declarations name their writers; retained records explicitly keep
+ * authored decisions or historical run evidence without re-deriving it. Live
+ * report headers, benchmark metadata and static inventories remain swept.
  * New unrelated uses of the same number can require an exact exception;
  * exceptions become stale when the current number or their source changes.
  */
@@ -147,9 +149,9 @@ final class BaselineFormatVersionPublicationTest extends TestCase
                 $problems[] = \sprintf('%s:%d: undeclared statement of the current baseline version: %s', $hit['file'], substr_count(substr($content[$hit['file']], 0, $hit['offset']), "\n") + 1, $hit['token']);
             }
         }
-        foreach (BaselineVersionSweep::GENERATED as $generated => $writer) {
-            if (!array_any($paths, static fn(string $path): bool => $path === $generated || (str_ends_with($generated, '/') && str_starts_with($path, $generated)))) {
-                $problems[] = $generated . ': stale generated row: ' . $writer;
+        foreach ([...BaselineVersionSweep::GENERATED, ...BaselineVersionSweep::RETAINED_RECORDS] as $excluded => $reason) {
+            if (!array_any($paths, static fn(string $path): bool => $path === $excluded || (str_ends_with($excluded, '/') && str_starts_with($path, $excluded)))) {
+                $problems[] = $excluded . ': stale excluded artifact row: ' . $reason;
             }
         }
         self::assertSame([], $problems, implode("\n", $problems));
