@@ -1,0 +1,10 @@
+{
+    "name": "finding-gate-corpus/incomplete-directory-symlink",
+    "description": "A contained directory symlink is refused during discovery; the report is incomplete and artifact commands must refuse it.",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Corpus\\IncompleteDirectorySymlink\\": "src/"
+        }
+    }
+}

@@ -46,6 +46,12 @@ final class DocumentKeyNormalizer
         foreach ($config as $key => $value) {
             $stringKey = (string) $key;
             $normalizedRoot = ConfigKeySpelling::normalize($stringKey);
+            foreach (ConfigSchema::DOCUMENT_ROOTS as $root) {
+                if (ConfigKeySpelling::normalize($root) === $normalizedRoot) {
+                    $normalizedRoot = $root;
+                    break;
+                }
+            }
             self::refuseSecondSpelling($authored, $normalizedRoot, $stringKey, [], $path);
 
             // A known root asks policyFor(), which fails fast when the root was

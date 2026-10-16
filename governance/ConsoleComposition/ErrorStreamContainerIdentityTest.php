@@ -7,11 +7,12 @@ namespace Qualimetrix\Governance\ConsoleComposition;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
-use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
-use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
+use Qualimetrix\Infrastructure\Console\GraphExport\GraphExportCommand;
+use Qualimetrix\Infrastructure\Console\RunSetup\RuntimeConfigurator;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Infrastructure\Parallel\Contract\WorkerDiagnosticsInterface;
 use ReflectionClass;
 use ReflectionNamedType;
 use ReflectionObject;
@@ -32,6 +33,29 @@ use ReflectionObject;
 #[CoversClass(ErrorStream::class)]
 final class ErrorStreamContainerIdentityTest extends TestCase
 {
+    #[Test]
+    public function itSharesProductApplicationDiagnosticsWithItsContainer(): void
+    {
+        $diagnostics = null;
+        $container = null;
+        $app = \Qualimetrix\Infrastructure\Console\Application\Application::forProduct(
+            static function (\Qualimetrix\Infrastructure\Console\Application\ConsoleDiagnostics $given) use (&$diagnostics, &$container) {
+                $diagnostics = $given;
+
+                return $container = (new ContainerFactory())->create($given);
+            },
+            \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register(),
+        );
+        $app->setAutoExit(false);
+        $app->doRun(new \Symfony\Component\Console\Input\ArrayInput(['command' => 'hook:status']), new \Symfony\Component\Console\Output\BufferedOutput());
+        self::assertInstanceOf(\Qualimetrix\Infrastructure\Console\Application\ConsoleDiagnostics::class, $diagnostics);
+        self::assertInstanceOf(\Symfony\Component\DependencyInjection\ContainerBuilder::class, $container);
+        self::assertSame($diagnostics->errorStream, $container->get(ErrorStream::class));
+        self::assertSame($diagnostics->refusalPresenter, $container->get(\Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter::class));
+        self::assertSame($diagnostics->errorStream, (new ReflectionClass($app))->getProperty('errorStream')->getValue($app));
+        self::assertSame($diagnostics->refusalPresenter, (new ReflectionClass($app))->getProperty('refusalPresenter')->getValue($app));
+    }
+
     /**
      * Every class the composed run gives the owner to.
      *
@@ -42,19 +66,36 @@ final class ErrorStreamContainerIdentityTest extends TestCase
      * @var list<class-string>
      */
     private const array CONSUMERS = [
-        'Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand',
-        'Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator',
-        'Qualimetrix\\Infrastructure\\Console\\ProfilePresenter',
+        'Qualimetrix\\Infrastructure\\Console\\CheckReport\\FindingDiagnostics',
+        'Qualimetrix\\Infrastructure\\Console\\CheckReport\\ReportFormatter',
+        'Qualimetrix\\Infrastructure\\Console\\CheckScope\\CheckScopeResolver',
+        'Qualimetrix\\Infrastructure\\Console\\Check\\CheckCommand',
+        'Qualimetrix\\Infrastructure\\Console\\GraphExport\\GraphExportCommand',
+        'Qualimetrix\\Infrastructure\\Console\\Invocation\\Configuration\\ConfigurationInputAdapter',
+        'Qualimetrix\\Infrastructure\\Console\\Profile\\ProfilePresenter',
         'Qualimetrix\\Infrastructure\\Console\\Progress\\ProgressConfigurator',
         'Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter',
-        'Qualimetrix\\Infrastructure\\Console\\ResultPresenter',
-        'Qualimetrix\\Infrastructure\\Console\\RuntimeLoggerConfigurator',
+        'Qualimetrix\\Infrastructure\\Console\\RuntimePolicy\\RuntimeLoggerConfigurator',
+        'Qualimetrix\\Infrastructure\\Console\\Terminal\\ReportPublication\\ReportPublication',
+        'Qualimetrix\\Infrastructure\\Parallel\\Strategy\\AmphpParallelStrategy',
     ];
 
     #[Test]
     public function itGivesEveryConsumerTheOneOwnerTheContainerHolds(): void
     {
         $container = (new ContainerFactory())->create();
+
+        $execution = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class, $execution);
+        $channels = $container->get(\Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface::class, $channels);
+        $rules = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface::class, $rules);
+        $rules->replace(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::ready(
+            \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::none(),
+            $execution->allRules(),
+            channels: $channels,
+        ));
 
         $owner = $container->get(ErrorStream::class);
         self::assertInstanceOf(ErrorStream::class, $owner);
@@ -82,13 +123,13 @@ final class ErrorStreamContainerIdentityTest extends TestCase
         // second instance gets composed by omission rather than by decision.
         $optional = [];
 
-        foreach ([...self::CONSUMERS, 'Qualimetrix\\Infrastructure\\Console\\Application'] as $class) {
+        foreach ([...self::CONSUMERS, 'Qualimetrix\\Infrastructure\\Console\\Application\\Application'] as $class) {
             $constructor = (new ReflectionClass($class))->getConstructor();
             self::assertNotNull($constructor, $class . ' has no constructor to inject through');
 
             foreach ($constructor->getParameters() as $parameter) {
                 $type = $parameter->getType();
-                if (!$type instanceof ReflectionNamedType || $type->getName() !== ErrorStream::class) {
+                if (!$type instanceof ReflectionNamedType || !\in_array($type->getName(), [ErrorStream::class, WorkerDiagnosticsInterface::class], true)) {
                     continue;
                 }
 

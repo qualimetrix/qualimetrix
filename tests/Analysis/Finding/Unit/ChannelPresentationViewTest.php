@@ -5,15 +5,17 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 
 use LogicException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\ChannelPresentationView;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOptionValues;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
@@ -111,7 +113,7 @@ final class ChannelPresentationViewTest extends TestCase
 
     /**
      * Every producer the universe can name must have contributed a DOCS_PAGE
-     * entry to the map {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass}
+     * entry to the map {@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\ChannelDeclarationCompilerPass}
      * builds; a producer missing from that map means the compiler pass and
      * the rule registry have drifted apart, which must fail loud rather than
      * silently answer null.
@@ -180,7 +182,7 @@ final class ChannelPresentationViewTest extends TestCase
  */
 final readonly class FixtureChannelPresentationRuleOptions implements RuleOptionsInterface
 {
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
         return new self();
     }

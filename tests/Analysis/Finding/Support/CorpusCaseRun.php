@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Finding\Support;
 
 use PHPUnit\Framework\Assert;
+use QmxFindingGate\CaseDefinition;
+use QmxFindingGate\CaseOutcome;
+use QmxFindingGate\Corpus;
 use Qualimetrix\Subprocess\ChildProcess;
 use RuntimeException;
 
 require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
+require_once \dirname(__DIR__, 4) . '/scripts/finding-gate/classes.php';
 
 /**
  * Runs the external corpus in `finding-gate/cases/` and hands back one
@@ -25,54 +29,43 @@ require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
  * observation. What each guard reads out of the report is its own business
  * and stays in its own class; nothing here knows about channels.
  *
- * Sharing the *runner* does not make the two guards one witness: they read
- * different fields of different reports and compare them against different
- * declarations.
+ * The two channel guards share each native JSON capture for the fixed corpus
+ * within their PHPUnit process. Temporary or authored external cases are not
+ * reused. Findings and raw metrics still come from
+ * separate native processes. Every reader repeats the completeness assertions;
+ * the guards compare different fields against independent declarations.
  */
 final class CorpusCaseRun
 {
     /** Exit codes at or above this one mean the analysis did not happen, not that it found something. */
     private const int EXIT_CANNOT_ANALYSE = 3;
 
+    /** @var array<string, array{stdout: string, stderr: string, exitCode: int}> */
+    private static array $captures = [];
+
+    /** @var array<string, true>|null */
+    private static ?array $declaredInputs = null;
+
     /**
      * Every corpus case, keyed by its directory.
      *
-     * @return array<string, array<string, mixed>> case directory => case definition
+     * @return array<string, CaseDefinition> case directory => authoritative case
      */
-    public static function cases(): array
+    public static function cases(string $repositoryRoot): array
     {
-        $root = self::repositoryRoot() . '/finding-gate/cases';
-        $directories = glob($root . '/*', \GLOB_ONLYDIR);
-
-        if ($directories === false || $directories === []) {
-            throw new RuntimeException(\sprintf('No corpus cases under %s.', $root));
-        }
-
         $cases = [];
-
-        foreach ($directories as $directory) {
-            $definition = file_get_contents($directory . '/case.json');
-
-            if ($definition === false) {
-                throw new RuntimeException(\sprintf('Corpus case %s has no case.json.', $directory));
-            }
-
-            /** @var array<string, mixed> $decoded */
-            $decoded = json_decode($definition, true, flags: \JSON_THROW_ON_ERROR);
-            $cases[$directory] = $decoded;
+        foreach (Corpus::load($repositoryRoot)->cases as $case) {
+            $cases[$case->directory] = $case;
         }
-
         return $cases;
     }
 
     /**
      * The findings a case emits, from a `--format=json` run.
      *
-     * @param array<string, mixed> $case
-     *
      * @return list<array<string, mixed>>
      */
-    public static function findings(string $directory, array $case): array
+    public static function findings(string $directory, CaseDefinition $case): array
     {
         $report = self::report($directory, $case, 'json');
         $violations = $report['violations'] ?? null;
@@ -95,11 +88,9 @@ final class CorpusCaseRun
      * the raw catalog values, before any rule published one as a finding's
      * magnitude.
      *
-     * @param array<string, mixed> $case
-     *
      * @return list<array<string, mixed>> one entry per symbol: `type`, `name`, `metrics`
      */
-    public static function metrics(string $directory, array $case): array
+    public static function metrics(string $directory, CaseDefinition $case): array
     {
         $report = self::report($directory, $case, 'metrics');
         $symbols = $report['symbols'] ?? null;
@@ -110,53 +101,43 @@ final class CorpusCaseRun
         return array_values($symbols);
     }
 
+    public static function isAnalysis(CaseDefinition $case): bool
+    {
+        return CaseOutcome::of($case, 'candidate') === CaseOutcome::ANALYSIS;
+    }
+
     public static function repositoryRoot(): string
     {
         return \dirname(__DIR__, 4);
     }
 
-    /**
-     * @param array<string, mixed> $case
-     */
-    public static function stringField(array $case, string $field): string
+    /** @return array<string,mixed> */
+    private static function report(string $directory, CaseDefinition $case, string $format): array
     {
-        $value = $case[$field] ?? null;
 
-        if (!\is_string($value)) {
-            throw new RuntimeException(\sprintf('Corpus case is missing the string field "%s".', $field));
+        if (!self::isAnalysis($case)) {
+            throw new RuntimeException('A declared refusal or incomplete case is not a complete channel observation.');
         }
-
-        return $value;
-    }
-
-    /**
-     * @param array<string, mixed> $case
-     *
-     * @return array<string, mixed>
-     */
-    private static function report(string $directory, array $case, string $format): array
-    {
-        /** @var list<string> $paths */
-        $paths = $case['paths'] ?? [];
-        /** @var list<string> $extra */
-        $extra = $case['args'] ?? [];
 
         $command = array_merge(
             [\PHP_BINARY, self::repositoryRoot() . '/bin/qmx', 'check'],
-            $paths,
+            $case->paths,
             [
                 '-c',
-                self::stringField($case, 'config'),
+                $case->config,
                 '--format=' . $format,
                 '--workers=0',
                 '--no-cache',
                 '--no-ansi',
                 '--fail-on=none',
             ],
-            $extra,
+            $case->args,
         );
 
-        $result = ChildProcess::run($command, $directory);
+        $key = serialize([$directory, $command]);
+        $result = self::isDeclaredInput($directory, $case)
+            ? (self::$captures[$key] ??= ChildProcess::run($command, $directory))
+            : ChildProcess::run($command, $directory);
         $exit = $result['exitCode'];
         $stdout = $result['stdout'];
         $stderr = $result['stderr'];
@@ -177,6 +158,23 @@ final class CorpusCaseRun
         self::assertObservationIsComplete($decoded, $directory, $exit, (string) $stderr);
 
         return $decoded;
+    }
+
+    private static function isDeclaredInput(string $directory, CaseDefinition $case): bool
+    {
+        if (self::$declaredInputs === null) {
+            self::$declaredInputs = [];
+            foreach (self::cases(self::repositoryRoot()) as $fixedDirectory => $fixedCase) {
+                self::$declaredInputs[self::inputKey($fixedDirectory, $fixedCase)] = true;
+            }
+        }
+
+        return isset(self::$declaredInputs[self::inputKey($directory, $case)]);
+    }
+
+    private static function inputKey(string $directory, CaseDefinition $case): string
+    {
+        return serialize([$directory, $case->paths, $case->config, $case->args]);
     }
 
     /**

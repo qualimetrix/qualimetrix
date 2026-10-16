@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting;
 
 use InvalidArgumentException;
+
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
@@ -26,11 +29,38 @@ final class ReportBuilder
     private int $filesSkipped = 0;
     private float $duration = 0.0;
     private ?MetricRepositoryInterface $metrics = null;
+    private \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces;
     private ?NamespaceTree $namespaceTree = null;
     private ?ReportCoverage $coverage = null;
     private ?SuppressionComposition $suppressionComposition = null;
     private ?OutOfScopeFindings $outOfScope = null;
     private ?ReportProjectScope $projectScope = null;
+
+    /** @var list<array{message: string, source: list<array<string, mixed>>}> */
+    private array $configurationDiagnostics = [];
+
+    private ComputedMetricEvaluationSummary $computedMetricEvaluation;
+    private JudgedPopulation $population;
+
+    public function population(JudgedPopulation $population): self
+    {
+        $this->population = $population;
+        return $this;
+    }
+
+    public function computedMetricEvaluation(ComputedMetricEvaluationSummary $summary): self
+    {
+        $this->computedMetricEvaluation = $summary;
+
+        return $this;
+    }
+
+    public function fileNamespaces(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces): self
+    {
+        $this->fileNamespaces = $fileNamespaces;
+
+        return $this;
+    }
 
     /**
      * Creates a new builder instance.
@@ -170,6 +200,19 @@ final class ReportBuilder
     }
 
     /**
+     * Records the warnings about the accepted configuration — see
+     * {@see Report::$configurationDiagnostics}.
+     *
+     * @param list<array{message: string, source: list<array<string, mixed>>}> $diagnostics
+     */
+    public function configurationDiagnostics(array $diagnostics): self
+    {
+        $this->configurationDiagnostics = $diagnostics;
+
+        return $this;
+    }
+
+    /**
      * Builds the Report instance.
      */
     public function build(): Report
@@ -187,6 +230,7 @@ final class ReportBuilder
         }
 
         return new Report(
+            fileNamespaces: $this->fileNamespaces ?? \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($this->metrics),
             findings: $this->findings,
             filesAnalyzed: $this->filesAnalyzed,
             filesSkipped: $this->filesSkipped,
@@ -200,6 +244,9 @@ final class ReportBuilder
             suppressionComposition: $this->suppressionComposition,
             outOfScope: $this->outOfScope,
             projectScope: $this->projectScope,
+            configurationDiagnostics: $this->configurationDiagnostics,
+            computedMetricEvaluation: $this->computedMetricEvaluation ?? new ComputedMetricEvaluationSummary(),
+            population: $this->population ?? JudgedPopulation::empty(),
         );
     }
 }

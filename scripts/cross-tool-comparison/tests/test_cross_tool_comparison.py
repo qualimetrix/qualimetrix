@@ -50,6 +50,21 @@ class CrossToolComparisonTest(unittest.TestCase):
         with self.assertRaisesRegex(MODULE.ComparisonError, "duplicate class identity"):
             MODULE.parse_pdepend_xml(FIXTURES / "pdepend-collision.xml")
 
+    def test_duplicate_qmx_class_names_are_excluded_from_name_based_comparison(self):
+        self.assertEqual(2, self.qmx["collisions"]["classes"])
+        self.assertNotIn("Vendor\\Duplicate\\Handler", self.qmx["classes"])
+        self.assertEqual(
+            {
+                "declaration:class:Vendor\\Duplicate\\Handler@src/Vendor/Duplicate/First.php",
+                "declaration:class:Vendor\\Duplicate\\Handler@src/Vendor/Duplicate/Second.php",
+            },
+            set(self.qmx["class_records"])
+            & {
+                "declaration:class:Vendor\\Duplicate\\Handler@src/Vendor/Duplicate/First.php",
+                "declaration:class:Vendor\\Duplicate\\Handler@src/Vendor/Duplicate/Second.php",
+            },
+        )
+
     def test_nonzero_competitor_process_is_a_hard_failure(self):
         completed = subprocess.CompletedProcess(["pdepend"], 1, stdout="", stderr="failed")
         with patch.object(MODULE.subprocess, "run", return_value=completed):

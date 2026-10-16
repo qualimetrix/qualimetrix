@@ -32,33 +32,28 @@ namespace QmxDirectiveAudit;
  *   to `threshold` is the whole of the fix: `effective`, `overrun` and `inert`
  *   are measured outcomes by definition, so demanding measuredness on top would
  *   add no name to the requirement.
- * - **every reason of the vocabulary, counted over both halves.** This axis is
- *   coverage of the vocabulary, not discrimination, and saying so is the honest
- *   half of the choice above. `AddressesEveryChannel` can only ever be reached
- *   by a suppression, so restricting this axis to `threshold` would make the
- *   floor unsatisfiable; and `AlreadyRefused` and `ProducerDisabled` are
- *   decided from the configuration and the channel catalogue before a sweep is
- *   asked anything. Only `Masked` is a branch the sweep executes, and it is the
- *   branch this control was asked for — it carries no verdict of its own, being
- *   `Unmeasured` exactly like a directive naming a channel nobody owns, so a
- *   floor written over verdicts alone would never demand it.
+ * - **every reason exercised by this sweep, counted over both halves.** This
+ *   axis is coverage of this population, not discrimination. ProducerDisabled
+ *   is decided from the run's configuration and activity. Masked is the branch
+ *   the sweep executes; it carries no effect of its own, so a floor over
+ *   effects alone would never demand it. ScopeUnmeasured is covered by the
+ *   product regression DirectivesCommandTest::itExplainsAnUnmeasuredNocDirectiveOnASelectedParent;
+ *   requiring it here would add a permanent probe of a probe.
  *
- * Both tables are frozen here rather than derived from `DirectiveEffect` and
- * `DirectiveUnmeasurableReason`, for the reason {@see MeasuredEffects} is:
- * enrolling a fifth case silently would decide on the author's behalf that a
- * fixture must now produce it. Two tests hold each table against its enum in
- * both directions, so the decision is refused rather than skipped.
+ * Both tables are frozen here rather than derived from the product enums, for
+ * the reason {@see MeasuredEffects} is: enrolling a new case silently would
+ * decide on the author's behalf that a fixture must now produce it. Governance
+ * holds the effect table against its enum and the reason table against the
+ * explicitly scoped reason population.
  */
 final class HeterogeneityFloor
 {
     /** @var list<string> every `DirectiveEffect` a population must contain */
-    public const array REQUIRED_EFFECTS = ['effective', 'overrun', 'inert', 'unmeasured'];
+    public const array REQUIRED_EFFECTS = ['effective', 'overrun', 'inert', 'unmeasured', 'refused'];
 
-    /** @var list<string> every `DirectiveUnmeasurableReason` a population must contain */
+    /** @var list<string> every reason this sweep's population must contain */
     public const array REQUIRED_REASONS = [
         'producer-disabled',
-        'already-refused',
-        'addresses-every-channel',
         'masked',
     ];
 

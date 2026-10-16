@@ -20,6 +20,35 @@ use Qualimetrix\Reporting\ReportBuilder;
 final class ReportBuilderTest extends TestCase
 {
     #[Test]
+    public function itCarriesPopulationWithoutReplacingComputedAbsencesOrFindingCounts(): void
+    {
+        $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
+        $trace->record(
+            'complexity.ccn',
+            new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel('complexity.ccn'),
+            \Qualimetrix\Core\Symbol\SymbolLevel::Callable,
+            \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::occurrence('missing', 0, 'callable'),
+            'callable-value',
+            'Callable complexity was not published.',
+        );
+        $population = $trace->freeze();
+        $summary = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary([
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence(
+                'computed.custom',
+                \Qualimetrix\Core\Symbol\SymbolLevel::Project,
+                noValueCount: 1,
+            ),
+        ]);
+        $report = ReportBuilder::create()->population($population)->computedMetricEvaluation($summary)->build();
+        self::assertSame($population, $report->population);
+        self::assertSame($summary, $report->computedMetricEvaluation);
+        self::assertSame(1, $report->population->abstentions()[0]->count);
+        self::assertSame([], $report->findings);
+        self::assertSame(0, $report->errorCount);
+        self::assertSame([], ReportBuilder::create()->build()->population->abstentions());
+    }
+
+    #[Test]
     public function itCreatesNewInstance(): void
     {
         $builder = ReportBuilder::create();
@@ -186,13 +215,30 @@ final class ReportBuilderTest extends TestCase
     }
 
     /** @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations */
-    private static function finding(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $code, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Finding
+    private static function finding(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $code, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Finding
     {
         $subject ??= match ($symbolPath->getType()) {
             \Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
             default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
         };
         return new Finding(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, code: $code, message: $message, severity: $severity, metricValue: $metricValue, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
+    }
+
+    #[Test]
+    public function itCarriesComputedAbsencesAndDefaultsToAnEmptySummary(): void
+    {
+        $summary = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary([
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence(
+                'computed.custom',
+                \Qualimetrix\Core\Symbol\SymbolLevel::Project,
+                2,
+                1,
+                ['missing.input'],
+                [\Qualimetrix\Core\Symbol\MetricSubject::aggregate(\Qualimetrix\Core\Symbol\SymbolPath::forProject())],
+            ),
+        ]);
+        self::assertSame([], ReportBuilder::create()->build()->computedMetricEvaluation->absences);
+        self::assertSame($summary, ReportBuilder::create()->computedMetricEvaluation($summary)->build()->computedMetricEvaluation);
     }
 
 }

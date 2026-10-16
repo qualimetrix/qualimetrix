@@ -30,7 +30,6 @@ final class MachineReadableFormatsTest extends TestCase
 
     #[Test]
     #[TestWith(['text'])]
-    #[TestWith(['text-verbose'])]
     #[TestWith(['summary'])]
     #[TestWith(['health'])]
     #[TestWith(['checkstyle'])]

@@ -99,7 +99,7 @@ final class DirectiveAuditReportReadingTest extends TestCase
     {
         $sound = self::verdict('src/A.php', 10, 'threshold', 'complexity.ccn', 'effective');
 
-        foreach (['effect', 'form', 'file', 'target'] as $field) {
+        foreach (['effect', 'form', 'file', 'target', 'refusals'] as $field) {
             $missing = $sound;
             unset($missing[$field]);
 
@@ -109,6 +109,13 @@ final class DirectiveAuditReportReadingTest extends TestCase
         yield 'effect null' => [[...$sound, 'effect' => null]];
         yield 'effect not a string' => [[...$sound, 'effect' => 7]];
         yield 'line not a number' => [[...$sound, 'line' => '10']];
+        yield 'refusals null' => [[...$sound, 'refusals' => null]];
+        yield 'refusals not a list' => [[...$sound, 'effect' => 'refused', 'refusals' => ['a' => ['channel' => 'a', 'message' => 'b']]]];
+        yield 'refused without refusals' => [[...$sound, 'effect' => 'refused']];
+        yield 'inert with refusals' => [[...$sound, 'effect' => 'inert', 'refusals' => [['channel' => 'a', 'message' => 'b']]]];
+        yield 'refusal missing channel' => [[...$sound, 'effect' => 'refused', 'refusals' => [['message' => 'b']]]];
+        yield 'refusal missing message' => [[...$sound, 'effect' => 'refused', 'refusals' => [['channel' => 'a']]]];
+
     }
 
     /** A verdict value outside the frozen table is a refusal rather than a guess. */
@@ -261,9 +268,8 @@ final class DirectiveAuditReportReadingTest extends TestCase
                 'no @qmx-threshold was judged "overrun".',
                 'no @qmx-threshold was judged "inert".',
                 'no @qmx-threshold was judged "unmeasured".',
+                'no @qmx-threshold was judged "refused".',
                 'no directive was refused for "producer-disabled".',
-                'no directive was refused for "already-refused".',
-                'no directive was refused for "addresses-every-channel".',
                 'no directive was refused for "masked".',
             ],
             HeterogeneityFloor::shortfalls($report, 1),
@@ -291,9 +297,8 @@ final class DirectiveAuditReportReadingTest extends TestCase
     public function itPrintsWhatThePopulationCarriesWhetherOrNotTheFloorIsMet(): void
     {
         self::assertSame(
-            "  threshold verdicts: effective=1 overrun=1 inert=1 unmeasured=3\n"
-                . "  reasons (both halves): producer-disabled=1 already-refused=1"
-                . " addresses-every-channel=1 masked=1\n"
+            "  threshold verdicts: effective=1 overrun=1 inert=1 unmeasured=2 refused=1\n"
+                . "  reasons (both halves): producer-disabled=1 masked=1\n"
                 . "  measured threshold verdicts: 3\n",
             HeterogeneityFloor::describe(self::heterogeneousReport()),
         );
@@ -314,8 +319,8 @@ final class DirectiveAuditReportReadingTest extends TestCase
             self::verdict('src/A.php', 10, 'threshold', 'code-smell.long-parameter-list', 'effective'),
             self::verdict('src/B.php', 10, 'threshold', 'code-smell.long-parameter-list', 'overrun'),
             self::verdict('src/C.php', 8, 'threshold', 'code-smell.long-parameter-list', 'unmeasured', 'masked'),
-            self::verdict('src/D.php', 7, 'symbol', '*', 'unmeasured', 'addresses-every-channel'),
-            self::verdict('src/D.php', 20, 'threshold', 'no.such-channel', 'unmeasured', 'already-refused'),
+            self::verdict('src/D.php', 7, 'symbol', '*', 'inert'),
+            self::verdict('src/D.php', 20, 'threshold', 'no.such-channel', 'refused'),
             self::verdict('src/D.php', 21, 'threshold', 'complexity.cognitive', 'unmeasured', 'producer-disabled'),
             self::verdict('src/E.php', 4, 'symbol', 'complexity.ccn', 'inert'),
         ], 2));
@@ -334,8 +339,8 @@ final class DirectiveAuditReportReadingTest extends TestCase
             self::verdict('src/A.php', 12, 'threshold', 'complexity.ccn', 'inert'),
             self::verdict('src/B.php', 10, 'threshold', 'code-smell.long-parameter-list', 'overrun'),
             self::verdict('src/C.php', 8, 'threshold', 'code-smell.long-parameter-list', 'unmeasured', 'masked'),
-            self::verdict('src/D.php', 7, 'symbol', '*', 'unmeasured', 'addresses-every-channel'),
-            self::verdict('src/D.php', 20, 'threshold', 'no.such-channel', 'unmeasured', 'already-refused'),
+            self::verdict('src/D.php', 7, 'symbol', '*', 'inert'),
+            self::verdict('src/D.php', 20, 'threshold', 'no.such-channel', 'refused'),
             self::verdict('src/D.php', 21, 'threshold', 'complexity.cognitive', 'unmeasured', 'producer-disabled'),
         ], 2));
     }
@@ -373,6 +378,7 @@ final class DirectiveAuditReportReadingTest extends TestCase
             'form' => $form,
             'target' => $target,
             'effect' => $effect,
+            'refusals' => $effect === 'refused' ? [['channel' => 'annotation.unresolved-directive', 'message' => 'Unknown channel.']] : [],
             'reason' => $reason,
             'masked_by' => null,
             'boundary_observable' => true,

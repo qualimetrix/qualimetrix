@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Run\Contract\Pipeline;
 
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 
 /**
  * Main entry point for code analysis.
@@ -23,8 +22,6 @@ interface AnalysisPipelineInterface
 {
     /**
      * Analyze one explicit Run-owned configuration.
-     *
-     * @param FileDiscoveryInterface|null $customFileDiscovery Custom file discovery strategy (e.g., for Git scope)
      */
-    public function analyze(RunConfiguration $configuration, ?FileDiscoveryInterface $customFileDiscovery = null): AnalysisResult;
+    public function analyze(RunConfiguration $configuration): AnalysisResult;
 }

@@ -13,7 +13,7 @@ declare(strict_types=1);
  *
  * IT USED TO BE PRINTED AND NOT COUNTED. Two reasons, and both are now gone:
  *
- *   1. 117 of the inventory's 455 form-deciding sites record the form of "any"
+ *   1. 117 of the inventory's 454 form-deciding sites record the form of "any"
  *      key rather than a named one, so a set computed over the remainder was
  *      silent about the rest by construction. Those 117 are now dispositioned,
  *      one row each, in `measurement/form-deciding-sites-resolution.tsv`, and
@@ -49,7 +49,7 @@ namespace Qualimetrix\PromiseEffect;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 
 final readonly class FifthSetReport

@@ -44,7 +44,7 @@ final class RuleDocsPageReader
      *                        string `DOCS_PAGE` constant, or the constant it
      *                        exposes is only inherited (from
      *                        {@see \Qualimetrix\Analysis\Evidence\CodeSmell\AbstractCodeSmellRule}
-     *                        or {@see \Qualimetrix\Analysis\Evidence\Security\AbstractSecurityPatternRule})
+     *                        or {@see \Qualimetrix\Analysis\Evidence\Security\DirectSinks\AbstractSecurityPatternRule})
      *                        rather than declared on the class itself
      */
     public static function read(string $ruleClass): string

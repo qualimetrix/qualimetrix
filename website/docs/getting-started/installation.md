@@ -42,11 +42,10 @@ chmod +x qmx.phar
     file it runs from is not named `*.phar`. Renaming it to `qmx` costs several megabytes of copying
     per run.
 
-Two differences from a Composer install:
+Notes for PHAR use:
 
-- HTML reports label the analysed project `qualimetrix/qualimetrix` unless you say otherwise. The
-  label falls back to the root package name, which inside the archive is Qualimetrix's own. Pass
-  `--format-opt=project-name=your/project` to set it.
+- HTML reports use the analysed project's `composer.json` `name`, falling back
+  to its directory name. Pass `--format-opt=project-name=your/project` to override the label.
 - Releases published before this feature carry no `qmx.phar` asset; the first release that does is
   the one whose changelog entry announces it.
 
@@ -64,7 +63,7 @@ Run Qualimetrix in a container without installing PHP locally:
 docker run --rm -v $(pwd):/app qmx check src/
 ```
 
-This mounts your current directory into the container and analyzes the `src/` folder.
+This mounts your current directory into the container and analyzes the `src/` folder. The image sets `XDG_CACHE_HOME=/cache`. Without a `/cache` volume, AST entries disappear with the container. Mount a persistent volume per uid; a volume owned by another uid disables the implicit cache with a warning. Keep it outside `/app`. For runs with `--user $(id -u)`, use a separate volume owned by that uid.
 
 You can pass any CLI options after `check`:
 

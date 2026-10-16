@@ -4,27 +4,30 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\Application;
-use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineRenameChannelsCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
+use Qualimetrix\Infrastructure\Console\Application\Application;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\ChannelRename\BaselineRenameChannelsCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Explanation\BaselineExplainCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Generation\BaselineGenerateCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Maintenance\BaselineCleanupCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Maintenance\BaselineUpdateCommand;
 use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
-use Qualimetrix\Infrastructure\Console\Command\DirectivesCommand;
-use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
-use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
-use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Directives\DirectivesCommand;
+use Qualimetrix\Infrastructure\Console\GraphExport\GraphExportCommand;
+use Qualimetrix\Infrastructure\Console\Invocation\CommandLineSpelling;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\Console\RuleListing\RulesCommand;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\CommandLoader\ContainerCommandLoader;
 use Symfony\Component\Console\Tester\ApplicationTester;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * Every door that reads a valued option or argument, fed by an embedder's
@@ -39,6 +42,24 @@ use Symfony\Component\Console\Tester\ApplicationTester;
 #[CoversClass(CommandLineSpelling::class)]
 final class CommandLineSpellingDoorTest extends TestCase
 {
+    private static ?ContainerBuilder $container = null;
+
+    public static function tearDownAfterClass(): void
+    {
+        self::$container = null;
+    }
+
+    private static function container(): ContainerBuilder
+    {
+        $container = self::$container ??= (new ContainerFactory())->create();
+        $manifest = $container->get(ManifestSnapshotControlInterface::class);
+        if (!$manifest instanceof ManifestSnapshotControlInterface) {
+            throw new LogicException('The command fixture has no manifest snapshot lifetime owner.');
+        }
+        $manifest->beginInvocation();
+
+        return $container;
+    }
     private string $fixture = '';
 
     private string $workingDirectory = '';
@@ -73,6 +94,7 @@ final class CommandLineSpellingDoorTest extends TestCase
         foreach (['suppress-path', 'suppress-namespace', 'rule-opt', 'preset', 'exclude', 'disable-rule', 'only-rule', 'exclude-health', 'format-opt'] as $option) {
             yield 'check --' . $option => [[...$check, '--' . $option => [true]], '--' . $option];
         }
+        yield 'check --rule-opt false' => [[...$check, '--rule-opt' => [false]], '--rule-opt'];
         yield 'check --workers' => [['command' => 'check', 'paths' => ['src'], '--no-cache' => true, '--workers' => true], '--workers'];
         yield 'check paths' => [['command' => 'check', 'paths' => [true], '--no-cache' => true, '--workers' => '0'], 'paths'];
 
@@ -169,12 +191,14 @@ final class CommandLineSpellingDoorTest extends TestCase
 
     private function application(): ApplicationTester
     {
-        $container = (new ContainerFactory())->create();
+        $container = self::container();
         /** @var ErrorStream $errorStream */
         $errorStream = $container->get(ErrorStream::class);
         /** @var RefusalPresenter $refusalPresenter */
         $refusalPresenter = $container->get(RefusalPresenter::class);
-        $application = new Application($errorStream, $refusalPresenter);
+        $manifest = $container->get(ManifestSnapshotControlInterface::class);
+        self::assertInstanceOf(ManifestSnapshotControlInterface::class, $manifest);
+        $application = new Application($errorStream, $refusalPresenter, static fn(): ManifestSnapshotControlInterface => $manifest);
         $application->setAutoExit(false);
         $application->setCommandLoader(new ContainerCommandLoader($container, [
             'check' => CheckCommand::class,

@@ -14,3 +14,5 @@ class Queries
         return mysqli_query($link, "SELECT * FROM users WHERE name = '{$_POST['name']}'");
     }
 }
+
+$topRequest = $_GET;

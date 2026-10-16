@@ -8,13 +8,13 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryRejection;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryValues;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
-use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineEntryRejection;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineEntryValues;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntryMode;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\InertEntryReason;
 
 #[CoversClass(BaselineEntryValues::class)]
 final class BaselineEntryValuesTest extends TestCase

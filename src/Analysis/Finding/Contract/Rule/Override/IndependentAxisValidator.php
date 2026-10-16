@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract\Rule\Override;
 
+use Qualimetrix\Analysis\Finding\Rule\Override\NonNegativeOverrideThresholds;
 use Qualimetrix\Analysis\Finding\Rule\Override\OverrideValidationFailure;
 
 /**
@@ -27,30 +28,8 @@ final class IndependentAxisValidator implements OverrideValidatorInterface
 
     private function __construct() {}
 
-    public function validate(
-        int|float|null $warning,
-        int|float|null $error,
-        bool $errorWasExplicit,
-    ): ?OverrideValidationFailure {
-        if ($warning !== null && $warning < 0) {
-            return new OverrideValidationFailure(
-                code: 'negative_warning',
-                message: \sprintf('warning threshold must be non-negative (got %s)', self::format($warning)),
-            );
-        }
-
-        if ($error !== null && $error < 0) {
-            return new OverrideValidationFailure(
-                code: 'negative_error',
-                message: \sprintf('error threshold must be non-negative (got %s)', self::format($error)),
-            );
-        }
-
-        return null;
-    }
-
-    private static function format(int|float $value): string
+    public function validate(ThresholdOverrideRequest $request): ?OverrideValidationFailure
     {
-        return \is_int($value) ? (string) $value : \sprintf('%g', $value);
+        return NonNegativeOverrideThresholds::judge($request);
     }
 }

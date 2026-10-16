@@ -336,9 +336,9 @@ final class Harness
             '--sweep=' . $sweep,
         ];
 
-        $startedAt = microtime(true);
+        $startedAt = (hrtime(true) / 1_000_000_000);
         $result = Process::run($command, self::rootPath());
-        $seconds = microtime(true) - $startedAt;
+        $seconds = (hrtime(true) / 1_000_000_000) - $startedAt;
 
         if (!\is_array(json_decode($result['stdout'], true))) {
             throw new AuditReportError(\sprintf(
@@ -366,7 +366,7 @@ final class Harness
             ));
         }
 
-        // 0 (clean) and 2 (inert directive found) are the only exit codes a
+        // 0 (clean) and 2 (inert or publishable refused directive found) are the only exit codes a
         // completed audit of a real tree can return. Anything else — 3
         // (configuration), 4 (incomplete run), 1 (unexpected failure) — means
         // this run has no verdicts worth comparing, not that it agrees.

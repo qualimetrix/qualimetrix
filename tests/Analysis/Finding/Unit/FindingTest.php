@@ -9,9 +9,9 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
-use Qualimetrix\Analysis\Finding\Contract\AcceptedLevel;
+use Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -121,45 +121,6 @@ final class FindingTest extends TestCase
         );
 
         self::assertNull($finding->metricValue);
-    }
-
-    #[Test]
-    public function itGetDisplayMessageReturnsHumanMessageWhenAvailable(): void
-    {
-        $finding = new Finding(
-            location: new Location(RelativePath::fromString('src/test.php'), 10),
-            subject: self::subject(),
-            symbolPath: SymbolPath::forClass('App', 'Foo'),
-            ruleName: 'complexity',
-            code: 'complexity.callable',
-            message: 'Cyclomatic complexity is 15, exceeds threshold of 10',
-            severity: Severity::Error,
-            recommendation: 'Cyclomatic complexity: 15 (threshold: 10) — too many code paths',
-        );
-
-        self::assertSame(
-            'Cyclomatic complexity: 15 (threshold: 10) — too many code paths',
-            $finding->getDisplayMessage(),
-        );
-    }
-
-    #[Test]
-    public function itGetDisplayMessageFallsBackToMessageWhenHumanMessageNull(): void
-    {
-        $finding = new Finding(
-            location: new Location(RelativePath::fromString('src/test.php'), 10),
-            subject: self::subject(),
-            symbolPath: SymbolPath::forClass('App', 'Foo'),
-            ruleName: 'complexity',
-            code: 'complexity.callable',
-            message: 'Cyclomatic complexity is 15, exceeds threshold of 10',
-            severity: Severity::Error,
-        );
-
-        self::assertSame(
-            'Cyclomatic complexity is 15, exceeds threshold of 10',
-            $finding->getDisplayMessage(),
-        );
     }
 
     #[Test]

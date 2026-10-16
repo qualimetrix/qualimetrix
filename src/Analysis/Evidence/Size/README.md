@@ -17,11 +17,16 @@ own one synthetic statement. Declarations, empty statements, comments, and blank
 lines are excluded, so the metric is independent of formatting.
 
 Maintainability Index uses this metric as its method-size input. See
-[ADR 0020](../../../docs/adr/0020-method-size-and-npath-semantics.md).
+[ADR 0020](../../../../docs/adr/0020-method-size-and-npath-semantics.md).
 
 ---
 
 ## LOC (Lines of Code)
+
+`size.class-loc` counts the own source span of every named class-like declaration:
+classes, interfaces, traits and enums. Anonymous classes stay excluded. It is
+separate from whole-file LOC and namespace aggregate LOC. HTML class-like area
+uses this own value.
 
 **Collector:** `LocCollector`
 **Provides:** `size.loc`, `size.lloc`, `size.cloc`
@@ -54,6 +59,11 @@ Maintainability Index uses this metric as its method-size input. See
 line break ends its last line and does not open another, so a file ending in a
 newline has exactly `wc -l` lines, and a last line without a newline still
 counts.
+
+`LocCollector` receives the Run-owned snapshot through
+Measurement-owned `SourceMeasuringCollectorInterface`. Collection resets it before byte handoff
+and AST traversal. LOC, parsing and Inline extraction use the same bytes; LOC
+does not reopen source. The line-count formula is unchanged.
 
 For files with namespace declarations, namespace LOC/LLOC/CLOC use each
 `Namespace_` AST node's inclusive source span. Declarations before the first
@@ -112,6 +122,17 @@ class Calculator  // LLOC +1
 Each namespace block contributes its own structural counts, including zero
 counts for empty blocks. The physical file bag retains the whole-file totals used
 at project level.
+
+`ClassCountRule` judges the own `size.class-count` of every namespace, including
+parents. The published `size.class-count.sum` remains a subtree total for other
+consumers. Equality with the configured warning or error boundary is a finding;
+the defaults are 15 and 25 respectively.
+
+Selected rule population distinguishes an unpublished own count from a measured
+zero. The former cannot be judged; the latter is outside the nonempty namespace
+population. A positive count below the finding threshold is a healthy judgement.
+These population outcomes travel separately from findings and do not change the
+exit status.
 
 ### Example
 
@@ -215,35 +236,38 @@ class User
 
 ### Metrics
 
-| Metric                        | Description                                   |
-| ----------------------------- | --------------------------------------------- |
-| `size.method-count`           | Methods excluding getters/setters             |
-| `size.method-count.total`     | All methods                                   |
-| `size.method-count.public`    | Public methods (excluding getters/setters)    |
-| `size.method-count.protected` | Protected methods (excluding getters/setters) |
-| `size.method-count.private`   | Private methods (excluding getters/setters)   |
-| `size.getter-count`           | Getters (`get*`, `is*`, `has*`)               |
-| `size.setter-count`           | Setters (`set*`)                              |
+| Metric                        | Description                                                        |
+| ----------------------------- | ------------------------------------------------------------------ |
+| `size.method-count`           | Methods excluding getters/setters                                  |
+| `size.method-count.total`     | All methods                                                        |
+| `size.method-count.public`    | Public methods (excluding getters/setters)                         |
+| `size.method-count.protected` | Protected methods (excluding getters/setters)                      |
+| `size.method-count.private`   | Private methods (excluding getters/setters)                        |
+| `size.getter-count`           | Simple property-return getters with `get*`, `is*`, or `has*` names |
+| `size.setter-count`           | Simple property-assignment setters with `set*` names               |
 
 ### Getter/Setter Detection
 
-**Getters** (case-insensitive):
-- `get*` — `getName()`, `getValue()`
-- `is*` — `isActive()`, `isValid()`
-- `has*` — `hasChildren()`, `hasErrors()`
+**Getters** use a case-insensitive `get`, `is`, or `has` prefix (including
+the bare name), zero parameters, and exactly one statement returning an
+instance property (`return $this->property;`).
 
-**Setters** (case-insensitive):
-- `set*` — `setName()`, `setValue()`
+**Setters** use a case-insensitive `set` prefix (including the bare name),
+exactly one parameter, and an assignment from that parameter to an instance
+property. An optional `return $this;` may follow. A matching name alone does
+not make a method an accessor: complex predicates, computed getters, and
+forwarding methods count as behavioral methods. `size.method-count.total`
+still includes every declared method.
 
 ### Example
 
 ```php
 class User
 {
-    public function getName(): string { }      // size.getter-count +1
-    public function setName(string $name): void { }  // size.setter-count +1
-    public function isActive(): bool { }       // size.getter-count +1
-    public function hasPermission(): bool { }  // size.getter-count +1
+    public function getName(): string { return $this->name; } // getter +1
+    public function setName(string $name): void { $this->name = $name; } // setter +1
+    public function isActive(): bool { return $this->active; } // getter +1
+    public function hasPermission(): bool { return $this->permission; } // getter +1
 
     public function save(): void { }           // size.method-count.public +1
     protected function validate(): bool { }    // size.method-count.protected +1
@@ -316,13 +340,18 @@ contracts rather than these implementations.
 
 Rule IDs remain stable. `MethodCountCollector` publishes the method/property
 metrics and the WOC input consumed by design policy, while WMC remains the
-Measurement aggregation of callable CCN.
+Complexity-owned sum of method CCN on each exact class declaration.
+
+Exception ancestry classification (`design.is-exception`) belongs to Design's
+`DitGlobalCollector`. Size publishes no exception flag; method, accessor,
+property and WOC measurement remain independent of that classification.
 
 `design.woc` follows Lanza & Marinescu: functional public methods — neither accessor
 nor constructor — over all other public members, which are public methods
-(accessors included) plus public properties. Accessor-ness is decided by method
-name in `MethodCountVisitor`, so a public method whose body only forwards to a
-collaborator counts as functional. Only members declared by the class itself
+(accessors included) plus public properties. Accessor-ness requires both a matching
+name and the simple property-read or property-write body recognized by
+`MethodCountVisitor`. A forwarding or computed `get*` method therefore counts
+as functional. Only members declared by the class itself
 are counted. A class with no public members scores 100 rather than being left
 undefined. `size.method-count.total` moved to `MetricName::SIZE_METHOD_COUNT_TOTAL`
 so Design can require it without importing a Size constant.
@@ -331,22 +360,27 @@ so Design can require it without importing a Size constant.
 
 ```text
 Size/
-├── ClassCountCollector.php
-├── ClassCountVisitor.php
+├── ClassCount/
+│   ├── ClassCountCollector.php
+│   ├── ClassCountOptions.php
+│   ├── ClassCountRule.php
+│   └── ClassCountVisitor.php
 ├── LocCollector.php
 ├── LocVisitor.php
-├── MethodStatementCountCollector.php
-├── MethodStatementCountVisitor.php
 ├── MethodCountCollector.php
 ├── MethodCountMetrics.php
-├── MethodCountVisitor.php
-├── ClassCountOptions.php
-├── ClassCountRule.php
 ├── MethodCountOptions.php
 ├── MethodCountRule.php
+├── MethodCountVisitor.php
+├── MethodStatementCountCollector.php
+├── MethodStatementCountVisitor.php
 ├── PropertyCountOptions.php
 └── PropertyCountRule.php
 ```
+
+LOC classifies physical lines using native PHP tokens: punctuation beside a
+comment still makes a code line. Namespace file contributions retain integer
+totals and contributing-file counts through subtree aggregation.
 
 Collectors keep visitor state per file and reset it between files. Named classes
 only are counted; anonymous classes never create class, method, or property
@@ -360,27 +394,32 @@ anonymous classes, methods, properties, thresholds, and property exclusions.
 
 ## Definition of Done
 
-- All 15 Size declarations remain in this flat leaf without a `Contract/` or
-  role-based subdirectory.
+- Class cardinality collection, traversal, options and rule stay together in
+  `ClassCount/`; the capability publishes no `Contract/` surface.
 - `size.class-count`, `size.method-count`, and `size.property-count` and their
   metric keys retain their existing behaviour. `design.woc` is the Lanza & Marinescu
-  ratio described above; WMC stays the Measurement aggregation of callable CCN.
+  ratio described above; WMC stays the Complexity-owned sum of method CCN on each exact class declaration.
 - The seven owned tests remain discovered and cover anonymous-class exclusion,
   LOC, statement, method, property, and class counts.
 
 
-## Rule option key declarations
+## Declared options
 
-`ClassCountOptions`, `MethodCountOptions` and `PropertyCountOptions` declare
-their accepted option keys through
-`RuleOptionsInterface::acceptedOptionKeys()`: `enabled`, `error`, `threshold`,
-`warning` for the first two; `PropertyCountOptions` adds
-`exclude-promoted-only` and `exclude-readonly`. Each declaration transcribes
-the class's own constructor parameters plus the `threshold` shorthand. Those
-declarations are what `RuleOptionKeyRecognition` compares an incoming key against: a
-key none of them knows is refused with exit 3, at the rule's own level and
-inside a level slot alike.
+Size options declare key/value forms and bands through `acceptedOptionKeys()`.
+`RuleOptionSurface` registers those forms in `RulesSection`; framework enabled
+and root suppression keys are added once by Finding. `fromResolved` reads the
+judged snapshot, not a constructor-reflected or raw-array dictionary. Unknown
+keys refuse with their authored full path before Discovery. Empty maps preserve
+lower writes and effective warning/error bands must be coherent. Existing size
+algorithms, levels and numeric defaults are unchanged.
 
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+Class method and property populations use the exact declaration roster. A published zero is judged before severity selection; an absent value remains unjudged. Property exclusions keep their native strict flag comparisons and configured order.
+
+Gate construction and lazy declaration-metric admission use Finding-owned
+`AbstractRule` operations. Each rule retains its raw metric keys, coordinate,
+ordered predicates and failure reasons; a refused coordinate never reads its
+metric bag.

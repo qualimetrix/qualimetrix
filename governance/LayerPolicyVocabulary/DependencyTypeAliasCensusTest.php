@@ -27,7 +27,7 @@ final class DependencyTypeAliasCensusTest extends TestCase
     #[DataProvider('everyDependencyTypeCase')]
     public function itAcceptsEveryDependencyTypeCaseAsADirectToken(DependencyType $case): void
     {
-        $result = AllowAliasExpander::expand([$case->value], 'architecture.allow.app[0]');
+        $result = AllowAliasExpander::expand($case->value);
 
         self::assertSame([$case], $result);
     }

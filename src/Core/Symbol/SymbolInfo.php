@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\Symbol;
 
+use InvalidArgumentException;
 use Qualimetrix\Core\Path\RelativePath;
 
 final readonly class SymbolInfo
@@ -13,8 +14,14 @@ final readonly class SymbolInfo
         public ?RelativePath $file,
         public ?int $line,
         public ?CallableKind $callableKind = null,
-        public ?LogicalClassPath $classAggregationOwner = null,
+        public ?DeclarationPath $classAggregationOwner = null,
+        public bool $anonymousClassContext = false,
     ) {
+        if ($callableKind === null && $classAggregationOwner !== null) {
+            throw new InvalidArgumentException('Class aggregation ownership requires callable metadata');
+        }
+        $callableKind?->assertClassAggregationOwner($classAggregationOwner, $anonymousClassContext);
+
         $this->subject = $symbolPath instanceof MetricSubject ? $symbolPath : null;
         $this->symbolPath = $symbolPath instanceof MetricSubject ? $symbolPath->toSymbolPath() : $symbolPath;
     }

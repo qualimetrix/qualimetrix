@@ -38,11 +38,13 @@ final class Profiler
         ];
     }
 
-    public function start(string $name, ?string $category = null): void
+    /** @param array<string, scalar> $attributes */
+    public function start(string $name, ?string $category = null, array $attributes = []): void
     {
         $span = new Span(
             name: $name,
             category: $category,
+            attributes: $attributes,
             startTime: hrtime(true),
             startMemory: memory_get_usage(true),
         );

@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\MetricHintCatalog;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -69,7 +69,7 @@ final class HealthDecompositionAgreesWithFormulasTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->catalog = new HealthDecompositionCatalog();
+        $this->catalog = new HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression());
         $this->hints = new MetricHintCatalog();
         $this->knees = new FormulaKneeReader();
         $this->expression = new ComputedMetricExpression();
@@ -131,11 +131,17 @@ final class HealthDecompositionAgreesWithFormulasTest extends TestCase
 
                 if (self::sharesItsKnee($input, $inputs)) {
                     // The knee sits on a weighted blend of several signals —
-                    // `ce_packages * 3 + sqrt(ce) * 0.5 - 5` — so it is a
+                    // `ce_packages * 3 + sqrt(ce) * 0.5 - 4` — so it is a
                     // threshold on the blend and no single input can claim it.
-                    // What such a line advertises is editorial, and the formula
-                    // contradicts nothing; the assertion above still fixes that
-                    // the term exists and which way it points.
+                    // A project target must name that shared threshold, never
+                    // claim a scalar boundary for either component.
+                    if ($level === SymbolLevel::Project) {
+                        self::assertNull($this->advertisedThreshold($key), 'a joint term cannot advertise an independent scalar target');
+                        self::assertStringStartsWith(
+                            'joint breadth at most ' . $knee['knee'],
+                            (string) $this->hints->getGoodValue($key),
+                        );
+                    }
                     $checked++;
 
                     continue;
@@ -228,6 +234,18 @@ final class HealthDecompositionAgreesWithFormulasTest extends TestCase
                     $resolved,
                     \sprintf('"%s" carries an advertised target but the HTML report resolves no bands for it', $key),
                 );
+
+                if (self::sharesItsKnee($input, $this->catalog->inputsFor($dimension, $level))) {
+                    $ranges = $hints[$resolved]['ranges'];
+                    self::assertCount(1, $ranges, 'a joint term must not split its components into independent good/bad bands');
+                    self::assertSame(true, $ranges[0]['above'] ?? null);
+                    self::assertArrayNotHasKey('max', $ranges[0], 'a joint term has no independent scalar boundary');
+                    self::assertStringContainsString('Joint breadth target:', $ranges[0]['text']);
+                    self::assertStringContainsString('at most ' . $knee['knee'], $ranges[0]['text']);
+                    $checked++;
+
+                    continue;
+                }
 
                 $boundaries = [];
                 foreach ($hints[$resolved]['ranges'] as $band) {

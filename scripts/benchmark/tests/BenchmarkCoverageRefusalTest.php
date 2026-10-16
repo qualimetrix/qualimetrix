@@ -24,6 +24,49 @@ final class BenchmarkCoverageRefusalTest extends TestCase
         }
     }
 
+    #[Test]
+    public function itRunsTheRealCliInsideTheMeasuredProjectWithNeutralConfiguration(): void
+    {
+        $fixtureRoot = $this->createFixtureRoot();
+        $this->copyScript('benchmark-regression.php', $fixtureRoot);
+        $projectPath = $fixtureRoot . '/fixtures/project';
+        mkdir($projectPath, recursive: true);
+        file_put_contents($projectPath . '/Calculator.php', <<<'PHP'
+<?php
+namespace BenchmarkFixture;
+final class Calculator
+{
+    public function add(int $left, int $right): int
+    {
+        return $left + $right;
+    }
+}
+PHP);
+        file_put_contents($fixtureRoot . '/qmx.yaml', "benchmark_poison: true\n");
+        file_put_contents($projectPath . '/qmx.yaml', "benchmark_poison: true\n");
+        mkdir($fixtureRoot . '/bin');
+        self::assertTrue(symlink(\dirname(__DIR__, 3) . '/bin/qmx', $fixtureRoot . '/bin/qmx'));
+
+        $baselinePath = $fixtureRoot . '/docs/internal/benchmark-baselines.json';
+        mkdir(\dirname($baselinePath), recursive: true);
+        $originalBaseline = json_encode([
+            'projects' => [
+                'fixture' => [
+                    'path' => 'fixtures/project',
+                    'expectations' => ['health.typing' => [100, 100]],
+                ],
+            ],
+        ], \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR) . "\n";
+        file_put_contents($baselinePath, $originalBaseline);
+
+        $process = new Process([\PHP_BINARY, 'scripts/benchmark-regression.php'], $fixtureRoot);
+        $process->run();
+
+        self::assertSame(0, $process->getExitCode(), $process->getErrorOutput());
+        self::assertStringContainsString('All 1 projects within expected ranges.', $process->getErrorOutput());
+        self::assertSame($originalBaseline, file_get_contents($baselinePath));
+    }
+
     #[TestWith(['partial'])]
     #[TestWith(['missing'])]
     #[TestWith(['malformed'])]
@@ -104,9 +147,38 @@ final class BenchmarkCoverageRefusalTest extends TestCase
         $process = new Process([\PHP_BINARY, 'scripts/benchmark-regression.php', '--update-baselines'], $fixtureRoot);
         $process->run();
 
-        self::assertSame(1, $process->getExitCode());
+        self::assertSame(2, $process->getExitCode());
         self::assertStringContainsString('missing: benchmark path not found', $process->getErrorOutput());
         self::assertSame($originalBaseline, file_get_contents($baselinePath));
+    }
+
+    #[Test]
+    public function itPreservesExactSubjectsAndCompleteReceiptInRawCapture(): void
+    {
+        $fixtureRoot = $this->createFixtureRoot();
+        $this->copyScript('collect-benchmark-data.php', $fixtureRoot);
+        $this->createCollectorProjectDirectories($fixtureRoot);
+        $artifact = json_decode($this->metricsArtifact('complete'), true, flags: \JSON_THROW_ON_ERROR);
+        $artifact['symbols'][] = [
+            'type' => 'class', 'name' => 'App\\Repeated', 'subject' => 'declaration:src/one.php:1:App\\Repeated',
+            'file' => 'src/one.php', 'line' => 1, 'metrics' => ['size.class-loc' => 7, 'cohesion.tcc' => 0],
+        ];
+        $artifact['symbols'][] = [
+            'type' => 'class', 'name' => 'App\\Repeated', 'subject' => 'declaration:src/two.php:1:App\\Repeated',
+            'file' => 'src/two.php', 'line' => 1, 'metrics' => ['size.class-loc' => 11],
+        ];
+        $this->writeFakeQmx($fixtureRoot, json_encode($artifact, \JSON_THROW_ON_ERROR));
+        $captureDir = $fixtureRoot . '/captures';
+        $process = new Process([\PHP_BINARY, 'scripts/collect-benchmark-data.php', $fixtureRoot . '/digest.json', '--capture-dir=' . $captureDir], $fixtureRoot);
+        $process->run();
+        self::assertSame(0, $process->getExitCode(), $process->getErrorOutput());
+        $capture = json_decode((string) file_get_contents($captureDir . '/qmx.json'), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame($artifact['coverage'], $capture['coverage']);
+        self::assertSame($artifact['symbols'][1]['subject'], $capture['symbols'][1]['subject']);
+        self::assertSame($artifact['symbols'][2]['subject'], $capture['symbols'][2]['subject']);
+        self::assertSame(0, $capture['symbols'][1]['metrics']['cohesion.tcc']);
+        self::assertSame('src/one.php', $capture['symbols'][1]['file']);
+        self::assertSame(1, $capture['symbols'][1]['line']);
     }
 
     private function createFixtureRoot(): string
@@ -210,6 +282,8 @@ PHP;
             'benchmarks/vendor/monolog/monolog/src',
             'benchmarks/vendor/guzzlehttp/guzzle/src',
             'benchmarks/vendor/laravel/framework/src',
+            'benchmarks/vendor/codeigniter/framework/system',
+            'benchmarks/vendor/johnpbloch/wordpress-core/wp-includes',
             'src',
         ];
         foreach ($paths as $path) {

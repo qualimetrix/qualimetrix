@@ -28,10 +28,11 @@ final class ProfileSession implements ProfilerInterface, ProfileSessionControlIn
         $this->enabled = false;
         $this->profiler->clear();
     }
-    public function start(string $name, ?string $category = null): void
+    /** @param array<string, scalar> $attributes */
+    public function start(string $name, ?string $category = null, array $attributes = []): void
     {
         if ($this->enabled) {
-            $this->profiler->start($name, $category);
+            $this->profiler->start($name, $category, $attributes);
         }
     }
     public function stop(string $name): void

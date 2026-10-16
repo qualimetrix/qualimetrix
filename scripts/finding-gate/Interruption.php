@@ -15,7 +15,7 @@ namespace QmxFindingGate;
  *
  * The handler only records the signal. The decision is taken synchronously, by
  * {@see raiseIfRequested()} at the points listed there — the idiom the controls
- * harness already argues for in `finding-gate-controls/Shell.php`. Throwing
+ * harness already argues for in its own `Shell`. Throwing
  * from the handler itself was tried on paper and rejected: two of the gate's
  * own `catch (GateError)` sites swallow and continue, and both wrap CPU-bound
  * string work, which is where an asynchronous signal is most likely to land. An
@@ -131,7 +131,7 @@ final class Interruption
      *
      * What the exit code is read from, and read from here rather than from
      * catching {@see Interrupted}: a stopping run also terminates its workers,
-     * and {@see CaseScheduler::run()} rethrows a termination failure out of its
+     * and {@see CaseScheduler::captureCases()} rethrows a termination failure out of its
      * own `finally`, which would replace the interrupt. And conditioned on the
      * raise because every finished run suppresses raising while it hands its
      * scratch back — without that, a signal recorded afterwards would make the

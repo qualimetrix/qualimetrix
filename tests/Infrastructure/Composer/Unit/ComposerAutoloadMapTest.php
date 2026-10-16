@@ -9,9 +9,11 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap;
+use Qualimetrix\Infrastructure\Composer\ComposerClassPathLookup;
 use RuntimeException;
 
 #[CoversClass(ComposerAutoloadMap::class)]
+#[CoversClass(ComposerClassPathLookup::class)]
 final class ComposerAutoloadMapTest extends TestCase
 {
     private string $root;
@@ -31,9 +33,32 @@ final class ComposerAutoloadMapTest extends TestCase
     }
 
     #[Test]
+    public function itObservesBoundedRootOmissionsWithoutLoadingAndResetsThemOnReanchor(): void
+    {
+        $this->writeManifest(['name' => 'fixture/project']);
+        $deep = $this->root;
+        for ($level = 0; $level < 14; ++$level) {
+            $deep .= '/nested';
+        }
+        mkdir($deep, 0777, true);
+        $reader = new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader();
+        $map = new ComposerAutoloadMap($reader);
+        $map->pointAt($this->root, [$deep, $this->root . '/missing-parent/child']);
+        $omissions = $map->observedRootOmissions();
+        self::assertCount(2, $omissions);
+        self::assertSame('walk-limit', $omissions[0]->cause);
+        self::assertSame(12, $omissions[0]->visitedLevels);
+        self::assertSame(realpath($deep), $omissions[0]->startDirectory);
+        self::assertSame('unresolvable', $omissions[1]->cause);
+        self::assertSame([], $reader->observedIssues());
+        $map->pointAt($this->root, [$this->root . '/src']);
+        self::assertSame([], $map->observedRootOmissions());
+    }
+
+    #[Test]
     public function itSaysSoWhenTheRunHasNoInstallToRead(): void
     {
-        $map = new ComposerAutoloadMap();
+        $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $map->pointAt($this->root . '/nowhere', [$this->root . '/nowhere']);
 
         self::assertFalse($map->isConfigured());
@@ -46,11 +71,61 @@ final class ComposerAutoloadMapTest extends TestCase
         $this->writeManifest(['autoload' => ['psr-4' => ['App\\' => 'src/']]]);
         $file = $this->write('src/Thing.php', "<?php\n\nnamespace App;\n\nclass Thing {}\n");
 
-        $map = new ComposerAutoloadMap();
+        $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $map->pointAt($this->root, [$this->root . '/src']);
 
         self::assertTrue($map->isConfigured());
         self::assertSame(realpath($file), realpath((string) $map->fileFor('App\\Thing')));
+    }
+
+    #[Test]
+    public function itRefusesAPsr4FileWhoseCaseDiffersFromTheRequestedClass(): void
+    {
+        $this->writeManifest(['autoload' => ['psr-4' => ['App\\' => 'src/']]]);
+        $this->write('src/Foo.php', "<?php\n\nnamespace App;\n\nclass Foo {}\n");
+
+        $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
+        $map->pointAt($this->root, [$this->root . '/src']);
+
+        self::assertNull($map->fileFor('App\\foo'));
+    }
+
+    #[Test]
+    public function itRefusesAPsr4DirectoryWhoseCaseDiffersFromTheRequestedNamespace(): void
+    {
+        $this->writeManifest(['autoload' => ['psr-4' => ['App\\' => 'src/']]]);
+        $this->write('src/sub/Foo.php', "<?php\n\nnamespace App\\sub;\n\nclass Foo {}\n");
+
+        $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
+        $map->pointAt($this->root, [$this->root . '/src']);
+
+        self::assertNull($map->fileFor('App\\Sub\\Foo'));
+    }
+
+    #[Test]
+    public function itRefusesAPsr4MappingBaseWhoseAuthoredCaseDiffersFromDisk(): void
+    {
+        $this->writeManifest(['autoload' => ['psr-4' => ['App\\' => 'Lib/']]]);
+        $this->write('lib/Foo.php', "<?php\n\nnamespace App;\n\nclass Foo {}\n");
+
+        $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
+        $map->pointAt($this->root, [$this->root . '/src']);
+
+        self::assertNull($map->fileFor('App\\Foo'));
+    }
+
+    #[Test]
+    public function itDropsTheDirectoryListingSnapshotWhenReanchored(): void
+    {
+        $this->writeManifest(['autoload' => ['psr-4' => ['App\\' => 'src/']]]);
+        $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
+        $map->pointAt($this->root, [$this->root . '/src']);
+        self::assertNull($map->fileFor('App\\AddedLater'));
+
+        $file = $this->write('src/AddedLater.php', "<?php\n\nnamespace App;\n\nclass AddedLater {}\n");
+        $map->pointAt($this->root, [$this->root . '/src']);
+
+        self::assertSame(realpath($file), realpath((string) $map->fileFor('App\\AddedLater')));
     }
 
     #[Test]
@@ -64,7 +139,7 @@ final class ComposerAutoloadMapTest extends TestCase
             'install-path' => '../acme/lib',
         ]]);
 
-        $map = new ComposerAutoloadMap();
+        $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $map->pointAt($this->root, [$this->root . '/src']);
 
         self::assertSame(realpath($file), realpath((string) $map->fileFor('Acme\\Widget')));
@@ -111,7 +186,7 @@ final class ComposerAutoloadMapTest extends TestCase
             );
             PHP, $composerBaseDirectoryExpression));
 
-        $map = new ComposerAutoloadMap();
+        $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $map->pointAt($this->root, [$this->root . '/src']);
 
         $placedRootParent = $map->fileFor('App\\RootParent');
@@ -151,7 +226,7 @@ final class ComposerAutoloadMapTest extends TestCase
             ]],
         ], \JSON_PRETTY_PRINT));
 
-        $map = new ComposerAutoloadMap();
+        $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $map->pointAt($this->root, [$this->root . '/src']);
 
         self::assertSame(realpath($file), realpath((string) $map->fileFor('Acme\\Moved')));
@@ -175,7 +250,7 @@ final class ComposerAutoloadMapTest extends TestCase
             ['name' => 'other/dep', 'autoload' => ['psr-4' => ['Other\\' => 'src/']], 'install-path' => '../other/dep'],
         ]);
 
-        $map = new ComposerAutoloadMap();
+        $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $map->pointAt($this->root, [$this->root . '/vendor/acme/lib/src']);
 
         // The sibling is invisible from the analysed package's own manifest.
@@ -201,7 +276,7 @@ final class ComposerAutoloadMapTest extends TestCase
         ));
 
         try {
-            $map = new ComposerAutoloadMap();
+            $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
             $map->pointAt($this->root, [$this->root . '/src']);
 
             self::assertNull($map->fileFor('Escaped\\Secret'));
@@ -220,7 +295,7 @@ final class ComposerAutoloadMapTest extends TestCase
         $this->writeManifest(['autoload' => ['psr-4' => ['Escaped\\' => '../' . basename($outsideDirectory) . '/']]]);
 
         try {
-            $map = new ComposerAutoloadMap();
+            $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
             $map->pointAt($this->root, [$this->root . '/src']);
 
             self::assertNull($map->fileFor('Escaped\\Secret'));
@@ -244,7 +319,7 @@ final class ComposerAutoloadMapTest extends TestCase
         $padding = str_repeat("// pad\n", 1_300_000);
         $this->write('vendor/composer/autoload_classmap.php', "<?php\n\n" . $padding . "\n\$vendorDir = dirname(__DIR__);\n\nreturn array(\n    'Acme\\\\Huge' => \$vendorDir . '/acme/big/src/Huge.php',\n);\n");
 
-        $map = new ComposerAutoloadMap();
+        $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $map->pointAt($this->root, [$this->root . '/src']);
 
         self::assertGreaterThan(8 * 1024 * 1024, (int) filesize($this->root . '/vendor/composer/autoload_classmap.php'));

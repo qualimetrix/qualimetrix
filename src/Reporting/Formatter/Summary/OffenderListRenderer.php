@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter\Summary;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\OffenderNamespaceSelection;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
 use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
@@ -14,14 +15,12 @@ use Qualimetrix\Reporting\Report;
 
 /**
  * Renders the worst namespaces and worst classes sections for the summary formatter.
+ *
+ * @qmx-threshold coupling.instability warning=0.800001 -- Offender presentation composes selection, ranking, styling and report contracts through few consumers; extracting those steps transfers the same outward dependencies.
  */
 final class OffenderListRenderer
 {
     private const int MAX_WORST_OFFENDERS = 3;
-
-    /** Default thresholds for worst offender score colorization (from health.overall defaults) */
-    private const float OFFENDER_WARN_THRESHOLD = 50.0;
-    private const float OFFENDER_ERR_THRESHOLD = 30.0;
 
     public function __construct(
         private readonly FindingFilter $filter,
@@ -83,14 +82,14 @@ final class OffenderListRenderer
     }
 
     /**
-     * Resolves worst classes: builds from namespace metrics when filtering, otherwise uses pre-built list.
+     * Selects worst classes from the complete report population.
      *
      * @return list<WorstOffender>
      */
     public function resolveWorstClasses(Report $report, FormatterContext $context): array
     {
-        if ($context->namespace !== null && $report->metrics !== null) {
-            return $this->namespaceDrillDown->buildWorstClasses($report->metrics, $context->namespace, $report->findings);
+        if ($context->namespace !== null) {
+            return $this->namespaceDrillDown->buildWorstClasses($report->worstClasses, new OffenderNamespaceSelection([$context->namespace]));
         }
 
         return $this->filter->filterWorstOffenders($report->worstClasses, $context);
@@ -114,12 +113,12 @@ final class OffenderListRenderer
 
         $remaining = \count($offenders) - $topN;
         if ($remaining > 0) {
-            $lines[] = $color->dim(\sprintf('  +%d more (use --format=html or --format-opt=top=%d)', $remaining, \count($offenders)));
+            $lines[] = $color->dim(\sprintf('  +%d more (use --format-opt=top=%d)', $remaining, \count($offenders)));
         }
     }
 
     /**
-     * Re-ranks offenders when rank-by=density is requested.
+     * Ranks selected offenders by the requested score or density.
      *
      * @param list<WorstOffender> $offenders
      *
@@ -127,7 +126,7 @@ final class OffenderListRenderer
      */
     private function rankOffenders(array $offenders, FormatterContext $context): array
     {
-        return WorstOffender::rankByDensity($offenders, FormatOptionValue::rankBy($context->getOption('rank-by', 'count')));
+        return WorstOffender::rank($offenders, FormatOptionValue::rankBy($context->getOption('rank-by', 'score')));
     }
 
     private function getTopN(FormatterContext $context): int
@@ -151,7 +150,7 @@ final class OffenderListRenderer
 
         $meta = [];
         if ($showClassCount && $offender->classCount > 0) {
-            $meta[] = \sprintf('%d classes', $offender->classCount);
+            $meta[] = \sprintf('%d classes in subtree', $offender->classCount);
         }
         if ($offender->violationCount > 0) {
             $meta[] = \sprintf('%d violations', $offender->violationCount);
@@ -165,7 +164,7 @@ final class OffenderListRenderer
 
         $lines[] = \sprintf(
             '  %s %s%s%s',
-            $this->colorizeScore($scoreText, $offender->healthOverall, self::OFFENDER_WARN_THRESHOLD, self::OFFENDER_ERR_THRESHOLD, $color),
+            $this->colorizeScore($scoreText, $offender->healthOverall, $offender->overallThresholds[0], $offender->overallThresholds[1], $color),
             $color->bold($name),
             $metaStr,
             $reasonStr,

@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Cache\CacheKeyGenerator;
-use SplFileInfo;
+use Symfony\Component\Process\Process;
 
 #[CoversClass(CacheKeyGenerator::class)]
 final class CacheKeyGeneratorTest extends TestCase
@@ -34,10 +34,9 @@ final class CacheKeyGeneratorTest extends TestCase
     #[Test]
     public function itGeneratesConsistentKey(): void
     {
-        $file = new SplFileInfo($this->tempFile);
 
-        $key1 = $this->generator->generate($file);
-        $key2 = $this->generator->generate($file);
+        $key1 = $this->key();
+        $key2 = $this->key();
 
         self::assertSame($key1, $key2);
         self::assertNotEmpty($key1);
@@ -46,12 +45,11 @@ final class CacheKeyGeneratorTest extends TestCase
     #[Test]
     public function itGeneratesTheSameKeyForAlreadyReadContent(): void
     {
-        $file = new SplFileInfo($this->tempFile);
         $content = file_get_contents($this->tempFile);
         self::assertNotFalse($content);
 
         self::assertSame(
-            $this->generator->generate($file),
+            $this->key(),
             $this->generator->generateForContent($content),
         );
     }
@@ -59,15 +57,14 @@ final class CacheKeyGeneratorTest extends TestCase
     #[Test]
     public function itGeneratesSameKeyWhenOnlyMtimeChanges(): void
     {
-        $file = new SplFileInfo($this->tempFile);
-        $key1 = $this->generator->generate($file);
+        $key1 = $this->key();
 
         // A metadata-only timestamp change must not invalidate the AST cache.
         sleep(1);
         touch($this->tempFile);
         clearstatcache(true, $this->tempFile);
 
-        $key2 = $this->generator->generate(new SplFileInfo($this->tempFile));
+        $key2 = $this->key();
 
         self::assertSame($key1, $key2);
     }
@@ -75,14 +72,13 @@ final class CacheKeyGeneratorTest extends TestCase
     #[Test]
     public function itGeneratesDifferentKeyWhenContentChanges(): void
     {
-        $file = new SplFileInfo($this->tempFile);
-        $key1 = $this->generator->generate($file);
+        $key1 = $this->key();
 
         // Change file content (which changes size and mtime)
         file_put_contents($this->tempFile, '<?php class Test { public function foo() {} }');
         clearstatcache(true, $this->tempFile);
 
-        $key2 = $this->generator->generate(new SplFileInfo($this->tempFile));
+        $key2 = $this->key();
 
         self::assertNotSame($key1, $key2);
     }
@@ -97,35 +93,46 @@ final class CacheKeyGeneratorTest extends TestCase
         file_put_contents($this->tempFile, $firstContent);
         $originalMtime = filemtime($this->tempFile);
         self::assertNotFalse($originalMtime);
-        $key1 = $this->generator->generate(new SplFileInfo($this->tempFile));
+        $key1 = $this->key();
 
         file_put_contents($this->tempFile, $secondContent);
         touch($this->tempFile, $originalMtime);
         clearstatcache(true, $this->tempFile);
 
-        $key2 = $this->generator->generate(new SplFileInfo($this->tempFile));
+        $key2 = $this->key();
 
         self::assertNotSame($key1, $key2);
     }
 
     #[Test]
-    public function itReturnsEmptyKeyForNonExistentFile(): void
+    public function itSeparatesLengthPrefixedFieldsAndParseIni(): void
     {
-        $file = new SplFileInfo('/non/existent/file.php');
+        $parserVersion = InstalledVersions::getVersion('nikic/php-parser');
+        $content = '<?php class Snapshot {}';
+        $fields = ['php' . \PHP_MAJOR_VERSION . '.' . \PHP_MINOR_VERSION, $parserVersion, (string) \ini_get('short_open_tag'), (string) \ini_get('zend.multibyte'), (string) \ini_get('zend.script_encoding'), $content];
+        $encoded = '';
+        foreach ($fields as $field) {
+            self::assertIsString($field);
+            $encoded .= \strlen($field) . ':' . $field;
+        }
+        self::assertSame(hash('sha256', $encoded), $this->generator->generateForContent($content));
+        $script = 'require ' . var_export(\dirname(__DIR__, 4) . '/vendor/autoload.php', true) . '; echo (new \Qualimetrix\Infrastructure\Cache\CacheKeyGenerator())->generateForContent("<? eval(\\$input); ?>");';
+        $keys = [];
+        foreach (['0', '1'] as $shortOpenTag) {
+            $process = new Process([\PHP_BINARY, '-d', 'short_open_tag=' . $shortOpenTag, '-r', $script]);
+            $process->mustRun();
+            $keys[] = $process->getOutput();
+        }
+        self::assertNotSame($keys[0], $keys[1]);
 
-        $key = $this->generator->generate($file);
-
-        self::assertSame('', $key);
     }
 
-    #[Test]
-    public function itReturnsEmptyKeyForNonFileTarget(): void
+    private function key(): string
     {
-        $directory = new SplFileInfo(\dirname($this->tempFile));
+        $content = file_get_contents($this->tempFile);
+        self::assertIsString($content);
 
-        $key = $this->generator->generate($directory);
-
-        self::assertSame('', $key);
+        return $this->generator->generateForContent($content);
     }
 
     #[Test]
@@ -161,11 +168,10 @@ final class CacheKeyGeneratorTest extends TestCase
     #[Test]
     public function itGeneratesKeyOfExpectedLength(): void
     {
-        $file = new SplFileInfo($this->tempFile);
 
-        $key = $this->generator->generate($file);
+        $key = $this->key();
 
-        // xxh128 produces 32 hex characters
-        self::assertSame(32, \strlen($key));
+        // SHA-256 produces 64 hexadecimal characters
+        self::assertSame(64, \strlen($key));
     }
 }

@@ -1,0 +1,48 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Analysis\Policy\Baseline\Explanation;
+
+use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+
+use Qualimetrix\Analysis\Policy\Baseline\Contract\CurrentMeasurement;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
+
+/**
+ * The effective boundary for one identity, and where each part of it comes
+ * from — `baseline:explain`'s "`ccn` ≤ 25 from baseline; `qmx.yaml` says 10;
+ * annotation raises it to 40" (ADR 0017).
+ *
+ * Each source is independently nullable, and absence is never conflated
+ * with a zero-valued source: a symbol with no baseline entry for this
+ * identity has {@see $baseline} `null`, not a source claiming to have
+ * accepted nothing.
+ */
+final readonly class EffectiveBoundary
+{
+    /**
+     * @param BaselineIdentity $identity the symbol, channel and (when present) dependency
+     *                                   edge this boundary is about
+     * @param ?EffectiveBoundaryBaselineSource $baseline `null` when no baseline entry
+     *                                                   addresses this identity
+     * @param int|float|null $configuredThreshold the rule's `qmx.yaml`-configured boundary
+     *                                            (before any `@qmx-threshold` override),
+     *                                            `null` when it could not be resolved
+     * @param ?ThresholdOverride $annotation the `@qmx-threshold` override in scope for this
+     *                                       symbol and rule, `null` when none applies
+     * @param list<string> $currentLocations `file:line` of each finding the run reports under
+     *                                       this identity, in report order. Several identities of
+     *                                       one channel and subject differ only in an occurrence
+     *                                       hash — each copy of a duplicate block does — and where
+     *                                       their findings sit is what tells them apart
+     */
+    public function __construct(
+        public BaselineIdentity $identity,
+        public ?EffectiveBoundaryBaselineSource $baseline,
+        public int|float|null $configuredThreshold,
+        public ?ThresholdOverride $annotation,
+        public CurrentMeasurement $now,
+        public array $currentLocations = [],
+    ) {}
+}

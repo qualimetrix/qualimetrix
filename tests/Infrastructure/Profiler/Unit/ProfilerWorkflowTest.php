@@ -95,7 +95,7 @@ final class ProfilerWorkflowTest extends TestCase
         self::assertIsArray($data);
         self::assertCount(1, $data['spans']);
         $span = $data['spans'][0];
-        self::assertSame(['name', 'category', 'duration_ms', 'memory_delta_bytes', 'stopped', 'children'], array_keys($span));
+        self::assertSame(['name', 'category', 'attributes', 'duration_ms', 'memory_delta_bytes', 'stopped', 'children'], array_keys($span));
         self::assertSame('test', $span['name']);
         self::assertSame('category', $span['category']);
         self::assertTrue($span['stopped']);
@@ -145,4 +145,21 @@ final class ProfilerWorkflowTest extends TestCase
         // Both spans should be counted
         self::assertSame(2, $summary['process_file']['count']);
     }
+
+    #[Test]
+    public function itCarriesWorkerCollectionAttributesThroughBothActualExports(): void
+    {
+        $profiler = new ProfileSession();
+        $profiler->enable();
+        $attributes = ['files' => 111, 'workers' => 2, 'timing' => 'per-file timing not collected in workers'];
+        $profiler->start('collection.workers', 'collection', $attributes);
+        $profiler->stop('collection.workers');
+        $json = json_decode($profiler->export(\Qualimetrix\Infrastructure\Profiler\Contract\ProfileFormat::Json), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame('collection', $json['spans'][0]['category']);
+        self::assertSame($attributes, $json['spans'][0]['attributes']);
+        $chrome = json_decode($profiler->export(\Qualimetrix\Infrastructure\Profiler\Contract\ProfileFormat::ChromeTracing), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame($attributes, $chrome['traceEvents'][0]['args']);
+        self::assertSame('collection', $chrome['traceEvents'][0]['cat']);
+    }
+
 }

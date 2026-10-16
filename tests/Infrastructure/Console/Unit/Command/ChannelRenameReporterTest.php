@@ -7,8 +7,8 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Unit\Command;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameReport;
-use Qualimetrix\Infrastructure\Console\Command\ChannelRenameReporter;
+use Qualimetrix\Analysis\Policy\Baseline\ChannelRename\ChannelRenameReport;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\ChannelRename\ChannelRenameReporter;
 use stdClass;
 use Symfony\Component\Console\Output\BufferedOutput;
 

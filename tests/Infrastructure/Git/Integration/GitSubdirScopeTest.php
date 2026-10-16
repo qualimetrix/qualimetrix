@@ -9,8 +9,8 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Infrastructure\Git\ChangedFile;
-use Qualimetrix\Infrastructure\Git\ChangeStatus;
+use Qualimetrix\Infrastructure\Git\ChangeListing\ChangedFile;
+use Qualimetrix\Infrastructure\Git\ChangeListing\ChangeStatus;
 use Qualimetrix\Infrastructure\Git\GitClient;
 use RuntimeException;
 use Stringable;
@@ -90,6 +90,40 @@ final class GitSubdirScopeTest extends TestCase
         self::assertStringContainsString('Skipped 1 changed file(s)', $warnings[0]);
         self::assertStringContainsString('did not resolve inside the project root', $warnings[0]);
         self::assertStringContainsString('Outsider.php', $warnings[0]);
+    }
+
+    #[Test]
+    public function itIgnoresRepositoryRelativeDiffConfiguration(): void
+    {
+        file_put_contents($this->projectRoot . '/Inside.php', "<?php\n");
+        $this->exec('git add -A', $this->gitToplevel);
+        $this->exec('git config diff.relative true', $this->gitToplevel);
+
+        $client = new GitClient(AbsolutePath::fromString($this->projectRoot));
+        self::assertSame(['Inside.php'], array_map(
+            static fn(ChangedFile $file): string => $file->path->value(),
+            $client->getChangedFiles('staged'),
+        ));
+
+        $previous = [];
+        foreach (['GIT_CONFIG_COUNT', 'GIT_CONFIG_KEY_0', 'GIT_CONFIG_VALUE_0'] as $key) {
+            $previous[$key] = getenv($key);
+        }
+
+        try {
+            putenv('GIT_CONFIG_COUNT=1');
+            putenv('GIT_CONFIG_KEY_0=diff.relative');
+            putenv('GIT_CONFIG_VALUE_0=true');
+
+            self::assertSame(['Inside.php'], array_map(
+                static fn(ChangedFile $file): string => $file->path->value(),
+                $client->getChangedFiles('staged'),
+            ));
+        } finally {
+            foreach ($previous as $key => $value) {
+                putenv($value === false ? $key : $key . '=' . $value);
+            }
+        }
     }
 
     #[Test]

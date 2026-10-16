@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer;
+namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CapturePattern;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
 

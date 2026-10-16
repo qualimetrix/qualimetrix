@@ -384,13 +384,6 @@ final class Stand
 
             $relative = substr($item->getPathname(), \strlen($directory));
 
-            // Run residue, not fixture content: the product writes its AST
-            // cache into the working directory, and a cache left behind by an
-            // ad-hoc run would otherwise invalidate every frozen shot.
-            if (str_contains($relative, '/.qmx-cache/')) {
-                continue;
-            }
-
             $entries[] = $relative . ':' . hash_file('sha256', $item->getPathname());
         }
 

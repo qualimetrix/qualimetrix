@@ -11,11 +11,19 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Infrastructure\Console\CliSelectorDecoder;
+use Qualimetrix\Infrastructure\Console\Invocation\CliSelectorDecoder;
 
 #[CoversClass(CliSelectorDecoder::class)]
 final class CliSelectorDecoderTest extends TestCase
 {
+    #[Test]
+    public function itProvidesPlainAuthoredSelectorPayloadAfterTheExistingValidation(): void
+    {
+        $decoder = new CliSelectorDecoder();
+        self::assertSame([['regex' => 'src/.+\\.php']], $decoder->pathPayload('regex:src/.+\\.php', '--rule-opt'));
+        self::assertSame([['subtree' => 'App\\Entity']], $decoder->namespacePayload('subtree:App\\Entity', '--rule-opt'));
+    }
+
     #[Test]
     public function itBuildsAPathPatternAndSplitsOnlyAtTheFirstColon(): void
     {
@@ -42,8 +50,9 @@ final class CliSelectorDecoderTest extends TestCase
             (new CliSelectorDecoder())->decodePath($value, '--suppress-path');
             self::fail('Expected the malformed selector to be refused.');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertSame(ConfigurationSource::CommandLine, $refusal->origin()->source());
-            self::assertSame('--suppress-path', $refusal->origin()->locator());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame(ConfigurationSource::CommandLine, $refusal->sources()[0]->source());
+            self::assertSame('--suppress-path', $refusal->sources()[0]->locator());
             self::assertNull($refusal->position());
             self::assertStringContainsString($message, $refusal->summary());
         }

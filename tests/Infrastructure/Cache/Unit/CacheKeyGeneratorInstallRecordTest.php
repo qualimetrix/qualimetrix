@@ -114,6 +114,16 @@ final class CacheKeyGeneratorInstallRecordTest extends TestCase
         self::assertStringContainsString('caching', strtolower($warnings[0]));
     }
 
+    #[Test]
+    public function itClearsOldVersionsBeforeOpeningAnUnnameableParser(): void
+    {
+        $result = $this->keyGeneratorUnder(null, null);
+        self::assertTrue($result['cleared']);
+        self::assertTrue($result['clearWithoutVersion']);
+        self::assertTrue($result['oldVersionRemoved']);
+        self::assertCount(1, $result['warnings']);
+    }
+
     /**
      * Builds a generator in a child process whose Composer runtime answers
      * with the given record; `null` for the version means the package is not
@@ -124,7 +134,7 @@ final class CacheKeyGeneratorInstallRecordTest extends TestCase
      * at all: `scripts/dangling-test-names.py` reads the tree, and a name
      * written here that no file declares is one it has to adjudicate.
      *
-     * @return array{version: string, key: string, warnings: list<mixed>}
+     * @return array{version: string, key: string, warnings: list<mixed>, cleared: bool, clearWithoutVersion: bool, oldVersionRemoved: bool}
      */
     private function keyGeneratorUnder(?string $version, ?string $reference): array
     {
@@ -166,12 +176,31 @@ final class CacheKeyGeneratorInstallRecordTest extends TestCase
                         }
                     };
 
-                    $generator = new \Qualimetrix\Infrastructure\Cache\CacheKeyGenerator($logger);
+                    $generator = new \Qualimetrix\Infrastructure\Cache\CacheKeyGenerator();
+                    $store = new \Qualimetrix\Infrastructure\Cache\CacheConfigurationStore();
+                    $directory = sys_get_temp_dir() . '/qmx-install-cache-' . bin2hex(random_bytes(6));
+                    $store->replace(new \Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration(
+                        \Qualimetrix\Core\Path\AbsolutePath::fromString($directory),
+                    ));
+                    $factory = new \Qualimetrix\Infrastructure\Cache\CacheFactory($store, $generator);
+                    $factory->configureLogger($logger);
+                    mkdir($directory . '/ast-v99/aa', 0700, true);
+                    file_put_contents($directory . '/ast-v99/aa/' . str_repeat('a', 64), 'stored entry');
+                    $outcome = $factory->clear();
+                    $clearWithoutVersion = (new \ReflectionProperty($generator, 'parserVersion'))->getValue($generator) === null;
+                    $oldVersionRemoved = !is_dir($directory . '/ast-v99');
+                    $factory->open();
+                    $factory->open();
 
+                    $factory->create()->clear();
+                    @rmdir($directory);
                     echo json_encode([
                         'version' => $generator->getCacheVersion(),
                         'key' => $generator->generateForContent('<?php class A {}'),
                         'warnings' => $logger->warnings,
+                        'cleared' => $outcome?->complete === true && $outcome->remaining === 0,
+                        'clearWithoutVersion' => $clearWithoutVersion,
+                        'oldVersionRemoved' => $oldVersionRemoved,
                     ]);
                 }
                 PHP,
@@ -201,7 +230,7 @@ final class CacheKeyGeneratorInstallRecordTest extends TestCase
             ));
         }
 
-        /** @var array{version: string, key: string, warnings: list<mixed>} $decoded */
+        /** @var array{version: string, key: string, warnings: list<mixed>, cleared: bool, clearWithoutVersion: bool, oldVersionRemoved: bool} $decoded */
         return $decoded;
     }
 }

@@ -5,39 +5,12 @@ declare(strict_types=1);
 namespace QmxFindingGate;
 
 /**
- * What a surface calls a compared field, and how it writes it down.
+ * Compared-field spellings belong to each captured side's publication.
  *
- * `delta-overreach` refuses a diff line that moves a field the equivalence
- * tuple compares. To do that it has to *find* the field on the line, and the
- * tuple is named after the JSON report — so reading the tuple's own spelling in
- * the tuple's own syntax means reading the JSON report and, by accident, only
- * the JSON report.
- *
- * That accident had already been half-noticed: the HTML payload publishes three
- * fields under other keys, and reading nothing there was fixed by an alias list.
- * The half that was missed is that the same is true of `sarif`, `gitlab`,
- * `checkstyle` and `suppressed`. One step moved one record's `message` on nine
- * surfaces and declared a delta for each; the licence that lets a compared field
- * move was needed on exactly one of them — not because the other eight do not
- * publish `message`, but because six of them mark no field at all and two mark
- * it under another name. Eight declarations were accepted by a reader that could
- * not reach them, and "one licence sufficed" was a fact about the reader.
- *
- * Two things are therefore stated per surface, and both are checked rather than
- * assumed by {@see SelfTest::publicationVocabulary()}: the key each field is
- * published under, pinned against the formatter that writes it, and whether the
- * list is the *whole* of what that surface publishes. The second matters as much
- * as the first: SARIF carries five of the seventeen tuple fields, and letting the
- * other twelve fall back to their tuple spelling would have the reader hunting
- * for keys the surface does not have.
- *
- * This is the gate's oracle, not the product's contract. It answers "which key
- * do I look for on this line", and it pins key names, never what a key holds:
- * two surfaces publishing different fields under one key would both pass it.
- * What each surface puts under its text keys is decided where the formatters
- * read it, in `Qualimetrix\Reporting\Formatter\PublishedFinding`; a row here
- * names the key that composition is published under, and the self-test pins the
- * key against the formatter's source.
+ * Reference HTML keeps its legacy aliases; candidate HTML publishes the shared
+ * record's canonical keys. A surface absent from the exhaustive key table cannot
+ * be licensed by a tuple spelling it never publishes. Prose fields are handled
+ * in each supported publication. Comparative field moves use authoritative JSON views only.
  */
 final class PublishedVocabulary
 {
@@ -134,11 +107,11 @@ final class PublishedVocabulary
     ];
 
     /**
-     * The formats no reader can pick a field out of, each with why.
+     * The formats whose lines carry no named finding-field marker, each with why.
      *
      * Enumerated rather than defaulted to, because "that surface publishes
      * nothing readable" is the claim that let eight declarations through
-     * unexamined. Four print the finding as prose with no field marking; two
+     * unexamined. Four print the finding as prose with no member or attribute marker; two
      * publish no finding record at all.
      *
      * @var array<string, string>
@@ -146,19 +119,25 @@ final class PublishedVocabulary
     public const UNREADABLE = [
         'summary' => 'prints the message as prose after a bare channel name',
         'text' => 'prints the message as prose after a bare channel name',
-        'text-verbose' => 'prints the message as prose after a bare channel name',
+        'text-detail' => 'prints the message as prose after a bare channel name',
         'github' => 'prints the message as prose after "::"',
         'metrics' => 'publishes measured metrics, not finding records',
         'health' => 'publishes health scores, not finding records',
     ];
 
+    private const JSON_CAPTURES = ['check:output:file', 'check:parallel', 'check:baseline', 'check:baseline-source'];
+
     /** The key a surface publishes one tuple field under, or null when it does not publish it. */
-    public static function spellingOf(string $surfaceClass, string $field): ?string
+    public static function spellingOf(string $surfaceClass, string $field, string $codec = 'legacy'): ?string
     {
-        $surface = self::SURFACES[$surfaceClass] ?? null;
+        $surface = self::SURFACES[self::syntaxSurface($surfaceClass)] ?? null;
 
         if ($surface === null) {
             return null;
+        }
+
+        if ($codec === 'current' && self::syntaxSurface($surfaceClass) === 'format:html') {
+            return $field;
         }
 
         return $surface['keys'][$field] ?? ($surface['exhaustive'] ? null : $field);
@@ -173,9 +152,9 @@ final class PublishedVocabulary
      *
      * @return list<string>
      */
-    public static function valuesOn(string $surfaceClass, ?string $line, string $field): array
+    public static function valuesOn(string $surfaceClass, ?string $line, string $field, string $codec = 'legacy'): array
     {
-        $spelling = self::spellingOf($surfaceClass, $field);
+        $spelling = self::spellingOf($surfaceClass, $field, $codec);
 
         if ($line === null || $spelling === null) {
             return [];
@@ -183,7 +162,7 @@ final class PublishedVocabulary
 
         $quoted = preg_quote($spelling, '~');
 
-        $pattern = self::SURFACES[$surfaceClass]['syntax'] === self::ATTRIBUTE
+        $pattern = self::SURFACES[self::syntaxSurface($surfaceClass)]['syntax'] === self::ATTRIBUTE
             ? \sprintf('~\b%s\s*=\s*"([^"]*)"()~', $quoted)
             : \sprintf('~"%s"\s*:\s*(?:"((?:[^"\\\\]|\\\\.)*)"|([^,}\]\s]+))~', $quoted);
 
@@ -207,7 +186,7 @@ final class PublishedVocabulary
      */
     public static function readableSurfaces(): array
     {
-        return array_keys(self::SURFACES);
+        return [...array_keys(self::SURFACES), ...self::JSON_CAPTURES];
     }
 
     /**
@@ -216,8 +195,27 @@ final class PublishedVocabulary
      *
      * @return array<string, string>
      */
-    public static function keysOf(string $surfaceClass): array
+    public static function keysOf(string $surfaceClass, string $codec = 'legacy'): array
     {
-        return self::SURFACES[$surfaceClass]['keys'] ?? [];
+        if ($codec === 'current' && self::syntaxSurface($surfaceClass) === 'format:html') {
+            return array_combine(ReportRecords::SCHEMAS['json'], ReportRecords::SCHEMAS['json']);
+        }
+        return self::SURFACES[self::syntaxSurface($surfaceClass)]['keys'] ?? [];
     }
+    /** @return list<string> Fields decoded by the JSON record comparator. */
+    public static function comparedFieldsOf(string $surface, string $codec = 'current'): array
+    {
+        return match (self::syntaxSurface($surface)) {
+            'format:json' => ReportRecords::SCHEMAS['json'],
+            'format:suppressed' => ['rule', 'code', 'subject', 'occurrence', 'edge', 'file', 'line', 'symbol', 'severity', 'message', 'recommendation'],
+            'baseline-file' => ['subject', 'channel', 'occurrence', 'edge'],
+            default => [],
+        };
+    }
+
+    private static function syntaxSurface(string $surface): string
+    {
+        return \in_array($surface, self::JSON_CAPTURES, true) ? 'format:json' : $surface;
+    }
+
 }

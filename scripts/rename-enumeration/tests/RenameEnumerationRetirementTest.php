@@ -160,6 +160,40 @@ final class RenameEnumerationRetirementTest extends TestCase
         emitMapsForStep([], 'unregistered-batch');
     }
 
+    #[Test]
+    public function itReachesTheOccurrenceFixedPointAfterOneWriteOfANewMetric(): void
+    {
+        $root = sys_get_temp_dir() . '/qmx-rename-enumeration-' . bin2hex(random_bytes(8));
+        $directory = $root . '/finding-gate';
+        mkdir($directory, 0777, true);
+        $key = 'enumeration.new-metric';
+        $consumer = $directory . '/qmx.yaml';
+        file_put_contents($consumer, $key . "\n");
+
+        try {
+            $surface = ['finding_gate' => surfaces()['finding_gate']];
+            $rows = [['old' => $key, 'kind' => 'metric-key', 'search' => $key]];
+            $measure = static fn(): array => measure($rows, readSurfaceContents($surface, $root), ['finding_gate']);
+            $before = $measure();
+            self::assertSame(1, $before[0]['counts']['finding_gate']);
+            $firstWrite = renderTsv(mergeExistingNewColumn($before, []), ['finding_gate'], [], [], [], []);
+            file_put_contents($directory . '/enumeration-renames.tsv', $firstWrite);
+            file_put_contents($directory . '/enumeration-renames-executed.tsv', $key . "\n");
+            file_put_contents($directory . '/enumeration-runtime-channels.tsv', $key . "\n");
+
+            $after = $measure();
+            self::assertSame(1, $after[0]['counts']['finding_gate']);
+            self::assertSame($firstWrite, renderTsv(mergeExistingNewColumn($after, []), ['finding_gate'], [], [], [], []));
+
+            file_put_contents($consumer, $key . "\n" . $key . "\n");
+            $changed = $measure();
+            self::assertSame(2, $changed[0]['counts']['finding_gate']);
+            self::assertNotSame($firstWrite, renderTsv(mergeExistingNewColumn($changed, []), ['finding_gate'], [], [], [], []));
+        } finally {
+            (new \Symfony\Component\Filesystem\Filesystem())->remove($root);
+        }
+    }
+
     /**
      * @return array{old: string, kind: string, search: string, counts: array<string, int>}
      */

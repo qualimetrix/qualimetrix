@@ -20,7 +20,7 @@ use InvalidArgumentException;
  *
  * Class-level:
  * - ccn.sum = 12 (1+2+4+5), ccn.max = 5, ccn.avg = 3.0 (12/4 methods)
- * - methodCount = 3
+ * - methodCount = 4
  * - propertyCount = 2 ($repository, $defaultRole)
  */
 class UserService

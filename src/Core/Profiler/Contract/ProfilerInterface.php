@@ -7,6 +7,7 @@ namespace Qualimetrix\Core\Profiler\Contract;
 /** Neutral write-only instrumentation vocabulary. */
 interface ProfilerInterface
 {
-    public function start(string $name, ?string $category = null): void;
+    /** @param array<string, scalar> $attributes */
+    public function start(string $name, ?string $category = null, array $attributes = []): void;
     public function stop(string $name): void;
 }

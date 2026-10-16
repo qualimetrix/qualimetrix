@@ -1,0 +1,10 @@
+{
+    "name": "finding-gate-corpus/selector-after-split",
+    "description": "Corpus case: selector-after-split",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Corpus\\SelectorAfterSplit\\": "src/"
+        }
+    }
+}

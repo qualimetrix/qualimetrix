@@ -87,7 +87,8 @@ final class Declarations
      * @param array<string, FormSpelling> $forms
      * @param array<string, Envelope> $envelopes
      * @param array<string, WitnessEnvelope> $witnessEnvelopes
-     * @param array<string, string> $axisAHits option leaf => the hit literal
+     * @param array<string, string> $axisAHits exact door/path/form or legacy leaf => the hit literal
+     * @param array<string, array<string, mixed>> $axisABases authored companion context by exact door/path
      * @param array<string, list<string>> $pairScopes pair kind => the coordinates it owes
      * @param array<string, Magnitude> $magnitudes `<slot>|<side>` => the two writings of it
      * @param array<string, string> $formAlternates form name => the counter-default literal of that form
@@ -99,6 +100,7 @@ final class Declarations
         public readonly array $envelopes,
         public readonly array $witnessEnvelopes,
         public readonly array $axisAHits,
+        public readonly array $axisABases,
         public readonly array $pairScopes,
         public readonly array $magnitudes,
         public readonly array $formAlternates,
@@ -164,9 +166,24 @@ final class Declarations
         }
 
         $hits = [];
+        $bases = [];
 
-        foreach (self::rows($root . '/promise-effect/axis-a-hits.tsv', 3) as $row) {
+        foreach (self::rows($root . '/promise-effect/axis-a-hits.tsv', 4) as $row) {
             $hits[$row[0]] = $row[1];
+
+            if ($row[3] === '') {
+                continue;
+            }
+
+            /** @var mixed $base */
+            $base = json_decode($row[3], true);
+
+            if (!\is_array($base) || array_is_list($base)) {
+                throw new LedgerError('axis-a-hits.tsv: context of ' . $row[0] . ' is not a JSON object');
+            }
+
+            /** @var array<string, mixed> $base */
+            $bases[$row[0]] = $base;
         }
 
         $pairScopes = [];
@@ -250,7 +267,7 @@ final class Declarations
             }
         }
 
-        return new self($forms, $envelopes, $witnesses, $hits, $pairScopes, $magnitudes, $formAlternates, $leafAlternates, $sideBLiterals);
+        return new self($forms, $envelopes, $witnesses, $hits, $bases, $pairScopes, $magnitudes, $formAlternates, $leafAlternates, $sideBLiterals);
     }
 
     /** @return list<string> */

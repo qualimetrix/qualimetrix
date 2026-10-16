@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Every `Qualimetrix\\Tests\\…` name in the tree that no file declares.
+"""Unresolved test names visible to the existing lexical census.
 
 This detector has been written from scratch three times inside this stage — once
 per package that needed it, each time in a session scratchpad that then vanished
@@ -11,6 +11,17 @@ over paths and by no sweep over namespace prefixes, and a reference spelled with
 a name from an *earlier* rename is reachable by neither of those nor by a sweep
 for the name a file carries today. The only thing that finds one is asking the
 opposite question: which names in the tree resolve to no file at all.
+
+The census is lexical, not a PHP parser: its existing \\w name pattern does
+not recognize all PHP-valid byte identifiers. Every tracked file is read with
+surrogateescape, including files whose names the pattern cannot recognize.
+
+Bare test names are also read in Markdown code spans and native PHP comments;
+PHP code strings and ordinary Markdown prose are outside that added scope. The
+same historical exclusions apply. Markdown matching is lexical: one-line spans
+without internal backticks; it does not implement the full Markdown grammar.
+A bare token must name a declared short class
+name; fully qualified tokens retain the namespace-aware rules below.
 
 Both spellings are read. PHP source writes a fully qualified name with every
 backslash doubled, so a single-backslash sweep silently returns nothing for a
@@ -57,6 +68,7 @@ another one.
 """
 
 import argparse
+import json
 import os
 import re
 import subprocess
@@ -64,6 +76,8 @@ import sys
 
 REPOSITORY_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 NAME = re.compile(r"Qualimetrix(?:\\\\|\\)Tests(?:(?:\\\\|\\)\w+)+")
+BARE_NAME = re.compile(r"(?<![\\\w])([A-Z]\w*Test)(?!\w)")
+CODE_SPAN = re.compile(r"(?<!`)(`+)(?!`)([^`\n]+)(?<!`)\1(?!`)")
 
 # Written left of a name, these make it a class however many namespaces live
 # beneath it. Without them the prefix exculpation below reads a genuine stale
@@ -83,6 +97,7 @@ CLASS_SHAPED_BEFORE = ("new ", "extends ", "implements ", "instanceof ", "use ")
 # being a set. Those probes declare no namespace instead; see
 # scripts/modular-architecture/tests/ModularArchitectureGeneratorRefusalTest.php.
 KNOWN = {
+    "UnitTest": "a filename example distinguishing directory test levels from a file basename",
     "Qualimetrix\\Tests\\Unit\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleCompilerPassTest":
         "a P6_RENAMED_TEST_IDS key: a pre-rename name by construction, and rewriting it would assert"
         " the test was always called what it is called now",
@@ -96,28 +111,68 @@ KNOWN = {
 }
 
 
+def php_comment_names(paths):
+    """PHP's tokenizer decides comment boundaries, including heredocs and strings."""
+    code = r'''
+$rows = [];
+foreach (explode("\0", stream_get_contents(STDIN)) as $path) {
+    if ($path === '') continue;
+    $source = file_get_contents($path);
+    if ($source === false) { fwrite(STDERR, "cannot read " . $path); exit(2); }
+    $line = 1;
+    foreach (token_get_all($source) as $token) {
+        $text = is_array($token) ? $token[1] : $token;
+        if (is_array($token) && in_array($token[0], [T_COMMENT, T_DOC_COMMENT], true)) {
+            preg_match_all('~(?<![\\\\\w])([A-Z]\w*Test)(?!\w)~', $text, $names, PREG_OFFSET_CAPTURE);
+            foreach ($names[1] as [$name, $offset]) {
+                $rows[] = [$name, $path, $line + substr_count(substr($text, 0, $offset), "\n")];
+            }
+        }
+        $line += substr_count($text, "\n");
+    }
+}
+echo json_encode($rows, JSON_THROW_ON_ERROR);
+'''
+    result = subprocess.run(
+        ["php", "-r", code], cwd=REPOSITORY_ROOT,
+        input="\0".join(paths).encode("utf-8", errors="surrogateescape"), capture_output=True,
+    )
+    if result.returncode != 0:
+        raise OSError("PHP comment census failed: " + result.stderr.decode("utf-8", errors="replace").strip())
+    return json.loads(result.stdout)
+
+
 def used_as_a_class(line, match):
     """True when this occurrence is written the way a class is written."""
     return line[match.end():].startswith("::") or line[: match.start()].rstrip("\\").endswith(CLASS_SHAPED_BEFORE)
 
 
 def git(*arguments):
-    result = subprocess.run(["git", *arguments], cwd=REPOSITORY_ROOT, capture_output=True, text=True)
+    result = subprocess.run(["git", *arguments], cwd=REPOSITORY_ROOT, capture_output=True, text=True, errors="surrogateescape")
     if result.returncode != 0:
         raise OSError(f"git {' '.join(arguments)} failed: {result.stderr.strip()}")
     return result.stdout
 
 
+def read_source(path):
+    """Read a tracked symlink's own content, never the directory it points at."""
+    absolute = os.path.join(REPOSITORY_ROOT, path)
+    if os.path.islink(absolute):
+        return os.readlink(absolute)
+    with open(absolute, encoding="utf-8", errors="surrogateescape") as stream:
+        return stream.read()
+
+
 def declared_names():
-    """Every fully qualified name the tree actually declares."""
+    """Declarations visible to the existing lexical name pattern."""
     declared = set()
-    for path in git("ls-files", "*.php").split("\n"):
+    expected = [path for path in git("ls-files", "-z", "*.php").split("\0") if path]
+    read = set()
+    for path in expected:
         if not path:
             continue
-        try:
-            source = open(os.path.join(REPOSITORY_ROOT, path), encoding="utf-8").read()
-        except OSError:
-            continue
+        source = read_source(path)
+        read.add(path)
         namespace = re.search(r"^namespace\s+([^;]+);", source, re.M)
         if namespace is None:
             continue
@@ -126,6 +181,10 @@ def declared_names():
             r"^(?:final\s+|abstract\s+|readonly\s+)*(?:class|trait|interface|enum)\s+(\w+)", source, re.M
         ):
             declared.add(prefix + "\\" + match.group(1))
+    missing = sorted(set(expected) - read)
+    if missing:
+        raise RuntimeError("PHP files not read: " + ", ".join(missing))
+    print(f"read {len(read)} of {len(expected)} tracked PHP files")
     return declared
 
 
@@ -141,7 +200,10 @@ def main():
 
     try:
         declared = declared_names()
-        tracked = [path for path in git("ls-files").split("\n") if path]
+        tracked = [path for path in git("ls-files", "-z").split("\0") if path]
+    except RuntimeError as error:
+        print(str(error), file=sys.stderr)
+        return 1
     except OSError as error:
         print(f"cannot read the tree: {error}", file=sys.stderr)
         return 2
@@ -164,15 +226,20 @@ def main():
     self_path = os.path.relpath(os.path.abspath(__file__), REPOSITORY_ROOT)
 
     dangling = {}
+    short_names = {name.rsplit("\\", 1)[-1] for name in declared}
+    comment_paths = []
     for path in tracked:
         if path == self_path:
             continue
         if not arguments.include_history and path.startswith(history):
             continue
         try:
-            source = open(os.path.join(REPOSITORY_ROOT, path), encoding="utf-8").read()
-        except (OSError, UnicodeDecodeError):
-            continue
+            source = read_source(path)
+        except OSError as error:
+            print(f"cannot read {path}: {error}", file=sys.stderr)
+            return 2
+        if path.endswith(".php") and not os.path.islink(os.path.join(REPOSITORY_ROOT, path)):
+            comment_paths.append(path)
         for line_number, line in enumerate(source.split("\n"), start=1):
             for match in NAME.finditer(line):
                 name = match.group(0).replace("\\\\", "\\")
@@ -187,6 +254,20 @@ def main():
                 if arguments.names_like and arguments.names_like not in name:
                     continue
                 dangling.setdefault(name, []).append(f"{path}:{line_number}")
+            if path.endswith(".md"):
+                for span in CODE_SPAN.finditer(line):
+                    for match in BARE_NAME.finditer(span.group(2)):
+                        name = match.group(1)
+                        if name not in short_names and (not arguments.names_like or arguments.names_like in name):
+                            dangling.setdefault(name, []).append(f"{path}:{line_number}")
+
+    try:
+        for name, path, line_number in php_comment_names(comment_paths):
+            if name not in short_names and (not arguments.names_like or arguments.names_like in name):
+                dangling.setdefault(name, []).append(f"{path}:{line_number}")
+    except (OSError, ValueError) as error:
+        print(f"cannot read PHP comments: {error}", file=sys.stderr)
+        return 2
 
     for name in sorted(dangling):
         print(f"{name}")

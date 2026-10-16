@@ -20,7 +20,7 @@ final class ErrorSuppressionRule extends AbstractCodeSmellRule
     public const string NAME = 'code-smell.error-suppression';
     public const string DOCS_PAGE = 'rules/code-smell.md';
     public const int REMEDIATION_MINUTES = 10;
-    protected const string DESCRIPTION = 'Detects usage of error suppression operator (@)';
+    public const string DESCRIPTION = 'Detects usage of error suppression operator (@)';
     protected const string SMELL_TYPE = 'error_suppression';
     protected const Severity SEVERITY = Severity::Warning;
     protected const string MESSAGE_TEMPLATE = 'Error suppression operator (@) detected - handle errors explicitly';

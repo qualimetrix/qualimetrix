@@ -29,37 +29,12 @@ use SplFileInfo;
  */
 final class CachedFileParser implements FileParserInterface
 {
-    private ?CacheInterface $resolvedCache = null;
-
     public function __construct(
         private readonly FileParserInterface $inner,
         private readonly CacheFactory|CacheInterface $cache,
         private readonly CacheKeyGenerator $keyGenerator,
         private readonly CacheConfigurationStoreInterface $configurationStore,
     ) {}
-
-    /**
-     * @return Node[]
-     */
-    public function parse(SplFileInfo $file): array
-    {
-        // A non-regular entry (directory, FIFO, dangling symlink) must never
-        // become a successfully parsed empty AST: `file_get_contents()` on a
-        // directory returns an empty string rather than `false`, so reading
-        // first and asking questions later reports a phantom analyzed file.
-        // The inner parser owns the typed refusal for that case.
-        if (!$this->cachingEnabled() || !$file->isFile() || !$file->isReadable()) {
-            return $this->inner->parse($file);
-        }
-
-        $content = @file_get_contents($file->getPathname());
-
-        if ($content === false) {
-            return $this->inner->parse($file);
-        }
-
-        return $this->parseContent($file, $content);
-    }
 
     /**
      * @return Node[]
@@ -99,17 +74,16 @@ final class CachedFileParser implements FileParserInterface
 
     private function cachingEnabled(): bool
     {
-        return $this->configurationStore->current()->enabled;
+        if (!$this->configurationStore->current()->enabled) {
+            return false;
+        }
+        return $this->cache instanceof CacheFactory
+            ? $this->cache->open() !== null
+            : $this->configurationStore->current()->enabled;
     }
 
     private function getCache(): CacheInterface
     {
-        if ($this->resolvedCache === null) {
-            $this->resolvedCache = $this->cache instanceof CacheFactory
-                ? $this->cache->create()
-                : $this->cache;
-        }
-
-        return $this->resolvedCache;
+        return $this->cache instanceof CacheFactory ? $this->cache->create() : $this->cache;
     }
 }

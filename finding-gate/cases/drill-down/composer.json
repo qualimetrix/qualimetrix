@@ -1,0 +1,9 @@
+{
+  "name": "qualimetrix/drill-down-fixture",
+  "autoload": {
+    "psr-4": {
+      "Shop\\": "src/",
+      "Other\\": "src/"
+    }
+  }
+}

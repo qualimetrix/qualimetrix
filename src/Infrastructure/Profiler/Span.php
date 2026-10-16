@@ -19,6 +19,13 @@ final class Span
      */
     private bool $stopped;
 
+    /**
+     * @param array<string, scalar> $attributes
+     *
+     * @qmx-ignore code-smell.constructor-overinjection -- A span records boundary measurements and ancestry; these values are not injected services.
+     *
+     * @qmx-threshold code-smell.long-parameter-list 9 -- Named boundary measurements and optional ancestry form one span record; wrapping them would duplicate its data contract.
+     */
     public function __construct(
         public readonly string $name,
         public readonly ?string $category,
@@ -27,6 +34,7 @@ final class Span
         public ?float $endTime = null,
         public ?int $endMemory = null,
         public ?Span $parent = null,
+        public readonly array $attributes = [],
     ) {
         $this->stopped = $endTime !== null;
     }

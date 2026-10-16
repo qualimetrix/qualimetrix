@@ -1,0 +1,32 @@
+name: Finding gate captures
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check-gate:
+    name: Gate captures and witnesses (composer check:gate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: igbinary, pcntl, posix
+          coverage: none
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --no-progress --prefer-dist --optimize-autoloader
+
+      - name: Run gate captures and witnesses
+        run: composer check:gate

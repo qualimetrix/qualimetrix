@@ -4,16 +4,75 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationHelper;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassKeyScope;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceMetricProviderInterface;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 #[CoversClass(AggregationHelper::class)]
 final class AggregationHelperTest extends TestCase
 {
+    #[Test]
+    public function itMarksOnlyFileDefinitionsOfANamespaceProviderAndRetainsTheirExtraLevels(): void
+    {
+        $provider = self::createStubForIntersectionOfInterfaces([
+            MetricCollectorInterface::class,
+            NamespaceMetricProviderInterface::class,
+        ]);
+        $provider->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition(
+                'size.loc',
+                SymbolLevel::File,
+                [SymbolLevel::Namespace_->value => [AggregationStrategy::Sum]],
+                directPublicationLevels: [SymbolLevel::Project],
+            ),
+            new MetricDefinition(
+                'size.class-count',
+                SymbolLevel::File,
+                directPublicationLevels: [SymbolLevel::Namespace_],
+            ),
+            new MetricDefinition(
+                'size.class-loc',
+                SymbolLevel::Class_,
+                classKeyScope: ClassKeyScope::Declaration,
+                directPublicationLevels: [SymbolLevel::Project],
+            ),
+        ]);
+
+        $definitions = AggregationHelper::collectDefinitions([$provider]);
+
+        self::assertCount(3, $definitions);
+        self::assertTrue($definitions[0]->namespaceFileContribution);
+        self::assertSame([SymbolLevel::File, SymbolLevel::Project, SymbolLevel::Namespace_], $definitions[0]->publicationLevels());
+        self::assertSame([SymbolLevel::File, SymbolLevel::Namespace_], $definitions[1]->publicationLevels());
+        self::assertFalse($definitions[2]->namespaceFileContribution);
+        self::assertSame([SymbolLevel::Class_, SymbolLevel::Project], $definitions[2]->publicationLevels());
+        self::assertSame(ClassKeyScope::Declaration, $definitions[2]->classKeyScope);
+    }
+
+    #[Test]
+    public function itRefusesAProviderDefinitionWithUnsupportedNamespaceFileAggregation(): void
+    {
+        $provider = self::createStubForIntersectionOfInterfaces([
+            MetricCollectorInterface::class,
+            NamespaceMetricProviderInterface::class,
+        ]);
+        $provider->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('size.loc', SymbolLevel::File, [SymbolLevel::Namespace_->value => [AggregationStrategy::Max]]),
+        ]);
+
+        $this->expectException(LogicException::class);
+        AggregationHelper::collectDefinitions([$provider]);
+    }
+
     /**
      * @return iterable<string, array{list<int|float>, float}>
      */

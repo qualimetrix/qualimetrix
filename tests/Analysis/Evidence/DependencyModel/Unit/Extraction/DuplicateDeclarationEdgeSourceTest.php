@@ -12,6 +12,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
+use Qualimetrix\Core\Ast\NameResolution;
 use Qualimetrix\Core\Path\RelativePath;
 
 /**
@@ -42,6 +43,7 @@ final class DuplicateDeclarationEdgeSourceTest extends TestCase
             }
             PHP;
         $ast = (new ParserFactory())->createForHostVersion()->parse($source) ?? [];
+        NameResolution::resolve($ast);
 
         $visitor = new DependencyVisitor();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();

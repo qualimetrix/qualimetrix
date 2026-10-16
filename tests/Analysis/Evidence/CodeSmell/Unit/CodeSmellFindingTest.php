@@ -13,7 +13,6 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellFinding;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Symbol\SymbolPath;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionProperty;
@@ -46,7 +45,7 @@ final class CodeSmellFindingTest extends TestCase
             $class->getMethods(ReflectionMethod::IS_PUBLIC),
         );
         sort($publicMethods);
-        self::assertSame(['fromEntry', 'toFinding'], $publicMethods);
+        self::assertSame(['fromEntry', 'subjectFromEntry', 'toFinding'], $publicMethods);
         self::assertSame([], $class->getProperties(ReflectionProperty::IS_PUBLIC));
     }
 
@@ -65,10 +64,8 @@ final class CodeSmellFindingTest extends TestCase
         bool $expectedHasPromoted,
     ): void {
         $file = RelativePath::fromString('src/Example.php');
-        $fileSymbol = SymbolPath::forFile($file);
 
         $finding = CodeSmellFinding::fromEntry($entry, $file)->toFinding(
-            $fileSymbol,
             'code-smell.example',
             'example',
             Severity::Warning,
@@ -77,7 +74,7 @@ final class CodeSmellFindingTest extends TestCase
         );
 
         self::assertSame($expectedSubject, $finding->subject->toCanonical());
-        self::assertSame($fileSymbol, $finding->symbolPath);
+        self::assertSame($finding->subject->toSymbolPath()->toString(), $finding->symbolPath->toString());
         self::assertSame('src/Example.php', $finding->location->pathString());
         self::assertSame($expectedLine, $finding->location->line);
         self::assertTrue($finding->location->precise);
@@ -267,7 +264,6 @@ final class CodeSmellFindingTest extends TestCase
             'extra' => 12,
             'promoted' => '0',
         ], $file)->toFinding(
-            SymbolPath::forFile($file),
             'rule',
             'smell',
             Severity::Warning,
@@ -293,17 +289,16 @@ final class CodeSmellFindingTest extends TestCase
     public function itDistinguishesPresenceFlagsAndKeepsCanonicalOccurrencesStable(): void
     {
         $file = RelativePath::fromString('src/Example.php');
-        $fileSymbol = SymbolPath::forFile($file);
         $withoutOptionalFields = CodeSmellFinding::fromEntry(['subjectKind' => 'file', 'line' => 8], $file)
-            ->toFinding($fileSymbol, 'rule', 'smell', Severity::Warning, 'message', null);
+            ->toFinding('rule', 'smell', Severity::Warning, 'message', null);
         $withEmptyExtra = CodeSmellFinding::fromEntry(['subjectKind' => 'file', 'line' => 8, 'extra' => ''], $file)
-            ->toFinding($fileSymbol, 'rule', 'smell', Severity::Warning, 'message', null);
+            ->toFinding('rule', 'smell', Severity::Warning, 'message', null);
         $withFalsePromoted = CodeSmellFinding::fromEntry(['subjectKind' => 'file', 'line' => 8, 'promoted' => false], $file)
-            ->toFinding($fileSymbol, 'rule', 'smell', Severity::Warning, 'message', null);
+            ->toFinding('rule', 'smell', Severity::Warning, 'message', null);
         $ordered = CodeSmellFinding::fromEntry(['subjectKind' => 'file', 'line' => 8, 'extra' => 'flag', 'promoted' => true], $file)
-            ->toFinding($fileSymbol, 'rule', 'smell', Severity::Warning, 'message', null);
+            ->toFinding('rule', 'smell', Severity::Warning, 'message', null);
         $reordered = CodeSmellFinding::fromEntry(['promoted' => true, 'extra' => 'flag', 'line' => 8, 'subjectKind' => 'file'], $file)
-            ->toFinding($fileSymbol, 'rule', 'smell', Severity::Warning, 'message', null);
+            ->toFinding('rule', 'smell', Severity::Warning, 'message', null);
 
         self::assertNotSame($withoutOptionalFields->occurrenceKey?->value, $withEmptyExtra->occurrenceKey?->value);
         self::assertNotSame($withoutOptionalFields->occurrenceKey?->value, $withFalsePromoted->occurrenceKey?->value);

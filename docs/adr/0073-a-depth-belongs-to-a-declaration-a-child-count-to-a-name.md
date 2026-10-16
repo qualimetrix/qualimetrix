@@ -1,7 +1,15 @@
 # 0073. A Depth Belongs to a Declaration, a Child Count to a Name
 
 **Date:** 2026-09-20
-**Status:** Accepted
+**Status:** Partially superseded by [0107](0107-inheritance-chain-outcomes.md)
+
+
+The exact child-declaration identity and distinct logical-child NOC decisions
+remain current. [ADR 0107](0107-inheritance-chain-outcomes.md) replaces the
+ancestry outcome and duplicate-parent merge semantics described below. The
+logical metric projection and within-file overwrite limitations describe the
+historical implementation measured here. Historical measurements and rationale
+are retained.
 
 ## Context
 

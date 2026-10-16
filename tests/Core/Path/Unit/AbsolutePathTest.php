@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Core\Path;
+namespace Qualimetrix\Tests\Core\Path\Unit;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;

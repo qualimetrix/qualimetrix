@@ -12,6 +12,7 @@ final class Process
 
     /**
      * @param list<string> $command
+     * @param array<string,string> $environmentAdditions
      *
      * @return array{stdout: string, stderr: string, exit: int}
      */
@@ -19,15 +20,16 @@ final class Process
         array $command,
         string $workingDirectory,
         float $deadlineSeconds = self::COMMAND_DEADLINE_SECONDS,
+        array $environmentAdditions = [],
     ): array {
         $description = implode(' ', $command);
-        $process = ProcessHandle::start($command, $workingDirectory);
-        $lastHeartbeatAt = microtime(true);
+        $process = ProcessHandle::start($command, $workingDirectory, $environmentAdditions);
+        $lastHeartbeatAt = (hrtime(true) / 1_000_000_000);
 
         try {
             while (!$process->settled()) {
                 self::poll($process);
-                $now = microtime(true);
+                $now = (hrtime(true) / 1_000_000_000);
 
                 if ($process->age() >= $deadlineSeconds) {
                     throw new GateError(\sprintf(

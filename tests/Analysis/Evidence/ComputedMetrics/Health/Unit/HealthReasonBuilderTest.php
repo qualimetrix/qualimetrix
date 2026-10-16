@@ -9,21 +9,26 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDimensionCatalog;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\HealthReasonBuilder;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\OffenderThresholds;
 
 #[CoversClass(HealthReasonBuilder::class)]
 final class HealthReasonBuilderTest extends TestCase
 {
     private HealthReasonBuilder $builder;
+    private OffenderThresholds $thresholds;
 
     protected function setUp(): void
     {
+        $catalog = self::createStub(\Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface::class);
+        $catalog->method('all')->willReturn(array_values(\Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults::getDefaults()));
+        $this->thresholds = OffenderThresholds::fromCatalog($catalog);
         $this->builder = new HealthReasonBuilder(new HealthDimensionCatalog());
     }
 
     #[Test]
     public function itReturnsEmptyStringForEmptyInput(): void
     {
-        self::assertSame('', $this->builder->buildReason([]));
+        self::assertSame('', $this->builder->buildReason([], $this->thresholds));
     }
 
     #[Test]
@@ -36,7 +41,7 @@ final class HealthReasonBuilderTest extends TestCase
             'coupling' => 75.0,
         ];
 
-        self::assertSame('', $this->builder->buildReason($scores));
+        self::assertSame('', $this->builder->buildReason($scores, $this->thresholds));
     }
 
     #[Test]
@@ -47,7 +52,7 @@ final class HealthReasonBuilderTest extends TestCase
             'cohesion' => 80.0,   // Above 50 -> good
         ];
 
-        $reason = $this->builder->buildReason($scores);
+        $reason = $this->builder->buildReason($scores, $this->thresholds);
 
         // Should contain the bad label for complexity
         self::assertSame('high complexity', $reason);
@@ -63,7 +68,7 @@ final class HealthReasonBuilderTest extends TestCase
             'maintainability' => 80.0, // Good
         ];
 
-        $reason = $this->builder->buildReason($scores);
+        $reason = $this->builder->buildReason($scores, $this->thresholds);
 
         // Should contain at most 2 worst dimensions
         $parts = explode(', ', $reason);
@@ -80,7 +85,7 @@ final class HealthReasonBuilderTest extends TestCase
             'complexity' => 50.0,
         ];
 
-        $reason = $this->builder->buildReason($scores);
+        $reason = $this->builder->buildReason($scores, $this->thresholds);
 
         self::assertSame('high complexity', $reason);
     }
@@ -92,22 +97,21 @@ final class HealthReasonBuilderTest extends TestCase
             'complexity' => 50.1,
         ];
 
-        $reason = $this->builder->buildReason($scores);
+        $reason = $this->builder->buildReason($scores, $this->thresholds);
 
         self::assertSame('', $reason);
     }
 
     #[Test]
-    public function itUnknownDimensionNameUsedAsIs(): void
+    public function itExcludesUnknownAndOverallDimensions(): void
     {
-        // Unknown dimensions that fall below threshold use the dimension name directly
         $scores = [
             'unknown_dim' => 10.0,
+            'overall' => 0.0,
         ];
 
-        $reason = $this->builder->buildReason($scores);
+        $reason = $this->builder->buildReason($scores, $this->thresholds);
 
-        // HealthMetricCatalog returns the raw dimension name for unknown dimensions
-        self::assertSame('unknown_dim', $reason);
+        self::assertSame('', $reason);
     }
 }

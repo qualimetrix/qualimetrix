@@ -20,6 +20,50 @@ use Qualimetrix\Core\Path\RelativePath;
 final class CyclomaticComplexityVisitorTest extends TestCase
 {
     #[Test]
+    public function itKeepsAnExactNamedClassRosterAcrossKindsAndResetsBetweenFiles(): void
+    {
+        $visitor = new CyclomaticComplexityVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $firstRegistrar = (new DeclarationRegistrarFactory())->createForFile();
+        $firstTraversal = new NodeTraverser();
+        $firstTraversal->addVisitor($firstRegistrar);
+        $visitor->useDeclarationIndex($firstRegistrar->index());
+        $firstTraversal->addVisitor($visitor);
+        $firstTraversal->traverse($parser->parse(<<<'PHP'
+<?php
+namespace App {
+    class Duplicate {}
+    interface Contract {}
+    trait SharedBehavior {}
+    enum State { case Ready; }
+    class Duplicate {}
+    function factory(): object { return new class {}; }
+}
+namespace {
+    class GlobalType {}
+}
+PHP) ?? []);
+
+        $first = $visitor->getNamedClasses();
+        self::assertSame(['Duplicate', 'Contract', 'SharedBehavior', 'State', 'Duplicate', 'GlobalType'], array_column($first, 'name'));
+        self::assertSame(['App', 'App', 'App', 'App', 'App', ''], array_column($first, 'namespace'));
+        self::assertCount(6, array_unique(array_column($first, 'position')));
+        self::assertSame([3, 4, 5, 6, 7, 11], array_column($first, 'line'));
+
+        $visitor->reset();
+        $secondRegistrar = (new DeclarationRegistrarFactory())->createForFile();
+        $secondTraversal = new NodeTraverser();
+        $secondTraversal->addVisitor($secondRegistrar);
+        $visitor->useDeclarationIndex($secondRegistrar->index());
+        $secondTraversal->addVisitor($visitor);
+        $secondTraversal->traverse($parser->parse('<?php namespace Next; class OnlyHere {}') ?? []);
+
+        self::assertCount(1, $visitor->getNamedClasses());
+        self::assertSame('OnlyHere', $visitor->getNamedClasses()[0]['name']);
+        self::assertSame('Next', $visitor->getNamedClasses()[0]['namespace']);
+    }
+
+    #[Test]
     public function itKeepsNestedCallableAndLexicalSubjectsScopedToOneFile(): void
     {
         $context = new VisitorMethodContext();

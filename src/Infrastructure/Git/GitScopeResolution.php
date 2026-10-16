@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Git;
 
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 
 /**
  * Result of resolving git scope from CLI input.
  *
- * Contains all information needed for runtime: paths, file discovery strategy,
- * optional git client, scope references and the explicit project root.
+ * Contains the resolved paths, optional git client, scope references and the
+ * explicit project root.
  *
  * The explicit {@see $projectRoot} replaces the previous indirection through
  * {@see GitClient}, where a `getProjectRoot()` accessor invited the same VO
@@ -25,7 +24,6 @@ final readonly class GitScopeResolution
      */
     public function __construct(
         public array $paths,
-        public FileDiscoveryInterface $fileDiscovery,
         public ?GitClient $gitClient,
         public ?GitScope $reportScope,
         public AbsolutePath $projectRoot,

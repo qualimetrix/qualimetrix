@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
+use Qualimetrix\Infrastructure\Console\Invocation\CommandLineSpelling;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputDefinition;
@@ -65,7 +65,8 @@ final class CommandLineSpellingTest extends TestCase
             self::fail('A shape no command line writes must be refused.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString(\sprintf('Invalid --one value of type %s', $type), $refusal->getMessage());
-            self::assertSame('--one', $refusal->origin()->locator());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame('--one', $refusal->sources()[0]->locator());
         }
     }
 

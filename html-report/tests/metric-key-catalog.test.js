@@ -3,58 +3,67 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadCatalog, isKeyShaped, staleLiterals } from '../scripts/metric-key-catalog.mjs';
-// './parseAst' is rollup's documented subpath export (see its package.json
-// "exports" map); 'rollup/dist/parseAst.js' reached the same file through
-// the catch-all "./dist/*" entry, which is an escape hatch rollup makes no
-// promise about, not a published surface.
-import { parseAst } from 'rollup/parseAst';
-import { walk } from 'estree-walker';
-
-// Regression guard for the hand-written metric-key literals in src/*.js
-// (`'size.loc.sum'`, `'health.overall'`, ...): a hardcoded key that drifts
-// from MetricName.php — a typo, a rename the JS side missed — is a silent
-// dashboard breakage (metric shows as 0/blank), not a build or type error.
-// loadCatalog() re-reads the PHP sources on every run, so the set asserted
-// against is derived rather than stored: there is no generated file to keep
-// fresh, and no way for this guard to pass against a stale copy of the
-// vocabulary. Keeping it as a test preserves the hand-written runtime bundle
-// while still detecting drift.
+import { payloadReads } from '../scripts/payload-readers.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const SRC_DIR = resolve(__dirname, '..', 'src');
+const ROOT = resolve(__dirname, '..');
+// Exact file/key exceptions: negative input cases, a renamed mock catalog and
+// DOM/rule selectors. They are not metric keys and never exempt production.
+const NOT_METRIC_KEYS = new Map([
+  ['tests/hints.test.js', new Set(['unknown.metric', 'health.unknown'])],
+  ['tests/metric-key-catalog.test.js', new Set(['class-cohesion.lcom', 'zoom.end', 'unknown.metric', 'health.unknown', 'circle.md-dot', 'architecture.layer-violation'])],
+  ['tests/payload-contract.test.js', new Set(['circle.md-dot', 'architecture.layer-violation'])],
+]);
 
-// Dotted string literals in src/ that are not metric keys. Empty today; a
-// literal belongs here only with the reason it is not a metric key.
-const NOT_METRIC_KEYS = new Set([]);
-
-function collectSrcLiterals() {
+function sources() {
   const found = [];
-  // Recursive: a literal in a future subdirectory of src/ is still read.
-  for (const name of readdirSync(SRC_DIR, { recursive: true }).filter((n) => String(n).endsWith('.js'))) {
-    const path = join(SRC_DIR, String(name));
-    const source = readFileSync(path, 'utf8');
-    const ast = parseAst(source, { ecmaVersion: 2023, sourceType: 'module' });
-    walk(ast, {
-      enter(node) {
-        if (node.type === 'Literal' && typeof node.value === 'string' && isKeyShaped(node.value)) {
-          const line = source.slice(0, node.start).split('\n').length;
-          found.push({ file: String(name), line, key: node.value });
-        }
-      },
-    });
+  for (const area of ['src', 'tests']) {
+    for (const name of readdirSync(join(ROOT, area), { recursive: true }).filter(name => String(name).endsWith('.js'))) {
+      const file = area + '/' + name;
+      found.push({ file, ...payloadReads(readFileSync(join(ROOT, file), 'utf8')) });
+    }
   }
   return found;
 }
 
+function payloadKeys() {
+  const payload = JSON.parse(readFileSync(join(__dirname, 'fixtures/payload.json'), 'utf8'));
+  const metrics = new Set();
+  const findings = new Set();
+  function visit(node) {
+    for (const key of Object.keys(node.metrics)) metrics.add(key);
+    for (const finding of node.violations) for (const key of Object.keys(finding)) findings.add(key);
+    for (const child of node.children || []) visit(child);
+  }
+  visit(payload.tree);
+  return { metricKeys: metrics, findingKeys: findings };
+}
+
+const READS = sources();
+
 describe('metric-key catalog', () => {
-  it('every key-shaped string literal in src/ is a real MetricName catalog key', () => {
+  it('every metric literal and static property in src/ and tests/ is a catalog key', () => {
     const catalog = loadCatalog();
-    const literals = collectSrcLiterals();
+    const rows = READS;
+    const stale = [];
+    for (const row of rows) {
+      for (const read of staleLiterals([...row.literals, ...row.metrics], catalog, NOT_METRIC_KEYS.get(row.file))) {
+        stale.push({ file: row.file, ...read });
+      }
+    }
+    expect(rows.flatMap(row => row.literals).length).toBeGreaterThan(0);
+    expect(stale, stale.map(read => `${read.file}:${read.line} '${read.key}': ${read.reason}`).join('\n')).toEqual([]);
+  });
 
-    expect(literals.length).toBeGreaterThan(0);
-
-    const stale = staleLiterals(literals, catalog, NOT_METRIC_KEYS);
-    expect(stale, stale.map((l) => `${l.file}:${l.line} '${l.key}': ${l.reason}`).join('\n')).toEqual([]);
+  it('static viewer metric and finding reads exist in the native payload', () => {
+    const keys = payloadKeys();
+    expect(keys.metricKeys.size).toBeGreaterThan(0);
+    expect(keys.findingKeys.size).toBeGreaterThan(0);
+    const stale = READS.filter(row => row.file.startsWith('src/')).flatMap(row => [
+      ...row.metrics.filter(read => !keys.metricKeys.has(read.key)).map(read => ({ file: row.file, kind: 'metric', ...read })),
+      ...row.findings.filter(read => !keys.findingKeys.has(read.key)).map(read => ({ file: row.file, kind: 'finding', ...read })),
+    ]);
+    expect(stale).toEqual([]);
   });
 
   it('fails a literal whose whole family was renamed on the PHP side instead of dropping it', () => {

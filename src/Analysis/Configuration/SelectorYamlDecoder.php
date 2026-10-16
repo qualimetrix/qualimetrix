@@ -54,16 +54,46 @@ final class SelectorYamlDecoder
     private function definition(mixed $value, ConfigurationOrigin $origin, array $position): array
     {
         $entryPosition = self::position($position);
+        $mapping = self::oneEntryMapping($value, $origin, $entryPosition);
+        $kind = self::selectorKind($mapping, $origin, $position, $entryPosition);
+        $kindPosition = self::position([...$position, $kind]);
+        $pattern = self::pattern($mapping, $kind, $origin, $kindPosition);
 
+        try {
+            return [SelectorDefinition::fromKindAndValue($kind, $pattern), $kindPosition];
+        } catch (InvalidArgumentException $e) {
+            throw ConfigurationRefusal::at($origin, $kindPosition, $e->getMessage(), $e);
+        }
+    }
+
+    /** @return array<mixed, mixed> */
+    private static function oneEntryMapping(
+        mixed $value,
+        ConfigurationOrigin $origin,
+        RefusedPosition $position,
+    ): array {
         if (!\is_array($value) || \count($value) !== 1) {
             throw ConfigurationRefusal::at(
                 $origin,
-                $entryPosition,
+                $position,
                 'Selector entries must be one-entry mappings: {exact: value}, {subtree: value}, or {regex: value}. Bare strings are not supported.',
             );
         }
 
-        $kind = array_key_first($value);
+        return $value;
+    }
+
+    /**
+     * @param array<mixed, mixed> $mapping
+     * @param list<string> $position
+     */
+    private static function selectorKind(
+        array $mapping,
+        ConfigurationOrigin $origin,
+        array $position,
+        RefusedPosition $entryPosition,
+    ): string {
+        $kind = array_key_first($mapping);
         if (!\is_string($kind)) {
             throw ConfigurationRefusal::at(
                 $origin,
@@ -72,7 +102,6 @@ final class SelectorYamlDecoder
             );
         }
 
-        $kindPosition = self::position([...$position, $kind]);
         if (!\in_array($kind, self::KINDS, true)) {
             throw ConfigurationRefusal::at(
                 $origin,
@@ -81,20 +110,26 @@ final class SelectorYamlDecoder
             );
         }
 
-        $pattern = $value[$kind];
+        return $kind;
+    }
+
+    /** @param array<mixed, mixed> $mapping */
+    private static function pattern(
+        array $mapping,
+        string $kind,
+        ConfigurationOrigin $origin,
+        RefusedPosition $position,
+    ): string {
+        $pattern = $mapping[$kind];
         if (!\is_string($pattern) || $pattern === '') {
             throw ConfigurationRefusal::at(
                 $origin,
-                $kindPosition,
+                $position,
                 \sprintf('Selector "%s" must have a non-empty string value.', $kind),
             );
         }
 
-        try {
-            return [SelectorDefinition::fromKindAndValue($kind, $pattern), $kindPosition];
-        } catch (InvalidArgumentException $e) {
-            throw ConfigurationRefusal::at($origin, $kindPosition, $e->getMessage(), $e);
-        }
+        return $pattern;
     }
 
     /** @param list<string> $segments */

@@ -53,10 +53,10 @@ describe('getHealthColor', () => {
     expect(color1).not.toBe(color2);
   });
 
-  it('falls back to mi.avg when health.overall is missing', () => {
+  it('keeps missing health.overall unknown despite a different metric', () => {
     const node = { metrics: { 'maintainability.mi.avg': 75 } };
     const color = getHealthColor(node, 'health.overall', scale);
-    expect(color).not.toBe('#888888');
+    expect(color).toBe('#888888');
   });
 
   it('returns grey for missing metric', () => {

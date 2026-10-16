@@ -22,12 +22,12 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SourceMeasuringCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use ReflectionMethod;
@@ -38,10 +38,25 @@ use stdClass;
 final class CompositeCollectorTest extends TestCase
 {
     #[Test]
+    public function itHandsSourceBytesOnlyToCollectorsThatMeasureSource(): void
+    {
+        $sourceCollector = $this->createMockForIntersectionOfInterfaces([
+            MetricCollectorInterface::class,
+            SourceMeasuringCollectorInterface::class,
+        ]);
+        $sourceCollector->expects(self::once())->method('measureSource')->with("<?php\n");
+        $ordinaryCollector = self::createStub(MetricCollectorInterface::class);
+
+        $composite = new CompositeCollector([$sourceCollector, $ordinaryCollector], new DeclarationRegistrarFactory());
+        $composite->measureSource("<?php\n");
+    }
+
+    #[Test]
     public function itTraversesMetricAndDependencyParticipantsInOneNodeTraverserPass(): void
     {
         $tracker = new stdClass();
         $tracker->visited = false;
+        $tracker->resolvedBeforeParent = false;
         $collector = self::createStub(MetricCollectorInterface::class);
         $collector->method('getVisitor')->willReturn(new class ($tracker) extends NodeVisitorAbstract {
             public function __construct(private readonly stdClass $tracker) {}
@@ -49,6 +64,9 @@ final class CompositeCollectorTest extends TestCase
             public function enterNode(Node $node): null
             {
                 $this->tracker->visited = true;
+                if ($node instanceof Node\Stmt\Class_ && $node->extends !== null) {
+                    $this->tracker->resolvedBeforeParent = $node->extends->getAttribute('resolvedName')?->toString() === 'Vendor\\Base';
+                }
 
                 return null;
             }
@@ -65,7 +83,10 @@ final class CompositeCollectorTest extends TestCase
         );
 
         self::assertTrue($tracker->visited);
+        self::assertTrue($tracker->resolvedBeforeParent);
         self::assertCount(1, $result->dependencies);
+        self::assertCount(1, $result->classLikeDeclarations);
+        self::assertSame('App\\Subject', $result->classLikeDeclarations[0]->declaration->logical->toString());
     }
 
     #[Test]
@@ -616,7 +637,7 @@ final class CompositeCollectorTest extends TestCase
             CallableKind::Method,
             null,
             null,
-            new LogicalClassPath($classPath),
+            DeclarationPath::of($classPath, DeclarationPath::of(SymbolPath::forMethod($namespace, $class, $method), RelativePath::fromString('CompositeCollectorTest.php'), DeclarationOrdinal::fromRank(0))->file, DeclarationOrdinal::fromRank(0)),
             $metrics,
         );
     }

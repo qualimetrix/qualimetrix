@@ -11,10 +11,15 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 final readonly class HealthMetricCatalog implements HealthMetricMetadataProviderInterface
 {
     public function __construct(
+        private HealthDecompositionCatalog $decomposition,
         private MetricHintCatalog $metricHints = new MetricHintCatalog(),
         private HealthDimensionCatalog $dimensions = new HealthDimensionCatalog(),
-        private HealthDecompositionCatalog $decomposition = new HealthDecompositionCatalog(),
     ) {}
+
+    public function decomposition(): HealthDecompositionCatalog
+    {
+        return $this->decomposition;
+    }
 
     public function getLabel(string $key): ?string
     {

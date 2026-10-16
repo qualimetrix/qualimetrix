@@ -1,0 +1,9 @@
+only_rules:
+  - complexity.ccn
+rules:
+  complexity.ccn:
+    callable:
+      warning: 2
+      error: 10
+    class:
+      enabled: false

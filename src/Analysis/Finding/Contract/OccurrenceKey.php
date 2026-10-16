@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract;
 
 use InvalidArgumentException;
+use Qualimetrix\Core\SourceText\SourceBytes;
 
 /**
  * Stable semantic discriminator for findings sharing one channel and subject.
@@ -12,7 +13,7 @@ use InvalidArgumentException;
  * **The value is 16 hex characters, not the full digest.** The discrimination
  * domain is a single (subject, channel) pair — units of members, not the
  * whole corpus — so 64 bits of the underlying SHA-256 carry far more headroom
- * than that domain needs; {@see \Qualimetrix\Analysis\Policy\Baseline\EntrySelector}
+ * than that domain needs; {@see \Qualimetrix\Analysis\Policy\Baseline\Entry\EntrySelector}
  * makes the same argument at 48 bits for a domain that addresses the entire
  * identity. Shortening is a breaking change to every consumer that persists
  * this value across runs — the baseline file, and, through
@@ -34,7 +35,9 @@ final readonly class OccurrenceKey
      * SHA-256 digest of the same material — never computed from a shorter or
      * different hash.
      *
-     * @param array<string, bool|float|int|string> $scalarEvidence
+     * Numeric string names retain PHP's native conversion to integer keys.
+     *
+     * @param array<array-key, bool|float|int|string> $scalarEvidence
      */
     public static function semantic(string $kind, array $scalarEvidence): self
     {
@@ -49,8 +52,17 @@ final readonly class OccurrenceKey
             }
         }
 
+        $framed = [];
+        $names = [];
+        $invalidName = false;
+        foreach ($scalarEvidence as $name => $value) {
+            $framed[$name] = \is_string($value) ? SourceBytes::framed($value) : $value;
+            $names[] = [SourceBytes::framed((string) $name), $framed[$name]];
+            $invalidName = $invalidName || !SourceBytes::isUtf8((string) $name);
+        }
+
         $payload = json_encode(
-            ['kind' => $kind, 'evidence' => $scalarEvidence],
+            ['kind' => SourceBytes::framed($kind), 'evidence' => $invalidName ? ['%' => $names] : $framed],
             \JSON_THROW_ON_ERROR | \JSON_PRESERVE_ZERO_FRACTION | \JSON_UNESCAPED_SLASHES,
         );
 

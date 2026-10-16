@@ -6,11 +6,13 @@ namespace Qualimetrix\Analysis\Evidence\Security;
 
 use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Core\Symbol\MetricSubjectCodec;
@@ -26,6 +28,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 final class SensitiveParameterRule extends AbstractRule
 {
     public const string NAME = 'security.sensitive-parameter';
+
+    public const string DESCRIPTION = 'Detects sensitive parameters missing #[\\SensitiveParameter] attribute';
     public const string DOCS_PAGE = 'rules/security.md';
 
     /**
@@ -38,15 +42,6 @@ final class SensitiveParameterRule extends AbstractRule
     public const int REMEDIATION_MINUTES = 10;
 
     public const ChannelShape SHAPE = ChannelShape::Occurrence;
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public function getDescription(): string
-    {
-        return 'Detects sensitive parameters missing #[\\SensitiveParameter] attribute';
-    }
 
     /**
      * @return class-string<SensitiveParameterOptions>
@@ -66,6 +61,7 @@ final class SensitiveParameterRule extends AbstractRule
         }
 
         $findings = [];
+        $declaration = self::channelDeclarations()[self::NAME];
 
         foreach ($context->metrics->all(SymbolLevel::File) as $fileInfo) {
             $metrics = $context->metrics->get($fileInfo->symbolPath);
@@ -75,8 +71,8 @@ final class SensitiveParameterRule extends AbstractRule
                 continue;
             }
 
-            foreach ($entries as $entry) {
-                $finding = $this->findingForEntry($fileInfo, $entry, $context);
+            foreach ($entries as $entryOrdinal => $entry) {
+                $finding = $this->findingForEntry($fileInfo, $entry, $context, $entryOrdinal, $declaration);
                 if ($finding !== null) {
                     $findings[] = $finding;
                 }
@@ -89,12 +85,13 @@ final class SensitiveParameterRule extends AbstractRule
     /**
      * @param array<string, bool|float|int|string> $entry
      */
-    private function findingForEntry(SymbolInfo $fileInfo, array $entry, AnalysisContext $context): ?Finding
+    private function findingForEntry(SymbolInfo $fileInfo, array $entry, AnalysisContext $context, int $entryOrdinal, ChannelDeclaration $declaration): ?Finding
     {
         \assert($this->options instanceof SensitiveParameterOptions);
         $file = $fileInfo->file ?? throw new LogicException('File symbol must carry a relative path');
         $line = (int) $entry['line'];
         $subject = MetricSubjectCodec::decodeEntry($entry, $file);
+        $context->admit(self::NAME, new FindingChannel(self::NAME), $subject::levelOfCanonical($subject->toCanonical()), PopulationIdentity::occurrence($subject->toCanonical(), $entryOrdinal), $declaration, []);
         $severity = $this->getEffectiveSeverity($context, $this->options, $subject, 1);
         if ($severity === null) {
             return null;
@@ -103,7 +100,7 @@ final class SensitiveParameterRule extends AbstractRule
         return new Finding(
             location: new Location($file, $line, precise: true),
             subject: $subject,
-            symbolPath: $fileInfo->symbolPath,
+            symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
             code: self::NAME,
             message: 'Sensitive parameter missing #[\\SensitiveParameter] attribute — add it to prevent credential leakage in stack traces',
@@ -127,7 +124,7 @@ final class SensitiveParameterRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Callable),
+            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Callable, SymbolLevel::File),
         ];
     }
 }

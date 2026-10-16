@@ -1,0 +1,24 @@
+suppress_paths: []
+only_rules: [complexity.ccn, architecture.circular-dependency, architecture.layer-violation, duplication.clone]
+rules:
+  complexity.ccn:
+    callable: { warning: 2, error: 10 }
+    class: { enabled: false }
+  duplication.clone: { min-tokens: 20, min-lines: 3 }
+computed_metrics:
+  health.complexity: { enabled: false }
+  health.cohesion: { enabled: false }
+  health.coupling: { enabled: false }
+  health.typing: { enabled: false }
+  health.maintainability: { enabled: false }
+  health.overall: { enabled: false }
+architecture:
+  coverage-gap: ignore
+  layers:
+    - name: public
+      patterns: ['Corpus\Utf8\Public\**']
+    - name: private
+      patterns: ['Corpus\Utf8\Private\**']
+  allow:
+    public: []
+    private: []

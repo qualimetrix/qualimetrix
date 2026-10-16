@@ -1,1 +1,4 @@
 old	new	reason
+# Plain values address only suppressed mechanism positions, never notes or arbitrary strings.
+# A canonical descriptor has surface,path,kind,members; kind is values (list) or keys (object permutation).
+# Example: {"surface":"format:suppressed","path":["mechanisms"],"kind":"values","members":["a","b"]}.

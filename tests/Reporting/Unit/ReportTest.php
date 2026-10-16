@@ -21,6 +21,7 @@ final class ReportTest extends TestCase
     public function itIsEmptyWhenNoFindings(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -39,6 +40,7 @@ final class ReportTest extends TestCase
         $finding = $this->createFinding(Severity::Error);
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [$finding],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -61,6 +63,7 @@ final class ReportTest extends TestCase
         ];
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: $findings,
             filesAnalyzed: 5,
             filesSkipped: 1,
@@ -78,6 +81,7 @@ final class ReportTest extends TestCase
         $findings = [$this->createFinding(Severity::Error)];
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: $findings,
             filesAnalyzed: 42,
             filesSkipped: 3,
@@ -107,7 +111,7 @@ final class ReportTest extends TestCase
     }
 
     /** @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations */
-    private static function finding(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $code, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Finding
+    private static function finding(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $code, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Finding
     {
         $subject ??= match ($symbolPath->getType()) {
             \Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),

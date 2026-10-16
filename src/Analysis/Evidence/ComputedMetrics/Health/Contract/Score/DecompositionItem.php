@@ -9,12 +9,17 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score;
  */
 final readonly class DecompositionItem
 {
+    public HealthCoverage $coverage;
+
     public function __construct(
         public string $metricKey,
         public string $humanName,
-        public float $value,
+        public ?float $value,
         public string $goodValue,
         public string $direction,
         public string $explanation,
-    ) {}
+        ?HealthCoverage $coverage = null,
+    ) {
+        $this->coverage = $coverage ?? HealthCoverage::notApplicable('this input has no declared symbol population');
+    }
 }

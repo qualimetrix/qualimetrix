@@ -34,10 +34,10 @@ final readonly class Suite
         'tests/Core/Symbol/Unit/CallableKindTest.php',
         'tests/Core/Symbol/Unit/SymbolInfoTest.php',
         'tests/Infrastructure/DependencyInjection/Integration/ContainerFactoryTest.php',
-        'tests/Infrastructure/DependencyInjection/Unit/CompilerPass/RuleCompilerPassTest.php',
+        'tests/Infrastructure/DependencyInjection/Unit/RuleCatalog/RuleCompilerPassTest.php',
         'tests/Infrastructure/Parallel/Unit/Strategy/AmphpParallelStrategyTest.php',
         'tests/Infrastructure/Rule/Unit/RuleRegistryTest.php',
-        'tests/Reporting/Unit/FindingProjection/DeclaredChannelFileScopeTest.php',
+        'tests/Infrastructure/DependencyInjection/Unit/Configurator/DeclaredChannelFileScopeTest.php',
     ];
 
     /**

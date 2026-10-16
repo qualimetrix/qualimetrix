@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Fixtures;
 
 use FilesystemIterator;
-use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Generation\BaselineGenerateCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Maintenance\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -119,7 +120,18 @@ final class BaselineCliFixture
         /** @var Command $command */
         $command = (new ContainerFactory())->create()->get($commandClass);
         $tester = new CommandTester($command);
-        $tester->execute($input, $testerOptions);
+        $previous = getcwd();
+        if ($previous === false || !chdir($this->root)) {
+            throw new RuntimeException('Cannot enter the baseline fixture root');
+        }
+
+        try {
+            $tester->execute($input, $testerOptions);
+        } finally {
+            if (!chdir($previous)) {
+                throw new RuntimeException('Cannot restore the working directory');
+            }
+        }
 
         return $tester;
     }

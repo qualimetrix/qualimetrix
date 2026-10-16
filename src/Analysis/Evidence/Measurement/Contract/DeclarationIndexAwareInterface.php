@@ -13,7 +13,7 @@ use Qualimetrix\Core\Symbol\FileDeclarationIndex;
  * never creates one, because a private index would number a subset of the file
  * and agree with the other producers only by accident.
  *
- * @qmx-threshold coupling.cbo 23 -- Every producer of declaration identity implements this one-method promise; its fan-in is the point of it, and raw CBO 22 gets one-edge headroom.
+ * @qmx-threshold coupling.cbo 23 -- Declaration producers share the traversal-owned index promise; splitting that promise duplicates numbering authority.
  */
 interface DeclarationIndexAwareInterface
 {

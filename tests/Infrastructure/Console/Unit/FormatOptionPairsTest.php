@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Infrastructure\Console\FormatOptionPairs;
+use Qualimetrix\Infrastructure\Console\Invocation\FormatOptionPairs;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 
 #[CoversClass(FormatOptionPairs::class)]
@@ -39,7 +39,8 @@ final class FormatOptionPairsTest extends TestCase
             self::fail('Two spellings of one value must be refused.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString('"violations" and "limit" set one value', $refusal->getMessage());
-            self::assertSame('--format-opt', $refusal->origin()->locator());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame('--format-opt', $refusal->sources()[0]->locator());
         }
     }
 

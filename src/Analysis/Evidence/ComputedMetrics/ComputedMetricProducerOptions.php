@@ -28,7 +28,7 @@ final readonly class ComputedMetricProducerOptions
     /**
      * @param array<string, ComputedMetricRuleOptions> $byProducer every name in
      *                                                             {@see ComputedMetricChannelFamily::PRODUCER_RULE_NAMES}, each built by
-     *                                                             `RuleOptionsFactory::create()` so that its own `exclude_*` keys reach the
+     *                                                             `RuleOptionsBuild::build()` so that its own `exclude_*` keys reach the
      *                                                             exclusion providers — the factory call is where that happens, and a
      *                                                             producer nobody builds options for excludes nothing while looking configured
      */
@@ -43,7 +43,7 @@ final readonly class ComputedMetricProducerOptions
         return ($this->byProducer[$producer] ?? throw new LogicException(\sprintf(
             'No options were built for computed-metric producer "%s". Every name in'
             . ' ComputedMetricChannelFamily::PRODUCER_RULE_NAMES must be registered through'
-            . ' RuleOptionsFactory::create(), or its configuration is read nowhere.',
+            . ' RuleOptionsBuild::build(), or its configuration is read nowhere.',
             $producer,
         )))->isEnabled();
     }

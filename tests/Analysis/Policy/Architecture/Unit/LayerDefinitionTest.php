@@ -2,23 +2,23 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer;
+namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\CriterionListValidator;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContext;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\InvalidLayerDefinitionException;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerCriteriaMatcher;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterionKind;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipResult;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CriterionListValidator;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\LayerCriteriaMatcher;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchedCriterion;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchedCriterionKind;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchMode;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MembershipResult;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use stdClass;
 
@@ -317,6 +317,27 @@ final class LayerDefinitionTest extends TestCase
         $context = new ClassContext('App\\Domain\\User', 'User');
 
         self::assertFalse($definition->matches($context)->matched);
+    }
+
+    #[Test]
+    public function itMatchesAnAttributeDeclaredOnAMember(): void
+    {
+        $definition = new LayerDefinition(
+            'controller',
+            new MembershipSpec(memberAttributes: ['App\\Http\\Route']),
+        );
+
+        $context = new ClassContext(
+            'App\\Http\\UserController',
+            'UserController',
+            memberAttributeFqns: ['App\\Http\\Route'],
+        );
+
+        $result = $definition->matches($context);
+
+        self::assertTrue($result->matched);
+        self::assertSame(MatchedCriterionKind::MemberAttribute, $result->matchedCriteria[0]->kind);
+        self::assertSame('App\\Http\\Route', $result->matchedCriteria[0]->value);
     }
 
     // -------------------------------------------------------------------------
@@ -655,6 +676,14 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
+    public function itAcceptsAMemberAttributesOnlySpec(): void
+    {
+        $spec = new MembershipSpec(memberAttributes: ['App\\Attr\\Route']);
+
+        self::assertSame(['App\\Attr\\Route'], $spec->memberAttributes);
+    }
+
+    #[Test]
     public function itAcceptsAnImplementsOnlySpec(): void
     {
         $spec = new MembershipSpec(implements: ['App\\Contracts\\Repository']);
@@ -745,6 +774,7 @@ final class LayerDefinitionTest extends TestCase
         self::assertSame('pattern "App\\Service"', (new MatchedCriterion(MatchedCriterionKind::Pattern, 'App\\Service'))->describe());
         self::assertSame('suffix "Repository"', (new MatchedCriterion(MatchedCriterionKind::Suffix, 'Repository'))->describe());
         self::assertSame('attribute "App\\Attr"', (new MatchedCriterion(MatchedCriterionKind::Attribute, 'App\\Attr'))->describe());
+        self::assertSame('member attribute "App\\Route"', (new MatchedCriterion(MatchedCriterionKind::MemberAttribute, 'App\\Route'))->describe());
     }
 
     #[Test]
@@ -862,6 +892,27 @@ final class LayerDefinitionTest extends TestCase
 
         self::assertTrue($definition->matches($clean)->matched);
         self::assertFalse($definition->matches($deprecated)->matched);
+    }
+
+    #[Test]
+    public function itExcludesByAnAttributeDeclaredOnAMember(): void
+    {
+        $definition = new LayerDefinition(
+            'service',
+            new MembershipSpec(
+                patterns: ['App\\Service\\**'],
+                exclude: new ExcludeSpec(memberAttributes: ['App\\Internal']),
+            ),
+        );
+
+        $context = new ClassContext(
+            'App\\Service\\InternalService',
+            'InternalService',
+            memberAttributeFqns: ['App\\Internal'],
+        );
+
+        self::assertTrue($definition->matches(new ClassContext('App\\Service\\PublicService', 'PublicService'))->matched);
+        self::assertTrue($definition->matches($context)->isExcluded());
     }
 
     #[Test]

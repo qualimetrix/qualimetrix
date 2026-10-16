@@ -15,12 +15,12 @@ See also: [LCOM (Lack of Cohesion of Methods)](#lcom----lack-of-cohesion-of-meth
 LCOM4 counts disconnected groups of related instance methods. A value of `1`
 means that the class is cohesive; values above `1` indicate independent groups
 of responsibilities that may be split. Qualimetrix connects methods that share
-a property or call one another through `$this->method()`, excludes static,
-constructor and destructor methods, and groups stateless constant methods
-into one virtual node.
+a property or call one another through `$this->method()`, `self::method()` or `static::method()`, excludes static,
+constructor and destructor methods, and groups only uncalled stateless constant methods
+into one virtual node. A called method remains its own graph vertex.
 
-The default warning/error thresholds are `3` and `5`. Readonly classes are
-excluded by default, and classes must have at least three methods. You can also
+The default warning/error thresholds are `3` and `5`, inclusive at equality. Readonly classes are
+excluded by default, and classes must have at least three graph-eligible methods after exclusions. You can also
 exclude interface-mandated methods from the graph:
 
 ```yaml
@@ -33,9 +33,9 @@ rules:
     exclude_methods: [getName, getDescription]
 ```
 
-`exclude_methods` also takes a single string, which stands for a one-element
-list: `exclude_methods: getName` means exactly `exclude_methods: [getName]`. A
-digit string is a method name like any other.
+`exclude_methods` requires a YAML sequence of strings. Use
+`exclude_methods: [getName]`; a scalar string or CSV is refused. String items
+retain their authored spelling and match method names case-insensitively.
 
 For a simple pass/fail threshold instead of separate warning/error levels
 (`threshold` cannot be combined with `warning` or `error` — mixing them is a
@@ -54,15 +54,20 @@ bin/qmx check src/ --rule-opt="cohesion.lcom:threshold=3"
 ### Implementation notes
 
 Qualimetrix implements the graph-based LCOM4 algorithm. Instance methods are
-graph nodes, and the metric is the number of connected components.
+graph nodes, and the metric is the number of connected components. An empty
+graph has no LCOM value. `cohesion.lcom-method-count` exposes its eligible
+method population; `cohesion.unread-trait-count` exposes unresolved trait uses. Resolvable
+trait methods participate after aliases, visibility changes, `insteadof`
+selections and class overrides; an unread trait is reported, not assumed empty.
 
 !!! info "Deviation from original spec"
-    The original LCOM4 specification by Hitz and Montazeri defines edges only
-    through shared property access. Qualimetrix also creates an edge when one
-    method calls another through `$this->method()`, so a well-factored class
-    that uses getters is not reported as artificially incohesive. Stateless
+    [Hitz and Montazeri](https://www.researchgate.net/publication/238729882_Measuring_coupling_and_cohesion_in_object-oriented_systems)
+    define connections through shared instance variables **or method calls**.
+    Qualimetrix follows those edge kinds with case-insensitive PHP method names
+    and effective trait methods. Its scope adaptation concerns the method
+    population and empty graphs, which publish no value. Stateless
     constant methods with no property access or instance method calls are
-    grouped into one virtual node; this prevents interface-mandated metadata
+    grouped into one virtual node only when uncalled; this prevents interface-mandated metadata
     methods such as `getName()` and `getDescription()` from each inflating the
     number of disconnected components. A method whose body is a single
     `return` of a class constant qualifies regardless of which class the
@@ -71,25 +76,10 @@ graph nodes, and the metric is the number of connected components.
     instance state, so they are all recognized as constant expressions. A
     dynamic class or constant name (`$var::X`, `Foo::{$name}`) is resolved at
     run time and is not.
-    Constructors and destructors
-    (`__construct`, `__destruct`) are excluded from the method set entirely,
-    consistent with how TCC/LCC already treats them (see "Implementation
-    notes" below): a constructor whose assigned fields no other stateful
-    method reads shares no property-access edge with the rest of the class,
-    so without this exclusion it would sit in the graph as an isolated
-    vertex and inflate LCOM by one. Property promotion (`private array $x`
-    in the parameter list) is the guaranteed case -- a promoted parameter
-    never emits a property-access node at all -- affecting the large
-    majority of constructors in modern PHP 8+ code. Recording promoted
-    parameters as property accesses was considered and rejected: it would
-    turn `__construct` into a hub touching every promoted property,
-    connecting unrelated methods through it and pushing LCOM toward 1 almost
-    everywhere, which would defeat the metric rather than fix it. The
-    exclusion is not one-directional: reverting it on php-parser's own
-    source (which has no promoted constructors) changed LCOM for 106 of 260
-    classes -- 97 dropped (the artifact this fix targets) and 9 *rose* (a
-    real disconnection the constructor's edges had been masking), moving
-    `health.cohesion` from 60.40 to 63.13.
+    Constructors and destructors (`__construct`, `__destruct`) are excluded
+    from the LCOM method population as a scope adaptation. TCC/LCC also exclude
+    them, as Bieman and Kang specify. Initialization is not a behavioral group;
+    constructor edges must not bridge unrelated responsibilities.
 
 !!! note "Comparing with other tools"
     phpmetrics uses the Henderson-Sellers LCOM formula, whose values are on a
@@ -248,22 +238,25 @@ LCC counts all 3 pairs (A-C are transitively connected through B): LCC = 3/3 = 1
 
 ## Implementation notes
 
-Qualimetrix implements a **simplified variant** of the Bieman & Kang (1995) TCC/LCC specification:
+Qualimetrix implements a **simplified variant** of the
+[Bieman & Kang (1995)](https://www.cs.colostate.edu/~bieman/Pubs/bieman-kang-ssr95.pdf)
+TCC/LCC specification. Sections 2–3 include state reached through directly or
+transitively called methods on the same object:
 
 - **Constructors and destructors** (`__construct`, `__destruct`) are excluded from the method set, per the B&K spec (these are setup/teardown, not behavioral methods).
 - **Enums are excluded** -- they cannot have instance properties, so TCC would always be 0.0, which is misleading.
 - **Interfaces are excluded** -- they have no method bodies, so property access cannot be measured.
-- **Only public methods** are considered. The original B&K paper specifies "visible methods" (public + protected); Qualimetrix follows the stricter industry convention (public only), consistent with most tools (PHPMD, PHPMetrics).
-- **Only direct `$this->property` access** is counted. B&K also defines "invocation trees" where a public method calling a private helper that accesses a property counts as indirect access. This is **not implemented** -- delegation through private methods is not tracked. This means TCC may be **underestimated** for classes that heavily use the delegation pattern.
+- **Only public methods** are considered. The original B&K paper specifies "visible methods"; Qualimetrix measures the public interface and follows private helpers indirectly through public callers.
+- **Invocation trees are followed.** Property access reached through an instance-method call, including a private helper, contributes to the public caller's property set. TCC counts pairs sharing these resolved sets; LCC additionally counts chains of such pairs.
 - **Static methods and abstract methods** are excluded -- they do not operate on instance state.
 - **Classes with 0 or 1 tracked public methods** get no TCC or LCC value at all: with fewer than two methods there is no pair to connect, so the ratio is undefined (0/0). The metrics are absent from the class's output, not 1.0.
-- **Namespace and project aggregates** (`cohesion.tcc.avg`, `cohesion.tcc.min` and the LCC equivalents) are computed only over classes that have a value; `.count` states how many that is. Where TCC is absent, the class-level `health.cohesion` score substitutes 0.5 for a class with fewer than six methods and 0 — the incohesive end — for a larger one (see [Health Scores](../reference/health-scores.md)).
+- **Namespace and project aggregates** (`cohesion.tcc.avg`, `cohesion.tcc.min` and the LCC equivalents) are computed only over classes that have a value; `.count` states how many that is. Health cohesion combines only available TCC and LCOM contributions, without substituting TCC 0.5 or 0; classes with no eligible methods have no measured LCOM (see [Health Scores](../reference/health-scores.md)).
 
 !!! info "Deviation from original spec"
-    Classes that declare **no instance properties** also get no TCC or LCC value, even with two or more tracked methods. Under the Bieman & Kang formula such a class has method pairs but no shared instance variable, so TCC = LCC = 0. Qualimetrix treats cohesion through shared state as not applicable to a stateless class instead of reporting it as maximally incohesive, which would pull namespace averages down for every stateless service.
+    Classes with **no applicable instance property use** also get no TCC or LCC value, even with two or more tracked methods. Under the Bieman & Kang formula such a class has method pairs but no shared instance variable, so TCC = LCC = 0. Qualimetrix treats cohesion through shared state as not applicable to a stateless class instead of reporting it as maximally incohesive, which would pull namespace averages down for every stateless service.
 
 !!! note "Comparing with other tools"
-    Most tools (PHPMD, PHPMetrics, JArchitect) implement the same simplified variant -- direct property access only, no invocation trees. Values should be comparable across tools, though minor differences may arise from how constructors or static methods are handled.
+    Tools that use direct property access only can report different TCC/LCC values for delegation-heavy classes; compare their method populations and invocation treatment before comparing values.
 
 ---
 
@@ -276,3 +269,18 @@ bin/qmx check src/ --format=metrics
 ```
 
 To use TCC/LCC for quality gates, you can process the metrics JSON output programmatically (e.g., in a CI pipeline script).
+
+## Unmatched configured method names
+
+exclude_methods is a sequence and uses PHP case-insensitive method matching, with the first authored spelling retained. When measured scope permits declaration-absence claims, the LCOM producer also publishes cohesion.unmatched-exclude-method once per unmatched normalized configured name. Functions and property hooks do not witness Method-kind declarations; partial runs do not claim project-wide absence. This secondary warning carries project magnitude 1 and a semantic occurrence for the normalized name, without a configured warning boundary. The primary LCOM 3/5 band and secondary-channel lifecycle are unchanged. CLI: --lcom-exclude-methods='[getName, getDescription]'.
+
+
+### Baseline comparison
+
+The seven composed class metrics (LCOM, TCC, LCC, their two method populations,
+pure-method count and unread-trait count) declare Run reach. A trait body in
+another file can change the selected class's metrics. Checking only the class
+file against a whole-project baseline therefore leaves these ceilings
+not compared, even when that particular class has no missing trait body.
+Use matching whole-run coverage to compare them. Raw file-local fact rows
+retain Members reach; exact declaration subjects are preserved in both phases.

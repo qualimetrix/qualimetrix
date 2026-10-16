@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Infrastructure\Console\Progress;
+namespace Qualimetrix\Tests\Infrastructure\Console\Unit\Progress;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;

@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import importlib.util
 import os
+import signal
 import subprocess
 import sys
 import tempfile
@@ -43,23 +44,111 @@ def complete_configuration() -> dict[str, object]:
 
 
 class PhpunitAggregateTest(unittest.TestCase):
+    def test_executes_each_shard_in_an_empty_directory_outside_the_repository(self):
+        with tempfile.TemporaryDirectory(prefix="qmx-phpunit-cwd-record-") as directory:
+            records_path = Path(directory)
+            completed = self.run_runner(complete_configuration(), record_directory=records_path)
+            records = [json.loads((records_path / f"{suite}.json").read_text()) for suite in SUITES]
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        working_directories = [Path(record["cwd"]) for record in records]
+        self.assertEqual(len(SUITES), len(set(working_directories)))
+        self.assertTrue(all(not path.is_relative_to(PROJECT_ROOT) for path in working_directories))
+        self.assertTrue(all(not path.exists() for path in working_directories))
+
+    def test_refuses_residue_in_the_shard_directory_even_when_declared_for_the_execution_window(self):
+        configuration = complete_configuration()
+        configuration["run"] = {"Unit": {"cwd_entries": [".qmx-cache"], "residue": [".qmx-cache"]}}
+        completed = self.run_runner(configuration, declared_residue=(".qmx-cache",))
+        self.assertNotEqual(0, completed.returncode)
+        self.assertIn("shard cwd not empty: .qmx-cache", completed.stdout)
+
+    def test_judges_declared_residue_freshness_from_the_union_of_every_suite(self):
+        configuration = complete_configuration()
+        configuration["run"] = {suite: {"residue": []} for suite in SUITES}
+        configuration["run"]["Governance"] = {"residue": [".qmx-cache"]}
+        completed = self.run_runner(configuration, declared_residue=(".qmx-cache",))
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        self.assertIn("Governance declared residue: .qmx-cache", completed.stdout)
+
+        configuration["run"]["Governance"] = {"residue": []}
+        stale = self.run_runner(configuration, declared_residue=(".qmx-cache",))
+        self.assertEqual(2, stale.returncode)
+        self.assertIn("stale declared residue .qmx-cache", stale.stderr)
+
+    def test_refuses_missing_residue_observations_after_success(self):
+        configuration = complete_configuration()
+        configuration["run"] = {"Functional": {"missing_residue_report": True}}
+        completed = self.run_runner(configuration)
+        self.assertEqual(2, completed.returncode)
+        self.assertIn("Functional: cannot read suite residue report", completed.stderr)
+
+    def test_refuses_an_undeclared_residue_observation(self):
+        configuration = complete_configuration()
+        configuration["run"] = {"Unit": {"residue": ["unexpected"]}}
+        completed = self.run_runner(configuration)
+        self.assertEqual(2, completed.returncode)
+        self.assertIn("Unit: undeclared suite residue report", completed.stderr)
+
+    def test_does_not_judge_freshness_from_an_incomplete_failed_run(self):
+        configuration = complete_configuration()
+        configuration["run"] = {suite: {"residue": []} for suite in SUITES}
+        configuration["run"]["Unit"]["exit"] = 1
+        completed = self.run_runner(configuration, declared_residue=(".qmx-cache",))
+        self.assertEqual(1, completed.returncode)
+        self.assertNotIn("stale declared residue", completed.stderr)
+
+    def test_refuses_malformed_residue_declarations_and_accepts_an_empty_population(self):
+        runner = load_runner_module()
+        with tempfile.TemporaryDirectory(prefix="qmx-residue-declaration-") as directory:
+            path = Path(directory) / "declared.tsv"
+            for body in ("entry\treason\ncache/entry\tmechanism\n", "entry\treason\ncache\t \n"):
+                path.write_text(body)
+                with self.assertRaises(runner.RunnerRefusal):
+                    runner.declared_residue(path)
+            path.write_text("entry\treason\n")
+            self.assertEqual(set(), runner.declared_residue(path))
+
+    def test_shard_command_always_uses_the_configuration_and_never_disables_the_window(self):
+        runner = load_runner_module()
+        for suite in SUITES:
+            command = runner.shard_command(FAKE_PHPUNIT, suite, Path("/tmp") / suite)
+            self.assertIn(f"--configuration={PROJECT_ROOT / 'phpunit.xml.dist'}", command)
+            bypasses = {"--no-extensions", "--no-configuration", "--bootstrap", "--do-not-fail-on-phpunit-warning"}
+            self.assertFalse(any(argument.split("=", 1)[0] in bypasses for argument in command))
+
     def run_runner(
         self,
         configuration: dict[str, object],
         *arguments: str,
         record_directory: Path | None = None,
+        profile: bool = False,
+        declared_residue: tuple[str, ...] | None = None,
     ) -> subprocess.CompletedProcess[str]:
         with tempfile.TemporaryDirectory(prefix="qmx-phpunit-aggregate-test-") as directory:
+            runner_path = RUNNER
+            if declared_residue is not None:
+                runner_path = Path(directory) / "scripts/phpunit-aggregate.py"
+                runner_path.parent.mkdir()
+                runner_path.write_text(RUNNER.read_text(encoding="utf-8"), encoding="utf-8")
+                declaration_path = Path(directory) / "tests/TestSupport/WorkingDirectory/declared-residue.tsv"
+                declaration_path.parent.mkdir(parents=True)
+                declaration_path.write_text(
+                    "entry\treason\n" + "".join(f"{entry}\tSynthetic residue fixture\n" for entry in declared_residue),
+                    encoding="utf-8",
+                )
             configuration_path = Path(directory) / "configuration.json"
             configuration_path.write_text(json.dumps(configuration), encoding="utf-8")
             environment = os.environ.copy()
             environment["FAKE_PHPUNIT_CONFIGURATION"] = configuration_path.read_text(encoding="utf-8")
+            environment.pop("QMX_PHPUNIT_PROFILE", None)
+            if profile:
+                environment["QMX_PHPUNIT_PROFILE"] = "1"
             if record_directory is not None:
                 environment["FAKE_PHPUNIT_RECORD_DIRECTORY"] = str(record_directory)
             return subprocess.run(
                 [
                     sys.executable,
-                    str(RUNNER),
+                    str(runner_path),
                     f"--phpunit={FAKE_PHPUNIT}",
                     "--heartbeat=0.01",
                     *arguments,
@@ -158,6 +247,53 @@ class PhpunitAggregateTest(unittest.TestCase):
         cache_directories = [record["cache_directory"] for record in records]
         self.assertEqual(len(SUITES), len(set(cache_directories)))
         self.assertTrue(all(not Path(cache_directory).exists() for cache_directory in cache_directories))
+        self.assertTrue(all(not any(arg.startswith("--log-junit=") for arg in record["arguments"]) for record in records))
+
+    def test_profile_keeps_suite_selection_and_reports_measured_cases(self):
+        configuration = complete_configuration()
+        configuration["run"] = {"Tooling": {"case_time": 2.5}}
+        with tempfile.TemporaryDirectory(prefix="qmx-phpunit-profile-record-") as directory:
+            record_directory = Path(directory)
+            completed = self.run_runner(configuration, record_directory=record_directory, profile=True)
+            records = [json.loads((record_directory / f"{suite}.json").read_text(encoding="utf-8")) for suite in SUITES]
+
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        self.assertIn("discovery wall time:", completed.stdout)
+        self.assertIn("shard phase wall time:", completed.stdout)
+        self.assertIn("2.500s Tooling Example\\ToolingTest::itRuns", completed.stdout)
+        self.assertTrue(all(any(arg.startswith("--log-junit=") for arg in record["arguments"]) for record in records))
+        self.assertTrue(all(not Path(record["cache_directory"]).exists() for record in records))
+
+    def test_profile_refuses_missing_junit_only_after_success(self):
+        configuration = complete_configuration()
+        configuration["run"] = {"Tooling": {"junit": "missing"}}
+
+        successful = self.run_runner(configuration, profile=True)
+        self.assertEqual(2, successful.returncode)
+        self.assertIn("enabled PHPUnit profile is incomplete", successful.stderr)
+        self.assertIn("partial measurement", successful.stdout)
+
+        configuration["run"]["Tooling"]["exit"] = 7
+        failed = self.run_runner(configuration, profile=True)
+        self.assertEqual(1, failed.returncode)
+        self.assertIn("partial measurement", failed.stdout)
+        self.assertNotIn("enabled PHPUnit profile is incomplete", failed.stderr)
+
+    def test_profile_refuses_a_junit_population_smaller_than_its_declared_count(self):
+        runner = load_runner_module()
+        with tempfile.TemporaryDirectory(prefix="qmx-profile-count-") as directory:
+            path = Path(directory) / "junit.xml"
+            path.write_text('<testsuites><testsuite tests="2"><testcase class="Example" name="itRuns" time="0.1"/></testsuite></testsuites>', encoding="utf-8")
+            with self.assertRaisesRegex(runner.RunnerRefusal, "testcase count"):
+                runner.read_junit_cases(path, "Unit")
+
+    def test_records_elapsed_time_for_a_started_shard_that_is_terminated(self):
+        runner = load_runner_module()
+        shard = runner.Shard("Unit", Path("Unit.stdout"), Path("Unit.stderr"), started_at=100.0)
+        with mock.patch.object(runner, "terminate_shard"), mock.patch.object(runner.time, "monotonic", return_value=103.0):
+            runner.terminate_shards([shard])
+        self.assertEqual(runner.TIMEOUT_EXIT, shard.exit_code)
+        self.assertEqual(3.0, shard.elapsed)
 
     def test_terminates_overdue_shards_and_cleans_up_before_returning(self):
         configuration = complete_configuration()
@@ -193,6 +329,102 @@ class PhpunitAggregateTest(unittest.TestCase):
         while process_exists(child_pid) and time.monotonic() < deadline:
             time.sleep(0.02)
         self.assertFalse(process_exists(child_pid), f"timeout left child process {child_pid} alive")
+
+    def test_sigint_during_listing_reaps_its_group_and_term_ignoring_child(self):
+        self.assert_cancellation_during_listing(signal.SIGINT)
+
+    def test_sigterm_during_listing_reaps_its_group_and_term_ignoring_child(self):
+        self.assert_cancellation_during_listing(signal.SIGTERM)
+
+    def test_sigint_during_shards_reaps_every_group_and_term_ignoring_child(self):
+        self.assert_cancellation_during_shards(signal.SIGINT)
+
+    def test_sigterm_during_shards_reaps_every_group_and_term_ignoring_child(self):
+        self.assert_cancellation_during_shards(signal.SIGTERM)
+
+    def assert_cancellation_during_listing(self, signum: int) -> None:
+        configuration = complete_configuration()
+        configuration["list_sleep"] = 30
+        configuration["list_spawn_term_ignoring_child"] = True
+        with tempfile.TemporaryDirectory(prefix="qmx-list-cancel-") as directory:
+            record_directory = Path(directory)
+            environment = os.environ.copy()
+            environment["FAKE_PHPUNIT_CONFIGURATION"] = json.dumps(configuration)
+            environment["FAKE_PHPUNIT_RECORD_DIRECTORY"] = str(record_directory)
+            process = subprocess.Popen(
+                [sys.executable, str(RUNNER), f"--phpunit={FAKE_PHPUNIT}"],
+                cwd=PROJECT_ROOT, env=environment, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                text=True, start_new_session=True,
+            )
+            pids: list[int] = []
+            try:
+                self.wait_for_records(record_directory / "list.pid", record_directory / "list.child-pid")
+                pids = [int((record_directory / name).read_text(encoding="utf-8")) for name in ("list.pid", "list.child-pid")]
+                process.send_signal(signum)
+                stdout, stderr = process.communicate(timeout=8)
+                self.assertEqual(128 + signum, process.returncode, (stdout, stderr))
+                self.assertIn(f"cancelled: received {signal.Signals(signum).name}", stderr)
+                self.assert_processes_gone(pids)
+            finally:
+                self.kill_leftovers(process, pids)
+
+    def assert_cancellation_during_shards(self, signum: int) -> None:
+        configuration = complete_configuration()
+        configuration["run"] = {
+            suite: {"sleep": 30, "spawn_term_ignoring_child": suite == "Unit"}
+            for suite in SUITES
+        }
+        with tempfile.TemporaryDirectory(prefix="qmx-shard-cancel-") as directory:
+            record_directory = Path(directory)
+            environment = os.environ.copy()
+            environment["FAKE_PHPUNIT_CONFIGURATION"] = json.dumps(configuration)
+            environment["FAKE_PHPUNIT_RECORD_DIRECTORY"] = str(record_directory)
+            process = subprocess.Popen(
+                [sys.executable, str(RUNNER), f"--phpunit={FAKE_PHPUNIT}"],
+                cwd=PROJECT_ROOT, env=environment, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                text=True, start_new_session=True,
+            )
+            pids: list[int] = []
+            try:
+                self.wait_for_records(
+                    *(record_directory / f"{suite}.json" for suite in SUITES),
+                    record_directory / "Unit.child-pid",
+                )
+                pids = [
+                    json.loads((record_directory / f"{suite}.json").read_text(encoding="utf-8"))["pid"]
+                    for suite in SUITES
+                ]
+                pids.append(int((record_directory / "Unit.child-pid").read_text(encoding="utf-8")))
+                process.send_signal(signum)
+                stdout, stderr = process.communicate(timeout=8)
+                self.assertEqual(128 + signum, process.returncode, (stdout, stderr))
+                self.assertIn(f"cancelled: received {signal.Signals(signum).name}", stderr)
+                self.assert_processes_gone(pids)
+            finally:
+                self.kill_leftovers(process, pids)
+
+    def wait_for_records(self, *paths: Path) -> None:
+        deadline = time.monotonic() + 4
+        while not all(path.exists() for path in paths) and time.monotonic() < deadline:
+            time.sleep(0.02)
+        self.assertTrue(all(path.exists() for path in paths), [str(path) for path in paths if not path.exists()])
+
+    def assert_processes_gone(self, pids: list[int]) -> None:
+        deadline = time.monotonic() + 2
+        while any(process_exists(pid) for pid in pids) and time.monotonic() < deadline:
+            time.sleep(0.02)
+        self.assertEqual([], [pid for pid in pids if process_exists(pid)])
+
+    def kill_leftovers(self, process: subprocess.Popen[str], pids: list[int]) -> None:
+        if process.poll() is None:
+            os.killpg(process.pid, signal.SIGKILL)
+            process.wait(timeout=2)
+        for pid in pids:
+            if process_exists(pid):
+                try:
+                    os.killpg(pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
 
     def test_printed_commands_are_built_by_the_function_that_starts_a_shard(self):
         """A printed command a reader trusts has to be the command that runs.
@@ -248,6 +480,21 @@ class PhpunitAggregateTest(unittest.TestCase):
             self.assertEqual(str(FAKE_PHPUNIT), command[0])
             self.assertIn(f"--testsuite={suite}", command)
 
+    def test_print_commands_in_profile_mode_names_the_junit_each_shard_would_write(self):
+        with tempfile.TemporaryDirectory(prefix="qmx-print-profile-") as directory:
+            environment = os.environ.copy()
+            environment["QMX_PHPUNIT_PROFILE"] = "1"
+            completed = subprocess.run(
+                [sys.executable, str(RUNNER), f"--phpunit={FAKE_PHPUNIT}",
+                 "--print-commands", f"--cache-root={directory}"],
+                cwd=PROJECT_ROOT, env=environment, capture_output=True, text=True, check=False, timeout=10,
+            )
+
+            self.assertEqual(0, completed.returncode, completed.stderr)
+            printed = json.loads(completed.stdout)
+            for suite, command in printed["commands"].items():
+                self.assertIn(f"--log-junit={directory}/{suite}/junit.xml", command)
+
     def test_both_command_builders_select_from_one_argument_tuple(self):
         """The partition proof and the shard must not select differently.
 
@@ -273,6 +520,29 @@ class PhpunitAggregateTest(unittest.TestCase):
         ]
 
         self.assertEqual(listing, shard)
+
+    def test_phpunit_excludes_each_dedicated_group_and_keeps_ordinary_cases(self):
+        runner = load_runner_module()
+        with tempfile.TemporaryDirectory(prefix="qmx-group-selection-") as directory:
+            fixture = Path(directory) / "GroupSelectionTest.php"
+            fixture.write_text("""<?php
+namespace AggregateFixture;
+use PHPUnit\\Framework\\Attributes\\{Group, Test};
+use PHPUnit\\Framework\\TestCase;
+final class GroupSelectionTest extends TestCase {
+    #[Test] public function itRunsOrdinaryCases(): void {}
+    #[Test, Group('benchmark')] public function itRunsBenchmarks(): void {}
+    #[Test, Group('live-freshness')] public function itRunsLiveFreshness(): void {}
+    #[Test, Group('finding-gate-e2e')] public function itRunsGateCapture(): void {}
+}
+""", encoding="utf-8")
+            completed = subprocess.run(
+                [*runner.list_command(PROJECT_ROOT / "vendor/bin/phpunit", None), str(fixture)],
+                cwd=PROJECT_ROOT, capture_output=True, text=True, check=False, timeout=10,
+            )
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        cases = [line.strip() for line in completed.stdout.splitlines() if line.startswith(" - ")]
+        self.assertEqual(["- AggregateFixture\\GroupSelectionTest::itRunsOrdinaryCases"], cases)
 
     def test_every_command_names_the_configuration_instead_of_searching_for_it(self):
         """A local phpunit.xml outranks phpunit.xml.dist in PHPUnit's search.

@@ -10,14 +10,11 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
-use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysis;
 
 /**
  * Pins that the three graph-backed membership criteria — {@code extends},
@@ -26,7 +23,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
  * matched at runtime.
  *
  * Observation reads the class relationships through the same
- * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory}
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContextFactory}
  * that runtime matching uses. That factory answers with empty attribute /
  * interface / parent lists until it is bound to the run's dependency graph, so
  * a factory bound after expansion makes every one of these criteria read as
@@ -125,26 +122,21 @@ final class TemplateCriteriaExpansionIntegrationTest extends TestCase
      */
     private function expandedDomainLayers(array $configArray): array
     {
-        $result = (new ArchitectureConfigurationFactory())->fromArray($configArray);
-
-        $container = (new ContainerFactory())->create();
+        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
+        $fixture = PreparedAnalysis::start($root, [$root], ['architecture' => $configArray, 'include_generated' => true]);
+        $container = $fixture->container();
 
         $holder = $container->get(ArchitecturePolicyConfiguratorInterface::class);
         self::assertInstanceOf(ArchitecturePolicy::class, $holder);
-        $holder->bind($result->configuration);
 
         $pipeline = $container->get(AnalysisPipelineInterface::class);
         self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
 
-        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
-        $pipeline->analyze(new RunConfiguration(
-            [$root],
-            [],
-            $root,
-            GeneratedFilePolicy::Include,
-            coversProjectScope: true,
-            authoredPathExcludes: [],
-        ));
+        try {
+            $pipeline->analyze($fixture->prepared()->runConfiguration);
+        } finally {
+            $fixture->close();
+        }
 
         $prepared = $holder->getPreparedConfiguration();
         self::assertNotNull($prepared, 'The pipeline must have prepared the architecture policy.');

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding;
 
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevel\ChannelLevelSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionAttribution;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;

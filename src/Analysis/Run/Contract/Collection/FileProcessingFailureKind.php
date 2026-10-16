@@ -8,5 +8,6 @@ namespace Qualimetrix\Analysis\Run\Contract\Collection;
 enum FileProcessingFailureKind: string
 {
     case Parse = 'parse';
+    case UnreadableFile = 'unreadable-file';
     case Processing = 'processing';
 }

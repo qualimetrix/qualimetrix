@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing;
+namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContextFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionResult;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerInstantiator;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\TupleExtractor;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
 use Qualimetrix\Core\Symbol\SymbolPath;

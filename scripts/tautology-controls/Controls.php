@@ -48,13 +48,13 @@ final class Controls
             'Qualimetrix.Tests.Analysis.Finding.Unit.LocationTest::itRefusesAWriteToAConstructedLocation',
             'Qualimetrix.Tests.Analysis.Policy.Baseline.Unit.ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared with data set "one-row"',
             'Qualimetrix.Tests.Infrastructure.DependencyInjection.Integration.ContainerFactoryTest::itLetsTheConfigurationPipelineAddressAProducerNoRuleClassDeclares',
-            'Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.CompilerPass.RuleCompilerPassTest::itInjectsIntoEveryConsumerItDeclaresAndIntoNothingElse',
+            'Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.RuleCatalog.RuleCompilerPassTest::itInjectsIntoEveryConsumerItDeclaresAndIntoNothingElse',
             'Qualimetrix.Tests.Infrastructure.Parallel.Unit.Strategy.AmphpParallelStrategyTest::itUsesLoggerForDebugMessages',
             'Qualimetrix.Tests.Infrastructure.Rule.Unit.RuleRegistryTest::itReadsMetadataOffARuleClassItCouldNotHaveBuilt',
-            'Qualimetrix.Tests.Reporting.Unit.FindingProjection.DeclaredChannelFileScopeTest::itMarksAChannelBothCapabilitiesDeclareAsProjectScoped',
-            'Qualimetrix.Tests.Unit.Core.Symbol.CallableKindTest::itUsesValuesNoCompositeKeyCanSplitInTheWrongPlace',
-            'Qualimetrix.Tests.Unit.Core.Symbol.SymbolInfoTest::itKeepsTheExactSubjectItWasConstructedFrom',
-            'Qualimetrix.Tests.Unit.Core.Symbol.SymbolInfoTest::itRefusesAWriteToAConstructedSymbolInfo',
+            'Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.Configurator.DeclaredChannelFileScopeTest::itKeepsDeclaredProjectChannelsExemptAndLayerViolationsFileScoped',
+            'Qualimetrix.Tests.Core.Symbol.Unit.CallableKindTest::itUsesValuesNoCompositeKeyCanSplitInTheWrongPlace',
+            'Qualimetrix.Tests.Core.Symbol.Unit.SymbolInfoTest::itKeepsTheExactSubjectItWasConstructedFrom',
+            'Qualimetrix.Tests.Core.Symbol.Unit.SymbolInfoTest::itRefusesAWriteToAConstructedSymbolInfo',
         ];
     }
 
@@ -88,7 +88,7 @@ final class Controls
                 'SymbolInfo refuses a write after construction',
                 'src/Core/Symbol/SymbolInfo.php',
                 ['final readonly class SymbolInfo' => 'final class SymbolInfo'],
-                ['Qualimetrix.Tests.Unit.Core.Symbol.SymbolInfoTest::itRefusesAWriteToAConstructedSymbolInfo'],
+                ['Qualimetrix.Tests.Core.Symbol.Unit.SymbolInfoTest::itRefusesAWriteToAConstructedSymbolInfo'],
             ),
 
             Control::breaking(
@@ -97,7 +97,16 @@ final class Controls
                 'SymbolInfo keeps the exact subject it was constructed from',
                 'src/Core/Symbol/SymbolInfo.php',
                 ['$this->subject = $symbolPath instanceof MetricSubject ? $symbolPath : null;' => '$this->subject = null;'],
-                ['Qualimetrix.Tests.Unit.Core.Symbol.SymbolInfoTest::itKeepsTheExactSubjectItWasConstructedFrom'],
+                ['Qualimetrix.Tests.Core.Symbol.Unit.SymbolInfoTest::itKeepsTheExactSubjectItWasConstructedFrom'],
+            )->alsoReddens(
+                'the stored ownership case also checks that SymbolInfo retains its exact subject',
+                ['Qualimetrix.Tests.Core.Symbol.Unit.SymbolInfoTest::itStoresOnlyExactNamedMemberOwnership'],
+            )->alsoReddens(
+                'both configured-container cases add exact declaration metrics through MetricSubjectIndex, which refuses SymbolInfo without its subject',
+                [
+                    'Qualimetrix.Tests.Infrastructure.DependencyInjection.Integration.ContainerFactoryTest::itCapturesFreshOffenderDefinitionsInOneConfiguredContainer',
+                    'Qualimetrix.Tests.Infrastructure.DependencyInjection.Integration.ContainerFactoryTest::itCreatesFreshRepositoriesFromTheConfiguredComputedCatalog',
+                ],
             ),
 
             Control::breaking(
@@ -106,7 +115,7 @@ final class Controls
                 'a CallableKind value cannot carry a separator the composite keys built from it use',
                 'src/Core/Symbol/CallableKind.php',
                 ["case Method = 'method';" => "case Method = 'met:hod';"],
-                ['Qualimetrix.Tests.Unit.Core.Symbol.CallableKindTest::itUsesValuesNoCompositeKeyCanSplitInTheWrongPlace'],
+                ['Qualimetrix.Tests.Core.Symbol.Unit.CallableKindTest::itUsesValuesNoCompositeKeyCanSplitInTheWrongPlace'],
             ),
 
             Control::breaking(
@@ -132,7 +141,7 @@ final class Controls
                 'R122',
                 'NamespaceInstabilityOptions reads the enabled flag instead of defaulting past it',
                 'src/Analysis/Evidence/Coupling/NamespaceInstabilityOptions.php',
-                ['enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),' => 'enabled: true,'],
+                ["enabled: \$config->boolean('enabled', true)," => 'enabled: true,'],
                 ['Qualimetrix.Tests.Analysis.Evidence.Coupling.Unit.NamespaceInstabilityOptionsTest::itIsDisabledWhenTheEnabledFlagIsFalse'],
             ),
 
@@ -140,7 +149,7 @@ final class Controls
                 'channel-rename-map-reads-its-rows',
                 'R270',
                 'ChannelRenameMap produces the map the corpus declares, rather than one derived from itself',
-                'src/Analysis/Policy/Baseline/ChannelRenameMap.php',
+                'src/Analysis/Policy/Baseline/ChannelRename/ChannelRenameMap.php',
                 ['$renames[$old] = $new;' => '$renames[$new] = $new;'],
                 [
                     'Qualimetrix.Tests.Analysis.Policy.Baseline.Unit.ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared with data set "one-row"',
@@ -156,14 +165,14 @@ final class Controls
                 'every-declaring-capability-is-asked',
                 'R065',
                 'the assembled channel scope asks every capability that declares project-scoped channels',
-                'src/Reporting/FindingProjection/DeclaredChannelFileScope.php',
+                'src/Infrastructure/DependencyInjection/Configurator/DeclaredChannelFileScope.php',
                 ['            ...CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS,' . "\n" => ''],
                 [
                     // Both halves of the repair: the roll-call reads the
                     // declaring capabilities off the tree, and the unit case
                     // writes out a channel of each capability by hand.
                     'Qualimetrix.Governance.Channel.ProjectScopedChannelRollCallTest::itAsksEveryCapabilityThatDeclaresProjectScopedChannels',
-                    'Qualimetrix.Tests.Reporting.Unit.FindingProjection.DeclaredChannelFileScopeTest::itMarksAChannelBothCapabilitiesDeclareAsProjectScoped',
+                    'Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.Configurator.DeclaredChannelFileScopeTest::itKeepsDeclaredProjectChannelsExemptAndLayerViolationsFileScoped',
                 ],
             ),
 
@@ -193,13 +202,13 @@ final class Controls
                 'rule-compiler-pass-injects-its-consumers',
                 'R184',
                 'RuleCompilerPass injects the tagged rules into every consumer it declares',
-                'src/Infrastructure/DependencyInjection/CompilerPass/RuleCompilerPass.php',
+                'src/Infrastructure/DependencyInjection/RuleCatalog/RuleCompilerPass.php',
                 ['$container->getDefinition($consumerId)->setArgument($argumentIndex, $rules);' => '$container->getDefinition($consumerId)->setArgument($argumentIndex, []);'],
-                ['Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.CompilerPass.RuleCompilerPassTest::itInjectsIntoEveryConsumerItDeclaresAndIntoNothingElse'],
+                ['Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.RuleCatalog.RuleCompilerPassTest::itInjectsIntoEveryConsumerItDeclaresAndIntoNothingElse'],
             )->alsoReddens(
                 'the first case in the file reads the same injected argument',
                 [
-                    'Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.CompilerPass.RuleCompilerPassTest::itCollectsTaggedRulesIntoRuleExecution',
+                    'Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.RuleCatalog.RuleCompilerPassTest::itCollectsTaggedRulesIntoRuleExecution',
                     'Qualimetrix.Tests.Infrastructure.DependencyInjection.Integration.ContainerFactoryTest::itInjectsRulesIntoRuleExecution',
                     'Qualimetrix.Tests.Infrastructure.DependencyInjection.Integration.ContainerFactoryTest::itWiresTheDuplicationCapabilityThroughItsContractAndRegistries',
                 ],
@@ -209,10 +218,10 @@ final class Controls
                 'known-rule-names-carry-the-classless-producers',
                 'R183',
                 'the rules vocabulary the configuration pipeline validates against carries producers no rule class declares',
-                'src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php',
+                'src/Infrastructure/DependencyInjection/RuleCatalog/ChannelDeclarationCompilerPass.php',
                 [
-                    "->setArgument('\$ruleNames', array_keys(\$thresholdOverrideSupport));"
-                        => "->setArgument('\$ruleNames', array_values(array_filter(array_keys(\$thresholdOverrideSupport), static fn(string \$name): bool => !str_starts_with(\$name, 'health.'))));",
+                    "->setArgument('\$classlessProducers', \$classlessProducers);"
+                        => "->setArgument('\$classlessProducers', array_filter(\$classlessProducers, static fn(ProducerDeclaration \$producer): bool => !str_starts_with(\$producer->name, 'health.')));",
                 ],
                 ['Qualimetrix.Tests.Infrastructure.DependencyInjection.Integration.ContainerFactoryTest::itLetsTheConfigurationPipelineAddressAProducerNoRuleClassDeclares'],
             ),

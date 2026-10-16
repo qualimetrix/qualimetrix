@@ -26,7 +26,8 @@ Infrastructure/Profiler/
 ```php
 interface ProfilerInterface
 {
-    public function start(string $name, ?string $category = null): void;
+    /** @param array<string, scalar> $attributes */
+    public function start(string $name, ?string $category = null, array $attributes = []): void;
     public function stop(string $name): void;
 }
 ```
@@ -36,6 +37,9 @@ interface ProfilerInterface
 Each `start()`/`stop()` pair creates a `Span` — a record of a single measurement:
 - `name` — operation name (e.g., `collection`, `aggregation`)
 - `category` — category (e.g., `pipeline`, `collection`), or `null`
+- `attributes` — immutable scalar labels attached when the span starts;
+  JSON exports them on each span and Chrome tracing puts nonempty labels
+  in the begin event's `args`
 - `startTime` / `endTime` — `hrtime(true)` nanoseconds
 - `startMemory` / `endMemory` — `memory_get_usage(true)` at the two
   boundaries. It moves in the allocator's blocks (2 MiB steps are typical),
@@ -55,6 +59,14 @@ report contracts to Console. Legacy holder/no-op types and static late binding
 do not exist.
 
 ## Usage
+
+For a Check run that reaches analysis, the command renders the report, records
+one `run.outcome` span (`complete`, `refused`, `internal`, or `incomplete`),
+exports the profile, and then publishes the report. A profile export failure
+replaces the unpublished report with a refusal. Pre-analysis refusals and
+coordinator OOM before profile publication do not export a profile. A profile
+already atomically published remains if OOM occurs later during report
+publication; existing profile bytes are not removed as a rollback.
 
 ### CLI Flags
 

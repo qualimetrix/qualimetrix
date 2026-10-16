@@ -16,7 +16,7 @@ use Stringable;
  * Invariants enforced at construction:
  * - non-empty, not pure "."
  * - never starts with "/" (absolute paths use {@see AbsolutePath})
- * - Windows-style separators normalized to "/"
+ * - POSIX backslashes remain literal filename characters
  * - ".." segments resolved lexically; paths that escape the base via leading ".."
  *   after normalization are rejected (out-of-base concerns are handled by
  *   {@see PathFactory::gitRelative()} / {@see PathFactory::tryProjectRelative()},
@@ -178,15 +178,11 @@ final readonly class RelativePath implements JsonSerializable, Stringable
     private static function normalize(string $value): string
     {
         // Fast path: a single PCRE pass detects every shape the slow path would
-        // need to handle — Windows separators, leading/trailing/embedded "." or
+        // need to handle — leading/trailing/embedded "." or
         // ".." segments, double slashes, and bare ".". A miss means the value is
         // already normalized.
-        if (preg_match('#\\\\|(?:\A|/)\.{0,2}(?:/|\z)#', $value) !== 1) {
+        if (preg_match('#(?:\A|/)\.{0,2}(?:/|\z)#', $value) !== 1) {
             return $value;
-        }
-
-        if (str_contains($value, '\\')) {
-            $value = str_replace('\\', '/', $value);
         }
 
         if (str_starts_with($value, './')) {

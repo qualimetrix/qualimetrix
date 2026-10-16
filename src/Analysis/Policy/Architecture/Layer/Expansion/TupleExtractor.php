@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion;
 
-use Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContext;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\CriterionOutcome;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerCriteriaMatcher;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CapturePattern;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CriterionOutcome;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\LayerCriteriaMatcher;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
 
@@ -32,7 +32,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
  * - **Mode-aware non-pattern criteria.** Non-pattern criteria
  *   ({@code suffix}, {@code attributes}, {@code implements}, {@code extends})
  *   respect the membership's {@see MatchMode}, and answer it through the same
- *   {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerCriteriaMatcher}
+ *   {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\LayerCriteriaMatcher}
  *   runtime membership uses rather than through a copy kept here. Under
  *   {@see MatchMode::Any} a template may not declare one at all — the
  *   configuration refuses it, because only patterns carry the capture
@@ -184,7 +184,7 @@ final class TupleExtractor
      * Patterns are passed empty on purpose: the capture-producing pattern has
      * already been matched by the caller, and the template's raw {@code {var}}
      * spelling would not match a concrete FQN anyway. What is left is exactly
-     * the {@see MatchMode::All} question over the four non-pattern kinds, and
+     * the {@see MatchMode::All} question over the five non-pattern kinds, and
      * {@see LayerCriteriaMatcher} answers it — a second implementation of this
      * predicate lived here once, and it is how observation and matching came to
      * disagree with each other while each looked right on its own.
@@ -205,6 +205,7 @@ final class TupleExtractor
             [],
             $membership->suffix,
             $membership->attributes,
+            $membership->memberAttributes,
             $membership->implements,
             $membership->extends,
         );
@@ -213,6 +214,7 @@ final class TupleExtractor
             [],
             $membership->suffix,
             $membership->attributes,
+            $membership->memberAttributes,
             $membership->implements,
             $membership->extends,
         ));

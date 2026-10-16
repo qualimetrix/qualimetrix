@@ -6,15 +6,20 @@ namespace Qualimetrix\Reporting\Formatter\Json;
 
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Reporting\Formatter\FindingRecord;
 use Qualimetrix\Reporting\Formatter\PublishedFinding;
 use Qualimetrix\Reporting\FormatterContext;
 
 final class JsonFindingSection
 {
+    private readonly FindingRecord $record;
+
     public function __construct(
-        private readonly RemediationTimeRegistry $remediationTimeRegistry,
-        private readonly JsonSanitizer $sanitizer,
-    ) {}
+        RemediationTimeRegistry $remediationTimeRegistry,
+        JsonSanitizer $sanitizer,
+    ) {
+        $this->record = new FindingRecord($remediationTimeRegistry, $sanitizer);
+    }
 
     /**
      * Formats an array of findings for JSON output.
@@ -23,10 +28,10 @@ final class JsonFindingSection
      *
      * @return list<array<string, mixed>>
      */
-    public function format(array $findings, FormatterContext $context): array
+    public function format(array $findings, FormatterContext $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces): array
     {
         return array_map(
-            fn(Finding $v): array => $this->formatFinding($v, $context),
+            fn(Finding $v): array => $this->formatFinding($v, $context, $fileNamespaces),
             $findings,
         );
     }
@@ -69,57 +74,9 @@ final class JsonFindingSection
     /**
      * @return array<string, mixed>
      */
-    private function formatFinding(Finding $finding, FormatterContext $context): array
+    public function formatFinding(Finding $finding, FormatterContext $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces): array
     {
-        $ns = $finding->symbolPath->namespace ?? '';
-        $file = $finding->location->file === null
-            ? null
-            : $context->relativizePath($finding->location->file);
-
-        return [
-            'file' => $file,
-            'line' => $finding->location->line,
-            'subject' => $finding->subject->toCanonical(),
-            'symbol' => $finding->symbolPath->toString(),
-            'channel' => $finding->channel()->code,
-            'occurrence' => $finding->occurrenceKey?->value,
-            'edge' => PublishedFinding::edge($finding),
-            'namespace' => $ns !== '' ? $ns : null,
-            'rule' => $finding->ruleName,
-            'code' => $finding->code,
-            'severity' => $finding->severity->value,
-            'message' => $finding->message,
-            'recommendation' => $finding->recommendation,
-            'metricValue' => $this->sanitizer->sanitizeNumeric($finding->metricValue),
-            'threshold' => $this->sanitizer->sanitizeNumeric($finding->threshold),
-            'techDebtMinutes' => $this->remediationTimeRegistry->getMinutesForFinding($finding),
-            'acceptedLevel' => $this->formatAcceptedLevel($finding),
-        ];
-    }
-
-    /**
-     * Structured form of the accepted level a measured breach carries under ADR 0017 —
-     * `null` on every other finding, including one no baseline ever
-     * judged. `describe` is the human string (e.g. "25" or "3 occurrences");
-     * `now` reuses the sibling `metricValue` field on purpose — an
-     * `occurrence` channel has no per-finding "now" to report, so this
-     * object never fabricates one.
-     *
-     * @return ?array{shape: string, describe: string, count: int}
-     */
-    private function formatAcceptedLevel(Finding $finding): ?array
-    {
-        $accepted = $finding->acceptedLevel;
-
-        if ($accepted === null) {
-            return null;
-        }
-
-        return [
-            'shape' => $accepted->shape()->value,
-            'describe' => $accepted->describe(),
-            'count' => $accepted->count,
-        ];
+        return $this->record->of($finding, $context, $fileNamespaces);
     }
 
     /**

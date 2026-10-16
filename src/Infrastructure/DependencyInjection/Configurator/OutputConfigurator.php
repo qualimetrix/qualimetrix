@@ -4,101 +4,108 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
-use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
-use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationResolverInterface;
-use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
-use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
-use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineChannelRenamer;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineCleaner;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
-use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
-use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
+use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
+use Qualimetrix\Analysis\Policy\Baseline\Capture\BaselineGenerator;
+use Qualimetrix\Analysis\Policy\Baseline\ChannelRename\BaselineChannelRenamer;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineWriter;
+use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
+use Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance\BaselineCleaner;
+use Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance\BaselineUpdater;
+use Qualimetrix\Analysis\Policy\Baseline\Explanation\BoundaryExplanationService;
+use Qualimetrix\Analysis\Policy\Baseline\RunCoverage\RunRuleCoverage;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
+use Qualimetrix\Analysis\Run\Configuration\PathsSection;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
 use Qualimetrix\Core\Ast\FileParserInterface;
-use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
-use Qualimetrix\Infrastructure\Cache\CacheFactory;
-use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
-use Qualimetrix\Infrastructure\Composer\Contract\AnalysedInstallAnchorInterface;
-use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
-use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
-use Qualimetrix\Infrastructure\Console\CheckConfigurationResolvers;
-use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds;
-use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineRenameChannelsCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineRun;
-use Qualimetrix\Infrastructure\Console\Command\BaselineRunInterface;
-use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
-use Qualimetrix\Infrastructure\Console\Command\DirectivesCommand;
-use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
-use Qualimetrix\Infrastructure\Console\Command\HookInstallCommand;
-use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
-use Qualimetrix\Infrastructure\Console\Command\HookUninstallCommand;
-use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
-use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
-use Qualimetrix\Infrastructure\Console\ExitCodeResolver;
-use Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator;
-use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
-use Qualimetrix\Infrastructure\Console\MeasuredFindingSet;
-use Qualimetrix\Infrastructure\Console\ProfilePresenter;
-use Qualimetrix\Infrastructure\Console\ProfileSummaryRenderer;
+use Qualimetrix\Infrastructure\Console\Application\RunningBinaryLocator;
+use Qualimetrix\Infrastructure\Console\Application\RunningBinaryLocatorInterface;
+use Qualimetrix\Infrastructure\Console\BaselineCommand\BaselineProjectionCoverage;
+use Qualimetrix\Infrastructure\Console\BaselineCommand\MeasuredFindingSet;
+use Qualimetrix\Infrastructure\Console\CacheLifecycle\CacheRunLifecycle;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
+use Qualimetrix\Infrastructure\Console\CheckReport\CheckFindingProjection;
+use Qualimetrix\Infrastructure\Console\CheckReport\CheckReportDelivery;
+use Qualimetrix\Infrastructure\Console\CheckReport\CheckReportRenderer;
+use Qualimetrix\Infrastructure\Console\CheckReport\FindingDiagnostics;
+use Qualimetrix\Infrastructure\Console\CheckReport\FindingProjection;
+use Qualimetrix\Infrastructure\Console\CheckReport\FormatterContextFactory;
+use Qualimetrix\Infrastructure\Console\CheckReport\ReportAssembler;
+use Qualimetrix\Infrastructure\Console\CheckReport\ReportFormatter;
+use Qualimetrix\Infrastructure\Console\CheckScope\FindingProjectionOptionsResolver;
+use Qualimetrix\Infrastructure\Console\CheckScope\ObservedProjectScopeReasons;
+use Qualimetrix\Infrastructure\Console\CheckScope\ProjectScopePresenter;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\BaselineRunInterface;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\ChannelRename\BaselineRenameChannelsCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Explanation\BaselineConfiguredThresholds;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Explanation\BaselineExplainCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Generation\BaselineGenerateCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Maintenance\BaselineCleanupCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Maintenance\BaselineUpdateCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Measurement\BaselineRun;
+use Qualimetrix\Infrastructure\Console\Directives\DirectivesCommand;
+use Qualimetrix\Infrastructure\Console\GraphExport\GraphExportCommand;
+use Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction;
+use Qualimetrix\Infrastructure\Console\Hook\HookInstallCommand;
+use Qualimetrix\Infrastructure\Console\Hook\HookStatusCommand;
+use Qualimetrix\Infrastructure\Console\Hook\HookUninstallCommand;
+use Qualimetrix\Infrastructure\Console\Invocation\CommandDefinition\CheckCommandDefinition;
+use Qualimetrix\Infrastructure\Console\Invocation\Configuration\ConfigurationInputAdapter;
+use Qualimetrix\Infrastructure\Console\Profile\ProfilePresenter;
+use Qualimetrix\Infrastructure\Console\Profile\ProfileSummaryRenderer;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
-use Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter;
+use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
-use Qualimetrix\Infrastructure\Console\ResultPresenter;
-use Qualimetrix\Infrastructure\Console\RuleInputValidator;
-use Qualimetrix\Infrastructure\Console\RuleListingPresenter;
-use Qualimetrix\Infrastructure\Console\RunningBinaryLocator;
-use Qualimetrix\Infrastructure\Console\RunningBinaryLocatorInterface;
-use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
-use Qualimetrix\Infrastructure\Console\RuntimeLimitsController;
+use Qualimetrix\Infrastructure\Console\RuleListing\RuleListingPresenter;
+use Qualimetrix\Infrastructure\Console\RuleListing\RulesCommand;
+use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisInputPathValidator;
+use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisPreflight;
+use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisRuntimeConfigurator;
+use Qualimetrix\Infrastructure\Console\RunSetup\CheckConfigurationResolvers;
+use Qualimetrix\Infrastructure\Console\RunSetup\FindingConfigurationPreparation;
+use Qualimetrix\Infrastructure\Console\RunSetup\ProjectSourceConfigurator;
+use Qualimetrix\Infrastructure\Console\RunSetup\RunConfigurationPreparation;
+use Qualimetrix\Infrastructure\Console\RunSetup\RuntimeConfigurator;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession;
+use Qualimetrix\Infrastructure\Console\RuntimePolicy\ExitCodeResolver;
+use Qualimetrix\Infrastructure\Console\RuntimePolicy\ExitPolicySection;
+use Qualimetrix\Infrastructure\Console\RuntimePolicy\MemoryLimitSection;
+use Qualimetrix\Infrastructure\Console\RuntimePolicy\RuntimeEffects;
+use Qualimetrix\Infrastructure\Console\RuntimePolicy\RuntimeLimitsController;
+use Qualimetrix\Infrastructure\Console\RuntimePolicy\RuntimeLoggerConfigurator;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\ReportPublication\ReportPublication;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface;
-use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
-use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
-use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationStoreInterface;
-use Qualimetrix\Infrastructure\Profiler\Contract\ProfileReportInterface;
-use Qualimetrix\Infrastructure\Profiler\Contract\ProfileSessionControlInterface;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Reporting\Configuration\OutputFormatResolver;
+use Qualimetrix\Reporting\Configuration\OutputFormatSection;
+use Qualimetrix\Reporting\Configuration\OutputFormatVocabulary;
 use Qualimetrix\Reporting\Contract\OutputFormatResolverInterface;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
 use Qualimetrix\Reporting\FindingProjection\Configuration\ConfiguredFindingExclusionsResolver;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
-use Qualimetrix\Reporting\Health\SummaryEnricher;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -201,43 +208,88 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $loader->registerClasses(
             $prototype,
             'Qualimetrix\\Analysis\\Policy\\Baseline\\',
-            $this->srcDir . '/Analysis/Policy/Baseline/*',
-            $this->srcDir . '/Analysis/Policy/Baseline/{'
-                . 'Baseline.php,BaselineEdge.php,BaselineEntry.php,BaselineEntryMode.php,'
-                . 'BaselineIdentity.php,EntrySelector.php,InertBaselineEntry.php,InertEntryReason.php,'
-                . 'BaselineConflictException.php,BaselineEntryRejection.php,'
-                . 'BaselineCapture.php,UncapturedGroup.php,UncapturedReason.php,'
-                . 'BaselineDocumentLayout.php,BaselineEntryOrder.php,BaselineEntryPayload.php,'
-                . 'BaselineFormatVersion.php,'
-                . 'ChannelRenameMap.php,ChannelRenameReport.php,ChannelRenameRefusal.php,'
-                . 'ExplainedSubject.php}',
+            $this->srcDir . '/Analysis/Policy/Baseline/{Capture,Ceiling,ChannelRename,Contract,DocumentAccess,DocumentReading,DocumentWriting,Entry,EntryBinding,EntryMaintenance,Explanation,RunCoverage}/*',
+            [
+                $this->srcDir . '/Analysis/Policy/Baseline/Entry/Baseline.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Entry/BaselineEdge.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Entry/BaselineEntry.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Entry/BaselineEntryMode.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Entry/BaselineIdentity.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Entry/EntrySelector.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Entry/InertBaselineEntry.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Entry/InertEntryReason.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/DocumentAccess/BaselineConflictException.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/DocumentReading/BaselineEntryRejection.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Capture/BaselineCapture.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Capture/UncapturedGroup.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Capture/UncapturedReason.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/DocumentWriting/BaselineDocumentLayout.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/DocumentWriting/BaselineEntryOrder.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/ChannelRename/BaselineEntryPayload.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/DocumentReading/BaselineFormatVersion.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/DocumentReading/BaselineFileShape.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Explanation/BoundaryThresholdSources.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Explanation/BoundaryRunFacts.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/DocumentReading/BaselineExclusionShape.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/DocumentReading/CanonicalEnvelope.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/DocumentReading/BaselineEntryShape.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Explanation/CurrentAbsentMeasurement.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/ChannelRename/ChannelRenameMap.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/ChannelRename/ChannelRenameReport.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/ChannelRename/ChannelRenameRefusal.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Explanation/ExplainedSubject.php',
+                $this->srcDir . '/Analysis/Policy/Baseline/Ceiling/**',
+                $this->srcDir . '/Analysis/Policy/Baseline/Contract/**',
+                $this->srcDir . '/Analysis/Policy/Baseline/EntryBinding/**',
+            ],
         );
     }
 
     private function registerCli(ContainerBuilder $container): void
     {
-        $runtimeLoggerConfigurator = 'Qualimetrix\\Infrastructure\\Console\\RuntimeLoggerConfigurator';
-        $suppressionFilter = 'Qualimetrix\\Analysis\\Policy\\Inline\\Suppression\\SuppressionFilter';
-        $gitScopeQuery = 'Qualimetrix\\Infrastructure\\Git\\ReportingGitScopeQuery';
-        $findingProjector = 'Qualimetrix\\Reporting\\FindingProjection\\FindingProjector';
+        $this->registerRunInputs($container);
+        $this->registerFindingProjection($container);
+        $this->registerRuntimePreparation($container);
+        $this->registerCheckDelivery($container);
+        $this->registerHookDelivery($container);
+        $this->registerAuditAndGraphDelivery($container);
+        $this->registerBaselineCommands($container);
+    }
 
-        $container->register(FindingConfigurationResolver::class);
-        $container->setAlias(FindingConfigurationResolverInterface::class, FindingConfigurationResolver::class);
+    private function registerRunInputs(ContainerBuilder $container): void
+    {
         $container->register(ConfigurationInputAdapter::class)
-            ->setArguments([
-                new Reference(ConfigurationPipelineInterface::class),
-            ]);
+            ->setAutowired(true);
+        $container->register(ExitPolicySection::class)->setAutoconfigured(true);
+        $container->register(MemoryLimitSection::class)->setAutoconfigured(true);
+        $container->register(PathsSection::class)->setAutoconfigured(true);
         $container->register(RunConfigurationResolver::class)
             ->setArgument('$projectScopeCoverage', new Reference(ProjectScopeCoverage::class));
         $container->setAlias(RunConfigurationResolverInterface::class, RunConfigurationResolver::class);
+        $container->register(OutputFormatVocabulary::class)
+            ->setAutowired(true);
+        $container->register(OutputFormatSection::class)
+            ->setAutowired(true)
+            ->setAutoconfigured(true);
         $container->register(OutputFormatResolver::class)
-            ->setArguments([new Reference(FormatterRegistryInterface::class)]);
+            ->setAutowired(true)
+            ->setAutoconfigured(true);
         $container->setAlias(OutputFormatResolverInterface::class, OutputFormatResolver::class);
         $container->register(ConfiguredFindingExclusionsResolver::class);
         $container->setAlias(
             ConfiguredFindingExclusionsResolverInterface::class,
             ConfiguredFindingExclusionsResolver::class,
         );
+    }
+
+    private function registerFindingProjection(ContainerBuilder $container): void
+    {
+        $suppressionFilter = 'Qualimetrix\\Analysis\\Policy\\Inline\\Suppression\\SuppressionFilter';
+        $gitScopeQuery = 'Qualimetrix\\Infrastructure\\Git\\ReportingGitScopeQuery';
+        $findingProjector = 'Qualimetrix\\Reporting\\FindingProjection\\FindingProjector';
+
+        $container->register(ChannelFileScope::class)
+            ->setFactory([DeclaredChannelFileScope::class, 'create']);
 
         $container->register($suppressionFilter);
         $container->setAlias(AnnotationSuppressionInterface::class, $suppressionFilter)
@@ -257,174 +309,128 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(BaselineLoader::class),
                 new Reference(ChannelDeclarationRegistryInterface::class),
                 new Reference(GitScopeQueryInterface::class),
+                new Reference(UnusedEntryAudit::class),
+                new Reference(ChannelFileScope::class),
             ]);
 
         // MeasuredFindingSet — the single definition of the set a baseline
         // measures. The pipeline runs its stages; baseline commands ask it
         // for the set directly.
         $container->register(MeasuredFindingSet::class)
-            ->setArguments([
-                new Reference(AnalysisPipelineInterface::class),
-                new Reference($findingProjector),
-                new Reference(FileDiscoveryFactoryInterface::class),
-            ]);
+            ->setAutowired(true);
+    }
+
+    private function registerRuntimePreparation(ContainerBuilder $container): void
+    {
+        $container->register(FindingProjectionOptionsResolver::class)->setAutowired(true);
+        $container->register(ProjectScopePresenter::class)->setAutowired(true);
+        $container->register(CheckReportDelivery::class)->setAutowired(true);
+        $container->register(FindingDiagnostics::class)->setAutowired(true);
+        $container->register(CheckFindingProjection::class)->setAutowired(true);
+        $container->register(ReportFormatter::class)->setAutowired(true);
+        $container->register(CheckReportRenderer::class)->setAutowired(true);
+        $container->register(ReportPublication::class)->setAutowired(true);
+        $container->register(CacheRunLifecycle::class)->setAutowired(true)->setPublic(true);
+        $container->register(RuntimeEffects::class)->setAutowired(true);
+        $container->register(CheckCommandDefinition::class)->setAutowired(true);
+
+        $container->register(RunConfigurationPreparation::class)->setAutowired(true);
+        $container->register(ObservedProjectScopeReasons::class)->setAutowired(true);
 
         $container->register(AnalysisRuntimeConfigurator::class)
-            ->setArguments([
-                new Reference(RuleConfigurationInterface::class),
-                new Reference(LcomCollectionConfigurationResolverInterface::class),
-                new Reference(LcomCollectionConfigurationStoreInterface::class),
-                new Reference(ArchitecturePolicyConfiguratorInterface::class),
-                new Reference(ComputedMetricConfiguratorInterface::class),
-                new Reference(CouplingConfiguratorInterface::class),
-                new Reference(RuleInputValidator::class),
-            ]);
+            ->setAutowired(true);
 
-        $container->register($runtimeLoggerConfigurator, $runtimeLoggerConfigurator)
-            ->setArguments([
-                new Reference(LoggerFactoryInterface::class),
-                new Reference(LoggerHolder::class),
-                new Reference(ErrorStream::class),
-            ]);
+        $container->register(RuntimeLoggerConfigurator::class)
+            ->setAutowired(true)
+            ->setArgument('$loggerHolder', new Reference(LoggerHolder::class))
+            ->setArgument('$runTargets', new Reference(RunTargets::class));
+
+        $container->register(ProjectSourceConfigurator::class)
+            ->setAutowired(true);
 
         // RuntimeConfigurator owns cross-cutting setup and resets owner-local
         // runtime state before each configuration resolution.
         $container->register(RuntimeConfigurator::class)
-            ->setPublic(true)
-            ->setArguments([
-                new Reference($runtimeLoggerConfigurator),
-                new Reference(ProgressConfigurator::class),
-                new Reference(ProfileSessionControlInterface::class),
-                new Reference(AnalysisRuntimeConfigurator::class),
-                new Reference(CacheFactory::class),
-                new Reference(ParallelConfigurationStoreInterface::class),
-                new Reference(RuntimeLimitsController::class),
-                new Reference(AnalysedInstallAnchorInterface::class),
-            ]);
+            ->setAutowired(true)
+            ->setPublic(true);
 
         // ProfileSummaryRenderer (stateless, no dependencies)
         $container->register(ProfileSummaryRenderer::class);
 
-        // ErrorStream is the single owner of the run's error stream: the
-        // progress section and every diagnostic writer come from this one
-        // shared instance, which is what makes them redraw around each other.
-        $container->register(ErrorStream::class)->setPublic(true);
-
-        // RefusalPresenter: the single writer for a configuration refusal or
-        // an internal error, shared by every command whose exit-code ladder
-        // catches ConfigurationRefusal — `check`, the five `baseline:*`, and
-        // `directives` here; `debug:layer-assignment` gets its own reference
-        // in ArchitectureConfigurator. Public, like ErrorStream above: `bin/qmx`
-        // fetches this exact instance to hand `Application`; a second,
-        // container-invisible instance would create a second diagnostic dialect.
-        $container->register(RefusalPresenter::class)
-            ->setPublic(true)
+        $container->register(RunTargetSession::class)
             ->setArguments([
-                new Reference(ErrorStream::class),
+                new Reference(RunTargets::class),
+                new Reference(RefusalPresenter::class),
+                new Reference(CacheRunLifecycle::class),
             ]);
 
         $container->register(ProgressConfigurator::class)
-            ->setArguments([
-                new Reference(SwitchableProgressReporter::class),
-                new Reference(ErrorStream::class),
-            ]);
-        $container->register(RuntimeLimitsController::class);
-        $container->register(RuleInputValidator::class)
-            ->setArguments([
-                new Reference(RuleRegistryInterface::class),
-                new Reference(RuleSelector::class),
-                new Reference(FindingConfigurationResolverInterface::class),
-                new Reference(RuleChannelSnapshotFactoryInterface::class),
-            ]);
+            ->setAutowired(true);
+        $container->register(RuntimeLimitsController::class)
+            ->setArguments([new Reference(OutOfMemoryHint::class)]);
+        $container->register(FindingConfigurationPreparation::class)
+            ->setAutowired(true);
 
         // ProfilePresenter for profiling output
         $container->register(ProfilePresenter::class)
-            ->setArguments([
-                new Reference(ProfileReportInterface::class),
-                new Reference(ErrorStream::class),
-                new Reference(ProfileSummaryRenderer::class),
-            ]);
+            ->setAutowired(true);
 
         $container->register(FormatterContextFactory::class)
-            ->setArguments([new Reference(FormatterRegistryInterface::class)]);
+            ->setAutowired(true);
 
         $container->register(ExitCodeResolver::class)
-            ->setArguments([new Reference(ChannelDeclarationRegistryInterface::class)]);
+            ->setAutowired(true);
 
-        // What --namespace/--class selects; ResultPresenter and the autowired
+        // What --namespace/--class selects; ReportAssembler and the autowired
         // formatter sections both resolve it from here.
         $container->register(FindingFilter::class);
 
-        // ResultPresenter for formatting/output of analysis results
-        $container->register(ResultPresenter::class)
-            ->setArguments([
-                new Reference(FormatterRegistryInterface::class),
-                new Reference(ProfilerInterface::class),
-                new Reference(SummaryEnricher::class),
-                new Reference(ProfilePresenter::class),
-                new Reference(ExitCodeResolver::class),
-                new Reference(FindingFilter::class),
-                new Reference(FormatterContextFactory::class),
-                new Reference(RuleConfigurationInterface::class),
-                new Reference(ErrorStream::class),
-            ]);
+        // ReportAssembler for formatting/output of analysis results
+        $container->register(ReportAssembler::class)
+            ->setAutowired(true);
 
-        // FindingFilterOrchestrator
-        $container->register(FindingFilterOrchestrator::class)
-            ->setArguments([
-                new Reference($findingProjector),
-                new Reference(ErrorStream::class),
-                new Reference('Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionAudit'),
-                new Reference(ComposerAutoloadPathReaderInterface::class),
-            ]);
+        // FindingProjection
+        $container->register(BaselineProjectionCoverage::class)
+            ->setAutowired(true);
+        $container->register(FindingProjection::class)
+            ->setAutowired(true);
+    }
 
+    private function registerCheckDelivery(ContainerBuilder $container): void
+    {
         // CheckCommand with all dependencies injected
         $container->register(
             'Qualimetrix\\Infrastructure\\Git\\GitScopeResolver',
             'Qualimetrix\\Infrastructure\\Git\\GitScopeResolver',
         )
             ->setArguments([
-                new Reference(FileDiscoveryFactoryInterface::class),
                 new Reference(DelegatingLogger::class),
             ]);
         $container->register(
-            'Qualimetrix\\Infrastructure\\Console\\ScopeWarningChecker',
-            'Qualimetrix\\Infrastructure\\Console\\ScopeWarningChecker',
+            'Qualimetrix\\Infrastructure\\Console\\CheckScope\\ScopeWarningChecker',
+            'Qualimetrix\\Infrastructure\\Console\\CheckScope\\ScopeWarningChecker',
         );
         $container->register(
-            'Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver',
-            'Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver',
+            'Qualimetrix\\Infrastructure\\Console\\CheckScope\\CheckScopeResolver',
+            'Qualimetrix\\Infrastructure\\Console\\CheckScope\\CheckScopeResolver',
         )
+            ->setAutowired(true)
             ->setArguments([
                 new Reference('Qualimetrix\\Infrastructure\\Git\\GitScopeResolver'),
-                new Reference('Qualimetrix\\Infrastructure\\Console\\ScopeWarningChecker'),
-                new Reference(ProjectScopeCoverage::class),
+                new Reference('Qualimetrix\\Infrastructure\\Console\\CheckScope\\ScopeWarningChecker'),
             ]);
         $container->register(CheckConfigurationResolvers::class)
-            ->setArguments([
-                new Reference(RunConfigurationResolverInterface::class),
-                new Reference(CacheConfigurationResolverInterface::class),
-                new Reference(ParallelConfigurationResolverInterface::class),
-                new Reference(ConfiguredFindingExclusionsResolverInterface::class),
-                new Reference(OutputFormatResolverInterface::class),
-            ]);
+            ->setAutowired(true);
 
         $container->register(CheckCommand::class)
-            ->setArguments([
-                new Reference(AnalysisPipelineInterface::class),
-                new Reference(FindingFilterOrchestrator::class),
-                new Reference(RuntimeConfigurator::class),
-                new Reference(ResultPresenter::class),
-                new Reference(RuleInputValidator::class),
-                new Reference('Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver'),
-                new Reference(ConfigurationInputAdapter::class),
-                new Reference(CheckConfigurationResolvers::class),
-                new Reference(RefusalPresenter::class),
-            ])
+            ->setAutowired(true)
             ->setPublic(true);
+    }
 
-        $this->registerBaselineCommands($container);
-
+    private function registerHookDelivery(ContainerBuilder $container): void
+    {
+        $container->register(HookFileTransaction::class)
+            ->setArgument('$errorStream', new Reference(ErrorStream::class));
         // GitRepositoryLocator (shared by hook commands)
         $container->register(GitRepositoryLocator::class);
         $container->setAlias(GitRepositoryLocatorInterface::class, GitRepositoryLocator::class);
@@ -438,6 +444,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(GitRepositoryLocator::class),
                 new Reference(RunningBinaryLocator::class),
+                new Reference(HookFileTransaction::class),
             ])
             ->setPublic(true);
 
@@ -446,6 +453,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(GitRepositoryLocator::class),
                 new Reference(RunningBinaryLocator::class),
+                new Reference(HookFileTransaction::class),
             ])
             ->setPublic(true);
 
@@ -454,23 +462,20 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(GitRepositoryLocator::class),
                 new Reference(RunningBinaryLocator::class),
+                new Reference(HookFileTransaction::class),
             ])
             ->setPublic(true);
+    }
 
+    private function registerAuditAndGraphDelivery(ContainerBuilder $container): void
+    {
         // DirectivesCommand. It reads the pipeline's *second* contract — the
         // audit — and never AnalysisPipelineInterface: analysing and auditing
         // are two questions, and the four consumers of the first do not ask
         // the second.
+        $container->register(AnalysisInputPathValidator::class);
         $container->register(AnalysisPreflight::class)
-            ->setArguments([
-                new Reference(RuntimeConfigurator::class),
-                new Reference(ConfigurationInputAdapter::class),
-                new Reference(RunConfigurationResolverInterface::class),
-                new Reference(CacheConfigurationResolverInterface::class),
-                new Reference(ParallelConfigurationResolverInterface::class),
-                new Reference(RuleInputValidator::class),
-                new Reference(FileDiscoveryFactoryInterface::class),
-            ]);
+            ->setAutowired(true);
         $container->register(DirectivesCommand::class)
             ->setArguments([
                 new Reference(DirectiveAuditInterface::class),
@@ -485,15 +490,17 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(RulesCommand::class)
             ->setArguments([
                 new Reference(RuleExecutionInterface::class),
-                new Reference(RuleChannelRegistryInterface::class),
-                new Reference(ChannelDeclarationRegistryInterface::class),
+                new Reference(RuleChannelSnapshotFactoryInterface::class),
+                new Reference(RuleEnablementResolver::class),
                 new Reference(RuleListingPresenter::class),
+                new Reference(ConfigurationInputAdapter::class),
+                new Reference(ComputedMetricConfiguratorInterface::class),
             ])
             ->setPublic(true);
 
         $container->register(self::DEPENDENCY_GRAPH_ANALYZER, self::DEPENDENCY_GRAPH_ANALYZER_CLASS)
             ->setArguments([
-                new Reference(FileDiscoveryInterface::class),
+                new Reference(ProjectFilesInterface::class),
                 new Reference(FileParserInterface::class),
                 new Reference(DependencyTraversalParticipantInterface::class),
                 new Reference(DependencyGraphBuilderInterface::class),
@@ -506,8 +513,9 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(DependencyGraphAnalyzerInterface::class),
                 new Reference('Qualimetrix\\Reporting\\GraphProjection\\Contract\\DependencyGraphProjectionInterface'),
+                new Reference(AnalysisPreflight::class),
                 new Reference(ErrorStream::class),
-                new Reference(RefusalPresenter::class),
+                new Reference(RunTargetSession::class),
                 new Reference(DelegatingLogger::class),
             ])
             ->setPublic(true);
@@ -524,23 +532,14 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
     private function registerBaselineCommands(ContainerBuilder $container): void
     {
         $container->register(BaselineRun::class)
-            ->setArguments([
-                new Reference(RuntimeConfigurator::class),
-                new Reference(MeasuredFindingSet::class),
-                new Reference(RuleInputValidator::class),
-                new Reference(ConfigurationInputAdapter::class),
-                new Reference(RunConfigurationResolverInterface::class),
-                new Reference(ConfiguredFindingExclusionsResolverInterface::class),
-                new Reference(CacheConfigurationResolverInterface::class),
-                new Reference(ParallelConfigurationResolverInterface::class),
-            ]);
+            ->setAutowired(true);
 
         $container->setAlias(BaselineRunInterface::class, BaselineRun::class);
 
         $container->register(BaselineConfiguredThresholds::class)
             ->setArguments([
                 new Reference(RuleRegistryInterface::class),
-                new Reference(RuleOptionsFactory::class),
+                new Reference(RuleConfigurationInterface::class),
             ]);
 
         // Every one of the five gets RefusalPresenter through a method call
@@ -557,6 +556,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(BaselineRun::class),
                 new Reference(BaselineGenerator::class),
                 new Reference(BaselineWriter::class),
+                new Reference(ErrorStream::class),
             ])
             ->addMethodCall(...$refusalPresenterCall)
             ->setPublic(true);
@@ -565,8 +565,10 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(BaselineRun::class),
                 new Reference(BaselineLoader::class),
+                new Reference(BaselineDocumentReader::class),
                 new Reference(BaselineUpdater::class),
                 new Reference(BaselineWriter::class),
+                new Reference(RunRuleCoverage::class),
             ])
             ->addMethodCall(...$refusalPresenterCall)
             ->setPublic(true);
@@ -575,6 +577,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(BaselineRun::class),
                 new Reference(BaselineLoader::class),
+                new Reference(BaselineDocumentReader::class),
                 new Reference(BaselineCleaner::class),
                 new Reference(BaselineWriter::class),
                 new Reference(ChannelDeclarationRegistryInterface::class),
@@ -589,6 +592,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(BaselineRenameChannelsCommand::class)
             ->setArguments([
                 new Reference(BaselineChannelRenamer::class),
+                new Reference(BaselineDocumentReader::class),
             ])
             ->addMethodCall(...$refusalPresenterCall)
             ->setPublic(true);
@@ -597,6 +601,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(BaselineRun::class),
                 new Reference(BaselineLoader::class),
+                new Reference(BaselineDocumentReader::class),
                 new Reference(BoundaryExplanationService::class),
                 new Reference(BaselineConfiguredThresholds::class),
                 new Reference(ChannelDeclarationRegistryInterface::class),

@@ -43,8 +43,6 @@ error() { echo -e "${RED}[ERROR]${NC} $1"; }
 clean_caches() {
     log "Cleaning caches..."
 
-    # Qualimetrix cache
-    rm -rf "$PROJECT_ROOT/.qmx-cache" 2>/dev/null || true
     rm -f "$PROJECT_ROOT/.phpmd.result-cache.php" 2>/dev/null || true
 
     # System caches
@@ -69,14 +67,14 @@ run_benchmark() {
     local start_time end_time duration
     local mem_before mem_after mem_used
 
-    start_time=$(python3 -c "import time; print(time.time())")
+    start_time=$(python3 -c "import time; print(time.monotonic())")
 
     case "$tool" in
         "qmx-seq")
-            "$PROJECT_ROOT/bin/qmx" check "$path" --workers=0 --format=json > /dev/null 2>&1
+            "$PROJECT_ROOT/bin/qmx" check "$path" --workers=0 --no-cache --format=json > /dev/null 2>&1
             ;;
         "qmx-par")
-            "$PROJECT_ROOT/bin/qmx" check "$path" --workers=4 --format=json > /dev/null 2>&1
+            "$PROJECT_ROOT/bin/qmx" check "$path" --workers=4 --no-cache --format=json > /dev/null 2>&1
             ;;
         "phpmd")
             "$COMPOSER_BIN/phpmd" "$path" text cleancode,codesize,design --ignore-violations-on-exit > /dev/null 2>&1
@@ -89,7 +87,7 @@ run_benchmark() {
             ;;
     esac
 
-    end_time=$(python3 -c "import time; print(time.time())")
+    end_time=$(python3 -c "import time; print(time.monotonic())")
     duration=$(python3 -c "print(round($end_time - $start_time, 2))")
 
     echo "$duration"

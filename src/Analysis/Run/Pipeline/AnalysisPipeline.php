@@ -7,23 +7,27 @@ namespace Qualimetrix\Analysis\Run\Pipeline;
 use LogicException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
+
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluatorInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
-use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
+use Qualimetrix\Analysis\Policy\Inline\Contract\DirectiveObservations;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
-use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
+use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\SkippedEntry;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
@@ -32,16 +36,18 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
-use Qualimetrix\Analysis\Run\Discovery\AnalysisFileDiscovery;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\MeasuredRunResult;
+use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
+use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeRule;
+use Qualimetrix\Analysis\Run\InlineDirectiveRun;
 use Qualimetrix\Analysis\Run\RuleProducerPreparation;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
-use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Core\Symbol\ClassNameSpelling;
+use Qualimetrix\Core\Symbol\MixedSpelling;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use SplFileInfo;
 
 /**
  * Main analysis pipeline orchestrator.
@@ -61,12 +67,15 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
     private readonly DependencyGraphBuilderInterface $graphBuilder;
 
     public function __construct(
-        private readonly AnalysisFileDiscovery $analysisFileDiscovery,
+        private readonly ProjectFilesInterface $projectFiles,
+        private readonly UnmatchedExcludeAudit $unmatchedExcludeAudit,
         private readonly CollectionOrchestratorInterface $collectionOrchestrator,
         private readonly RuleExecutionInterface $ruleExecutor,
+        private readonly RulePublicationInterface $rulePublication,
         private readonly RuleProducerPreparation $ruleProducerPreparation,
+        private readonly InlineDirectiveRun $inlineDirectiveRun,
         private readonly MeasurementAggregationInterface $measurementAggregation,
-        private readonly ComputedMetricEvaluator $computedMetricEvaluation,
+        private readonly ComputedMetricEvaluatorInterface $computedMetricEvaluation,
         DependencyGraphBuilderInterface $graphBuilder,
         private readonly MetricRepositoryFactoryInterface $repositoryFactory,
         private readonly ProfilerInterface $profiler,
@@ -75,29 +84,39 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         $this->graphBuilder = $graphBuilder;
     }
 
-    public function analyze(RunConfiguration $configuration, ?FileDiscoveryInterface $discovery = null): AnalysisResult
+    public function analyze(RunConfiguration $configuration): AnalysisResult
     {
-        $startTime = microtime(true);
-        $prepared = $this->preparedRun($configuration, $discovery);
-        $findings = $this->reportedFindings($prepared);
-        $duration = microtime(true) - $startTime;
+        $startTime = hrtime(true);
+        [$prepared, $measuredScope] = $this->preparedRun($configuration);
+        $late = $this->latePublishedResult($prepared);
+        $latePublished = $late['findings'];
+        $duration = (hrtime(true) - $startTime) / 1e9;
 
         $this->logger->info('Analysis complete', [
             'total_duration' => \sprintf('%.2fs', $duration),
-            'violations' => \count($findings),
-            'files_analyzed' => $prepared->collection->filesAnalyzed,
+            'violations' => \count($prepared->ruleExecution->published) + \count($latePublished),
+            'files_analyzed' => $prepared->coverage->analyzedFilesCount(),
             'files_skipped' => $prepared->coverage->skippedFilesCount(),
         ]);
 
-        return new AnalysisResult(
-            findings: $findings,
-            duration: $duration,
-            metrics: $prepared->context->metrics,
-            coverage: $prepared->coverage,
-            suppressions: $prepared->collection->suppressions,
-            namespaceTree: $prepared->namespaceTree,
-            thresholdOverrides: $prepared->collection->thresholdOverrides,
+        return AnalysisResult::fromRun(
+            measured: new MeasuredRunResult(
+                repository: $prepared->context->metrics,
+                coverage: $prepared->coverage,
+                namespaceTree: $prepared->namespaceTree,
+                projectScope: $measuredScope,
+                duration: $duration,
+                subjectCoverage: $prepared->subjectCoverage,
+            ),
+            directives: new DirectiveObservations(
+                suppressions: $prepared->suppressions,
+                thresholdOverrides: $prepared->thresholdOverrides,
+            ),
             ruleExecution: $prepared->ruleExecution,
+            latePublished: $latePublished,
+            computedMetricEvaluation: $prepared->computedMetricEvaluation,
+            population: $prepared->discoveryPopulation->merge($late['population']),
+            populationPublication: $prepared->populationPublication,
         );
     }
 
@@ -111,10 +130,9 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
      */
     public function auditDirectives(
         RunConfiguration $configuration,
-        ?FileDiscoveryInterface $discovery = null,
         DirectiveSweepScope $sweep = DirectiveSweepScope::Narrow,
     ): DirectiveAuditReport {
-        $prepared = $this->preparedRun($configuration, $discovery);
+        [$prepared, $measuredScope] = $this->preparedRun($configuration);
 
         // What the rules produced, and nothing assembled after them. The
         // channel a run assembles late — `annotation.unused-directive` — used
@@ -125,24 +143,14 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         // channel no verdict was judged against.
         $produced = $prepared->ruleExecution->produced;
 
-        $verdicts = [
-            ...$this->ruleProducerPreparation->directiveVerdicts($produced, $prepared->ruleExecution->levelActivity),
-            ...$this->ruleProducerPreparation->auditThresholdDirectives(
-                $prepared->context,
-                $this->ruleExecutor,
-                $prepared->ruleExecution,
-                $sweep,
-            ),
-        ];
-
-        // One list in the order an author reads a tree, not two halves
-        // concatenated: which of the two tags a directive is belongs on the
-        // verdict, not in the position it happens to occupy.
-        usort(
-            $verdicts,
-            static fn(DirectiveVerdict $left, DirectiveVerdict $right): int
-                => [$left->site->file->value(), $left->site->line, $left->site->form, $left->site->target]
-                <=> [$right->site->file->value(), $right->site->line, $right->site->form, $right->site->target],
+        $verdicts = $this->inlineDirectiveRun->verdicts(
+            $produced,
+            $prepared->ruleExecution->levelActivity,
+            $prepared->subjectCoverage,
+            $prepared->context,
+            $this->ruleExecutor,
+            $prepared->ruleExecution,
+            $sweep,
         );
 
         return new DirectiveAuditReport(
@@ -150,6 +158,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             coverage: $prepared->coverage,
             producedFindings: \count($produced),
             sweep: $sweep,
+            projectScope: $measuredScope,
         );
     }
 
@@ -163,7 +172,8 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
      * would measure a second world, and a difference between two worlds says
      * nothing about a directive.
      */
-    private function preparedRun(RunConfiguration $configuration, ?FileDiscoveryInterface $discovery): PreparedRun
+    /** @return array{PreparedRun, \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement} */
+    private function preparedRun(RunConfiguration $configuration): array
     {
         $profiler = $this->profiler;
 
@@ -175,12 +185,37 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             'paths' => array_map(static fn(AbsolutePath $p): string => $p->value(), $pathList),
         ]);
 
+        $populationPublication = $this->rulePublication->publication();
         $repository = $this->repositoryFactory->create();
         // Phase 1: Discovery
         $profiler->start('discovery', 'pipeline');
-        $discoveredFiles = $this->analysisFileDiscovery->discover($configuration, $discovery);
+        $discoveredFiles = $this->projectFiles->discover($configuration);
+        $measuredScope = $configuration->projectScope->withDiscoveredFiles($discoveredFiles);
+        $discoveryPopulation = $this->unmatchedExcludeAudit->population(
+            $measuredScope->judgement(),
+            $populationPublication,
+            new FindingChannel(UnmatchedExcludeRule::NAME),
+            UnmatchedExcludeRule::channelDeclarations()[UnmatchedExcludeRule::NAME],
+        );
         $files = $discoveredFiles->eligibleFiles;
         $generatedExcludedFiles = $discoveredFiles->generatedExcludedFiles;
+
+        $eligiblePaths = [];
+        $publishedByInput = [];
+        foreach ($files as $file) {
+            $input = PathFactory::fromCliArgument($file->getPathname(), $configuration->projectRoot);
+            $published = PathFactory::published($input, $configuration->projectRoot);
+            $eligiblePaths[] = $published;
+            $publishedByInput[$input->value()] = $published;
+        }
+        $skippedFailures = array_map(
+            static fn(SkippedEntry $skip): AnalysisFailure => new AnalysisFailure(
+                $skip->relativeTo($configuration->projectRoot),
+                $skip->reason,
+                $skip->detail,
+            ),
+            $discoveredFiles->skippedEntries,
+        );
 
         $profiler->stop('discovery');
 
@@ -191,35 +226,39 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         }
 
         // Phase 2: Collection (metrics + dependencies in single AST traversal)
-        $phaseStartTime = microtime(true);
+        $phaseStartTime = hrtime(true);
         $this->logger->debug('Starting collection phase', ['files' => \count($files)]);
 
         $profiler->start('collection', 'pipeline');
         $collectionResult = $this->collectionOrchestrator->collect($files, $repository, $configuration->projectRoot);
         $profiler->stop('collection');
 
-        $collectionTime = microtime(true) - $phaseStartTime;
-        $this->logger->info('Collection completed', [
+        $this->logPhaseCompleted('Collection', $phaseStartTime, [
             'processed' => $collectionResult->filesAnalyzed,
             'errors' => $collectionResult->filesSkipped,
             'dependencies' => \count($collectionResult->dependencies),
-            'duration' => \sprintf('%.2fs', $collectionTime),
         ]);
 
+        $filesAnalyzed = $collectionResult->filesAnalyzed;
+        $analyzedFiles = $collectionResult->analyzedFiles;
+        $collectionFailures = $collectionResult->failures;
+        $suppressions = $collectionResult->suppressions;
+        $thresholdOverrides = $collectionResult->thresholdOverrides;
+        $thresholdDiagnostics = $collectionResult->thresholdDiagnostics;
+
         // Phase 2.5: Build dependency graph from collected dependencies.
-        // The raw dependency list is not released here: the same
-        // CollectionPhaseOutput carries the suppressions and counters the rest
-        // of the run needs, so it stays reachable until the run ends. An
-        // `unset()` of a second name for it used to claim otherwise.
         $this->logger->debug('Building dependency graph', [
             'dependencies' => \count($collectionResult->dependencies),
         ]);
         $profiler->start('dependency', 'pipeline');
-        $graph = $this->buildDependencyGraph(
+        $graphBuild = $this->graphBuilder->build(
             $collectionResult->dependencies,
-            $repository,
+            $collectionResult->classLikeDeclarations,
         );
+        unset($collectionResult);
+        $graph = $graphBuild->graph;
         $profiler->stop('dependency');
+        $this->reportMixedSpellings([...$repository->mixedSpellings(), ...$graphBuild->mixedSpellings]);
 
         // Phase 2.6: prepare Architecture-owned layer policy from this run's
         // graph and class universe. Run selects the producer rule through its
@@ -234,7 +273,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         $namespaceTree = $this->measurementAggregation->aggregate($repository, $graph);
 
         // Phase 4: Computed metric evaluation.
-        $this->computedMetricEvaluation->evaluate($repository, $collectionResult->filesAnalyzed);
+        $computedMetricEvaluation = $this->computedMetricEvaluation->evaluate($repository, $filesAnalyzed);
 
         // Phase 5: Circular dependency preparation.
         $this->ruleProducerPreparation->prepareCircularDependencies(
@@ -243,19 +282,23 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         );
 
         // Phase 6: File-set inspection.
-        $this->ruleProducerPreparation->inspectFiles($files, $configuration->projectRoot);
+        $inspectionFailures = $this->ruleProducerPreparation->inspectFiles(
+            $files,
+            $configuration->projectRoot,
+            $publishedByInput,
+        );
 
         // Phase 6.5: hand this run's inline directives to their owning
         // capability, so the rule that reports on them reads prepared state
         // rather than receiving it through the shared analysis context.
-        $this->ruleProducerPreparation->prepareInlineDirectives(
-            $collectionResult->suppressions,
-            $collectionResult->thresholdOverrides,
-            $collectionResult->thresholdDiagnostics,
+        $this->inlineDirectiveRun->prepare(
+            $suppressions,
+            $thresholdOverrides,
+            $thresholdDiagnostics,
         );
 
         // Phase 7: Rule execution.
-        $phaseStartTime = microtime(true);
+        $phaseStartTime = hrtime(true);
         $this->logger->debug('Starting analysis phase');
 
         $profiler->start('rules', 'pipeline');
@@ -263,50 +306,62 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             metrics: $repository,
             dependencyGraph: $graph,
             namespaceTree: $namespaceTree,
-            thresholdOverrides: $collectionResult->thresholdOverrides,
-            coversProjectScope: $configuration->coversProjectScope,
+            thresholdOverrides: $thresholdOverrides,
+            projectScope: $measuredScope->judgement(),
         );
         $ruleExecution = $this->ruleExecutor->execute($context);
+        $unmatchedTypeWarning = $this->ruleProducerPreparation->unmatchedTypeWarning(
+            $measuredScope->judgement(),
+            $this->rulePublication->publication(),
+        );
+        if ($unmatchedTypeWarning !== null) {
+            $this->logger->warning($unmatchedTypeWarning);
+        }
         $profiler->stop('rules');
 
-        $analysisTime = microtime(true) - $phaseStartTime;
-        $this->logger->info('Analysis completed', [
+        $this->logPhaseCompleted('Analysis', $phaseStartTime, [
             'violations' => \count($ruleExecution->published),
-            'duration' => \sprintf('%.2fs', $analysisTime),
         ]);
-
-        $eligiblePaths = array_map(
-            static fn(SplFileInfo $file): RelativePath => PathFactory::bestEffortRelative(
-                $file->getPathname(),
-                $configuration->projectRoot,
-            ),
-            $files,
-        );
 
         $profiler->stop('analysis');
 
-        return new PreparedRun(
+        $coverage = self::buildCoverage(
+            $eligiblePaths,
+            $generatedExcludedFiles,
+            $analyzedFiles,
+            $collectionFailures,
+            $skippedFailures,
+            $discoveredFiles->namedExcluded,
+            $inspectionFailures,
+        );
+        $subjectCoverage = SubjectCoverageFacts::fromMeasured(
+            $measuredScope->judgement(),
+            $coverage->analyzedFiles,
+            array_map(static fn(AnalysisFailure $failure): RelativePath => $failure->path, $coverage->failures),
+        );
+
+        return [new PreparedRun(
             namespaceTree: $namespaceTree,
-            collection: $collectionResult,
+            suppressions: $suppressions,
+            thresholdOverrides: $thresholdOverrides,
             context: $context,
             ruleExecution: $ruleExecution,
-            coverage: self::buildCoverage(
-                $eligiblePaths,
-                $generatedExcludedFiles,
-                $collectionResult,
-                $discoveredFiles->skippedEntries,
-                $configuration->projectRoot,
-            ),
-            unmatchedExcludeFindings: $discoveredFiles->unmatchedExcludeFindings,
-        );
+            coverage: $coverage,
+            subjectCoverage: $subjectCoverage,
+            unmatchedExcludeFindings: $this->unmatchedExcludeAudit->findings($measuredScope->judgement(), $configuration->projectRoot),
+            computedMetricEvaluation: $computedMetricEvaluation,
+            discoveryPopulation: $discoveryPopulation,
+            populationPublication: $populationPublication,
+        ), $measuredScope];
     }
 
-    /** @param list<Dependency> $dependencies */
-    private function buildDependencyGraph(
-        array $dependencies,
-        MetricRepositoryInterface $repository,
-    ): DependencyGraphInterface {
-        return $this->graphBuilder->build($dependencies, self::collectLogicalClassPaths($repository));
+    /** @param array<string, int> $counts */
+    private function logPhaseCompleted(string $phase, int $startTime, array $counts): void
+    {
+        $this->logger->info($phase . ' completed', [
+            ...$counts,
+            'duration' => \sprintf('%.2fs', (hrtime(true) - $startTime) / 1e9),
+        ]);
     }
 
     /**
@@ -337,59 +392,45 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
      * **What is asked and what is reported are still two questions.** The
      * verdict is reached over `produced`; whether the verdict is *published*
      * obeys the same channel selection as every other finding, asked through
-     * {@see RuleExecutionInterface::publishable()}. Being assembled after
+     * {@see RulePublicationInterface::publishable()}. Being assembled after
      * `execute()` used to mean being assembled past that filter, which made
      * `--disable-rule annotation.unused-directive` inert and let an
      * `--only-rule` naming a sibling channel publish this one.
      *
-     * @return list<Finding>
+     * @return array{findings: list<Finding>, population: JudgedPopulation}
      */
-    private function reportedFindings(PreparedRun $prepared): array
+    private function latePublishedResult(PreparedRun $prepared): array
     {
         $ruleExecution = $prepared->ruleExecution;
-
-        $late = $this->ruleExecutor->publishable([
-            ...$this->ruleProducerPreparation->auditInlineDirectives(
-                $ruleExecution->produced,
-                $ruleExecution->levelActivity,
-            ),
-            // The second channel assembled outside `execute()`, and through
-            // the same `publishable()` for the same reason: an exclude pattern
-            // that removed nothing is a fact about this run's own input, which
-            // no rule can see, but the report it lands in obeys
-            // `--disable-rule`, `--only-rule`, the baseline and `--fail-on`
-            // like every other finding.
-            ...$prepared->unmatchedExcludeFindings,
-        ]);
-
-        return $late === [] ? $ruleExecution->published : array_merge($ruleExecution->published, $late);
-    }
-
-    /** @return list<LogicalClassPath> */
-    private static function collectLogicalClassPaths(MetricRepositoryInterface $repository): array
-    {
-        $classes = [];
-        foreach ($repository->allLogicalClasses() as $info) {
-            $logicalClass = $info->subject?->logicalClassPath();
-            if ($logicalClass !== null) {
-                $classes[$logicalClass->toCanonical()] = $logicalClass;
-            }
-        }
-
-        return array_values($classes);
+        $inline = $this->inlineDirectiveRun->usageResult(
+            $ruleExecution->produced,
+            $ruleExecution->levelActivity,
+            $prepared->subjectCoverage,
+            $prepared->populationPublication,
+        );
+        return [
+            'findings' => $this->rulePublication->publishable([...$inline['findings'], ...$prepared->unmatchedExcludeFindings]),
+            'population' => $inline['population'],
+        ];
     }
 
     /**
      * @param list<RelativePath> $eligiblePaths
      * @param list<RelativePath> $generatedExcludedFiles
-     * @param list<SkippedEntry> $skippedEntries
+     * @param list<RelativePath> $analyzedFiles
+     * @param list<FileProcessingResult> $collectionFailures
+     * @param list<AnalysisFailure> $skippedFailures published during discovery
+     * @param list<RelativePath> $namedExcluded
+     * @param list<AnalysisFailure> $inspectionFailures
      */
     private static function buildCoverage(
         array $eligiblePaths,
         array $generatedExcludedFiles,
-        CollectionPhaseOutput $collectionResult,
-        array $skippedEntries,
-        AbsolutePath $projectRoot,
+        array $analyzedFiles,
+        array $collectionFailures,
+        array $skippedFailures,
+        array $namedExcluded,
+        array $inspectionFailures,
     ): AnalysisCoverage {
         $failures = array_map(
             static function ($failure): AnalysisFailure {
@@ -397,28 +438,47 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
                     $failure->filePath,
                     match ($failure->failureKind()) {
                         FileProcessingFailureKind::Parse => AnalysisFailureKind::Parse,
+                        FileProcessingFailureKind::UnreadableFile => AnalysisFailureKind::UnreadableFile,
                         FileProcessingFailureKind::Processing => AnalysisFailureKind::Processing,
                     },
                     $failure->error(),
                 );
             },
-            $collectionResult->failures,
+            $collectionFailures,
         );
 
+        $collectionFailurePaths = [];
+        foreach ($failures as $failure) {
+            $collectionFailurePaths[$failure->path->value()] = true;
+        }
+
+        $lateFailures = [];
+        foreach ($inspectionFailures as $failure) {
+            $key = $failure->path->value();
+            if (!isset($collectionFailurePaths[$key])) {
+                $lateFailures[$key] ??= $failure;
+            }
+        }
+
+        $analyzed = array_values(array_filter(
+            $analyzedFiles,
+            static fn(RelativePath $path): bool => !isset($lateFailures[$path->value()]),
+        ));
+
         $coverage = new AnalysisCoverage(
-            $collectionResult->analyzedFiles,
+            $analyzed,
             $generatedExcludedFiles,
-            $failures,
+            [...$failures, ...array_values($lateFailures)],
+            $namedExcluded,
         );
 
         // A skipped entry is a discovered path with a terminal state, so it
         // belongs on both sides of the invariant below — not only in the
         // coverage it is recorded in.
         $skippedPaths = [];
-        foreach ($skippedEntries as $skip) {
-            $path = $skip->relativeTo($projectRoot);
-            $skippedPaths[] = $path;
-            $coverage = $coverage->withSkipped($path, $skip->reason, $skip->detail);
+        foreach ($skippedFailures as $skip) {
+            $skippedPaths[] = $skip->path;
+            $coverage = $coverage->withSkipped($skip->path, $skip->kind, $skip->message);
         }
 
         self::assertCoverageMatchesDiscovery($coverage, [...$eligiblePaths, ...$skippedPaths]);
@@ -448,6 +508,24 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         }
     }
 
+    /** @param list<MixedSpelling> $mixedSpellings */
+    private function reportMixedSpellings(array $mixedSpellings): void
+    {
+        $reported = [];
+        foreach ($mixedSpellings as $mixed) {
+            $key = ClassNameSpelling::fold($mixed->canonical);
+            if (isset($reported[$key])) {
+                continue;
+            }
+            $reported[$key] = true;
+            $this->logger->warning(\sprintf(
+                'mixed spelling: %s → %s',
+                implode(', ', $mixed->spellings),
+                $mixed->canonical,
+            ));
+        }
+    }
+
     /**
      * Collects the {@see SymbolPath} for every class symbol recorded in the
      * metric repository — the input set for architecture template expansion.
@@ -457,7 +535,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
     private static function collectClassPaths(MetricRepositoryInterface $repository): array
     {
         $paths = [];
-        foreach ($repository->all(SymbolLevel::Class_) as $classSymbol) {
+        foreach ($repository->allLogicalClasses() as $classSymbol) {
             $paths[] = $classSymbol->symbolPath;
         }
 

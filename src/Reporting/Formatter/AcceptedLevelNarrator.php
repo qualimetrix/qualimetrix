@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter;
 
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 
 /**
@@ -19,9 +19,8 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 final class AcceptedLevelNarrator
 {
     /**
-     * Returns the breach fragment, or `null` for every finding that is
-     * not a measured breach — {@see Finding::$acceptedLevel} is `null` on
-     * all of them, including findings a baseline never judged.
+     * Returns the accepted-level fragment, distinguishing a measured breach
+     * from an entry whose comparison the run could not complete.
      */
     public static function describe(Finding $finding): ?string
     {
@@ -29,6 +28,10 @@ final class AcceptedLevelNarrator
 
         if ($accepted === null) {
             return null;
+        }
+
+        if ($finding->uncomparedReason !== null) {
+            return \sprintf('accepted at %s; not compared: %s', $accepted->describe(), $finding->uncomparedReason);
         }
 
         if ($accepted->shape() === ChannelShape::Occurrence) {
@@ -48,7 +51,7 @@ final class AcceptedLevelNarrator
     }
 
     /**
-     * Same trailing-zero trim as {@see \Qualimetrix\Analysis\Finding\Contract\AcceptedLevel::describe()}
+     * Same trailing-zero trim as {@see \Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel::describe()}
      * applies to the accepted side, so "40.0" and "40" don't print differently
      * depending on which side of "now" they land on.
      */

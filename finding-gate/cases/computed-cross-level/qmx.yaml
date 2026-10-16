@@ -1,0 +1,8 @@
+suppress_paths: []
+computed_metrics:
+  computed.class-load:
+    formula: 'm["size.method-count"] + 1'
+    levels: [class]
+  computed.project-load:
+    formula: 'm["computed.class-load"] + 1'
+    levels: [project]

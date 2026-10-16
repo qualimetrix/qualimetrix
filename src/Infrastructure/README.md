@@ -11,7 +11,6 @@ Infrastructure contains external adapters and entry points:
 - **Git**: Git integration for analyzing staged/changed files ([details](Git/README.md))
 - **Logging**: PSR-3 logging ([details](Logging/README.md))
 - **Parallel**: Parallel processing strategies
-- **Serializer**: Serialization abstraction (igbinary/PHP native)
 - **Profiler**: Span-based performance profiler ([details](Profiler/README.md))
 
 ## Internal Dependency Layers
@@ -20,8 +19,8 @@ Infrastructure sub-packages are declared as `infrastructure-*` sub-layers in the
 own `qmx.yaml` to prevent circular dependencies (see
 [ADR 0014](../../docs/adr/0014-deptrac-retirement.md)):
 
-- **Leaf** (no Infrastructure siblings): Serializer, Logging, Profiler, Rule, Git, Composer
-- **Mid** (depends on specific siblings): Cache -> Serializer, Ast -> Cache, Parallel -> Ast + Cache + Serializer
+- **Leaf** (no Infrastructure siblings): Cache, Logging, Profiler, Rule, Git, Composer
+- **Mid** (depends on specific siblings): Ast -> Cache, Parallel -> Ast + Cache
 - **Hub** (wide dependencies): Console -> Git, Rule, Cache, Logging, Profiler; DI -> all
 
 ## Structure
@@ -29,157 +28,64 @@ own `qmx.yaml` to prevent circular dependencies (see
 ```
 Infrastructure/
 ├── Ast/
-│   ├── PhpFileParser.php            # Base implementation
-│   ├── CachedFileParser.php         # Decorator with caching
-│   └── FileParserFactory.php        # Factory with config awareness
-├── Cache/                            # -> See Cache/README.md
-│   ├── CacheInterface.php
-│   ├── FileCache.php
-│   ├── CacheFactory.php
-│   ├── CacheKeyGenerator.php
-│   └── CacheWriteException.php      # Cache write failure exception
+├── Cache/
+│   ├── Contract/
+│   └── Root/
 ├── Composer/
-│   ├── ClassmapPath.php              # Resolves generated classmap path expressions without executing them
-│   ├── ComposerAutoloadMap.php       # Places classes from the analysed project's Composer roots
-│   ├── DeclaredParentReader.php      # Reads external inheritance declarations for Design DIT
-│   ├── GeneratedClassmap.php         # Parses Composer's generated classmap without including it
-│   ├── InstallLocator.php            # Finds the bounded set of Composer roots a run may read
 │   └── Contract/
-│       └── AnalysedInstallAnchorInterface.php # Re-aims install-backed adapters for each run
-├── Git/                              # -> See Git/README.md
-│   ├── GitClient.php
-│   ├── NameStatusListing.php         # One `--name-status -z` listing read into files; the rows it drops, reported by reason
-│   ├── GitScopeParser.php
-│   ├── GitScope.php
-│   ├── ChangedFile.php
-│   ├── ChangeStatus.php
-│   ├── NameStatusRecord.php          # One `git diff --name-status -z` row, held as the bytes git wrote
-│   ├── GitRepositoryLocator.php      # Locates the git dir and the directory git runs hooks out of
-│   ├── GitRepositoryLocatorInterface.php
-│   ├── ReportingGitScopeQuery.php   # Git adapter for Reporting finding projection
-│   ├── GitScopeResolver.php          # Resolves git scope from CLI options
-│   ├── GitScopeResolution.php        # Resolution result VO
-│   ├── GitScopeRefusedException.php  # A scope git will not answer for
-│   ├── NotAGitRepositoryException.php # --report=git:* outside a repository
-│   └── UnresolvedGitReferenceException.php # Invalid git revision input
-├── Logging/                          # -> See Logging/README.md
-│   ├── LoggerFactory.php
-│   ├── LoggerHolder.php
-│   ├── LoggerHelperTrait.php        # Shared PSR-3 interpolation and level filtering
-│   ├── DelegatingLogger.php
-│   ├── ConsoleLogger.php
-│   └── FileLogger.php
-├── Parallel/
-│   ├── FileProcessingTask.php       # Task executed in parallel workers
-│   ├── FileProcessingTaskFactory.php # Supplies each task with compile-time metadata and current runtime configuration
-│   ├── WorkerBootstrap.php          # Reconstructs Measurement and DependencyModel worker-safe participants
-│   └── Strategy/
-│       ├── SequentialStrategy.php      # Single-process execution
-│       ├── AmphpParallelStrategy.php   # Multi-worker via amphp
-│       ├── StrategySelector.php        # Strategy selection logic
-│       └── WorkerCountDetector.php     # Detects optimal worker count
-├── Serializer/
-│   ├── SerializerInterface.php      # Serializer contract
-│   ├── IgbinarySerializer.php       # igbinary-based serializer
-│   ├── PhpSerializer.php            # PHP native serializer
-│   └── SerializerSelector.php       # Auto-selects best serializer
-├── Profiler/                         # -> See Profiler/README.md
-│   ├── Profiler.php
-│   └── Export/
+├── Console/
+│   ├── Application/
+│   ├── BaselineCommand/
+│   ├── CacheLifecycle/
+│   ├── Check/
+│   ├── CheckReport/
+│   ├── CheckScope/
+│   ├── Command/
+│   ├── Directives/
+│   ├── GraphExport/
+│   ├── Hook/
+│   ├── Invocation/
+│   ├── Profile/
+│   ├── Progress/
+│   ├── Refusal/
+│   ├── RuleListing/
+│   ├── RunSetup/
+│   ├── RunTarget/
+│   ├── RuntimePolicy/
+│   └── Terminal/
 ├── DependencyInjection/
-│   ├── ContainerFactory.php           # Thin orchestrator (delegates to configurators)
-│   ├── Configurator/                  # Decomposed container configuration
-│   │   ├── ContainerConfiguratorInterface.php
-│   │   ├── CoreServicesConfigurator.php
-│   │   ├── ConfigurationConfigurator.php
-│   │   ├── DependencyModelConfigurator.php
-│   │   ├── ComputedMetricsConfigurator.php
-│   │   ├── MeasurementConfigurator.php
-│   │   ├── ParserConfigurator.php
-│   │   ├── CollectorConfigurator.php      # Collector compiler/parallel composition
-│   │   ├── RuleConfigurator.php           # Rule registries and selection composition
-│   │   ├── CodeSmellConfigurator.php      # Exact CodeSmell collector/rule roots
-│   │   ├── CohesionConfigurator.php       # Exact Cohesion collector/rule roots
-│   │   ├── ComplexityConfigurator.php     # Exact Complexity collector/rule roots
-│   │   ├── CouplingConfigurator.php       # Exact Coupling roots, config contract alias, state
-│   │   ├── DesignConfigurator.php         # Exact Design collector/rule roots
-│   │   ├── MaintainabilityConfigurator.php # Exact Maintainability collector/rule roots
-│   │   ├── SecurityConfigurator.php       # Exact Security collector/rule roots
-│   │   ├── SizeConfigurator.php           # Exact Size collector/rule roots
-│   │   ├── ArchitectureConfigurator.php
-│   │   ├── CircularDependencyConfigurator.php
-│   │   ├── DuplicationConfigurator.php
-│   │   ├── AnalysisConfigurator.php
-│   │   └── OutputConfigurator.php
-│   └── CompilerPass/
-│       ├── CollectorCompilerPass.php
-│       ├── GlobalCollectorCompilerPass.php
-│       ├── RuleCompilerPass.php
-│       ├── RuleRegistryCompilerPass.php
-│       ├── ChannelDeclarationCompilerPass.php
-│       ├── JudgedMetricDeclarationGuard.php
-│       ├── ConfigurationValidatorCompilerPass.php
-│       ├── RuleOptionsCompilerPass.php
-│       ├── FormatterCompilerPass.php
-│       ├── ConfigurationStageCompilerPass.php
-│       ├── ParallelCollectorClassesCompilerPass.php
-│       ├── FileSetInspectionParticipantCompilerPass.php
-│       └── ThresholdValidatorMapCompilerPass.php
-├── Rule/
-│   ├── RuleRegistryInterface.php
-│   ├── RuleRegistry.php
-│   ├── ConfigurationValidatorRegistry.php  # The same, for the second producer kind
-│   ├── ChannelUniverse.php                 # One channel-identity instance behind Finding's narrow views
-│   └── Exception/
-│       └── ConflictingCliAliasException.php
-└── Console/                          # -> See Console/README.md
-    ├── Application.php
-    ├── CliOptionsParser.php
-    ├── OutputHelper.php               # Helper for large text output (line-by-line flush)
-    ├── MeasuredFindingSet.php       # The one definition of the set a baseline measures: paths + resolved config in, findings at the baseline stage's input out (no InputInterface)
-    ├── FindingFilterOrchestrator.php # Adapts check options to the Reporting-owned FindingProjector, asks Finding's suppression-binding audit on a run wide enough to judge it — for findings and for the values it skipped, which the project scope publishes — and reports the stage results
-    ├── RuntimeConfigurator.php        # Runtime DI configuration; applies the ConfigurationDocument to Coupling every run
-    ├── RuntimeLoggerConfigurator.php  # Creates and publishes the logger for one console run
-    ├── ErrorStream.php               # Sole owner of the run's error stream: progress section plus every diagnostic writer
-    ├── RuleInputValidator.php        # Fails closed on unknown selectors and option owners
-    ├── ResultPresenter.php            # Output presentation
-    ├── ExitCodeResolver.php           # Determines policy codes and incomplete-analysis exit 4
-    ├── DirectiveAuditPresenter.php    # Both projections of one directive audit; the text one prints the claim, the JSON one the stable key
-    ├── DirectiveVerdictTally.php      # How many directives of each verdict one audit produced, tallied over the vocabulary and rendered for both projections
-    ├── ScopeWarningChecker.php        # Renders the incomplete-scope and pruned-target warnings from Run's ProjectScopeCoverage answer
-    ├── ProfilePresenter.php           # Handles profiling output: summary to stderr or export to file
-    ├── FormatterContextFactory.php    # Creates FormatterContext from CLI input options
-    ├── FormatOptionPairs.php          # The --format-opt door: every written pair judged, a repeated key and two spellings of one value refused
-    ├── ArtifactFile.php               # A file an option names for an artifact: written in place when it exists, created when it does not
-    ├── CommandLineSpelling.php        # An option or argument value as argv would spell it; other shapes refused with exit 3
-    ├── CheckCommandDefinition.php     # Command option definitions
-    ├── FilteredInputDefinition.php    # InputDefinition that hides rule-specific options from --help
-    ├── Progress/
-    │   ├── ConsoleProgressBar.php
-    │   └── SwitchableProgressReporter.php
-    └── Command/
-        ├── CheckCommand.php           # Thin orchestrator (delegates to extracted classes)
-        ├── BaselineCommand.php              # Base class for the five lifecycle commands: shared error-to-exit-code mapping, and — for cleanup/update — the measured-run preamble and scope validation
-        ├── BaselineCommandDefinition.php    # Shared input definition: paths + the configuration options that decide what is measured (--config, --preset, --rule-opt, --only-rule, --disable-rule, --include-generated, --include-autoload-dev), deliberately without check's exclusion/suppression flags (ADR 0017)
-        ├── BaselineRunInterface.php         # The one way a baseline command obtains the set it measures
-        ├── BaselineRun.php                  # Implements BaselineRunInterface: resolves configuration, configures the runtime and runs the analysis exactly as `check` does
-        ├── BaselineRunContext.php           # VO: one run's measured findings, its RunScope and project root
-        ├── LoadedBaselineRun.php            # VO: a BaselineRunContext paired with the Baseline it was measured against, returned by BaselineCommand::measureAgainstBaseline()
-        ├── BaselineCaptureReporter.php      # Reports non-baselineable findings omitted by baseline:generate
-        ├── BaselineConfiguredThresholds.php # Asks each channel's options for its warning boundary, for baseline:explain (ADR 0038)
-        ├── BaselineGenerateCommand.php # `baseline:generate` — captures the current findings as a new baseline file
-        ├── BaselineUpdateCommand.php   # `baseline:update` — direction-aware monotonic tightening of an existing baseline in place
-        ├── BaselineCleanupCommand.php  # `baseline:cleanup` — lists removal candidates (stale/undeclared/inert entries) and removes only the selectors named via --remove
-        ├── BaselineRenameChannelsCommand.php # `baseline:rename-channels` — carries a baseline onto renamed channels along a declared TSV map; the one baseline command that runs no analysis
-        ├── ChannelRenameReporter.php        # Renders a rename-channels outcome (refusal or ChannelRenameReport) in the caller's chosen format
-        ├── BaselineExplainCommand.php  # `baseline:explain` — prints the effective boundary for one symbol and its three sources (baseline, qmx.yaml, @qmx-threshold)
-        ├── BaselineExplanationRenderer.php # How `baseline:explain` spells a BoundaryExplanation: entries present but not applied, unreadable entries, `mode: suppress`, a member without a finite value
-        ├── DirectivesCommand.php      # `directives` — what each inline @qmx directive still does; exits 2 on an inert one (ADR 0039)
-        ├── GraphExportCommand.php           # Export dependency graph (DOT, JSON)
-        ├── RulesCommand.php           # Lists every option each rule accepts, its CLI aliases and judged metrics
-        ├── HookInstallCommand.php
-        ├── HookStatusCommand.php
-        └── HookUninstallCommand.php
+│   ├── CircularDependency/
+│   ├── CodeSmell/
+│   ├── Cohesion/
+│   ├── CompilerPass/
+│   ├── Complexity/
+│   ├── ComputedMetrics/
+│   ├── Configurator/
+│   ├── ContainerFactory.php
+│   ├── Coupling/
+│   ├── Design/
+│   ├── Duplication/
+│   ├── Maintainability/
+│   ├── MeasurementRepositoryFactory.php
+│   ├── ProjectManifest/
+│   ├── Registration/
+│   ├── RuleCatalog/
+│   ├── Security/
+│   └── Size/
+├── Git/
+│   └── ChangeListing/
+├── Logging/
+│   └── Contract/
+├── Parallel/
+│   ├── Configuration/
+│   ├── Contract/
+│   ├── Runtime/
+│   └── Strategy/
+├── Profiler/
+│   ├── Contract/
+│   └── Export/
+└── Rule/
+    └── Contract/
 ```
 
 ---
@@ -214,7 +120,7 @@ Creates a unified Symfony DI ContainerBuilder without parameters. Delegates conf
 - `ConfigurationConfigurator` — Analysis.Configuration pipeline and ordered document source seam
 - `DependencyModelConfigurator` — graph/traversal contracts and extraction registration
 - `ComputedMetricsConfigurator` — private root/Health implementation tree, capability-owned rule, and four public contract aliases
-- `MeasurementConfigurator` — repository, aggregation, Cohesion LCOM configuration, and worker reconstruction
+- `MeasurementConfigurator` — repository, aggregation, and worker reconstruction
 - `ParserConfigurator` — AST parser and caching
 - `CollectorConfigurator` — collector compiler-pass and parallel-class composition; it does not scan capability implementations
 - `RuleConfigurator` — rule registries, channels, selector, and compiler passes; it does not scan capability implementations
@@ -222,6 +128,8 @@ Creates a unified Symfony DI ContainerBuilder without parameters. Delegates conf
   `DesignConfigurator`, `MaintainabilityConfigurator`, `SecurityConfigurator`,
   and `SizeConfigurator` — exact owned collector roots plus lazy, non-autowired
   rule roots
+- `CohesionConfigurator` also registers the LCOM configuration resolver and
+  store, with the tagged LCOM-configurable collectors
 - `CouplingConfigurator` — the same exact collector/rule registration for
   Coupling, plus internal `CouplingAnalysis` state and the public
   `CouplingConfiguratorInterface` alias
@@ -230,6 +138,10 @@ Creates a unified Symfony DI ContainerBuilder without parameters. Delegates conf
 - `DuplicationConfigurator` — internal Duplication detector/provider wiring and capability-owned rule registration; the detector is autoconfigured as a Run-owned FileSet participant
 - `AnalysisConfigurator` — Run pipeline, discovery, collection, and strategies
 - `OutputConfigurator` — formatters, GraphProjection, and exact composition for Reporting finding projection, Inline annotation suppression, and the Git query adapter
+
+`Registration/EvidenceRegistration` supplies fresh loader and collector/rule
+prototypes to Cohesion, Complexity, Coupling, Maintainability and Size. Each
+configurator retains its literal exact resource roots and special bindings.
 
 **Method:**
 - `create(): ContainerBuilder` — runs all configurators and returns a compiled container
@@ -260,10 +172,9 @@ Console and Finding receive that universe through their own narrow contracts.
 
 ### Lazy Services
 
-Rules and their Options are made lazy via `->setLazy(true)`:
-- Rules are not created during container compilation
-- Rules are created on first use in Finding's `RuleExecution`
-- By that time RuleOptionsFactory is already configured with CLI options
+Executable rules are lazy services and are created on first use in
+Finding's `RuleExecution`. Options are immutable values built during preflight
+for every producer, not lazy services or raw CLI readers.
 
 ### CompilerPass
 
@@ -274,6 +185,13 @@ Rules and their Options are made lazy via `->setLazy(true)`:
 **GlobalCollectorCompilerPass:**
 - Collects services with tag `qmx.global_collector`
 - Injects into `GlobalCollectorRunner`
+
+`FindingConfigurator` registers the private document-forms implementation and
+its `RuleOptionDocumentFormsInterface` alias. CLI input adapters and validators
+receive that contract through autowiring; inline compiler wiring and worker
+bootstrap supply the same interpretation. `OutputConfigurator` composes one
+`ChannelFileScope` from declared capability channels and supplies it to Reporting.
+It also wires the held `BaselineDocumentReader` separately from semantic loading.
 
 **RuleOptionsCompilerPass:**
 - Prepares producer-specific options for Finding's private executable rules
@@ -312,10 +230,11 @@ remain independent because configuration is keyed by producer rule name.
 - Rejects a channel declared by more than one producer, a validator that names a
   producer no rule answers to or declares no channels at all, and a tagged service
   whose definition names no class
-- Delegates the judged-metric half of the declaration check to
+- Delegates single-source reach and judged-metric declaration checks to
   `JudgedMetricDeclarationGuard`, which is the only class on this side that reads the
   metric catalog: a declared judged key must exist in `MetricName` (an aggregate
-  spelling counts) and only a `magnitude` producer may name one at all
+  spelling counts) and only a `magnitude` producer may name one at all. Run-evidence reach
+  and a judged metric cannot be declared together
 - **The one place a channel becomes a configuration error.** It applies
   `ChannelDeclaration::asConfigurationError()` to everything a validator declares and
   to nothing else, registering it under the validator's producer rule name so
@@ -382,11 +301,15 @@ Decorator for `FileParserInterface`.
 - `CacheInterface $cache`
 - `CacheKeyGenerator $keyGenerator`
 
-**Algorithm of parse():**
-1. Read source bytes once from the original file.
-2. Generate the cache key from those bytes.
+**Algorithm of `parseContent()`:**
+1. Receive caller-owned bytes and the original absolute file identity.
+2. Generate the key from those bytes with `generateForContent()`.
 3. Cache hit -> return from cache.
-4. Cache miss -> parse those same bytes via `$inner` while retaining the original file for diagnostics, save.
+4. Cache miss -> parse those bytes via `$inner`, preserving file identity for diagnostics, and save.
+
+Source IO belongs to Run's private `SourceReader`. Parser/cache adapters neither
+reopen source nor infer cwd. Generated-header inspection and Duplication retain
+separate reads. See [Run](../Analysis/Run/README.md).
 
 ### FileParserFactory
 
@@ -454,6 +377,40 @@ Factory with runtime configuration awareness.
 - No ServiceLocator (all dependencies via constructor)
 
 
+## Atomic typed rule configuration
+
+Infrastructure supplies one immutable channel universe over the candidate
+computed-metric definitions, shared by document/selection/option preparation.
+Every producer's options are built, even when inactive, before collection. The
+completed `FindingConfiguration` carries document, options, enablement, universe
+and diagnostics; runtime stores receive it only after all preflight succeeds.
+A failed invocation cannot leave part of a candidate configuration committed.
+Rules remain lazy executable services. Their Options are already immutable
+prepared values, not lazy raw readers. No generic contribution adapter or second
+constructor-reflected option catalogue participates in runtime execution.
+
+## Report publication
+
+`CheckReport/ReportAssembler` forwards the normal analysis absence summary to
+`ReportBuilder`. For successful check with resolved format exactly `json` and
+stdout destination, `Terminal/ReportPublication/ReportPublication` writes the complete raw
+document at NORMAL and QUIET verbosity, preserving literal markup. SILENT emits
+no bytes. Configuration-selected JSON follows the same route. File destinations
+retain judged full publication, and other formats retain their ordinary output
+behavior. Formula failures retain the effective-source refusal and exit 3.
+
+Formatters return Reporting's `FormattedReport` (`body`, `escapedStrings`) and
+state `PublicationKind`. `CheckReport/ReportFormatter` applies the invocation's prose mode
+or preserves a structured body, and reports a positive repair count on the
+single ErrorStream. Internal terminal failures use `ConsoleExitCode::InternalError`
+(exit 5); typed input/environment refusals remain 3. Generated hooks distinguish
+measured findings at 1/2 from refusal/incomplete/internal outcomes at 3/4/5.
+
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+Measurement repository composition resolves the measured and computed definition
+catalogs for every fresh store after invocation configuration. Class key scopes
+are assembled here; Measurement itself does not import ComputedMetrics. The
+container's direct repository service uses the same factory.

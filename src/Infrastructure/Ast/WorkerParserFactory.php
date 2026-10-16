@@ -31,14 +31,8 @@ final class WorkerParserFactory
      */
     public static function create(?AbsolutePath $cacheDirectory): FileParserInterface
     {
-        // Both loggers are written out rather than defaulted, because a worker
-        // is the one place where silence is the answer and an omitted argument
-        // cannot say so. A worker's own STDERR is not a channel the user reads,
-        // and neither message would be news there: a file the parser refuses is
-        // published as a `parse` entry in the run's coverage (measured under
-        // `--workers=4`), and the key generator's verdict on the parser version
-        // is the same in every process of one install, so the parent's single
-        // warning already carries it.
+        // Worker parse failures are returned through coverage; the coordinator
+        // owns diagnostics and the parser-version cache verdict.
         $parser = new PhpFileParser(logger: new NullLogger());
 
         if ($cacheDirectory === null) {
@@ -51,7 +45,7 @@ final class WorkerParserFactory
         return new CachedFileParser(
             $parser,
             new FileCache($cacheDirectory),
-            new CacheKeyGenerator(new NullLogger()),
+            new CacheKeyGenerator(),
             $configurationStore,
         );
     }

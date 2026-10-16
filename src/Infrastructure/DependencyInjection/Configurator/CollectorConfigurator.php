@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
 use Qualimetrix\Infrastructure\Parallel\Configuration\ParallelConfigurationResolver;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
@@ -31,13 +33,14 @@ final class CollectorConfigurator implements ContainerConfiguratorInterface
     {
         $container->register(ParallelConfigurationStore::class);
         $container->setAlias(ParallelConfigurationStoreInterface::class, ParallelConfigurationStore::class);
-        $container->register(ParallelConfigurationResolver::class);
+        $container->register(ParallelConfigurationResolver::class)->setAutoconfigured(true);
         $container->setAlias(ParallelConfigurationResolverInterface::class, ParallelConfigurationResolver::class);
 
         // WorkerCountDetector for auto-detecting CPU cores
         $container->register(WorkerCountDetector::class);
 
-        $container->register(FileProcessingTaskFactory::class);
+        $container->register(FileProcessingTaskFactory::class)
+            ->setArgument('$documentForms', new Reference(RuleOptionDocumentFormsInterface::class));
 
         // AmphpParallelStrategy for parallel processing via amphp/parallel
         // The logger is what makes the parallel path observable. The selector
@@ -48,6 +51,9 @@ final class CollectorConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 '$fileProcessingTaskFactory' => new Reference(FileProcessingTaskFactory::class),
                 '$logger' => new Reference(DelegatingLogger::class),
+                '$sequentialStrategy' => new Reference(SequentialStrategy::class),
+                '$profiler' => new Reference(ProfilerInterface::class),
+                '$errorStream' => new Reference(ErrorStream::class),
             ]);
 
         // SequentialStrategy as fallback

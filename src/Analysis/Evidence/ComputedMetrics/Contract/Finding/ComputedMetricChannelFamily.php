@@ -5,7 +5,16 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
+use Qualimetrix\Analysis\Finding\Contract\Population\KindIn;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
+use Qualimetrix\Core\Observation\WorseDirection;
+
+use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
  * Every fact the rest of the system reads off "the class named by this
@@ -14,10 +23,10 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
  *
  * A producer here is not a rule class, and cannot become one: two classes
  * declaring one `NAME` are refused by
- * {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass},
+ * {@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\RuleRegistryCompilerPass},
  * and six classes over one shared body would be six copies of the same rule.
  * So the facts a rule class would carry as constants are carried here, and
- * {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass}
+ * {@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\ChannelDeclarationCompilerPass}
  * reads them at container-build time exactly where it reads a class's own.
  *
  * **The split is not a preference, it is what the name spaces allow.** The six
@@ -46,6 +55,31 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
  */
 final class ComputedMetricChannelFamily
 {
+    /**
+     * @param list<SymbolLevel> $levels
+     *
+     * @qmx-ignore code-smell.boolean-argument -- Inversion is an authored definition fact determining magnitude direction, not a caller-selected execution mode.
+     */
+    public static function declarationFor(string $name, array $levels, bool $inverted): ?ChannelDeclaration
+    {
+        if ($levels === []) {
+            return null;
+        }
+        $channel = new FindingChannel($name);
+        $gates = [];
+        foreach ($levels as $level) {
+            $unit = match ($level) {
+                SymbolLevel::Class_ => 'declaration', SymbolLevel::Namespace_ => 'namespace',
+                SymbolLevel::Project => 'project', default => 'callable',
+            };
+            if ($level === SymbolLevel::Class_) {
+                $gates[] = new PopulationGate('class-coordinate', $channel, $level, $unit, new KindIn('class-coordinate', [SymbolType::Class_]), 'Computed class judgement requires a class declaration.');
+            }
+            $gates[] = new PopulationGate('published-value', $channel, $level, $unit, new KeyPresent('published-value', [$name]), 'Applicable computed metric requires its published value.');
+        }
+        return ChannelDeclaration::magnitude($inverted ? WorseDirection::Lower : WorseDirection::Higher, ...$levels)->withGates(...$gates);
+    }
+
     /**
      * The producer of every user-defined computed metric, and the `NAME` of
      * {@see \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule} —
@@ -116,7 +150,7 @@ final class ComputedMetricChannelFamily
      *
      * A function rather than a fourth copy of the rule as a map, because four
      * seams ask it — finding emission, the reverse lookup
-     * ({@see \Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface::producerOf()}),
+     * ({@see \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelIdentityInterface::producerOf()}),
      * the forward lookup (`channelsProducedBy()`), and the run-time snapshot's
      * name-collision guard — and a map copied four times is a rule stated four
      * times.

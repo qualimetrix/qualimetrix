@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
@@ -15,9 +17,11 @@ use Qualimetrix\Analysis\Evidence\Design\Inheritance\ExternalAncestry;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthResolver;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
@@ -27,44 +31,24 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 use Qualimetrix\Tests\Analysis\Evidence\Design\Support\FixedParentSource;
 use Qualimetrix\Tests\Analysis\Evidence\Design\Support\UnloadableClassProbe;
-use Qualimetrix\Tests\TestSupport\Logging\Support\RecordingLogger;
 use RuntimeException;
 
 #[CoversClass(DitGlobalCollector::class)]
 #[CoversClass(InheritanceDepthResolver::class)]
 final class DitGlobalCollectorTest extends TestCase
 {
-    /**
-     * Seeded in place of the per-file depth so that an assertion of 0 proves
-     * the global pass wrote it, rather than reading back its own fixture.
-     * The guard only tests presence, so the magnitude is free.
-     */
-    private const int UNWRITTEN = 99;
-
     private DitGlobalCollector $collector;
 
-    private RecordingLogger $logger;
+    /** @var array<string, ClassLikeDeclaration> */
+    private array $facts = [];
 
     protected function setUp(): void
     {
         // No install to read: every external parent stays unresolved, which is
         // what these cases assume unless they say otherwise.
-        $this->logger = new RecordingLogger();
         $this->collector = new DitGlobalCollector(
             new ExternalAncestry(FixedParentSource::unconfigured()),
-            $this->logger,
         );
-    }
-
-    /**
-     * @return list<string> the warning messages this collector emitted
-     */
-    private function warnings(): array
-    {
-        return array_values(array_map(
-            static fn(array $record): string => $record['message'],
-            array_filter($this->logger->records, static fn(array $record): bool => $record['level'] === 'warning'),
-        ));
     }
 
     /**
@@ -88,12 +72,13 @@ final class DitGlobalCollectorTest extends TestCase
     ): Dependency {
         $declaration = $this->declarationFor($childFqn, $file, $ordinal);
 
-        return new Dependency(
+        return Dependency::ofClassLike(
             source: $declaration,
             target: new LogicalClassPath(SymbolPath::fromClassFqn($parentFqn)),
             type: DependencyType::Extends,
             location: new Location($declaration->file, 1),
             describesNestedAnonymousClass: $describesNestedAnonymousClass,
+            interfaceExtends: false,
         );
     }
 
@@ -111,9 +96,11 @@ final class DitGlobalCollectorTest extends TestCase
         ?RelativePath $file = null,
         int $ordinal = 0,
         int $line = 1,
+        ClassType $type = ClassType::Class_,
     ): MetricSubject {
         $declaration = $this->declarationFor($fqn, $file, $ordinal);
         $subject = MetricSubject::declaration($declaration);
+        $this->facts[$declaration->toCanonical()] = ClassLikeDeclaration::of($declaration, $type, false, false);
         $repository->addSubject($subject, $bag, $declaration->file, $line);
 
         return $subject;
@@ -134,21 +121,24 @@ final class DitGlobalCollectorTest extends TestCase
     #[Test]
     public function itProvidesTheDitMetric(): void
     {
-        self::assertSame(['design.dit'], $this->collector->provides());
+        self::assertSame(['design.dit', 'design.dit-unresolved', 'design.is-exception'], $this->collector->provides());
     }
 
     #[Test]
     public function itScoresDitZeroForAClassWithNoParent(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            ...$this->collector->getMetricDefinitions(),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+        ]);
         $graph = $this->graph([]);
 
         $path = SymbolPath::forClass('App', 'Root');
-        $this->seedDeclaration($repository, 'App\\Root', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $this->seedDeclaration($repository, 'App\\Root', (new MetricBag())->with('complexity.wmc', 0));
 
-        $this->collector->calculate($graph, $repository);
+        $this->calculate($graph, $repository);
 
-        self::assertSame(0, $repository->get($path)->get('design.dit'));
+        self::assertSame(0, $this->classMetrics($repository, $path)->get('design.dit'));
     }
 
     /**
@@ -168,71 +158,82 @@ final class DitGlobalCollectorTest extends TestCase
         $probe = UnloadableClassProbe::start();
 
         try {
-            $repository = new InMemoryMetricRepository();
+            $repository = new InMemoryMetricRepository([
+                ...$this->collector->getMetricDefinitions(),
+                new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+            ]);
             $graph = $this->graph([
                 $this->createExtends('App\\Local', $probe->childFqcn()),
             ]);
 
             $path = SymbolPath::forClass('App', 'Local');
-            $this->seedDeclaration($repository, 'App\\Local', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+            $this->seedDeclaration($repository, 'App\\Local', (new MetricBag())->with('complexity.wmc', 0));
 
-            $this->collector->calculate($graph, $repository);
+            $this->calculate($graph, $repository);
 
             self::assertSame(0, $probe->queryCount(), 'The collector consulted an autoloader');
             self::assertFalse($probe->failedOnTheMissingParent(), 'A load was attempted, so foreign code ran');
-            self::assertSame(1, $repository->get($path)->get('design.dit'));
+            self::assertSame(1, $this->classMetrics($repository, $path)->get('design.dit'));
         } finally {
             $probe->stop();
         }
     }
 
     #[Test]
-    public function itScoresDitOneForAClassExtendingAStandardPhpClass(): void
+    public function itIncludesTheBuiltinParentsOwnDepth(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            ...$this->collector->getMetricDefinitions(),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+        ]);
         $graph = $this->graph([
             $this->createExtends('App\\MyException', 'RuntimeException'),
         ]);
 
         $path = SymbolPath::forClass('App', 'MyException');
-        $this->seedDeclaration($repository, 'App\\MyException', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $this->seedDeclaration($repository, 'App\\MyException', (new MetricBag())->with('complexity.wmc', 0));
 
-        $this->collector->calculate($graph, $repository);
+        $this->calculate($graph, $repository);
 
-        self::assertSame(1, $repository->get($path)->get('design.dit'));
+        self::assertSame(2, $this->classMetrics($repository, $path)->get('design.dit'));
     }
 
     #[Test]
     public function itComputesDitTwoAcrossFilesForATwoLevelInheritanceChain(): void
     {
         // A extends B extends C (C is root, each in different "file")
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            ...$this->collector->getMetricDefinitions(),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+        ]);
         $graph = $this->graph([
             $this->createExtends('App\\Child', 'App\\Parent'),
             $this->createExtends('App\\Parent', 'App\\GrandParent'),
         ]);
 
         $grandparentPath = SymbolPath::forClass('App', 'GrandParent');
-        $this->seedDeclaration($repository, 'App\\GrandParent', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $this->seedDeclaration($repository, 'App\\GrandParent', (new MetricBag())->with('complexity.wmc', 0));
 
         $parentPath = SymbolPath::forClass('App', 'Parent');
         $this->seedDeclaration($repository, 'App\\Parent', (new MetricBag())->with('design.dit', 1));
 
         $childPath = SymbolPath::forClass('App', 'Child');
-        // The per-file collector would have set dit=1 (can't see grandparent)
         $this->seedDeclaration($repository, 'App\\Child', (new MetricBag())->with('design.dit', 1));
 
-        $this->collector->calculate($graph, $repository);
+        $this->calculate($graph, $repository);
 
-        self::assertSame(0, $repository->get($grandparentPath)->get('design.dit'));
-        self::assertSame(1, $repository->get($parentPath)->get('design.dit'));
-        self::assertSame(2, $repository->get($childPath)->get('design.dit'));
+        self::assertSame(0, $this->classMetrics($repository, $grandparentPath)->get('design.dit'));
+        self::assertSame(1, $this->classMetrics($repository, $parentPath)->get('design.dit'));
+        self::assertSame(2, $this->classMetrics($repository, $childPath)->get('design.dit'));
     }
 
     #[Test]
     public function itComputesDitThreeAcrossFilesForAThreeLevelInheritanceChain(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            ...$this->collector->getMetricDefinitions(),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+        ]);
         $graph = $this->graph([
             $this->createExtends('App\\D', 'App\\C'),
             $this->createExtends('App\\C', 'App\\B'),
@@ -240,7 +241,7 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         $aPath = SymbolPath::forClass('App', 'A');
-        $this->seedDeclaration($repository, 'App\\A', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $this->seedDeclaration($repository, 'App\\A', (new MetricBag())->with('complexity.wmc', 0));
 
         $bPath = SymbolPath::forClass('App', 'B');
         $this->seedDeclaration($repository, 'App\\B', (new MetricBag())->with('design.dit', 1));
@@ -251,19 +252,22 @@ final class DitGlobalCollectorTest extends TestCase
         $dPath = SymbolPath::forClass('App', 'D');
         $this->seedDeclaration($repository, 'App\\D', (new MetricBag())->with('design.dit', 1));
 
-        $this->collector->calculate($graph, $repository);
+        $this->calculate($graph, $repository);
 
-        self::assertSame(0, $repository->get($aPath)->get('design.dit'));
-        self::assertSame(1, $repository->get($bPath)->get('design.dit'));
-        self::assertSame(2, $repository->get($cPath)->get('design.dit'));
-        self::assertSame(3, $repository->get($dPath)->get('design.dit'));
+        self::assertSame(0, $this->classMetrics($repository, $aPath)->get('design.dit'));
+        self::assertSame(1, $this->classMetrics($repository, $bPath)->get('design.dit'));
+        self::assertSame(2, $this->classMetrics($repository, $cPath)->get('design.dit'));
+        self::assertSame(3, $this->classMetrics($repository, $dPath)->get('design.dit'));
     }
 
     #[Test]
     public function itComputesDitForAChainRootedInAStandardPhpClass(): void
     {
         // D extends C extends B extends Exception (standard)
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            ...$this->collector->getMetricDefinitions(),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+        ]);
         $graph = $this->graph([
             $this->createExtends('App\\D', 'App\\C'),
             $this->createExtends('App\\C', 'App\\B'),
@@ -271,67 +275,73 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         $bPath = SymbolPath::forClass('App', 'B');
-        $this->seedDeclaration($repository, 'App\\B', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $this->seedDeclaration($repository, 'App\\B', (new MetricBag())->with('complexity.wmc', 0));
 
         $cPath = SymbolPath::forClass('App', 'C');
-        $this->seedDeclaration($repository, 'App\\C', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $this->seedDeclaration($repository, 'App\\C', (new MetricBag())->with('complexity.wmc', 0));
 
         $dPath = SymbolPath::forClass('App', 'D');
-        $this->seedDeclaration($repository, 'App\\D', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $this->seedDeclaration($repository, 'App\\D', (new MetricBag())->with('complexity.wmc', 0));
 
-        $this->collector->calculate($graph, $repository);
+        $this->calculate($graph, $repository);
 
-        self::assertSame(1, $repository->get($bPath)->get('design.dit'));
-        self::assertSame(2, $repository->get($cPath)->get('design.dit'));
-        self::assertSame(3, $repository->get($dPath)->get('design.dit'));
+        self::assertSame(1, $this->classMetrics($repository, $bPath)->get('design.dit'));
+        self::assertSame(2, $this->classMetrics($repository, $cPath)->get('design.dit'));
+        self::assertSame(3, $this->classMetrics($repository, $dPath)->get('design.dit'));
     }
 
     #[Test]
     public function itPreservesOtherMetricsWhileUpdatingDit(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            ...$this->collector->getMetricDefinitions(),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+        ]);
         $graph = $this->graph([
             $this->createExtends('App\\Child', 'App\\Parent'),
         ]);
 
         $parentPath = SymbolPath::forClass('App', 'Parent');
-        $this->seedDeclaration($repository, 'App\\Parent', (new MetricBag())->with('complexity.wmc', 10)->with('design.dit', self::UNWRITTEN));
+        $this->seedDeclaration($repository, 'App\\Parent', (new MetricBag())->with('complexity.wmc', 10));
 
         $childPath = SymbolPath::forClass('App', 'Child');
         $this->seedDeclaration($repository, 'App\\Child', (new MetricBag())->with('complexity.wmc', 5)->with('design.dit', 1));
 
-        $this->collector->calculate($graph, $repository);
+        $this->calculate($graph, $repository);
 
         // WMC should be preserved, DIT updated
-        self::assertSame(10, $repository->get($parentPath)->get('complexity.wmc'));
-        self::assertSame(0, $repository->get($parentPath)->get('design.dit'));
-        self::assertSame(5, $repository->get($childPath)->get('complexity.wmc'));
-        self::assertSame(1, $repository->get($childPath)->get('design.dit'));
+        self::assertSame(10, $this->classMetrics($repository, $parentPath)->get('complexity.wmc'));
+        self::assertSame(0, $this->classMetrics($repository, $parentPath)->get('design.dit'));
+        self::assertSame(5, $this->classMetrics($repository, $childPath)->get('complexity.wmc'));
+        self::assertSame(1, $this->classMetrics($repository, $childPath)->get('design.dit'));
     }
 
     #[Test]
     public function itComputesDitAcrossANamespaceCrossingInheritanceChain(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            ...$this->collector->getMetricDefinitions(),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+        ]);
         $graph = $this->graph([
             $this->createExtends('App\\Service\\Handler', 'Vendor\\Base\\AbstractHandler'),
             $this->createExtends('Vendor\\Base\\AbstractHandler', 'Vendor\\Core\\Component'),
         ]);
 
         $componentPath = SymbolPath::forClass('Vendor\\Core', 'Component');
-        $this->seedDeclaration($repository, 'Vendor\\Core\\Component', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $this->seedDeclaration($repository, 'Vendor\\Core\\Component', (new MetricBag())->with('complexity.wmc', 0));
 
         $abstractPath = SymbolPath::forClass('Vendor\\Base', 'AbstractHandler');
-        $this->seedDeclaration($repository, 'Vendor\\Base\\AbstractHandler', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $this->seedDeclaration($repository, 'Vendor\\Base\\AbstractHandler', (new MetricBag())->with('complexity.wmc', 0));
 
         $handlerPath = SymbolPath::forClass('App\\Service', 'Handler');
-        $this->seedDeclaration($repository, 'App\\Service\\Handler', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $this->seedDeclaration($repository, 'App\\Service\\Handler', (new MetricBag())->with('complexity.wmc', 0));
 
-        $this->collector->calculate($graph, $repository);
+        $this->calculate($graph, $repository);
 
-        self::assertSame(0, $repository->get($componentPath)->get('design.dit'));
-        self::assertSame(1, $repository->get($abstractPath)->get('design.dit'));
-        self::assertSame(2, $repository->get($handlerPath)->get('design.dit'));
+        self::assertSame(0, $this->classMetrics($repository, $componentPath)->get('design.dit'));
+        self::assertSame(1, $this->classMetrics($repository, $abstractPath)->get('design.dit'));
+        self::assertSame(2, $this->classMetrics($repository, $handlerPath)->get('design.dit'));
     }
 
     /**
@@ -344,26 +354,29 @@ final class DitGlobalCollectorTest extends TestCase
     #[Test]
     public function itIgnoresAnExtendsEdgeFlaggedAsANestedAnonymousClassDeclaration(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            ...$this->collector->getMetricDefinitions(),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+        ]);
         $graph = $this->graph([
             $this->createExtends('An\\L1', 'An\\L0'),
             $this->createExtends('An\\Host', 'An\\L1', describesNestedAnonymousClass: true),
         ]);
 
         $l0Path = SymbolPath::forClass('An', 'L0');
-        $this->seedDeclaration($repository, 'An\\L0', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $this->seedDeclaration($repository, 'An\\L0', (new MetricBag())->with('complexity.wmc', 0));
 
         $l1Path = SymbolPath::forClass('An', 'L1');
-        $this->seedDeclaration($repository, 'An\\L1', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $this->seedDeclaration($repository, 'An\\L1', (new MetricBag())->with('complexity.wmc', 0));
 
         $hostPath = SymbolPath::forClass('An', 'Host');
-        $this->seedDeclaration($repository, 'An\\Host', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $this->seedDeclaration($repository, 'An\\Host', (new MetricBag())->with('complexity.wmc', 0));
 
-        $this->collector->calculate($graph, $repository);
+        $this->calculate($graph, $repository);
 
-        self::assertSame(0, $repository->get($l0Path)->get('design.dit'));
-        self::assertSame(1, $repository->get($l1Path)->get('design.dit'));
-        self::assertSame(0, $repository->get($hostPath)->get('design.dit'), 'A flagged edge must not be read as the enclosing class\'s own ancestry');
+        self::assertSame(0, $this->classMetrics($repository, $l0Path)->get('design.dit'));
+        self::assertSame(1, $this->classMetrics($repository, $l1Path)->get('design.dit'));
+        self::assertSame(0, $this->classMetrics($repository, $hostPath)->get('design.dit'), 'A flagged edge must not be read as the enclosing class\'s own ancestry');
     }
 
     #[Test]
@@ -371,7 +384,7 @@ final class DitGlobalCollectorTest extends TestCase
     {
         $definitions = $this->collector->getMetricDefinitions();
 
-        self::assertCount(1, $definitions);
+        self::assertCount(3, $definitions);
 
         $def = $definitions[0];
         self::assertSame('design.dit', $def->name);
@@ -386,27 +399,26 @@ final class DitGlobalCollectorTest extends TestCase
     }
 
     #[Test]
-    public function itLeavesSymbolsTheFilePassNeverMeasuredAlone(): void
+    public function itKeepsInterfacesOutOfTheDitPopulation(): void
     {
-        // The file pass measures named class declarations only, so its keys are
-        // DIT's population. An interface reaches the repository as a class-level
-        // symbol without one, and must not be given a depth here -- doing so
-        // moves the denominator of every aggregate.
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            ...$this->collector->getMetricDefinitions(),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+        ]);
         $graph = $this->graph([
             $this->createExtends('App\\Impl', 'App\\Contract'),
         ]);
 
         $measured = SymbolPath::forClass('App', 'Impl');
-        $this->seedDeclaration($repository, 'App\\Impl', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $this->seedDeclaration($repository, 'App\\Impl', (new MetricBag())->with('complexity.wmc', 0));
 
         $unmeasured = SymbolPath::forClass('App', 'Contract');
-        $this->seedDeclaration($repository, 'App\\Contract', new MetricBag());
+        $this->seedDeclaration($repository, 'App\\Contract', new MetricBag(), type: ClassType::Interface_);
 
-        $this->collector->calculate($graph, $repository);
+        $this->calculate($graph, $repository);
 
-        self::assertSame(1, $repository->get($measured)->get('design.dit'));
-        self::assertNull($repository->get($unmeasured)->get('design.dit'));
+        self::assertSame(1, $this->classMetrics($repository, $measured)->get('design.dit'));
+        self::assertNull($this->classMetrics($repository, $unmeasured)->get('design.dit'));
     }
 
     /**
@@ -419,20 +431,20 @@ final class DitGlobalCollectorTest extends TestCase
     {
         $collector = new DitGlobalCollector(
             new ExternalAncestry(new FixedParentSource(['Vendor\\Upstream' => 'RuntimeException'])),
-            new RecordingLogger(),
         );
 
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            ...$this->collector->getMetricDefinitions(),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+        ]);
         $graph = $this->graph([$this->createExtends('App\\MyException', 'Vendor\\Upstream')]);
 
         $path = SymbolPath::forClass('App', 'MyException');
-        $this->seedDeclaration($repository, 'App\\MyException', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $this->seedDeclaration($repository, 'App\\MyException', (new MetricBag())->with('complexity.wmc', 0));
 
-        $collector->calculate($graph, $repository);
+        $this->calculate($graph, $repository, $collector);
 
-        // 1 for extending Upstream, plus 1 for its RuntimeException parent,
-        // which is builtin and ends the walk.
-        self::assertSame(2, $repository->get($path)->get('design.dit'));
+        self::assertSame(3, $this->classMetrics($repository, $path)->get('design.dit'));
     }
 
     /**
@@ -447,24 +459,27 @@ final class DitGlobalCollectorTest extends TestCase
         $probe = UnloadableClassProbe::start();
 
         try {
-            $repository = new InMemoryMetricRepository();
+            $repository = new InMemoryMetricRepository([
+                ...$this->collector->getMetricDefinitions(),
+                new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+            ]);
             $graph = $this->graph([
                 $this->createExtends('App\\Child', $probe->childFqcn()),
             ]);
 
             $childPath = SymbolPath::forClass('App', 'Child');
-            $this->seedDeclaration($repository, 'App\\Child', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+            $this->seedDeclaration($repository, 'App\\Child', (new MetricBag())->with('complexity.wmc', 0));
 
             // The parent is measured by this run, so it belongs to the project
             // even though nothing records a parent for it.
             $rootPath = SymbolPath::fromClassFqn($probe->childFqcn());
-            $this->seedDeclaration($repository, $probe->childFqcn(), (new MetricBag())->with('design.dit', self::UNWRITTEN));
+            $this->seedDeclaration($repository, $probe->childFqcn(), (new MetricBag())->with('complexity.wmc', 0));
 
-            $this->collector->calculate($graph, $repository);
+            $this->calculate($graph, $repository);
 
             self::assertSame(0, $probe->queryCount(), 'An in-project parent was looked up through an autoloader');
-            self::assertSame(1, $repository->get($childPath)->get('design.dit'));
-            self::assertSame(0, $repository->get($rootPath)->get('design.dit'));
+            self::assertSame(1, $this->classMetrics($repository, $childPath)->get('design.dit'));
+            self::assertSame(0, $this->classMetrics($repository, $rootPath)->get('design.dit'));
         } finally {
             $probe->stop();
         }
@@ -478,7 +493,10 @@ final class DitGlobalCollectorTest extends TestCase
     #[Test]
     public function itGivesEachDeclarationOfADuplicatedNameItsOwnDepth(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            ...$this->collector->getMetricDefinitions(),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+        ]);
         $fileA = RelativePath::fromString('a.php');
         $fileB = RelativePath::fromString('b.php');
 
@@ -488,27 +506,26 @@ final class DitGlobalCollectorTest extends TestCase
             $this->createExtends('App\\Mid', 'App\\Root2'),
         ]);
 
-        $declarationA = $this->seedDeclaration($repository, 'App\\Dup', (new MetricBag())->with('design.dit', self::UNWRITTEN), $fileA);
-        $declarationB = $this->seedDeclaration($repository, 'App\\Dup', (new MetricBag())->with('design.dit', self::UNWRITTEN), $fileB);
+        $declarationA = $this->seedDeclaration($repository, 'App\\Dup', (new MetricBag())->with('complexity.wmc', 0), $fileA);
+        $declarationB = $this->seedDeclaration($repository, 'App\\Dup', (new MetricBag())->with('complexity.wmc', 0), $fileB);
         // The walk reasons about measured declarations, and in a run every
         // class on the path is one.
-        $this->seedDeclaration($repository, 'App\\Mid', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $this->seedDeclaration($repository, 'App\\Mid', (new MetricBag())->with('complexity.wmc', 0));
 
-        $this->collector->calculate($graph, $repository);
+        $this->calculate($graph, $repository);
 
         self::assertSame(1, $repository->getSubject($declarationA)->get('design.dit'));
         self::assertSame(2, $repository->getSubject($declarationB)->get('design.dit'));
     }
 
-    /**
-     * The logical projection is the one view left for readers that only know
-     * a name -- aggregates, `format:metrics`, a user formula -- so it carries
-     * the max over that name's declarations, not whichever was written last.
-     */
+    /** The two declarations retain their separately measured depths. */
     #[Test]
-    public function itProjectsTheDuplicatedNameToTheMaximumDepthAcrossDeclarations(): void
+    public function itKeepsDuplicatedNameDepthsOnTheirOwnDeclarations(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            ...$this->collector->getMetricDefinitions(),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+        ]);
         $fileA = RelativePath::fromString('a.php');
         $fileB = RelativePath::fromString('b.php');
 
@@ -518,15 +535,16 @@ final class DitGlobalCollectorTest extends TestCase
             $this->createExtends('App\\Mid', 'App\\Root2'),
         ]);
 
-        $this->seedDeclaration($repository, 'App\\Dup', (new MetricBag())->with('design.dit', self::UNWRITTEN), $fileA);
-        $this->seedDeclaration($repository, 'App\\Dup', (new MetricBag())->with('design.dit', self::UNWRITTEN), $fileB);
+        $declarationA = $this->seedDeclaration($repository, 'App\\Dup', (new MetricBag())->with('complexity.wmc', 0), $fileA);
+        $declarationB = $this->seedDeclaration($repository, 'App\\Dup', (new MetricBag())->with('complexity.wmc', 0), $fileB);
         // The walk reasons about measured declarations, and in a run every
         // class on the path is one.
-        $this->seedDeclaration($repository, 'App\\Mid', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $this->seedDeclaration($repository, 'App\\Mid', (new MetricBag())->with('complexity.wmc', 0));
 
-        $this->collector->calculate($graph, $repository);
+        $this->calculate($graph, $repository);
 
-        self::assertSame(2, $repository->get(SymbolPath::fromClassFqn('App\\Dup'))->get('design.dit'));
+        self::assertSame(1, $repository->getSubject($declarationA)->get('design.dit'));
+        self::assertSame(2, $repository->getSubject($declarationB)->get('design.dit'));
     }
 
     /**
@@ -536,7 +554,10 @@ final class DitGlobalCollectorTest extends TestCase
     #[Test]
     public function itScoresAChildOfADuplicatedParentNameAtMaxPlusOne(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            ...$this->collector->getMetricDefinitions(),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+        ]);
         $fileA = RelativePath::fromString('a.php');
         $fileB = RelativePath::fromString('b.php');
 
@@ -549,12 +570,12 @@ final class DitGlobalCollectorTest extends TestCase
 
         // Every declaration on the path is seeded: the walk reasons about the
         // declarations a run measured, and in a run they all are.
-        $this->seedDeclaration($repository, 'App\\Dup', (new MetricBag())->with('design.dit', self::UNWRITTEN), $fileA);
-        $this->seedDeclaration($repository, 'App\\Dup', (new MetricBag())->with('design.dit', self::UNWRITTEN), $fileB);
-        $this->seedDeclaration($repository, 'App\\Mid', (new MetricBag())->with('design.dit', self::UNWRITTEN));
-        $grandChild = $this->seedDeclaration($repository, 'App\\GrandChild', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $declarationA = $this->seedDeclaration($repository, 'App\\Dup', (new MetricBag())->with('complexity.wmc', 0), $fileA);
+        $declarationB = $this->seedDeclaration($repository, 'App\\Dup', (new MetricBag())->with('complexity.wmc', 0), $fileB);
+        $this->seedDeclaration($repository, 'App\\Mid', (new MetricBag())->with('complexity.wmc', 0));
+        $grandChild = $this->seedDeclaration($repository, 'App\\GrandChild', (new MetricBag())->with('complexity.wmc', 0));
 
-        $this->collector->calculate($graph, $repository);
+        $this->calculate($graph, $repository);
 
         self::assertSame(3, $repository->getSubject($grandChild)->get('design.dit'));
     }
@@ -592,7 +613,10 @@ final class DitGlobalCollectorTest extends TestCase
      */
     private function depthsAfterSeeding(array $seedOrder): array
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            ...$this->collector->getMetricDefinitions(),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+        ]);
         $graph = $this->graph([
             $this->createExtends('App\\Order\\D', 'App\\Order\\C'),
             $this->createExtends('App\\Order\\C', 'App\\Order\\B'),
@@ -600,35 +624,27 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         foreach ($seedOrder as $fqn) {
-            $this->seedDeclaration($repository, $fqn, (new MetricBag())->with('design.dit', self::UNWRITTEN));
+            $this->seedDeclaration($repository, $fqn, (new MetricBag())->with('complexity.wmc', 0));
         }
 
-        $this->collector->calculate($graph, $repository);
+        $this->calculate($graph, $repository);
 
         $depths = [];
         foreach ($seedOrder as $fqn) {
-            $depths[$fqn] = $repository->get(SymbolPath::fromClassFqn($fqn))->get('design.dit');
+            $depths[$fqn] = $this->classMetrics($repository, SymbolPath::fromClassFqn($fqn))->get('design.dit');
         }
         ksort($depths);
 
         return $depths;
     }
 
-    /**
-     * A cycle through a duplicated name terminates, and the two declarations
-     * do not both get the fallback.
-     *
-     * Whichever is entered first is cycle-marked while the other resolves, so
-     * one reports 1 -- the "no depth could be established" default -- and the
-     * other reports 1 + that. Which is which follows the order the walk
-     * enters them in, an accepted limitation of cycles that ADR 0073 states
-     * rather than repairs; the test pins the order so the numbers are a fact
-     * about the walk and not about chance.
-     */
     #[Test]
-    public function itTerminatesACycleThroughADuplicatedNameWithoutGivingBothTheFallback(): void
+    public function itOmitsBothDitValuesForACycleThroughADuplicatedName(): void
     {
-        $repository = new InMemoryMetricRepository();
+        $repository = new InMemoryMetricRepository([
+            ...$this->collector->getMetricDefinitions(),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+        ]);
         $fileX = RelativePath::fromString('x.php');
         $fileY = RelativePath::fromString('y.php');
 
@@ -637,33 +653,34 @@ final class DitGlobalCollectorTest extends TestCase
             $this->createExtends('App\\Cyclic', 'App\\Cyclic', file: $fileY),
         ]);
 
-        $declarationX = $this->seedDeclaration($repository, 'App\\Cyclic', (new MetricBag())->with('design.dit', self::UNWRITTEN), $fileX);
-        $declarationY = $this->seedDeclaration($repository, 'App\\Cyclic', (new MetricBag())->with('design.dit', self::UNWRITTEN), $fileY);
+        $declarationX = $this->seedDeclaration($repository, 'App\\Cyclic', (new MetricBag())->with('complexity.wmc', 0), $fileX);
+        $declarationY = $this->seedDeclaration($repository, 'App\\Cyclic', (new MetricBag())->with('complexity.wmc', 0), $fileY);
 
-        $this->collector->calculate($graph, $repository);
+        $this->calculate($graph, $repository);
 
-        self::assertSame(2, $repository->getSubject($declarationX)->get('design.dit'));
-        self::assertSame(1, $repository->getSubject($declarationY)->get('design.dit'));
+        self::assertNull($repository->getSubject($declarationX)->get('design.dit'));
+        self::assertSame(1, $repository->getSubject($declarationX)->get('design.dit-unresolved'));
+        self::assertNull($repository->getSubject($declarationY)->get('design.dit'));
+        self::assertSame(1, $repository->getSubject($declarationY)->get('design.dit-unresolved'));
     }
 
-    /**
-     * The diagnostic is about this run's input, so a run that read every chain
-     * to its end has nothing to say.
-     */
     #[Test]
-    public function itSaysNothingWhenEveryExternalChainReachesARoot(): void
+    public function itPublishesCompleteNonThrowableExternalRoots(): void
     {
         $collector = new DitGlobalCollector(
             new ExternalAncestry(new FixedParentSource(['Vendor\\Base' => null])),
-            $logger = new RecordingLogger(),
         );
 
-        $repository = new InMemoryMetricRepository();
-        $this->seedDeclaration($repository, 'App\\Child', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $repository = new InMemoryMetricRepository([
+            ...$this->collector->getMetricDefinitions(),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+        ]);
+        $this->seedDeclaration($repository, 'App\\Child', (new MetricBag())->with('complexity.wmc', 0));
 
-        $collector->calculate($this->graph([$this->createExtends('App\\Child', 'Vendor\\Base')]), $repository);
+        $this->calculate($this->graph([$this->createExtends('App\\Child', 'Vendor\\Base')]), $repository, $collector);
 
-        self::assertSame([], $logger->records);
+        self::assertSame(0, $this->classMetrics($repository, SymbolPath::fromClassFqn('App\\Child'))->get('design.dit-unresolved'));
+        self::assertSame(0, $this->classMetrics($repository, SymbolPath::fromClassFqn('App\\Child'))->get('design.is-exception'));
     }
 
     /**
@@ -673,40 +690,40 @@ final class DitGlobalCollectorTest extends TestCase
      * no-install case below a statement about chains rather than about config.
      */
     #[Test]
-    public function itSaysNothingWhenNoChainLeavesTheAnalysedPath(): void
+    public function itPublishesCompleteInProjectRootsAndTheirChildren(): void
     {
-        $repository = new InMemoryMetricRepository();
-        $this->seedDeclaration($repository, 'App\\Root', (new MetricBag())->with('design.dit', self::UNWRITTEN));
-        $this->seedDeclaration($repository, 'App\\Child', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $repository = new InMemoryMetricRepository([
+            ...$this->collector->getMetricDefinitions(),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+        ]);
+        $this->seedDeclaration($repository, 'App\\Root', (new MetricBag())->with('complexity.wmc', 0));
+        $this->seedDeclaration($repository, 'App\\Child', (new MetricBag())->with('complexity.wmc', 0));
 
-        $this->collector->calculate(
+        $this->calculate(
             $this->graph([$this->createExtends('App\\Child', 'App\\Root')]),
             $repository,
         );
 
-        self::assertSame([], $this->warnings());
+        self::assertSame(0, $this->classMetrics($repository, SymbolPath::fromClassFqn('App\\Root'))->get('design.dit-unresolved'));
+        self::assertSame(0, $this->classMetrics($repository, SymbolPath::fromClassFqn('App\\Child'))->get('design.dit-unresolved'));
     }
 
     #[Test]
-    public function itReportsOnceAndNamesWhereReadingStopped(): void
+    public function itPublishesUnknownExceptionForAnUnreadExternalTail(): void
     {
         $collector = new DitGlobalCollector(
             new ExternalAncestry(new FixedParentSource([])),
-            $logger = new RecordingLogger(),
         );
 
-        $repository = new InMemoryMetricRepository();
-        $this->seedDeclaration($repository, 'App\\Child', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $repository = new InMemoryMetricRepository([
+            ...$this->collector->getMetricDefinitions(),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+        ]);
+        $this->seedDeclaration($repository, 'App\\Child', (new MetricBag())->with('complexity.wmc', 0));
 
-        $collector->calculate($this->graph([$this->createExtends('App\\Child', 'Vendor\\Gone')]), $repository);
+        $this->calculate($this->graph([$this->createExtends('App\\Child', 'Vendor\\Gone')]), $repository, $collector);
 
-        $warnings = array_values(array_map(
-            static fn(array $record): string => $record['message'],
-            array_filter($logger->records, static fn(array $record): bool => $record['level'] === 'warning'),
-        ));
-
-        self::assertCount(1, $warnings);
-        self::assertStringContainsString('Vendor\\Gone', $warnings[0]);
+        self::assertIncompletePublication($repository);
     }
 
     /**
@@ -715,87 +732,61 @@ final class DitGlobalCollectorTest extends TestCase
      * report one.
      */
     #[Test]
-    public function itCountsChildDeclarationsRatherThanDistinctAncestors(): void
+    public function itPublishesIncompleteEvidenceForEachChildOfAnUnreadParent(): void
     {
         $collector = new DitGlobalCollector(
             new ExternalAncestry(new FixedParentSource([])),
-            $logger = new RecordingLogger(),
         );
 
-        $repository = new InMemoryMetricRepository();
-        $this->seedDeclaration($repository, 'App\\First', (new MetricBag())->with('design.dit', self::UNWRITTEN));
-        $this->seedDeclaration($repository, 'App\\Second', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $repository = new InMemoryMetricRepository([
+            ...$this->collector->getMetricDefinitions(),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+        ]);
+        $this->seedDeclaration($repository, 'App\\First', (new MetricBag())->with('complexity.wmc', 0));
+        $this->seedDeclaration($repository, 'App\\Second', (new MetricBag())->with('complexity.wmc', 0));
 
-        $collector->calculate($this->graph([
+        $this->calculate($this->graph([
             $this->createExtends('App\\First', 'Vendor\\Gone'),
             $this->createExtends('App\\Second', 'Vendor\\Gone'),
-        ]), $repository);
+        ]), $repository, $collector);
 
-        $warnings = array_values(array_map(
-            static fn(array $record): string => $record['message'],
-            array_filter($logger->records, static fn(array $record): bool => $record['level'] === 'warning'),
-        ));
-
-        self::assertCount(1, $warnings);
-        self::assertStringContainsString('2 inheritance chain(s)', $warnings[0]);
+        self::assertIncompletePublication($repository);
     }
 
-    /**
-     * With no install the run cannot name a class -- it never placed one -- so
-     * the sentence has to say what happened instead of listing nothing.
-     */
     #[Test]
-    public function itSeparatesHavingNoInstallFromHavingNoEntryInTheMessage(): void
+    public function itPublishesAnIncompleteFloorWithoutAnInstall(): void
     {
-        $repository = new InMemoryMetricRepository();
-        $this->seedDeclaration($repository, 'App\\Child', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $repository = new InMemoryMetricRepository([
+            ...$this->collector->getMetricDefinitions(),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+        ]);
+        $this->seedDeclaration($repository, 'App\\Child', (new MetricBag())->with('complexity.wmc', 0));
 
-        $this->collector->calculate($this->graph([$this->createExtends('App\\Child', 'Vendor\\Gone')]), $repository);
+        $this->calculate($this->graph([$this->createExtends('App\\Child', 'Vendor\\Gone')]), $repository);
 
-        $warnings = $this->warnings();
-
-        self::assertCount(1, $warnings);
-        self::assertStringContainsString('no composer install', $warnings[0]);
-        self::assertStringNotContainsString('Vendor\\Gone', $warnings[0]);
+        self::assertIncompletePublication($repository);
     }
 
-    /**
-     * A cycle is the outcome a looser wording would lie about: the steps walked
-     * are the length of a loop, so the message must not call the number a lower
-     * bound on a real depth, and must not tell anyone to install anything.
-     */
     #[Test]
-    public function itStaysTrueForACycleAndPrescribesNothing(): void
+    public function itOmitsDitForACyclicExternalTail(): void
     {
         $collector = new DitGlobalCollector(
             new ExternalAncestry(new FixedParentSource([
                 'Vendor\\A' => 'Vendor\\B',
                 'Vendor\\B' => 'Vendor\\A',
             ])),
-            $logger = new RecordingLogger(),
         );
 
-        $repository = new InMemoryMetricRepository();
-        $this->seedDeclaration($repository, 'App\\Child', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $repository = new InMemoryMetricRepository([
+            ...$this->collector->getMetricDefinitions(),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+        ]);
+        $this->seedDeclaration($repository, 'App\\Child', (new MetricBag())->with('complexity.wmc', 0));
 
-        $collector->calculate($this->graph([$this->createExtends('App\\Child', 'Vendor\\A')]), $repository);
+        $this->calculate($this->graph([$this->createExtends('App\\Child', 'Vendor\\A')]), $repository, $collector);
 
-        $warnings = array_values(array_map(
-            static fn(array $record): string => $record['message'],
-            array_filter($logger->records, static fn(array $record): bool => $record['level'] === 'warning'),
-        ));
-
-        self::assertCount(1, $warnings);
-        // The walk books the cycle against the name it revisited, so the
-        // message has to name it: without this the case asserts only that
-        // something was said.
-        self::assertStringContainsString('Vendor\\A', $warnings[0]);
-        // Two wordings this outcome forbids. `floor` is the one the plan
-        // rejected outright; the no-install text is the other branch of the
-        // same sentence, and a message that fell into it here would be wrong
-        // about an install that exists.
-        self::assertStringNotContainsString('floor', $warnings[0]);
-        self::assertStringNotContainsString('no composer install', $warnings[0]);
+        self::assertIncompletePublication($repository);
+        self::assertNull($this->classMetrics($repository, SymbolPath::fromClassFqn('App\\Child'))->get('design.dit'));
     }
 
     /**
@@ -806,7 +797,7 @@ final class DitGlobalCollectorTest extends TestCase
      * at" is what is true.
      */
     #[Test]
-    public function itStaysTrueWhenTheWalkGivesUpOnALongChain(): void
+    public function itPublishesTheKnownFloorAtTheExternalVisitCap(): void
     {
         $links = [];
 
@@ -818,36 +809,179 @@ final class DitGlobalCollectorTest extends TestCase
 
         $collector = new DitGlobalCollector(
             new ExternalAncestry(new FixedParentSource($links)),
-            $logger = new RecordingLogger(),
         );
 
-        $repository = new InMemoryMetricRepository();
-        $this->seedDeclaration($repository, 'App\\Child', (new MetricBag())->with('design.dit', self::UNWRITTEN));
+        $repository = new InMemoryMetricRepository([
+            ...$this->collector->getMetricDefinitions(),
+            new MetricDefinition('complexity.wmc', SymbolLevel::Class_),
+        ]);
+        $this->seedDeclaration($repository, 'App\\Child', (new MetricBag())->with('complexity.wmc', 0));
 
-        $collector->calculate($this->graph([$this->createExtends('App\\Child', 'Vendor\\C0')]), $repository);
+        $this->calculate($this->graph([$this->createExtends('App\\Child', 'Vendor\\C0')]), $repository, $collector);
 
-        $warnings = array_values(array_map(
-            static fn(array $record): string => $record['message'],
-            array_filter($logger->records, static fn(array $record): bool => $record['level'] === 'warning'),
-        ));
+        self::assertIncompletePublication($repository);
+        self::assertSame(65, $this->classMetrics($repository, SymbolPath::fromClassFqn('App\\Child'))->get('design.dit'));
+    }
 
-        self::assertCount(1, $warnings);
-        self::assertStringContainsString('the walk stopped at:', $warnings[0]);
-        self::assertStringNotContainsString('no composer install', $warnings[0]);
-        // Every link here is placed and readable, so a message blaming reading
-        // would be describing something that did not happen.
-        self::assertStringNotContainsString('could not be read', $warnings[0]);
+    #[Test]
+    public function itDeclaresTheIncompleteAndExceptionSumsAtBothAggregateLevels(): void
+    {
+        $definitions = $this->collector->getMetricDefinitions();
+        foreach ([$definitions[1], $definitions[2]] as $definition) {
+            foreach ([SymbolLevel::Namespace_, SymbolLevel::Project] as $level) {
+                self::assertSame([AggregationStrategy::Sum], $definition->getStrategiesForLevel($level));
+            }
+        }
+    }
+
+    #[Test]
+    public function itPublishesTheFullPositiveRosterWithoutALocalDitSeed(): void
+    {
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
+        $facts = [];
+        foreach ([ClassType::Class_, ClassType::Interface_, ClassType::Trait_, ClassType::Enum_] as $i => $type) {
+            $declaration = $this->declarationFor('App\\T' . $i);
+            $facts[] = ClassLikeDeclaration::of($declaration, $type, false, false);
+            $repository->addSubject(MetricSubject::declaration($declaration), new MetricBag(), $declaration->file, 1);
+        }
+        $graph = AdjacencyGraphBuilder::builder()->build([], $facts)->graph;
+        $this->collector->calculate($graph, $repository);
+        foreach ($facts as $i => $fact) {
+            $bag = $repository->getSubject(MetricSubject::declaration($fact->declaration));
+            self::assertSame($i === 0 ? 0 : null, $bag->get('design.dit'));
+            self::assertSame($i === 0 ? 0 : null, $bag->get('design.dit-unresolved'));
+            self::assertSame(0, $bag->get('design.is-exception'));
+        }
+    }
+
+    #[Test]
+    public function itPublishesLoopOmissionAndUnknownClassifierWithoutFallbackScalars(): void
+    {
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
+        $loop = $this->seedDeclaration($repository, 'App\\Loop', new MetricBag());
+        $floor = $this->seedDeclaration($repository, 'App\\Floor', new MetricBag());
+        $this->calculate($this->graph([
+            $this->createExtends('App\\Loop', 'app\\loop'),
+            $this->createExtends('App\\Floor', 'Vendor\\Unread'),
+        ]), $repository);
+        self::assertNull($repository->getSubject($loop)->get('design.dit'));
+        self::assertSame(1, $repository->getSubject($floor)->get('design.dit'));
+        foreach ([$loop, $floor] as $subject) {
+            self::assertSame(1, $repository->getSubject($subject)->get('design.dit-unresolved'));
+            self::assertFalse($repository->getSubject($subject)->has('design.is-exception'));
+        }
+    }
+
+    #[Test]
+    public function itRefusesAGraphClassWhoseExactRepositoryRecordIsMissing(): void
+    {
+        $fact = ClassLikeDeclaration::of($this->declarationFor('App\\Missing'), ClassType::Class_, false, false);
+        $graph = AdjacencyGraphBuilder::builder()->build([], [$fact])->graph;
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('requires an exact repository subject');
+        $this->collector->calculate($graph, new InMemoryMetricRepository($this->collector->getMetricDefinitions()));
+    }
+
+    #[Test]
+    public function itPublishesRejoinedAcyclicDepthAndOmitsAnAmbiguousClassifier(): void
+    {
+        foreach ([false, true] as $reverse) {
+            [$repository, $subjects] = $this->bridgePublication('RuntimeException', $reverse);
+            $bag = $repository->getSubject($subjects[2]);
+            self::assertSame(4, $bag->get('design.dit'));
+            self::assertSame(0, $bag->get('design.dit-unresolved'));
+            self::assertFalse($bag->has('design.is-exception'));
+            self::assertSame(0, $repository->getSubject($subjects[0])->get('design.dit'));
+            self::assertSame(2, $repository->getSubject($subjects[1])->get('design.dit'));
+            self::assertSame(0, $repository->getSubject($subjects[0])->get('design.is-exception'));
+            self::assertSame(1, $repository->getSubject($subjects[1])->get('design.is-exception'));
+            self::assertNotSame($subjects[0]->toCanonical(), $subjects[1]->toCanonical());
+        }
+    }
+
+    #[Test]
+    public function itOmitsNumericDepthForACycleReachedThroughExternalSource(): void
+    {
+        foreach ([false, true] as $reverse) {
+            [$repository, $subjects] = $this->bridgePublication('App\C', $reverse);
+            foreach ([2, 3] as $i) {
+                $bag = $repository->getSubject($subjects[$i]);
+                self::assertFalse($bag->has('design.dit'));
+                self::assertSame(1, $bag->get('design.dit-unresolved'));
+                self::assertFalse($bag->has('design.is-exception'));
+            }
+            self::assertSame(0, $repository->getSubject($subjects[0])->get('design.dit'));
+            self::assertSame(0, $repository->getSubject($subjects[0])->get('design.is-exception'));
+        }
+    }
+
+    /** @return array{InMemoryMetricRepository, list<MetricSubject>} */
+    private function bridgePublication(string $alternativeParent, bool $reverse): array
+    {
+        $this->facts = [];
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
+        $rows = [['App\A', null], ['App\A', $alternativeParent], ['App\C', 'Vendor\B'], ['App\Below', 'App\C']];
+        $subjects = [];
+        $dependencies = [];
+        foreach ($reverse ? [3, 2, 1, 0] : [0, 1, 2, 3] as $i) {
+            [$name, $parent] = $rows[$i];
+            $subjects[$i] = $this->seedDeclaration($repository, $name, new MetricBag(), RelativePath::fromString('bridge.php'), $i);
+            if ($parent !== null) {
+                $dependencies[] = $this->createExtends($name, $parent, file: RelativePath::fromString('bridge.php'), ordinal: $i);
+            }
+        }
+        $collector = new DitGlobalCollector(new ExternalAncestry(new FixedParentSource(['Vendor\B' => 'App\A', 'App\A' => null])));
+        $this->calculate($this->graph($dependencies), $repository, $collector);
+        ksort($subjects);
+
+        return [$repository, array_values($subjects)];
+    }
+
+    private static function assertIncompletePublication(InMemoryMetricRepository $repository): void
+    {
+        $population = iterator_to_array($repository->allClassDeclarations());
+        self::assertNotEmpty($population);
+        foreach ($population as $info) {
+            self::assertNotNull($info->subject);
+            $metrics = $repository->getSubject($info->subject);
+            self::assertSame(1, $metrics->get('design.dit-unresolved'));
+            self::assertFalse($metrics->has('design.is-exception'));
+        }
+    }
+
+    private function calculate(DependencyGraphInterface $graph, InMemoryMetricRepository $repository, ?DitGlobalCollector $collector = null): void
+    {
+        $dependencies = $graph->getDeclarationDependencies();
+        ($collector ?? $this->collector)->calculate(AdjacencyGraphBuilder::builder()->build($dependencies, array_values($this->facts))->graph, $repository);
     }
 
     /** @param list<Dependency> $dependencies */
     private function graph(array $dependencies): DependencyGraphInterface
     {
         $universe = array_map(
-            static fn(Dependency $dependency): LogicalClassPath => new LogicalClassPath($dependency->sourceLogical()),
+            static fn(Dependency $dependency): ClassLikeDeclaration => ClassLikeDeclaration::of(
+                $dependency->source,
+                ClassType::Class_,
+                false,
+                false,
+            ),
             $dependencies,
         );
 
-        return AdjacencyGraphBuilder::builder()->build($dependencies, $universe);
+        return AdjacencyGraphBuilder::builder()->build($dependencies, $universe)->graph;
+    }
+    private function classMetrics(InMemoryMetricRepository $repository, SymbolPath $logical): MetricBag
+    {
+        $subjects = [];
+        foreach ($repository->allClassDeclarations() as $info) {
+            if ($info->symbolPath->toCanonical() === $logical->toCanonical()) {
+                $subjects[] = $info->subject;
+            }
+        }
+        self::assertCount(1, $subjects, 'Class fixture must identify exactly one declaration');
+        self::assertNotNull($subjects[0]);
+
+        return $repository->getSubject($subjects[0]);
     }
 }
 

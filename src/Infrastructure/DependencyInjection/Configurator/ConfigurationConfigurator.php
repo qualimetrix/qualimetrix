@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Symfony\Component\Config\FileLocator;
+use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
@@ -17,14 +17,15 @@ use Symfony\Component\DependencyInjection\Reference;
  */
 final class ConfigurationConfigurator implements ContainerConfiguratorInterface
 {
+    /** The tag an owner's configuration section carries once registered autoconfigured. */
+    public const string SECTION_TAG = 'qmx.configuration.document_section';
+
     private const string PRESET_RESOLVER = 'qmx.configuration.preset_resolver';
     private const string CONFIGURATION_PIPELINE = 'qmx.configuration.pipeline';
     private const string CONFIGURATION_PIPELINE_CLASS = 'Qualimetrix\\Analysis\\Configuration\\Pipeline\\ConfigurationPipeline';
     private const string PRESET_RESOLVER_CLASS = 'Qualimetrix\\Analysis\\Configuration\\Preset\\PresetResolver';
     private const string YAML_CONFIG_LOADER = 'qmx.configuration.yaml_config_loader';
     private const string YAML_CONFIG_LOADER_CLASS = 'Qualimetrix\\Analysis\\Configuration\\Loader\\YamlConfigLoader';
-    private const string COMPOSER_AUTOLOAD_READER = 'qmx.configuration.composer_autoload_reader';
-    private const string COMPOSER_AUTOLOAD_READER_CLASS = 'Qualimetrix\\Analysis\\Configuration\\Discovery\\ComposerReader';
 
     public function __construct(
         private readonly string $srcDir,
@@ -44,11 +45,6 @@ final class ConfigurationConfigurator implements ContainerConfiguratorInterface
     private function registerConfigurationPipeline(ContainerBuilder $container): void
     {
         $loader = new PhpFileLoader($container, new FileLocator($this->srcDir));
-
-        // Register ComposerReader (required by ComposerDiscoveryStage)
-        $container->register(self::COMPOSER_AUTOLOAD_READER, self::COMPOSER_AUTOLOAD_READER_CLASS)
-            ->setAutowired(true);
-        $container->setAlias(ComposerAutoloadPathReaderInterface::class, self::COMPOSER_AUTOLOAD_READER);
 
         // Register PresetResolver (required by PresetStage)
         $container->register(self::PRESET_RESOLVER, self::PRESET_RESOLVER_CLASS)
@@ -79,6 +75,7 @@ final class ConfigurationConfigurator implements ContainerConfiguratorInterface
         // ConfigurationPipeline exposes an ordered document. Capability-owned
         // parsing and warning delivery happen later, after runtime logging.
         $container->register(self::CONFIGURATION_PIPELINE, self::CONFIGURATION_PIPELINE_CLASS)
+            ->setArgument('$sections', new TaggedIteratorArgument(self::SECTION_TAG))
             ->setAutowired(true)
             ->setPublic(true);
         $container->setAlias(ConfigurationPipelineInterface::class, self::CONFIGURATION_PIPELINE)

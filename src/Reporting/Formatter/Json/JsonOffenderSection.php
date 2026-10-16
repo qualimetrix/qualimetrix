@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter\Json;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\OffenderNamespaceSelection;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
 use Qualimetrix\Reporting\Formatter\FormatOptionValue;
@@ -31,16 +32,15 @@ final class JsonOffenderSection
         FormatterContext $context,
         int $topN,
     ): array {
-        $ranked = $this->rankOffenders($offenders, $context);
+        $selected = $this->filter->filterWorstOffenders($offenders, $context);
 
-        return $this->formatWorstOffenders($ranked, $context, $topN, showClassCount: true);
+        return $this->formatWorstOffenders($selected, $context, $topN, showClassCount: true);
     }
 
     /**
      * Resolves and formats worst class offenders for JSON output.
      *
-     * For namespace drill-down, builds worst classes from metrics.
-     * Otherwise, formats pre-computed worst offenders.
+     * Selects from the complete report population before ranking and truncation.
      *
      * @return list<array<string, mixed>>
      */
@@ -49,44 +49,14 @@ final class JsonOffenderSection
         FormatterContext $context,
         int $topN,
     ): array {
-        if ($context->namespace !== null && $report->metrics !== null) {
-            $nsClasses = $this->namespaceDrillDown->buildWorstClasses(
-                $report->metrics,
-                $context->namespace,
-                $report->findings,
-                includeNotableMetrics: true,
-            );
-            $ranked = $this->rankOffenders($nsClasses, $context);
-            $sliced = \array_slice($ranked, 0, $topN);
+        $selected = $context->namespace !== null
+            ? $this->namespaceDrillDown->buildWorstClasses(
+                $report->worstClasses,
+                new OffenderNamespaceSelection([$context->namespace]),
+            )
+            : $this->filter->filterWorstOffenders($report->worstClasses, $context);
 
-            $result = [];
-            foreach ($sliced as $offender) {
-                $result[] = [
-                    'symbolPath' => $offender->symbolPath->toString(),
-                    'healthOverall' => $this->sanitizer->sanitizeFloat($offender->healthOverall),
-                    'label' => $offender->label,
-                    'reason' => $offender->reason,
-                    'violationCount' => $offender->violationCount,
-                    'violationDensity' => $offender->violationDensity,
-                    'file' => $offender->file !== null
-                        ? $context->relativizePath($offender->file)
-                        : null,
-                    'metrics' => $this->sanitizer->sanitizeFloatArray($offender->metrics),
-                    'healthScores' => $this->sanitizer->sanitizeFloatArray($offender->healthScores),
-                ];
-            }
-
-            return $result;
-        }
-
-        $ranked = $this->rankOffenders($report->worstClasses, $context);
-
-        return $this->formatWorstOffenders(
-            $ranked,
-            $context,
-            $topN,
-            showClassCount: false,
-        );
+        return $this->formatWorstOffenders($selected, $context, $topN, showClassCount: false);
     }
 
     /**
@@ -100,8 +70,8 @@ final class JsonOffenderSection
         int $topN,
         bool $showClassCount,
     ): array {
-        $filtered = $this->filter->filterWorstOffenders($offenders, $context);
-        $sliced = \array_slice($filtered, 0, $topN);
+        $ranked = $this->rankOffenders($offenders, $context);
+        $sliced = \array_slice($ranked, 0, $topN);
 
         $result = [];
         foreach ($sliced as $offender) {
@@ -115,7 +85,7 @@ final class JsonOffenderSection
             ];
 
             if ($showClassCount) {
-                $entry['size.class-count'] = $offender->classCount;
+                $entry['size.class-count.sum'] = $offender->classCount;
             } else {
                 $entry['file'] = $offender->file !== null
                     ? $context->relativizePath($offender->file)
@@ -132,7 +102,7 @@ final class JsonOffenderSection
     }
 
     /**
-     * Re-ranks offenders when rank-by=density is requested.
+     * Ranks selected offenders by the requested score or density.
      *
      * @param list<WorstOffender> $offenders
      *
@@ -140,6 +110,6 @@ final class JsonOffenderSection
      */
     private function rankOffenders(array $offenders, FormatterContext $context): array
     {
-        return WorstOffender::rankByDensity($offenders, FormatOptionValue::rankBy($context->getOption('rank-by', 'count')));
+        return WorstOffender::rank($offenders, FormatOptionValue::rankBy($context->getOption('rank-by', 'score')));
     }
 }

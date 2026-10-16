@@ -32,6 +32,7 @@ final class DependencyHandlerTable
             new CatchInstanceofHandler(),
             new PropertyHandler(),
             new FunctionLikeHandler(),
+            new ClassMemberDeclarationHandler(),
         ];
 
         $table = [];

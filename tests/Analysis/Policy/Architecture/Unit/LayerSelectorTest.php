@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Allow;
+namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 
@@ -18,7 +18,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\SelectorKind;
 /**
  * Direct coverage of the D4 selector grammar — kind detection from content,
  * source/target match semantics, and parser error surface. Configuration-layer
- * tests in {@see \Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\AllowValidatorTest}
+ * tests in {@see \Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowValidatorTest}
  * verify the rewrap-as-{@see \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal} behaviour.
  */
 #[CoversClass(LayerSelector::class)]

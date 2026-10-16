@@ -1,0 +1,51 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Analysis\Evidence\Security\DirectSinks;
+
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOptionValues;
+
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+
+/**
+ * Shared options for security pattern rules (SQL injection, XSS, command injection).
+ *
+ * Note: getSeverity() is required by RuleOptionsInterface but not used by
+ * AbstractSecurityPatternRule, which determines severity via its own abstract method.
+ */
+final readonly class SecurityPatternOptions implements RuleOptionsInterface
+{
+    public function __construct(
+        public bool $enabled = true,
+    ) {}
+
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
+    {
+        return new self(
+            enabled: $config->boolean('enabled', true),
+        );
+    }
+
+    public function isEnabled(): bool
+    {
+        return $this->enabled;
+    }
+
+    /**
+     * Required by RuleOptionsInterface. Not used by AbstractSecurityPatternRule
+     * which determines severity via its own abstract getSeverity() method.
+     */
+    public function getSeverity(int|float $value): ?Severity
+    {
+        return $value > 0 ? Severity::Error : null;
+    }
+
+    public static function acceptedOptionKeys(): RuleOptionKeySet
+    {
+        return RuleOptionKeySet::of([
+        ]);
+    }
+}

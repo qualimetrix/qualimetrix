@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevel\ChannelLevelAddressing;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevel\ChannelLevelSelector;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
@@ -30,11 +30,21 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
  * decides *what to report and on which channel*. The rule keeps every
  * `new Finding(...)` so the emission guard can still read the channel of
  * each one off a `self::` constant.
- *
- * @qmx-threshold coupling.instability warning=0.85 error=0.85 -- Ca=2, Ce=10: this class answers for the whole directive vocabulary, so it depends outward on every part of it and is depended on by the two halves that ask. The measured 0.83 moved by one dependency when the ban arrived and stays structural; the second dependent is what made an always-structural value reportable at all, since the class rule needs min_afferent=2. Same shape as VisitorMethodContext's composition root.
  */
 final readonly class DirectiveAddressability
 {
+    public function addressedProducerOf(string $rulePattern): ?string
+    {
+        if ($this->identity->hasRule($rulePattern)) {
+            return $rulePattern;
+        }
+        if ($this->identity->hasChannel($rulePattern)) {
+            return $this->identity->producerOf($rulePattern);
+        }
+
+        return null;
+    }
+
     private DirectiveNameHints $hints;
 
     /**

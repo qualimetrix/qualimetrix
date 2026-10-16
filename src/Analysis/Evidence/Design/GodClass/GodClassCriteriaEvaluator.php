@@ -15,7 +15,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
  * small, independently testable predicate instead of four inline branches
  * multiplying the enclosing method's NPath complexity. This class performs
  * no AST traversal — it only reads metrics already computed by collectors,
- * same as the rule it serves (see CLAUDE.md §2, §3).
+ * same as the rule it serves (see CLAUDE.md, sections 2 and 3).
  *
  * A criterion is omitted from the result list entirely when its backing
  * metric is missing (not merely unmatched) — the caller uses the resulting

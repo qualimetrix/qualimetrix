@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Reporting\Integration;
 
+use DOMDocument;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -51,6 +52,70 @@ final class OutOfScopePublicationTest extends TestCase
         }
     }
 
+    /** @return iterable<string, array{string, string, string}> */
+    public static function filelessFormats(): iterable
+    {
+        foreach (['text', 'checkstyle', 'gitlab', 'github', 'sarif'] as $format) {
+            foreach (['Shop' => 'Shop', '' => '(global)'] as $namespace => $label) {
+                yield $format . '-' . $label => [$format, $namespace, $label];
+            }
+        }
+    }
+
+    #[Test]
+    #[DataProvider('filelessFormats')]
+    public function itPublishesTheNamespacePlaceOnlyInFormatsWithAFilelessLocation(string $format, string $namespace, string $label): void
+    {
+        $symbol = SymbolPath::forNamespace($namespace);
+        $finding = new Finding(Location::none(), MetricSubject::aggregate($symbol), $symbol, 'health.cohesion', 'health.cohesion', 'Low cohesion.', Severity::Warning);
+        $output = $this->format($format, [$finding], null);
+
+        match ($format) {
+            'text' => self::assertStringStartsWith($label . ':', $output),
+            'checkstyle' => self::assertEmptyCheckstyle($output),
+            'gitlab' => self::assertSame([], self::decode($output)),
+            'github' => self::assertStringContainsString('::' . $label . ': Low cohesion.', $output),
+            'sarif' => self::assertSame($label . ': Low cohesion.', self::decode($output)['runs'][0]['results'][0]['message']['text']),
+            default => self::fail('Unknown format'),
+        };
+    }
+
+    #[Test]
+    public function itPublishesTwoDistinctOutOfScopeOccurrencesInEveryStructuredTrace(): void
+    {
+        $symbol = SymbolPath::forMethod('Other', 'Secrets', 'authenticate');
+        $file = RelativePath::fromString('src/Secrets.php');
+        $subject = MetricSubject::declaration(DeclarationPath::of($symbol, $file, DeclarationOrdinal::fromRank(0)));
+        $findings = [];
+        foreach (['password', 'token'] as $parameter) {
+            $findings[] = new Finding(new Location($file, 3), $subject, $symbol, 'security.sensitive-parameter', 'security.sensitive-parameter', 'Sensitive parameter', Severity::Warning, occurrenceKey: \Qualimetrix\Analysis\Finding\Contract\OccurrenceKey::semantic('parameter', ['name' => $parameter]));
+        }
+        $outOfScope = OutOfScopeFindings::between($findings, []);
+        $json = self::decode($this->format('json', [], $outOfScope))['outOfScope'];
+        $metrics = self::decode($this->format('metrics', [], $outOfScope))['outOfScope'];
+        $notification = self::decode($this->format('sarif', [], $outOfScope))['runs'][0]['invocations'][0]['toolExecutionNotifications'][0];
+
+        self::assertArrayHasKey('identities', $json);
+        self::assertCount(2, $json['identities']);
+        self::assertNotSame($json['identities'][0]['occurrence'], $json['identities'][1]['occurrence']);
+        self::assertSame($json, $metrics);
+        self::assertSame($json['identities'], $notification['properties']['identities']);
+    }
+
+    #[Test]
+    public function itSubtractsSelectedIdentityInstancesWithoutDroppingRepeatedOutsideFindings(): void
+    {
+        $finding = self::finding();
+        $run = [$finding, $finding, $finding];
+        $selected = [clone $finding];
+        $outside = OutOfScopeFindings::between($run, $selected);
+        self::assertSame(2, $outside->errorCount);
+        self::assertCount(2, $outside->identities);
+        self::assertSame($outside->identities[0]->published(), $outside->identities[1]->published());
+        self::assertSame(['channel', 'subject', 'occurrence', 'edge', 'severity'], array_keys($outside->identities[0]->published()));
+        self::assertSame(0, OutOfScopeFindings::between($run, [clone $finding, clone $finding, clone $finding])->total());
+    }
+
     /**
      * The sharpest case: the selection is clean, the run is not.
      */
@@ -62,15 +127,15 @@ final class OutOfScopePublicationTest extends TestCase
 
         match ($format) {
             'json' => self::assertSame(
-                ['violationCount' => 10, 'errorCount' => 7, 'warningCount' => 2, 'infoCount' => 1],
+                ['violationCount' => 10, 'errorCount' => 7, 'warningCount' => 2, 'infoCount' => 1, 'identities' => []],
                 self::decode($output)['outOfScope'],
             ),
             'metrics' => self::assertSame(
-                ['violations' => 10, 'errors' => 7, 'warnings' => 2, 'info' => 1],
+                ['violationCount' => 10, 'errorCount' => 7, 'warningCount' => 2, 'infoCount' => 1, 'identities' => []],
                 self::decode($output)['outOfScope'],
             ),
             'sarif' => self::assertSame(
-                [['level' => 'note', 'message' => ['text' => self::sentence()], 'descriptor' => ['id' => 'QMX-DRILL-DOWN-OUT-OF-SCOPE']]],
+                [['level' => 'note', 'message' => ['text' => self::sentence()], 'descriptor' => ['id' => 'QMX-DRILL-DOWN-OUT-OF-SCOPE'], 'properties' => ['identities' => []]]],
                 self::decode($output)['runs'][0]['invocations'][0]['toolExecutionNotifications'],
             ),
             'github' => self::assertSame('::notice title=drill-down.out-of-scope::' . self::sentence() . "\n", $output),
@@ -98,7 +163,7 @@ final class OutOfScopePublicationTest extends TestCase
             ),
             'metrics' => self::assertSame(
                 [1, 3],
-                [self::decode($output)['summary']['errors'], self::decode($output)['outOfScope']['errors']],
+                [self::decode($output)['summary']['errors'], self::decode($output)['outOfScope']['errorCount']],
             ),
             default => self::assertSame(
                 [1, 1],
@@ -129,8 +194,8 @@ final class OutOfScopePublicationTest extends TestCase
         $json = self::decode($this->format('json', [self::finding()], new OutOfScopeFindings(0, 0, 0)));
         $metrics = self::decode($this->format('metrics', [self::finding()], new OutOfScopeFindings(0, 0, 0)));
 
-        self::assertSame(['violationCount' => 0, 'errorCount' => 0, 'warningCount' => 0, 'infoCount' => 0], $json['outOfScope']);
-        self::assertSame(['violations' => 0, 'errors' => 0, 'warnings' => 0, 'info' => 0], $metrics['outOfScope']);
+        self::assertSame(['violationCount' => 0, 'errorCount' => 0, 'warningCount' => 0, 'infoCount' => 0, 'identities' => []], $json['outOfScope']);
+        self::assertSame(['violationCount' => 0, 'errorCount' => 0, 'warningCount' => 0, 'infoCount' => 0, 'identities' => []], $metrics['outOfScope']);
     }
 
     /**
@@ -212,7 +277,7 @@ final class OutOfScopePublicationTest extends TestCase
             useColor: false,
             basePath: '/project',
             namespace: $outOfScope === null ? null : NamespacePatternStub::subtree('App'),
-        ));
+        ))->body;
     }
 
     private static function finding(): Finding
@@ -229,6 +294,14 @@ final class OutOfScopePublicationTest extends TestCase
             message: 'Class Kept is too complex',
             severity: Severity::Error,
         );
+    }
+
+    private static function assertEmptyCheckstyle(string $output): void
+    {
+        $xml = new DOMDocument();
+        self::assertTrue($xml->loadXML($output));
+        self::assertSame(0, $xml->getElementsByTagName('file')->length);
+        self::assertSame(0, $xml->getElementsByTagName('error')->length);
     }
 
     /** @return array<mixed> */

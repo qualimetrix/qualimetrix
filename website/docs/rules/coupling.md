@@ -271,6 +271,10 @@ themselves classify.
 
 ### When it stays silent
 
+- **Declaration evidence is incomplete.** Missing PHP, authored PHP removal,
+  generated exclusions or an uncertain universe withhold namespace-absence
+  claims; a `covered` report state alone does not authorize them.
+
 - **No `framework-namespaces` configured.** Nothing was claimed, so nothing
   failed.
 - **The selector matched.** Including a selector that only matches your own
@@ -295,6 +299,104 @@ It is an ordinary rule finding rather than a configuration error: it answers to
 `@qmx-ignore coupling.unmatched-framework-namespace` and the baseline. A shared
 `qmx.yaml` that legitimately names a framework one repository does not use is
 the case that keeps it out of the refusal path.
+
+---
+
+## RFC -- Response for a Class
+
+**Metrics:** `coupling.rfc`, `coupling.rfc-own`, `coupling.rfc-external`
+
+RFC measures the size of a class's response set, using Chidamber and Kemerer's
+union of its methods and the targets directly invoked by those methods:
+
+```text
+RFC = |M ∪ R₁ ∪ R₂ ∪ ...|
+```
+
+`M` contains every declared method, including abstract methods, plus the
+methods effectively imported from traits. A trait alias adds its exposed name;
+a visibility-only adaptation does not add another method. Class methods
+override trait methods, and trait conflicts follow `insteadof`. This applies to
+named classes, traits, interfaces and enums. Methods inherited from a parent
+do not enter `M`; a direct call to an inherited or parent method enters the
+response set. Calls made inside a method's closure are included. Nested
+anonymous-class methods and expressions outside methods are excluded.
+Unread traits contribute no guessed methods to `M`; unresolved invoked targets
+use the fallback described below.
+
+- `coupling.rfc-own` is the size of `M`.
+- `coupling.rfc-external` counts distinct directly invoked responses outside
+  `M`, including directly called inherited methods. “External” here means
+  outside the measured declaration's effective method set, not outside the
+  analysed project.
+- `coupling.rfc` is their sum. Repeated calls and calls to an already owned
+  method do not increase it.
+
+A statically known class response uses the resolved class name and method
+name, compared without regard to letter case. Aliases, fully qualified names
+and namespace-relative spellings of the same target count once. An imported
+trait alias refers to its original method body when deciding whether a called
+response is already owned. Responses in effective imported trait bodies use
+the consuming class's `this`/`self`/`static`/`parent` context.
+A named target outside the collected class roster retains its resolved class
+and method identity. A known receiver whose readable hierarchy has no
+matching method retains that receiver and method identity. An inherited target reached through unread ancestry
+cannot identify its declaring body and uses the method-name fallback.
+
+### Which calls contribute
+
+| Form                                                                                    | Response identity                                                                     |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Own method via `$this`, `self` or `static`                                              | Already in `M`                                                                        |
+| Inherited or `parent` method                                                            | Resolved declaring class and method, where readable                                   |
+| Imported trait method or alias                                                          | Effective exposed method in `M`; invoked body resolved to its source                  |
+| Typed non-variadic parameter, property or promoted-property receiver                    | Resolved class and method, when the declared type identifies one class                |
+| Assignment of a known receiver to a local variable; direct positive `instanceof` branch | The retained class and method, within that supported local scope                      |
+| Named static call; `new ClassName()`                                                    | Resolved class and method; construction uses `__construct`                            |
+| Nullsafe call                                                                           | The same target as the ordinary method call                                           |
+| Chained return, array element, variadic parameter or untyped receiver                   | Method-name fallback, shared by repeated calls to that name                           |
+| Variable-class static call (`$class::method()`)                                         | Resolved class and method for a known object receiver; otherwise method-name fallback |
+| Global function                                                                         | A separate function response, independent of method responses                         |
+| First-class callable or dynamic method name                                             | Excluded                                                                              |
+
+The fallback also applies when ancestry or a trait is unreadable, or method
+lookup is ambiguous. Declared types provide static evidence; RFC does not
+follow runtime dispatch, infer return types or perform general flow or PHPDoc
+type analysis. Distinct unknown receivers calling the same method name can
+therefore share one response. These are metric values, with no separate RFC
+rule or configurable finding threshold.
+
+!!! info "Deviation from original spec"
+    - Global functions contribute responses, and PHP 8.4 property hooks contribute
+      to `M`; the original class metric has no corresponding PHP constructs. Hook
+      property names remain case-sensitive. Imported hooks with conflicting
+      property sources are omitted; PHP property compatibility is not validated.
+    - Trait methods and adaptations use PHP composition rules, including nested
+      traits, aliases, visibility changes and `insteadof`.
+    - First-class callables are not invocations; dynamic method names are not
+      resolved and do not contribute a response.
+    - An unresolved receiver, unread trait or ancestor outside the analysed paths
+      falls back to the method name. The result does not claim complete runtime
+      dispatch resolution.
+
+<!-- llms:skip-begin -->
+### Example
+
+```php
+class InvoiceService
+{
+    public function issue(Gateway $gateway): void
+    {
+        $gateway->send();
+        $gateway->send();
+    }
+}
+// rfc-own: 1 (issue); rfc-external: 1 (Gateway::send); rfc: 2
+```
+
+A larger response set means more behaviour to understand and test. Split
+responsibilities when one class reaches too many unrelated operations.
+<!-- llms:skip-end -->
 
 ---
 
@@ -467,7 +569,7 @@ rules:
 
 **Rule ID:** `coupling.distance`
 
-**Judged metric:** `coupling.distance`
+**Judged metric:** `coupling.distance-own`
 
 <!-- llms:skip-begin -->
 ### What it measures
@@ -520,8 +622,8 @@ There are two bad zones:
     `BackedEnum` interfaces that every enum satisfies implicitly do not. The shape
     of the formula is unchanged -- this is a scope adaptation for PHP, not a
     different metric. A namespace whose only declarations are bare enums has an
-    empty denominator and keeps the existing no-type result `A = 0.0`; such
-    namespaces are already skipped by `minClassCount`.
+    empty denominator and publishes no abstractness or distance. An absent
+    value is not a measured concrete `A = 0.0`.
 
 <!-- llms:skip-end -->
 
@@ -530,23 +632,28 @@ There are two bad zones:
 A namespace that both declares classes of its own and contains sub-namespaces
 has two coupling scopes, and both are published:
 
-| Key                                                                                                                        | Scope                                                                                                             |
-| -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `coupling.ca` / `coupling.ce` / `coupling.instability` / `coupling.abstractness` / `coupling.distance`                     | The whole subtree rooted at this namespace — the value the rule judges and the one a namespace-level report shows |
-| `coupling.ca-own` / `coupling.ce-own` / `coupling.instability-own` / `coupling.abstractness-own` / `coupling.distance-own` | Only the types declared directly in this namespace, leaving the ones its sub-namespaces hold to those namespaces  |
+| Key                                                                                                                        | Scope                                                                                                            |
+| -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `coupling.ca` / `coupling.ce` / `coupling.instability` / `coupling.abstractness` / `coupling.distance`                     | The whole subtree rooted at this namespace; retained as aggregate evidence                                       |
+| `coupling.ca-own` / `coupling.ce-own` / `coupling.instability-own` / `coupling.abstractness-own` / `coupling.distance-own` | Only the types declared directly in this namespace, leaving the ones its sub-namespaces hold to those namespaces |
 
 `coupling.cbo` and `coupling.cbo-own` split the same way, and there the rule
-judges the own scope instead: see [CBO](#cbo----coupling-between-objects).
+also judges the own scope: see [CBO](#cbo----coupling-between-objects).
 
-For a namespace with no sub-namespaces the two coincide. A namespace that
+When the measured populations and required inputs coincide, both scopes
+have the same value. The absence of sub-namespaces alone does not establish
+that their inputs are applicable. A namespace that
 declares no type of its own carries no own-scope abstractness at all and gets no
 `-own` key for abstractness or distance: how far a package sits from the main
 sequence is undefined where there is no package, and silence says that where
 `0.0` would not.
 
 **The project number is folded over own scopes.** `coupling.distance-own.avg` is
-the unweighted mean of `coupling.distance-own` across every namespace that
-publishes one — the project-level key is `coupling.distance-own.avg`, and
+the eligible-type-weighted mean of measured `coupling.distance-own` across
+own namespaces. Each weight counts its own classes, traits, interfaces and
+explicitly implementing enums; bare enums are excluded. A namespace without
+measured own distance contributes no sample, and `.count` records the number
+of measured namespaces — the project-level key is `coupling.distance-own.avg`, and
 `coupling.distance.avg` does not exist. Folding the subtree rollups instead
 would count a parent's declarations once for the parent and again for each
 child. The older fold avoided that double count by taking leaf namespaces only,
@@ -565,11 +672,11 @@ share of; see [What a Score Covers](../reference/health-scores.md#what-a-score-c
 | Warning | >= 0.3    | Warning  |
 | Error   | >= 0.5    | Error    |
 
-The rule judges the subtree value `coupling.distance`, not `coupling.distance-own`.
+The rule judges `coupling.distance-own`; its message uses own abstractness, instability and coupling.
 
-Only namespaces with at least 3 classes are analyzed (configurable via `minClassCount`).
+Only namespaces with at least 3 own types are analyzed (configurable via `minTypeCount`): classes, traits, interfaces and enums with an explicit `implements` clause. Bare enums do not count.
 
-A namespace with no dependency in either direction (Ca = Ce = 0) is not judged either. Its instability is 0 by convention, not by measurement, so a concrete namespace that nothing uses and that uses nothing would read D = 1.0 and be reported as a zone of pain -- which needs many dependents it does not have. The value is still published and still enters `health.coupling`.
+A namespace with no dependency in either direction (Ca-own = Ce-own = 0) is not judged either. Its instability is 0 by convention, not by measurement, so a concrete namespace that nothing uses and that uses nothing would read D = 1.0 and be reported as a zone of pain -- which needs many dependents it does not have. The distance is absent and does not enter project or health aggregation.
 
 A namespace that lacks an input publishes no distance at all rather than one computed from 0. A namespace that declares only functions is not in the class dependency graph, so it has no instability and gets no `coupling.distance`.
 <!-- llms:skip-end -->
@@ -604,7 +711,7 @@ rules:
   coupling.distance:
     max_distance_warning: 0.4
     max_distance_error: 0.6
-    min_class_count: 5
+    min_type_count: 5
     include_namespaces:
       - subtree: App\Domain
       - subtree: App\Infrastructure
@@ -623,19 +730,16 @@ rules:
 ```bash
 bin/qmx check src/ --rule-opt="coupling.distance:max_distance_warning=0.4"
 bin/qmx check src/ --rule-opt="coupling.distance:max_distance_error=0.6"
-bin/qmx check src/ --rule-opt="coupling.distance:min_class_count=5"
+bin/qmx check src/ --rule-opt="coupling.distance:min_type_count=5"
 ```
 
-**`min_class_count`** -- minimum number of classes a namespace must hold to be
-checked. Default: `3`, compared strictly, so a namespace of one or two classes
-is skipped and reports nothing however far from the main sequence it sits: a
-two-class namespace at D = 1.00 and a balanced one look the same in the report,
-because silence here means "not measured", not "clean". The gate exists because
-A and I are ratios, and over a handful of classes one class moving swings D
-across the whole range. Set it to `0` to judge every namespace. Note the
-consequence for refactoring: splitting a directory into smaller namespaces can
-switch this rule on for the parts, and it starts reporting at the third class,
-not the second.
+**`min_type_count`** counts classes, traits, interfaces and explicitly implementing
+enums declared directly in the namespace. Default `3` admits equality; `0`
+disables this floor. Missing count inputs contribute zero. The rule still
+requires published own distance; scopes without coupling publish none. Selected population
+accounting distinguishes these exclusions from healthy judgements.
+`min_class_count`, `min-class-count` and `minClassCount` are refused for Distance;
+CBO and Instability retain their existing class-count options.
 
 By default, project namespaces are auto-detected from `composer.json` (`autoload.psr-4`).
 
@@ -651,35 +755,32 @@ that subtree; several selectors are written as a list in `qmx.yaml`.
 
 **Rule ID:** `coupling.class-rank`
 
-<!-- llms:skip-begin -->
+**Judged metric:** `coupling.class-rank-share`
+
 ### What it measures
 
-ClassRank applies the **PageRank algorithm** to your project's dependency graph to identify the most "important" classes. The idea comes from how Google ranks web pages: if class A depends on class B, A "votes" for B. Classes that receive many votes -- or receive votes from classes that are themselves highly ranked -- get a higher ClassRank score.
-
-A high ClassRank means the class is a critical hub in your codebase. If that class breaks or changes its API, the impact ripples across many dependents (directly and transitively). Think of it like a highway interchange: the more roads that pass through it, the bigger the traffic jam when it is closed.
-
-The result is a value between 0.0 and 1.0, where all class ranks in the project sum to 1.0.
-
-**How to read the value:**
-
-| ClassRank  | Interpretation                            |
-| ---------- | ----------------------------------------- |
-| Below 0.01 | Peripheral class                          |
-| 0.01--0.02 | Moderate importance                       |
-| 0.02--0.05 | Important hub -- changes have wide impact |
-| 0.05+      | Critical coupling point                   |
-
-<!-- llms:skip-end -->
+The raw `coupling.class-rank` remains PageRank probability mass `r`. The rule
+uses the separate share `r / (1 / N) = r * N`: how many times the vertex's rank
+exceeds the uniform rank in this measured graph. A share of 1 is uniform.
+`N` counts distinct measured logical class-like vertices, including isolated
+ones with logical subjects in the metric repository. Unmeasured external
+vertices stay outside this analysed PageRank population; duplicate declarations
+do not inflate it. Both metrics project to each
+exact declaration and provide namespace/project max, average and p95 values.
+The rule judges exact PHP classes, including abstract classes, with positive
+`coupling.ca`; interfaces, traits and enums retain evidence but are not judged.
 
 <!-- llms:skip-begin -->
 ### Thresholds
 
-| Level   | Threshold | Severity |
-| ------- | --------- | -------- |
-| Warning | >= 0.02   | Warning  |
-| Error   | >= 0.05   | Error    |
+| Level   | Share               | Severity |
+| ------- | ------------------- | -------- |
+| Warning | >= 5 times uniform  | Warning  |
+| Error   | >= 10 times uniform | Error    |
 
-Both thresholds are divided by the project-size factor described under Implementation notes. A class that no other class depends on (`coupling.ca` = 0) is never reported, whatever its rank: it is not a hub, and on a small project the floor rank every class receives can exceed the scaled threshold on its own.
+Equality reaches the boundary. There is no square-root scaling. Overrides and
+configuration use share units. Messages expand from two to six decimal places
+to distinguish unequal values; remaining display collisions say they are rounded.
 <!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
@@ -703,7 +804,7 @@ class DatabaseConnection
 //
 // If these dependents are themselves important (high rank),
 // DatabaseConnection's ClassRank grows even further.
-// ClassRank = 0.06 -> ERROR (against the threshold scaled for this project's class count)
+// ClassRank share = 12 -> ERROR (12 times the uniform rank)
 ```
 
 <!-- llms:skip-end -->
@@ -717,45 +818,53 @@ class DatabaseConnection
 
 <!-- llms:skip-end -->
 
-<!-- llms:skip-begin -->
 ### Implementation notes
 
-Qualimetrix uses the standard PageRank algorithm with the following parameters:
+PageRank keeps damping 0.85, at most 100 iterations and convergence epsilon
+1e-6. Dangling vertices redistribute their rank evenly. Raw ranks sum to 1;
+shares sum to `N` before projection to duplicate declarations. An empty graph
+publishes neither metric, a singleton publishes raw 1 and share 1. Share values
+are relative to the current graph population; narrowed and whole runs can differ.
+Prioritization consumes share, uses its measured median for an unranked finding,
+and publishes `coupling.class-rank-share` in JSON top issues. It never substitutes raw
+probability for missing share.
 
-- **Damping factor:** 0.85
-- **Max iterations:** 100
-- **Convergence epsilon:** 1e-6
-
-Ranks are normalized so they sum to 1.0 across all project classes. Vendor classes are excluded from the graph. A class with no outgoing project dependency is a *dangling* node: its rank is spread evenly over all classes in the next iteration, which is what keeps the sum at 1.0. Every class therefore receives at least `(1 - d) / N + d · S / N`, where `d` is the damping factor, `N` the number of classes and `S` the total rank held by dangling classes. An isolated class (no incoming or outgoing dependencies) receives exactly that floor, not `(1 - d) / N`: in a project with no dependencies at all every class is dangling, `S = 1`, and each class ranks `1 / N`. The floor rises with the share of dangling classes, which is why the rule does not report a class nothing depends on.
-
-Each graph vertex is a logical class. Its one ClassRank score is projected to
-every exact declaration owned by that logical class; the score and graph remain
-logical while controls, findings, baseline identity, and fingerprints remain
-declaration-scoped.
-
-**Sqrt scaling for project size:** Because ranks sum to 1.0, individual ClassRank values naturally decrease as the number of classes grows (dilution effect). To keep thresholds meaningful across different project sizes, Qualimetrix applies a `sqrt(classCount / 100)` scaling factor: both thresholds are divided by it, so they remain unchanged for a 100-class project, are lower for larger projects (where every rank is diluted) and higher for smaller ones.
-
-<!-- llms:skip-end -->
+!!! info "Deviation from original spec"
+    Namespace and project ClassRank aggregates sample physical class
+    declarations. Each declaration repeats its logical node's rank and share,
+    so sums, counts and averages are declaration-weighted. Raw PageRank sums
+    to 1 over logical nodes before this projection, not over declarations.
 
 ### Configuration
 
 ```yaml
-# qmx.yaml
 rules:
   coupling.class-rank:
-    warning: 0.03
-    error: 0.08
-```
-
-For a simple pass/fail threshold:
-
-```yaml
-rules:
-  coupling.class-rank:
-    threshold: 0.03   # warning=0.03, error=0.03
+    warning: 6
+    error: 12
 ```
 
 ```bash
-bin/qmx check src/ --rule-opt="coupling.class-rank:warning=0.03"
-bin/qmx check src/ --rule-opt="coupling.class-rank:error=0.08"
+bin/qmx check src/ --rule-opt="coupling.class-rank:warning=6"
+bin/qmx check src/ --rule-opt="coupling.class-rank:error=12"
 ```
+
+Migrate old raw/scaled thresholds and baseline entries to the share metric;
+there is no raw-key fallback or option alias. See [default thresholds](../reference/default-thresholds.md).
+
+## Independent layer bands
+
+CBO and instability spread a top band to class and namespace in its writing layer. Explicit writes to the same expanded leaves conflict in that layer; independent level settings such as enabled are preserved. Configure distinct level bands explicitly or put overlapping overrides in another layer. Effective-band validation includes written and default halves. These forms do not change metric direction, formulas or numeric defaults. A written enabled:true intentionally overrides a lower disable. See [Configuration](../getting-started/configuration.md#declared-rule-forms-and-prepared-execution).
+
+## Dependency position and type shape
+
+An edge type names the reference position: `type_hint` for parameter/return,
+`property_type` for a property or promoted parameter, and `constant_type` for a
+typed constant. Union/intersection/DNF are not separate relation kinds.
+Graph JSON always publishes `shape` as an object mapping each type position
+to its sorted observed shape names (`single`, `nullable`, `union`,
+`intersection`, `dnf`), for example `{"property_type": ["nullable"],
+"type_hint": ["union"]}`. An edge with no type-shape facts has `shape: {}`. Declaration facts (kind, parents/interfaces/traits,
+attribute sites and `__toString`) travel separately from edges. Implicit
+Stringable does not invent dependency edges or increase coupling. Logical PHP
+class identity is ASCII-folded; exact source declarations remain separate.

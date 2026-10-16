@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Composer;
 
+use Qualimetrix\Infrastructure\Composer\Contract\ComposerRootOmission;
+
 /**
  * Which composer projects a run is allowed to read.
  *
@@ -27,33 +29,39 @@ final readonly class InstallLocator
      * manifest placed 8 of 22 parents; reading both placed 20.
      *
      * @param list<string> $analysedPaths
-     *
-     * @return list<string>
      */
-    public function rootsFor(string $projectRoot, array $analysedPaths): array
+    public function rootsFor(string $projectRoot, array $analysedPaths): LocatedComposerRoots
     {
         $roots = [];
+        $omissions = [];
 
         foreach ([...$analysedPaths, $projectRoot] as $path) {
             $root = $this->nearestRoot($path);
+            if ($root instanceof ComposerRootOmission) {
+                $omissions[] = $root;
+                continue;
+            }
 
-            if ($root !== null && !\in_array($root, $roots, true)) {
+            if (!\in_array($root, $roots, true)) {
                 $roots[] = $root;
             }
         }
 
-        return $roots;
+        return new LocatedComposerRoots($roots, $omissions);
     }
 
-    private function nearestRoot(string $path): ?string
+    private function nearestRoot(string $path): string|ComposerRootOmission
     {
         $directory = realpath(is_dir($path) ? $path : \dirname($path));
 
         if ($directory === false) {
-            return null;
+            return ComposerRootOmission::unresolvable($path);
         }
 
+        $start = $directory;
+        $last = $directory;
         for ($level = 0; $level < self::MAX_WALK_UP; ++$level) {
+            $last = $directory;
             if (is_file($directory . '/composer.json')) {
                 return $directory;
             }
@@ -63,12 +71,12 @@ final readonly class InstallLocator
             // A filesystem root is its own parent: without this the loop would
             // spin, and without the cap above it could climb past the project.
             if ($parent === $directory) {
-                return null;
+                return ComposerRootOmission::filesystemRootReached($path, $start, $directory, $level + 1);
             }
 
             $directory = $parent;
         }
 
-        return null;
+        return ComposerRootOmission::walkLimitReached($path, $start, $last, self::MAX_WALK_UP);
     }
 }

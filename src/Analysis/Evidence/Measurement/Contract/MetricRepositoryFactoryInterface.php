@@ -12,5 +12,6 @@ namespace Qualimetrix\Analysis\Evidence\Measurement\Contract;
  */
 interface MetricRepositoryFactoryInterface
 {
-    public function create(): MetricRepositoryInterface;
+    /** @param list<MetricDefinition> $definitions */
+    public function create(array $definitions = []): MetricRepositoryInterface;
 }

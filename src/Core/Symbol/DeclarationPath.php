@@ -6,6 +6,7 @@ namespace Qualimetrix\Core\Symbol;
 
 use InvalidArgumentException;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\SourceText\SourceBytes;
 
 /**
  * Durable identity of one source declaration.
@@ -39,7 +40,7 @@ final readonly class DeclarationPath
         $canonical = \sprintf(
             self::CANONICAL_PREFIX . '%s@%s',
             $this->logical->toCanonical(),
-            $this->file->value(),
+            SourceBytes::escape($this->file->value(), '#'),
         );
 
         return $this->ordinal->isFirst() ? $canonical : $canonical . '#' . $this->ordinal->value;

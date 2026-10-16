@@ -12,6 +12,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
 use Qualimetrix\Analysis\Evidence\Size\LocVisitor;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\FileDeclarationIndex;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use SplFileInfo;
@@ -43,6 +44,41 @@ final class LocCollectorTest extends TestCase
 
         if (is_dir($this->tempDir)) {
             rmdir($this->tempDir);
+        }
+    }
+
+    #[Test]
+    public function itMeasuresTheOwnSpanOfEveryNamedClassLike(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+class Pair
+{
+    public function run(): void {}
+}
+interface Greeter
+{
+    public function greet(): void;
+}
+trait Greeting
+{
+    public function greet(): void {}
+}
+enum Status
+{
+    case Active;
+}
+$anonymous = new class {};
+PHP;
+        $bag = $this->collectMetrics($code);
+        $classes = $this->collector->getClassesWithMetrics(\Qualimetrix\Core\Path\RelativePath::fromString('Kinds.php'));
+
+        self::assertCount(4, $classes);
+        self::assertSame(['Pair', 'Greeter', 'Greeting', 'Status'], array_map(static fn($class): ?string => $class->declarationPath->logical->type, $classes));
+        foreach ($classes as $class) {
+            self::assertSame(4, $class->metrics->get('size.class-loc'));
+            self::assertSame(4, $bag->get('size.class-loc:App\\' . $class->declarationPath->logical->type));
         }
     }
 
@@ -235,6 +271,63 @@ PHP;
         self::assertSame(1, $metrics->get('size.cloc'));
         // LLOC = 6 - 1 empty - 1 pure comment = 4
         self::assertSame(4, $metrics->get('size.lloc'));
+
+        $punctuation = <<<'PHP'
+<?php
+
+// comment only
+# hash comment only
+/* block comment only */
+/**
+ * docblock body
+ */
+function f(array $a): array
+{
+    { // brace-open + //
+        $b = [ # x
+            1,
+            2, // comma + //
+        ]; // close array + //
+        $c = \count(
+            $a
+        ); /* close call + block */
+        if ($b) {
+            $c++;
+        } // brace-close + //
+        if ($c) {
+            $c--;
+        } # brace-close + hash
+        if ($a) {
+            $c--;
+        } /* brace-close + block */
+        if ($a) {
+            $c--;
+        } /** brace-close + docblock */
+        if ($a) {
+            $c--;
+        }
+        $d = 1; // code + comment
+        /* lead */ $e = 2;
+        $f = [
+        ] // ] + // (statement ends next line)
+        ;
+        $h = f(
+            [] // [] + //
+        );
+        $i = array_map(function ($v) {
+            return $v;
+        }, $a); // }, $a); has code token
+        $j = array_map(static function ($v) {
+            return $v;
+        }); // }); + //
+    /* c */ }
+}
+PHP;
+
+        $punctuationMetrics = $this->collectMetrics($punctuation);
+        self::assertSame(49, $punctuationMetrics->get('size.loc'));
+        self::assertSame(42, $punctuationMetrics->get('size.lloc'));
+        self::assertSame(6, $punctuationMetrics->get('size.cloc'));
     }
 
     #[Test]
@@ -596,6 +689,43 @@ PHP;
         self::assertNotContains(\Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface::class, class_implements($this->collector));
     }
 
+    #[Test]
+    public function itMeasuresSuppliedBytesEvenWhenTheFileDoesNotExist(): void
+    {
+        $code = "<?php\n// note\n\nclass Test {}";
+        $file = new SplFileInfo($this->tempDir . '/absent.php');
+        $ast = (new ParserFactory())->createForHostVersion()->parse($code) ?? [];
+
+        $this->collector->reset();
+        $this->collector->measureSource($code);
+        $metrics = $this->collector->collect($file, $ast);
+
+        self::assertFileDoesNotExist($file->getPathname());
+        self::assertSame(4, $metrics->get('size.loc'));
+        self::assertSame(1, $metrics->get('size.cloc'));
+        self::assertSame(2, $metrics->get('size.lloc'));
+    }
+
+    #[Test]
+    public function itKeepsBothSameFileClassSpans(): void
+    {
+        $this->collectMetrics(<<<'PHP'
+<?php
+namespace App;
+class Twin {}
+if (false) {
+    class Twin
+    {
+        public function run(): void {}
+    }
+}
+PHP);
+
+        $classes = $this->collector->getClassesWithMetrics(RelativePath::fromString('src/Duplicate.php'));
+        self::assertCount(2, $classes);
+        self::assertSame([1, 4], array_map(static fn($class): int|float|null => $class->metrics->get('size.class-loc'), $classes));
+    }
+
     private function collectMetrics(string $code): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag
     {
         // Create actual temp file
@@ -608,7 +738,9 @@ PHP;
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $code !== '' ? ($parser->parse($code) ?? []) : [];
 
+        $this->collector->reset();
         $this->collector->useDeclarationIndex(new FileDeclarationIndex());
+        $this->collector->measureSource($code);
 
         $traverser = new NodeTraverser();
         $traverser->addVisitor($this->collector->getVisitor());

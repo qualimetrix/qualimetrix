@@ -7,21 +7,17 @@ namespace Qualimetrix\Analysis\Evidence\Cohesion;
 use Override;
 use PhpParser\Node;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareTrait;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Symbol\SymbolLevel;
-use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
 
 /**
- * Collects TCC and LCC (Tight/Loose Class Cohesion) metrics for classes.
+ * Captures exact declaration facts for later TCC and LCC calculation.
  *
  * TCC (Tight Class Cohesion):
  * - Measures direct connections via shared properties
@@ -41,8 +37,8 @@ use SplFileInfo;
  * Only PUBLIC methods are considered (unlike LCOM which considers all methods).
  * Anonymous classes are ignored.
  *
- * No value is published for a class with fewer than two tracked methods
- * (no pair: the ratio is undefined) or without declared instance properties.
+ * The global composition publishes no value for a class with fewer than two tracked methods
+ * (no pair: the ratio is undefined) or without declared or observed instance properties.
  * The latter deviates from Bieman & Kang, whose formula gives such a class
  * TCC = LCC = 0; a stateless class is treated as outside the metric's
  * domain rather than as maximally incohesive.
@@ -50,6 +46,9 @@ use SplFileInfo;
 final class TccLccCollector extends AbstractCollector implements DeclarationIndexAwareInterface, ClassMetricsProviderInterface
 {
     use DeclarationIndexAwareTrait;
+    use CohesionFactProjectionTrait;
+
+    public const string FACTS = 'cohesion.tcc-facts';
 
     private const NAME = 'tcc_lcc';
 
@@ -68,7 +67,7 @@ final class TccLccCollector extends AbstractCollector implements DeclarationInde
      */
     public function provides(): array
     {
-        return [MetricName::COHESION_TCC, MetricName::COHESION_LCC, MetricName::COHESION_PURE_METHOD_COUNT];
+        return [self::FACTS];
     }
 
     /**
@@ -76,36 +75,7 @@ final class TccLccCollector extends AbstractCollector implements DeclarationInde
      */
     public function collect(SplFileInfo $file, array $ast): MetricBag
     {
-        $bag = new MetricBag();
-
-        \assert($this->visitor instanceof TccLccVisitor);
-
-        foreach ($this->visitor->getClassData() as $classFqn => $classData) {
-            // Skip classes with fewer than 2 public instance methods — TCC/LCC is not
-            // meaningful for them. This covers all-static utility classes, empty classes,
-            // single-method classes, and classes with only constructors/destructors.
-            if (\count($classData->getMethods()) < 2) {
-                continue;
-            }
-
-            // Skip classes with no declared instance properties (deviation, see the
-            // class docblock): TCC=0.0 for them would drag down cohesion averages of
-            // namespaces with many property-less classes.
-            if ($classData->getPropertyCount() === 0) {
-                continue;
-            }
-
-            $tcc = $classData->calculateTcc();
-            $lcc = $classData->calculateLcc();
-            $pureCount = $this->countPureMethods($classData);
-
-            // Store metrics with class FQN as key
-            $bag = $bag->with(MetricName::COHESION_TCC . ':' . $classFqn, round($tcc, 3));
-            $bag = $bag->with(MetricName::COHESION_LCC . ':' . $classFqn, round($lcc, 3));
-            $bag = $bag->with(MetricName::COHESION_PURE_METHOD_COUNT . ':' . $classFqn, $pureCount);
-        }
-
-        return $bag;
+        return new MetricBag();
     }
 
     /**
@@ -115,32 +85,7 @@ final class TccLccCollector extends AbstractCollector implements DeclarationInde
     {
         \assert($this->visitor instanceof TccLccVisitor);
 
-        $result = [];
-
-        foreach ($this->visitor->getClassData() as $classData) {
-            // Skip classes with fewer than 2 public instance methods (see collect() comment)
-            if (\count($classData->getMethods()) < 2) {
-                continue;
-            }
-
-            // Skip classes with no declared instance properties (see collect() comment)
-            if ($classData->getPropertyCount() === 0) {
-                continue;
-            }
-
-            $tcc = round($classData->calculateTcc(), 3);
-            $lcc = round($classData->calculateLcc(), 3);
-            $pureCount = $this->countPureMethods($classData);
-
-            $bag = (new MetricBag())
-                ->with(MetricName::COHESION_TCC, $tcc)
-                ->with(MetricName::COHESION_LCC, $lcc)
-                ->with(MetricName::COHESION_PURE_METHOD_COUNT, $pureCount);
-
-            $result[] = $this->classWithMetrics(SymbolPath::forClass($classData->namespace ?? '', $classData->className), $file, $classData->startFilePos, $classData->line, $bag);
-        }
-
-        return $result;
+        return $this->classesWithCohesionFacts($file, $this->visitor->getClassData(), self::FACTS);
     }
 
     /**
@@ -149,61 +94,6 @@ final class TccLccCollector extends AbstractCollector implements DeclarationInde
     #[Override]
     public function getMetricDefinitions(): array
     {
-        return [
-            new MetricDefinition(
-                name: MetricName::COHESION_TCC,
-                collectedAt: SymbolLevel::Class_,
-                aggregations: [
-                    SymbolLevel::Namespace_->value => [
-                        AggregationStrategy::Average,
-                        AggregationStrategy::Min,
-                    ],
-                    SymbolLevel::Project->value => [
-                        AggregationStrategy::Average,
-                        AggregationStrategy::Min,
-                    ],
-                ],
-            ),
-            new MetricDefinition(
-                name: MetricName::COHESION_LCC,
-                collectedAt: SymbolLevel::Class_,
-                aggregations: [
-                    SymbolLevel::Namespace_->value => [
-                        AggregationStrategy::Average,
-                        AggregationStrategy::Min,
-                    ],
-                    SymbolLevel::Project->value => [
-                        AggregationStrategy::Average,
-                        AggregationStrategy::Min,
-                    ],
-                ],
-            ),
-            new MetricDefinition(
-                name: MetricName::COHESION_PURE_METHOD_COUNT,
-                collectedAt: SymbolLevel::Class_,
-                aggregations: [],
-            ),
-        ];
-    }
-
-    /**
-     * Counts methods with zero property access ("pure" methods).
-     *
-     * These are typically interface contract implementations (getName(), getDescription())
-     * that inflate TCC denominator and LCOM without reflecting actual cohesion issues.
-     * Note: only $this->property accesses are tracked; static property accesses
-     * (self::$x, static::$x) are not considered — this matches TCC semantics.
-     */
-    private function countPureMethods(TccLccClassData $classData): int
-    {
-        $count = 0;
-
-        foreach ($classData->getMethods() as $method) {
-            if (\count($classData->getPropertiesAccessedBy($method)) === 0) {
-                ++$count;
-            }
-        }
-
-        return $count;
+        return [];
     }
 }

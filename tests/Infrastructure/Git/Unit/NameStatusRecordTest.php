@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Git\NameStatusRecord;
+use Qualimetrix\Infrastructure\Git\ChangeListing\NameStatusRecord;
 use RuntimeException;
 
 /**

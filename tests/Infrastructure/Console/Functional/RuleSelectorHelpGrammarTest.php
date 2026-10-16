@@ -4,20 +4,24 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\Application;
-use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
-use Qualimetrix\Infrastructure\Console\Command\DirectivesCommand;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
+use Qualimetrix\Infrastructure\Console\Application\Application;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Generation\BaselineGenerateCommand;
+use Qualimetrix\Infrastructure\Console\Directives\DirectivesCommand;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
-use Qualimetrix\Infrastructure\Console\RuleInputValidator;
+use Qualimetrix\Infrastructure\Console\RunSetup\FindingConfigurationPreparation;
+use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\TestSupport\WorkingDirectory\RunsFromRepositoryRoot;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * `--help` and the selector grammar describe the same language.
@@ -28,9 +32,29 @@ use Symfony\Component\Console\Tester\CommandTester;
  * selection options is executed here, and a bare group name is checked to be
  * refused with the spelling that would have worked.
  */
-#[CoversClass(RuleInputValidator::class)]
+#[CoversClass(FindingConfigurationPreparation::class)]
 final class RuleSelectorHelpGrammarTest extends TestCase
 {
+    use RunsFromRepositoryRoot;
+
+    private static ?ContainerBuilder $container = null;
+
+    public static function tearDownAfterClass(): void
+    {
+        self::$container = null;
+    }
+
+    private static function container(): ContainerBuilder
+    {
+        $container = self::$container ??= (new ContainerFactory())->create();
+        $manifest = $container->get(ManifestSnapshotControlInterface::class);
+        if (!$manifest instanceof ManifestSnapshotControlInterface) {
+            throw new LogicException('The command fixture has no manifest snapshot lifetime owner.');
+        }
+        $manifest->beginInvocation();
+
+        return $container;
+    }
     private const string FIXTURE = 'tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php';
 
     /** @return iterable<string, array{class-string<Command>, string}> */
@@ -48,7 +72,7 @@ final class RuleSelectorHelpGrammarTest extends TestCase
     #[DataProvider('provideSelectionOptions')]
     public function itOffersOnlyExamplesTheSelectorGrammarAccepts(string $commandClass, string $option): void
     {
-        $container = (new ContainerFactory())->create();
+        $container = self::container();
         /** @var Command $command */
         $command = $container->get($commandClass);
         $description = $command->getDefinition()->getOption($option)->getDescription();
@@ -106,7 +130,7 @@ final class RuleSelectorHelpGrammarTest extends TestCase
         self::assertSame(3, $tester->getStatusCode());
         $error = self::envelopeError($tester);
         self::assertStringNotContainsString('group, or channel', $error);
-        self::assertStringContainsString(\sprintf('write "%s.*"', $group), $error);
+        self::assertSame(\sprintf('Configuration error: Rule selector "%s" does not match any registered producer or channel. Write "%s.*" to select its descendants.', $group, $group), $error);
 
         $starred = $this->checkTester();
         $starred->execute(
@@ -153,12 +177,12 @@ final class RuleSelectorHelpGrammarTest extends TestCase
 
     private function checkTester(): CommandTester
     {
-        $container = (new ContainerFactory())->create();
+        $container = self::container();
         /** @var CheckCommand $command */
         $command = $container->get(CheckCommand::class);
         /** @var RefusalPresenter $refusalPresenter */
         $refusalPresenter = $container->get(RefusalPresenter::class);
-        $application = new Application(new ErrorStream(), $refusalPresenter);
+        $application = new Application(new ErrorStream(), $refusalPresenter, static fn() => new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $application->addCommand($command);
 
         return new CommandTester($command);

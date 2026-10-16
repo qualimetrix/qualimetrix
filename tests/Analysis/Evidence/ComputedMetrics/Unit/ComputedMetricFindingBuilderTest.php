@@ -21,6 +21,8 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
+use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -44,9 +46,9 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([self::subjectInfo($classPath, RelativePath::fromString('src/UserService.php'), 10)]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn((new MetricBag())->with('health.score', 75.0));
 
         $findings = $rule->analyze(new AnalysisContext($repository));
@@ -71,9 +73,9 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([self::subjectInfo($classPath, RelativePath::fromString('src/UserService.php'), 10)]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn((new MetricBag())->with('health.score', 40.0));
 
         $findings = $rule->analyze(new AnalysisContext($repository));
@@ -102,9 +104,9 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([self::subjectInfo($classPath, RelativePath::fromString('src/UserService.php'), 10)]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn((new MetricBag())->with('health.score', 20.0));
 
         $findings = $rule->analyze(new AnalysisContext($repository));
@@ -130,9 +132,9 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([self::subjectInfo($classPath, RelativePath::fromString('src/UserService.php'), 10)]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn((new MetricBag())->with('health.complexity', 15.0));
 
         $findings = $rule->analyze(new AnalysisContext($repository));
@@ -158,9 +160,9 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([self::subjectInfo($classPath, RelativePath::fromString('src/UserService.php'), 10)]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn((new MetricBag())->with('health.complexity', 25.0));
 
         $findings = $rule->analyze(new AnalysisContext($repository));
@@ -186,9 +188,9 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([self::subjectInfo($classPath, RelativePath::fromString('src/UserService.php'), 10)]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn((new MetricBag())->with('health.score', 25.0));
 
         $findings = $rule->analyze(new AnalysisContext($repository));
@@ -219,9 +221,9 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $classPath = SymbolPath::forClass('App', 'Test');
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([self::subjectInfo($classPath, RelativePath::fromString('test.php'), 1)]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn((new MetricBag())->with('health.custom', 15.0));
 
         $findings = $rule->analyze(new AnalysisContext($repository));
@@ -247,9 +249,9 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $classPath = SymbolPath::forClass('App', 'Test');
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([self::subjectInfo($classPath, RelativePath::fromString('test.php'), 1)]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn((new MetricBag())->with('health.precise', 15.678));
 
         $findings = $rule->analyze(new AnalysisContext($repository));
@@ -274,9 +276,9 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $classPath = SymbolPath::forClass('App', 'Test');
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([self::subjectInfo($classPath, RelativePath::fromString('test.php'), 1)]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn((new MetricBag())->with('health.norm', 15.0));
 
         $findings = $rule->analyze(new AnalysisContext($repository));
@@ -302,9 +304,9 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $classPath = SymbolPath::forClass('App', 'Test');
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([self::subjectInfo($classPath, RelativePath::fromString('test.php'), 1)]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn((new MetricBag())->with('health.inv', 40.0));
 
         $findings = $rule->analyze(new AnalysisContext($repository));
@@ -331,9 +333,9 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([self::subjectInfo($classPath, RelativePath::fromString('src/UserService.php'), 10)]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn((new MetricBag())->with('health.complexity', 25.0));
 
         $findings = $rule->analyze(new AnalysisContext($repository));
@@ -363,9 +365,9 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $classPath = SymbolPath::forClass('App', 'Test');
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([self::subjectInfo($classPath, RelativePath::fromString('test.php'), 1)]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn((new MetricBag())->with('health.cohesion', 30.0));
 
         $findings = $rule->analyze(new AnalysisContext($repository));
@@ -393,9 +395,9 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $classPath = SymbolPath::forClass('App', 'Test');
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([self::subjectInfo($classPath, RelativePath::fromString('test.php'), 1)]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn((new MetricBag())->with('health.complexity', 25.0));
 
         $findings = $rule->analyze(new AnalysisContext($repository));
@@ -437,9 +439,9 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $classPath = SymbolPath::forClass('App', 'Test');
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')
+        $repository->method('allClassDeclarations')
             ->willReturn([self::subjectInfo($classPath, RelativePath::fromString('test.php'), 1)]);
-        $repository->method('get')
+        $repository->method('getSubject')
             ->willReturn((new MetricBag())->with($dimensionName, 15.0));
 
         $findings = $rule->analyze(new AnalysisContext($repository));
@@ -488,6 +490,9 @@ final class ComputedMetricFindingBuilderTest extends TestCase
             $file,
             $line,
             $kind,
+            $kind === \Qualimetrix\Core\Symbol\CallableKind::Method
+                ? DeclarationPath::of(SymbolPath::forClass($symbolPath->namespace ?? '', $symbolPath->type ?? ''), $file, DeclarationOrdinal::fromRank(0))
+                : null,
         );
     }
 }

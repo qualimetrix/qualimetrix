@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
+use LogicException;
 
 /**
  * Parses and validates the {@code architecture.coverage-gap} scalar.
  *
- * Accepts {@code null} (defaults to {@see CoverageMode::Ignore}) or a
- * case-insensitive string of {@code 'ignore'}, {@code 'warn'}, {@code 'error'}.
+ * Accepts a key not written (defaults to {@see CoverageMode::Ignore}) or a
+ * case-insensitive string of {@code 'ignore'}, {@code 'warn'}, {@code 'error'};
+ * the configuration engine has already refused any other form.
  *
  * The mode is also checked against the layers it would judge, because the two
  * halves are one contract: a mode that names a policy and a declaration that
@@ -23,32 +23,24 @@ final class CoverageValidator
 {
     private const array ACCEPTED = ['error', 'ignore', 'warn'];
 
-    public function validate(mixed $coverageRaw): CoverageMode
+    public function validate(SectionSpot $coverage): CoverageMode
     {
-        if ($coverageRaw === null) {
+        $value = $coverage->value();
+        if ($value === null) {
             return CoverageMode::Ignore;
         }
 
-        if (!\is_string($coverageRaw)) {
-            throw ConfigurationRefusal::atResolvedKey(
-                RefusedPosition::closed(['architecture', 'coverage-gap'], get_debug_type($coverageRaw), self::ACCEPTED),
-                \sprintf(
-                    "architecture.coverage-gap: must be one of 'ignore', 'warn', 'error' (got %s).",
-                    get_debug_type($coverageRaw),
-                ),
-            );
+        if (!\is_string($value)) {
+            throw new LogicException('The configuration engine admits only a string as architecture.coverage-gap.');
         }
 
         try {
-            return CoverageMode::fromString($coverageRaw);
-        } catch (InvalidArgumentException $e) {
-            throw ConfigurationRefusal::atResolvedKey(
-                RefusedPosition::closed(['architecture', 'coverage-gap'], $coverageRaw, self::ACCEPTED),
-                \sprintf(
-                    "architecture.coverage-gap: must be one of 'ignore', 'warn', 'error' (got '%s').",
-                    $coverageRaw,
-                ),
-                previous: $e,
+            return CoverageMode::fromString($value);
+        } catch (InvalidArgumentException) {
+            throw $coverage->refusal(
+                \sprintf("architecture.coverage-gap: must be one of 'ignore', 'warn', 'error' (got '%s').", $value),
+                self::ACCEPTED,
+                $value,
             );
         }
     }
@@ -74,20 +66,23 @@ final class CoverageValidator
      * fail every project that has not written a `layers:` block yet, which is
      * not what the option's author asked for either.
      *
+     * The refusal names the layers that wrote either half: the mode and an
+     * empty `layers:` can come from different configuration files.
+     *
      * The `architecture.unassigned-class` half of this is NOT covered here. Its
      * mode is a rule option, invisible to the configuration factory, and the
      * same emptiness silences it the same way.
      *
      * @param list<\Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition|\Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition> $layerEntries
      */
-    public function rejectModeWithNothingToJudge(CoverageMode $mode, array $layerEntries): void
+    public function rejectModeWithNothingToJudge(CoverageMode $mode, array $layerEntries, SectionSpot $coverage, SectionSpot $layers): void
     {
         if ($mode === CoverageMode::Ignore || $layerEntries !== []) {
             return;
         }
 
-        throw ConfigurationRefusal::atResolvedKey(
-            RefusedPosition::open(['architecture', 'coverage-gap'], 'architecture.coverage-gap'),
+        throw SectionSpot::refusalAcross(
+            [$layers, $coverage],
             \sprintf(
                 'architecture.coverage-gap: "%s" requires at least one entry under "architecture.layers". '
                 . 'With no layers declared every class is outside every layer, and the run reports none of them — '

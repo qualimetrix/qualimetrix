@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Exclusion;
 
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevel\ChannelLevelSelector;
 use Qualimetrix\Core\Pattern\NamespaceMatcher;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Symbol\SymbolLevel;

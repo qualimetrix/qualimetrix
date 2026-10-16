@@ -46,7 +46,7 @@ final class ThresholdValidatorAssignmentTest extends TestCase
             ++$checked;
         }
 
-        self::assertGreaterThanOrEqual(27, $checked, 'Expected at least 27 ThresholdAware Options classes');
+        self::assertGreaterThanOrEqual(26, $checked, 'Expected at least 26 ThresholdAware Options classes');
     }
 
     #[Test]

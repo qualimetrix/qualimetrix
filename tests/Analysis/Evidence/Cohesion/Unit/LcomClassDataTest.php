@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Cohesion\CohesionFactWire;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomClassData;
 
 #[CoversClass(LcomClassData::class)]
@@ -20,7 +21,6 @@ final class LcomClassDataTest extends TestCase
         // analyze and validate share $data
         $classData->addMethod('analyze');
         $classData->addPropertyAccess('analyze', 'data');
-        $classData->markNonTrivial();
 
         $classData->addMethod('validate');
         $classData->addPropertyAccess('validate', 'data');
@@ -42,13 +42,53 @@ final class LcomClassDataTest extends TestCase
     }
 
     #[Test]
+    public function itPreservesExactFactRowsAcrossTheCollectionWire(): void
+    {
+        $data = new LcomClassData('App', 'Service', 7, 19);
+        $data->addMethod('work');
+        $data->addMethod('metadata');
+        $data->markStatic('metadata');
+        $data->markStatelessConstant('metadata');
+        $data->markNonTrivial();
+        $data->addPropertyAccess('work', 'state');
+        $data->addMethodCall('work', 'metadata');
+
+        $rows = [
+            ['tag' => 'declaration', 'namespace' => 'App', 'name' => 'Service', 'line' => 7, 'position' => 19, 'nonTrivial' => true, 'rowCount' => 8],
+            ['tag' => 'method', 'name' => 'work', 'static' => false, 'stateless' => false],
+            ['tag' => 'method', 'name' => 'metadata', 'static' => true, 'stateless' => true],
+            ['tag' => 'declaredMethod', 'name' => 'work', 'visibility' => 'public', 'abstract' => false],
+            ['tag' => 'declaredMethod', 'name' => 'metadata', 'visibility' => 'public', 'abstract' => false],
+            ['tag' => 'instancePropertyCount', 'count' => 0],
+            ['tag' => 'property', 'method' => 'work', 'name' => 'state'],
+            ['tag' => 'call', 'caller' => 'work', 'callee' => 'metadata'],
+        ];
+
+        self::assertSame($rows, CohesionFactWire::lcomRows($data));
+        self::assertSame($rows, CohesionFactWire::lcomRows(CohesionFactWire::lcomFromRows($rows)));
+    }
+
+    #[Test]
+    public function itMatchesConfiguredMethodExclusionsWithoutCase(): void
+    {
+        $data = new LcomClassData();
+        foreach (['work', 'bridge', 'label'] as $method) {
+            $data->addMethod($method);
+            $data->addPropertyAccess($method, $method);
+        }
+
+        self::assertSame(3, $data->calculateLcom());
+        self::assertSame(1, $data->calculateLcom(['BRIDGE', 'Bridge', 'LABEL']));
+        self::assertSame(['work', 'bridge', 'label'], $data->getMethods());
+    }
+
+    #[Test]
     public function itCalculatesLcomWhenExcludingNonexistentMethod(): void
     {
         $classData = new LcomClassData(namespace: 'App', className: 'Service');
 
         $classData->addMethod('methodA');
         $classData->addPropertyAccess('methodA', 'propA');
-        $classData->markNonTrivial();
 
         $classData->addMethod('methodB');
         $classData->addPropertyAccess('methodB', 'propB');
@@ -67,7 +107,6 @@ final class LcomClassDataTest extends TestCase
 
         $classData->addMethod('methodA');
         $classData->addPropertyAccess('methodA', 'propA');
-        $classData->markNonTrivial();
 
         $classData->addMethod('methodB');
         $classData->addPropertyAccess('methodB', 'propB');

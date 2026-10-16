@@ -83,13 +83,13 @@ final class DependencyGraphProjectorTest extends TestCase
 
         return new DependencyGraph(
             dependencies: [
-                new Dependency(
+                Dependency::ofKind(
                     DeclarationPath::of($producer, RelativePath::fromString('Producer.php'), DeclarationOrdinal::fromRank(0)),
                     new LogicalClassPath($consumer),
                     DependencyType::TypeHint,
                     new Location(RelativePath::fromString('Producer.php'), 10),
                 ),
-                new Dependency(
+                Dependency::ofKind(
                     DeclarationPath::of($consumer, RelativePath::fromString('Consumer.php'), DeclarationOrdinal::fromRank(0)),
                     new LogicalClassPath($ignored),
                     DependencyType::TypeHint,
@@ -104,6 +104,7 @@ final class DependencyGraphProjectorTest extends TestCase
             classCe: [],
             classCa: [],
             declarationDependencies: [],
+            classLikeDeclarations: [],
         );
     }
 }

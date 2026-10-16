@@ -37,7 +37,7 @@ final class CyclomaticComplexityCollectorTest extends TestCase
     #[Test]
     public function itProvides(): void
     {
-        self::assertSame(['complexity.ccn'], $this->collector->provides());
+        self::assertSame(['complexity.ccn', 'complexity.wmc'], $this->collector->provides());
     }
 
     #[Test]
@@ -652,9 +652,16 @@ PHP;
     {
         $definitions = $this->collector->getMetricDefinitions();
 
-        self::assertCount(1, $definitions);
+        self::assertCount(2, $definitions);
 
-        $ccnDefinition = $definitions[0];
+        $wmcDefinition = $definitions[0];
+        self::assertSame('complexity.wmc', $wmcDefinition->name);
+        self::assertSame(SymbolLevel::Class_, $wmcDefinition->collectedAt);
+        self::assertSame([], $wmcDefinition->getStrategiesForLevel(SymbolLevel::Class_));
+        self::assertContains(AggregationStrategy::Sum, $wmcDefinition->getStrategiesForLevel(SymbolLevel::Namespace_));
+        self::assertContains(AggregationStrategy::Sum, $wmcDefinition->getStrategiesForLevel(SymbolLevel::Project));
+
+        $ccnDefinition = $definitions[1];
         self::assertSame('complexity.ccn', $ccnDefinition->name);
         self::assertSame(SymbolLevel::Callable, $ccnDefinition->collectedAt);
 

@@ -4,11 +4,18 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\Pipeline;
 
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
+
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication;
+
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
-use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
+use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 
 /**
@@ -32,6 +39,8 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 final readonly class PreparedRun
 {
     /**
+     * @param array<string, list<Suppression>> $suppressions
+     * @param array<string, list<ThresholdOverride>> $thresholdOverrides
      * @param list<Finding> $unmatchedExcludeFindings What the run's own exclude patterns failed to remove
      *
      * `$unmatchedExcludeFindings` is built beside file discovery, where the
@@ -42,10 +51,15 @@ final readonly class PreparedRun
      */
     public function __construct(
         public NamespaceTree $namespaceTree,
-        public CollectionPhaseOutput $collection,
+        public array $suppressions,
+        public array $thresholdOverrides,
         public AnalysisContext $context,
         public RuleExecutionResult $ruleExecution,
         public AnalysisCoverage $coverage,
+        public SubjectCoverageFacts $subjectCoverage,
         public array $unmatchedExcludeFindings,
+        public JudgedPopulation $discoveryPopulation,
+        public ChannelPublication $populationPublication,
+        public ComputedMetricEvaluationSummary $computedMetricEvaluation = new ComputedMetricEvaluationSummary(),
     ) {}
 }

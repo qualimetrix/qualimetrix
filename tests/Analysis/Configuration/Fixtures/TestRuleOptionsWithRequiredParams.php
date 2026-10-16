@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Configuration\Fixtures;
 
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOptionValues;
+
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 
@@ -26,17 +28,18 @@ final readonly class TestRuleOptionsWithRequiredParams implements RuleOptionsInt
         public ?string $optional,
     ) {}
 
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
-        $items = $config['items'] ?? [];
+        $items = $config->strings('items');
+        $optional = $config->node('optional') === null ? null : $config->text('optional', '');
 
         return new self(
-            enabled: (bool) ($config['enabled'] ?? true),
-            threshold: (int) ($config['threshold'] ?? 0),
-            ratio: (float) ($config['ratio'] ?? 0.0),
-            name: (string) ($config['name'] ?? ''),
-            items: \is_array($items) ? array_values($items) : [],
-            optional: $config['optional'] ?? null,
+            enabled: $config->boolean('enabled', true),
+            threshold: $config->integer('threshold', 0),
+            ratio: $config->number('ratio', 0.0),
+            name: $config->text('name', ''),
+            items: $items,
+            optional: $optional,
         );
     }
 

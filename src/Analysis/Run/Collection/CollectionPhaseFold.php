@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\Collection;
 
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
@@ -28,6 +29,9 @@ final class CollectionPhaseFold
     /** @var list<Dependency> */
     private array $dependencies = [];
 
+    /** @var list<ClassLikeDeclaration> */
+    private array $classLikeDeclarations = [];
+
     /** @var array<string, list<Suppression>> */
     private array $suppressions = [];
 
@@ -48,6 +52,7 @@ final class CollectionPhaseFold
         $filePathKey = $result->filePath->value();
         $this->analyzedFiles[] = $result->filePath;
         array_push($this->dependencies, ...$result->dependencies());
+        array_push($this->classLikeDeclarations, ...$result->classLikeDeclarations());
         if ($result->suppressions() !== []) {
             $this->suppressions[$filePathKey] = $result->suppressions();
         }
@@ -64,6 +69,7 @@ final class CollectionPhaseFold
         return new CollectionPhaseOutput(
             $this->analyzedFiles,
             $this->failures,
+            $this->classLikeDeclarations,
             $this->suppressions,
             $this->thresholdOverrides,
             $this->thresholdDiagnostics,

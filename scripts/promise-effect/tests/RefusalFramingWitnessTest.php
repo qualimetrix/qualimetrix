@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\PromiseEffect\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\PromiseEffect\Observation;
 use Qualimetrix\PromiseEffect\ProcessProbe;
@@ -64,6 +65,22 @@ final class RefusalFramingWitnessTest extends TestCase
         $probe->observeCommand(Stand::refusalWitness(Stand::UNFRAMED_WITNESS_MESSAGE));
 
         self::assertSame(0, $probe->runs());
+    }
+
+    #[Test]
+    #[TestWith([5, 'crashed'])]
+    #[TestWith([1, 'accepted'])]
+    #[TestWith([2, 'accepted'])]
+    #[TestWith([0, 'accepted'])]
+    public function itDistinguishesInternalFailureFromFindingExitCodes(int $exit, string $expected): void
+    {
+        $observation = self::probe()->observeCommand([\PHP_BINARY, '-r', 'exit((int) $argv[1]);', (string) $exit]);
+
+        self::assertSame($exit, $observation->exit);
+        self::assertSame($expected, $observation->outcome());
+        if ($exit === 1 || $exit === 2) {
+            self::assertSame('exit=' . $exit, $observation->text());
+        }
     }
 
     private static function probe(): ProcessProbe

@@ -7,9 +7,10 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Command\Baseline\Generation\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\TestSupport\WorkingDirectory\RunsFromRepositoryRoot;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
@@ -28,6 +29,8 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(BaselineGenerateCommand::class)]
 final class ArchitectureCeilingRefusalTest extends TestCase
 {
+    use RunsFromRepositoryRoot;
+
     private const string FIXTURE_PATH = __DIR__ . '/../../../Analysis/Policy/Architecture/Fixtures/TemplateSample';
 
     private string $tempDir;

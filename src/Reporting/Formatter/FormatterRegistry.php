@@ -8,9 +8,6 @@ use InvalidArgumentException;
 
 final class FormatterRegistry implements FormatterRegistryInterface
 {
-    /** @var list<string> Formatter names excluded from public listings (deprecated) */
-    private const array HIDDEN_FORMATTERS = ['text-verbose'];
-
     /**
      * @var array<string, FormatterInterface>
      */
@@ -70,10 +67,7 @@ final class FormatterRegistry implements FormatterRegistryInterface
      */
     public function getAvailableNames(): array
     {
-        $names = array_filter(
-            array_keys($this->formatters),
-            static fn(string $name): bool => !\in_array($name, self::HIDDEN_FORMATTERS, true),
-        );
+        $names = array_keys($this->formatters);
         sort($names);
 
         return $names;

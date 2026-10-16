@@ -7,7 +7,6 @@ namespace Qualimetrix\Tests\Reporting\Unit\Formatter\Summary;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
@@ -28,7 +27,7 @@ final class OffenderListRendererDensityTest extends TestCase
     {
         $this->renderer = new OffenderListRenderer(
             new FindingFilter(),
-            new WorstClassDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class)),
+            new WorstClassDrillDown(),
         );
     }
 
@@ -36,8 +35,7 @@ final class OffenderListRendererDensityTest extends TestCase
     public function itDisplaysDensityInWorstClassesMeta(): void
     {
         $offender = new WorstOffender(
-            symbolPath: SymbolPath::forClass('App\\Service', 'HeavyService'),
-            file: RelativePath::fromString('src/Service/HeavyService.php'),
+            subject: \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass('App\\Service', 'HeavyService'), RelativePath::fromString('src/Service/HeavyService.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
             healthOverall: 30.0,
             label: 'Poor',
             reason: 'high complexity',
@@ -46,9 +44,11 @@ final class OffenderListRendererDensityTest extends TestCase
                 classCount: 0,
                 violationDensity: 5.0,
             ),
+            overallThresholds: [50.0, 30.0],
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -73,8 +73,7 @@ final class OffenderListRendererDensityTest extends TestCase
     public function itDoesNotDisplayDensityWhenZero(): void
     {
         $offender = new WorstOffender(
-            symbolPath: SymbolPath::forClass('App\\Service', 'CleanService'),
-            file: RelativePath::fromString('src/Service/CleanService.php'),
+            subject: \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass('App\\Service', 'CleanService'), RelativePath::fromString('src/Service/CleanService.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
             healthOverall: 80.0,
             label: 'Good',
             reason: '',
@@ -83,9 +82,11 @@ final class OffenderListRendererDensityTest extends TestCase
                 classCount: 0,
                 violationDensity: 0.0,
             ),
+            overallThresholds: [50.0, 30.0],
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -109,8 +110,7 @@ final class OffenderListRendererDensityTest extends TestCase
     public function itDoesNotDisplayDensityWhenNull(): void
     {
         $offender = new WorstOffender(
-            symbolPath: SymbolPath::forClass('App\\Service', 'NoLocService'),
-            file: RelativePath::fromString('src/Service/NoLocService.php'),
+            subject: \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass('App\\Service', 'NoLocService'), RelativePath::fromString('src/Service/NoLocService.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
             healthOverall: 40.0,
             label: 'Poor',
             reason: '',
@@ -119,9 +119,11 @@ final class OffenderListRendererDensityTest extends TestCase
                 classCount: 0,
                 violationDensity: null,
             ),
+            overallThresholds: [50.0, 30.0],
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -147,8 +149,7 @@ final class OffenderListRendererDensityTest extends TestCase
     {
         // Class A: 5 findings, 100 LOC => density = 5.0 (highest density)
         $offenderA = new WorstOffender(
-            symbolPath: SymbolPath::forClass('App', 'SmallBad'),
-            file: RelativePath::fromString('a.php'),
+            subject: \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass('App', 'SmallBad'), RelativePath::fromString('a.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
             healthOverall: 40.0,
             label: 'Poor',
             reason: '',
@@ -157,12 +158,12 @@ final class OffenderListRendererDensityTest extends TestCase
                 classCount: 0,
                 violationDensity: 5.0,
             ),
+            overallThresholds: [50.0, 30.0],
         );
 
         // Class B: 10 findings, 1000 LOC => density = 1.0 (lower density but more findings)
         $offenderB = new WorstOffender(
-            symbolPath: SymbolPath::forClass('App', 'BigBad'),
-            file: RelativePath::fromString('b.php'),
+            subject: \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass('App', 'BigBad'), RelativePath::fromString('b.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
             healthOverall: 35.0,
             label: 'Poor',
             reason: '',
@@ -171,9 +172,11 @@ final class OffenderListRendererDensityTest extends TestCase
                 classCount: 0,
                 violationDensity: 1.0,
             ),
+            overallThresholds: [50.0, 30.0],
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -199,11 +202,10 @@ final class OffenderListRendererDensityTest extends TestCase
     }
 
     #[Test]
-    public function itPreservesOriginalOrderWhenRankingByCount(): void
+    public function itRanksUnorderedCandidatesByScore(): void
     {
         $offenderA = new WorstOffender(
-            symbolPath: SymbolPath::forClass('App', 'SmallBad'),
-            file: RelativePath::fromString('a.php'),
+            subject: \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass('App', 'SmallBad'), RelativePath::fromString('a.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
             healthOverall: 40.0,
             label: 'Poor',
             reason: '',
@@ -212,11 +214,11 @@ final class OffenderListRendererDensityTest extends TestCase
                 classCount: 0,
                 violationDensity: 5.0,
             ),
+            overallThresholds: [50.0, 30.0],
         );
 
         $offenderB = new WorstOffender(
-            symbolPath: SymbolPath::forClass('App', 'BigBad'),
-            file: RelativePath::fromString('b.php'),
+            subject: \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass('App', 'BigBad'), RelativePath::fromString('b.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
             healthOverall: 35.0,
             label: 'Poor',
             reason: '',
@@ -225,21 +227,23 @@ final class OffenderListRendererDensityTest extends TestCase
                 classCount: 0,
                 violationDensity: 1.0,
             ),
+            overallThresholds: [50.0, 30.0],
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
             errorCount: 0,
             warningCount: 0,
-            worstClasses: [$offenderB, $offenderA], // B first (default by health score)
+            worstClasses: [$offenderA, $offenderB],
         );
 
         $color = new AnsiColor(false);
-        // rank-by=count (default) => should preserve original order
-        $context = new FormatterContext(useColor: false, options: ['top' => '10', 'rank-by' => 'count']);
+        // Score ranking uses the measured value, independent of input order.
+        $context = new FormatterContext(useColor: false, options: ['top' => '10', 'rank-by' => 'score']);
         $lines = [];
 
         $this->renderer->renderWorstClasses($report, $color, $context, $lines);
@@ -256,8 +260,7 @@ final class OffenderListRendererDensityTest extends TestCase
     public function itSortsNullDensityOffendersLastWhenRankingByDensity(): void
     {
         $offenderWithDensity = new WorstOffender(
-            symbolPath: SymbolPath::forClass('App', 'ClassA'),
-            file: RelativePath::fromString('a.php'),
+            subject: \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass('App', 'ClassA'), RelativePath::fromString('a.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
             healthOverall: 40.0,
             label: 'Poor',
             reason: '',
@@ -266,11 +269,11 @@ final class OffenderListRendererDensityTest extends TestCase
                 classCount: 0,
                 violationDensity: 2.0,
             ),
+            overallThresholds: [50.0, 30.0],
         );
 
         $offenderNullDensity = new WorstOffender(
-            symbolPath: SymbolPath::forClass('App', 'ClassB'),
-            file: RelativePath::fromString('b.php'),
+            subject: \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass('App', 'ClassB'), RelativePath::fromString('b.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
             healthOverall: 30.0,
             label: 'Poor',
             reason: '',
@@ -279,9 +282,11 @@ final class OffenderListRendererDensityTest extends TestCase
                 classCount: 0,
                 violationDensity: null,
             ),
+            overallThresholds: [50.0, 30.0],
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
@@ -304,4 +309,38 @@ final class OffenderListRendererDensityTest extends TestCase
         self::assertNotFalse($posB);
         self::assertLessThan($posB, $posA, 'ClassA (density=2.0) should appear before ClassB (density=null)');
     }
+    #[Test]
+    public function itCountsAllSelectedCandidatesAndRecommendsOnlyTheFullTop(): void
+    {
+        $offenders = [];
+        for ($index = 1; $index <= 15; ++$index) {
+            $path = SymbolPath::forNamespace('App\\N' . str_pad((string) $index, 2, '0', \STR_PAD_LEFT));
+            $offenders[] = new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::aggregate($path), 82.8, 'Critical', '', new WorstOffenderEvidence(1, 2), [90.0, 85.0]);
+        }
+        $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            findings: [],
+            filesAnalyzed: 15,
+            filesSkipped: 0,
+            duration: 0.0,
+            errorCount: 0,
+            warningCount: 0,
+            worstNamespaces: array_reverse($offenders),
+        );
+        foreach ([3 => 12, 12 => 3] as $top => $remaining) {
+            $lines = [];
+            $this->renderer->renderWorstNamespaces($report, new AnsiColor(true), new FormatterContext(options: ['top' => (string) $top]), $lines);
+            $output = implode("\n", $lines);
+            self::assertStringContainsString('+' . $remaining . ' more (use --format-opt=top=15)', $output);
+            self::assertStringNotContainsString('--format=html', $output);
+            self::assertStringContainsString('2 classes in subtree', $output);
+            self::assertStringContainsString("\033[31m82.8\033[0m", $output);
+            self::assertStringContainsString('App\\N01', $lines[1]);
+        }
+        $lines = [];
+        $this->renderer->renderWorstNamespaces($report, new AnsiColor(false), new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::exact('App\\N14')), $lines);
+        self::assertStringContainsString('App\\N14', implode("\n", $lines));
+        self::assertStringNotContainsString('more', implode("\n", $lines));
+    }
+
 }

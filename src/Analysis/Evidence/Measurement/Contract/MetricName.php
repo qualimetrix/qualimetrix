@@ -14,11 +14,10 @@ namespace Qualimetrix\Analysis\Evidence\Measurement\Contract;
  *
  * The constant is the key upper-cased, so a constant cannot drift from the
  * family of its own value the way `STRUCTURE_LCOM = 'lcom'` did.
- *
- * @qmx-threshold coupling.cbo 73 -- Canonical names are an intentional Measurement contract hub, and this CBO is afferent: it counts adoption, not entanglement. Current raw CBO 72 gets one-edge headroom. ChannelDeclarationCompilerPass and ComputedMetricFormulaValidator read these constants by reflection to validate published metric keys; HealthDimensionCatalog uses them instead of spelling class-level keys as literals. Centralizing these readers prevents private copies of the metric vocabulary from drifting.
  */
 final class MetricName
 {
+    public const string NAMESPACE_FILE_CONTRIBUTION = 'internal.namespace-file-contribution';
     // -- Complexity ------------------------------------------------------------
 
     public const string COMPLEXITY_CCN = 'complexity.ccn';
@@ -41,6 +40,7 @@ final class MetricName
     public const string COUPLING_ABSTRACTNESS_OWN = 'coupling.abstractness-own';
     public const string COUPLING_DISTANCE_OWN = 'coupling.distance-own';
     public const string COUPLING_CLASS_RANK = 'coupling.class-rank';
+    public const string COUPLING_CLASS_RANK_SHARE = 'coupling.class-rank-share';
     public const string COUPLING_CE_PACKAGES = 'coupling.ce-packages';
     public const string COUPLING_CBO_APP = 'coupling.cbo-app';
     public const string COUPLING_CE_FRAMEWORK = 'coupling.ce-framework';
@@ -54,6 +54,9 @@ final class MetricName
     public const string COHESION_LCC = 'cohesion.lcc';
     public const string COHESION_PURE_METHOD_COUNT = 'cohesion.pure-method-count';
     public const string COHESION_LCOM = 'cohesion.lcom';
+    public const string COHESION_LCOM_METHOD_COUNT = 'cohesion.lcom-method-count';
+    public const string COHESION_TCC_METHOD_COUNT = 'cohesion.tcc-method-count';
+    public const string COHESION_UNREAD_TRAIT_COUNT = 'cohesion.unread-trait-count';
 
     // -- Design ----------------------------------------------------------------
 
@@ -68,6 +71,7 @@ final class MetricName
     public const string DESIGN_TYPE_COVERAGE_PROPERTY = 'design.type-coverage.property';
     public const string DESIGN_TYPE_COVERAGE_ALL = 'design.type-coverage.all';
     public const string DESIGN_DIT = 'design.dit';
+    public const string DESIGN_DIT_UNRESOLVED = 'design.dit-unresolved';
     public const string DESIGN_IS_READONLY = 'design.is-readonly';
     public const string DESIGN_IS_PROMOTED_PROPERTIES_ONLY = 'design.is-promoted-properties-only';
     public const string DESIGN_IS_DATA_CLASS = 'design.is-data-class';

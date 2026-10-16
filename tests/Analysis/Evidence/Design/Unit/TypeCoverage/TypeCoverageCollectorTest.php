@@ -712,6 +712,26 @@ PHP;
         self::assertNotContains(\Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface::class, class_implements($this->collector));
     }
 
+    #[Test]
+    public function itKeepsDistinctTypingForSameFileDeclarations(): void
+    {
+        $this->collectMetrics(<<<'PHP'
+<?php
+namespace App;
+class Twin { public function run(int $value): int { return $value; } }
+if (false) {
+    class Twin { public function run($one, $two) { return $one; } }
+}
+PHP);
+
+        $visitor = $this->collector->getVisitor();
+        self::assertInstanceOf(TypeCoverageVisitor::class, $visitor);
+        $classes = array_values($visitor->getClassTypeInfo());
+        self::assertCount(2, $classes);
+        self::assertSame([1, 2], array_column($classes, 'paramTotal'));
+        self::assertSame([1, 0], array_column($classes, 'paramTyped'));
+    }
+
     private function collectMetrics(string $code): MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();

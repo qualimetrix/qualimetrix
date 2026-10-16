@@ -24,9 +24,9 @@ final class DebugCodeSmellsTest extends TestCase
         );
         $smells = new DebugCodeSmells();
 
-        self::assertSame('debug_code', $smells->location($calls[0], null, 'file')?->type);
-        self::assertNull($smells->location($calls[1], null, 'file'));
-        self::assertNull($smells->location($calls[2], 'dump', 'file'));
+        self::assertSame('debug_code', $smells->location($calls[0], 'file')?->type);
+        self::assertNull($smells->location($calls[1], 'file'));
+        self::assertSame('debug_code', $smells->location($calls[2], 'file')?->type);
     }
 
     #[Test]
@@ -38,7 +38,7 @@ final class DebugCodeSmellsTest extends TestCase
         );
         $smells = new DebugCodeSmells();
 
-        $location = $smells->location($calls[0], null, 'file');
+        $location = $smells->location($calls[0], 'file');
 
         self::assertNotNull($location);
         self::assertSame('debug_code', $location->type);
@@ -56,10 +56,25 @@ final class DebugCodeSmellsTest extends TestCase
 
         $flagged = [];
         foreach ($calls as $call) {
-            $flagged[] = $smells->location($call, null, 'file')?->extra;
+            $flagged[] = $smells->location($call, 'file')?->extra;
         }
 
         self::assertSame(['var_dump', 'dd', 'dump', null, null, null, 'var_export'], $flagged);
+    }
+
+    #[Test]
+    public function itAppliesTheNamedReturnFlagOnlyToFunctionsThatHaveOne(): void
+    {
+        $calls = (new NodeFinder())->findInstanceOf(
+            (new ParserFactory())->createForHostVersion()->parse('<?php dump($x, return: true); dd($x, return: true); var_dump($x, return: true); print_r($x, return: true);') ?? [],
+            FuncCall::class,
+        );
+        $smells = new DebugCodeSmells();
+
+        self::assertSame(['dump', 'dd', 'var_dump', null], array_map(
+            static fn(FuncCall $call): ?string => $smells->location($call, 'file')?->extra,
+            $calls,
+        ));
     }
 
     #[Test]
@@ -71,19 +86,19 @@ final class DebugCodeSmellsTest extends TestCase
         );
         $smells = new DebugCodeSmells();
 
-        self::assertNull($smells->location($calls[0], null, 'file'));
-        self::assertSame('debug_print_backtrace', $smells->location($calls[1], null, 'file')?->extra);
+        self::assertNull($smells->location($calls[0], 'file'));
+        self::assertSame('debug_print_backtrace', $smells->location($calls[1], 'file')?->extra);
     }
 
     #[Test]
     public function itDoesNotResolveAnImportedFunctionAlias(): void
     {
-        // Known limit: the collection pipeline runs no name resolver, so an alias is read as written.
+        // Function aliases are still read as written by this detector.
         $calls = (new NodeFinder())->findInstanceOf(
             (new ParserFactory())->createForHostVersion()->parse('<?php use function var_dump as vd; vd($x);') ?? [],
             FuncCall::class,
         );
 
-        self::assertNull((new DebugCodeSmells())->location($calls[0], null, 'file'));
+        self::assertNull((new DebugCodeSmells())->location($calls[0], 'file'));
     }
 }

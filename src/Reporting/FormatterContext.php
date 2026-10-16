@@ -10,9 +10,7 @@ use Qualimetrix\Core\Pattern\NamespacePattern;
 /**
  * Context passed to formatters with rendering options.
  *
- * Created by CheckCommand from CLI flags and OutputInterface state.
- *
- * @qmx-threshold coupling.cbo warning=33 error=33 -- Formatter context is the immutable Reporting input boundary every formatter's `format(Report, FormatterContext)` signature depends on. `Infrastructure\Console\ResultPresenter` also names it directly to refuse a `--namespace` or `--class` value that selects nothing, and the bound namespace selector is now part of that stable boundary. Raw CBO 32 gets one-edge headroom from the inclusive threshold of 33.
+ * @qmx-threshold coupling.cbo warning=34 error=34 -- This immutable rendering boundary is shared by formatters, FormatterContextFactory and ReportAssembler. Splitting its report-selection facts would distribute the same dependencies across their signatures; a finite ceiling keeps further growth visible.
  */
 final readonly class FormatterContext
 {
@@ -43,6 +41,7 @@ final readonly class FormatterContext
         public ?int $detailLimit = null,
         public bool $isGroupByExplicit = false,
         public int $topIssuesLimit = self::DEFAULT_TOP_ISSUES_LIMIT,
+        public bool $verbose = false,
     ) {}
 
     /**
@@ -87,6 +86,7 @@ final readonly class FormatterContext
             detailLimit: $detailLimit,
             isGroupByExplicit: $this->isGroupByExplicit,
             topIssuesLimit: $this->topIssuesLimit,
+            verbose: $this->verbose,
         );
     }
 

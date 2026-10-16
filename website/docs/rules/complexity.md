@@ -240,7 +240,7 @@ Qualimetrix implements the SonarSource whitepaper
 - **`match`** is PHP's switch expression and is scored as `switch` (+1 plus the nesting level, arms nested one level): the whitepaper counts a language's own spelling of a listed keyword.
 - **Closures and arrow functions** add nothing to the enclosing method and raise the nesting level of their body by one. Like every other callable metric, Qualimetrix measures each closure as its own unit (see the deviation below).
 - **Named functions and anonymous-class methods** declared inside a method are measured as separate units starting at nesting level 0 (see the deviation below).
-- **Null-coalescing operators add nothing:** `??`, `??=` and `?->` score 0, as the whitepaper prescribes ("Ignore shorthand", page 6): they shorten a null check into one expression rather than break the linear flow. Cyclomatic complexity and NPath still count `??` and `??=`.
+- **Null-coalescing operators add nothing:** `??`, `??=` and `?->` score 0, as the whitepaper prescribes ("Ignore shorthand", page 6): they shorten a null check into one expression rather than break the linear flow. Cyclomatic complexity counts each operator as +1; NPath treats `??` and `??=` as ternary value selections (+2 each).
 
 ```php
 public function activeNames(array $users): array  // cognitive complexity: 0
@@ -265,12 +265,22 @@ public function activeNames(array $users): array  // cognitive complexity: 0
       nests them one level inside the enclosing structure and adds their body to the
       method. Qualimetrix measures each as its own unit starting at nesting level 0.
     - **Recursion:** only a direct self-call is detected: `$this->method()` or
-      `$this?->method()`, `self::`, `static::` or the own class name, or a function calling
-      itself by its short, fully qualified or `namespace\`-relative name, in any letter case.
+      `$this?->method()`, `self::`, `static::` or a class name resolved to the owning class,
+      including imported aliases, imported namespace prefixes, fully qualified and
+      `namespace\`-relative names, in any letter case. `parent::` is not a self-call.
+      A function can call itself by its short, fully qualified or `namespace\`-relative name.
       The whitepaper also counts every method in an indirect cycle (A calls B, B calls A);
       Qualimetrix does not, and it does not follow a call through a variable or a callable.
 
 <!-- llms:skip-end -->
+
+<!-- llms-only
+Cognitive recursion is a direct self-call, counted once per callable. Static
+class names use shared class-name resolution (imports, namespace prefixes,
+fully qualified and namespace-relative names), compared case-insensitively to
+the owning class. self/static retain their self-call treatment; parent does
+not. Indirect cycles and calls through variables or callables are not followed.
+-->
 
 ### Configuration
 
@@ -387,7 +397,8 @@ Qualimetrix follows Nejmeh (1988) with PHP-specific extensions:
 
 - **Boolean operators in conditions:** Each `&&`/`||` in a condition adds 1 to that condition's path count. For example, `if ($a && $b || $c)` contributes 4 paths (base 2 + 2 operators).
 - **Ternary:** Contributes 2 base paths plus any complexity in sub-expressions.
-- **`??` (null coalescing):** Treated as +1 additional path, similar to a ternary.
+- **`??` and `??=`:** Contribute 2 ordinary expression paths each, like ternary value selection. `return $x ?? 5` and `$x ??= []` have NPath 2; two chained coalesces have NPath 4.
+- **`?->`:** Each nullsafe hop adds 1 separately from ordinary expression paths. At a callable statement boundary, `max(1, ordinary) + nullsafe` retains exactly one statement base.
 - **PHP-specific extensions:** `match`, `foreach`, `??`, and `?->` are all handled as path-generating constructs. Expression-bearing `for`, `foreach`, `switch`, and `echo` slots are traversed through transparent AST wrappers.
 
 **`match` expressions:** Qualimetrix uses an **additive** approach, consistent with Nejmeh's original formula for `switch`:
@@ -406,6 +417,13 @@ yields practical, actionable values. Values for these constructs change from
 earlier Qualimetrix releases and may require threshold/baseline recalibration.
 
 !!! info "Deviation from original spec"
+    Nejmeh (1988) predates `??`, `??=` and `?->`. Qualimetrix models `??` and
+    `??=` as ternary value selections (+2 ordinary paths), while `?->` adds
+    one separate nullsafe path per hop. `$x ?? $y ?? 5` therefore reports 4,
+    like the nested ternary `$x ? 1 : ($y ? 2 : 3)`, although each has three
+    distinguishable outcomes. This preserves the existing ternary recurrence;
+    it is not a special count of distinct runtime outcomes.
+
     NPath `try/catch` handling is a deliberate qmx extension. Qualimetrix computes
     `(NPath(try) + Σ NPath(catch) + 1) × NPath(finally)`: the `+1` is a PMD-style
     additive term for the no-exception path. A bare `try{}catch{}` therefore reports
@@ -479,8 +497,8 @@ A class with 20 simple getter/setter methods (each with complexity 1) has WMC = 
 
 | Level   | Threshold | Severity |
 | ------- | --------- | -------- |
-| Warning | > 50      | Warning  |
-| Error   | > 80      | Error    |
+| Warning | >= 50     | Warning  |
+| Error   | >= 80     | Error    |
 <!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
@@ -514,7 +532,7 @@ class OrderProcessor
 <!-- llms:skip-begin -->
 ### Implementation notes
 
-WMC is calculated as the sum of [Cyclomatic Complexity](#cyclomatic-complexity) of all methods in a class. The aggregator produces this class-level metric; the Complexity rule evaluates it and can exclude data classes. Since Qualimetrix uses the CCN2+ variant (which counts `??` and `?->` as decision points), WMC values will be correspondingly higher than those reported by other tools.
+WMC is calculated as the sum of [Cyclomatic Complexity](#cyclomatic-complexity) of all methods in a class. The Complexity collector produces it on each exact class declaration, including `0` for a class without methods. Property hooks and anonymous-class methods do not contribute; the Complexity rule evaluates it and can exclude data classes. Since Qualimetrix uses the CCN2+ variant (which counts `??` and `?->` as decision points), WMC values will be correspondingly higher than those reported by other tools.
 
 <!-- llms:skip-end -->
 
@@ -541,3 +559,7 @@ rules:
 bin/qmx check src/ --rule-opt="complexity.wmc:warning=60"
 bin/qmx check src/ --rule-opt="complexity.wmc:error=100"
 ```
+
+## Per-layer shorthand and class activation
+
+A top shorthand for CCN, cognitive complexity or NPath changes callable and preserves the class band. It conflicts with explicit writes to the same expanded leaves in one layer; independent settings such as callable.enabled are preserved. Separate layers merge their expanded leaves. NPath written class bands activate without a redundant true; class.enabled:false still turns them off. Integer bands refuse fractional values; effective ordering includes default halves. Existing academic algorithms and default numbers are unchanged. See [Configuration forms](../getting-started/configuration.md#declared-rule-forms-and-prepared-execution).

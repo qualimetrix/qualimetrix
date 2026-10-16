@@ -39,7 +39,7 @@ final class HtmlDebtCalculatorTest extends TestCase
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
-        $this->calculator->computeDebt([], ['App\\Service' => $node]);
+        $this->calculator->calculate($node, [], ['App\\Service' => $node]);
 
         self::assertSame(0, $node->debtMinutes);
     }
@@ -60,7 +60,8 @@ final class HtmlDebtCalculatorTest extends TestCase
             metricValue: 10,
         );
 
-        $this->calculator->computeDebt(
+        $this->calculator->calculate(
+            $node,
             ['App\\Service' => [$finding]],
             ['App\\Service' => $node],
         );
@@ -84,7 +85,8 @@ final class HtmlDebtCalculatorTest extends TestCase
             severity: Severity::Warning,
         );
 
-        $this->calculator->computeDebt(
+        $this->calculator->calculate(
+            $node,
             ['App\\Other' => [$finding]],
             ['App\\Service' => $node],
         );
@@ -97,12 +99,12 @@ final class HtmlDebtCalculatorTest extends TestCase
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
         $node->findings = [
-            ['subject' => 'declaration:class:s@f:0', 'ruleName' => 'r1', 'violationCode' => 'r1', 'message' => 'm', 'recommendation' => null, 'severity' => 'warning', 'metricValue' => 1, 'symbolPath' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 1],
-            ['subject' => 'declaration:class:s@f:1', 'ruleName' => 'r2', 'violationCode' => 'r2', 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 2, 'symbolPath' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 2],
+            ['subject' => 'declaration:class:s@f:0', 'rule' => 'r1', 'code' => 'r1', 'channel' => 'r1', 'edge' => null, 'namespace' => '', 'namespaces' => [''], 'threshold' => null, 'techDebtMinutes' => 0, 'message' => 'm', 'recommendation' => null, 'severity' => 'warning', 'metricValue' => 1, 'symbol' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 1, 'acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null],
+            ['subject' => 'declaration:class:s@f:1', 'rule' => 'r2', 'code' => 'r2', 'channel' => 'r2', 'edge' => null, 'namespace' => '', 'namespaces' => [''], 'threshold' => null, 'techDebtMinutes' => 0, 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 2, 'symbol' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 2, 'acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null],
         ];
         $node->debtMinutes = 60;
 
-        $total = $this->calculator->aggregateBottomUp($node);
+        $total = $this->calculator->calculate($node, [], []);
 
         self::assertSame(2, $total);
         self::assertSame(2, $node->violationCountTotal);
@@ -116,20 +118,20 @@ final class HtmlDebtCalculatorTest extends TestCase
 
         $childA = new HtmlTreeNode('A', 'App\\A', 'class');
         $childA->findings = [
-            ['subject' => 'declaration:class:s@f:0', 'ruleName' => 'r1', 'violationCode' => 'r1', 'message' => 'm', 'recommendation' => null, 'severity' => 'warning', 'metricValue' => 1, 'symbolPath' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 1],
+            ['subject' => 'declaration:class:s@f:0', 'rule' => 'r1', 'code' => 'r1', 'channel' => 'r1', 'edge' => null, 'namespace' => '', 'namespaces' => [''], 'threshold' => null, 'techDebtMinutes' => 0, 'message' => 'm', 'recommendation' => null, 'severity' => 'warning', 'metricValue' => 1, 'symbol' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 1, 'acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null],
         ];
         $childA->debtMinutes = 30;
 
         $childB = new HtmlTreeNode('B', 'App\\B', 'class');
         $childB->findings = [
-            ['subject' => 'declaration:class:s@f:1', 'ruleName' => 'r2', 'violationCode' => 'r2', 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 2, 'symbolPath' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 2],
-            ['subject' => 'declaration:class:s@f:2', 'ruleName' => 'r3', 'violationCode' => 'r3', 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 3, 'symbolPath' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 3],
+            ['subject' => 'declaration:class:s@f:1', 'rule' => 'r2', 'code' => 'r2', 'channel' => 'r2', 'edge' => null, 'namespace' => '', 'namespaces' => [''], 'threshold' => null, 'techDebtMinutes' => 0, 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 2, 'symbol' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 2, 'acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null],
+            ['subject' => 'declaration:class:s@f:2', 'rule' => 'r3', 'code' => 'r3', 'channel' => 'r3', 'edge' => null, 'namespace' => '', 'namespaces' => [''], 'threshold' => null, 'techDebtMinutes' => 0, 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 3, 'symbol' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 3, 'acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null],
         ];
         $childB->debtMinutes = 45;
 
         $root->children = [$childA, $childB];
 
-        $total = $this->calculator->aggregateBottomUp($root);
+        $total = $this->calculator->calculate($root, [], []);
 
         self::assertSame(3, $total);
         self::assertSame(3, $root->violationCountTotal);
@@ -150,21 +152,21 @@ final class HtmlDebtCalculatorTest extends TestCase
 
         $classA = new HtmlTreeNode('ClassA', 'App\\ClassA', 'class');
         $classA->findings = [
-            ['subject' => 'declaration:class:s@f:0', 'ruleName' => 'r1', 'violationCode' => 'r1', 'message' => 'm', 'recommendation' => null, 'severity' => 'warning', 'metricValue' => 1, 'symbolPath' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 1],
+            ['subject' => 'declaration:class:s@f:0', 'rule' => 'r1', 'code' => 'r1', 'channel' => 'r1', 'edge' => null, 'namespace' => '', 'namespaces' => [''], 'threshold' => null, 'techDebtMinutes' => 0, 'message' => 'm', 'recommendation' => null, 'severity' => 'warning', 'metricValue' => 1, 'symbol' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 1, 'acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null],
         ];
         $classA->debtMinutes = 20;
 
         $classB = new HtmlTreeNode('ClassB', 'App\\ClassB', 'class');
         $classB->findings = [
-            ['subject' => 'declaration:class:s@f:1', 'ruleName' => 'r2', 'violationCode' => 'r2', 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 2, 'symbolPath' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 2],
-            ['subject' => 'declaration:class:s@f:2', 'ruleName' => 'r3', 'violationCode' => 'r3', 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 3, 'symbolPath' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 3],
+            ['subject' => 'declaration:class:s@f:1', 'rule' => 'r2', 'code' => 'r2', 'channel' => 'r2', 'edge' => null, 'namespace' => '', 'namespaces' => [''], 'threshold' => null, 'techDebtMinutes' => 0, 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 2, 'symbol' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 2, 'acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null],
+            ['subject' => 'declaration:class:s@f:2', 'rule' => 'r3', 'code' => 'r3', 'channel' => 'r3', 'edge' => null, 'namespace' => '', 'namespaces' => [''], 'threshold' => null, 'techDebtMinutes' => 0, 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 3, 'symbol' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 3, 'acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null],
         ];
         $classB->debtMinutes = 40;
 
         $ns->children = [$classA, $classB];
         $root->children = [$ns];
 
-        $total = $this->calculator->aggregateBottomUp($root);
+        $total = $this->calculator->calculate($root, [], []);
 
         self::assertSame(3, $total);
         self::assertSame(3, $root->violationCountTotal);

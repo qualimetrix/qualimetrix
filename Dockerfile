@@ -48,9 +48,14 @@ FROM php:8.4-cli-alpine
 LABEL maintainer="FractalizeR"
 LABEL description="Qualimetrix - PHP Static Analysis Tool"
 
-# Install runtime dependencies (if any)
-# Currently Qualimetrix only needs PHP CLI with no additional extensions
+# The base PHP CLI supplies posix and proc_open for process workers; pcntl is
+# unnecessary. Git is used for project scope and hook commands.
 RUN apk add --no-cache git
+
+# The first run creates /cache/qmx as a private directory for its UID; use a
+# separate cache volume when running the image as another user.
+ENV XDG_CACHE_HOME=/cache
+RUN mkdir -m 1777 /cache
 
 # Set working directory for analyzed projects
 WORKDIR /app

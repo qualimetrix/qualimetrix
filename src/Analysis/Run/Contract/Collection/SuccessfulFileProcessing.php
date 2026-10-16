@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\Contract\Collection;
 
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
@@ -18,6 +19,7 @@ final readonly class SuccessfulFileProcessing
 {
     /**
      * @param list<CallableWithMetrics> $callableMetrics
+     * @param list<ClassLikeDeclaration> $classLikeDeclarations
      * @param array<string, array{subject: MetricSubject, metrics: MetricBag, line: int, start: int}> $classMetrics
      * @param array<string, array{symbolPath: SymbolPath, metrics: MetricBag, line: int}> $namespaceMetrics
      * @param list<Dependency> $dependencies
@@ -27,6 +29,7 @@ final readonly class SuccessfulFileProcessing
      */
     public function __construct(
         public MetricBag $fileBag,
+        public array $classLikeDeclarations,
         public array $callableMetrics = [],
         public array $classMetrics = [],
         public array $namespaceMetrics = [],

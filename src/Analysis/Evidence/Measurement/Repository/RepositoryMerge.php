@@ -7,7 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Measurement\Repository;
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 
 /**
@@ -15,41 +15,26 @@ use Qualimetrix\Core\Symbol\SymbolInfo;
  */
 final class RepositoryMerge
 {
-    public static function metrics(MetricBag $left, MetricBag $right): MetricBag
-    {
-        return $left->merge($right);
-    }
-
     /**
-     * @param array<string, MetricBag> $leftMetrics
-     * @param array<string, SymbolInfo> $leftInfos
-     * @param array<string, MetricBag> $rightMetrics
-     * @param array<string, SymbolInfo> $rightInfos
-     *
-     * @return array{metrics: array<string, MetricBag>, infos: array<string, SymbolInfo>}
+     * @param array<string, MetricBag> $metrics
+     * @param array<string, SymbolInfo> $infos
      */
-    public static function plain(
-        array $leftMetrics,
-        array $leftInfos,
-        array $rightMetrics,
-        array $rightInfos,
-    ): array {
-        $metrics = $leftMetrics;
-        $infos = $leftInfos;
-
-        foreach ($rightInfos as $canonical => $info) {
-            if (isset($metrics[$canonical])) {
-                $metrics[$canonical] = self::metrics($metrics[$canonical], $rightMetrics[$canonical]);
-                $infos[$canonical] = self::plainInfo($infos[$canonical], $info);
-
-                continue;
-            }
-
-            $metrics[$canonical] = $rightMetrics[$canonical];
+    public static function store(string $canonical, SymbolInfo $info, MetricBag $incoming, array &$metrics, array &$infos): SymbolInfo
+    {
+        if (isset($metrics[$canonical])) {
+            $metrics[$canonical] = self::metrics($metrics[$canonical], $incoming);
+            $infos[$canonical] = self::subjectInfo($infos[$canonical], $info);
+        } else {
+            $metrics[$canonical] = $incoming;
             $infos[$canonical] = $info;
         }
 
-        return ['metrics' => $metrics, 'infos' => $infos];
+        return $infos[$canonical];
+    }
+
+    public static function metrics(MetricBag $left, MetricBag $right): MetricBag
+    {
+        return $left->merge($right);
     }
 
     public static function plainInfo(SymbolInfo $left, SymbolInfo $right): SymbolInfo
@@ -88,13 +73,15 @@ final class RepositoryMerge
             $left->line ?? $right->line,
             $left->callableKind,
             $left->classAggregationOwner,
+            $left->anonymousClassContext,
         );
     }
 
     private static function assertSameCallableMetadata(SymbolInfo $left, SymbolInfo $right): void
     {
         if ($left->callableKind === $right->callableKind
-            && self::sameLogicalClass($left->classAggregationOwner, $right->classAggregationOwner)
+            && self::sameDeclaration($left->classAggregationOwner, $right->classAggregationOwner)
+            && $left->anonymousClassContext === $right->anonymousClassContext
             && self::sameFile($left->file, $right->file)
             && self::sameSourceLine($left->line, $right->line)
         ) {
@@ -107,7 +94,7 @@ final class RepositoryMerge
         ));
     }
 
-    private static function sameLogicalClass(?LogicalClassPath $left, ?LogicalClassPath $right): bool
+    private static function sameDeclaration(?DeclarationPath $left, ?DeclarationPath $right): bool
     {
         return $left?->toCanonical() === $right?->toCanonical();
     }

@@ -1,0 +1,64 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Infrastructure\Console\Command\Baseline;
+
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
+use Qualimetrix\Analysis\Policy\Baseline\RunCoverage\RunScope;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Console\BaselineCommand\MeasuredAnalysisRun;
+
+/**
+ * Everything one run of a baseline command needs from the analysis it just
+ * performed.
+ *
+ * The measured set (ADR 0017) is the point of the
+ * object, but five other things travel with it because they are facts about
+ * *that* run and cannot be recomputed later without risking disagreement:
+ *
+ * - the **scope**, as a {@see RunScope} rather than a bare path list, so the
+ *   guard of ADR 0017 asks the object that derived the portable form whether it
+ *   covers the recorded one instead of two sides deriving it separately;
+ * - the **project root**, which {@see \Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineWriter}
+ *   needs to make `file:` keys portable;
+ * - the **analysis result**, because `baseline:explain` reads the run's
+ *   `@qmx-threshold` overrides off it, and a second analysis to fetch them
+ *   could disagree with the first;
+ * - the **resolved configuration**, whose complete discovery exclusions must
+ *   be recorded even when a selector matched no file in this run.
+ * - the **coverage**, whose analyzed paths, current exclusions and project
+ *   tree query are the facts the ceiling uses to compare this invocation.
+ */
+final readonly class BaselineRunContext
+{
+    /**
+     * @param RunScope $scope the analysed paths in the portable form a baseline file
+     *                        records, and the coverage predicate the scope guard reads
+     */
+    public function __construct(
+        public MeasuredAnalysisRun $run,
+        public RunScope $scope,
+        public AbsolutePath $projectRoot,
+        public RunConfiguration $configuration,
+        public RunCoverage $coverage,
+    ) {}
+
+    /**
+     * The measured set: the findings every baseline operation reads (ADR 0017).
+     *
+     * @return list<Finding>
+     */
+    public function findings(): array
+    {
+        return $this->run->findings;
+    }
+
+    public function result(): AnalysisResult
+    {
+        return $this->run->result;
+    }
+}

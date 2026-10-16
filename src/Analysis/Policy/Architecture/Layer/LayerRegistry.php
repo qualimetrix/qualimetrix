@@ -6,7 +6,12 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 
 use Closure;
 use InvalidArgumentException;
+
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContext;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContextFactory;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\LayerMatch;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MembershipResult;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
@@ -65,7 +70,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * There is intentionally no specificity scoring, no collision detection,
  * and no exception class for ambiguity — declaration order is the user's
  * tool to express intent, and the engine does not second-guess it. The
- * {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator}
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator}
  * emits `architecture.unreachable-layer` and `architecture.potential-shadow`
  * to surface misordered or overlapping declarations.
  */

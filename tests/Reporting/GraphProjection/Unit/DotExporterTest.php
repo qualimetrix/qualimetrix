@@ -28,13 +28,13 @@ final class DotExporterTest extends TestCase
     public function itExportsValidDot(): void
     {
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\ServiceA'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\ServiceB')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
             ),
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\ServiceB'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\ServiceC')),
                 DependencyType::TypeHint,
@@ -55,7 +55,7 @@ final class DotExporterTest extends TestCase
     public function itGroupsByNamespace(): void
     {
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\Service\\UserService'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Repository\\UserRepository')),
                 DependencyType::TypeHint,
@@ -76,7 +76,7 @@ final class DotExporterTest extends TestCase
     public function itUsesShortLabels(): void
     {
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\Very\\Long\\Namespace\\UserService'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Very\\Long\\Namespace\\UserRepository')),
                 DependencyType::TypeHint,
@@ -96,7 +96,7 @@ final class DotExporterTest extends TestCase
     public function itUsesFullLabelsWhenDisabled(): void
     {
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\UserService'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\UserRepository')),
                 DependencyType::TypeHint,
@@ -119,7 +119,7 @@ final class DotExporterTest extends TestCase
     public function itUsesFullLabelsInClusterModeWhenShortLabelsDisabled(): void
     {
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\Service\\UserService'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Repository\\UserRepository')),
                 DependencyType::TypeHint,
@@ -143,7 +143,7 @@ final class DotExporterTest extends TestCase
     public function itUsesShortLabelsInClusterMode(): void
     {
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\Service\\UserService'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Repository\\UserRepository')),
                 DependencyType::TypeHint,
@@ -167,7 +167,7 @@ final class DotExporterTest extends TestCase
     public function itEscapesSpecialCharacters(): void
     {
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\Class"With"Quotes'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Another')),
                 DependencyType::TypeHint,
@@ -189,13 +189,13 @@ final class DotExporterTest extends TestCase
     public function itFiltersIncludeNamespaces(): void
     {
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\Service\\Foo'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Service\\Bar')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
             ),
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\Tests\\FooTest'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Service\\Foo')),
                 DependencyType::TypeHint,
@@ -218,13 +218,13 @@ final class DotExporterTest extends TestCase
     public function itFiltersExcludeNamespaces(): void
     {
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\Service\\Foo'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Service\\Bar')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
             ),
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\Tests\\FooTest'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Service\\Foo')),
                 DependencyType::TypeHint,
@@ -247,7 +247,7 @@ final class DotExporterTest extends TestCase
     public function itColorsByInstability(): void
     {
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\Stable'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Unstable')),
                 DependencyType::TypeHint,
@@ -267,7 +267,7 @@ final class DotExporterTest extends TestCase
     public function itDisablesColorByInstability(): void
     {
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\ServiceA'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\ServiceB')),
                 DependencyType::TypeHint,
@@ -286,7 +286,7 @@ final class DotExporterTest extends TestCase
     public function itChangesDirection(): void
     {
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\ServiceA'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\ServiceB')),
                 DependencyType::TypeHint,
@@ -314,7 +314,7 @@ final class DotExporterTest extends TestCase
     {
         $broken = "Bad\xFFClass";
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\' . $broken), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Good')),
                 DependencyType::TypeHint,
@@ -327,7 +327,7 @@ final class DotExporterTest extends TestCase
         $dot = $exporter->export($graph);
 
         self::assertTrue(mb_check_encoding($dot, 'UTF-8'), 'the exported document is valid UTF-8');
-        self::assertStringContainsString("Bad\u{FFFD}Class", $dot);
+        self::assertStringContainsString("Bad%FFClass", $dot);
         self::assertStringContainsString(PublishedUtf8::REPAIR_CHECK, $dot);
     }
 
@@ -339,7 +339,7 @@ final class DotExporterTest extends TestCase
     public function itAddsNoRepairMarkWhenTheInputIsValid(): void
     {
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\Good'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Better')),
                 DependencyType::TypeHint,
@@ -369,7 +369,7 @@ final class DotExporterTest extends TestCase
     public function itFiltersEdgesWhenNodesAreFiltered(): void
     {
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\\Service\\Foo'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Tests\\FooTest')),
                 DependencyType::TypeHint,
@@ -443,6 +443,7 @@ final class DotExporterTest extends TestCase
             [],
             [],
             DependencyGraph::declarationsAmong($dependencies),
+            [],
         );
     }
 }

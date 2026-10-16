@@ -80,6 +80,7 @@ final readonly class PseudoTerminalRun
             'TERM' => 'xterm-256color',
             'PATH' => (string) getenv('PATH'),
             'HOME' => (string) getenv('HOME'),
+            'XDG_CACHE_HOME' => (string) getenv('XDG_CACHE_HOME'),
         ], $environment);
 
         $process = proc_open(

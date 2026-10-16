@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\FilteredInputDefinition;
+use Qualimetrix\Infrastructure\Console\Invocation\CommandDefinition\FilteredInputDefinition;
 use Symfony\Component\Console\Input\InputOption;
 
 #[CoversClass(FilteredInputDefinition::class)]

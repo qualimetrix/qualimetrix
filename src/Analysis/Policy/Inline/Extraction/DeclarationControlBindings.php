@@ -9,6 +9,9 @@ use PhpParser\Node;
 use PhpParser\NodeFinder;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusalReason;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -44,15 +47,12 @@ final readonly class DeclarationControlBindings
     /**
      * @param array<int, list<MetricSubject>> $byStart
      * @param list<array{start: int, subject: MetricSubject, lexicalClassContext: ?string}> $callableStarts
-     * @param list<array{start: int, end: int, subject: MetricSubject, scope: ControlScope}> $classRanges
-     * @param list<array{start: int, end: int, subject: MetricSubject, scope: ControlScope}> $callableRanges
      */
     private function __construct(
         private MetricSubject $file,
         private array $byStart,
         private array $callableStarts,
-        private array $classRanges,
-        private array $callableRanges,
+        private DeclarationRanges $ranges,
     ) {}
 
     /**
@@ -82,16 +82,13 @@ final readonly class DeclarationControlBindings
             }
         }
 
-        $finder = new NodeFinder();
-        $classRanges = self::classRanges($finder, $ast, $byStart);
-        $callableRanges = self::callableRanges($finder, $ast, $byStart);
+        $ranges = DeclarationRanges::from($ast, $byStart);
 
         return new self(
             MetricSubject::aggregate(SymbolPath::forFile($file)),
             $byStart,
             $callableStarts,
-            $classRanges,
-            $callableRanges,
+            $ranges,
         );
     }
 
@@ -146,9 +143,63 @@ final readonly class DeclarationControlBindings
     }
 
     /**
+     * @return list<DeclarationBinding>
+     */
+    public function suppressionBindingsFor(Node $node): array
+    {
+        $standsOn = self::describe($node);
+
+        if ($node->getType() === 'Stmt_Property') {
+            return [
+                ...self::wholeReach($this->propertyHookBindings($node), $node, $standsOn),
+                ...self::lineReach($this->ranges->classAt($node->getStartFilePos()), $node, $standsOn),
+            ];
+        }
+
+        if (self::isClassLike($node)) {
+            return self::wholeReach($this->classBindings($node), $node, $standsOn);
+        }
+
+        if (\in_array($node->getType(), self::CALLABLE_TYPES, true)) {
+            $own = self::wholeReach($this->callablesBeginningWith($node), $node, $standsOn);
+
+            return $node->getType() === 'Stmt_ClassMethod'
+                ? [
+                    ...$own,
+                    ...self::lineReach($this->ranges->classAt($node->getStartFilePos()), $node, $standsOn),
+                ]
+                : $own;
+        }
+
+        $start = $node->getStartFilePos();
+
+        if ($node instanceof Node\Param) {
+            $bindings = self::lineReach($this->ranges->callableAt($start), $node, $standsOn);
+            if (!$node->isPromoted()) {
+                return $bindings;
+            }
+
+            return [
+                ...$bindings,
+                ...self::lineReach($this->ranges->classAt($start), $node, $standsOn),
+                ...self::wholeReach($this->propertyHookBindings($node), $node, $standsOn),
+            ];
+        }
+
+        if ($node->getType() === 'Stmt_EnumCase' || $node->getType() === 'Stmt_ClassConst') {
+            return self::lineReach($this->ranges->classAt($start), $node, $standsOn);
+        }
+
+        return self::wholeReach($this->directCallableBindings($node), $node, $standsOn);
+    }
+
+    /**
+     * Thresholds bind only to the declarations they retune. They keep whole
+     * declaration reach, and no containing class or callable is inferred.
+     *
      * @return list<array{subject: MetricSubject, scope: ControlScope}>
      */
-    public function bindingsFor(Node $node): array
+    public function thresholdBindingsFor(Node $node): array
     {
         if ($node->getType() === 'Stmt_Property') {
             return $this->propertyHookBindings($node);
@@ -158,17 +209,30 @@ final readonly class DeclarationControlBindings
             return $this->classBindings($node);
         }
 
-        $start = $node->getStartFilePos();
-
-        if ($node->getType() === 'Param') {
-            return $this->containingBinding($this->callableRanges, $start);
+        if (\in_array($node->getType(), self::CALLABLE_TYPES, true)) {
+            return $this->callablesBeginningWith($node);
         }
 
-        if ($node->getType() === 'Stmt_EnumCase' || $node->getType() === 'Stmt_ClassConst') {
-            return $this->containingBinding($this->classRanges, $start);
-        }
+        return $this->directCallableBindings($node);
+    }
 
-        return $this->callablesBeginningWith($node);
+    public static function unboundReason(Node $node): DirectiveRefusalReason
+    {
+        $callable = (new NodeFinder())->findFirst(
+            $node,
+            static fn(Node $candidate): bool => $candidate instanceof Node\Expr\Closure
+                || $candidate instanceof Node\Expr\ArrowFunction,
+        );
+
+        return $callable === null
+            ? DirectiveRefusalReason::NoDeclarationToBind
+            : DirectiveRefusalReason::ClosureNotDirectValue;
+    }
+
+    /** Human-readable source construct on which an authored directive stands. */
+    public static function describe(Node $node): string
+    {
+        return DeclarationSource::describe($node);
     }
 
     /**
@@ -198,64 +262,22 @@ final readonly class DeclarationControlBindings
         );
     }
 
+    /** @return list<array{subject: MetricSubject, scope: ControlScope}> */
+    private function directCallableBindings(Node $node): array
+    {
+        $callable = DeclarationSource::anonymousCallable($node);
+
+        return $callable === null ? [] : $this->callablesBeginningWith($callable);
+    }
+
     /**
      * @return non-empty-list<array{subject: MetricSubject, scope: ControlScope}>
      */
     public function fallbackBindingsForProperty(Node $property): array
     {
-        $binding = $this->containingBinding($this->classRanges, $property->getStartFilePos());
+        $binding = $this->ranges->classAt($property->getStartFilePos());
 
         return $binding !== [] ? $binding : [['subject' => $this->file, 'scope' => ControlScope::Class_]];
-    }
-
-    /**
-     * @param array<Node> $ast
-     * @param array<int, list<MetricSubject>> $byStart
-     *
-     * @return list<array{start: int, end: int, subject: MetricSubject, scope: ControlScope}>
-     */
-    private static function classRanges(NodeFinder $finder, array $ast, array $byStart): array
-    {
-        $ranges = [];
-        foreach ($finder->find($ast, self::isClassLike(...)) as $classLike) {
-            $start = $classLike->getStartFilePos();
-            $end = $classLike->getEndFilePos();
-            if ($start >= 0 && $end >= $start) {
-                foreach (self::subjectsAt($byStart, $start, ...self::CLASS_SUBJECT_TYPES) as $subject) {
-                    $ranges[] = ['start' => $start, 'end' => $end, 'subject' => $subject, 'scope' => ControlScope::Class_];
-                }
-            }
-        }
-
-        return $ranges;
-    }
-
-    /**
-     * @param array<Node> $ast
-     * @param array<int, list<MetricSubject>> $byStart
-     *
-     * @return list<array{start: int, end: int, subject: MetricSubject, scope: ControlScope}>
-     */
-    private static function callableRanges(NodeFinder $finder, array $ast, array $byStart): array
-    {
-        $ranges = [];
-        $callables = $finder->find($ast, static fn(Node $node): bool => \in_array($node->getType(), self::CALLABLE_TYPES, true));
-        foreach ($callables as $callable) {
-            $start = $callable->getStartFilePos();
-            $end = $callable->getEndFilePos();
-            if ($start >= 0 && $end >= $start) {
-                foreach (self::subjectsAt($byStart, $start, ...self::CALLABLE_SUBJECT_TYPES) as $subject) {
-                    $ranges[] = [
-                        'start' => $start,
-                        'end' => $end,
-                        'subject' => $subject,
-                        'scope' => $callable->getType() === 'PropertyHook' ? ControlScope::Hook : ControlScope::Callable,
-                    ];
-                }
-            }
-        }
-
-        return $ranges;
     }
 
     /**
@@ -304,34 +326,41 @@ final readonly class DeclarationControlBindings
     }
 
     /**
-     * @param list<array{start: int, end: int, subject: MetricSubject, scope: ControlScope}> $ranges
+     * @param list<array{subject: MetricSubject, scope: ControlScope}> $bindings
      *
-     * @return list<array{subject: MetricSubject, scope: ControlScope}>
+     * @return list<DeclarationBinding>
      */
-    private function containingBinding(array $ranges, int $start): array
+    private static function wholeReach(array $bindings, Node $node, string $standsOn): array
     {
-        $bestSpan = null;
-        $bindings = [];
-        foreach ($ranges as $range) {
-            if ($start < $range['start'] || $start > $range['end']) {
-                continue;
-            }
+        $reach = DeclarationReach::whole($node->getEndLine() > 0 ? $node->getEndLine() : null, $standsOn);
 
-            $span = $range['end'] - $range['start'];
-            if ($bestSpan === null || $span < $bestSpan) {
-                $bestSpan = $span;
-                $bindings = [];
-            }
+        return array_map(
+            static fn(array $binding): DeclarationBinding => new DeclarationBinding(
+                $binding['subject'],
+                $binding['scope'],
+                $reach,
+            ),
+            $bindings,
+        );
+    }
 
-            if ($span === $bestSpan) {
-                $bindings[] = [
-                    'subject' => $range['subject'],
-                    'scope' => $range['scope'],
-                ];
-            }
-        }
+    /**
+     * @param list<array{subject: MetricSubject, scope: ControlScope}> $bindings
+     *
+     * @return list<DeclarationBinding>
+     */
+    private static function lineReach(array $bindings, Node $node, string $standsOn): array
+    {
+        $reach = DeclarationReach::lines($node->getStartLine(), $node->getEndLine(), $standsOn);
 
-        return $bindings;
+        return array_map(
+            static fn(array $binding): DeclarationBinding => new DeclarationBinding(
+                $binding['subject'],
+                $binding['scope'],
+                $reach,
+            ),
+            $bindings,
+        );
     }
 
     /**

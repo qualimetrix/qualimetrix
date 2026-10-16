@@ -20,10 +20,7 @@ final class PropertyTypeCoverageRule extends AbstractTypeCoverageRule
 {
     public const string NAME = 'design.type-coverage.property';
 
-    public function getDescription(): string
-    {
-        return 'Checks type coverage of properties per class';
-    }
+    public const string DESCRIPTION = 'Checks type coverage of properties per class';
 
     /**
      * @return class-string<TypeCoverageOptions>

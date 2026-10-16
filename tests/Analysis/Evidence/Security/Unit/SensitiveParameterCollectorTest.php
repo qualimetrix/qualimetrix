@@ -116,6 +116,7 @@ PHP;
     {
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        \Qualimetrix\Core\Ast\NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();

@@ -14,7 +14,6 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(CallableWithMetrics::class)]
@@ -32,13 +31,13 @@ final class CallableWithMetricsTest extends TestCase
             kind: CallableKind::Method,
             anonymousSyntax: null,
             lexicalClassContext: DeclarationPath::of(SymbolPath::forClass('App\\Service', 'UserService'), RelativePath::fromString('src/UserService.php'), DeclarationOrdinal::fromRank(0)),
-            classAggregationOwner: new LogicalClassPath(SymbolPath::forClass('App\\Service', 'UserService')),
+            classAggregationOwner: DeclarationPath::of(SymbolPath::forClass('App\Service', 'UserService'), RelativePath::fromString('src/UserService.php'), DeclarationOrdinal::fromRank(0)),
             metrics: $metrics,
         );
 
         self::assertSame($declaration, $method->declarationPath);
         self::assertSame(CallableKind::Method, $method->kind);
-        self::assertSame('class:App\\Service\\UserService', $method->classAggregationOwner?->toCanonical());
+        self::assertSame('class:App\\Service\\UserService', $method->classAggregationOwner?->logical->toCanonical());
     }
 
     #[Test]
@@ -93,5 +92,52 @@ final class CallableWithMetricsTest extends TestCase
             classAggregationOwner: null,
             metrics: $metrics,
         );
+    }
+
+    #[Test]
+    public function itRejectsInvalidClassOwnershipAtConstruction(): void
+    {
+        $file = RelativePath::fromString('src/Service.php');
+        $class = DeclarationPath::of(SymbolPath::forClass('App', 'Service'), $file, DeclarationOrdinal::fromRank(0));
+        $callable = DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'run'), $file, DeclarationOrdinal::fromRank(0));
+        foreach ([
+            [CallableKind::Method, null, false],
+            [CallableKind::PropertyHook, null, false],
+            [CallableKind::Method, $callable, false],
+            [CallableKind::Method, $class, true],
+            [CallableKind::PropertyHook, $class, true],
+            [CallableKind::Function, $class, false],
+            [CallableKind::AnonymousCallable, $class, false],
+        ] as [$kind, $owner, $anonymous]) {
+            try {
+                new CallableWithMetrics($callable, 1, $kind, $kind === CallableKind::AnonymousCallable ? 'closure' : null, $class, $owner, new MetricBag(), anonymousClassContext: $anonymous);
+                self::fail('Invalid callable class ownership was accepted: ' . $kind->value);
+            } catch (InvalidArgumentException $exception) {
+                self::assertStringContainsString('class', $exception->getMessage());
+            }
+        }
+    }
+
+    #[Test]
+    public function itKeepsLexicalContextIndependentFromClassOwnership(): void
+    {
+        $file = RelativePath::fromString('src/Service.php');
+        $class = DeclarationPath::of(SymbolPath::forClass('App', 'Service'), $file, DeclarationOrdinal::fromRank(0));
+        $callable = DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'run'), $file, DeclarationOrdinal::fromRank(0));
+        foreach ([
+            [CallableKind::Method, $class, false],
+            [CallableKind::PropertyHook, $class, false],
+            [CallableKind::Method, null, true],
+            [CallableKind::PropertyHook, null, true],
+            [CallableKind::Function, null, false],
+            [CallableKind::Function, null, true],
+            [CallableKind::AnonymousCallable, null, false],
+            [CallableKind::AnonymousCallable, null, true],
+        ] as [$kind, $owner, $anonymous]) {
+            $record = new CallableWithMetrics($callable, 1, $kind, $kind === CallableKind::AnonymousCallable ? 'closure' : null, $class, $owner, new MetricBag(), anonymousClassContext: $anonymous);
+            self::assertSame($class, $record->lexicalClassContext);
+            self::assertSame($owner, $record->classAggregationOwner);
+            self::assertSame($anonymous, $record->anonymousClassContext);
+        }
     }
 }

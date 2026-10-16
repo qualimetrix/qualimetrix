@@ -36,7 +36,6 @@ final class SchemaNodeInventory
         'symbols[].metrics',
         'worstNamespaces[].healthScores',
         'worstClasses[].healthScores',
-        'worstNamespaces[].metrics',
         'worstClasses[].metrics',
         'health.{}.worstContributors[].metrics',
     ];

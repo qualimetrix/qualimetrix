@@ -24,6 +24,7 @@ Detects hardcoded credentials in PHP code -- string literal values assigned to v
 - Array element assignment: `$config['password'] = '...';`
 - Array item: `['api_key' => 'abc123']`
 - Class constant: `const DB_PASSWORD = 'root';`
+- Namespace or global constant: `const API_PASSWORD = 'root';` (including several constants in one declaration)
 - `define()` call: `define('API_KEY', '...');`
 - Property default: `private string $token = 'x';`
 - Parameter default: `function f($pwd = 'root')`
@@ -41,8 +42,13 @@ Names like `$passwordHash`, `$tokenStorage`, `$cacheKey`, `OPTION_PASSWORD` are 
 **Value filtering:** these values are skipped:
 
 - empty strings, strings shorter than 4 characters, and strings of identical characters (`***`, `xxx`);
-- dotted identifiers such as `auth.password.reset`, `App.Models.User` or `auth.password-reset` (translation, configuration or channel keys: each segment is a code identifier — a letter or an underscore followed by letters, digits or underscores — or lowercase letter-only words joined by hyphens). A hyphenated segment with a capital letter or a digit is reported, so `Summer-2024.Pass` and `sk-live.abc123-def456` are not treated as keys; neither is a JWT (`eyJ...`). A value made only of lowercase words, such as `sk-live-abc.def`, has the shape of a key and is skipped;
+- whole angle-bracket placeholders such as `<password>` and native built-in PHP type syntax such as `?string` or `int|string`. The type filter parses syntax against a built-in whitelist; it does not validate PHP type semantics;
+- lowercase dotted identifiers such as `auth.password.reset` or `auth.password-reset` (translation, configuration or channel keys). Uppercase dotted values such as `App.Models.User`, capitalized or digit-bearing hyphen segments such as `Summer-2024.Pass` and `sk-live.abc123-def456`, and JWT-shaped values are judged as possible secrets. A lowercase dotted secret phrase such as `correct-horse.battery-staple` can still be skipped;
 - messages: longer than 20 characters and at least three whitespace-separated words. Hyphens, dots, slashes and plus signs are not word breaks, so UUID-, AWS- and base64-shaped keys are still reported.
+
+Bare `token8` is outside the default sensitive-name policy; configure `token` as an extra sensitive name if that name should be judged. A credential-looking value in an alias map may still be reported; suppress an intentional case with a reasoned `@qmx-ignore`.
+
+Findings inside named classes, methods, and functions carry their declaration symbol. File-scope and anonymous evidence retain a file symbol and null namespace. Direct superglobal checks recognize literal variable-variable names and literal `$GLOBALS` keys; an unknown dynamic name such as `$$name` is outside their finite pattern set.
 
 <!-- llms:skip-end -->
 

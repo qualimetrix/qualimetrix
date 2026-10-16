@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Size;
 
 use PhpParser\Node;
-use PhpParser\Node\Stmt\Class_;
+use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterfac
 /**
  * Visitor for LocCollector.
  *
- * Tracks class node positions (start/end lines) for class-level LOC calculation.
+ * Tracks named class-like node spans for declaration-level LOC calculation.
  * Anonymous classes are ignored.
  */
 final class LocVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
@@ -21,7 +21,7 @@ final class LocVisitor extends NodeVisitorAbstract implements ResettableVisitorI
     private ?string $currentNamespace = null;
 
     /**
-     * @var array<string, array{namespace: ?string, className: string, startLine: int, startFilePos: int, endLine: int}>
+     * @var array<int, array{namespace: ?string, className: string, startLine: int, startFilePos: int, endLine: int}>
      */
     private array $classRanges = [];
 
@@ -47,11 +47,9 @@ final class LocVisitor extends NodeVisitorAbstract implements ResettableVisitorI
             return null;
         }
 
-        if ($node instanceof Class_ && $node->name !== null) {
+        if ($node instanceof ClassLike && $node->name !== null) {
             $className = $node->name->toString();
-            $fqn = $this->buildClassFqn($className);
-
-            $this->classRanges[$fqn] = [
+            $this->classRanges[max(0, $node->getStartFilePos())] = [
                 'namespace' => $this->currentNamespace,
                 'className' => $className,
                 'startLine' => $node->getStartLine(),
@@ -73,7 +71,7 @@ final class LocVisitor extends NodeVisitorAbstract implements ResettableVisitorI
     }
 
     /**
-     * @return array<string, array{namespace: ?string, className: string, startLine: int, startFilePos: int, endLine: int}>
+     * @return array<int, array{namespace: ?string, className: string, startLine: int, startFilePos: int, endLine: int}>
      */
     public function getClassRanges(): array
     {
@@ -88,12 +86,4 @@ final class LocVisitor extends NodeVisitorAbstract implements ResettableVisitorI
         return $this->namespaceRanges;
     }
 
-    private function buildClassFqn(string $className): string
-    {
-        if ($this->currentNamespace !== null && $this->currentNamespace !== '') {
-            return $this->currentNamespace . '\\' . $className;
-        }
-
-        return $className;
-    }
 }

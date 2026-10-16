@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Core\Symbol;
+namespace Qualimetrix\Tests\Core\Symbol\Unit;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -17,6 +17,17 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 #[CoversClass(DeclarationPath::class)]
 final class DeclarationPathTest extends TestCase
 {
+    #[Test]
+    public function itKeepsFilenameSuffixesDistinctFromDeclarationOrdinals(): void
+    {
+        $symbol = SymbolPath::forClass('', 'A');
+        $filename = DeclarationPath::of($symbol, RelativePath::fromString('x.php#1'), DeclarationOrdinal::fromRank(0));
+        $ordinal = DeclarationPath::of($symbol, RelativePath::fromString('x.php'), DeclarationOrdinal::fromRank(1));
+        self::assertNotSame($filename->toCanonical(), $ordinal->toCanonical());
+        self::assertSame('declaration:class:A@x.php%231', $filename->toCanonical());
+        self::assertSame('declaration:class:A@x.php#1', $ordinal->toCanonical());
+    }
+
     #[Test]
     public function itBuildsAStableCanonicalIdentityAndAddsAnOrdinalOnlyForCollisions(): void
     {

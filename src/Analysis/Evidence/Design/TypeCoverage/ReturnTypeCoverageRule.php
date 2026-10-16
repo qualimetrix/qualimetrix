@@ -20,10 +20,7 @@ final class ReturnTypeCoverageRule extends AbstractTypeCoverageRule
 {
     public const string NAME = 'design.type-coverage.return';
 
-    public function getDescription(): string
-    {
-        return 'Checks type coverage of return types per class';
-    }
+    public const string DESCRIPTION = 'Checks type coverage of return types per class';
 
     /**
      * @return class-string<TypeCoverageOptions>

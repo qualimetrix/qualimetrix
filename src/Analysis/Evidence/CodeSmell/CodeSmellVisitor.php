@@ -23,19 +23,15 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\Debug\DebugCodeSmells;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrait;
+use Qualimetrix\Core\Ast\SuperglobalRead;
 
 /** Traverses AST nodes and delegates code-smell semantics to subject companions. */
 final class CodeSmellVisitor extends NodeVisitorAbstract implements DeclarationIndexAwareInterface, ResettableVisitorInterface
 {
     use VisitorMethodTrackingTrait;
 
-    private const SUPERGLOBALS = ['_GET', '_POST', '_REQUEST', '_COOKIE', '_SESSION', '_SERVER', '_FILES', '_ENV', 'GLOBALS'];
-
     /** @var list<CodeSmellLocation> */
     private array $locations = [];
-
-    /** @var list<string> */
-    private array $methodStack = [];
 
     /** @var array<int, true> Object ids of the tries that form a foreach chain of attempts */
     private array $chainAttempts = [];
@@ -50,7 +46,6 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements DeclarationI
     public function reset(): void
     {
         $this->locations = [];
-        $this->methodStack = [];
         $this->chainAttempts = [];
         $this->resetVisitorMethodContext();
     }
@@ -58,7 +53,6 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements DeclarationI
     public function enterNode(Node $node): ?int
     {
         $this->enterVisitorMethodContext($node);
-        $this->trackMethod($node);
         if ($node instanceof Foreach_) {
             foreach ($this->chainOfAttempts->attempts($node) as $attempt) {
                 $this->chainAttempts[spl_object_id($attempt)] = true;
@@ -68,7 +62,7 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements DeclarationI
         $subjectId = $this->currentFileEntrySubjectId();
         $this->append($this->controlFlowSmells->locations($node, $subjectId, isset($this->chainAttempts[spl_object_id($node)])));
         if ($node instanceof FuncCall) {
-            $location = $this->debugCodeSmells->location($node, $this->currentMethod(), $subjectId);
+            $location = $this->debugCodeSmells->location($node, $subjectId);
             if ($location !== null) {
                 $this->append([$location]);
             }
@@ -83,9 +77,6 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements DeclarationI
 
     public function leaveNode(Node $node): null
     {
-        if ($node instanceof ClassMethod || $node instanceof Function_) {
-            array_pop($this->methodStack);
-        }
         $this->leaveVisitorMethodContext($node);
 
         return null;
@@ -114,18 +105,6 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements DeclarationI
         return $this->fileEntrySubjectComponents($location->subjectId);
     }
 
-    private function trackMethod(Node $node): void
-    {
-        if ($node instanceof ClassMethod || $node instanceof Function_) {
-            $this->methodStack[] = $node->name->toLowerString();
-        }
-    }
-
-    private function currentMethod(): ?string
-    {
-        return $this->methodStack === [] ? null : $this->methodStack[array_key_last($this->methodStack)];
-    }
-
     /** @param list<CodeSmellLocation> $locations */
     private function append(array $locations): void
     {
@@ -139,8 +118,8 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements DeclarationI
         } elseif ($node instanceof ErrorSuppress) {
             $name = $node->expr instanceof FuncCall && $node->expr->name instanceof Name ? $node->expr->name->toLowerString() : null;
             $this->append([new CodeSmellLocation('error_suppression', $node->getStartLine(), $node->getStartTokenPos(), $subjectId, $name)]);
-        } elseif ($node instanceof Variable && \is_string($node->name) && \in_array($node->name, self::SUPERGLOBALS, true)) {
-            $this->append([new CodeSmellLocation('superglobals', $node->getStartLine(), $node->getStartTokenPos(), $subjectId, $node->name)]);
+        } elseif ($node instanceof Variable && ($name = SuperglobalRead::ofVariable($node)) !== null) {
+            $this->append([new CodeSmellLocation('superglobals', $node->getStartLine(), $node->getStartTokenPos(), $subjectId, $name)]);
         }
     }
 }

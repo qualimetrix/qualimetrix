@@ -108,9 +108,8 @@ final class NamespaceToProjectAggregator implements AggregationPhaseInterface
         $projectBag = AggregationHelper::addSymbolCounts($projectBag, $allSymbolInfos);
         $projectBag = AggregationHelper::addDeclaringNamespaceCount($projectBag, $allSymbolInfos);
 
-        $firstFile = $allSymbolInfos[0]->file;
         $projectPath = SymbolPath::forProject();
-        $repository->add($projectPath, $projectBag, $firstFile, null);
+        $repository->add($projectPath, $projectBag, null, null);
         $profiler->stop('aggregation.to_project.process');
     }
 

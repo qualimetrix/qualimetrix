@@ -10,11 +10,16 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareTrait;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
 
 /**
@@ -23,8 +28,9 @@ use SplFileInfo;
  * Metric format: ccn:{FQN}
  * Example: complexity.ccn:App\Service\UserService::calculate
  */
-final class CyclomaticComplexityCollector extends AbstractCollector implements CallableMetricsProviderInterface
+final class CyclomaticComplexityCollector extends AbstractCollector implements CallableMetricsProviderInterface, ClassMetricsProviderInterface, DeclarationIndexAwareInterface
 {
+    use DeclarationIndexAwareTrait;
     private const NAME = 'cyclomatic-complexity';
 
     public function __construct()
@@ -42,7 +48,7 @@ final class CyclomaticComplexityCollector extends AbstractCollector implements C
      */
     public function provides(): array
     {
-        return [MetricName::COMPLEXITY_CCN];
+        return [MetricName::COMPLEXITY_CCN, MetricName::COMPLEXITY_WMC];
     }
 
     /**
@@ -71,6 +77,33 @@ final class CyclomaticComplexityCollector extends AbstractCollector implements C
         return $this->visitor->getCallablesWithMetrics($file);
     }
 
+    public function getClassesWithMetrics(RelativePath $file): array
+    {
+        \assert($this->visitor instanceof CyclomaticComplexityVisitor);
+        $callables = $this->visitor->getCallablesWithMetrics($file);
+        $classes = [];
+        foreach ($this->visitor->getNamedClasses() as $named) {
+            $logical = SymbolPath::forClass($named['namespace'], $named['name']);
+            $class = $this->classWithMetrics($logical, $file, $named['position'], $named['line'], new MetricBag());
+            $wmc = 0;
+            foreach ($callables as $callable) {
+                if ($callable->kind === CallableKind::Method
+                    && $callable->classAggregationOwner?->toCanonical() === $class->declarationPath->toCanonical()) {
+                    $wmc += $callable->metrics->get(MetricName::COMPLEXITY_CCN) ?? 0;
+                }
+            }
+            $classes[] = $this->classWithMetrics(
+                $logical,
+                $file,
+                $named['position'],
+                $named['line'],
+                (new MetricBag())->with(MetricName::COMPLEXITY_WMC, $wmc),
+            );
+        }
+
+        return $classes;
+    }
+
     /**
      * @return list<MetricDefinition>
      */
@@ -78,6 +111,14 @@ final class CyclomaticComplexityCollector extends AbstractCollector implements C
     public function getMetricDefinitions(): array
     {
         return [
+            new MetricDefinition(
+                name: MetricName::COMPLEXITY_WMC,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: [
+                    SymbolLevel::Namespace_->value => [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max],
+                    SymbolLevel::Project->value => [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max],
+                ],
+            ),
             new MetricDefinition(
                 name: MetricName::COMPLEXITY_CCN,
                 collectedAt: SymbolLevel::Callable,

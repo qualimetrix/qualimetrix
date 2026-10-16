@@ -7,10 +7,13 @@ namespace Qualimetrix\Analysis\Policy\Inline\Contract;
 use LogicException;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionDocumentFormsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleOptionForms;
 
 /**
  * Builds the `rule-name => OverrideValidatorInterface` map consumed by
@@ -22,13 +25,14 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
  * or through a hierarchical wrapper that exposes level-specific
  * ThresholdAware Options — the rule's NAME constant is resolved via
  * reflection and the validator is obtained from the static
- * `getOverrideValidator()` accessor. Rules without thresholds are
+ * `getOverrideValidator()` accessor and paired with its declared option forms.
+ * Rules without thresholds are
  * skipped silently.
  *
  * The criterion below is mechanical — what a rule's Options class *can*
  * carry. What the run answers is what the rule *declares*, through its
  * `SUPPORTS_THRESHOLD_OVERRIDE` constant
- * ({@see \Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface::supportsThresholdOverride()}).
+ * ({@see \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelIdentityInterface::supportsThresholdOverride()}).
  * The two are pinned against each other by
  * `ChannelUniverseCoverageTest::itRequiresEveryRulesDeclaredThresholdSupportToMatchWhatItsOptionsCanHonour()`,
  * because a rule that declares support its options cannot honour promises a
@@ -44,16 +48,16 @@ final readonly class RuleValidatorMapFactory
      *
      * @return array<string, OverrideValidatorInterface>
      */
-    public static function build(array $ruleClasses): array
+    public static function build(RuleOptionDocumentFormsInterface $documentForms, array $ruleClasses): array
     {
         $map = [];
 
         foreach ($ruleClasses as $ruleClass) {
             if (!class_exists($ruleClass)) {
-                // Defensive symmetry with WorkerBootstrap::canInstantiate() — a
-                // misconfigured rule class string would otherwise surface as
-                // a low-level ReflectionException inside a worker task.
-                continue;
+                throw new LogicException(\sprintf(
+                    'Rule class %s does not exist or cannot be autoloaded while building the threshold validator map.',
+                    $ruleClass,
+                ));
             }
 
             $ruleName = RuleNameReader::read($ruleClass);
@@ -64,7 +68,7 @@ final readonly class RuleValidatorMapFactory
                 continue;
             }
 
-            $map[$ruleName] = $validator;
+            $map[$ruleName] = new RuleOptionForms($ruleName, RuleOptionSurface::of($optionsClass), $validator, $documentForms);
         }
 
         return $map;
@@ -88,19 +92,13 @@ final readonly class RuleValidatorMapFactory
             return null;
         }
 
-        $rootOptions = $optionsClass::fromArray([]);
-        \assert($rootOptions instanceof HierarchicalRuleOptionsInterface);
-
         $selected = null;
         $selectedSource = null;
 
-        foreach ($rootOptions->getSupportedLevels() as $level) {
-            $levelOptions = $rootOptions->forLevel($level);
-            if (!$levelOptions instanceof ThresholdAwareOptionsInterface) {
+        foreach ($optionsClass::levelOptionsClasses() as $levelOptionsClass) {
+            if (!is_a($levelOptionsClass, ThresholdAwareOptionsInterface::class, true)) {
                 continue;
             }
-
-            $levelOptionsClass = $levelOptions::class;
             $levelValidator = $levelOptionsClass::getOverrideValidator();
 
             if ($selected === null) {

@@ -100,17 +100,14 @@ final class HintRenderer
             return null;
         }
 
-        $nsName = $this->escapeForShell('subtree:' . $worstNs->symbolPath->toString());
+        $nsName = $this->escapeForShell(($worstNs->symbolPath->namespace ?? '') === ''
+            ? 'regex:^$' : 'subtree:' . $worstNs->symbolPath->namespace);
 
         return \sprintf('--namespace=%s to drill down', $nsName);
     }
 
     private function escapeForShell(string $value): string
     {
-        if (str_contains($value, '\\')) {
-            return "'" . $value . "'";
-        }
-
-        return $value;
+        return "'" . str_replace("'", "'\\''", $value) . "'";
     }
 }

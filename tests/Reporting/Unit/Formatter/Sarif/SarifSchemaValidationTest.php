@@ -8,7 +8,7 @@ use JsonSchema\Validator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\AcceptedLevel;
+use Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -50,7 +50,7 @@ final class SarifSchemaValidationTest extends TestCase
             ->duration(0.0)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         $this->assertOutputMatchesSarifSchema($output);
     }
@@ -93,7 +93,7 @@ final class SarifSchemaValidationTest extends TestCase
         $output = $this->formatter->format(
             $report,
             new FormatterContext(basePath: '/home/user/project'),
-        );
+        )->body;
 
         $this->assertOutputMatchesSarifSchema($output);
     }
@@ -132,7 +132,7 @@ final class SarifSchemaValidationTest extends TestCase
         $output = $this->formatter->format(
             $report,
             new FormatterContext(basePath: '/home/user/project'),
-        );
+        )->body;
 
         $this->assertOutputMatchesSarifSchema($output);
     }
@@ -157,7 +157,7 @@ final class SarifSchemaValidationTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         $this->assertOutputMatchesSarifSchema($output);
     }
@@ -170,7 +170,7 @@ final class SarifSchemaValidationTest extends TestCase
     #[Test]
     public function itConformsToTheSarifSchemaWithTheDocumentationAddressesOnTheDriver(): void
     {
-        $output = $this->formatter->format(ReportBuilder::create()->build(), new FormatterContext());
+        $output = $this->formatter->format(ReportBuilder::create()->build(), new FormatterContext())->body;
 
         $driver = json_decode($output, true, 512, \JSON_THROW_ON_ERROR)['runs'][0]['tool']['driver'];
         self::assertSame(ProductIdentity::docsUrl(), $driver['informationUri']);
@@ -188,7 +188,7 @@ final class SarifSchemaValidationTest extends TestCase
     public function itRefusesTheLlmsTxtAddressOutsideThePropertiesBag(): void
     {
         $sarif = json_decode(
-            $this->formatter->format(ReportBuilder::create()->build(), new FormatterContext()),
+            $this->formatter->format(ReportBuilder::create()->build(), new FormatterContext())->body,
             true,
             512,
             \JSON_THROW_ON_ERROR,
@@ -275,7 +275,7 @@ final class SarifSchemaValidationTest extends TestCase
         int|float|null $threshold = null,
         ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null,
         ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null,
-        ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null,
+        ?\Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel $acceptedLevel = null,
         ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null,
         ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null,
     ): Finding {

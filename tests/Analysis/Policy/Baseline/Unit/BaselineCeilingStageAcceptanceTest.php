@@ -11,13 +11,13 @@ use Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassOptions;
 use Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
-use Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage;
-use Qualimetrix\Analysis\Policy\Baseline\Filter\GroupCeilingVerdict;
+use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
+use Qualimetrix\Analysis\Policy\Baseline\Ceiling\GroupCeilingVerdict;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntryMode;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -624,10 +624,8 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
             ->with('size.method-count', 10)
             ->with('design.is-readonly', 0);
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('allDeclarations')->willReturn([$classInfo]);
-        $repository->method('all')
-            ->willReturnCallback(static fn(SymbolLevel $level): array => $level === SymbolLevel::Class_ ? [$classInfo] : []);
-        $repository->method('get')->willReturn($metrics);
+        $repository->method('allClassDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn($metrics);
 
         $findings = (new GodClassRule(new GodClassOptions()))->analyze(new AnalysisContext($repository));
 

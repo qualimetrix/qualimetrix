@@ -1,0 +1,263 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\RepeatedExpression;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\CodeSmell\BooleanArgument\BooleanArgumentRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionOptions;
+use Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionRule;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
+
+#[CoversClass(IdenticalSubExpressionRule::class)]
+#[CoversClass(IdenticalSubExpressionOptions::class)]
+final class IdenticalSubExpressionRuleTest extends TestCase
+{
+    #[Test]
+    public function itGetName(): void
+    {
+        $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
+        self::assertSame('code-smell.identical-subexpression', $rule->getName());
+    }
+
+    #[Test]
+    public function itGetDescription(): void
+    {
+        $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
+        self::assertNotEmpty($rule::getDescription());
+    }
+
+    #[Test]
+    public function itGetOptionsClass(): void
+    {
+        self::assertSame(IdenticalSubExpressionOptions::class, IdenticalSubExpressionRule::getOptionsClass());
+    }
+
+    #[Test]
+    public function itAnalyzeDisabledReturnsEmpty(): void
+    {
+        $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions(enabled: false));
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->expects(self::never())->method('all');
+
+        $context = new AnalysisContext($repository);
+        self::assertSame([], $rule->analyze($context));
+    }
+
+    #[Test]
+    public function itProducesNoFindingsWhenTheMetricBagHasNoIdenticalOperandEntries(): void
+    {
+        $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
+
+        $metricBag = new MetricBag();
+        $context = $this->createContext($metricBag);
+
+        self::assertSame([], $rule->analyze($context));
+    }
+
+    #[Test]
+    public function itWithIdenticalOperands(): void
+    {
+        $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
+
+        $metricBag = (new MetricBag())
+            ->withEntry('identicalSubExpression.identical_operands', ['subjectKind' => 'file', 'line' => 10, 'detail' => '']);
+
+        $context = $this->createContext($metricBag);
+        $findings = $rule->analyze($context);
+
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame(10, $findings[0]->location->line);
+        self::assertStringContainsString('operator', $findings[0]->message);
+        self::assertSame('code-smell.identical-subexpression', $findings[0]->code);
+        self::assertSame(1.0, $findings[0]->metricValue);
+        self::assertSame(SymbolLevel::File, $findings[0]->subject::levelOfCanonical($findings[0]->subject->toCanonical()));
+        self::assertSame(
+            [SymbolLevel::Callable, SymbolLevel::File],
+            IdenticalSubExpressionRule::channelDeclarations()['code-smell.identical-subexpression']->levels,
+        );
+        self::assertSame(
+            [SymbolLevel::Callable, SymbolLevel::File],
+            BooleanArgumentRule::channelDeclarations()['code-smell.boolean-argument']->levels,
+        );
+    }
+
+    #[Test]
+    public function itProjectsADeclarationEntryToItsLogicalSymbol(): void
+    {
+        $entry = [
+            'subjectKind' => 'declaration', 'logicalKind' => 'method',
+            'namespace' => 'App', 'class' => 'Example', 'member' => 'run',
+            'line' => 10, 'detail' => '',
+        ];
+        $findings = (new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions()))
+            ->analyze($this->createContext((new MetricBag())->withEntry('identicalSubExpression.identical_operands', $entry)));
+
+        self::assertCount(1, $findings);
+        self::assertSame($findings[0]->subject->toSymbolPath()->toString(), $findings[0]->symbolPath->toString());
+    }
+
+    /**
+     * Pins `occurrence` to the channel's frozen spelling read off a finding
+     * produced by {@see IdenticalSubExpressionRule::analyze()} itself, so a
+     * future regression that swaps the occurrence call site's argument back
+     * to `self::NAME` reddens this test once `NAME` and the frozen constant
+     * diverge (they will, once the channel is renamed).
+     */
+    #[Test]
+    public function itKeysOccurrenceToTheFrozenChannelSpellingNotToName(): void
+    {
+        $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
+
+        $metricBag = (new MetricBag())
+            ->withEntry('identicalSubExpression.identical_operands', ['subjectKind' => 'file', 'line' => 10, 'detail' => '']);
+
+        $context = $this->createContext($metricBag);
+        $findings = $rule->analyze($context);
+
+        self::assertCount(1, $findings);
+        self::assertSame(
+            OccurrenceKey::semantic('code-smell.identical-subexpression', [
+                'type' => 'identical_operands',
+                'detail' => '',
+            ])->value,
+            $findings[0]->occurrenceKey?->value,
+        );
+    }
+
+    #[Test]
+    public function itWithDuplicateCondition(): void
+    {
+        $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
+
+        $metricBag = (new MetricBag())
+            ->withEntry('identicalSubExpression.duplicate_condition', ['subjectKind' => 'file', 'line' => 5, 'detail' => '']);
+
+        $context = $this->createContext($metricBag);
+        $findings = $rule->analyze($context);
+
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('if/elseif', $findings[0]->message);
+    }
+
+    #[Test]
+    public function itWithIdenticalTernary(): void
+    {
+        $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
+
+        $metricBag = (new MetricBag())
+            ->withEntry('identicalSubExpression.identical_ternary', ['subjectKind' => 'file', 'line' => 3, 'detail' => '']);
+
+        $context = $this->createContext($metricBag);
+        $findings = $rule->analyze($context);
+
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('ternary', $findings[0]->message);
+    }
+
+    #[Test]
+    public function itWithDuplicateMatchArm(): void
+    {
+        $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
+
+        $metricBag = (new MetricBag())
+            ->withEntry('identicalSubExpression.duplicate_match_arm', ['subjectKind' => 'file', 'line' => 7, 'detail' => '']);
+
+        $context = $this->createContext($metricBag);
+        $findings = $rule->analyze($context);
+
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('match', $findings[0]->message);
+    }
+
+    #[Test]
+    public function itMultipleFindings(): void
+    {
+        $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
+
+        $metricBag = (new MetricBag())
+            ->withEntry('identicalSubExpression.identical_operands', ['subjectKind' => 'file', 'line' => 5, 'detail' => ''])
+            ->withEntry('identicalSubExpression.identical_operands', ['subjectKind' => 'file', 'line' => 8, 'detail' => ''])
+            ->withEntry('identicalSubExpression.duplicate_condition', ['subjectKind' => 'file', 'line' => 12, 'detail' => '']);
+
+        $context = $this->createContext($metricBag);
+        $findings = $rule->analyze($context);
+
+        self::assertCount(3, $findings);
+    }
+
+    // -- Options Tests ---------------------------------------------------
+
+    #[Test]
+    public function itOptionsDefaultEnabled(): void
+    {
+        $options = new IdenticalSubExpressionOptions();
+        self::assertTrue($options->isEnabled());
+    }
+
+    #[Test]
+    public function itOptionsFromArrayEnabled(): void
+    {
+        $options = IdenticalSubExpressionOptions::fromResolved(ResolvedOptionsFixture::values(IdenticalSubExpressionOptions::class, ['enabled' => true]));
+        self::assertTrue($options->isEnabled());
+    }
+
+    #[Test]
+    public function itOptionsFromArrayDisabled(): void
+    {
+        $options = IdenticalSubExpressionOptions::fromResolved(ResolvedOptionsFixture::values(IdenticalSubExpressionOptions::class, ['enabled' => false]));
+        self::assertFalse($options->isEnabled());
+    }
+
+    #[Test]
+    public function itOptionsFromEmptyArray(): void
+    {
+        $options = IdenticalSubExpressionOptions::fromResolved(ResolvedOptionsFixture::values(IdenticalSubExpressionOptions::class, []));
+        self::assertTrue($options->isEnabled());
+    }
+
+    #[Test]
+    public function itOptionsSeverityPositiveValue(): void
+    {
+        $options = new IdenticalSubExpressionOptions();
+        self::assertSame(Severity::Warning, $options->getSeverity(1));
+    }
+
+    #[Test]
+    public function itOptionsSeverityZeroValue(): void
+    {
+        $options = new IdenticalSubExpressionOptions();
+        self::assertNull($options->getSeverity(0));
+    }
+
+    // -- Helpers ----------------------------------------------------------
+
+    private function createContext(MetricBag $metricBag): AnalysisContext
+    {
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/file.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/file.php'), 1);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        return new AnalysisContext($repository);
+    }
+}

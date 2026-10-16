@@ -22,12 +22,25 @@ final readonly class HtmlDebtCalculator
     ) {}
 
     /**
+     * Assigns own debt and completes the tree's debt and finding totals.
+     *
+     * @param array<string, list<Finding>> $findingsByNode
+     * @param array<string, HtmlTreeNode> $nodesByPath
+     */
+    public function calculate(HtmlTreeNode $root, array $findingsByNode, array $nodesByPath): int
+    {
+        $this->computeDebt($findingsByNode, $nodesByPath);
+
+        return $this->aggregateBottomUp($root);
+    }
+
+    /**
      * Computes debt per node from partitioned findings.
      *
      * @param array<string, list<Finding>> $findingsByNode
      * @param array<string, HtmlTreeNode> $nodesByPath
      */
-    public function computeDebt(
+    private function computeDebt(
         array $findingsByNode,
         array $nodesByPath,
     ): void {
@@ -44,7 +57,7 @@ final readonly class HtmlDebtCalculator
     /**
      * Computes violationCountTotal and aggregates debt bottom-up (post-order traversal).
      */
-    public function aggregateBottomUp(HtmlTreeNode $node): int
+    private function aggregateBottomUp(HtmlTreeNode $node): int
     {
         $total = \count($node->findings);
 

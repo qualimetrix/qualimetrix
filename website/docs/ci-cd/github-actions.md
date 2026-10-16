@@ -36,10 +36,10 @@ jobs:
 
 ## Outputs
 
-| Output       | Description                                                                                |
-| ------------ | ------------------------------------------------------------------------------------------ |
-| `violations` | Number of violations found                                                                 |
-| `exit-code`  | Exit code (0 = clean, 1 = warnings, 2 = errors, 3 = config error, 4 = analysis incomplete) |
+| Output       | Description                                                                                                                                           |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `violations` | Number of violations found                                                                                                                            |
+| `exit-code`  | Exit code (0 = clean, 1 = warnings, 2 = errors, 3 = input/config/environment refusal, 4 = incomplete analysis or coordinator OOM, 5 = internal error) |
 
 ## Examples
 
@@ -329,6 +329,8 @@ with:
         path: ~/.composer/cache
         key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
     ```
+
+   If caching ASTs with `actions/cache`, use the user `qmx` directory outside the checkout (usually `~/.cache/qmx` on Linux), under the runner uid with no group/other write. Restore only from a trusted source: cache entries remain untrusted input and obsolete entries are misses. `--clear-cache` affects every project sharing the root.
 
 2. **Use baseline** to focus on new issues only
 3. **Limit paths** to relevant source directories

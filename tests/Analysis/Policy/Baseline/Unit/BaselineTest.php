@@ -9,13 +9,13 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Policy\Baseline\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
-use Qualimetrix\Analysis\Policy\Baseline\EntrySelector;
-use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\EntrySelector;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\InertBaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\InertEntryReason;
 
 #[CoversClass(Baseline::class)]
 #[CoversClass(InertBaselineEntry::class)]
@@ -29,6 +29,7 @@ final class BaselineTest extends TestCase
             scope: ['src'],
             entries: [self::entry('callable:App\Foo::bar'), self::entry('callable:App\Foo::baz')],
             inertEntries: [self::inert('callable:App\Foo::qux')],
+            exclusions: self::fixtureExclusions(),
         );
 
         self::assertSame(2, $baseline->count());
@@ -101,6 +102,7 @@ final class BaselineTest extends TestCase
             scope: [],
             entries: [self::entry('callable:App\Foo::bar')],
             inertEntries: [self::inert('file:src/Legacy.php')],
+            exclusions: self::fixtureExclusions(),
         );
 
         self::assertEqualsCanonicalizing(
@@ -117,6 +119,7 @@ final class BaselineTest extends TestCase
             scope: ['src'],
             entries: [self::entry('callable:App\Foo::bar')],
             sourceContentHash: 'abc',
+            exclusions: self::fixtureExclusions(),
         );
 
         self::assertNull($baseline->detached()->sourceContentHash);
@@ -150,6 +153,7 @@ final class BaselineTest extends TestCase
             entries: [],
             sourceContentHash: 'abc',
             expectsSourceAbsence: true,
+            exclusions: self::fixtureExclusions(),
         );
     }
 
@@ -159,6 +163,7 @@ final class BaselineTest extends TestCase
             generated: new DateTimeImmutable('2026-08-05T12:00:00+03:00'),
             scope: ['src'],
             entries: array_values($entries),
+            exclusions: self::fixtureExclusions(),
         );
     }
 
@@ -184,6 +189,14 @@ final class BaselineTest extends TestCase
             reason: InertEntryReason::Malformed,
             detail: 'entry must be a JSON object',
             raw: 'garbage',
+        );
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
         );
     }
 }

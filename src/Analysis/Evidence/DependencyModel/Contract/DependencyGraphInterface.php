@@ -132,7 +132,12 @@ interface DependencyGraphInterface
      * without them a class declaring `implements \JsonSerializable` reads as
      * one that does not.
      *
+     * Named class self-extends survives here; ordinary graph and coupling queries omit self edges.
+     *
      * @return list<Dependency>
      */
     public function getDeclarationDependencies(): array;
+
+    /** @return list<ClassLikeDeclaration> */
+    public function getClassLikeDeclarations(): array;
 }

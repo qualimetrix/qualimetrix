@@ -22,9 +22,11 @@ use Qualimetrix\Reporting\GraphProjection\Contract\GraphExportFormat;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphProjectionRequest;
 use Qualimetrix\Reporting\GraphProjection\DependencyGraphProjector;
 use Qualimetrix\Reporting\GraphProjection\NamespaceFilter;
+use Qualimetrix\Reporting\GraphProjection\NamespaceSelection;
 use Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub;
 
 #[CoversClass(NamespaceFilter::class)]
+#[CoversClass(NamespaceSelection::class)]
 final class NamespaceFilterTest extends TestCase
 {
     /** @return iterable<string, array{list<string>|null, list<string>, list<string>}> */
@@ -137,24 +139,28 @@ final class NamespaceFilterTest extends TestCase
         self::assertSame(array_map(static fn(string $value): string => 'subtree:' . $value, $expected), $unbound);
     }
 
-    /**
-     * A miss on the excluding door is deliberately not a refusal, so it must
-     * not be a binding report either: it leaves the graph as it would have
-     * been.
-     */
     #[Test]
-    public function itIgnoresExcludeNamespacesThatMatchNothing(): void
+    public function itReportsUnboundExcludeValuesAndTheirExactCaseSuggestion(): void
     {
-        $graph = self::graph();
-        $projector = new DependencyGraphProjector();
-
-        self::assertSame([], $projector->unboundIncludeNamespaces(
-            $graph,
-            new GraphProjectionRequest(excludeNamespaces: self::patterns(['Zzz\\Nope']) ?? []),
-        ));
         self::assertSame(
-            $projector->project($graph, new GraphProjectionRequest()),
-            $projector->project($graph, new GraphProjectionRequest(excludeNamespaces: self::patterns(['Zzz\\Nope']) ?? [])),
+            [
+                ['selector' => 'subtree:Zzz\\Nope', 'suggestion' => null],
+                ['selector' => 'subtree:app\\service', 'suggestion' => 'App\\Service'],
+            ],
+            (new NamespaceFilter(
+                excludeNamespaces: self::patterns(['Zzz\\Nope', 'app\\service']) ?? [],
+            ))->unboundExcludeNamespaces(self::graph()->getAllClasses()),
+        );
+    }
+
+    #[Test]
+    public function itTreatsACorrectlyCasedExcludeAsBoundEvenWhenItRemovesEveryMatch(): void
+    {
+        self::assertSame(
+            [],
+            (new NamespaceFilter(
+                excludeNamespaces: self::patterns(['App\\Service']) ?? [],
+            ))->unboundExcludeNamespaces(self::graph()->getAllClasses()),
         );
     }
 
@@ -208,13 +214,13 @@ final class NamespaceFilterTest extends TestCase
 
         return new DependencyGraph(
             dependencies: [
-                new Dependency(
+                Dependency::ofKind(
                     DeclarationPath::of($producer, RelativePath::fromString('Producer.php'), DeclarationOrdinal::fromRank(0)),
                     new LogicalClassPath($consumer),
                     DependencyType::TypeHint,
                     new Location(RelativePath::fromString('Producer.php'), 10),
                 ),
-                new Dependency(
+                Dependency::ofKind(
                     DeclarationPath::of($consumer, RelativePath::fromString('Consumer.php'), DeclarationOrdinal::fromRank(0)),
                     new LogicalClassPath($ignored),
                     DependencyType::TypeHint,
@@ -229,6 +235,7 @@ final class NamespaceFilterTest extends TestCase
             classCe: [],
             classCa: [],
             declarationDependencies: [],
+            classLikeDeclarations: [],
         );
     }
 }

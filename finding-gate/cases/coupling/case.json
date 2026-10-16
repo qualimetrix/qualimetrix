@@ -1,6 +1,6 @@
 {
     "id": "coupling",
-    "description": "Four namespaces — stable concrete kernel, abstract contracts, services and wiring — with CBO, instability and distance thresholds floored, plus a framework namespace prefix that classifies nothing.",
+    "description": "Four namespaces \u2014 stable concrete kernel, abstract contracts, services and wiring \u2014 with CBO, instability and distance thresholds floored, plus a framework namespace prefix that classifies nothing.",
     "paths": [
         "src"
     ],
@@ -19,7 +19,9 @@
         "--rule-opt=code-smell.long-parameter-list:warning=30",
         "--rule-opt=code-smell.long-parameter-list:error=40",
         "--rule-opt=code-smell.long-parameter-list:vo-warning=30",
-        "--rule-opt=code-smell.long-parameter-list:vo-error=40"
+        "--rule-opt=code-smell.long-parameter-list:vo-error=40",
+        "--rule-opt=coupling.class-rank:warning=1",
+        "--rule-opt=coupling.class-rank:error=2"
     ],
     "channels": [
         "coupling.cbo@class",

@@ -20,6 +20,25 @@ final class CacheConfigurationStoreTest extends TestCase
         $store->reset();
 
         self::assertTrue($store->current()->enabled);
-        self::assertNotSame('/custom', $store->current()->directory->value());
+        self::assertNotSame('/custom', $store->current()->directory?->value());
     }
+    #[Test]
+    public function itCapturesEnvironmentAtTheRunReadBoundaryAndAfterReset(): void
+    {
+        $before = getenv('XDG_CACHE_HOME');
+        $store = new CacheConfigurationStore();
+        $base = sys_get_temp_dir() . '/qmx-cache-boundary-' . bin2hex(random_bytes(6));
+        try {
+            putenv('XDG_CACHE_HOME=' . $base . '/first');
+            self::assertSame($base . '/first/qmx', $store->current()->directory?->value());
+            putenv('XDG_CACHE_HOME=' . $base . '/second');
+            self::assertSame($base . '/first/qmx', $store->current()->directory->value());
+            $store->reset();
+            self::assertSame($base . '/second/qmx', $store->current()->directory?->value());
+            self::assertDirectoryDoesNotExist($base);
+        } finally {
+            putenv($before === false ? 'XDG_CACHE_HOME' : 'XDG_CACHE_HOME=' . $before);
+        }
+    }
+
 }

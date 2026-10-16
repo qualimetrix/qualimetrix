@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
-use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -68,7 +68,7 @@ final class RuleRemediationMinutesCoverageTest extends TestCase
      * worse than no page, so every number on it is checked against the rule
      * that declares it, not merely trusted to have been transcribed right.
      *
-     * The Russian translation (`remediation-time.ru.md`) carries the same
+     * The Russian translation (`reference/remediation-time.ru.md`) carries the same
      * table and is swept the same way — a page nobody checks is exactly how
      * the English page could have drifted in the first place.
      */

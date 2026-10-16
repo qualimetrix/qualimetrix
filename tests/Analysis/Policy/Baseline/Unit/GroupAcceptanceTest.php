@@ -7,12 +7,12 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Policy\Baseline\GroupAcceptance;
+use Qualimetrix\Analysis\Policy\Baseline\Entry\GroupAcceptance;
 use Qualimetrix\Core\Observation\WorseDirection;
 
 /**
  * ADR 0017 cumulative rule, tested directly against the primitive rather than
- * through {@see \Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage}'s
+ * through {@see \Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage}'s
  * `Finding`-shaped scaffolding — this is the type `baseline:update` also
  * has to call (ADR 0017), so it must be checkable on its own.
  *

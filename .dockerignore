@@ -70,6 +70,7 @@ scripts/modular-architecture/tests/
 scripts/subprocess/tests/
 scripts/cross-tool-comparison/tests/
 scripts/phpunit-aggregate/tests/
+scripts/check-code-parallel/tests/
 html-report/tests/
 
 # Examples and documentation (reference only)

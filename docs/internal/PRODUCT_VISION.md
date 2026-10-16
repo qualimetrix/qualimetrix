@@ -260,7 +260,7 @@ exists so that none of them reads as shipped. How far each has progressed belong
 - **Enforcement-input changes surfaced separately** — policy, suppressions, and accepted state told
   apart from code findings, so that repository review rules can require separate approval for them.
 - **Historical trend data**, human-facing only: it helps a person see where the project is heading
-  and is never an input to a verdict (§6.4).
+  and is never an input to a verdict ([Design Principles](#6-design-principles), item 4).
 
 ---
 
@@ -274,14 +274,14 @@ exists so that none of them reads as shipped. How far each has progressed belong
 | "Where are the problems, and what should I look at first?" | Developer, architecture owner    | Health scores per dimension plus ranked hotspots, as orientation                                           |
 | "How healthy is this codebase I just met?"                 | Agent, developer, auditor        | One concise structural overview, drillable to the finding                                                  |
 | "How do we stop the bleeding without fixing everything?"   | Team adopting on legacy code     | An accepted starting state, explicit reviewable suppression, enforcement on new debt only                  |
-| "What did the agent change about the rules themselves?"    | Architecture owner, reviewer     | *(target, §9)* Enforcement-input changes identified separately from code findings                          |
+| "What did the agent change about the rules themselves?"    | Architecture owner, reviewer     | *([target](#9-what-is-not-built-yet))* Enforcement-input changes identified separately from code findings  |
 | "May this land?"                                           | CI                               | A deterministic verdict with machine-readable reasons, distinguishing policy failure from analysis failure |
 
 ---
 
 ## 11. Success Criteria
 
-The principles in §6 say what the product must do. These say how we would know it worked — they are
+The [design principles](#6-design-principles) say what the product must do. These say how we would know it worked — they are
 the claims worth measuring, not restating.
 
 - **Nothing lands silently.** A change that breaks a declared boundary is stopped, whoever produced
@@ -302,14 +302,19 @@ For a proposed feature, answer:
 
 1. Which stage of the core loop does it strengthen?
 2. Whose control over architectural outcomes improves — and does it stay on the correct side of the
-   decision boundary (§3)?
+   [decision boundary](#3-the-decision-boundary)?
 3. Can it be silenced by the thing it supervises? If so, what makes that silencing visible?
 4. Is it based on evidence Qualimetrix can observe reliably, at an acceptable false-positive cost?
 5. Does it preserve one analysis model and reproducibility from committed inputs?
-6. Does it cross a declared boundary (§7) or duplicate a complementary tool?
-7. Does its justification rest on a horizon (§8) that is not current — a user who does not exist yet,
+6. Does it cross a declared [product boundary](#7-what-qualimetrix-is-not) or duplicate a complementary tool?
+7. Does its justification rest on a [horizon](#8-horizons) that is not current — a user who does not exist yet,
    or a market position?
 8. What more central work does it delay?
+
+Among candidates that pass this test, prioritize the trustworthiness of one result
+([Design Principles](#6-design-principles), items 1, 3, and 8) before comparisons
+or deltas, and one correct analysis model ([Design Principles](#6-design-principles),
+item 5) before a new surface projects it.
 
 An item that cannot answer 1–4 does not enter the roadmap. An item that conflicts with 5 or 6 requires
 an explicit revision of this document, not an implementation-level exception. An item justified only

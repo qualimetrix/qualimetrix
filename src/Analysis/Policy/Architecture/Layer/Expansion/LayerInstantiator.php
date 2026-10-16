@@ -6,10 +6,10 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\InvalidLayerDefinitionException;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CapturePattern;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
 
@@ -22,7 +22,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
  *
  * Surfaces a {@see ConfigurationRefusal} when:
  * - The tuple is incomplete (a variable referenced by the template is not
- *   bound). This typically happens under {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode::Any}
+ *   bound). This typically happens under {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchMode::Any}
  *   with multiple capture-producing patterns binding different variables.
  * - The substituted name violates the layer-name grammar (binding values
  *   must consist of letters, digits, hyphens, and underscores, starting
@@ -104,6 +104,8 @@ final class LayerInstantiator
                 implements: $membership->exclude->implements,
                 extends: $membership->exclude->extends,
                 mode: $membership->exclude->mode,
+                memberAttributes: $membership->exclude->memberAttributes,
+                namedTypes: $membership->exclude->namedTypes,
             )
             : null;
 
@@ -118,6 +120,8 @@ final class LayerInstantiator
             extends: $membership->extends,
             mode: $membership->mode,
             exclude: $exclude,
+            memberAttributes: $membership->memberAttributes,
+            namedTypes: $membership->namedTypes,
         );
     }
 

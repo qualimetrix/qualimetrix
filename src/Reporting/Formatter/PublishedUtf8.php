@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter;
 
 use JsonException;
-use LogicException;
+use Qualimetrix\Core\SourceText\SourceBytes;
 
 /**
  * Keeps a structured report valid UTF-8 when the analysed code is not.
@@ -15,8 +15,8 @@ use LogicException;
  * after an otherwise complete analysis. A JSON encoder then refuses the whole
  * document and an XML writer emits one no parser accepts.
  *
- * Each invalid byte becomes U+FFFD, the character Unicode reserves
- * for exactly that. The repair is never silent: it counts the strings it
+ * Invalid strings use reversible percent encoding, preserving distinct bytes.
+ * The repair is never silent: it counts the strings it
  * touched, and every structured format publishes that count in its own
  * diagnostic channel next to the repaired document.
  */
@@ -27,10 +27,6 @@ final class PublishedUtf8
 
     /** Check name / descriptor / source suffix the interchange formats publish the repair under. */
     public const string REPAIR_CHECK = 'publication.invalid-utf8';
-
-    private const string VALID_SEQUENCE_OR_BYTE = '/(?:[\x00-\x7F]|[\xC2-\xDF][\x80-\xBF]|\xE0[\xA0-\xBF][\x80-\xBF]'
-        . '|[\xE1-\xEC\xEE\xEF][\x80-\xBF]{2}|\xED[\x80-\x9F][\x80-\xBF]|\xF0[\x90-\xBF][\x80-\xBF]{2}'
-        . '|[\xF1-\xF3][\x80-\xBF]{3}|\xF4[\x80-\x8F][\x80-\xBF]{2})+|(.)/s';
 
     /**
      * Encodes a document, repairing its strings only when the encoder refuses
@@ -86,22 +82,18 @@ final class PublishedUtf8
     }
 
     /**
-     * The string with each invalid sequence replaced by U+FFFD; `$repairs` is
+     * The string with invalid bytes percent-escaped; `$repairs` is
      * incremented when anything was replaced.
      */
     public static function repair(string $value, int &$repairs): string
     {
-        if (mb_check_encoding($value, 'UTF-8')) {
+        if (SourceBytes::isUtf8($value)) {
             return $value;
         }
 
         ++$repairs;
 
-        return preg_replace_callback(
-            self::VALID_SEQUENCE_OR_BYTE,
-            static fn(array $match): string => isset($match[1]) ? "\u{FFFD}" : $match[0],
-            $value,
-        ) ?? throw new LogicException(\sprintf('Could not repair a published string: %s', preg_last_error_msg()));
+        return SourceBytes::escapeInvalid($value);
     }
 
     /**
@@ -110,7 +102,7 @@ final class PublishedUtf8
     public static function describe(int $repairs): string
     {
         return \sprintf(
-            '%d published string(s) contained invalid UTF-8 from the analysed source; each invalid byte was replaced by U+FFFD.',
+            '%d published string(s) contained invalid UTF-8 from the analysed source; invalid bytes were percent-escaped as %%XX.',
             $repairs,
         );
     }

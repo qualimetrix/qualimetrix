@@ -4,13 +4,18 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Inline\Unit;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\InvertedOverrideValidator;
+use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideAxis;
+use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideSyntax;
+use Qualimetrix\Analysis\Finding\Contract\Rule\Override\ThresholdOverrideRequest;
 use Qualimetrix\Analysis\Finding\Rule\Override\OverrideValidationFailure;
 
 #[CoversClass(InvertedOverrideValidator::class)]
+#[CoversClass(ThresholdOverrideRequest::class)]
 final class InvertedOverrideValidatorTest extends TestCase
 {
     private InvertedOverrideValidator $validator;
@@ -30,19 +35,19 @@ final class InvertedOverrideValidatorTest extends TestCase
     public function itAcceptsWarningAboveError(): void
     {
         // Maintainability defaults: warning=40, error=20 — natural state for inverted rules
-        self::assertNull($this->validator->validate(40, 20, true));
+        self::assertNull($this->validator->validate(new ThresholdOverrideRequest(40, 20, OverrideSyntax::ExplicitAxes, [OverrideAxis::Warning, OverrideAxis::Error])));
     }
 
     #[Test]
     public function itAcceptsWarningEqualsError(): void
     {
-        self::assertNull($this->validator->validate(30, 30, true));
+        self::assertNull($this->validator->validate(new ThresholdOverrideRequest(30, 30, OverrideSyntax::ExplicitAxes, [OverrideAxis::Warning, OverrideAxis::Error])));
     }
 
     #[Test]
     public function itRejectsWarningBelowError(): void
     {
-        $failure = $this->validator->validate(10, 30, true);
+        $failure = $this->validator->validate(new ThresholdOverrideRequest(10, 30, OverrideSyntax::ExplicitAxes, [OverrideAxis::Warning, OverrideAxis::Error]));
 
         self::assertInstanceOf(OverrideValidationFailure::class, $failure);
         self::assertSame('error_exceeds_warning', $failure->code);
@@ -56,24 +61,26 @@ final class InvertedOverrideValidatorTest extends TestCase
     #[Test]
     public function itRejectsNegativeValues(): void
     {
-        self::assertSame('negative_warning', $this->validator->validate(-1, 20, true)?->code);
-        self::assertSame('negative_error', $this->validator->validate(40, -1, true)?->code);
+        self::assertSame('negative_warning', $this->validator->validate(new ThresholdOverrideRequest(-1, 20, OverrideSyntax::ExplicitAxes, [OverrideAxis::Warning, OverrideAxis::Error]))?->code);
+        self::assertSame('negative_error', $this->validator->validate(new ThresholdOverrideRequest(40, -1, OverrideSyntax::ExplicitAxes, [OverrideAxis::Warning, OverrideAxis::Error]))?->code);
     }
 
     #[Test]
-    public function itAcceptsNullsAsNoOpHalves(): void
+    public function itAcceptsPartialAxesAndRefusesAnAbsentOverride(): void
     {
-        self::assertNull($this->validator->validate(null, null, false));
-        self::assertNull($this->validator->validate(40, null, false));
-        self::assertNull($this->validator->validate(null, 20, true));
+        self::assertNull($this->validator->validate(new ThresholdOverrideRequest(40, null, OverrideSyntax::ExplicitAxes, [OverrideAxis::Warning])));
+        self::assertNull($this->validator->validate(new ThresholdOverrideRequest(null, 20, OverrideSyntax::ExplicitAxes, [OverrideAxis::Error])));
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('equal non-null values');
+        new ThresholdOverrideRequest(null, null, OverrideSyntax::Shorthand, []);
     }
 
     #[Test]
     public function itHandlesFloatThresholds(): void
     {
-        self::assertNull($this->validator->validate(0.8, 0.5, true));
+        self::assertNull($this->validator->validate(new ThresholdOverrideRequest(0.8, 0.5, OverrideSyntax::ExplicitAxes, [OverrideAxis::Warning, OverrideAxis::Error])));
 
-        $failure = $this->validator->validate(0.3, 0.5, true);
+        $failure = $this->validator->validate(new ThresholdOverrideRequest(0.3, 0.5, OverrideSyntax::ExplicitAxes, [OverrideAxis::Warning, OverrideAxis::Error]));
         self::assertInstanceOf(OverrideValidationFailure::class, $failure);
         self::assertSame('error_exceeds_warning', $failure->code);
     }

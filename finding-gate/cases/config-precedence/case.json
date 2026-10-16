@@ -1,0 +1,19 @@
+{
+    "id": "config-precedence",
+    "description": "YAML null preserves a written preset boundary, and later CLI shorthands replace earlier graduated bands at root and callable scope.",
+    "coverage": "auxiliary",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "args": [
+        "--preset=strict",
+        "--rule-opt=complexity.ccn:threshold=3",
+        "--rule-opt=complexity.cognitive:callable.threshold=3"
+    ],
+    "channels": [
+        "complexity.ccn@callable",
+        "complexity.cognitive@callable",
+        "complexity.npath@callable"
+    ]
+}

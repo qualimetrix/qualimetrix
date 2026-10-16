@@ -75,6 +75,15 @@ The verdict label and `defect` bit are separate. A framed refusal can still be
 a defect when the ledger promised acceptance; all floors and controls compare
 `VERDICT|defect`, never the label alone.
 
+The live form and pair populations contain only addresses writable through the
+native declaration API. Historical ledger addresses with no writable declaration
+remain explicit `NOT OBSERVABLE` cells, with their exclusion reason; they are not
+judged as repaired promises. The frozen ledger and its historical observations
+remain unchanged. Retired Distance `min-class-count` spellings are covered by
+`DistanceRuleTest::itRefusesEveryRetiredClassCountSpelling`; removed architecture
+severity options are covered by
+`UnknownRuleOptionKeyRefusalTest::itLeavesAKeyTheClassAnswersForToTheClassItself`.
+
 ## Composition and neighbourhood
 
 Axis C preserves both source composition and sibling loss. `LOST_SIBLING` is
@@ -97,13 +106,21 @@ already defective alone belongs to the form axis and is not counted twice.
 subject requires a configuration section use their declared minimal document
 in `witness-envelopes.tsv`.
 
-Every process probe names and clears a unique cache directory and fails if the
-default cache appears. `--no-cache` is not trusted. The refusal classifier also
+Process probes that do not measure cache ownership name and clear a unique
+cache directory, then fail if the default appears in their private XDG home.
+Cache-owned probes observe the cache path itself. `--no-cache` is not trusted.
+The refusal classifier also
 uses a framed and an unframed control on every measured tree; a changed control
 shape is a refusal of the stand, not a verdict. The framed control is a product
 refusal. The unframed one is a stand-owned process that writes the product's
 JSON refusal envelope without the frame: the product frames every exit-3
 refusal, so it has no unframed refusal to offer.
+
+Axis D's canonical `cache.dir` spellings are relative to the copied project.
+Their framed refusal for being inside that root is a location refusal, not a
+refusal of the promised string form. The stand names that distinction only
+when the product gives the specific project-root reason; another framed
+refusal of a promised string remains a defect.
 
 ## Limits and floor
 
@@ -169,3 +186,26 @@ php scripts/promise-effect.php --freeze-before --reason='…'
 input stamp. It does not measure current product behaviour; only the full stand
 does that. A narrowed `--axis=` run rewrites the published grid partially, so
 follow it with a full run before relying on generated verdict data.
+
+Form probes carry a fixed authored context when a canonical magnitude would
+otherwise contradict a sibling band boundary. The same document is used for
+omission, the value and its comparand on both versions; the target itself is not
+seeded. Exact door/path/form hits keep typed YAML selectors separate from native
+scalar CLI selector spellings. A presence-only alias has no payload spelling,
+so only its presence form is measured, without a self-equal collapse comparand.
+
+A before retake uses the native pipeline and option declarations of the declared
+old product. Pending cures remain pending: the frozen side must still observe
+the old defect, and the live side must observe its repair. Full population,
+frozen floor, old-source and reason guards complete before any capture artifact
+is published. A normal live run may publish a red measurement.
+
+The formula placeholder is instantiated as `health.complexity.formula` at the
+project level, with the built-in formula as its lawful omitted/default case.
+All forms on both versions use the same warning/error thresholds 10000/10000,
+so both the declared `1 + 1` hit and the numeric string `7331` change findings.
+The formulas-map placeholder remains `computed.probe-metric.formulas`, with a
+sibling `formula: "1"` and class thresholds 1.5/1.8. Its `{class: "1 + 1"}`
+write changes the reported findings; `null` leaves the sibling formula in place.
+Cache-owned observations retain named/default sentinels and also compare newly
+created directory names with their file counts, excluding fixture directories.

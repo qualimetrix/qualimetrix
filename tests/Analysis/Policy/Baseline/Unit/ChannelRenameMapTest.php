@@ -8,8 +8,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameMap;
-use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameRefusal;
+use Qualimetrix\Analysis\Policy\Baseline\ChannelRename\ChannelRenameMap;
+use Qualimetrix\Analysis\Policy\Baseline\ChannelRename\ChannelRenameRefusal;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Fixtures\ChannelRenameTsvCorpus;
 
 /**

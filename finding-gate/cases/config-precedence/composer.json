@@ -1,0 +1,10 @@
+{
+    "name": "finding-gate-corpus/config-precedence",
+    "description": "A top-level shorthand takes precedence over a callable block, YAML null preserves a written preset boundary, and a later CLI shorthand replaces an earlier graduated band.",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Corpus\\ConfigPrecedence\\": "src/"
+        }
+    }
+}

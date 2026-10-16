@@ -13,10 +13,14 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
-use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityIndexCollector;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
+use Qualimetrix\Analysis\Run\Contract\Collection\SuccessfulFileProcessing;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
 use Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy;
 use RecursiveDirectoryIterator;
@@ -41,28 +45,6 @@ final class AmphpParallelStrategyTest extends TestCase
         if (is_dir($this->tempDir)) {
             $this->removeDirectory($this->tempDir);
         }
-    }
-
-    #[Test]
-    public function itReturnsAvailabilityBasedOnAmphpParallelAndExtensions(): void
-    {
-        // amphp/parallel is installed in dev environment
-        // It should be available if ext-parallel or pcntl_fork exists
-        $isAvailable = $this->strategy->isAvailable();
-
-        // At least on Unix systems with PCNTL it should be available
-        if (\function_exists('pcntl_fork') || \extension_loaded('parallel')) {
-            self::assertTrue($isAvailable, 'AmphpParallelStrategy should be available when amphp/parallel is installed and pcntl/parallel available');
-        } else {
-            self::assertFalse($isAvailable, 'AmphpParallelStrategy should not be available without pcntl or parallel extension');
-        }
-    }
-
-    #[Test]
-    public function itDelegatesIsParallelAvailableToIsAvailable(): void
-    {
-        // isParallelAvailable should return same as isAvailable
-        self::assertSame($this->strategy->isAvailable(), $this->strategy->isParallelAvailable());
     }
 
     #[Test]
@@ -97,10 +79,10 @@ final class AmphpParallelStrategyTest extends TestCase
         // We can't directly read the private property, but we can verify behavior
         // by checking that small file sets fall back to sequential
         $files = $this->createTestFiles(50);
-        $processor = fn(SplFileInfo $file): string => $file->getPathname();
+        $processor = fn(SplFileInfo $file): FileProcessingResult => self::resultFor($file);
 
         // With 50 files and threshold of 200, should fall back to sequential
-        $results = $this->strategy->execute($files, $processor, canParallelize: true);
+        $results = $this->strategy->execute($files, $processor);
 
         self::assertCount(50, $results);
     }
@@ -108,7 +90,7 @@ final class AmphpParallelStrategyTest extends TestCase
     #[Test]
     public function itForwardsTheDependencyTraversalParticipantClassToEverySerializedTask(): void
     {
-        if (!$this->strategy->isAvailable()) {
+        if (\Qualimetrix\Infrastructure\Parallel\WorkerPool::unavailableCapability() !== null) {
             self::markTestSkipped('Parallel worker transport is unavailable.');
         }
 
@@ -123,38 +105,55 @@ final class AmphpParallelStrategyTest extends TestCase
 
         self::assertCount(2, $results);
         foreach ($results as $result) {
-            self::assertInstanceOf(FileProcessingResult::class, $result);
             self::assertTrue($result->isSuccessful());
         }
     }
 
     #[Test]
-    public function itFallsBackToSequentialWhenCannotParallelize(): void
+    public function itPublishesTheNamedLinkInAWorkerForSuccessAndReadFailure(): void
     {
-        $files = $this->createTestFiles(2);
+        if (\Qualimetrix\Infrastructure\Parallel\WorkerPool::unavailableCapability() !== null) {
+            self::markTestSkipped('Parallel worker transport is unavailable.');
+        }
 
-        $callCount = 0;
-        $processor = function (SplFileInfo $file) use (&$callCount): string {
-            $callCount++;
-            return $file->getPathname();
-        };
+        $outside = $this->tempDir . '-outside';
+        mkdir($this->tempDir . '/src');
+        mkdir($outside);
+        file_put_contents($outside . '/Actual.php', '<?php class Actual {}');
+        symlink($outside . '/Actual.php', $this->tempDir . '/src/Named.php');
+        symlink($outside . '/Missing.php', $this->tempDir . '/src/Missing.php');
 
-        $results = $this->strategy->execute($files, $processor, canParallelize: false);
+        try {
+            $this->strategy->setProjectRoot(AbsolutePath::fromString($this->tempDir));
+            $this->strategy->setMinFilesForParallel(1);
+            $this->strategy->setWorkerCount(2);
 
-        self::assertSame(2, $callCount);
-        self::assertCount(2, $results);
+            $results = $this->strategy->execute(
+                [new SplFileInfo($this->tempDir . '/src/Named.php'), new SplFileInfo($this->tempDir . '/src/Missing.php')],
+                static fn(): never => throw new LogicException('Parallel execution must not use the fallback.'),
+            );
+
+            self::assertCount(2, $results);
+            self::assertTrue($results[0]->isSuccessful());
+            self::assertSame('src/Named.php', $results[0]->filePath->value());
+            self::assertFalse($results[1]->isSuccessful());
+            self::assertSame('src/Missing.php', $results[1]->filePath->value());
+        } finally {
+            unlink($outside . '/Actual.php');
+            rmdir($outside);
+        }
     }
 
     #[Test]
     public function itHandlesEmptyFilesList(): void
     {
         $callCount = 0;
-        $processor = function (SplFileInfo $file) use (&$callCount): string {
+        $processor = function (SplFileInfo $file) use (&$callCount): FileProcessingResult {
             $callCount++;
-            return $file->getPathname();
+            return self::resultFor($file);
         };
 
-        $results = $this->strategy->execute([], $processor, canParallelize: true);
+        $results = $this->strategy->execute([], $processor);
 
         self::assertSame(0, $callCount);
         self::assertSame([], $results);
@@ -167,12 +166,12 @@ final class AmphpParallelStrategyTest extends TestCase
         $files = $this->createTestFiles(50);
 
         $callCount = 0;
-        $processor = function (SplFileInfo $file) use (&$callCount): string {
+        $processor = function (SplFileInfo $file) use (&$callCount): FileProcessingResult {
             $callCount++;
-            return $file->getPathname();
+            return self::resultFor($file);
         };
 
-        $results = $this->strategy->execute($files, $processor, canParallelize: true);
+        $results = $this->strategy->execute($files, $processor);
 
         self::assertSame(50, $callCount);
         self::assertCount(50, $results);
@@ -188,12 +187,12 @@ final class AmphpParallelStrategyTest extends TestCase
         // Don't set projectRoot - should cause fallback
 
         $callCount = 0;
-        $processor = function (SplFileInfo $file) use (&$callCount): string {
+        $processor = function (SplFileInfo $file) use (&$callCount): FileProcessingResult {
             $callCount++;
-            return $file->getPathname();
+            return self::resultFor($file);
         };
 
-        $results = $this->strategy->execute($files, $processor, canParallelize: true);
+        $results = $this->strategy->execute($files, $processor);
 
         // Should fall back to sequential
         self::assertSame(20, $callCount);
@@ -210,12 +209,12 @@ final class AmphpParallelStrategyTest extends TestCase
         $this->strategy->setProjectRoot(AbsolutePath::fromString($this->tempDir));
 
         $callCount = 0;
-        $processor = function (SplFileInfo $file) use (&$callCount): string {
+        $processor = function (SplFileInfo $file) use (&$callCount): FileProcessingResult {
             $callCount++;
-            return $file->getPathname();
+            return self::resultFor($file);
         };
 
-        $results = $this->strategy->execute($files, $processor, canParallelize: true);
+        $results = $this->strategy->execute($files, $processor);
 
         // Should fall back to sequential
         self::assertSame(20, $callCount);
@@ -228,19 +227,19 @@ final class AmphpParallelStrategyTest extends TestCase
         $files = $this->createTestFiles(5);
 
         $processedFiles = [];
-        $processor = function (SplFileInfo $file) use (&$processedFiles): string {
+        $processor = function (SplFileInfo $file) use (&$processedFiles): FileProcessingResult {
             $processedFiles[] = $file->getPathname();
-            return $file->getPathname();
+            return self::resultFor($file);
         };
 
-        $results = $this->strategy->execute($files, $processor, canParallelize: false);
+        $results = $this->strategy->execute($files, $processor);
 
         self::assertCount(5, $results);
         self::assertCount(5, $processedFiles);
 
         // Verify all files were processed
         foreach ($files as $index => $file) {
-            self::assertSame($file->getPathname(), $results[$index]);
+            self::assertSame($file->getPathname(), $results[$index]->error());
             self::assertSame($file->getPathname(), $processedFiles[$index]);
         }
     }
@@ -262,9 +261,9 @@ final class AmphpParallelStrategyTest extends TestCase
         $strategy->setMinFilesForParallel(100);
 
         $files = $this->createTestFiles(50);
-        $processor = fn(SplFileInfo $file): string => $file->getPathname();
+        $processor = fn(SplFileInfo $file): FileProcessingResult => self::resultFor($file);
 
-        $strategy->execute($files, $processor, canParallelize: true);
+        $strategy->execute($files, $processor);
     }
 
     #[Test]
@@ -273,17 +272,15 @@ final class AmphpParallelStrategyTest extends TestCase
         $logger = $this->createMock(LoggerInterface::class);
 
         // Expect warning message about missing project root
-        $logger->expects($this->once())
-            ->method('warning')
-            ->with('AmphpParallelStrategy: project root not set, using sequential fallback');
+        $logger->expects($this->once())->method('warning')->with('AmphpParallelStrategy: project root not set, using sequential fallback');
 
         $strategy = $this->createStrategy(logger: $logger);
         $strategy->setMinFilesForParallel(10);
 
         $files = $this->createTestFiles(20);
-        $processor = fn(SplFileInfo $file): string => $file->getPathname();
+        $processor = fn(SplFileInfo $file): FileProcessingResult => self::resultFor($file);
 
-        $strategy->execute($files, $processor, canParallelize: true);
+        $strategy->execute($files, $processor);
     }
 
     #[Test]
@@ -302,9 +299,9 @@ final class AmphpParallelStrategyTest extends TestCase
         // Don't set collector classes
 
         $files = $this->createTestFiles(20);
-        $processor = fn(SplFileInfo $file): string => $file->getPathname();
+        $processor = fn(SplFileInfo $file): FileProcessingResult => self::resultFor($file);
 
-        $strategy->execute($files, $processor, canParallelize: true);
+        $strategy->execute($files, $processor);
     }
 
     #[Test]
@@ -324,76 +321,92 @@ final class AmphpParallelStrategyTest extends TestCase
     }
 
     #[Test]
-    public function itHandlesProcessorReturningDifferentTypes(): void
+    public function itPreservesRichProcessorResultsDuringSequentialFallback(): void
     {
         $files = $this->createTestFiles(3);
-
-        $processor = fn(SplFileInfo $file): array => ['path' => $file->getPathname(), 'size' => $file->getSize()];
-
-        $results = $this->strategy->execute($files, $processor, canParallelize: false);
-
-        self::assertCount(3, $results);
-        foreach ($results as $result) {
-            self::assertIsArray($result);
-            self::assertArrayHasKey('path', $result);
-            self::assertArrayHasKey('size', $result);
-        }
-    }
-
-    #[Test]
-    public function itFallsBackToSequentialWhenParallelNotAvailableWithAllConditionsMet(): void
-    {
-        // Every other condition is met, so the fallback under test is the
-        // availability one, and on a machine where parallel *is* available the
-        // case cannot reach it. Skipping loudly is the point: the claim used
-        // to sit inside this same condition, so it was silently satisfied here
-        // and checked nowhere.
-        if ($this->strategy->isAvailable()) {
-            self::markTestSkipped('Parallel is available, so the unavailable fallback cannot be reached.');
+        $expected = [];
+        foreach ($files as $index => $file) {
+            $expected[] = FileProcessingResult::success(
+                RelativePath::fromString($file->getFilename()),
+                new SuccessfulFileProcessing(
+                    MetricBag::fromArray([MetricName::SIZE_LOC => $index + 1])
+                        ->withEntry('fixture', ['path' => $file->getFilename(), 'index' => $index]),
+                    classLikeDeclarations: [],
+                ),
+            );
         }
 
-        $this->strategy = $this->createStrategy([LocCollector::class], derivedCollectorClasses: [MaintainabilityIndexCollector::class]);
-        $this->strategy->setMinFilesForParallel(10);
-        $this->strategy->setProjectRoot(AbsolutePath::fromString($this->tempDir));
+        $processedFiles = [];
+        $processor = static function (SplFileInfo $file) use (&$processedFiles, $expected): FileProcessingResult {
+            $processedFiles[] = $file->getFilename();
 
-        // Create enough files to pass threshold
-        $files = $this->createTestFiles(20);
-
-        $callCount = 0;
-        $processor = function (SplFileInfo $file) use (&$callCount): string {
-            $callCount++;
-            return $file->getPathname();
+            return $expected[\count($processedFiles) - 1];
         };
 
-        $results = $this->strategy->execute($files, $processor, canParallelize: true);
+        $results = $this->strategy->execute($files, $processor);
 
-        self::assertSame(20, $callCount, 'Should fall back to sequential when parallel not available');
-        self::assertCount(20, $results);
+        self::assertSame($expected, $results);
+        self::assertSame(array_map(static fn(SplFileInfo $file): string => $file->getFilename(), $files), $processedFiles);
+        foreach ($results as $index => $result) {
+            self::assertSame($files[$index]->getFilename(), $result->filePath->value());
+            self::assertSame($index + 1, $result->fileBag()->get(MetricName::SIZE_LOC));
+            self::assertSame([['path' => $files[$index]->getFilename(), 'index' => $index]], $result->fileBag()->entries('fixture'));
+        }
     }
 
     #[Test]
-    public function itLogsInfoWhenParallelNotAvailable(): void
+    public function itRefusesAnExplicitRequestWhenProcOpenIsDisabled(): void
     {
-        // Only run this test if parallel is actually unavailable
-        if ($this->strategy->isAvailable()) {
-            self::markTestSkipped('Parallel is available, cannot test unavailable case');
-        }
+        $run = $this->withoutProcOpen(true);
+        self::assertSame(3, $run['code']);
+        self::assertStringContainsString('proc_open', $run['message']);
+        self::assertStringContainsString('--workers=2', $run['message']);
+        self::assertStringContainsString('--workers=0', $run['message']);
+        self::assertSame([], $run['warnings']);
+    }
 
-        $logger = $this->createMock(LoggerInterface::class);
+    #[Test]
+    public function itWarnsOnceAndProfilesEachFileForAnUnavailableAutomaticRequest(): void
+    {
+        $run = $this->withoutProcOpen(false);
+        self::assertSame(0, $run['code']);
+        self::assertSame(20, $run['processed']);
+        self::assertCount(1, $run['warnings']);
+        self::assertStringContainsString('proc_open', $run['warnings'][0]);
+        self::assertSame(20, $run['profile']['collection.file']['count']);
+    }
 
-        // Expect info message about parallel not available
-        $logger->expects($this->once())
-            ->method('info')
-            ->with('AmphpParallelStrategy: parallel not available, using sequential fallback');
-
-        $strategy = $this->createStrategy(logger: $logger);
-        $strategy->setMinFilesForParallel(10);
-        $strategy->setProjectRoot(AbsolutePath::fromString($this->tempDir));
-
-        $files = $this->createTestFiles(20);
-        $processor = fn(SplFileInfo $file): string => $file->getPathname();
-
-        $strategy->execute($files, $processor, canParallelize: true);
+    /** @return array{code: int, message: string, processed: int, warnings: list<string>, profile: array<string, array{count: int}>} */
+    private function withoutProcOpen(bool $explicit): array
+    {
+        $script = <<<'PHP'
+require $argv[1];
+$profiler = new \Qualimetrix\Infrastructure\Profiler\ProfileSession();
+$profiler->enable();
+$logger = new class extends \Psr\Log\AbstractLogger {
+    public array $warnings = [];
+    public function log($level, string|\Stringable $message, array $context = []): void {
+        if ($level === 'warning') $this->warnings[] = (string) $message;
+    }
+};
+$factory = new \Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory(new \Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore(),new \Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms(),\Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor::class,[\Qualimetrix\Analysis\Evidence\Size\LocCollector::class]);
+$strategy = new \Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy($factory,new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy($profiler),$profiler,new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream(),$logger);
+$strategy->setWorkerRequest(new \Qualimetrix\Infrastructure\Parallel\WorkerRequest(2,$argv[3] === '1' ? '--workers=2' : null));
+$strategy->setProjectRoot(\Qualimetrix\Core\Path\AbsolutePath::fromString($argv[2]));
+$strategy->setMinFilesForParallel(1);
+$files = array_fill(0,20,new \SplFileInfo($argv[2] . '/file.php'));
+$processed = 0;
+try {
+    $strategy->execute($files,static function() use (&$processed): int { return ++$processed; });
+    $code = 0;$message = '';
+} catch (\Qualimetrix\Infrastructure\Parallel\WorkerStartFailure $failure) {
+    $code = 3;$message = $failure->getMessage();
+}
+echo json_encode(['code'=>$code,'message'=>$message,'processed'=>$processed,'warnings'=>$logger->warnings,'profile'=>$profiler->summary()->spans],JSON_THROW_ON_ERROR);
+PHP;
+        $process = new \Symfony\Component\Process\Process([\PHP_BINARY, '-d', 'disable_functions=proc_open', '-r', $script, \dirname(__DIR__, 5) . '/vendor/autoload.php', $this->tempDir, $explicit ? '1' : '0']);
+        $process->mustRun();
+        return json_decode($process->getOutput(), true, flags: \JSON_THROW_ON_ERROR);
     }
 
     #[Test]
@@ -402,12 +415,12 @@ final class AmphpParallelStrategyTest extends TestCase
         $files = $this->createTestFiles(10);
 
         $processedOrder = [];
-        $processor = function (SplFileInfo $file) use (&$processedOrder): int {
+        $processor = function (SplFileInfo $file) use (&$processedOrder): FileProcessingResult {
             $processedOrder[] = $file->getFilename();
-            return 1;
+            return self::resultFor($file);
         };
 
-        $this->strategy->execute($files, $processor, canParallelize: false);
+        $this->strategy->execute($files, $processor);
 
         // Verify files were processed in the same order
         self::assertCount(10, $processedOrder);
@@ -425,11 +438,16 @@ final class AmphpParallelStrategyTest extends TestCase
         // Create 1 file - should still fall back to sequential
         // due to missing configuration (projectRoot, collectors)
         $files = $this->createTestFiles(1);
-        $processor = fn(SplFileInfo $file): string => $file->getPathname();
+        $processor = fn(SplFileInfo $file): FileProcessingResult => self::resultFor($file);
 
-        $results = $this->strategy->execute($files, $processor, canParallelize: true);
+        $results = $this->strategy->execute($files, $processor);
 
         self::assertCount(1, $results);
+    }
+
+    private static function resultFor(SplFileInfo $file): FileProcessingResult
+    {
+        return FileProcessingResult::failure(RelativePath::fromString($file->getFilename()), $file->getPathname());
     }
 
     /**
@@ -462,10 +480,14 @@ final class AmphpParallelStrategyTest extends TestCase
         return new AmphpParallelStrategy(
             new FileProcessingTaskFactory(
                 new LcomCollectionConfigurationStore(),
+                new RuleOptionDocumentForms(),
                 DependencyVisitor::class,
                 $collectorClasses,
                 $derivedCollectorClasses,
             ),
+            new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()),
+            new \Qualimetrix\Infrastructure\Profiler\ProfileSession(),
+            new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream(),
             $logger,
         );
     }

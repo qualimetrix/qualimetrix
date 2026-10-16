@@ -12,8 +12,8 @@ use Qualimetrix\Reporting\FindingProjection\SuppressionMechanism;
 
 /**
  * Regression guard for the closed vocabulary the `suppressed` format uses:
- * seven values, five derived one-to-one from
- * {@see FindingFilterStage} plus the two per-rule ledger halves.
+ * eight values, five derived one-to-one from
+ * {@see FindingFilterStage}, the two per-rule ledger halves and selection.
  *
  * `itMapsEveryStageToADistinctMechanism()` is what actually fails the build
  * when a sixth {@see FindingFilterStage} case is declared:
@@ -26,13 +26,15 @@ use Qualimetrix\Reporting\FindingProjection\SuppressionMechanism;
 final class SuppressionMechanismTest extends TestCase
 {
     #[Test]
-    public function itHasExactlySevenValues(): void
+    public function itHasExactlyEightValues(): void
     {
         self::assertCount(
-            \count(FindingFilterStage::cases()) + \count(SuppressionMechanism::ledgerHalves()),
+            \count(FindingFilterStage::cases()) + \count(SuppressionMechanism::ledgerHalves()) + 1,
             SuppressionMechanism::cases(),
         );
-        self::assertCount(7, SuppressionMechanism::cases());
+        self::assertCount(8, SuppressionMechanism::cases());
+        self::assertSame('selection', SuppressionMechanism::Selection->value);
+        self::assertNotContains(SuppressionMechanism::Selection, SuppressionMechanism::ledgerHalves());
     }
 
     #[Test]

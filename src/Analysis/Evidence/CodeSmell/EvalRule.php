@@ -17,7 +17,7 @@ final class EvalRule extends AbstractCodeSmellRule
     public const string NAME = 'code-smell.eval';
     public const string DOCS_PAGE = 'rules/code-smell.md';
     public const int REMEDIATION_MINUTES = 15;
-    protected const string DESCRIPTION = 'Detects usage of eval() function';
+    public const string DESCRIPTION = 'Detects usage of eval() function';
     protected const string SMELL_TYPE = 'eval';
     protected const Severity SEVERITY = Severity::Error;
     protected const string MESSAGE_TEMPLATE = 'eval() usage detected - security risk';

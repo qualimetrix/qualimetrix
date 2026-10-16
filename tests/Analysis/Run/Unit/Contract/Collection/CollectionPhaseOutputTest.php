@@ -23,6 +23,7 @@ final class CollectionPhaseOutputTest extends TestCase
         $result = new CollectionPhaseOutput(
             self::paths('analyzed', 10),
             self::failures('failed', 2),
+            [],
         );
 
         self::assertSame(10, $result->filesAnalyzed);
@@ -32,7 +33,7 @@ final class CollectionPhaseOutputTest extends TestCase
     #[Test]
     public function itCalculatesTotalFiles(): void
     {
-        $result = new CollectionPhaseOutput(self::paths('analyzed', 10), self::failures('failed', 2));
+        $result = new CollectionPhaseOutput(self::paths('analyzed', 10), self::failures('failed', 2), classLikeDeclarations: []);
 
         self::assertSame(12, $result->totalFiles());
     }
@@ -40,8 +41,8 @@ final class CollectionPhaseOutputTest extends TestCase
     #[Test]
     public function itDetectsErrorsWhenFilesSkipped(): void
     {
-        $resultWithErrors = new CollectionPhaseOutput(self::paths('analyzed', 10), self::failures('failed', 2));
-        $resultWithoutErrors = new CollectionPhaseOutput(self::paths('analyzed', 10), []);
+        $resultWithErrors = new CollectionPhaseOutput(self::paths('analyzed', 10), self::failures('failed', 2), classLikeDeclarations: []);
+        $resultWithoutErrors = new CollectionPhaseOutput(self::paths('analyzed', 10), [], classLikeDeclarations: []);
 
         self::assertTrue($resultWithErrors->hasErrors());
         self::assertFalse($resultWithoutErrors->hasErrors());
@@ -50,7 +51,7 @@ final class CollectionPhaseOutputTest extends TestCase
     #[Test]
     public function itHandlesZeroFiles(): void
     {
-        $result = new CollectionPhaseOutput([], []);
+        $result = new CollectionPhaseOutput([], [], classLikeDeclarations: []);
 
         self::assertSame(0, $result->totalFiles());
         self::assertFalse($result->hasErrors());
@@ -64,7 +65,7 @@ final class CollectionPhaseOutputTest extends TestCase
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('multiple terminal states');
 
-        new CollectionPhaseOutput([$path], [FileProcessingResult::failure($path, 'broken')]);
+        new CollectionPhaseOutput([$path], [FileProcessingResult::failure($path, 'broken')], classLikeDeclarations: []);
     }
 
     #[Test]
@@ -74,8 +75,8 @@ final class CollectionPhaseOutputTest extends TestCase
         $this->expectExceptionMessage('successful result');
 
         new CollectionPhaseOutput([], [
-            FileProcessingResult::success(RelativePath::fromString('src/Good.php'), new SuccessfulFileProcessing(new MetricBag())),
-        ]);
+            FileProcessingResult::success(RelativePath::fromString('src/Good.php'), new SuccessfulFileProcessing(new MetricBag(), classLikeDeclarations: [])),
+        ], []);
     }
 
     /** @return list<RelativePath> */

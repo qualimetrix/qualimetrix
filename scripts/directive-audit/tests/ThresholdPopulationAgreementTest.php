@@ -14,6 +14,8 @@ use PHPUnit\Framework\TestCase;
 use QmxDirectiveAudit\EnumeratedSite;
 use QmxDirectiveAudit\ThresholdDirectiveScan;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusalReason;
+use Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor;
 use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -45,9 +47,9 @@ use RuntimeException;
  * character list that *grows* reads further than the product does, and no
  * narrowing catches that.
  *
- * One authored form is absent: a tag with no target on its own line. The
- * product refuses it as naming no rule rather than reading a site, and the
- * scan finds no target there either, so neither measure counts it.
+ * A tag with no target authors no named threshold site. The threshold
+ * extractor leaves it to the suppression sweep to refuse as naming no rule;
+ * enumeration must not read the docblock's closing stars as a target.
  *
  * The library has no PSR-4 entry, the same as `scripts/finding-gate/`, so this
  * test loads it the way its own scripts do.
@@ -113,13 +115,13 @@ final class ThresholdPopulationAgreementTest extends TestCase
 
         yield 'backticked' => ['backticked', []];
 
-        yield 'after a multiline backtick region' => ['afterMultilineBacktickRegion', [['after.backticks', '20']]];
+        yield 'after a closed fence' => ['afterMultilineBacktickRegion', [['after.backticks', '20']]];
 
         yield 'outside a docblock' => ['outsideADocblock', []];
 
         yield 'two on one line' => [
             'twoOnOneLine',
-            [['first.of.two', '20 @qmx-threshold second.of.two 30']],
+            [['first.of.two', '20 @qmx-threshold second.of.two 30 `@qmx-threshold quoted.reason 40`'], ['second.of.two', '30 `@qmx-threshold quoted.reason 40`']],
         ];
 
         yield 'target cut at a call' => ['targetCutAtACall', [['paren.call', '']]];
@@ -144,6 +146,20 @@ final class ThresholdPopulationAgreementTest extends TestCase
             'cutTargetThenASecondDirective',
             [['cut.first', ''], ['second.target', '20']],
         ];
+
+        yield 'prose inside a code span' => ['proseInsideACodeSpan', [['prose.span', '20` here']]];
+        yield 'double backticks' => ['doubleBackticks', []];
+        yield 'closed tilde fence' => ['closedTildeFence', []];
+        yield 'unclosed fence' => ['unclosedFence', [['unclosed.fence', '20']]];
+        yield 'inline continuation' => ['inlineContinuation', [['continued.line', '20']]];
+        yield 'comment decoration' => ['commentDecoration', [['decorated.line', '20']]];
+        yield 'list item mention' => ['listItemMention', [['list.item', '20']]];
+        yield 'summary mention' => ['summaryMention', [['summary.line', '20']]];
+        yield 'typed integer' => ['typedInteger', [['typed.integer', 'warning=15 error=25']]];
+        yield 'typed fraction' => ['typedFraction', [['typed.fraction', '0.8']]];
+        yield 'typed negative' => ['typedNegative', [['typed.negative', '-3']]];
+
+        yield 'missing target' => ['missingTarget', []];
 
         yield 'single-line docblock' => ['onASingleLineDocblock', [['one.line', '20']]];
 
@@ -393,6 +409,35 @@ final class ThresholdPopulationAgreementTest extends TestCase
             );
         }
 
+        $refused = new SuppressionExtractor()->extractPhysical($node, static fn(): bool => true);
+        foreach ($refused as $suppression) {
+            if ($suppression->refusal?->form !== 'threshold' || $suppression->rule === ''
+                || !\in_array($suppression->refusal->reason, [DirectiveRefusalReason::NotAtLineStart, DirectiveRefusalReason::InsideUnclosedFence], true)) {
+                continue;
+            }
+            $comment = $node->getDocComment();
+            if ($comment === null) {
+                self::fail('A refused fixture threshold must have its authored comment.');
+            }
+            $offset = $suppression->position - $comment->getStartFilePos();
+            $tail = substr($comment->getText(), $offset + \strlen('@qmx-threshold'));
+            $tail = explode("\n", $tail, 2)[0];
+            $tail = ltrim($tail, " \t");
+            $afterTarget = substr($tail, \strlen($suppression->rule));
+            $values = str_starts_with($afterTarget, ' ') || str_starts_with($afterTarget, "\t")
+                ? ltrim($afterTarget, " \t") : '';
+            $values = rtrim($values);
+            if (str_ends_with($values, '*/')) {
+                $values = rtrim(substr($values, 0, -2));
+            }
+            $sites[] = \sprintf(
+                '%d|%s|%s',
+                $suppression->line,
+                $suppression->rule,
+                self::productReadingOf($suppression->rule, $values),
+            );
+        }
+
         return $sites;
     }
 
@@ -406,7 +451,10 @@ final class ThresholdPopulationAgreementTest extends TestCase
         $node->setAttribute('startLine', 1);
         $node->setAttribute('endLine', 1);
 
-        $readings = self::readingsOf($node);
+        $readings = array_values(array_filter(
+            self::readingsOf($node),
+            static fn(string $reading): bool => explode('|', $reading, 3)[1] === $target,
+        ));
 
         return \count($readings) === 1
             ? explode('|', $readings[0], 3)[2]
@@ -419,8 +467,8 @@ final class ThresholdPopulationAgreementTest extends TestCase
     }
 
     /**
-     * A diagnostic names the directive it refuses as `@qmx-threshold <target>:
-     * <complaint>`. The split is on the colon *and a space*, because a target
+     * A diagnostic names the directive it refuses as
+     * `@qmx-threshold <target>: <complaint>`. The split is on the colon *and a space*, because a target
      * may carry a colon of its own — `channel:level` is captured whole so that
      * it can be refused by name.
      */

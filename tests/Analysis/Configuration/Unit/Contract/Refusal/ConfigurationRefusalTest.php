@@ -47,8 +47,9 @@ final class ConfigurationRefusalTest extends TestCase
 
         $refusal = $build($position);
 
-        self::assertSame($source, $refusal->origin()->source());
-        self::assertSame($locator, $refusal->origin()->locator());
+        self::assertCount(1, $refusal->sources());
+        self::assertSame($source, $refusal->sources()[0]->source());
+        self::assertSame($locator, $refusal->sources()[0]->locator());
         self::assertSame($position, $refusal->position());
         self::assertSame('Refused.', $refusal->summary());
     }
@@ -69,6 +70,12 @@ final class ConfigurationRefusalTest extends TestCase
                 => ConfigurationRefusal::atPresetKey('strict', $p, 'Refused.'),
             ConfigurationSource::Preset,
             'strict',
+        ];
+        yield 'defaults' => [
+            static fn(RefusedPosition $p): ConfigurationRefusal
+                => ConfigurationRefusal::atDefaultsKey($p, 'Refused.'),
+            ConfigurationSource::Defaults,
+            null,
         ];
         yield 'resolved without a key' => [
             static fn(RefusedPosition $p): ConfigurationRefusal
@@ -96,8 +103,9 @@ final class ConfigurationRefusalTest extends TestCase
     ): void {
         $refusal = $build();
 
-        self::assertSame($source, $refusal->origin()->source());
-        self::assertSame($locator, $refusal->origin()->locator());
+        self::assertCount(1, $refusal->sources());
+        self::assertSame($source, $refusal->sources()[0]->source());
+        self::assertSame($locator, $refusal->sources()[0]->locator());
         self::assertNull($refusal->position());
         self::assertSame('Refused.', $refusal->summary());
     }
@@ -163,10 +171,34 @@ final class ConfigurationRefusalTest extends TestCase
 
         $refusal = ConfigurationRefusal::at($origin, $position, 'Unknown rule name.');
 
-        self::assertSame($origin, $refusal->origin());
+        self::assertSame([$origin], $refusal->sources());
         self::assertSame($position, $refusal->position());
         self::assertSame('Unknown rule name.', $refusal->summary());
         self::assertSame('Unknown rule name.', $refusal->getMessage());
+    }
+
+    #[Test]
+    public function itNamesItsOneOriginAsItsOnlySource(): void
+    {
+        $origin = ConfigurationOrigin::of(ConfigurationSource::Preset, 'strict');
+
+        $refusal = ConfigurationRefusal::aboutInput($origin, 'Refused.');
+
+        self::assertSame([$origin], $refusal->sources());
+    }
+
+    #[Test]
+    public function itNamesEveryContributingLayerOfARefusalAcrossLayers(): void
+    {
+        $preset = ConfigurationOrigin::of(ConfigurationSource::Preset, 'strict');
+        $file = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml');
+        $position = RefusedPosition::open(['architecture', 'allow'], 'allow');
+
+        $refusal = ConfigurationRefusal::acrossLayers([$preset, $file], $position, 'The allow graph has a cycle.');
+
+        self::assertSame([$preset, $file], $refusal->sources());
+        self::assertSame($position, $refusal->position());
+        self::assertSame('The allow graph has a cycle.', $refusal->summary());
     }
 
     #[Test]
@@ -176,7 +208,7 @@ final class ConfigurationRefusalTest extends TestCase
 
         $refusal = ConfigurationRefusal::aboutDocument($origin, 'File is not valid YAML.');
 
-        self::assertSame($origin, $refusal->origin());
+        self::assertSame([$origin], $refusal->sources());
         self::assertNull($refusal->position());
         self::assertSame('File is not valid YAML.', $refusal->summary());
     }
@@ -188,7 +220,7 @@ final class ConfigurationRefusalTest extends TestCase
 
         $refusal = ConfigurationRefusal::aboutInput($origin, 'Baseline path does not exist.');
 
-        self::assertSame($origin, $refusal->origin());
+        self::assertSame([$origin], $refusal->sources());
         self::assertNull($refusal->position());
         self::assertSame('Baseline path does not exist.', $refusal->summary());
     }

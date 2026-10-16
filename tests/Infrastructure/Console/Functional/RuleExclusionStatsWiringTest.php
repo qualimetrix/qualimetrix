@@ -11,17 +11,18 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Core\Symbol\SymbolLevel;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
-use Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
+use Qualimetrix\Infrastructure\Console\CheckReport\FindingProjection;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
+use RuntimeException;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
  * Regression guard for `--show-suppressed` reporting per-rule
  * `suppress_namespaces`, `suppress_namespace_channels`, and `suppress_paths`
- * suppressions ({@see RuleExclusionStats}): {@see FindingFilterOrchestrator}
+ * suppressions ({@see RuleExclusionStats}): {@see FindingProjection}
  * reads them off {@see \Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult},
  * the value `AnalysisPipeline` carries on `AnalysisResult` out of the same
  * `execute()` call — there is no second, separately mutable accessor left to
@@ -42,19 +43,30 @@ use Symfony\Component\Console\Tester\CommandTester;
  * `CommandTester`, mirroring
  * {@see \Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration\RulesCommandWiringTest}.
  */
-#[CoversClass(FindingFilterOrchestrator::class)]
+#[CoversClass(FindingProjection::class)]
 final class RuleExclusionStatsWiringTest extends TestCase
 {
     private string $tempDir;
+    private string $originalWorkingDirectory;
 
     protected function setUp(): void
     {
         $this->tempDir = sys_get_temp_dir() . '/qmx-rule-exclusion-wiring-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0777, true);
+        $workingDirectory = getcwd();
+        if ($workingDirectory === false || !chdir($this->tempDir)) {
+            throw new RuntimeException('Cannot enter the fixture working directory');
+        }
+        $this->originalWorkingDirectory = $workingDirectory;
+
     }
 
     protected function tearDown(): void
     {
+        if (!chdir($this->originalWorkingDirectory)) {
+            throw new RuntimeException('Cannot restore the working directory');
+        }
+
         $this->removeDirectory($this->tempDir);
     }
 

@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\SuppressionBinding;
 
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
+
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Population\ContextGuard;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -36,7 +40,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * execution for it. So the findings are assembled by
  * {@see UnboundSuppressionAudit} at the one seam where the configured values
  * and the run's universes meet, and passed through
- * `RuleExecutionInterface::publishable()`, exactly as
+ * `RulePublicationInterface::publishable()`, exactly as
  * `annotation.unused-directive` and `discovery.unmatched-exclude` are. This
  * class is what makes those assembled findings *channels*: without a
  * registered rule there is no entry in `qmx rules`, no `--disable-rule`, no
@@ -71,6 +75,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * channel, measured, while the other two keep speaking.
  *
  * **Statelessness:** trivially — `analyze()` does nothing at all.
+ *
+ * @qmx-threshold coupling.instability warning=0.82 -- Hosted suppression metadata consumes its channel and option vocabulary through a narrow composition boundary.
  */
 final class UnboundSuppressionRule extends AbstractRule
 {
@@ -82,6 +88,8 @@ final class UnboundSuppressionRule extends AbstractRule
      */
     public const string NAME = 'suppression.configuration';
 
+    public const string DESCRIPTION = 'Reports a suppress_paths, suppress_namespaces or suppress_namespace_channels value that names nothing the run contains';
+
     public const string DOCS_PAGE = 'rules/suppression.md';
 
     /** Deleting one line of configuration, plus checking what the tree really contains. */
@@ -91,16 +99,6 @@ final class UnboundSuppressionRule extends AbstractRule
 
     /** There is no measured quantity here to retune. */
     public const bool SUPPORTS_THRESHOLD_OVERRIDE = false;
-
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public function getDescription(): string
-    {
-        return 'Reports a suppress_paths, suppress_namespaces or suppress_namespace_channels value that names nothing the run contains';
-    }
 
     /**
      * @return class-string<UnboundSuppressionOptions>
@@ -127,10 +125,16 @@ final class UnboundSuppressionRule extends AbstractRule
     {
         return [
             UnboundSuppressionOptions::UNMATCHED_PATH => ChannelDeclaration::occurrence(SymbolLevel::Project)
+                ->withGates(new PopulationGate('suppressionPathJudged', new FindingChannel(UnboundSuppressionOptions::UNMATCHED_PATH), SymbolLevel::Project, 'configured-suppression-value-occurrence', new ContextGuard('suppressionPathJudged'), 'Suppression value scope was not judged.'))
                 ->describedAs('Reports a global suppress_paths value that matches no analysed file.'),
             UnboundSuppressionOptions::UNMATCHED_NAMESPACE => ChannelDeclaration::occurrence(SymbolLevel::Project)
+                ->withGates(new PopulationGate('suppressionNamespaceJudged', new FindingChannel(UnboundSuppressionOptions::UNMATCHED_NAMESPACE), SymbolLevel::Project, 'configured-suppression-value-occurrence', new ContextGuard('suppressionNamespaceJudged'), 'Suppression value scope was not judged.'))
                 ->describedAs('Reports a global suppress_namespaces value that matches no declared namespace.'),
             UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER => ChannelDeclaration::occurrence(SymbolLevel::Project)
+                ->withGates(
+                    new PopulationGate('suppressionPathJudged', new FindingChannel(UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER), SymbolLevel::Project, 'configured-suppression-value-occurrence', new ContextGuard('suppressionPathJudged', true), 'Suppression value scope was not judged.'),
+                    new PopulationGate('suppressionNamespaceJudged', new FindingChannel(UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER), SymbolLevel::Project, 'configured-suppression-value-occurrence', new ContextGuard('suppressionNamespaceJudged', true), 'Suppression value scope was not judged.'),
+                )
                 ->describedAs('Reports a suppression value configured under a rule that names nothing the run contains.'),
         ];
     }

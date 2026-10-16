@@ -78,6 +78,16 @@ final class DirectiveAuditGateTest extends TestCase
     }
 
     #[Test]
+    public function itRefusesAReportWhoseThresholdVerdictsAreAllRefused(): void
+    {
+        self::assertSame(6, self::judge(
+            self::report([self::verdict('src/A.php', 10, 'threshold', 'missing.rule', 'refused')]),
+            2,
+            "src/A.php\t10\tmissing.rule\t20\n",
+        ));
+    }
+
+    #[Test]
     public function itRefusesAReportWhoseThresholdVerdictsAreAllUnmeasured(): void
     {
         self::assertSame(6, self::judge(
@@ -214,6 +224,7 @@ final class DirectiveAuditGateTest extends TestCase
             'form' => $form,
             'target' => $target,
             'effect' => $effect,
+            'refusals' => $effect === 'refused' ? [['channel' => 'annotation.unresolved-directive', 'message' => 'Unknown channel.']] : [],
             'reason' => null,
             'masked_by' => null,
             'boundary_observable' => true,

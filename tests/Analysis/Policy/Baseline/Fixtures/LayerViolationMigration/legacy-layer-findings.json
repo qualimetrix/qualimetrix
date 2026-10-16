@@ -1,0 +1,24 @@
+{
+  "version": 14,
+  "generated": "2026-10-07T11:03:47+00:00",
+  "scope": ["src"],
+  "exclusions": {"patterns":["subtree:src/Excluded"],"generated":"excluded"},
+  "entries": {
+    "declaration:callable:App\\Application\\Consumer::branch@src/Application/Consumer.php": [
+      {"channel":"code-smell.boolean-argument","occurrence":"a60a5a1e180a79ac","count":1,"mode":"suppress"},
+      {"channel":"complexity.ccn","magnitudes":[1]}
+    ],
+    "declaration:class:App\\Domain\\OrdinaryTarget@src/Domain/OrdinaryTarget.php": [
+      {"channel":"architecture.layer-violation","occurrence":"fb3f7c9bdd839ee0","edge":{"target":"class:App\\Domain\\OrdinaryTarget","type":"new"},"count":1}
+    ],
+    "declaration:class:App\\Domain\\OtherUnionTarget@src/Domain/OtherUnionTarget.php": [
+      {"channel":"architecture.layer-violation","occurrence":"e2485bfaee33c8cf","edge":{"target":"class:App\\Domain\\OtherUnionTarget","type":"union_type"},"count":1}
+    ],
+    "declaration:class:App\\Domain\\PromotedTarget@src/Domain/PromotedTarget.php": [
+      {"channel":"architecture.layer-violation","occurrence":"3fc3eeeb04e028c4","edge":{"target":"class:App\\Domain\\PromotedTarget","type":"type_hint"},"count":1}
+    ],
+    "declaration:class:App\\Domain\\UnionTarget@src/Domain/UnionTarget.php": [
+      {"channel":"architecture.layer-violation","occurrence":"b1897ff91dd33933","edge":{"target":"class:App\\Domain\\UnionTarget","type":"union_type"},"count":1}
+    ]
+  }
+}

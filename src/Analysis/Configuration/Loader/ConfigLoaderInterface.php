@@ -9,14 +9,12 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 interface ConfigLoaderInterface
 {
     /**
-     * Loads configuration from the given path.
+     * Read the physical document as written for the declared schema;
+     * sourceName identifies that document in refusals.
      *
-     *
-     * @throws ConfigurationRefusal If the configuration cannot be loaded
-     *
-     * @return array<string, mixed>
+     * @throws ConfigurationRefusal If the document cannot be read as a whole
      */
-    public function load(string $path): array;
+    public function read(string $physicalPath, string $sourceName): LoadedDocument;
 
     /**
      * Returns whether this loader supports the given path.

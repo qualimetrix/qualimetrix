@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\ProfileSummaryRenderer;
+use Qualimetrix\Infrastructure\Console\Profile\ProfileSummaryRenderer;
 use Qualimetrix\Infrastructure\Profiler\Contract\ProfileSummary;
 
 #[CoversClass(ProfileSummaryRenderer::class)]

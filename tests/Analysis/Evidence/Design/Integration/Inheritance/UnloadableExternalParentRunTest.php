@@ -10,35 +10,20 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\DitGlobalCollector;
-use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthCollector;
 use RuntimeException;
 use Symfony\Component\Process\Process;
 
 /**
- * A run over a class whose parent loads and then fails stays authoritative.
+ * Analysing a class whose external parent cannot load still reports complete coverage.
  *
- * DIT resolution asks this tool's own autoloader to load a class named by the
- * analysed source. A standalone install ships packages without the
- * dependencies only its development graph supplies, so the file it finds can
- * name a parent that is absent -- and then `class_exists()` throws instead of
- * returning false. One collector resolves an external parent now: the per-file
- * pass no longer consults any autoloader, so the only load left in a run is the
- * global pass's, and that is what these cases cover. The claim is measured
- * rather than assumed -- reverting the global pass's catch reddens them.
+ * The separate fixture-shape test deliberately loads the parent to prove that
+ * its file remains reachable and broken. The analysis runs in child processes;
+ * source-based ancestry must not execute that file. The unit collector probe
+ * measures the absence of autoloader calls directly.
  *
- * The unit tests assert that the global collector survives the throw, and that
- * the per-file one never provokes it. This asserts the property a user actually
- * reads -- the run reports complete coverage -- through the real binary and the
- * real autoloader.
- *
- * The run happens in an empty directory, with the binary addressed absolutely.
- * Run from the repository root it would instead pick up this repository's own
- * `qmx.yaml`, making every assertion here depend on a file that is edited for
- * unrelated reasons: that config's layer declarations alone contributed 37
- * findings about this repository to a run whose analysed path was one file in a
- * temporary directory.
+ * Runs use an empty working directory so the repository's qmx.yaml cannot
+ * contribute unrelated layer findings.
  */
-#[CoversClass(InheritanceDepthCollector::class)]
 #[CoversClass(DitGlobalCollector::class)]
 final class UnloadableExternalParentRunTest extends TestCase
 {

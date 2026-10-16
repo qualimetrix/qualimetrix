@@ -9,7 +9,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 
 #[CoversClass(RuleNameReader::class)]
 final class RuleNameReaderTest extends TestCase
@@ -46,6 +49,30 @@ final class RuleNameReaderTest extends TestCase
 
         RuleNameReader::read(FixtureRuleWithNonStringName::class);
     }
+
+    #[Test]
+    public function itRejectsAnInheritedPlaceholderName(): void
+    {
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('must declare its own NAME constant');
+
+        RuleNameReader::read(FixtureRuleWithInheritedName::class);
+    }
+
+    #[Test]
+    public function itRejectsAnEmptyNameUsedByTheSharedGetter(): void
+    {
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('must declare a public non-empty string NAME constant');
+
+        RuleNameReader::read(FixtureRuleWithEmptyName::class);
+    }
+
+    #[Test]
+    public function itKeepsInheritedMetadataForAnOverriddenGetter(): void
+    {
+        self::assertSame('fixture.overridden-name', RuleNameReader::read(FixtureRuleWithOverriddenNameGetter::class));
+    }
 }
 
 /**
@@ -59,4 +86,59 @@ final class FixtureRuleWithoutName {}
 final class FixtureRuleWithNonStringName
 {
     public const int NAME = 42;
+}
+
+/** @internal */
+final class FixtureRuleWithInheritedName extends AbstractRule
+{
+    public static function getOptionsClass(): string
+    {
+        return RuleOptionsInterface::class;
+    }
+
+    public function analyze(AnalysisContext $context): array
+    {
+        return [];
+    }
+}
+
+/** @internal */
+final class FixtureRuleWithEmptyName extends AbstractRule
+{
+    public const string NAME = '';
+
+    public static function getOptionsClass(): string
+    {
+        return RuleOptionsInterface::class;
+    }
+
+    public function analyze(AnalysisContext $context): array
+    {
+        return [];
+    }
+}
+
+/** @internal */
+abstract class FixtureRuleWithNameMetadata extends AbstractRule
+{
+    public const string NAME = 'fixture.overridden-name';
+}
+
+/** @internal */
+final class FixtureRuleWithOverriddenNameGetter extends FixtureRuleWithNameMetadata
+{
+    public function getName(): string
+    {
+        return self::NAME;
+    }
+
+    public static function getOptionsClass(): string
+    {
+        return RuleOptionsInterface::class;
+    }
+
+    public function analyze(AnalysisContext $context): array
+    {
+        return [];
+    }
 }

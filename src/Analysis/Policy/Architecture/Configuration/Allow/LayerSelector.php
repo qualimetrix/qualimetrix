@@ -170,7 +170,7 @@ final readonly class LayerSelector
      * Returns the capture variable names declared by this selector in
      * declaration order. Non-captured selectors return an empty list.
      *
-     * Used by {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowValidator}
+     * Used by {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowValidator}
      * to cross-validate that every variable referenced on the allow entry's
      * target side is declared on the source side.
      *
@@ -198,7 +198,7 @@ final readonly class LayerSelector
      * Returns a map of capture variable name → {@code multiSegment} flag.
      * Non-captured selectors return an empty map.
      *
-     * Used by {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowValidator}
+     * Used by {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowValidator}
      * to detect shape mismatches between source and target captures: a
      * variable declared {@code {m}} on the source but referenced
      * {@code {m:**}} on the target (or vice-versa) is rejected because the

@@ -8,6 +8,7 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\RankBy;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Reporting\Formatter\FormatOptionValue;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
@@ -40,8 +41,9 @@ final class FormatOptionValueTest extends TestCase
         self::assertSame(1, FormatOptionValue::positive('top', '1'));
         self::assertNull(FormatOptionValue::limit('violations', 'all'));
         self::assertSame(0, FormatOptionValue::limit('violations', '0'));
-        self::assertSame('density', FormatOptionValue::rankBy('density'));
-        self::assertSame('count', FormatOptionValue::rankBy('count'));
+        self::assertSame(RankBy::Density, FormatOptionValue::rankBy('density'));
+        self::assertSame(RankBy::Score, FormatOptionValue::rankBy('score'));
+        self::assertSame('one of: score, density', FormatOptionValue::problem('rank-by', 'count'));
         self::assertNull(FormatOptionValue::problem('project-name', 'acme/app'));
     }
 

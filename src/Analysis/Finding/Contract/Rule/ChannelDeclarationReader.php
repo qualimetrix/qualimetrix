@@ -6,8 +6,8 @@ namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
 use InvalidArgumentException;
 use LogicException;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionNamedType;

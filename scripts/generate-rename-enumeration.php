@@ -8,7 +8,7 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Finder\Finder;
@@ -54,7 +54,7 @@ function surfaces(): array
         // the count in the same step that moves the files, so a sweep reading
         // one column would have read a drop that means nothing.
         'tests' => [
-            'roots' => ['tests', 'governance', 'tools', 'scripts/promise-effect/tests', 'scripts/directive-audit/tests', 'scripts/directive-audit-controls/tests', 'scripts/tautology-controls/tests', 'scripts/finding-gate/tests', 'scripts/suppression-snapshot/tests', 'scripts/rename-enumeration/tests', 'scripts/health-calibration/tests', 'scripts/benchmark/tests', 'scripts/modular-architecture/tests', 'scripts/subprocess/tests', 'scripts/cross-tool-comparison/tests', 'scripts/phpunit-aggregate/tests'],
+            'roots' => ['tests', 'governance', 'tools', 'scripts/promise-effect/tests', 'scripts/directive-audit/tests', 'scripts/directive-audit-controls/tests', 'scripts/tautology-controls/tests', 'scripts/finding-gate/tests', 'scripts/suppression-snapshot/tests', 'scripts/rename-enumeration/tests', 'scripts/health-calibration/tests', 'scripts/benchmark/tests', 'scripts/modular-architecture/tests', 'scripts/subprocess/tests', 'scripts/cross-tool-comparison/tests', 'scripts/phpunit-aggregate/tests', 'scripts/check-code-parallel/tests'],
             'files' => [],
             'excludeDirs' => ['__pycache__'],
             'excludeFiles' => [],
@@ -93,7 +93,13 @@ function surfaces(): array
             'roots' => ['finding-gate'],
             'files' => [],
             'excludeDirs' => [],
-            'excludeFiles' => [],
+            // Counting this generator's outputs makes a newly measured identity add
+            // its own occurrence on the next run instead of reaching a fixed point.
+            'excludeFiles' => [
+                'finding-gate/enumeration-renames.tsv',
+                'finding-gate/enumeration-renames-executed.tsv',
+                'finding-gate/enumeration-runtime-channels.tsv',
+            ],
         ],
     ];
 }
@@ -1261,7 +1267,10 @@ function footer(array $surfaceOrder, int $channelCount, int $producerCount, int 
 # BOUNDARY OF THE SET: every file under the eight surfaces above, minus
 # generated/vendored noise (html-report/{node_modules,dist},
 # benchmarks/vendor, __pycache__) and the three preset YAML files, which are
-# counted once, under `presets`, not again under `src`.
+# counted once, under `presets`, not again under `src`. The three inventories
+# this generator writes are excluded from `finding_gate`: their rows are
+# measurements of names, not source usages. Decisions and executed history
+# are still read and validated separately.
 #
 # THE `new` AND `step` COLUMNS ARE DECISIONS, NOT MEASUREMENTS. This script
 # never invents either: an unfilled row keeps `?` and an empty `step`. Both

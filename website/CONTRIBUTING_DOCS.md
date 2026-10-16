@@ -19,7 +19,7 @@ Both versions must be updated simultaneously. Content parity is required.
 
 ### Page Structure
 
-Each rule group page (e.g., `complexity.md`, `design.md`) follows this structure:
+Each rule group page (e.g., `rules/complexity.md`, `rules/design.md`) follows this structure:
 
 ```
 # {Group Name} Rules
@@ -192,20 +192,23 @@ Per the single-source-of-truth principle:
 
 - Rule ID (e.g., `**Rule ID:** complexity.ccn`)
 - Judged metric, where the rule declares one (e.g., `**Judged metric:** complexity.ccn`) — the rule ID and the metric key are separate names in separate vocabularies, and this line is the only place the pair is written down for a reader. Take the keys from `bin/qmx rules`, never from the spelling of the rule ID. RU pages use `**Судимая метрика:**` / `**Судимые метрики:**`
-- `### Configuration` — YAML/CLI option syntax and non-default options (`exclude_data_classes`, `min_afferent`, `max_warning`, `threshold` shorthand, etc.) — these are canonical here, not in `default-thresholds.md`.
+- `### Configuration` — YAML/CLI option syntax and non-default options (`exclude_data_classes`, `min_afferent`, `max_warning`, `threshold` shorthand, etc.) — these are canonical here, not in `reference/default-thresholds.md`.
 
-    Take the rule's **option set** from the product's refusal, not from `bin/qmx rules`:
+    Take the rule's **option set** from `bin/qmx rules`: accepted root options,
+    declared level lines and the shared framework-option footer are independent
+    of the dedicated CLI alias list. Reassemble the set at the depth you document;
+    do not treat a level slot name or an alias as a root option.
+
+    A real unknown-option refusal is an independent cross-check at that depth:
 
     ```bash
     bin/qmx check <path> --rule-opt='<rule>:zzNotAnOption=1'
     ```
 
-    exits 3 and names every option that rule accepts. `bin/qmx rules` lists only
-    options carrying a dedicated CLI alias, so options reachable just through
-    `--rule-opt` or YAML are invisible there — which is how 13 rule sections came
-    to omit real options, the `threshold` shorthand among them. Write YAML keys in
-    `snake_case`; the product also accepts kebab and camel, so a page mixing them
-    still works and therefore drifts unnoticed.
+    It exits 3 and names the admitted keys. For a declared level, address that
+    level explicitly. Write YAML keys in `snake_case`; declared kebab and camel
+    spellings also work, so mixed examples can drift unnoticed. The listing does
+    not prove effective-band validation: it does not build/conclude rule options.
 
 When adding a new rule page, mirror the skip-marker placement from existing pages. Both EN and RU versions must have identical markers.
 
@@ -222,6 +225,8 @@ Use MkDocs Material admonitions sparingly and consistently:
 | `!!! tip`     | Practical advice, common false positive workarounds                    |
 
 Place admonitions immediately after the section they relate to, not grouped at the end.
+On Russian pages, give each admonition a Russian title. An explicitly empty
+title (`""`) is allowed when the admonition needs no visible heading.
 
 ---
 
@@ -260,11 +265,11 @@ Place admonitions immediately after the section they relate to, not grouped at t
 | Metric collector added/changed         | Owning `src/Analysis/Evidence/{Capability}/README.md` + `rules/{group}.md`                                                                                                  |
 | CLI alias added for a rule             | `src/Analysis/Configuration/README.md` (CLI aliases table)                                                                                                                  |
 | Pipeline phase changed                 | `src/Analysis/README.md` + `docs/ARCHITECTURE.md` + `CLAUDE.md`                                                                                                             |
-| DI registration mechanism changed      | `CLAUDE.md` (§ Symfony DI) + `docs/ARCHITECTURE.md` (link to CLAUDE)                                                                                                        |
+| DI registration mechanism changed      | [Symfony DI](../CLAUDE.md#7-symfony-di-automatic-service-registration) + `docs/ARCHITECTURE.md` (link to CLAUDE)                                                            |
 | Formatter added/changed                | `src/Reporting/README.md`                                                                                                                                                   |
 | Configuration pipeline stage added     | `src/Analysis/Configuration/README.md`                                                                                                                                      |
 | Baseline/suppression mechanism changed | [`src/Analysis/Policy/Baseline/README.md`](../src/Analysis/Policy/Baseline/README.md) and [`src/Analysis/Policy/Inline/README.md`](../src/Analysis/Policy/Inline/README.md) |
 
-**Note:** `DocumentationConsistencyTest` automatically validates rule names in `default-thresholds.md`,
+**Note:** `DocumentationRuleSurfaceTest` automatically validates rule names in `reference/default-thresholds.md`,
 CLI aliases in `src/Analysis/Configuration/README.md`, and YAML examples in `README.md` against source code.
 If you add a rule or CLI alias, the test will catch missing documentation.

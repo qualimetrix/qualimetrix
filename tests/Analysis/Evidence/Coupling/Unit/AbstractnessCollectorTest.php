@@ -12,8 +12,9 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationHelper;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MetricAggregator;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
-use Qualimetrix\Analysis\Evidence\Size\ClassCountCollector;
+use Qualimetrix\Analysis\Evidence\Size\ClassCount\ClassCountCollector;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -198,9 +199,9 @@ final class AbstractnessCollectorTest extends TestCase
     }
 
     #[Test]
-    public function itReturnsZeroForAnEnumOnlyNamespace(): void
+    public function itDoesNotPublishAbstractnessForAnEnumOnlyNamespace(): void
     {
-        // Bare enums leave totalTypes at 0, which keeps the pre-existing no-type behaviour.
+        // Bare enums leave totalTypes at 0, so abstractness is undefined.
         $repository = $this->repositoryWithNamespaceCounts('App\\Enums', [
             'size.class-count.sum' => 0,
             'size.enum-count.sum' => 5,
@@ -212,7 +213,7 @@ final class AbstractnessCollectorTest extends TestCase
 
         $this->collector->calculate($this->createEmptyGraph(), $repository);
 
-        self::assertSame(0.0, $repository->get(SymbolPath::forNamespace('App\\Enums'))->get('coupling.abstractness'));
+        self::assertNull($repository->get(SymbolPath::forNamespace('App\\Enums'))->get('coupling.abstractness'));
     }
 
     #[Test]
@@ -240,18 +241,18 @@ final class AbstractnessCollectorTest extends TestCase
             SymbolPath::forNamespace($namespace),
             MetricBag::fromArray([
                 'size.class-count' => 6,
-                'size.class-count.count' => 6,
                 'size.abstract-class-count' => 1,
-                'size.abstract-class-count.count' => 6,
                 'size.interface-count' => 0,
-                'size.interface-count.count' => 6,
                 'size.trait-count' => 0,
-                'size.trait-count.count' => 6,
                 'size.enum-count' => 0,
-                'size.enum-count.count' => 6,
                 'size.implementing-enum-count' => 0,
-                'size.implementing-enum-count.count' => 6,
-            ]),
+            ])
+                ->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => 'size.class-count'])
+                ->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => 'size.abstract-class-count'])
+                ->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => 'size.interface-count'])
+                ->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => 'size.trait-count'])
+                ->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => 'size.enum-count'])
+                ->withEntry(MetricName::NAMESPACE_FILE_CONTRIBUTION, ['metric' => 'size.implementing-enum-count']),
             $file,
             1,
         );
@@ -308,7 +309,7 @@ final class AbstractnessCollectorTest extends TestCase
     }
 
     #[Test]
-    public function itReturnsZeroForANamespaceWithoutAnyType(): void
+    public function itDoesNotPublishAbstractnessForANamespaceWithoutAnyType(): void
     {
         $repository = $this->repositoryWithNamespaceCounts('App\\Empty', [
             'size.class-count.sum' => 0,
@@ -320,11 +321,7 @@ final class AbstractnessCollectorTest extends TestCase
 
         $this->collector->calculate($this->createEmptyGraph(), $repository);
 
-        self::assertEqualsWithDelta(
-            0.0,
-            $repository->get(SymbolPath::forNamespace('App\\Empty'))->get('coupling.abstractness'),
-            0.001,
-        );
+        self::assertNull($repository->get(SymbolPath::forNamespace('App\\Empty'))->get('coupling.abstractness'));
     }
 
     #[Test]

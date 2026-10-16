@@ -1,4 +1,7 @@
 suppress_paths: []
+rules:
+  cohesion.lcom:
+    exclude-methods: [brigde]
 computed_metrics:
   health.complexity: { enabled: false }
   health.cohesion: { enabled: false }

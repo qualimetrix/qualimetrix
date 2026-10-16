@@ -6,7 +6,10 @@ namespace Qualimetrix\Infrastructure\Composer;
 
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Composer\Contract\AnalysedInstallAnchorInterface;
+use Qualimetrix\Infrastructure\Composer\Contract\ComposerRootOmission;
 
 /**
  * Where the analysed project's install says its classes live.
@@ -27,12 +30,15 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
 
     private bool $loaded = false;
 
-    /** @var list<string> */
-    private array $roots = [];
+    /** @var list<ComposerRootOmission> */
+    private array $omissions = [];
+
+    private readonly ComposerClassPathLookup $classPathLookup;
 
     private readonly GeneratedClassmap $generatedClassmap;
 
     public function __construct(
+        private readonly ComposerManifestReaderInterface $manifestReader,
         private readonly InstallLocator $locator = new InstallLocator(),
         ?GeneratedClassmap $generatedClassmap = null,
         private readonly LoggerInterface $logger = new NullLogger(),
@@ -41,6 +47,7 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
         // reader reports through the same channel as this one: a default in
         // the signature cannot see another parameter.
         $this->generatedClassmap = $generatedClassmap ?? new GeneratedClassmap(logger: $this->logger);
+        $this->classPathLookup = new ComposerClassPathLookup();
     }
 
     /**
@@ -48,15 +55,22 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
      */
     public function pointAt(string $projectRoot, array $analysedPaths): void
     {
-        $this->roots = $this->locator->rootsFor($projectRoot, $analysedPaths);
+        $located = $this->locator->rootsFor($projectRoot, $analysedPaths);
+        $this->omissions = $located->omissions;
         $this->psr4 = [];
         $this->classmap = [];
+        $this->classPathLookup->pointAt($located->roots);
         $this->loaded = false;
+    }
+
+    public function observedRootOmissions(): array
+    {
+        return $this->omissions;
     }
 
     public function isConfigured(): bool
     {
-        return $this->roots !== [];
+        return $this->classPathLookup->isConfigured();
     }
 
     public function fileFor(string $fqcn): ?string
@@ -66,7 +80,7 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
         $normalized = ltrim($fqcn, '\\');
 
         if (isset($this->classmap[$normalized])) {
-            return $this->within($this->classmap[$normalized]);
+            return $this->classPathLookup->within($this->classmap[$normalized]);
         }
 
         foreach ($this->psr4 as $prefix => $directories) {
@@ -77,39 +91,11 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
             $relative = str_replace('\\', '/', substr($normalized, \strlen($prefix))) . '.php';
 
             foreach ($directories as $directory) {
-                $candidate = $this->within($directory . '/' . $relative);
+                $candidate = $this->classPathLookup->within($directory . '/' . $relative);
 
                 if ($candidate !== null && is_file($candidate)) {
                     return $candidate;
                 }
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * The same path, or null when it lies outside every project this run may
-     * read.
-     *
-     * The values behind these paths come from files the analysed tree controls:
-     * an `install-path` or a psr-4 target may contain `..`, and a classmap
-     * entry is whatever was generated into it. Without this the map would hand
-     * back a path anywhere on the machine and the reader would open it. The old
-     * mechanism had the same exposure and worse -- it executed what it found --
-     * but that is a reason to state the boundary, not to inherit the silence.
-     */
-    private function within(string $path): ?string
-    {
-        $resolved = realpath($path);
-
-        if ($resolved === false) {
-            return null;
-        }
-
-        foreach ($this->roots as $root) {
-            if ($resolved === $root || str_starts_with($resolved, $root . '/')) {
-                return $resolved;
             }
         }
 
@@ -124,7 +110,7 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
 
         $this->loaded = true;
 
-        foreach ($this->roots as $root) {
+        foreach ($this->classPathLookup->roots() as $root) {
             $this->readProject($root);
         }
 
@@ -135,11 +121,22 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
 
     private function readProject(string $root): void
     {
-        $manifest = $this->decode($root . '/composer.json');
-        $vendor = $root . '/' . ($manifest['config']['vendor-dir'] ?? 'vendor');
+        $manifest = $this->manifestReader->read(AbsolutePath::fromString($root));
+        foreach ($manifest->issues as $issue) {
+            if ($issue->kind !== \Qualimetrix\Analysis\ProjectManifest\Contract\ManifestIssueKind::Absent) {
+                $this->logger->warning(\sprintf('Cannot use "%s": %s. Classes rejected by the manifest are treated as external.', $issue->source, $issue->kind->value === 'invalid-json' ? 'invalid JSON — ' . $issue->detail : $issue->detail));
+            }
+        }
+        $vendorPath = str_starts_with($manifest->vendorDirectory, '/')
+            ? $manifest->vendorDirectory
+            : $root . '/' . $manifest->vendorDirectory;
+        $vendor = $this->classPathLookup->existingPath($vendorPath);
 
-        $this->addPsr4($manifest['autoload']['psr-4'] ?? null, $root);
-        $this->addPsr4($manifest['autoload-dev']['psr-4'] ?? null, $root);
+        $this->addPsr4($manifest->psr4Roots(), $root);
+        if ($vendor === null) {
+            return;
+        }
+
         $this->readInstalledPackages($vendor);
 
         foreach ($this->generatedClassmap->read($root, $vendor) as $fqcn => $file) {
@@ -177,10 +174,10 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
         foreach ($section as $prefix => $paths) {
             foreach ((array) $paths as $path) {
                 $directory = \is_string($prefix) && \is_string($path)
-                    ? realpath(rtrim($base . '/' . $path, '/'))
-                    : false;
+                    ? $this->classPathLookup->existingPath(rtrim($base . '/' . $path, '/'))
+                    : null;
 
-                if ($directory !== false) {
+                if ($directory !== null) {
                     $this->psr4[$prefix][] = $directory;
                 }
             }

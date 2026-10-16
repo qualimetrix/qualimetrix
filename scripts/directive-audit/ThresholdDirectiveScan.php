@@ -10,54 +10,10 @@ use RuntimeException;
 use SplFileInfo;
 
 /**
- * The second measure of the authored `@qmx-threshold` population.
+ * Independent enumeration of authored threshold sites, including refused mentions.
  *
- * The gate compares what the audit judged against what a tree scan finds, and
- * that pair is only worth running if the two measures can disagree. They could
- * not: this scan used to hold a hand-copied duplicate of
- * {@see \Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor}'s
- * private pattern, with a test forcing the copy to stay byte-identical — so a
- * regression inside the pattern itself was authored once and landed in both
- * measures at the same instant.
- *
- * So this measure is built differently on purpose. It splits a docblock line
- * into words and cuts the target with its own character list, written out here
- * rather than referenced, and nothing it does is a regular expression over the
- * directive. The independence is textual rather than conceptual, and that is
- * the whole point: a character narrowed in one of the two spellings is caught
- * because the other one did not move. What it may not do is disagree on
- * authored forms, so a fixture of them is asserted against the product's own
- * extraction — that agreement, not this file, is what makes the measure usable
- * as a witness.
- *
- * Four rules below are not stylistic; each one is a divergence that was
- * measured and then closed:
- *
- * - a directive is a word *ending* in the tag. The product's pattern carries no
- *   left boundary, so a tag written straight against the docblock star, with no
- *   space between them, is honoured by the product; a measure demanding the tag
- *   as a whole word would report that site missing.
- * - a directive whose target is followed by a space takes the rest of the line
- *   as its values, and the line ends there. A directive whose target is not is
- *   a site with no values, and the scan resumes right after that target. The
- *   product's values group is greedy to the line break — but only once it
- *   matches at all, and it does not match when no space separates the target
- *   from what follows. Review measured the difference: on
- *   `@qmx-threshold cbo(x) @qmx-threshold other 20` the product reports two
- *   sites, and a measure that stopped at the first would report one.
- * - the values are what the product parses, terminator and all: a docblock
- *   written on a single line ends with `*` and a slash, and the product strips
- *   that marker with the whitespace around it before reading the values.
- * - backtick regions are blanked, not removed. The product replaces every
- *   non-newline character of such a region with a space (AGENTS.md §8); cutting
- *   the region out instead shortens the docblock by however many lines it
- *   spanned, and every directive below it is then reported on the wrong line.
- *
- * One divergence is left open. The product decides backtick regions line by
- * line, and a backtick written directly before the tag always opens a quote;
- * this scan pairs backticks across the whole comment. The two disagree when a
- * stray backtick precedes a quoted tag on the same line, and the agreement
- * fixture carries no such row.
+ * This scanner uses tokenized comments, character runs and an explicit target
+ * alphabet. It imports no product grammar: agreement is measured on authored forms.
  */
 final class ThresholdDirectiveScan
 {
@@ -110,9 +66,8 @@ final class ThresholdDirectiveScan
     }
 
     /**
-     * Only `T_DOC_COMMENT` is read: an ordinary comment carries no directive
-     * for the product either, and a grep over the raw source would report
-     * sites the audit will never judge.
+     * Threshold population is read from docblocks. Ordinary comments are
+     * separately refused by source policy and are outside this scan's population.
      *
      * @return list<EnumeratedSite>
      */
@@ -125,14 +80,9 @@ final class ThresholdDirectiveScan
                 continue;
             }
 
-            foreach (explode("\n", self::blankBacktickRegions($token[1])) as $offset => $line) {
+            foreach (self::commentLines($token[1]) as $offset => $line) {
                 foreach (self::recognise($line) as $address) {
-                    $sites[] = new EnumeratedSite(
-                        $path,
-                        $token[2] + $offset,
-                        $address['target'],
-                        $address['values'],
-                    );
+                    $sites[] = new EnumeratedSite($path, $token[2] + $offset, $address['target'], $address['values']);
                 }
             }
         }
@@ -140,51 +90,29 @@ final class ThresholdDirectiveScan
         return $sites;
     }
 
-    /**
-     * Everything one line addresses, in the order it is written.
-     *
-     * Usually that is nothing or one directive, and a directive carrying values
-     * is always the last thing on its line: the product's values group runs to
-     * the line break, so what follows a complete directive is its reason text
-     * however many tags a reader sees there.
-     *
-     * A directive whose target is *not* followed by a space carries no values —
-     * and then the product's own scan resumes right after that target and can
-     * match a second directive on the same line. A cut-short target followed by
-     * a second tag with a target of its own is two sites to the product, not
-     * one, and a measure returning a single address per line would report the
-     * second of them missing.
-     *
-     * @return list<array{target: string, values: string}>
-     */
+    /** @return list<array{target: string, values: string}> */
     public static function recognise(string $docblockLine): array
     {
         $line = rtrim($docblockLine, "\r");
-        $length = \strlen($line);
         $cursor = 0;
         $addresses = [];
-
-        while ($cursor < $length) {
+        while ($cursor < \strlen($line)) {
             $cursor = self::skipSeparators($line, $cursor);
             $word = self::wordAt($line, $cursor);
             $cursor += \strlen($word);
-
             if ($word === '' || !str_ends_with($word, self::DIRECTIVE)) {
                 continue;
             }
-
+            $position = $cursor - \strlen(self::DIRECTIVE);
+            if (self::quotedMention($line, $position)) {
+                continue;
+            }
             $address = self::addressAfter($line, $cursor);
-
             if ($address === null) {
                 continue;
             }
-
             $addresses[] = ['target' => $address['target'], 'values' => $address['values']];
-
-            if ($address['values'] !== '' || $address['carriesValues']) {
-                return $addresses;
-            }
-
+            // Values belong to the first tag, but later tags are separately refused mentions.
             $cursor = $address['end'];
         }
 
@@ -215,7 +143,8 @@ final class ThresholdDirectiveScan
 
         $target = self::targetAt($line, $afterSeparators);
 
-        if ($target === '') {
+        $stars = strspn($line, '*', $afterSeparators);
+        if ($target === '' || ($stars > 0 && ($line[$afterSeparators + $stars] ?? null) === '/')) {
             return null;
         }
 
@@ -285,16 +214,64 @@ final class ThresholdDirectiveScan
         return substr($line, $cursor, $end - $cursor);
     }
 
-    /**
-     * A backtick region becomes as many spaces as it had characters, keeping
-     * every line break it spanned, exactly as the product blanks it.
-     */
-    private static function blankBacktickRegions(string $text): string
+    /** @return list<string> */
+    private static function commentLines(string $text): array
     {
-        return preg_replace_callback(
-            '/`[^`]*`/',
-            static fn(array $match): string => preg_replace('/[^\r\n]/', ' ', $match[0]) ?? $match[0],
-            $text,
-        ) ?? $text;
+        $lines = explode("\n", $text);
+        $fence = null;
+        $pending = [];
+        foreach ($lines as $index => $line) {
+            $content = substr($line, strspn($line, " \t\r\v\f/*#"));
+            $character = $content[0] ?? '';
+            $width = $character === '`' || $character === '~' ? strspn($content, $character) : 0;
+            if ($fence !== null) {
+                $tail = trim(substr($content, $width));
+                if ($character === $fence[0] && $width >= $fence[1] && ($tail === '' || $tail === '*/')) {
+                    $fence = null;
+                    $pending = [];
+                } elseif (str_starts_with($content, self::DIRECTIVE)) {
+                    $pending[$index] = $line;
+                }
+                $lines[$index] = str_repeat(' ', \strlen($line));
+            } elseif ($width >= 3 && ($character === '~' || !str_contains(substr($content, $width), '`'))) {
+                $fence = [$character, $width];
+                $lines[$index] = str_repeat(' ', \strlen($line));
+            }
+        }
+        foreach ($pending as $index => $line) {
+            $lines[$index] = $line;
+        }
+
+        return array_values($lines);
+    }
+
+    private static function quotedMention(string $line, int $position): bool
+    {
+        $cursor = 0;
+        while (($opening = strpos($line, '`', $cursor)) !== false) {
+            $width = strspn($line, '`', $opening);
+            $search = $opening + $width;
+            $closing = null;
+            while (($run = strpos($line, '`', $search)) !== false) {
+                $length = strspn($line, '`', $run);
+                if ($length === $width) {
+                    $closing = $run;
+                    break;
+                }
+                $search = $run + $length;
+            }
+            if ($closing === null) {
+                $cursor = $opening + $width;
+                continue;
+            }
+            if ($position >= $opening + $width && $position < $closing) {
+                $prefix = substr($line, $opening + $width, $position - $opening - $width);
+
+                return strspn($prefix, " \t\r\v\f/*#`") === \strlen($prefix);
+            }
+            $cursor = $closing + $width;
+        }
+
+        return false;
     }
 }

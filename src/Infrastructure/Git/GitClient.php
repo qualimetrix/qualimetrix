@@ -6,7 +6,10 @@ namespace Qualimetrix\Infrastructure\Git;
 
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Git\ChangeListing\ChangedFile;
+use Qualimetrix\Infrastructure\Git\ChangeListing\NameStatusListing;
 use RuntimeException;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
@@ -32,17 +35,6 @@ final class GitClient
     ) {}
 
     /**
-     * Returns true if the current directory is a git repository.
-     */
-    public function isRepository(): bool
-    {
-        // .git is a directory in regular repos, but a file in worktrees
-        $gitDir = $this->projectRoot->value() . '/.git';
-
-        return is_dir($gitDir) || is_file($gitDir);
-    }
-
-    /**
      * Returns the root directory of the git repository (the `git rev-parse
      * --show-toplevel`). May differ from the project root the client was
      * constructed with when the project sits in a strict subdirectory of
@@ -63,6 +55,7 @@ final class GitClient
     public function getChangedFiles(string $scope): array
     {
         $this->validateScope($scope);
+        $scope = self::completedRange($scope);
 
         return match (true) {
             $scope === 'staged' => $this->getStagedFiles(),
@@ -89,6 +82,7 @@ final class GitClient
     public function validateScope(string $scope): void
     {
         $this->assertInsideWorkTree();
+        $scope = self::completedRange($scope);
 
         if ($scope === 'staged') {
             return;
@@ -110,6 +104,23 @@ final class GitClient
         }
     }
 
+    private static function completedRange(string $scope): string
+    {
+        $separator = str_contains($scope, '...') ? '...' : (str_contains($scope, '..') ? '..' : null);
+        if ($separator === null) {
+            return $scope;
+        }
+
+        $references = explode($separator, $scope);
+        if (\count($references) !== 2) {
+            return $scope;
+        }
+
+        return ($references[0] === '' ? 'HEAD' : $references[0])
+            . $separator
+            . ($references[1] === '' ? 'HEAD' : $references[1]);
+    }
+
     private function assertCommitReference(string $reference): void
     {
         if ($reference === '') {
@@ -127,9 +138,8 @@ final class GitClient
         // Relayed, so the environment is left alone and the text reaches the
         // user in the system's language; nothing reads it, so nothing breaks
         // when it is not English.
-        $process = new Process(
+        $process = $this->process(
             ['git', 'rev-parse', '--verify', $reference . '^{commit}'],
-            $this->projectRoot->value(),
         );
         $process->run();
 
@@ -150,7 +160,7 @@ final class GitClient
      */
     private function assertInsideWorkTree(): void
     {
-        $process = new Process(['git', 'rev-parse', '--is-inside-work-tree'], $this->projectRoot->value());
+        $process = $this->process(['git', 'rev-parse', '--is-inside-work-tree']);
         $process->run();
 
         if ($process->isSuccessful() && trim($process->getOutput()) === 'true') {
@@ -246,10 +256,7 @@ final class GitClient
      */
     private function exec(array $command): string
     {
-        $process = new Process(
-            $command,
-            $this->projectRoot->value(),
-        );
+        $process = $this->process($command);
 
         try {
             $process->mustRun();
@@ -280,14 +287,29 @@ final class GitClient
      */
     private function diff(array $arguments, string $scope): string
     {
-        $process = new Process(['git', 'diff', ...$arguments], $this->projectRoot->value());
+        $process = $this->process(['git', 'diff', '--no-relative', ...$arguments]);
 
         try {
             $process->mustRun();
 
             return $process->getOutput();
         } catch (ProcessFailedException) {
-            throw GitScopeRefusedException::commandFailed($scope, trim($process->getErrorOutput()));
+            $gitReport = trim($process->getErrorOutput());
+            if (str_contains($gitReport, 'no-relative')) {
+                throw GitScopeRefusedException::commandFailed($scope, 'Git 2.28 or newer is required for --no-relative. ' . $gitReport);
+            }
+
+            throw GitScopeRefusedException::commandFailed($scope, $gitReport);
         }
+    }
+
+    /** @param list<string> $command */
+    private function process(array $command): Process
+    {
+        if (!GitProcessAvailability::isAvailable()) {
+            throw new GitUnavailable();
+        }
+
+        return new Process($command, $this->projectRoot->value());
     }
 }

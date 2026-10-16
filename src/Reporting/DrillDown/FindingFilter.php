@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\DrillDown;
 
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\OffenderNamespaceSelection;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex;
+use Qualimetrix\Analysis\Finding\Contract\Filter\FindingNamespace;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Reporting\FormatterContext;
@@ -17,6 +20,10 @@ use Qualimetrix\Reporting\FormatterContext;
  * rendered, and has to compare the same way this filters: a value accepted
  * there and matching nothing here produces the empty report that refusal
  * exists to explain.
+ *
+ * File findings match any namespace declared in their physical file; without
+ * declarations or a repository they use the global namespace. Class selection
+ * keeps file aggregates outside the selection.
  *
  * Project-wide findings are excluded from every namespace selection. Their
  * symbol path carries the internal project sentinel where a namespace would
@@ -32,32 +39,45 @@ final class FindingFilter
      *
      * @return list<Finding>
      */
-    public function filterFindings(array $findings, FormatterContext $context): array
+    public function filterFindings(array $findings, FormatterContext $context, FileNamespaceIndex $fileNamespaces): array
     {
         if ($context->namespace === null && $context->class === null) {
             return $findings;
         }
 
-        return array_values(array_filter($findings, function (Finding $v) use ($context): bool {
-            $ns = $v->symbolPath->namespace ?? '';
-            $class = $v->symbolPath->type;
-
+        return array_values(array_filter($findings, function (Finding $v) use ($context, $fileNamespaces): bool {
             if ($context->namespace !== null) {
-                if ($v->symbolPath->getType() === SymbolType::Project) {
-                    return false;
-                }
-
-                return $context->namespace->matches($ns);
+                return $this->matchesNamespace($v, $context, $fileNamespaces);
             }
 
+            $class = $v->symbolPath->type;
             if ($context->class !== null && $class !== null) {
-                $fqcn = $ns !== '' ? $ns . '\\' . $class : $class;
-
-                return $fqcn === $context->class;
+                return $this->qualifiedClassName(FindingNamespace::declared($v), $class) === $context->class;
             }
 
             return false;
         }));
+    }
+
+    private function matchesNamespace(Finding $finding, FormatterContext $context, FileNamespaceIndex $fileNamespaces): bool
+    {
+        $selector = $context->namespace;
+        if ($selector === null || $finding->symbolPath->getType() === SymbolType::Project) {
+            return false;
+        }
+
+        foreach (\Qualimetrix\Reporting\FindingProjection\FindingNamespaces::of($finding, $fileNamespaces) as $namespace) {
+            if ($selector->matches($namespace)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function qualifiedClassName(?string $namespace, string $class): string
+    {
+        return $namespace !== null && $namespace !== '' ? $namespace . '\\' . $class : $class;
     }
 
     /**
@@ -81,7 +101,7 @@ final class FindingFilter
                     return false;
                 }
 
-                return $context->namespace->matches($canonical);
+                return (new OffenderNamespaceSelection([$context->namespace]))->matches($offender->symbolPath);
             }
 
             if ($context->class !== null) {

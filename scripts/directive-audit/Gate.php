@@ -51,7 +51,7 @@ use RuntimeException;
  *
  * 2. **Non-emptiness of what was actually measured**: population matching is
  *    silent when every `@qmx-threshold` site becomes
- *    `DirectiveEffect::Unmeasured` — a widened addressability refusal or a
+ *    `DirectiveEffect::Unmeasured` or `Refused` — a widened addressability refusal or a
  *    disabled producer removes nothing from the population the multiset diff
  *    sees, it just stops any of those sites from being judged. So once the
  *    populations agree and are non-empty, this gate also demands at least one
@@ -209,8 +209,8 @@ final class Gate
 
         if ($measured === 0) {
             $note(\sprintf(
-                "ALL @qmx-THRESHOLD VERDICTS UNMEASURED: %d site(s) match the enumeration exactly, but not one" .
-                    " produced a measured verdict — every one is `effect === \"unmeasured\"`. Population agreement" .
+                "NO MEASURED @qmx-THRESHOLD VERDICTS: %d site(s) match the enumeration exactly, but not one" .
+                    " produced a measured verdict — every one is unmeasured or refused. Population agreement" .
                     " alone does not prove the audit judged anything.\n",
                 \count($auditedSites),
             ));

@@ -12,19 +12,19 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContextFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\CriteriaEvaluation;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\CriterionOutcome;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\TupleExtractor;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerCriteriaMatcher;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterionKind;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CriteriaEvaluation;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CriterionOutcome;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\LayerCriteriaMatcher;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\LayerMatch;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchedCriterion;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchedCriterionKind;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
 use Qualimetrix\Core\Path\RelativePath;
@@ -870,7 +870,7 @@ final class UndecidableMembershipTest extends TestCase
     {
         $deps = [];
         foreach ($edges as [$source, $target, $type]) {
-            $deps[] = new Dependency(
+            $deps[] = Dependency::ofKind(
                 DeclarationPath::of(
                     SymbolPath::fromClassFqn($source),
                     RelativePath::fromString('test.php'),
@@ -946,6 +946,11 @@ final class UndecidableMembershipTest extends TestCase
             public function getDeclarationDependencies(): array
             {
                 return $this->deps;
+            }
+
+            public function getClassLikeDeclarations(): array
+            {
+                return [];
             }
         };
     }

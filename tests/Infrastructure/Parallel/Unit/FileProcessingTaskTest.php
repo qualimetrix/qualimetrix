@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTask;
 use Qualimetrix\Infrastructure\Parallel\WorkerBootstrap;
@@ -59,6 +60,7 @@ final class FileProcessingTaskTest extends TestCase
         return new FileProcessingTask(
             filePath: AbsolutePath::fromString($this->directory . '/Subject.php'),
             projectRoot: AbsolutePath::fromString($this->directory),
+            documentForms: new RuleOptionDocumentForms(),
             composition: new WorkerComposition([CyclomaticComplexityCollector::class], DependencyVisitor::class),
             memoryLimit: $memoryLimit,
         );

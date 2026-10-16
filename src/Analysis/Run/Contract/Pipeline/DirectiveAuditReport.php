@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Run\Contract\Pipeline;
 
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
 
 /**
  * What every inline directive of one run did, plus what the answer is relative
@@ -32,11 +33,8 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
  * so this is not an invitation to compare reports — it is what lets a report
  * state which measurement produced it.
  *
- * The **rule selection** the run resolved is the other half of that context and
- * is deliberately absent: `RuleSelection` is Finding's internal type, so
- * carrying it here would be an unapproved exact grant, and the caller that
- * needs to print it — a command — resolved those selectors itself and prints
- * them from its own copy.
+ * The final rule enablement stays with Finding's invocation configuration;
+ * the command reads it there when presenting this report.
  */
 final readonly class DirectiveAuditReport
 {
@@ -45,6 +43,7 @@ final readonly class DirectiveAuditReport
         public array $verdicts,
         public AnalysisCoverage $coverage,
         public int $producedFindings,
+        public ProjectScopeMeasurement $projectScope,
         public DirectiveSweepScope $sweep = DirectiveSweepScope::Narrow,
     ) {}
 }

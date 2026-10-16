@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricContributionReader;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
+use Qualimetrix\Core\Symbol\SymbolLevel;
+use WeakMap;
 
 final class ComputedMetricAnalysis implements
     ComputedMetricConfiguratorInterface,
@@ -17,26 +19,29 @@ final class ComputedMetricAnalysis implements
 {
     private ResolvedComputedMetricDefinitions $definitions;
 
+    /** @var WeakMap<ConfigurationDocument, ResolvedComputedMetricDefinitions> */
+    private WeakMap $resolved;
+
     public function __construct(
         private readonly ComputedMetricsConfigResolver $configResolver,
-        private readonly ComputedMetricContributionReader $contributionReader,
     ) {
         $this->definitions = new ResolvedComputedMetricDefinitions([]);
+        $this->resolved = new WeakMap();
     }
 
     public function resolve(ConfigurationDocument $document): ResolvedComputedMetricDefinitions
     {
-        $computedMetrics = $this->contributionReader->computedMetrics($document);
-        $excludeHealth = $this->contributionReader->excludedHealthDimensions($document);
-
-        return new ResolvedComputedMetricDefinitions(
-            $this->configResolver->resolve($computedMetrics, $excludeHealth),
-        );
+        return $this->resolved[$document] ??= $this->configResolver->resolveWithSources($document->resolved());
     }
 
     public function replace(ResolvedComputedMetricDefinitions $definitions): void
     {
         $this->definitions = $definitions;
+    }
+
+    public function refuseFormula(ComputedMetricDefinition $definition, SymbolLevel $level, string $summary): ConfigurationRefusal
+    {
+        return $this->definitions->refuseFormula($definition, $level, $summary);
     }
 
     public function all(): array
@@ -48,5 +53,4 @@ final class ComputedMetricAnalysis implements
     {
         return $this->definitions->find($name);
     }
-
 }

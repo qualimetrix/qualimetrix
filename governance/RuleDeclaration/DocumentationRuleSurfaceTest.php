@@ -19,8 +19,8 @@ use Symfony\Component\Yaml\Yaml;
  * Validates that documentation stays in sync with the rule declaration surface.
  *
  * These tests catch stale documentation automatically in CI:
- * - Rule names missing from default-thresholds.md
- * - CLI aliases missing from Analysis/Configuration/README.md
+ * - Rule names missing from website/docs/reference/default-thresholds.md
+ * - CLI aliases missing from src/Analysis/Configuration/README.md
  * - YAML examples in README.md that don't parse or reference non-existent rules
  */
 final class DocumentationRuleSurfaceTest extends TestCase
@@ -33,7 +33,7 @@ final class DocumentationRuleSurfaceTest extends TestCase
     }
 
     /**
-     * Every rule NAME constant must appear in default-thresholds.md.
+     * Every rule NAME constant must appear in website/docs/reference/default-thresholds.md.
      */
     #[Test]
     public function itDocumentsAllRuleNamesInDefaultThresholds(): void
@@ -41,7 +41,7 @@ final class DocumentationRuleSurfaceTest extends TestCase
         $ruleNames = $this->collectAllRuleNames();
         $thresholdsContent = $this->readFile('website/docs/reference/default-thresholds.md');
 
-        // computed.health is a synthetic rule — not listed in default-thresholds.md
+        // computed.health is a synthetic rule — not listed in website/docs/reference/default-thresholds.md
         // architecture.circular-dependency has no numeric thresholds — documented separately
         // architecture.layer-violation has no numeric thresholds either — documented separately
         $exemptions = [
@@ -291,6 +291,8 @@ final class DocumentationRuleSurfaceTest extends TestCase
     {
         $rulesDirs = [
             self::$projectRoot . '/src/Analysis/Policy/Architecture/LayerViolation',
+            self::$projectRoot . '/src/Analysis/Policy/Architecture/LayerDeclaration',
+            self::$projectRoot . '/src/Analysis/Policy/Architecture/UnassignedClass',
             self::$projectRoot . '/src/Analysis/Policy/Inline/Directive',
             self::$projectRoot . '/src/Analysis/Evidence/CircularDependency',
             self::$projectRoot . '/src/Analysis/Evidence/Duplication',

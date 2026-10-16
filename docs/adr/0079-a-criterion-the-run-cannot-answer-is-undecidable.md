@@ -511,3 +511,12 @@ only the exact spelling. It would have restored the error for a lower-case
 criterion, but kept every class that writes a PHP name in another case out of
 the layers naming it, which PHP itself does not do. Names of the project's own
 classes and of vendor classes are still compared as written.
+
+## Amendment of 2026-09-29: undeclared subsets
+
+[ADR 0089](0089-composer-manifest-facts-and-project-scope-reasons.md) amends
+the whole-project scope answer recorded through ADR 0084. A manifest-less
+subset is now `unmeasured` and withholds whole-project channels; selecting
+the whole root remains `unknown` and judges. Namespace-value location uses
+accepted PSR-4 records independently of the scope enum. The earlier
+amendments above remain the decision history.
