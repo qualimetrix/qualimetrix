@@ -2467,6 +2467,7 @@ Qualimetrix\Infrastructure\Cache\CacheConfigurationStore	Infrastructure.Cache	Qu
 Qualimetrix\Infrastructure\Cache\CacheDirectoryContents	Infrastructure.Cache	Qualimetrix\Core\FileTarget\TemporarySibling	Core.FileTarget	contract
 Qualimetrix\Infrastructure\Cache\CacheDirectoryContents	Infrastructure.Cache	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Infrastructure\Cache\CacheFactory	Infrastructure.Cache	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
+Qualimetrix\Infrastructure\Cache\CacheLayout	Infrastructure.Cache	Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	contract
 Qualimetrix\Infrastructure\Cache\CacheLayout	Infrastructure.Cache	Qualimetrix\Core\FileTarget\Publication\FileReplacement	Core.FileTarget	contract
 Qualimetrix\Infrastructure\Cache\CacheLayout	Infrastructure.Cache	Qualimetrix\Core\FileTarget\Publication\NewName	Core.FileTarget	contract
 Qualimetrix\Infrastructure\Cache\CacheLayout	Infrastructure.Cache	Qualimetrix\Core\FileTarget\Resolution\TargetPath	Core.FileTarget	contract

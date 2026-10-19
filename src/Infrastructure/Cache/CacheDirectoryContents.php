@@ -16,28 +16,12 @@ final readonly class CacheDirectoryContents
         $remaining = 0;
         $reason = null;
         $retained = [];
-        $names = is_dir($this->directory->value()) ? @scandir($this->directory->value()) : [];
-        if ($names === false) {
+        $directories = CacheLayout::clearableDirectories($this->directory->value());
+        if ($directories === null) {
             return new CacheClearOutcome(false, 0, $this->directory->value(), 'Cannot inspect cache directories.');
         }
-        foreach ($names as $name) {
-            $detached = $this->directory->value() . '/' . $name;
-            if (preg_match('/^\.clearing-[0-9a-f]{16}$/D', $name) !== 1 || is_link($detached)) {
-                continue;
-            }
-            [$count, $failure, $retainedDirectory] = $this->clearVersion($detached);
-            $remaining += $count;
-            $reason ??= $failure;
-            if ($retainedDirectory !== null) {
-                $retained[] = $retainedDirectory;
-            }
-        }
-        $versions = CacheLayout::versions($this->directory->value());
-        if ($versions === null) {
-            return new CacheClearOutcome(false, 0, $this->directory->value(), 'Cannot inspect cache version directories.');
-        }
-        foreach ($versions as $version) {
-            [$count, $failure, $retainedDirectory] = $this->detachAndClear($version);
+        foreach ($directories as $directory) {
+            [$count, $failure, $retainedDirectory] = $this->detachAndClear($directory);
             if ($retainedDirectory !== null) {
                 $retained[] = $retainedDirectory;
             }
@@ -51,6 +35,9 @@ final readonly class CacheDirectoryContents
     /** @return array{int, ?string, ?string} */
     private function detachAndClear(string $version): array
     {
+        if (str_starts_with(basename($version), '.clearing-')) {
+            return $this->clearVersion($version);
+        }
         $detached = $this->directory->value() . '/.clearing-' . bin2hex(random_bytes(8));
         if (!@rename($version, $detached)) {
             return [1, 'Cannot detach cache version directory: ' . $version, null];

@@ -19184,6 +19184,10 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\DocumentAccess\\BaselineDocumentReader"
         },
         {
+          "owner": "Infrastructure.Cache",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\CacheLayout"
+        },
+        {
           "owner": "Infrastructure.Git",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Git\\GitRepositoryLocator"
         },

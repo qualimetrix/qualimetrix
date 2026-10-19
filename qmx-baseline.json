@@ -1,6 +1,6 @@
 {
   "version": 14,
-  "generated": "2026-10-08T21:08:00+00:00",
+  "generated": "2026-10-19T21:42:35+00:00",
   "scope": [
     "src"
   ],
@@ -320,20 +320,6 @@
         ]
       }
     ],
-    "declaration:callable:Qualimetrix\\Infrastructure\\Cache\\CacheDirectoryContents::clear@src/Infrastructure/Cache/CacheDirectoryContents.php": [
-      {
-        "channel": "complexity.ccn",
-        "magnitudes": [
-          15
-        ]
-      },
-      {
-        "channel": "complexity.npath",
-        "magnitudes": [
-          900
-        ]
-      }
-    ],
     "declaration:callable:Qualimetrix\\Infrastructure\\Cache\\CacheDirectoryContents::clearShard@src/Infrastructure/Cache/CacheDirectoryContents.php": [
       {
         "channel": "code-smell.error-suppression",
@@ -578,14 +564,6 @@
         "channel": "complexity.wmc",
         "magnitudes": [
           55
-        ]
-      }
-    ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Cache\\CacheDirectoryContents@src/Infrastructure/Cache/CacheDirectoryContents.php": [
-      {
-        "channel": "complexity.wmc",
-        "magnitudes": [
-          50
         ]
       }
     ],

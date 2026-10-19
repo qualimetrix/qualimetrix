@@ -147,8 +147,10 @@ when owned entries remain, the layout cannot be inspected, or a detached
 directory remains. Foreign files are preserved and their retained directory
 prevents a misleading successful clear. Root-level unrelated
 files are untouched. Detached-directory retries enumerate the selected root
-literally, including names containing brackets, stars or question marks. Clear
-affects all projects sharing this user's root; an invalid default is not cleared.
+literally, including names containing brackets, stars or question marks.
+`CacheLayout` enumerates retained directories before current versions; the
+clear lifecycle folds both through one path and preserves retained-file refusals.
+Clear affects all projects sharing this user's root; an invalid default is not cleared.
 
 ## Definition of Done
 

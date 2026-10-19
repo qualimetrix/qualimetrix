@@ -2457,6 +2457,7 @@ Qualimetrix\Core\FileTarget\FileTargetFailureKind	Core.FileTarget	Qualimetrix\In
 Qualimetrix\Core\FileTarget\FileTargetFailureKind	Core.FileTarget	Qualimetrix\Infrastructure\Console\Refusal\FileTargetRefusal	Infrastructure.Console	src/Infrastructure/Console/Refusal/FileTargetRefusal.php	ast-name
 Qualimetrix\Core\FileTarget\FileTargetFailureKind	Core.FileTarget	Qualimetrix\Infrastructure\Console\RunTarget\TargetAccess	Infrastructure.Console	src/Infrastructure/Console/RunTarget/TargetAccess.php	ast-name
 Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader	Analysis.Policy.Baseline	src/Analysis/Policy/Baseline/DocumentAccess/BaselineDocumentReader.php	ast-name
+Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	Qualimetrix\Infrastructure\Cache\CacheLayout	Infrastructure.Cache	src/Infrastructure/Cache/CacheLayout.php	ast-name
 Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	Qualimetrix\Infrastructure\Git\GitRepositoryLocator	Infrastructure.Git	src/Infrastructure/Git/GitRepositoryLocator.php	ast-name
 Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	Qualimetrix\Infrastructure\Parallel\WorkerContextFactory	Infrastructure.Parallel	src/Infrastructure/Parallel/WorkerContextFactory.php	ast-name
 Qualimetrix\Core\FileTarget\PrivateGroup\ProcessOwner	Core.FileTarget	Qualimetrix\Infrastructure\Cache\Root\CacheLocationJudgement	Infrastructure.Cache	src/Infrastructure/Cache/Root/CacheLocationJudgement.php	ast-name
