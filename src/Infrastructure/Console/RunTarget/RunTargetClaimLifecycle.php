@@ -52,7 +52,7 @@ final class RunTargetClaimLifecycle
     public function claim(array $judged, bool $hasStandardOutputReport): void
     {
         $this->removeExhaustion = $this->memoryHint->onExhaustion($this->abandon(...));
-        $this->startSignalsForStagedOutput($judged);
+        $this->signals = StagedSignalGuard::start();
         $this->claimTargets($judged);
         TargetCollisions::assertAfterClaim(
             [...$this->held, ...$this->prepared],
@@ -60,17 +60,6 @@ final class RunTargetClaimLifecycle
             $hasStandardOutputReport ? ProcessStreams::identity(1) : null,
         );
         $this->attachLogTarget();
-    }
-
-    /** @param array<string, ResolvedTarget> $judged */
-    private function startSignalsForStagedOutput(array $judged): void
-    {
-        foreach ($judged as $subject => $target) {
-            if (self::needsStaging($subject, $target)) {
-                $this->signals = StagedSignalGuard::start();
-                break;
-            }
-        }
     }
 
     /** @param array<string, ResolvedTarget> $judged */

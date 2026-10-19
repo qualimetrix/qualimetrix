@@ -57,6 +57,11 @@ final class TemporarySibling
         throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $directory->value(), 'temporary names collided repeatedly');
     }
 
+    public static function ownsName(string $name): bool
+    {
+        return preg_match('/^\.qmx-[0-9a-f]{12}$/D', $name) === 1;
+    }
+
     /** @param resource $handle */
     private static function verifyCreated(AbsolutePath $path, mixed $handle, int $ownerPid): self
     {

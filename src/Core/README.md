@@ -112,6 +112,7 @@ Core/
 │   ├── SymbolPath.php                     # Stable symbol identifier
 │   ├── SymbolType.php
 │   ├── TraitComposition.php               # Neutral effective imported PHP method composition
+│   ├── TraitCompositionFailure.php        # Invalid source composition bound to its declaration
 │   ├── TraitCompositionResult.php         # Imported method sources and unread trait names
 │   ├── TraitCompositionScope.php          # Internal recursive raw-fact reads and cycles
 │   ├── TraitDefinitionFacts.php           # Raw own trait methods and nested use facts
@@ -982,7 +983,8 @@ publication primitive for immediate replacement,
 and `HeldLock::acquire()` holds a named lock without truncating it, using a
 monotonic acquisition deadline. Native lock contention waits; another native
 lock failure refuses immediately with its cause.
-`TemporarySibling`, `ProcessOwner`, `FileIdentity`, the facts and enum values
+`TemporarySibling::ownsName()` supplies the exact temporary-name predicate to
+Cache cleanup as well as publication. `TemporarySibling`, `ProcessOwner`, `FileIdentity`, the facts and enum values
 support these operations. `NativeCall` captures the warning of one filesystem
 call and restores the previous PHP error handler even when the call throws.
 `FileTargetFailure` carries an explicit kind, path,

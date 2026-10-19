@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Cache;
 
+use Qualimetrix\Core\FileTarget\Publication\TemporarySibling;
 use Qualimetrix\Core\Path\AbsolutePath;
 
 final readonly class CacheDirectoryContents
@@ -15,6 +16,18 @@ final readonly class CacheDirectoryContents
         $remaining = 0;
         $reason = null;
         $retained = [];
+        $detachedDirectories = glob($this->directory->value() . '/.clearing-*');
+        foreach ($detachedDirectories === false ? [] : $detachedDirectories as $detached) {
+            if (preg_match('/^\.clearing-[0-9a-f]{16}$/D', basename($detached)) !== 1 || is_link($detached)) {
+                continue;
+            }
+            [$count, $failure, $retainedDirectory] = $this->clearVersion($detached);
+            $remaining += $count;
+            $reason ??= $failure;
+            if ($retainedDirectory !== null) {
+                $retained[] = $retainedDirectory;
+            }
+        }
         $versions = CacheLayout::versions($this->directory->value());
         if ($versions === null) {
             return new CacheClearOutcome(false, 0, $this->directory->value(), 'Cannot inspect cache version directories.');
@@ -28,7 +41,7 @@ final readonly class CacheDirectoryContents
             $reason ??= $failure;
         }
 
-        return new CacheClearOutcome($remaining === 0 && $reason === null, $remaining, $this->directory->value(), $reason ?? ($retained === [] ? null : 'Retained detached cache directories: ' . implode(', ', $retained)));
+        return new CacheClearOutcome($remaining === 0 && $reason === null && $retained === [], $remaining, $this->directory->value(), $reason ?? ($retained === [] ? null : 'Retained detached cache directories: ' . implode(', ', $retained)));
     }
 
     /** @return array{int, ?string, ?string} */
@@ -102,12 +115,12 @@ final readonly class CacheDirectoryContents
 
     private static function metadataName(string $name): bool
     {
-        return $name === 'CACHEDIR.TAG' || $name === '.sweep' || preg_match('/^(?:CACHEDIR\.TAG|\.sweep)\.tmp\.[0-9a-f]+$/D', $name) === 1;
+        return $name === 'CACHEDIR.TAG' || $name === '.sweep' || TemporarySibling::ownsName($name);
     }
 
     private static function ownedEntryName(string $name): bool
     {
-        return CacheLayout::entryName($name) || preg_match('/^[0-9a-f]{64}\.tmp\.[0-9a-f]+$/D', $name) === 1;
+        return CacheLayout::entryName($name) || TemporarySibling::ownsName($name);
     }
 
     /** @return array{int, ?string} */

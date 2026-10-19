@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Infrastructure\Parallel\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Qualimetrix\Infrastructure\Parallel\WorkerContextFactory;
@@ -15,6 +16,47 @@ use Qualimetrix\Infrastructure\Parallel\WorkerRequest;
 #[CoversClass(WorkerContextFactory::class)]
 final class WorkerContextFactoryTest extends TestCase
 {
+    #[Test]
+    #[TestWith([false])]
+    #[TestWith([true])]
+    public function itRemovesStartupFilesWhenTheCoordinatorExhaustsMemory(bool $fromComposition): void
+    {
+        $script = <<<'PHP'
+require $argv[1];
+$hint = \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register();
+$registration = $hint->onExhaustion(...);
+if ($argv[2] === 'composition') {
+    $container = (new \Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory())->configure();
+    $strategyType = \Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy::class;
+    $container->getDefinition($strategyType)->setPublic(true);
+    $container->compile();
+    $strategy = $container->get($strategyType);
+    $registration = (new \ReflectionProperty($strategy, 'registerExhaustion'))->getValue($strategy);
+}
+$notes = new \Qualimetrix\Infrastructure\Parallel\WorkerNotes(new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream());
+$factory = new \Qualimetrix\Infrastructure\Parallel\WorkerContextFactory(new \Qualimetrix\Infrastructure\Parallel\WorkerRequest(2), $notes, [PHP_BINARY], new \Psr\Log\NullLogger(), $registration);
+$directory = (new \ReflectionProperty($factory, 'directory'))->getValue($factory);
+file_put_contents($directory . '/start-test.log', 'startup diagnostic');
+echo $directory;
+$limit = (int) ceil((memory_get_usage(true) + 2 * 1024 * 1024) / (1024 * 1024));
+ini_set('memory_limit', $limit . 'M');
+str_repeat('x', 4 * 1024 * 1024);
+PHP;
+        $process = new \Symfony\Component\Process\Process([\PHP_BINARY, '-d', 'xdebug.mode=off', '-r', $script, \dirname(__DIR__, 4) . '/vendor/autoload.php', $fromComposition ? 'composition' : 'direct']);
+        $process->run();
+        $directory = $process->getOutput();
+        try {
+            self::assertSame(4, $process->getExitCode(), $process->getErrorOutput());
+            self::assertStringContainsString('qmx-worker-start-', $directory);
+            self::assertDirectoryDoesNotExist($directory);
+        } finally {
+            if (is_dir($directory)) {
+                unlink($directory . '/start-test.log');
+                rmdir($directory);
+            }
+        }
+    }
+
     #[Test]
     public function itStartsOnlyAProcessWithMergedEnvironmentParseIniAndCapturedStreams(): void
     {

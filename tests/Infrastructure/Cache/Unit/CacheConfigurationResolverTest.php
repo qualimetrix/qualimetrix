@@ -34,6 +34,46 @@ final class CacheConfigurationResolverTest extends TestCase
     }
 
     #[Test]
+    public function itRefusesAnExplicitCacheDirectoryThroughAPlaceableLink(): void
+    {
+        mkdir($this->root . '/outside', 0700);
+        mkdir($this->root . '/project', 0700);
+        symlink($this->root . '/outside', $this->root . '/link');
+        chmod($this->root, 0777);
+        try {
+            $this->expectException(ConfigurationRefusal::class);
+            $this->expectExceptionMessage('symbolic link');
+            $this->resolve($this->root . '/link', AbsolutePath::fromString($this->root . '/project'));
+        } finally {
+            chmod($this->root, 0700);
+        }
+    }
+
+    #[Test]
+    public function itDisablesADefaultCacheDirectoryThroughAPlaceableLink(): void
+    {
+        mkdir($this->root . '/outside', 0700);
+        symlink($this->root . '/outside', $this->root . '/link');
+        chmod($this->root, 0777);
+        $store = new CacheConfigurationStore();
+        $store->replace(new \Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration(
+            AbsolutePath::fromString($this->root . '/link'),
+            source: \Qualimetrix\Infrastructure\Cache\Root\CacheSource::default(),
+        ));
+        $logger = self::createMock(\Psr\Log\LoggerInterface::class);
+        $logger->expects(self::once())->method('warning')->with(self::stringContains('symbolic link'));
+        $factory = new CacheFactory($store);
+        $factory->configureLogger($logger);
+        try {
+            self::assertNull($factory->open());
+            self::assertNull($factory->open());
+            self::assertDirectoryDoesNotExist($this->root . '/outside/ast-v1');
+        } finally {
+            chmod($this->root, 0700);
+        }
+    }
+
+    #[Test]
     public function itRefusesExplicitCanonicalPathsInsideTheProjectAndHonoursDisabledCache(): void
     {
         mkdir($this->root . '/project', 0700);

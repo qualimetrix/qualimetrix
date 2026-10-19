@@ -14,6 +14,7 @@ use Amp\Parallel\Context\ProcessContext;
 use Amp\Parallel\Ipc\LocalIpcHub;
 use Amp\Socket\SocketException;
 use Amp\TimeoutCancellation;
+use Closure;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Core\FileTarget\NativeCall;
@@ -28,9 +29,14 @@ final class WorkerContextFactory implements ContextFactory
     /** @var list<string> */
     private array $startupFiles = [];
     private ?WorkerStartFailure $failure = null;
+    private ?Closure $removeExhaustion = null;
+    private bool $closed = false;
 
-    /** @param non-empty-list<string> $binary */
-    public function __construct(private readonly WorkerRequest $request, private readonly WorkerNotes $notes, private readonly array $binary = [\PHP_BINARY], private readonly LoggerInterface $logger = new NullLogger())
+    /**
+     * @param non-empty-list<string> $binary
+     * @param (Closure(Closure(): void): (Closure(): void))|null $registerExhaustion
+     */
+    public function __construct(private readonly WorkerRequest $request, private readonly WorkerNotes $notes, private readonly array $binary = [\PHP_BINARY], private readonly LoggerInterface $logger = new NullLogger(), ?Closure $registerExhaustion = null)
     {
         try {
             $this->hub = new LocalIpcHub();
@@ -43,6 +49,10 @@ final class WorkerContextFactory implements ContextFactory
             $this->hub->close();
             throw WorkerStartFailure::failedToStart('cannot create worker startup directory ' . $this->directory . ': ' . ($warning ?? 'unknown error'), '', $request);
         }
+        $this->removeExhaustion = $registerExhaustion?->__invoke(function (): void {
+            $this->hub->close();
+            $this->cleanupDirectory();
+        });
     }
 
     /**
@@ -104,16 +114,28 @@ final class WorkerContextFactory implements ContextFactory
 
     public function close(): void
     {
+        if ($this->closed) {
+            return;
+        }
+        $this->closed = true;
+        $this->removeExhaustion?->__invoke();
+        $this->removeExhaustion = null;
         try {
             $this->hub->close();
             $this->notes->close();
         } finally {
-            foreach ($this->startupFiles as $file) {
-                if (is_file($file)) {
-                    unlink($file);
-                }
-            }
-            rmdir($this->directory);
+            $this->cleanupDirectory();
         }
+    }
+
+    private function cleanupDirectory(): void
+    {
+        $files = glob($this->directory . '/start-*.log');
+        foreach ($files === false ? [] : $files as $file) {
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
+        rmdir($this->directory);
     }
 }

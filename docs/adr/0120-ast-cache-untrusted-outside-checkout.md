@@ -18,3 +18,10 @@ An entry key includes the source bytes, PHP minor version, exact parser version 
 ## Consequences
 
 Old `.qmx-cache` entries can be deleted. A CI cache must be outside the checkout, and GitLab `cache:paths` inside the checkout cannot express this layout. The root check and POSIX path grammar are explicit limits; this ADR does not claim secure ancestors or Windows-drive support.
+
+Cache publication, pruning and clearing share Core's temporary-sibling name
+predicate. Old temporary siblings in entry shards and version metadata are
+removed after the same 30-day age limit; recent siblings survive quota eviction
+and their bytes are additional to the cache-entry target. Clearing preserves
+foreign data but reports refusal whenever a detached directory remains, so a
+retained directory cannot accompany a successful "Cache cleared" message.

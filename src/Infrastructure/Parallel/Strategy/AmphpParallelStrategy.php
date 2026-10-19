@@ -40,7 +40,8 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface
     private ?AbsolutePath $projectRoot = null;
     private ?AbsolutePath $cacheDir = null;
 
-    public function __construct(private readonly FileProcessingTaskFactory $fileProcessingTaskFactory, private readonly SequentialStrategy $sequentialStrategy, private readonly ProfilerInterface $profiler, private readonly WorkerDiagnosticsInterface $errorStream, private readonly LoggerInterface $logger = new NullLogger())
+    /** @param (Closure(Closure(): void): (Closure(): void))|null $registerExhaustion */
+    public function __construct(private readonly FileProcessingTaskFactory $fileProcessingTaskFactory, private readonly SequentialStrategy $sequentialStrategy, private readonly ProfilerInterface $profiler, private readonly WorkerDiagnosticsInterface $errorStream, private readonly LoggerInterface $logger = new NullLogger(), private readonly ?Closure $registerExhaustion = null)
     {
         $this->request = new WorkerRequest(4);
     }
@@ -134,7 +135,7 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface
         $workerCount = min($this->request->count, \count($files));
         $notes = new WorkerNotes($this->errorStream);
         try {
-            $contexts = new WorkerContextFactory($this->request, $notes, logger: $this->logger);
+            $contexts = new WorkerContextFactory($this->request, $notes, logger: $this->logger, registerExhaustion: $this->registerExhaustion);
         } catch (WorkerStartFailure $failure) {
             return $this->startupFallback($files, $processor, $failure);
         }

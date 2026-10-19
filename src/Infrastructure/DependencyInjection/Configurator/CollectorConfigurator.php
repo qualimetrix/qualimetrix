@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
+use Closure;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
 use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
 use Qualimetrix\Infrastructure\Parallel\Configuration\ParallelConfigurationResolver;
@@ -41,6 +43,9 @@ final class CollectorConfigurator implements ContainerConfiguratorInterface
 
         $container->register(FileProcessingTaskFactory::class)
             ->setArgument('$documentForms', new Reference(RuleOptionDocumentFormsInterface::class));
+        $container->register('parallel.exhaustion-cleanup', Closure::class)
+            ->setFactory([Closure::class, 'fromCallable'])
+            ->setArguments([[new Reference(OutOfMemoryHint::class), 'onExhaustion']]);
 
         // AmphpParallelStrategy for parallel processing via amphp/parallel
         // The logger is what makes the parallel path observable. The selector
@@ -54,6 +59,7 @@ final class CollectorConfigurator implements ContainerConfiguratorInterface
                 '$sequentialStrategy' => new Reference(SequentialStrategy::class),
                 '$profiler' => new Reference(ProfilerInterface::class),
                 '$errorStream' => new Reference(ErrorStream::class),
+                '$registerExhaustion' => new Reference('parallel.exhaustion-cleanup'),
             ]);
 
         // SequentialStrategy as fallback

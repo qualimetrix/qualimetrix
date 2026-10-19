@@ -48,9 +48,9 @@ FROM php:8.4-cli-alpine
 LABEL maintainer="FractalizeR"
 LABEL description="Qualimetrix - PHP Static Analysis Tool"
 
-# The base PHP CLI supplies posix and proc_open for process workers; pcntl is
-# unnecessary. Git is used for project scope and hook commands.
-RUN apk add --no-cache git
+# pcntl lets PID 1 handle interruption and release report and worker temporaries.
+# The base PHP CLI supplies posix and proc_open for process workers.
+RUN docker-php-ext-install pcntl && apk add --no-cache git
 
 # The first run creates /cache/qmx as a private directory for its UID; use a
 # separate cache volume when running the image as another user.

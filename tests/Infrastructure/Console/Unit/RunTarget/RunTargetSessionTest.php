@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget;
 
+use FilesystemIterator;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -14,6 +15,8 @@ use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession;
 use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
 use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use Symfony\Component\Console\Output\BufferedOutput;
 
 #[CoversClass(RunTargetSession::class)]
@@ -100,22 +103,25 @@ PHP;
         }
     }
 
-    /** @return iterable<string, array{int}> */
+    /** @return iterable<string, array{int, bool}> */
     public static function workerSignals(): iterable
     {
-        yield 'worker SIGTERM' => [\SIGTERM];
-        yield 'worker SIGINT' => [\SIGINT];
+        yield 'worker SIGTERM staged' => [\SIGTERM, true];
+        yield 'worker SIGINT staged' => [\SIGINT, true];
+        yield 'worker SIGTERM stdout' => [\SIGTERM, false];
+        yield 'worker SIGINT stdout' => [\SIGINT, false];
     }
 
     #[Test]
     #[DataProvider('workerSignals')]
-    public function itDoesNotPublishAfterARealAmpWorkerWasInterrupted(int $signal): void
+    public function itDoesNotPublishAfterARealAmpWorkerWasInterrupted(int $signal, bool $staged): void
     {
         if (!\function_exists('proc_open') || !\extension_loaded('posix')) {
             self::markTestSkipped('Process workers are unavailable on this host.');
         }
         $directory = sys_get_temp_dir() . '/qmx-session-worker-' . bin2hex(random_bytes(6));
         mkdir($directory);
+        mkdir($directory . '/tmp');
         file_put_contents($directory . '/SourceA.php', '<?php final class SourceA {}');
         file_put_contents($directory . '/SourceB.php', '<?php final class SourceB {}');
         $target = $directory . '/report.json';
@@ -141,19 +147,23 @@ $session = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession(
     new \Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter(new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream()),
 );
 $exit = $session->run(new \Symfony\Component\Console\Output\BufferedOutput(), 'json', static function () use ($targets, $strategy, $argv): int {
-    $targets->judge('--output', $argv[2]);
+    if ($argv[4] === 'staged') {
+        $targets->judge('--output', $argv[2]);
+    }
     $targets->claim();
     $strategy->execute(
         [new \SplFileInfo($argv[3] . '/SourceA.php'), new \SplFileInfo($argv[3] . '/SourceB.php')],
         static fn(): never => throw new \LogicException('Parallel execution must not use the fallback.'),
     );
-    $targets->write('--output', 'NEW');
+    if ($argv[4] === 'staged') {
+        $targets->write('--output', 'NEW');
+    }
 
     return 0;
 });
 exit($exit);
 PHP;
-        $process = proc_open([\PHP_BINARY, '-r', $script, $autoload, $target, $directory], [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+        $process = proc_open([\PHP_BINARY, '-d', 'sys_temp_dir=' . $directory . '/tmp', '-r', $script, $autoload, $target, $directory, $staged ? 'staged' : 'stdout'], [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
         self::assertIsResource($process);
         fclose($pipes[0]);
         try {
@@ -164,6 +174,9 @@ PHP;
             }
             self::assertFileExists($readyA);
             self::assertFileExists($readyB);
+            $startupDirectories = glob($directory . '/tmp/qmx-worker-start-*');
+            self::assertIsArray($startupDirectories);
+            self::assertCount(1, $startupDirectories);
             $workerA = (int) file_get_contents($readyA);
             $workerB = (int) file_get_contents($readyB);
             self::assertGreaterThan(0, $workerA);
@@ -184,12 +197,13 @@ PHP;
                 }
             } while (microtime(true) < $deadline);
             self::assertFalse($status['running'], 'The interrupted worker run waited for unreleased workers.');
+            self::assertSame([], glob($directory . '/tmp/qmx-worker-start-*'));
             if (\function_exists('posix_kill')) {
                 self::assertFalse(posix_kill($workerA, 0), 'The first interrupted worker remains alive.');
                 self::assertFalse(posix_kill($workerB, 0), 'The second interrupted worker remains alive.');
             }
             self::assertSame('OLD', file_get_contents($target));
-            self::assertSame(['SourceA.php', 'SourceA.php.ready', 'SourceB.php', 'SourceB.php.ready', 'report.json'], array_values(array_diff((array) scandir($directory), ['.', '..'])));
+            self::assertSame(['SourceA.php', 'SourceA.php.ready', 'SourceB.php', 'SourceB.php.ready', 'report.json', 'tmp'], array_values(array_diff((array) scandir($directory), ['.', '..'])));
             self::assertSame(128 + $signal, $status['exitcode'], stream_get_contents($pipes[2]));
         } finally {
             file_put_contents($directory . '/release-workers', 'released');
@@ -202,8 +216,9 @@ PHP;
                     fclose($pipe);
                 }
             }
-            foreach (array_diff((array) scandir($directory), ['.', '..']) as $entry) {
-                unlink($directory . '/' . $entry);
+            $entries = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
+            foreach ($entries as $entry) {
+                $entry->isDir() ? rmdir($entry->getPathname()) : unlink($entry->getPathname());
             }
             rmdir($directory);
         }
