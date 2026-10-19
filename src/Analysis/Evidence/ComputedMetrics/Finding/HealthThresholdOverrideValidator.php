@@ -21,7 +21,7 @@ final class HealthThresholdOverrideValidator implements OverrideValidatorInterfa
 
     public function validate(ThresholdOverrideRequest $request): ?OverrideValidationFailure
     {
-        if ($request->warning === null || $request->error === null || ($request->warning <=> $request->error) !== 0) {
+        if (!isset($request->warning, $request->error) || ($request->warning <=> $request->error) !== 0) {
             return new OverrideValidationFailure(
                 'health_single_boundary',
                 'A health threshold override requires one boundary; use a number or equal warning and error values.',
