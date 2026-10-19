@@ -1,0 +1,17 @@
+--- candidate
++++ reference (mapped)
+@@ -2,7 +2,7 @@
+-::error file=src/Complex.php,line=7,title=complexity.ccn::Cyclomatic complexity is 8, exceeds threshold of 3. Consider extracting methods or simplifying conditions
+-::error file=src/Complex.php,line=7,title=complexity.cognitive::Cognitive complexity is 7, exceeds threshold of 3. Top: if +1 L10, if +1 L11, if +1 L12. Reduce nesting and break into smaller methods
+-::warning file=src/Complex.php,line=7,title=complexity.npath::NPath complexity (execution paths) is 128 (moderate), exceeds threshold of 100. Chain: ×2 if L10, ×2 if L11, ×2 if L12. Reduce branching or extract methods
+-
+-invocation-format:github 584
+-::error file=src/Complex.php,line=7,title=complexity.ccn::Cyclomatic complexity is 8, exceeds threshold of 3. Consider extracting methods or simplifying conditions
+-::error file=src/Complex.php,line=7,title=complexity.cognitive::Cognitive complexity is 7, exceeds threshold of 3. Top: if +1 L10, if +1 L11, if +1 L12. Reduce nesting and break into smaller methods
++::error file=src/Complex.php,line=7,title=complexity.cognitive::Cognitive complexity is 7, exceeds threshold of 3. Top: if +1 L10, if +1 L11, if +1 L12. Reduce nesting and break into smaller methods
++::error file=src/Complex.php,line=7,title=complexity.ccn::Cyclomatic complexity is 8, exceeds threshold of 3. Consider extracting methods or simplifying conditions
++::warning file=src/Complex.php,line=7,title=complexity.npath::NPath complexity (execution paths) is 128 (moderate), exceeds threshold of 100. Chain: ×2 if L10, ×2 if L11, ×2 if L12. Reduce branching or extract methods
++
++invocation-format:github 584
++::error file=src/Complex.php,line=7,title=complexity.cognitive::Cognitive complexity is 7, exceeds threshold of 3. Top: if +1 L10, if +1 L11, if +1 L12. Reduce nesting and break into smaller methods
++::error file=src/Complex.php,line=7,title=complexity.ccn::Cyclomatic complexity is 8, exceeds threshold of 3. Consider extracting methods or simplifying conditions

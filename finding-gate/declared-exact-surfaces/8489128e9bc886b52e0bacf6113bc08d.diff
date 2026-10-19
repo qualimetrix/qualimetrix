@@ -1,0 +1,102 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 19039
++visible 19975
+@@ -41,0 +41,36 @@
++            "producer": "architecture.layer-declaration",
++            "channel": "architecture.doubted-assignment",
++            "level": "project",
++            "gate": "prepared-evidence",
++            "reason": "Prepared layer evidence is unavailable. Required population context was not judged.",
++            "unit": "invocation",
++            "count": 1,
++            "examples": [
++                "architecture.layer-declaration"
++            ]
++        },
++        {
++            "producer": "architecture.layer-declaration",
++            "channel": "architecture.layer-overlap",
++            "level": "project",
++            "gate": "prepared-evidence",
++            "reason": "Prepared layer evidence is unavailable. Required population context was not judged.",
++            "unit": "invocation",
++            "count": 1,
++            "examples": [
++                "architecture.layer-declaration"
++            ]
++        },
++        {
++            "producer": "architecture.layer-violation",
++            "channel": "architecture.layer-violation",
++            "level": "class",
++            "gate": "prepared-evidence",
++            "reason": "Prepared layer evidence is unavailable. Required population context was not judged.",
++            "unit": "invocation",
++            "count": 1,
++            "examples": [
++                "architecture.layer-violation"
++            ]
++        },
++        {
+@@ -54,2 +90,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -70,2 +105,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -83,2 +117,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -99,2 +132,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -112,2 +144,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -125,2 +156,1 @@
+-            ],
+-            "dataGap": true
++            ]
+@@ -141,2 +171,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -155,2 +184,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -171,2 +199,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -188,2 +215,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -204,2 +230,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -220,2 +245,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -236,2 +260,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -253,2 +276,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -266,2 +288,1 @@
+-            ],
+-            "dataGap": true
++            ]

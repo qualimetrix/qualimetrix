@@ -1,0 +1,64 @@
+--- candidate
++++ reference (mapped)
+@@ -4,0 +4,24 @@
++        "description": "Cognitive complexity is 3, exceeds threshold of 1. Top: nested if +2 L21, foreach +1 L20. Reduce nesting and break into smaller methods",
++        "check_name": "complexity.cognitive",
++        "fingerprint": "aca90078b2afc9b264d97639db986459",
++        "severity": "major",
++        "location": {
++            "path": "src/ClassScoped.php",
++            "lines": {
++                "begin": 16
++            }
++        }
++    },
++    {
++        "description": "Maximum method cognitive complexity is 3, exceeds threshold of 1. Refactor the most complex methods",
++        "check_name": "complexity.cognitive",
++        "fingerprint": "6e25297d37f28f1c372117938f004a6c",
++        "severity": "major",
++        "location": {
++            "path": "src/ClassScoped.php",
++            "lines": {
++                "begin": 14
++            }
++        }
++    },
++    {
+@@ -14,1 +38,4 @@
+-    },
++    }
++]
++invocation-format:gitlab 1273
++[
+@@ -38,4 +65,1 @@
+-    }
+-]
+-invocation-format:gitlab 1273
+-[
++    },
+@@ -51,24 +75,0 @@
+-            }
+-        }
+-    },
+-    {
+-        "description": "Cognitive complexity is 3, exceeds threshold of 1. Top: nested if +2 L21, foreach +1 L20. Reduce nesting and break into smaller methods",
+-        "check_name": "complexity.cognitive",
+-        "fingerprint": "aca90078b2afc9b264d97639db986459",
+-        "severity": "major",
+-        "location": {
+-            "path": "src/ClassScoped.php",
+-            "lines": {
+-                "begin": 16
+-            }
+-        }
+-    },
+-    {
+-        "description": "Maximum method cognitive complexity is 3, exceeds threshold of 1. Refactor the most complex methods",
+-        "check_name": "complexity.cognitive",
+-        "fingerprint": "6e25297d37f28f1c372117938f004a6c",
+-        "severity": "major",
+-        "location": {
+-            "path": "src/ClassScoped.php",
+-            "lines": {
+-                "begin": 14

@@ -1,0 +1,133 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 56358
++visible 55399
+@@ -50,2 +50,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -66,2 +65,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -83,2 +81,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -96,2 +93,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -113,2 +109,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -126,2 +121,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -143,2 +137,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -160,2 +153,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -177,2 +169,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -191,2 +182,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -208,2 +198,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -221,2 +210,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -234,2 +222,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -251,2 +238,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -264,2 +250,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -281,2 +266,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -296,2 +280,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -313,2 +296,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -330,2 +312,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -343,2 +324,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -358,2 +338,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -371,2 +350,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -388,2 +366,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -405,2 +382,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -422,2 +398,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -435,2 +410,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -452,2 +426,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -469,2 +442,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -486,2 +458,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -503,2 +474,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -517,2 +487,1 @@
+-            ],
+-            "dataGap": true
++            ]
+@@ -532,2 +501,1 @@
+-            ],
+-            "dataGap": false
++            ]

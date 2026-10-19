@@ -1,0 +1,14 @@
+--- candidate
++++ reference (mapped)
+@@ -16,1 +16,1 @@
+-  Channel: design.type-coverage.property
++  Channel: design.type-coverage.return
+@@ -22,1 +22,1 @@
+-  Channel: design.type-coverage.return
++  Channel: design.type-coverage.property
+@@ -50,1 +50,1 @@
+-  Channel: design.type-coverage.property
++  Channel: design.type-coverage.return
+@@ -56,1 +56,1 @@
+-  Channel: design.type-coverage.return
++  Channel: design.type-coverage.property

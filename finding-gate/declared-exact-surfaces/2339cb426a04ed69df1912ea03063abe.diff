@@ -1,0 +1,14 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 1535
++visible 1646
+@@ -6,1 +6,1 @@
+-Rule population incomplete — namespace: 2 judged, 2 not judged.
++Rule population incomplete — callable: 25 judged, 10 not judged; declaration: 40 judged, 33 not judged; invocation: 0 judged, 3 not judged; namespace: 2 judged, 6 not judged.
+@@ -25,1 +25,1 @@
+-invocation-format:summary 1535
++invocation-format:summary 1646
+@@ -30,1 +30,1 @@
+-Rule population incomplete — namespace: 2 judged, 2 not judged.
++Rule population incomplete — callable: 25 judged, 10 not judged; declaration: 40 judged, 33 not judged; invocation: 0 judged, 3 not judged; namespace: 2 judged, 6 not judged.
