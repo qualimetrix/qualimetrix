@@ -46,6 +46,32 @@ use Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub;
 final class DistanceRuleTest extends TestCase
 {
     #[Test]
+    #[DataProvider('roundedThresholds')]
+    public function itDistinguishesRoundedDistanceFromItsThreshold(float $threshold, string $fragment): void
+    {
+        $path = SymbolPath::forNamespace('App');
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')->willReturn([self::subjectInfo($path, null, null)]);
+        $repository->method('get')->willReturn(MetricBag::fromArray([
+            'coupling.distance-own' => 0.5,
+            'coupling.abstractness-own' => 0.5,
+            'coupling.instability-own' => 0.0,
+        ]));
+        $rule = self::rule(new DistanceOptions(maxDistanceWarning: $threshold, maxDistanceError: 1.0, includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 0));
+        $findings = $rule->analyze(new AnalysisContext($repository));
+        self::assertCount(1, $findings);
+        self::assertStringContainsString($fragment, $findings[0]->message);
+        self::assertStringContainsString($threshold === 0.4999 ? '0.4999' : 'display rounded', $findings[0]->recommendation ?? '');
+    }
+
+    /** @return iterable<string, array{float, string}> */
+    public static function roundedThresholds(): iterable
+    {
+        yield 'expanded' => [0.4999, '0.5000 (A=0.50, I=0.00), exceeds threshold of 0.4999'];
+        yield 'rounded' => [0.49999999, 'exceeds threshold of 0.500000 (display rounded)'];
+    }
+
+    #[Test]
     public function itReturnsCorrectName(): void
     {
         $rule = self::rule(new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 0));
@@ -800,6 +826,27 @@ final class DistanceRuleTest extends TestCase
         self::assertSame(0, $session->freeze()->judgedCount());
         self::assertSame(2, $session->freeze()->unjudgedCount());
         self::assertSame(['namespace-selected', 'own-distance'], array_map(static fn($absence): string => $absence->gate, $session->freeze()->abstentions()));
+    }
+
+    #[Test]
+    public function itRecordsOwnTypesBelowAndAtThePopulationBoundary(): void
+    {
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $paths = [SymbolPath::forNamespace('App\\Below'), SymbolPath::forNamespace('App\\At')];
+        $repository->method('all')->willReturn(array_map(static fn($path) => self::subjectInfo($path, null, null), $paths));
+        $repository->method('get')->willReturnCallback(static fn(SymbolPath $path): MetricBag => MetricBag::fromArray([
+            'size.class-count' => $path->namespace === 'App\\Below' ? 1 : 2,
+            'coupling.distance-own' => 0, 'coupling.ca-own' => 1, 'coupling.ce-own' => 1,
+        ]));
+        $session = new PopulationSession(static fn(): bool => true);
+        $rule = self::rule(new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 2));
+        self::assertSame([], $rule->analyze((new AnalysisContext($repository))->withPopulationTrace($session)));
+        $population = $session->freeze();
+        self::assertSame(1, $population->judgedCount());
+        self::assertSame(1, $population->unjudgedCount());
+        self::assertSame('own-types', $population->abstentions()[0]->gate);
+        self::assertSame('namespace', $population->abstentions()[0]->unit);
+        self::assertSame(1, $population->abstentions()[0]->count);
     }
 
     private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo

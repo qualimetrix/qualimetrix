@@ -192,6 +192,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
 
         $ce = (int) ($metrics->get(MetricName::COUPLING_CE) ?? 0);
         $threshold = $severity === Severity::Error ? $effectiveOptions->maxError : $effectiveOptions->maxWarning;
+        [$valueText, $thresholdText, $rounded] = ThresholdCrossing::display($instabilityValue, $threshold);
 
         return new Finding(
             location: $location,
@@ -200,15 +201,16 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
             ruleName: $this->getName(),
             code: self::NAME,
             message: \sprintf(
-                'Instability is %.2f (Ca=%d, Ce=%d), ' . ThresholdCrossing::of($instabilityValue, $threshold)->value . ' threshold of %.2f. Reduce outgoing dependencies',
-                $instabilityValue,
+                'Instability is %s (Ca=%d, Ce=%d), ' . ThresholdCrossing::of($instabilityValue, $threshold)->value . ' threshold of %s%s. Reduce outgoing dependencies',
+                $valueText,
                 $ca,
                 $ce,
-                $threshold,
+                $thresholdText,
+                $rounded ? ' (display rounded)' : '',
             ),
             severity: $severity,
             metricValue: $instabilityValue,
-            recommendation: \sprintf('Instability: %.2f (threshold: %.2f) — package is highly unstable', $instabilityValue, $threshold),
+            recommendation: \sprintf('Instability: %s (threshold: %s%s) — package is highly unstable', $valueText, $thresholdText, $rounded ? ', display rounded' : ''),
             threshold: $threshold,
         );
     }
@@ -251,6 +253,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
                 $ce = (int) ($metrics->get(MetricName::COUPLING_CE) ?? 0);
 
                 $threshold = $severity === Severity::Error ? $effectiveNsOptions->maxError : $effectiveNsOptions->maxWarning;
+                [$valueText, $thresholdText, $rounded] = ThresholdCrossing::display($instabilityValue, $threshold);
 
                 $findings[] = new Finding(
                     location: new Location($nsInfo->file, $nsInfo->line),
@@ -259,15 +262,16 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
                     ruleName: $this->getName(),
                     code: self::NAME,
                     message: \sprintf(
-                        'Instability is %.2f (Ca=%d, Ce=%d), ' . ThresholdCrossing::of($instabilityValue, $threshold)->value . ' threshold of %.2f. Reduce outgoing dependencies',
-                        $instabilityValue,
+                        'Instability is %s (Ca=%d, Ce=%d), ' . ThresholdCrossing::of($instabilityValue, $threshold)->value . ' threshold of %s%s. Reduce outgoing dependencies',
+                        $valueText,
                         $ca,
                         $ce,
-                        $threshold,
+                        $thresholdText,
+                        $rounded ? ' (display rounded)' : '',
                     ),
                     severity: $severity,
                     metricValue: $instabilityValue,
-                    recommendation: \sprintf('Instability: %.2f (threshold: %.2f) — package is highly unstable', $instabilityValue, $threshold),
+                    recommendation: \sprintf('Instability: %s (threshold: %s%s) — package is highly unstable', $valueText, $thresholdText, $rounded ? ', display rounded' : ''),
                     threshold: $threshold,
                 );
             }

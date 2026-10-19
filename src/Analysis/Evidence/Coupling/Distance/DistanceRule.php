@@ -167,6 +167,8 @@ final class DistanceRule extends AbstractRule
         $instability = (float) ($metrics->get(MetricName::COUPLING_INSTABILITY_OWN) ?? 0.0);
         $threshold = $severity === Severity::Error ? $effectiveOptions->maxDistanceError : $effectiveOptions->maxDistanceWarning;
 
+        [$valueText, $thresholdText, $rounded] = ThresholdCrossing::display($distanceValue, $threshold);
+
         return new Finding(
             location: new Location($info->file, $info->line),
             subject: $subject,
@@ -174,15 +176,16 @@ final class DistanceRule extends AbstractRule
             ruleName: $this->getName(),
             code: self::NAME,
             message: \sprintf(
-                'Distance from main sequence is %.2f (A=%.2f, I=%.2f), ' . ThresholdCrossing::of($distanceValue, $threshold)->value . ' threshold of %.2f. Balance abstractness and stability',
-                $distanceValue,
+                'Distance from main sequence is %s (A=%.2f, I=%.2f), ' . ThresholdCrossing::of($distanceValue, $threshold)->value . ' threshold of %s%s. Balance abstractness and stability',
+                $valueText,
                 $abstractness,
                 $instability,
-                $threshold,
+                $thresholdText,
+                $rounded ? ' (display rounded)' : '',
             ),
             severity: $severity,
             metricValue: $distanceValue,
-            recommendation: \sprintf('Distance: %.2f (threshold: %.2f) — poor balance of abstraction and stability', $distanceValue, $threshold),
+            recommendation: \sprintf('Distance: %s (threshold: %s%s) — poor balance of abstraction and stability', $valueText, $thresholdText, $rounded ? ', display rounded' : ''),
             threshold: $threshold,
         );
     }

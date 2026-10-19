@@ -101,7 +101,7 @@ final class ClassRankRule extends AbstractRule
             return null;
         }
         $threshold = $severity === Severity::Error ? $options->error : $options->warning;
-        [$valueText, $thresholdText, $rounded] = self::display($rank, $threshold);
+        [$valueText, $thresholdText, $rounded] = ThresholdCrossing::display($rank, $threshold);
         $dependents = (int) $metrics->require(MetricName::COUPLING_CA);
         return new Finding(
             location: new Location($info->file, $info->line),
@@ -113,7 +113,7 @@ final class ClassRankRule extends AbstractRule
             severity: $severity,
             metricValue: $rank,
             threshold: $threshold,
-            recommendation: \sprintf('ClassRank share: %s× uniform (threshold: %s×%s) — coupling hotspot, %d %s on this', $valueText, $thresholdText, $rounded ? ', display rounded' : '', $dependents, $dependents === 1 ? 'class depends' : 'classes depend'),
+            recommendation: \sprintf('ClassRank share: %s× uniform (threshold: %s×%s) — coupling hotspot, %d %s directly; PageRank also reflects transitive dependency paths', $valueText, $thresholdText, $rounded ? ', display rounded' : '', $dependents, $dependents === 1 ? 'class depends' : 'classes depend'),
         );
     }
 
@@ -157,23 +157,6 @@ final class ClassRankRule extends AbstractRule
             $measured[$key] = true;
         }
         return $measured;
-    }
-
-    /** @return array{string, string, bool} */
-    private static function display(float $value, float $threshold): array
-    {
-        $precision = 2;
-        while (true) {
-            $valueText = \sprintf('%.*f', $precision, $value);
-            $thresholdText = \sprintf('%.*f', $precision, $threshold);
-            if ($value === $threshold || $valueText !== $thresholdText) {
-                return [$valueText, $thresholdText, false];
-            }
-            if ($precision === 6) {
-                return [$valueText, $thresholdText, true];
-            }
-            $precision++;
-        }
     }
 
     /**

@@ -459,7 +459,10 @@ classes, with positive `coupling.ca`. Interfaces, traits and enums retain graph
 rank evidence but are outside that rule population. The fixed share defaults
 are warning 5 and error 10, in multiples of the uniform rank; equality reaches
 the boundary. Overrides use the same units, with no project-size scaling.
-Messages use the shortest common precision from two through six decimal places
+The recommendation labels Ca as the number of direct dependents. PageRank
+also reflects transitive dependency paths but the report does not count
+transitive dependents. A single direct dependent can itself be a hub.
+ClassRank, Distance and Instability messages use the shortest common precision from two through six decimal places
 that distinguishes unequal value and threshold; a remaining collision is marked
 as rounded. The underlying comparison always uses the unrounded share.
 
@@ -585,3 +588,7 @@ builder receives the same full declaration used by its invocation.
 > aggregates sample physical declarations, so a logical name's graph value
 > contributes once per declaration. Namespace sums/counts/averages are
 > declaration-weighted, rather than graph-node or inheritance-edge counts.
+
+Invalid trait method composition carries the exact declaration through
+`TraitCompositionFailure`; Run refuses that source file and publishes the rest
+of the analysis with incomplete coverage.

@@ -31,6 +31,48 @@ use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 final class InstabilityRuleTest extends TestCase
 {
     #[Test]
+    #[DataProvider('populationBoundaries')]
+    public function itRecordsConfiguredPopulationBoundaries(SymbolLevel $level, string $key, string $gate, string $unit): void
+    {
+        $paths = $level === SymbolLevel::Class_
+            ? [SymbolPath::forClass('App', 'Below'), SymbolPath::forClass('App', 'At')]
+            : [SymbolPath::forNamespace('App\\Below'), SymbolPath::forNamespace('App\\At')];
+        $infos = array_map(static fn($path) => self::subjectInfo($path, RelativePath::fromString('Sample.php'), 1), $paths);
+        $bags = [];
+        foreach ($paths as $index => $path) {
+            $bags[$path->toCanonical()] = MetricBag::fromArray([
+                'coupling.instability' => 0, 'coupling.ca' => 2, 'coupling.ce' => 0, 'size.class-count.sum' => 2,
+                ...[$key => $index + 1],
+            ]);
+        }
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allClassDeclarations')->willReturn($infos);
+        $repository->method('all')->willReturn($infos);
+        $repository->method('get')->willReturnCallback(static fn(SymbolPath $path): MetricBag => $bags[$path->toCanonical()]);
+        $repository->method('getSubject')->willReturnCallback(static fn($subject): MetricBag => $bags[$subject->toSymbolPath()->toCanonical()]);
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(static fn(): bool => true);
+        $rule = new InstabilityRule(new InstabilityOptions(
+            class: new ClassInstabilityOptions(minAfferent: 2),
+            namespace: new NamespaceInstabilityOptions(minAfferent: 2, minClassCount: 2),
+        ));
+        self::assertSame([], $rule->analyzeLevel($level, (new AnalysisContext($repository))->withPopulationTrace($session)));
+        $population = $session->freeze();
+        self::assertSame(1, $population->judgedCount());
+        self::assertSame(1, $population->unjudgedCount());
+        self::assertSame($gate, $population->abstentions()[0]->gate);
+        self::assertSame($unit, $population->abstentions()[0]->unit);
+        self::assertSame(1, $population->abstentions()[0]->count);
+    }
+
+    /** @return iterable<string, array{SymbolLevel, string, string, string}> */
+    public static function populationBoundaries(): iterable
+    {
+        yield 'class-afferent' => [SymbolLevel::Class_, 'coupling.ca', 'class-afferent', 'declaration'];
+        yield 'namespace-afferent' => [SymbolLevel::Namespace_, 'coupling.ca', 'namespace-afferent', 'namespace'];
+        yield 'namespace-classes' => [SymbolLevel::Namespace_, 'size.class-count.sum', 'namespace-classes', 'namespace'];
+    }
+
+    #[Test]
     public function itAccountsMeasuredZeroAndMissingSelectedPublicationBeforeSeverity(): void
     {
         $repository = self::createStub(MetricRepositoryInterface::class);
@@ -52,6 +94,35 @@ final class InstabilityRuleTest extends TestCase
         self::assertSame(1, $session->freeze()->unjudgedCount());
         self::assertStringContainsString('Missing', $session->freeze()->abstentions()[0]->examples[0]);
         self::assertSame('declaration', $session->freeze()->abstentions()[0]->unit);
+    }
+
+    #[Test]
+    #[DataProvider('roundedLevels')]
+    public function itDistinguishesRoundedInstabilityFromItsThreshold(SymbolLevel $level): void
+    {
+        $path = $level === SymbolLevel::Class_ ? SymbolPath::forClass('App', 'Sample') : SymbolPath::forNamespace('App');
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $info = self::subjectInfo($path, RelativePath::fromString('Sample.php'), 1);
+        $repository->method('allClassDeclarations')->willReturn([$info]);
+        $repository->method('all')->willReturn([$info]);
+        $bag = MetricBag::fromArray(['coupling.instability' => 0.5, 'coupling.ca' => 2, 'coupling.ce' => 2, 'size.class-count.sum' => 3]);
+        $repository->method('getSubject')->willReturn($bag);
+        $repository->method('get')->willReturn($bag);
+        $rule = new InstabilityRule(new InstabilityOptions(
+            class: new ClassInstabilityOptions(maxWarning: 0.4999, maxError: 1.0),
+            namespace: new NamespaceInstabilityOptions(maxWarning: 0.4999, maxError: 1.0),
+        ));
+        $findings = $rule->analyzeLevel($level, new AnalysisContext($repository));
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('0.5000 (Ca=2, Ce=2), exceeds threshold of 0.4999', $findings[0]->message);
+        self::assertStringContainsString('0.4999', $findings[0]->recommendation ?? '');
+    }
+
+    /** @return iterable<string, array{SymbolLevel}> */
+    public static function roundedLevels(): iterable
+    {
+        yield 'class' => [SymbolLevel::Class_];
+        yield 'namespace' => [SymbolLevel::Namespace_];
     }
 
     #[Test]

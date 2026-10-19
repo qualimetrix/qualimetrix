@@ -39,6 +39,27 @@ use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 final class CboRuleTest extends TestCase
 {
     #[Test]
+    public function itRecordsOwnClassesBelowAndAtThePopulationBoundary(): void
+    {
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $paths = [SymbolPath::forNamespace('App\\Below'), SymbolPath::forNamespace('App\\At')];
+        $repository->method('all')->willReturn(array_map(static fn($path) => self::subjectInfo($path, null, null), $paths));
+        $repository->method('get')->willReturnCallback(static fn(SymbolPath $path): MetricBag => MetricBag::fromArray([
+            'size.class-count' => $path->namespace === 'App\\Below' ? 1 : 2,
+            'coupling.cbo-own' => 0, 'coupling.ca-own' => 0, 'coupling.ce-own' => 0,
+        ]));
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(static fn(): bool => true);
+        $rule = new CboRule(new CboOptions(namespace: new NamespaceCboOptions(minClassCount: 2)));
+        self::assertSame([], $rule->analyzeLevel(SymbolLevel::Namespace_, (new AnalysisContext($repository))->withPopulationTrace($session)));
+        $population = $session->freeze();
+        self::assertSame(1, $population->judgedCount());
+        self::assertSame(1, $population->unjudgedCount());
+        self::assertSame('own-classes', $population->abstentions()[0]->gate);
+        self::assertSame('namespace', $population->abstentions()[0]->unit);
+        self::assertSame(1, $population->abstentions()[0]->count);
+    }
+
+    #[Test]
     public function itAccountsMeasuredZeroAndMissingSelectedPublicationBeforeSeverity(): void
     {
         $repository = self::createStub(MetricRepositoryInterface::class);

@@ -175,12 +175,15 @@ rules:
 bin/qmx check src/ --rule-opt="coupling.cbo:threshold=15"
 ```
 
-!!! warning "Flat threshold wins over a nested class:/namespace: config"
-    If a `threshold` at the rule's top level and a nested `class:`/`namespace:`
-    section both end up configured for `coupling.cbo` at once, the flat
-    `threshold` takes full precedence -- the nested section is ignored, not
-    merged with it. Configure one form or the other for a given rule, not
-    both.
+!!! warning "Shorthand expands before configuration layers merge"
+    A top-level `threshold` sets both the class and namespace warning/error
+    leaves in its own configuration layer. Writing it beside an overlapping
+    nested threshold or band in that same layer refuses with exit 3; independent
+    settings such as `class.enabled` remain valid. Across layers, the later
+    layer replaces only the leaves it writes: `threshold: 50` in `qmx.yaml`
+    followed by `--rule-opt="coupling.cbo:class.warning=1"` and
+    `--rule-opt="coupling.cbo:class.error=1"` sets the class band to 1/1 while
+    leaving the namespace band at 50/50.
 
 **Top-level `warning:` / `error:` are options of this rule too.** Unlike the
 complexity rules, `coupling.cbo` reads them at its own top level, where they
@@ -545,11 +548,13 @@ rules:
 bin/qmx check src/ --rule-opt="coupling.instability:threshold=0.9"
 ```
 
-!!! warning "Flat threshold wins over a nested class:/namespace: config"
-    Same rule as `coupling.cbo` above: if a top-level `threshold` and a
-    nested `class:`/`namespace:` section both end up configured at once, the
-    flat `threshold` takes full precedence over the nested section rather
-    than being merged with it.
+!!! warning "Shorthand expands before configuration layers merge"
+    As with `coupling.cbo`, a top-level `threshold` expands to both class and
+    namespace bands in its own layer. Overlapping shorthand and explicit band
+    writes in one layer refuse with exit 3. In a later layer, a nested write
+    replaces only the addressed leaves; for example,
+    `--rule-opt="coupling.instability:class.threshold=0.8"` overrides a file's
+    flat `threshold: 0.9` for the class band while retaining namespace 0.9/0.9.
 
 **Top-level `max_warning:` / `max_error:` are options of this rule too.** Like
 `coupling.cbo`'s `warning`/`error`, they open the flat form at the rule's own
@@ -834,6 +839,13 @@ probability for missing share.
     declarations. Each declaration repeats its logical node's rank and share,
     so sums, counts and averages are declaration-weighted. Raw PageRank sums
     to 1 over logical nodes before this projection, not over declarations.
+
+The recommendation counts **direct** dependents (Ca). PageRank also reflects
+transitive dependency paths, so one direct dependent that is itself a hub can
+produce a high share. The report does not count transitive dependents.
+Distance and Instability use the same expanding precision and explicit
+`display rounded` marker as ClassRank when a value and threshold would otherwise
+look equal.
 
 ### Configuration
 
