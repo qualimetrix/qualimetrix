@@ -55,15 +55,19 @@ final readonly class JudgedPopulation
         $groups = [];
         foreach ($this->partitions as $partition) {
             foreach ($partition['abstentions'] as $absence) {
-                $key = json_encode([$absence->producer, $absence->channel->code, $absence->level->value, $absence->gate, $absence->reason, $absence->unit], \JSON_THROW_ON_ERROR);
+                $key = \strlen($absence->producer) . ":" . $absence->producer . \strlen($absence->channel->code) . ":" . $absence->channel->code . "\0" . $absence->level->value . "\0" . \strlen($absence->gate) . ":" . $absence->gate . "\0" . $absence->unit . "\0" . ($absence->dataGap ? "1" : "0") . $absence->reason;
                 $previous = $groups[$key] ?? null;
                 $examples = array_values(array_unique([...($previous->examples ?? []), ...$absence->examples]));
                 sort($examples, \SORT_STRING);
-                $groups[$key] = new RuleAbstention($absence->producer, $absence->channel, $absence->level, $absence->gate, $absence->reason, $absence->unit, ($previous->count ?? 0) + $absence->count, \array_slice($examples, 0, 5));
+                $groups[$key] = new RuleAbstention($absence->producer, $absence->channel, $absence->level, $absence->gate, $absence->reason, $absence->unit, ($previous->count ?? 0) + $absence->count, \array_slice($examples, 0, 5), $absence->dataGap);
             }
         }
-        ksort($groups, \SORT_STRING);
-        return array_values($groups);
+        $ordered = array_values($groups);
+        usort($ordered, static fn(RuleAbstention $left, RuleAbstention $right): int => self::compareCoordinates(
+            [$left->producer, $left->channel->code, $left->level->value, $left->gate, $left->reason, $left->unit, $left->dataGap ? '1' : '0'],
+            [$right->producer, $right->channel->code, $right->level->value, $right->gate, $right->reason, $right->unit, $right->dataGap ? '1' : '0'],
+        ));
+        return $ordered;
     }
 
     /** @return list<array{producer: string, channel: FindingChannel, level: SymbolLevel, unit: string, count: int}> */
@@ -76,8 +80,27 @@ final readonly class JudgedPopulation
                 $groups[$key] = $group;
             }
         }
-        ksort($groups, \SORT_STRING);
-        return array_values($groups);
+        $ordered = array_values($groups);
+        usort($ordered, static fn(array $left, array $right): int => self::compareCoordinates(
+            [$left['producer'], $left['channel']->code, $left['level']->value, $left['unit']],
+            [$right['producer'], $right['channel']->code, $right['level']->value, $right['unit']],
+        ));
+        return $ordered;
+    }
+
+    /**
+     * @param list<string> $left
+     * @param list<string> $right
+     */
+    private static function compareCoordinates(array $left, array $right): int
+    {
+        foreach ($left as $index => $field) {
+            $comparison = strcmp($field, $right[$index]);
+            if ($comparison !== 0) {
+                return $comparison;
+            }
+        }
+        return 0;
     }
 
     public function judgedCount(): int

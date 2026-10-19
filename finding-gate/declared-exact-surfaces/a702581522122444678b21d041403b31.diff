@@ -1,0 +1,19 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 1016
++visible 1026
+@@ -6,5 +6,5 @@
+-Project scope narrowed: the analysed paths do not cover src; channels with no judged value: architecture.empty-template, architecture.unmatched-exclude, architecture.unmatched-type, architecture.unreachable-layer, cohesion.unmatched-exclude-method, coupling.unmatched-framework-namespace, discovery.unmatched-exclude, suppression.unmatched-namespace, suppression.unmatched-path, suppression.unmatched-rule-ledger. Source reasons: {"kind":"explicit-files","namedFiles":1,"missingFiles":1}.
+-Technical debt: 15min
+-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
+-
+-invocation-show-suppressed 1016
++Project scope narrowed: the analysed paths do not cover src/Other.php; channels with no judged value: architecture.empty-template, architecture.unmatched-exclude, architecture.unmatched-type, architecture.unreachable-layer, cohesion.unmatched-exclude-method, coupling.unmatched-framework-namespace, discovery.unmatched-exclude, suppression.unmatched-namespace, suppression.unmatched-path, suppression.unmatched-rule-ledger. Source reasons: {"kind":"explicit-files","namedFiles":1,"missingFiles":1}.
++Technical debt: 15min
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-show-suppressed 1026
+@@ -15,1 +15,1 @@
+-Project scope narrowed: the analysed paths do not cover src; channels with no judged value: architecture.empty-template, architecture.unmatched-exclude, architecture.unmatched-type, architecture.unreachable-layer, cohesion.unmatched-exclude-method, coupling.unmatched-framework-namespace, discovery.unmatched-exclude, suppression.unmatched-namespace, suppression.unmatched-path, suppression.unmatched-rule-ledger. Source reasons: {"kind":"explicit-files","namedFiles":1,"missingFiles":1}.
++Project scope narrowed: the analysed paths do not cover src/Other.php; channels with no judged value: architecture.empty-template, architecture.unmatched-exclude, architecture.unmatched-type, architecture.unreachable-layer, cohesion.unmatched-exclude-method, coupling.unmatched-framework-namespace, discovery.unmatched-exclude, suppression.unmatched-namespace, suppression.unmatched-path, suppression.unmatched-rule-ledger. Source reasons: {"kind":"explicit-files","namedFiles":1,"missingFiles":1}.

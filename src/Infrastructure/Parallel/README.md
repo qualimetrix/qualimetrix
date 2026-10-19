@@ -77,7 +77,12 @@ file retains the PHP diagnostic and worker limit; a missing diagnostic falls
 back to the bounded shutdown-note drain and then a generic cause. `WorkerPool`
 re-submits a task the dead worker refused before starting it and routes pool
 crash notices to the log instead of stdout. The private log is removed when
-the pool closes.
+the pool closes. Cleanup reads the literal startup directory and checks only
+each entry name; temporary-parent metacharacters do not select sibling trees.
+DI supplies Console's exhaustion registration as a closure,
+so coordinator memory exhaustion also removes the private startup directory
+without a Parallel-to-Console dependency. Once the failed context's streams
+reach EOF, a missing shutdown note returns immediately; SIGKILL cannot emit one.
 `WorkerNotes` sends child diagnostics through the Parallel-owned
 `WorkerDiagnosticsInterface`; Console's run-bound `ErrorStream` implements this
 one-method port. Its separate stdout and stderr readers decode nonce-bearing
@@ -94,6 +99,8 @@ closed when its startup-log directory cannot be created.
 **Interruption.** `Amp\CancelledException` bypasses per-file error recovery.
 The pool kills pending workers on cancellation instead of awaiting graceful
 shutdown, so an interrupted coordinator does not wait for another file result.
+Console installs its optional pcntl guard for every claimed run, including
+stdout reports. The Docker image includes pcntl so its PID 1 handles SIGTERM.
 
 **Collector marker.** A registered collector that does not implement
 `ParallelSafeCollectorInterface` is refused, like a collector class that does not

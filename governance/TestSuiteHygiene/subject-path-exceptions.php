@@ -47,7 +47,7 @@ return [
             'tests/Analysis/Policy/Architecture/Integration/LayerViolationIntegrationTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Policy/Architecture/Integration/Phase1ConfigCompatibilityTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Policy/Architecture/Integration/RelationsFilterIntegrationTest.php' => 'declares no coverage attribute',
-            'tests/Analysis/Policy/Architecture/Unit/LayersValidatorEmptyMembershipRefusalTest.php' => 'declares no coverage attribute',
+            'tests/Analysis/Policy/Architecture/Unit/Configuration/Reading/LayersValidatorEmptyMembershipRefusalTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Policy/Baseline/Functional/BaselineIncompleteAnalysisTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Policy/Baseline/Functional/BaselineLifecycleTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Policy/Baseline/Functional/BaselineMigrateCommandTest.php' => 'declares no coverage attribute',

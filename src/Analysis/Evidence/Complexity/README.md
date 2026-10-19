@@ -16,6 +16,20 @@ declaration-scoped collection: the sum of the CCN values of owned methods.
 
 ```text
 Complexity/
+├── Cognitive/
+│   ├── ClassCognitiveComplexityOptions.php
+│   ├── CognitiveComplexityCollector.php
+│   ├── CognitiveComplexityOptions.php
+│   ├── CognitiveComplexityRule.php
+│   ├── CognitiveComplexityVisitor.php
+│   └── MethodCognitiveComplexityOptions.php
+├── Cyclomatic/
+│   ├── ClassComplexityOptions.php
+│   ├── ComplexityOptions.php
+│   ├── ComplexityRule.php
+│   ├── CyclomaticComplexityCollector.php
+│   ├── CyclomaticComplexityVisitor.php
+│   └── MethodComplexityOptions.php
 ├── Npath/
 │   ├── ClassNpathComplexityOptions.php
 │   ├── MethodNpathComplexityOptions.php
@@ -24,24 +38,15 @@ Complexity/
 │   ├── NpathComplexityRule.php
 │   ├── NpathComplexityVisitor.php
 │   └── NpathExpressionCalculator.php
-├── ClassCognitiveComplexityOptions.php
-├── ClassComplexityOptions.php
-├── CognitiveComplexityCollector.php
-├── CognitiveComplexityOptions.php
-├── CognitiveComplexityRule.php
-├── CognitiveComplexityVisitor.php
-├── ComplexityOptions.php
-├── ComplexityRule.php
-├── CyclomaticComplexityCollector.php
-├── CyclomaticComplexityVisitor.php
-├── MethodCognitiveComplexityOptions.php
-├── MethodComplexityOptions.php
-├── WmcOptions.php
-└── WmcRule.php
+└── Wmc/
+    ├── WmcOptions.php
+    └── WmcRule.php
 ```
 
-`Npath/` keeps the NPath expression recurrence, visitor, collector, options and
-rule together; cyclomatic and cognitive measurement remain at the capability root.
+`Cyclomatic/`, `Cognitive/` and `Npath/` each keep one callable algorithm, its
+collector, visitor, options and rule together. `Wmc/` owns class-level interpretation
+of the weighted-method sum published by the cyclomatic collector. The capability
+root is navigation only; adding another algorithm follows the same rule.
 
 The three callable collectors retain their names, requirements and metric
 definitions. Callable CCN, cognitive and NPath rule coordinates declare
@@ -230,6 +235,14 @@ NPath = sum of NPath(case_i)
 > `max(1, ordinary) + nullsafe` preserves the statement base. Two chained
 > coalesces have NPath 4, like a nested ternary with three distinct outcomes;
 > this retains the existing recurrence rather than counting runtime outcomes.
+
+Bare blocks and `declare` bodies retain their statement-sequence products.
+Expression slots in `unset`, dynamic `global`, and `static` initializers are
+counted like other expression-bearing statements.
+
+> **Note:** Arithmetic saturates at 1,000,000,000. A value at that cap is a
+> lower bound, not an exact path count; the text label `> 1M (extreme)` names
+> a display category rather than the saturation limit.
 
 ### Examples
 

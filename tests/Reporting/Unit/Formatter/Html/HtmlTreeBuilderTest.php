@@ -29,10 +29,10 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Report\Report;
 use Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder;
 use Qualimetrix\Reporting\Formatter\Html\HtmlTreeNode;
-use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\Report;
 use Qualimetrix\Reporting\ReportBuilder;
 use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
@@ -51,7 +51,7 @@ final class HtmlTreeBuilderTest extends TestCase
             new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues())),
             $this->catalog(),
             new \Qualimetrix\Reporting\Formatter\Html\HtmlProjectMetadata(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()),
-            new \Qualimetrix\Reporting\Formatter\FindingRecord(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()), new \Qualimetrix\Reporting\Formatter\Json\JsonSanitizer()),
+            new \Qualimetrix\Reporting\FindingPublication\FindingRecord(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()), new \Qualimetrix\Reporting\Formatter\Json\JsonSanitizer()),
         );
     }
 
@@ -625,13 +625,11 @@ final class HtmlTreeBuilderTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 0.5,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
-            healthScores: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: [
                 'cohesion' => new HealthScore('cohesion', 82.9, 'Excellent', 60.0, 30.0, HealthCoverage::over(3, 12, CoverageUnit::Classes, 'cohesion.tcc.count')),
                 'overall' => new HealthScore('overall', 75.3, 'Acceptable', 50.0, 30.0, HealthCoverage::notApplicable('composes the other dimensions')),
-            ],
+            ]),
         );
 
         $coverage = (array) $this->builder->build($report, new FormatterContext())['summary']['healthCoverage'];
@@ -1164,7 +1162,14 @@ final class HtmlTreeBuilderTest extends TestCase
                 new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem('cohesion.tcc.avg', 'TCC', null, '> 0.5', 'higher', '', coverage: $coverage),
             ],
         );
-        $payload = $this->builder->build(new \Qualimetrix\Reporting\Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 1, 0, 0.0, 0, 0, healthScores: ['cohesion' => $score]), new FormatterContext());
+        $payload = $this->builder->build(new \Qualimetrix\Reporting\Contract\Report\Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            findings: [],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 0.0,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: ['cohesion' => $score]),
+        ), new FormatterContext());
         $data = json_decode(json_encode($payload, \JSON_THROW_ON_ERROR), true, 512, \JSON_THROW_ON_ERROR);
         self::assertArrayHasKey('health.cohesion', $data['summary']['healthScores']);
         self::assertNull($data['summary']['healthScores']['health.cohesion']);

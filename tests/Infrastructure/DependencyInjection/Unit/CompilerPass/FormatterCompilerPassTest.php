@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\FormatterCompilerPass;
 use Qualimetrix\Reporting\Formatter\FormatterRegistry;
 use Qualimetrix\Reporting\Formatter\Json\JsonFormatter;
-use Qualimetrix\Reporting\Formatter\TextFormatter;
+use Qualimetrix\Reporting\Formatter\Text\TextFormatter;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 

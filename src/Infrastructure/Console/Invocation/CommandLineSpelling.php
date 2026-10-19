@@ -20,6 +20,8 @@ use Symfony\Component\Console\Input\InputInterface;
  * Flags (`VALUE_NONE`) are read by their callers as booleans and never pass
  * through here; a value-optional option's "written alone" forms are decided by
  * its caller before the value is spelled.
+ *
+ * @qmx-threshold coupling.cbo 24 -- Invocation adapters share this internal vocabulary so one token spelling has one interpretation across command routes.
  */
 final class CommandLineSpelling
 {

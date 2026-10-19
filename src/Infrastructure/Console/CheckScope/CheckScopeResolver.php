@@ -8,8 +8,8 @@ use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Infrastructure\Console\Invocation\CommandLineSpelling;
-use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisInputPathValidator;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\RunSetup\Input\AnalysisInputPathValidator;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\Git\GitScopeResolver;
 
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions;

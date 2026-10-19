@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance;
 
-use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\EntrySelector;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\EntrySelector;
 
 /**
  * What one `baseline:cleanup --remove` run produced (ADR 0017).

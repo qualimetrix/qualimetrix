@@ -6,16 +6,18 @@ namespace Qualimetrix\Reporting\Formatter\Html;
 
 use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 
-use Qualimetrix\Reporting\Formatter\CoverageNarrator;
-use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
-use Qualimetrix\Reporting\Formatter\FormattedReport;
-use Qualimetrix\Reporting\Formatter\FormatterInterface;
-use Qualimetrix\Reporting\Formatter\PublicationKind;
-use Qualimetrix\Reporting\Formatter\PublishedUtf8;
-use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\GroupBy;
+use Qualimetrix\Reporting\Contract\Formatting\FormatOptionKeysInterface;
+
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterInterface;
+use Qualimetrix\Reporting\Contract\Formatting\GroupBy;
+use Qualimetrix\Reporting\Contract\Report\Report;
+use Qualimetrix\Reporting\Formatter\Prose\RuleAbstentionNarrator;
+use Qualimetrix\Reporting\Formatter\Text\CoverageNarrator;
 use Qualimetrix\Reporting\Health\HealthHintProjector;
-use Qualimetrix\Reporting\Report;
+use Qualimetrix\Reporting\Publication\FormattedReport;
+use Qualimetrix\Reporting\Publication\PublicationKind;
+use Qualimetrix\Reporting\Publication\PublishedUtf8;
 use RuntimeException;
 
 /**
@@ -103,10 +105,11 @@ final class HtmlFormatter implements FormatterInterface, FormatOptionKeysInterfa
 
     private function populationBanner(JudgedPopulation $population, int &$repairs): string
     {
-        if ($population->unjudgedCount() === 0) {
+        $gaps = RuleAbstentionNarrator::dataGaps($population);
+        if ($gaps === []) {
             return '';
         }
-        $description = 'Selected judgement incomplete: ' . implode('; ', array_map(static fn($absence): string => \sprintf('%s (%s): %d unjudged %s; %s', $absence->channel->code, $absence->level->value, $absence->count, $absence->unit, $absence->reason), $population->abstentions()));
+        $description = 'Selected judgement incomplete: ' . implode('; ', array_map(static fn($absence): string => \sprintf('%s (%s): %d unjudged %s; %s', $absence->channel->code, $absence->level->value, $absence->count, $absence->unit, $absence->reason), $gaps));
         $description = PublishedUtf8::repair($description, $repairs);
         return '<div role="status" data-qmx-population="incomplete" style="padding:12px;background:#78350f;color:#fff">' . htmlspecialchars($description, \ENT_QUOTES) . '</div>';
     }

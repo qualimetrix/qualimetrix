@@ -8,10 +8,10 @@ use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInte
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\GroupCapture;
 
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
 use Qualimetrix\Core\Time\ClockInterface;
 
 /**
@@ -38,6 +38,8 @@ use Qualimetrix\Core\Time\ClockInterface;
  * `generated` comes from the injected {@see ClockInterface}: with it, the
  * whole file is determined by the analysis, which is what lets ADR 0017 claim byte
  * stability.
+ *
+  * @qmx-threshold coupling.instability 0.800001 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
  */
 final readonly class BaselineGenerator
 {

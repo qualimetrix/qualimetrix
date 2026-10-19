@@ -6,7 +6,7 @@ namespace Qualimetrix\Analysis\Policy\Baseline\DocumentAccess;
 
 use LogicException;
 
-use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
 use Qualimetrix\Core\FileTarget\FileTargetFailure;
 use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
 use Qualimetrix\Core\FileTarget\Publication\FileReplacement;
@@ -14,14 +14,16 @@ use Qualimetrix\Core\FileTarget\Publication\HeldLock;
 use Qualimetrix\Core\FileTarget\Publication\HeldTarget;
 use Qualimetrix\Core\FileTarget\Publication\NewName;
 use Qualimetrix\Core\FileTarget\Publication\PreparedTarget;
-use Qualimetrix\Core\FileTarget\ResolvedTarget;
+use Qualimetrix\Core\FileTarget\Resolution\ResolvedTarget;
+use Qualimetrix\Core\FileTarget\Resolution\TargetPath;
 use Qualimetrix\Core\FileTarget\TargetKind;
-use Qualimetrix\Core\FileTarget\TargetPath;
 
 /**
  * Prepares and atomically replaces one baseline document under its sibling
  * lock. The prepared target carries the exact filesystem decision from the
  * caller to the locked replacement.
+ *
+  * @qmx-threshold coupling.instability 0.857144 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
  */
 final readonly class BaselineDocumentWriter
 {

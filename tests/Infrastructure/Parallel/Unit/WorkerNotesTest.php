@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Parallel\Unit;
 
+use Amp\ByteStream\ReadableResourceStream;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\Parallel\WorkerNotes;
 use ReflectionProperty;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -16,6 +17,24 @@ use Symfony\Component\Console\Output\ConsoleOutputInterface;
 #[CoversClass(WorkerNotes::class)]
 final class WorkerNotesTest extends TestCase
 {
+    #[Test]
+    public function itDoesNotWaitForADeathNoteAfterTheWorkerStreamReachedEof(): void
+    {
+        $notes = new WorkerNotes(new ErrorStream());
+        $stream = fopen('php://temp', 'w+');
+        self::assertIsResource($stream);
+        $notes->captureStderr(new ReadableResourceStream($stream), 'nonce')->await();
+        $start = hrtime(true);
+        $keepAlive = \Revolt\EventLoop::delay(11, static function (): void {});
+        try {
+            self::assertNull($notes->deathFor('/project/Killed.php'));
+            self::assertLessThan(500_000_000, hrtime(true) - $start);
+        } finally {
+            \Revolt\EventLoop::cancel($keepAlive);
+            $notes->close();
+        }
+    }
+
     #[Test]
     public function itUsesOnlyTheNamedNonceChannelAndKeepsAllWorkerOutputOffThePayload(): void
     {

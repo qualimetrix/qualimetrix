@@ -24,32 +24,32 @@ final class ArchitectureInternalTopologyTest extends TestCase
     /** @var list<string> */
     private const array ARCHITECTURE_DECLARATIONS = [
         'Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy',
-        'Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowAliasExpander',
-        'Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowListEntry',
-        'Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowTarget',
-        'Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowValidator',
-        'Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\CaptureBinding',
-        'Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\ExactAllowCycleValidator',
-        'Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\InvalidSelectorException',
-        'Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelector',
-        'Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelectorParser',
-        'Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LongFormAllowEntryNormalizer',
-        'Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\ParseCapturedState',
-        'Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\SelectorKind',
-        'Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\SelectorSegment',
-        'Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\WildcardSelfAllowDetector',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowAliasExpander',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowListEntry',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowTarget',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowValidator',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureFactoryResult',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureSection',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\CaptureBinding',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\CarriedValueForm',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageValidator',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\DuplicatePatternRejector',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\ExactAllowCycleValidator',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\ExcludeBlockValidator',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\InvalidSelectorException',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerCriterionNormalizer',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerSelector',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerSelectorParser',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\LayersValidator',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\LongFormAllowEntryNormalizer',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\ParseCapturedState',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\SectionSpot',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\SelectorKind',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\SelectorSegment',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\WildcardSelfAllowDetector',
         'Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels',
         'Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationWarning',
         'Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface',
@@ -80,41 +80,41 @@ final class ArchitectureInternalTopologyTest extends TestCase
         'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule',
         'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\OwnedLayerTargets',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\AnalysedDeclarations',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePatternCompiler',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\Ancestry',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContext',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContextFactory',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\DeclarationRelationIndex',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\DeclarationRelations',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ImplicitStringability',
-        'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\KnownTypes',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\NameSpellingIndex',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\CriteriaEvaluation',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\CriterionListValidator',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\CriterionOutcome',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionResult',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerInstantiator',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\TupleExtractor',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\InvalidLayerDefinitionException',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\KnownTypes',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerCriteriaMatcher',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerLifecycle',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerShadowVerdict',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerShadowing',
-        'Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CapturePattern',
-        'Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CapturePatternCompiler',
-        'Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CriteriaEvaluation',
-        'Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CriterionListValidator',
-        'Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CriterionOutcome',
-        'Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\LayerCriteriaMatcher',
-        'Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\LayerMatch',
-        'Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchMode',
-        'Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchedCriterion',
-        'Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchedCriterionKind',
-        'Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MembershipResult',
-        'Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\PatternScope',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterionKind',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipResult',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\NamedType',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\PatternScope',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\UnmatchedTypeJudgement',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\UnmatchedTypeOccurrence',
@@ -133,6 +133,20 @@ final class ArchitectureInternalTopologyTest extends TestCase
         'Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassOptions',
         'Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassRule',
         'Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassSummary',
+    ];
+
+    /** @var list<string> */
+    private const array ALLOW_LANGUAGE_DECLARATIONS = [
+        'AllowAliasExpander',
+        'AllowListEntry',
+        'AllowTarget',
+        'CaptureBinding',
+        'InvalidSelectorException',
+        'LayerSelector',
+        'LayerSelectorParser',
+        'ParseCapturedState',
+        'SelectorKind',
+        'SelectorSegment',
     ];
 
     /** @var array<string, list<string>> */
@@ -186,6 +200,16 @@ final class ArchitectureInternalTopologyTest extends TestCase
     #[Test]
     public function itRejectsInjectedReverseAndUnknownCrossZoneEdgesWithoutWildcardWidening(): void
     {
+        $allowValue = 'Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\AllowTarget';
+        self::assertSame('Configuration/Allow', $this->zoneForFqcn($allowValue));
+        self::assertSame([], $this->disallowedDependencies('Layer', [$allowValue]));
+
+        $configurationOperations = [
+            'Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\AllowValidator',
+            'Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\ArchitectureConfigurationFactory',
+        ];
+        self::assertSame($configurationOperations, $this->disallowedDependencies('Layer', $configurationOperations));
+
         self::assertNotContains('ArchitecturePolicy', self::ALLOWED['Layer']);
         self::assertNotContains('Layer/Expansion', self::ALLOWED['Configuration']);
         self::assertNotContains('LayerViolation', self::ALLOWED['Observation']);
@@ -249,13 +273,10 @@ final class ArchitectureInternalTopologyTest extends TestCase
     {
         return match (true) {
             str_contains($path, '/Contract/') => 'Contract',
-            // These validators compose Allow primitives with Configuration; their frozen zone
-            // remains Configuration when their files move beside the clauses they validate.
-            str_ends_with($path, '/Configuration/Allow/AllowValidator.php'),
-            str_ends_with($path, '/Configuration/Allow/ExactAllowCycleValidator.php'),
-            str_ends_with($path, '/Configuration/Allow/LongFormAllowEntryNormalizer.php'),
-            str_ends_with($path, '/Configuration/Allow/WildcardSelfAllowDetector.php') => 'Configuration',
-            str_contains($path, '/Configuration/Allow/') => 'Configuration/Allow',
+            // The logical allow-language zone survives its physical rejoin; Layer must
+            // still be unable to call the adjacent configuration validators and factory.
+            str_starts_with($path, 'src/Analysis/Policy/Architecture/Configuration/')
+                && \in_array(basename($path, '.php'), self::ALLOW_LANGUAGE_DECLARATIONS, true) => 'Configuration/Allow',
             str_contains($path, '/Layer/Expansion/') => 'Layer/Expansion',
             str_contains($path, '/LayerAssignment/') => 'LayerAssignment',
             str_contains($path, '/Observation/') => 'Observation',

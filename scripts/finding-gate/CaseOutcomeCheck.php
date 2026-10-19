@@ -153,7 +153,7 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck
         $calls = $finder->find($methods[0], static fn($node): bool => ($node instanceof FuncCall
             && $node->name instanceof Name && $node->name->toLowerString() === 'json_encode')
             || ($node instanceof StaticCall && $node->class instanceof Name
-                && \in_array($node->class->toString(), ['PublishedUtf8', 'Qualimetrix\\Reporting\\Formatter\\PublishedUtf8'], true)
+                && \in_array($node->class->toString(), ['PublishedUtf8', 'Qualimetrix\\Reporting\\Publication\\PublishedUtf8'], true)
                 && $node->name instanceof Identifier && $node->name->toString() === 'encodeJsonObject'));
         if (\count($calls) !== 1 || !(($encoder = $calls[0]) instanceof FuncCall || $encoder instanceof StaticCall)
             || !($argument = $encoder->getArgs()[0] ?? null) instanceof Arg || !$argument->value instanceof Array_) {

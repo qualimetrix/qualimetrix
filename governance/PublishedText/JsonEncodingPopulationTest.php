@@ -27,9 +27,7 @@ final class JsonEncodingPopulationTest extends TestCase
     private const array OWNERS = [
         \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder::class => 'Only finite positive float weights from native ConstantNode values checked by WeightedHealthFormula::weightOf are encoded, preserving the JSON fraction.',
         \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule::class => 'Native copy ordinals and content hashes identify the copy; its existing canonical file subject escapes invalid source bytes.',
-        \Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation::class => 'Group keys contain validated producer/channel metadata, declared gate reasons and closed units; source examples remain outside the encoded key.',
         \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::class => 'Source authority, cycle member and edge endpoint strings are framed; symbol canonicals already escape invalid source bytes.',
-        \Qualimetrix\Analysis\Finding\Population\PopulationTrace::class => 'Group keys contain validated producer/channel metadata, declared gate reasons and closed units; native source identity examples are stored separately.',
         \Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit::class => 'Source selector displays are byte-framed before the inner JSON tuple; rule, option and channel names are validated vocabulary, and native ordinals preserve duplicate positions.',
         \Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationRule::class => 'Layer names originate in parsed UTF-8 architecture configuration; the pair records native precedence.',
         \Qualimetrix\Analysis\Policy\Architecture\Observation\EdgeEvidenceWalk::class => 'Dependency endpoints are byte-safe canonical SymbolPath identities; the dependency type is closed vocabulary.',
@@ -39,15 +37,15 @@ final class JsonEncodingPopulationTest extends TestCase
         \Qualimetrix\Analysis\Policy\Architecture\Layer\UnmatchedTypeOccurrence::class => 'Named types and provenance come from parsed UTF-8 configuration.',
         \Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineDocumentLayout::class => 'Source identity keys are already escaped; raw scope is validated before publication.',
         \Qualimetrix\Analysis\Policy\Baseline\ChannelRename\BaselineEntryPayload::class => 'Input was already accepted by json_decode.',
-        \Qualimetrix\Analysis\Policy\Baseline\Entry\InertBaselineEntry::class => 'Input was already accepted by json_decode.',
-        \Qualimetrix\Infrastructure\Console\Command\Baseline\ChannelRename\ChannelRenameReporter::class => 'Renamed channels come from parsed baseline documents.',
+        \Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertBaselineEntry::class => 'Input was already accepted by json_decode.',
+        \Qualimetrix\Infrastructure\Console\Baseline\ChannelRename\ChannelRenameReporter::class => 'Renamed channels come from parsed baseline documents.',
         \Qualimetrix\Infrastructure\Logging\LoggerHelperTrait::class => 'Invalid strings are escaped after the native UTF-8 refusal.',
         \Qualimetrix\Infrastructure\Parallel\WorkerFatalNotes::class => 'Worker diagnostics and fatal notes carry untrusted PHP messages and source paths; JSON_INVALID_UTF8_SUBSTITUTE repairs those bytes before the nonce-framed base64 transport.',
         \Qualimetrix\Infrastructure\Profiler\Export\ChromeTracingExporter::class => 'Span names are product vocabulary.',
         \Qualimetrix\Infrastructure\Profiler\Export\JsonExporter::class => 'Span names are product vocabulary.',
         \Qualimetrix\Reporting\DrillDown\OutOfScopeFindings::class => 'Occurrence-preserving multiset keys contain canonical published identities.',
-        \Qualimetrix\Reporting\Formatter\PublishedUtf8::class => 'Shared publication repair boundary.',
-        \Qualimetrix\Reporting\ReportProjectScope::class => 'Scope reasons are configuration facts; prose encoding has no throw flag.',
+        \Qualimetrix\Reporting\Publication\PublishedUtf8::class => 'Shared publication repair boundary.',
+        \Qualimetrix\Reporting\Contract\Report\ReportProjectScope::class => 'Scope reasons are configuration facts; prose encoding has no throw flag.',
     ];
 
     #[Test]

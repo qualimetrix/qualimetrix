@@ -6,7 +6,7 @@ namespace Qualimetrix\Reporting\GraphProjection;
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Reporting\Formatter\PublishedUtf8;
+use Qualimetrix\Reporting\Publication\PublishedUtf8;
 
 /**
  * Exports dependency graphs to DOT format (Graphviz).

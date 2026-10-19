@@ -10,7 +10,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthSc
 /**
  * One line saying what share of the subject a health score speaks for.
  *
- * Beside {@see \Qualimetrix\Reporting\Formatter\CoverageNarrator}, which narrates the other coverage in a
+ * Beside {@see \Qualimetrix\Reporting\Formatter\Text\CoverageNarrator}, which narrates the other coverage in a
  * report — the share of discovered files that parsed. The two are different
  * subjects with the same word, which is why neither line uses the word alone.
  */

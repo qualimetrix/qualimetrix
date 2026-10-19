@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionValueForm;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ThresholdPair;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionShapeMatcher;
 use RuntimeException;
@@ -66,7 +67,7 @@ final class RuleThresholdKeyGroupRegistryCompletenessTest extends TestCase
             $callSiteGroupCount,
             $registryGroups,
             \sprintf(
-                'Rule "%s" (path %s) has %d ThresholdParser::parse() call site group(s) but the declaration names %d.',
+                'Rule "%s" (path %s) has %d threshold reader call site group(s) but the declaration names %d.',
                 $ruleName,
                 $path === '' ? '(top level)' : $path,
                 $callSiteGroupCount,
@@ -134,7 +135,7 @@ final class RuleThresholdKeyGroupRegistryCompletenessTest extends TestCase
             $callSites,
             \sprintf(
                 'RuleOptionSurface declares an entry for rule "%s" (path %s) that no real'
-                . ' ThresholdParser::parse() call site corresponds to — remove the stray entry.',
+                . ' threshold reader call site corresponds to — remove the stray entry.',
                 $ruleName,
                 $path === '' ? '(top level)' : $path,
             ),
@@ -262,7 +263,7 @@ final class RuleThresholdKeyGroupRegistryCompletenessTest extends TestCase
 
     // ------------------------------------------------------------------
     // 4/5. the denominator itself: every rule class is discovered from the
-    //    tree (see discoverRuleClasses()), and no ThresholdParser::parse()
+    //    tree (see discoverRuleClasses()), and no threshold reader
     //    call site anywhere in src/ escapes the files that discovery visits.
     // ------------------------------------------------------------------
 
@@ -274,7 +275,7 @@ final class RuleThresholdKeyGroupRegistryCompletenessTest extends TestCase
      * outside whatever that discovery visits would be invisible to every
      * other assertion in this file without ever failing one. This test asks
      * the opposite question directly, over the whole of `src/`: does any
-     * `ThresholdParser::parse()` call site exist in a file this guard never
+     * `threshold reader` call site exist in a file this guard never
      * looked at?
      */
     #[Test]
@@ -293,7 +294,8 @@ final class RuleThresholdKeyGroupRegistryCompletenessTest extends TestCase
         foreach ($finder as $file) {
             $path = ThresholdRuleDiscovery::realOrPathname($file);
 
-            if (isset($consideredFiles[$path])) {
+            // The pair forwards a band; literal key ownership stays with its options reader.
+            if (isset($consideredFiles[$path]) || $path === ThresholdRuleDiscovery::fileNameOf(ThresholdPair::class)) {
                 continue;
             }
 
@@ -306,7 +308,7 @@ final class RuleThresholdKeyGroupRegistryCompletenessTest extends TestCase
             [],
             $escaped,
             \sprintf(
-                'These file(s) call ThresholdParser::parse() but are not the source file of any options class'
+                'These file(s) call threshold reader but are not the source file of any options class'
                 . ' this guard discovered from a real rule — it cannot see whether their keys match the declaration: %s',
                 implode(', ', $escaped),
             ),
@@ -333,8 +335,9 @@ final class RuleThresholdKeyGroupRegistryCompletenessTest extends TestCase
         $result = [];
 
         foreach (ThresholdRuleDiscovery::ruleNameToOptionsClass() as $ruleName => $optionsClass) {
+            $readerClasses = ThresholdRuleDiscovery::optionsClassesByPath($optionsClass);
             foreach (ThresholdRuleDiscovery::sourceFilesByPath($optionsClass) as $path => $sourceFile) {
-                $groups = self::extractCallSiteGroups($sourceFile);
+                $groups = self::extractCallSiteGroups($sourceFile, $readerClasses[$path]);
                 if ($groups === []) {
                     continue;
                 }
@@ -352,12 +355,12 @@ final class RuleThresholdKeyGroupRegistryCompletenessTest extends TestCase
 
     /**
      * Parses one source file and returns one entry per
-     * `ThresholdParser::parse(...)` call found in it, with its literal key
+     * `ThresholdParser::parse(...)` or `ThresholdPair::fromResolved(...)` call found in it, with its literal key
      * arguments — never derived from the declaration.
      *
      * @return list<array{warning: list<string>, error: list<string>, threshold: list<string>}>
      */
-    private static function extractCallSiteGroups(string $sourceFile): array
+    private static function extractCallSiteGroups(string $sourceFile, ?string $optionsClass = null): array
     {
         $source = file_get_contents($sourceFile);
         if ($source === false) {
@@ -371,14 +374,16 @@ final class RuleThresholdKeyGroupRegistryCompletenessTest extends TestCase
         /** @var list<Node\Expr\StaticCall> $calls */
         $calls = $finder->find($ast, static fn(Node $node): bool => $node instanceof Node\Expr\StaticCall
                 && $node->class instanceof Node\Name
-                && strtolower($node->class->getLast()) === 'thresholdparser'
                 && $node->name instanceof Node\Identifier
-                && $node->name->toString() === 'parse');
+                && ((strtolower($node->class->getLast()) === 'thresholdparser' && $node->name->toString() === 'parse')
+                    || (strtolower($node->class->getLast()) === 'thresholdpair' && $node->name->toString() === 'fromResolved')));
 
         $groups = [];
         foreach ($calls as $call) {
-            $relative = substr($sourceFile, \strlen(ThresholdRuleDiscovery::srcDir()) + 1, -4);
-            $optionsClass = 'Qualimetrix\\' . str_replace('/', '\\', $relative);
+            if ($optionsClass === null) {
+                $relative = substr($sourceFile, \strlen(ThresholdRuleDiscovery::srcDir()) + 1, -4);
+                $optionsClass = 'Qualimetrix\\' . str_replace('/', '\\', $relative);
+            }
             if (!is_a($optionsClass, RuleOptionsInterface::class, true) && !is_a($optionsClass, LevelOptionsInterface::class, true)) {
                 throw new RuntimeException('A threshold reader is outside the declared options population.');
             }

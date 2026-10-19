@@ -39,7 +39,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
  * `$docsPageByRule` is handed in rather than read by this class: a rule's
  * `DOCS_PAGE` constant is only safe to read by reflection on the class-string,
  * never by instantiating (mirrors {@see \Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader}'s
- * reasoning), so {@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\ChannelDeclarationCompilerPass}
+ * reasoning), so {@see \Qualimetrix\Infrastructure\DependencyInjection\ChannelCatalog\ChannelDeclarationCompilerPass}
  * builds the map at the same pass that already walks every tagged rule
  * service for its name, and injects it here as a constructor argument.
  */

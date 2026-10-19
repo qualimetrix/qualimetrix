@@ -130,19 +130,27 @@ An unreadable cursor chooses a random start. Entries older than 30 days are
 removed. A shard over 8 MiB then loses oldest entries until within quota, except
 for its newest entry, which may exceed the quota alone. Hits touch mtime; empty
 shards are removed. Concurrent removal failures are ignored. Core publishes the
-cursor; a failed cursor write is a debug diagnostic.
+cursor; a failed cursor write is a debug diagnostic. Temporary publication
+siblings use Core's single name predicate for writing, sweeping and clearing.
+Old siblings in shards and version metadata are aged out; recent siblings are
+kept during sweeping so active writers retain their names.
 
 Sixteen successful cursor steps cover all 256 shards. Per format the bound is
 2 GiB plus entries written since their shard's last sweep and one oversized newest
-entry per shard. Foreign names and linked shards are not swept. There is no
+entry per shard. Recent temporary siblings are retained until the same 30-day
+age limit and add their bytes beyond that cache-entry target. Foreign names and linked shards are not swept. There is no
 configurable quota.
 
 `clear()` atomically detaches each version directory to `.clearing-<random hex>`.
 It removes only layout names, retains foreign files and reports incomplete clear
-when owned entries remain or the layout cannot be inspected. Foreign-only detached
-residue is successful and its path is retained in the outcome. Root-level unrelated
-files are untouched. Clear affects all projects sharing this user's root; an
-invalid default is not cleared.
+when owned entries remain, the layout cannot be inspected, or a detached
+directory remains. Foreign files are preserved and their retained directory
+prevents a misleading successful clear. Root-level unrelated
+files are untouched. Detached-directory retries enumerate the selected root
+literally, including names containing brackets, stars or question marks.
+`CacheLayout` enumerates retained directories before current versions; the
+clear lifecycle folds both through one path and preserves retained-file refusals.
+Clear affects all projects sharing this user's root; an invalid default is not cleared.
 
 ## Definition of Done
 

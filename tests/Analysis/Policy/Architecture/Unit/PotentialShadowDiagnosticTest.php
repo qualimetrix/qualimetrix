@@ -9,8 +9,8 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchedCriterion;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchedCriterionKind;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterionKind;
 use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\PotentialShadowDiagnostic;
 use Qualimetrix\Analysis\Policy\Architecture\Observation\ShadowedClass;
 

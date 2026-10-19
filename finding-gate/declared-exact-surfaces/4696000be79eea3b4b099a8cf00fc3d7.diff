@@ -1,0 +1,17 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 578
++visible 722
+@@ -12,4 +12,4 @@
+-Rule population incomplete — namespace: 1 judged, 1 not judged.
+-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
+-
+-invocation-format:text-detail 578
++Rule population incomplete — callable: 5 judged, 2 not judged; declaration: 10 judged, 8 not judged; invocation: 0 judged, 3 not judged; namespace: 1 judged, 7 not judged; occurrence: 1 judged, 0 not judged.
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-format:text-detail 722
+@@ -26,1 +26,1 @@
+-Rule population incomplete — namespace: 1 judged, 1 not judged.
++Rule population incomplete — callable: 5 judged, 2 not judged; declaration: 10 judged, 8 not judged; invocation: 0 judged, 3 not judged; namespace: 1 judged, 7 not judged; occurrence: 1 judged, 0 not judged.

@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineFileShape;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineFormatVersion;
 use Qualimetrix\Core\ProductIdentity;
-use Qualimetrix\Infrastructure\Console\Command\Baseline\ChannelRename\BaselineRenameChannelsCommand;
+use Qualimetrix\Infrastructure\Console\Baseline\ChannelRename\BaselineRenameChannelsCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory;
 

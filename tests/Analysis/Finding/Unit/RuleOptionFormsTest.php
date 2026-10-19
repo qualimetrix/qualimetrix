@@ -7,8 +7,8 @@ namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
-use Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule;
+use Qualimetrix\Analysis\Evidence\Complexity\Cyclomatic\ComplexityRule;
+use Qualimetrix\Analysis\Evidence\Coupling\Instability\InstabilityRule;
 use Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassOptions;
 use Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassRule;
 use Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassOptions;
@@ -16,7 +16,7 @@ use Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassRule;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
 use Qualimetrix\Analysis\Finding\Contract\RuleOptionForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
-use Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory;
+use Qualimetrix\Analysis\Policy\Inline\Threshold\RuleValidatorMapFactory;
 
 #[CoversClass(RuleOptionForms::class)]
 #[CoversClass(RuleValidatorMapFactory::class)]

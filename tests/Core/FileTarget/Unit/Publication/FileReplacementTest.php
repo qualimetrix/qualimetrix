@@ -13,8 +13,8 @@ use Qualimetrix\Core\FileTarget\Publication\FileReplacement;
 use Qualimetrix\Core\FileTarget\Publication\HeldLock;
 use Qualimetrix\Core\FileTarget\Publication\HeldTarget;
 use Qualimetrix\Core\FileTarget\Publication\NewName;
-use Qualimetrix\Core\FileTarget\Publication\TemporarySibling;
-use Qualimetrix\Core\FileTarget\TargetPath;
+use Qualimetrix\Core\FileTarget\Resolution\TargetPath;
+use Qualimetrix\Core\FileTarget\TemporarySibling;
 use Qualimetrix\Core\Path\AbsolutePath;
 
 #[CoversClass(FileReplacement::class)]

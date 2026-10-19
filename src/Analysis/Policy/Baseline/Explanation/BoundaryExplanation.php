@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Baseline\Explanation;
 
-use Qualimetrix\Analysis\Policy\Baseline\Entry\InertBaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertBaselineEntry;
 
 /**
  * What `bin/qmx baseline:explain <symbol>` prints, before printing: every

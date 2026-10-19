@@ -40,15 +40,15 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\Console\CheckReport\FindingProjection;
+use Qualimetrix\Infrastructure\Console\CheckReport\Projection\FindingProjection;
 use Qualimetrix\Infrastructure\Console\CheckScope\ResolvedCheckScope;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
+use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionOptions;
+use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeResult;
-use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
-use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
@@ -68,8 +68,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  * reporting (path/namespace exclusion counters).
  */
 #[CoversClass(FindingProjection::class)]
-#[CoversClass(\Qualimetrix\Infrastructure\Console\CheckReport\FindingDiagnostics::class)]
-#[CoversClass(\Qualimetrix\Infrastructure\Console\CheckReport\CheckFindingProjection::class)]
+#[CoversClass(\Qualimetrix\Infrastructure\Console\CheckReport\Projection\FindingDiagnostics::class)]
+#[CoversClass(\Qualimetrix\Infrastructure\Console\CheckReport\Projection\CheckFindingProjection::class)]
 #[CoversClass(\Qualimetrix\Infrastructure\Console\CheckScope\ProjectScopePresenter::class)]
 final class FindingFilterOrchestratorTest extends TestCase
 {
@@ -495,7 +495,7 @@ final class FindingFilterOrchestratorTest extends TestCase
     }
 
     private function filterAndReport(
-        \Qualimetrix\Infrastructure\Console\CheckReport\CheckFindingProjection $orchestrator,
+        \Qualimetrix\Infrastructure\Console\CheckReport\Projection\CheckFindingProjection $orchestrator,
         AnalysisResult $result,
         ArrayInput $input,
         OutputInterface $output,
@@ -524,7 +524,7 @@ final class FindingFilterOrchestratorTest extends TestCase
         );
     }
 
-    private function createOrchestrator(?\Qualimetrix\Infrastructure\Composer\ComposerManifestReader $reader = null, ?\Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap $anchor = null): \Qualimetrix\Infrastructure\Console\CheckReport\CheckFindingProjection
+    private function createOrchestrator(?\Qualimetrix\Infrastructure\Composer\ComposerManifestReader $reader = null, ?\Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap $anchor = null): \Qualimetrix\Infrastructure\Console\CheckReport\Projection\CheckFindingProjection
     {
         $reader ??= new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader();
         $anchor ??= new \Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap($reader);
@@ -547,12 +547,12 @@ final class FindingFilterOrchestratorTest extends TestCase
 
                 return $execution;
             })()),
-            fileScope: \Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelFileScope::create(),
+            fileScope: \Qualimetrix\Infrastructure\DependencyInjection\ChannelCatalog\DeclaredChannelFileScope::create(),
         );
 
-        return new \Qualimetrix\Infrastructure\Console\CheckReport\CheckFindingProjection(
+        return new \Qualimetrix\Infrastructure\Console\CheckReport\Projection\CheckFindingProjection(
             new FindingProjection($pipeline, self::silentSuppressionAudit(), new \Qualimetrix\Infrastructure\Console\BaselineCommand\BaselineProjectionCoverage($reader, new ProjectTree(new EntryInspector()), StubRuleCoverage::everyRuleRan())),
-            new \Qualimetrix\Infrastructure\Console\CheckReport\FindingDiagnostics(new ErrorStream()),
+            new \Qualimetrix\Infrastructure\Console\CheckReport\Projection\FindingDiagnostics(new ErrorStream()),
         );
     }
 

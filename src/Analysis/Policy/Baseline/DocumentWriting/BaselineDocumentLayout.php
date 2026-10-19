@@ -7,7 +7,7 @@ namespace Qualimetrix\Analysis\Policy\Baseline\DocumentWriting;
 use LogicException;
 use Qualimetrix\Analysis\Policy\Baseline\ChannelRename\BaselineChannelRenamer;
 
-use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
 use stdClass;
 
 /**

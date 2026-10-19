@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
-use Qualimetrix\Infrastructure\Console\CheckReport\FormatterContextFactory;
+use Qualimetrix\Infrastructure\Console\CheckReport\FormatBinding\FormatterContextFactory;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\DependencyInjection\ContainerBuilder;

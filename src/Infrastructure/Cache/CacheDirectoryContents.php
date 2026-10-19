@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Cache;
 
+use Qualimetrix\Core\FileTarget\TemporarySibling;
 use Qualimetrix\Core\Path\AbsolutePath;
 
 final readonly class CacheDirectoryContents
@@ -15,12 +16,12 @@ final readonly class CacheDirectoryContents
         $remaining = 0;
         $reason = null;
         $retained = [];
-        $versions = CacheLayout::versions($this->directory->value());
-        if ($versions === null) {
-            return new CacheClearOutcome(false, 0, $this->directory->value(), 'Cannot inspect cache version directories.');
+        $directories = CacheLayout::clearableDirectories($this->directory->value());
+        if ($directories === null) {
+            return new CacheClearOutcome(false, 0, $this->directory->value(), 'Cannot inspect cache directories.');
         }
-        foreach ($versions as $version) {
-            [$count, $failure, $retainedDirectory] = $this->detachAndClear($version);
+        foreach ($directories as $directory) {
+            [$count, $failure, $retainedDirectory] = $this->detachAndClear($directory);
             if ($retainedDirectory !== null) {
                 $retained[] = $retainedDirectory;
             }
@@ -28,12 +29,15 @@ final readonly class CacheDirectoryContents
             $reason ??= $failure;
         }
 
-        return new CacheClearOutcome($remaining === 0 && $reason === null, $remaining, $this->directory->value(), $reason ?? ($retained === [] ? null : 'Retained detached cache directories: ' . implode(', ', $retained)));
+        return new CacheClearOutcome($remaining === 0 && $reason === null && $retained === [], $remaining, $this->directory->value(), $reason ?? ($retained === [] ? null : 'Retained detached cache directories: ' . implode(', ', $retained)));
     }
 
     /** @return array{int, ?string, ?string} */
     private function detachAndClear(string $version): array
     {
+        if (str_starts_with(basename($version), '.clearing-')) {
+            return $this->clearVersion($version);
+        }
         $detached = $this->directory->value() . '/.clearing-' . bin2hex(random_bytes(8));
         if (!@rename($version, $detached)) {
             return [1, 'Cannot detach cache version directory: ' . $version, null];
@@ -102,12 +106,12 @@ final readonly class CacheDirectoryContents
 
     private static function metadataName(string $name): bool
     {
-        return $name === 'CACHEDIR.TAG' || $name === '.sweep' || preg_match('/^(?:CACHEDIR\.TAG|\.sweep)\.tmp\.[0-9a-f]+$/D', $name) === 1;
+        return $name === 'CACHEDIR.TAG' || $name === '.sweep' || TemporarySibling::ownsName($name);
     }
 
     private static function ownedEntryName(string $name): bool
     {
-        return CacheLayout::entryName($name) || preg_match('/^[0-9a-f]{64}\.tmp\.[0-9a-f]+$/D', $name) === 1;
+        return CacheLayout::entryName($name) || TemporarySibling::ownsName($name);
     }
 
     /** @return array{int, ?string} */

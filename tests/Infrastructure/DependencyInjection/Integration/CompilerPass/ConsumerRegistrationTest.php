@@ -111,7 +111,7 @@ final class ConsumerRegistrationTest extends TestCase
     private static function compilerPassFiles(): array
     {
         $filesByClass = [];
-        foreach (['CompilerPass', 'RuleCatalog'] as $root) {
+        foreach (['CompilerPass', 'RuleCatalog', 'Parallel'] as $root) {
             $directory = \dirname(__DIR__, 5) . '/src/Infrastructure/DependencyInjection/' . $root;
             $files = glob($directory . '/*CompilerPass.php');
             self::assertNotFalse($files);

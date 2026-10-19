@@ -201,7 +201,7 @@ final class ReportRecords
     {
         $sources = array_values(array_unique(EquivalenceTuple::load($treeRoot)->sources));
         return match ($sources) {
-            [EquivalenceTuple::source()] => 'current',
+            [EquivalenceTuple::source()], ['src/Reporting/Formatter/FindingRecord.php::of'] => 'current',
             ['src/Reporting/Formatter/Json/JsonFindingSection.php::formatFinding'] => 'legacy',
             default => throw new GateError('The tree has an unsupported finding publisher: ' . implode(', ', $sources)),
         };

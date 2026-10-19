@@ -15,11 +15,11 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\GroupBy;
 use Qualimetrix\Reporting\Formatter\Detail\DebtBreakdownRenderer;
 use Qualimetrix\Reporting\Formatter\Detail\DetailedFindingRenderer;
 use Qualimetrix\Reporting\Formatter\Detail\FindingDetailRenderer;
-use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 

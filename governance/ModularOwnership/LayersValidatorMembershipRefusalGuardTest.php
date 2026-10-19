@@ -76,7 +76,7 @@ final class LayersValidatorMembershipRefusalGuardTest extends TestCase
         );
         self::assertSame(
             3,
-            $this->countInvalidArgumentExceptionThrows($root . '/Matching/CriterionListValidator.php'),
+            $this->countInvalidArgumentExceptionThrows($root . '/CriterionListValidator.php'),
             'CriterionListValidator.php must throw exactly three InvalidArgumentException — the non-string, empty-string and named-type checks.',
         );
     }

@@ -24,6 +24,9 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\GroupBy;
+use Qualimetrix\Reporting\Contract\Report\Report;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
 use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\Formatter\Detail\DetailedFindingRenderer;
@@ -33,10 +36,7 @@ use Qualimetrix\Reporting\Formatter\Summary\HintRenderer;
 use Qualimetrix\Reporting\Formatter\Summary\OffenderListRenderer;
 use Qualimetrix\Reporting\Formatter\Summary\SummaryFormatter;
 use Qualimetrix\Reporting\Formatter\Summary\TopIssuesRenderer;
-use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
-use Qualimetrix\Reporting\Report;
 use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
@@ -71,7 +71,14 @@ final class SummaryFormatterTest extends TestCase
     {
         $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
         $trace->record('fixture.rule', new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel('fixture.channel'), \Qualimetrix\Core\Symbol\SymbolLevel::Project, \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::selector('project:fixture', 'project'), 'published', 'The fixture value is absent.');
-        $report = new \Qualimetrix\Reporting\Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 0, 0, 0, 0, 0, population: $trace->freeze());
+        $report = new \Qualimetrix\Reporting\Contract\Report\Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            findings: [],
+            filesAnalyzed: 0,
+            filesSkipped: 0,
+            duration: 0,
+            population: $trace->freeze(),
+        );
         $compact = $this->formatter->format($report, new FormatterContext(useColor: false))->body;
         self::assertSame(1, substr_count($compact, 'Rule population incomplete'));
         self::assertStringContainsString('project: 0 judged, 1 not judged', $compact);
@@ -88,7 +95,14 @@ final class SummaryFormatterTest extends TestCase
         $low = self::finding(new Location(RelativePath::fromString('src/B.php'), 1), SymbolPath::forClass('Shop', 'B'), 'complexity.ccn', 'complexity.ccn', 'Hidden low impact', Severity::Error);
         $high = self::finding(new Location(RelativePath::fromString('src/Z.php'), 1), SymbolPath::forClass('Shop', 'Z'), 'complexity.ccn', 'complexity.ccn', 'Shown high impact', Severity::Error);
         $ranked = [new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($high, 50, null, 5, 3), new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($low, 10, null, 5, 3)];
-        $report = new \Qualimetrix\Reporting\Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [$warning, $low, $high], 3, 0, 0, 2, 1, topIssues: $ranked);
+        $report = new \Qualimetrix\Reporting\Contract\Report\Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            findings: [$warning, $low, $high],
+            filesAnalyzed: 3,
+            filesSkipped: 0,
+            duration: 0,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(topIssues: $ranked),
+        );
         $output = $this->formatter->format($report, new FormatterContext(useColor: false, detailLimit: 1, topIssuesLimit: 0))->body;
 
         self::assertStringContainsString('Shown high impact', $output);
@@ -114,7 +128,14 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('accepted at 25; not compared: analysis-incomplete', $output);
         self::assertStringNotContainsString('now 31', $output);
         $ranked = new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($finding, 1.0, null, 5, 1);
-        $report = new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [$finding], 1, 0, 0.0, 0, 1, topIssues: [$ranked, $ranked]);
+        $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            findings: [$finding],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 0.0,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(topIssues: [$ranked, $ranked]),
+        );
         $topOutput = $this->formatter->format($report, new FormatterContext(useColor: false, topIssuesLimit: 1))->body;
         self::assertSame(1, substr_count($topOutput, 'accepted at 25; not compared: analysis-incomplete'));
         self::assertStringNotContainsString('now 31', $topOutput);
@@ -1123,13 +1144,11 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 50,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
-            healthScores: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: [
                 'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
                 'complexity' => new HealthScore('complexity', 85.0, 'Excellent', 50.0, 25.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
-            ],
+            ]),
         );
 
         $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'), terminalWidth: 120);
@@ -1180,20 +1199,17 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 50,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
-            healthScores: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: [
                 'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
-            ],
-            worstClasses: [new WorstOffender(
+            ], worstClasses: [new WorstOffender(
                 $subject,
                 42.0,
                 'Poor',
                 'carried reason',
                 new WorstOffenderEvidence(2, 0, ['size.method-count' => 32], ['complexity' => 20.0, 'cohesion' => 15.0]),
                 [50.0, 30.0],
-            )],
+            )]),
         );
 
         $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'), terminalWidth: 120);
@@ -1218,12 +1234,10 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: 50,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
-            healthScores: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: [
                 'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
-            ],
+            ]),
         );
 
         $context = new FormatterContext(useColor: false, namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\NonExistent'), terminalWidth: 120);
@@ -1360,13 +1374,8 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: $report->filesAnalyzed,
             filesSkipped: $report->filesSkipped,
             duration: $report->duration,
-            errorCount: \count(array_filter($selected, static fn(Finding $f): bool => $f->severity === Severity::Error)),
-            warningCount: \count(array_filter($selected, static fn(Finding $f): bool => $f->severity === Severity::Warning)),
-            healthScores: $report->healthScores,
-            worstNamespaces: $report->worstNamespaces,
-            worstClasses: $report->worstClasses,
-            techDebtMinutes: $report->techDebtMinutes,
             outOfScope: OutOfScopeFindings::between($report->findings, $selected),
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: $report->healthScores, worstNamespaces: $report->worstNamespaces, worstClasses: $report->worstClasses, techDebtMinutes: $report->techDebtMinutes),
         );
     }
 
@@ -1402,12 +1411,7 @@ final class SummaryFormatterTest extends TestCase
             filesAnalyzed: $filesAnalyzed,
             filesSkipped: 0,
             duration: $duration,
-            errorCount: $errorCount,
-            warningCount: $warningCount,
-            healthScores: $healthScores,
-            worstNamespaces: $worstNamespaces,
-            worstClasses: $worstClasses,
-            techDebtMinutes: $techDebtMinutes,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: $healthScores, worstNamespaces: $worstNamespaces, worstClasses: $worstClasses, techDebtMinutes: $techDebtMinutes),
         );
     }
 
@@ -1434,14 +1438,29 @@ final class SummaryFormatterTest extends TestCase
                 [\Qualimetrix\Core\Symbol\MetricSubject::aggregate(\Qualimetrix\Core\Symbol\SymbolPath::forProject())],
             ),
         ]);
-        $report = new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 1, 0, 0.0, 0, 0, computedMetricEvaluation: $summary);
+        $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            findings: [],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 0.0,
+            computedMetricEvaluation: $summary,
+        );
         $body = $this->formatter->format($report, new FormatterContext(useColor: false))->body;
         self::assertStringContainsString('Computed metric computed.custom (project): not measured', $body);
         self::assertStringContainsString('missing keys [missing.input] for 2 subject(s)', $body);
         self::assertStringContainsString('no value for 1 subject(s)', $body);
-        $withScores = new \Qualimetrix\Reporting\Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 1, 0, 0.0, 0, 0, healthScores: [
-            'overall' => new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore('overall', 0.0, 'Critical', 50.0, 25.0, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage::notApplicable('composes dimensions')),
-        ], computedMetricEvaluation: $summary);
+        $withScores = new \Qualimetrix\Reporting\Contract\Report\Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            findings: [],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 0.0,
+            computedMetricEvaluation: $summary,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: [
+                'overall' => new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore('overall', 0.0, 'Critical', 50.0, 25.0, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage::notApplicable('composes dimensions')),
+            ]),
+        );
         $alongside = $this->formatter->format($withScores, new FormatterContext(useColor: false))->body;
         self::assertStringContainsString('missing keys [missing.input] for 2 subject(s)', $alongside);
         self::assertStringContainsString('no value for 1 subject(s)', $alongside);

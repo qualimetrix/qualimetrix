@@ -7,7 +7,7 @@ namespace Qualimetrix\Governance\ProjectScopeCoverage;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceRule;
+use Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFramework\UnmatchedFrameworkNamespaceRule;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
@@ -42,9 +42,9 @@ final class ProjectScopeReadersTest extends TestCase
             'src/Analysis/Policy/Architecture/LayerDeclaration/UnmatchedExcludeDiagnostic.php' => [ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME],
             'src/Analysis/Policy/Architecture/ArchitecturePolicy.php' => [],
             'src/Analysis/Policy/Architecture/Contract/UnmatchedTypeWarningInterface.php' => [],
-            'src/Analysis/Policy/Architecture/Layer/ClassContext/KnownTypes.php' => [],
+            'src/Analysis/Policy/Architecture/Layer/KnownTypes.php' => [],
             'src/Analysis/Policy/Architecture/LayerDeclaration/UnmatchedTypeDiagnostic.php' => [ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME],
-            'src/Analysis/Evidence/Coupling/UnmatchedFrameworkNamespaceRule.php' => [UnmatchedFrameworkNamespaceRule::NAME],
+            'src/Analysis/Evidence/Coupling/UnmatchedFramework/UnmatchedFrameworkNamespaceRule.php' => [UnmatchedFrameworkNamespaceRule::NAME],
             'src/Analysis/Evidence/Cohesion/LcomExcludedMethods.php' => ['cohesion.unmatched-exclude-method'],
             'src/Analysis/Run/ExcludeBinding/UnmatchedExcludeAudit.php' => [UnmatchedExcludeOptions::CHANNEL],
             'src/Analysis/Run/RuleProducerPreparation.php' => [],
@@ -58,7 +58,7 @@ final class ProjectScopeReadersTest extends TestCase
             'src/Analysis/Finding/Contract/Rule/AnalysisContext.php' => [],
             'src/Analysis/Run/Contract/Configuration/ProjectScopeMeasurement.php' => [],
             'src/Analysis/Run/Contract/Pipeline/MeasuredRunResult.php' => [],
-            'src/Reporting/ReportProjectScope.php' => [],
+            'src/Reporting/Contract/Report/ReportProjectScope.php' => [],
         ];
     }
 

@@ -8,6 +8,7 @@ use FilesystemIterator;
 use PhpParser\Node\Stmt\Nop;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\AstEntryCodec;
@@ -197,6 +198,26 @@ final class FileCacheTest extends TestCase
     }
 
     #[Test]
+    public function itSweepsAndClearsTheTemporaryNamesCreatedByPublication(): void
+    {
+        $this->cache->set(str_repeat('a', 64), []);
+        $orphan = $this->cacheDir . '/ast-v1/aa/.qmx-0123456789ab';
+        $metadata = $this->cacheDir . '/ast-v1/.qmx-abcdef012345';
+        file_put_contents($orphan, 'orphan');
+        file_put_contents($metadata, 'orphan metadata');
+        touch($orphan, time() - 3_000_000);
+        touch($metadata, time() - 3_000_000);
+        file_put_contents($this->cacheDir . '/ast-v1/.sweep', '170');
+        self::assertSame(2, $this->cache->sweepStep(time(), SweepPolicy::default())->removed);
+        self::assertFileDoesNotExist($orphan);
+        self::assertFileDoesNotExist($metadata);
+        file_put_contents($orphan, 'recent orphan');
+        file_put_contents($metadata, 'recent metadata orphan');
+        self::assertTrue($this->cache->clear()->complete);
+        self::assertSame([], glob($this->cacheDir . '/.clearing-*'));
+    }
+
+    #[Test]
     public function itClearsVersionsAtomicallyWithoutRemovingForeignContents(): void
     {
         $key = str_repeat('c', 64);
@@ -206,7 +227,7 @@ final class FileCacheTest extends TestCase
         file_put_contents($this->cacheDir . '/notes.txt', 'outside');
         file_put_contents($this->cacheDir . '/ast-v1/cc/foreign.txt', 'inside');
         $outcome = $this->cache->clear();
-        self::assertTrue($outcome->complete);
+        self::assertFalse($outcome->complete);
         self::assertSame(0, $outcome->remaining);
         self::assertStringContainsString('.clearing-', $outcome->reason ?? '');
         self::assertFalse($this->cache->has($key));
@@ -215,6 +236,12 @@ final class FileCacheTest extends TestCase
         $foreign = glob($this->cacheDir . '/.clearing-*/cc/foreign.txt');
         self::assertNotFalse($foreign);
         self::assertCount(1, $foreign);
+        $repeated = $this->cache->clear();
+        self::assertFalse($repeated->complete);
+        self::assertStringContainsString('.clearing-', $repeated->reason ?? '');
+        unlink($foreign[0]);
+        self::assertTrue($this->cache->clear()->complete);
+        self::assertSame([], glob($this->cacheDir . '/.clearing-*'));
     }
 
     #[Test]
@@ -238,7 +265,7 @@ final class FileCacheTest extends TestCase
         self::assertSame(0, $result['hookCalls'], 'Foreign names must not be offered for deletion.');
         self::assertFalse($result['entryExists']);
         self::assertTrue($result['foreignExists']);
-        self::assertTrue($result['outcome']['complete'] ?? false);
+        self::assertFalse($result['outcome']['complete'] ?? true);
         self::assertSame(0, $result['outcome']['remaining'] ?? null);
     }
 
@@ -299,6 +326,43 @@ final class FileCacheTest extends TestCase
     public function itPreservesAnEntryAndRemovesTheTemporaryFileAfterAWriteReturnsFalse(): void
     {
         $this->assertFailedReplacementLeavesOriginal('false');
+    }
+
+    #[Test]
+    #[TestWith(['cache[1]'])]
+    #[TestWith(['cache?'])]
+    #[TestWith(['cache*'])]
+    public function itRetriesOnlyDetachedDirectoriesUnderTheLiteralCacheRoot(string $name): void
+    {
+        if (\DIRECTORY_SEPARATOR !== '/') {
+            self::markTestSkipped('Literal wildcard filenames require a POSIX host.');
+        }
+        $directory = $this->cacheDir . '/' . $name;
+        $detached = $directory . '/.clearing-aaaaaaaaaaaaaaaa';
+        $key = str_repeat('a', 64);
+        mkdir($detached . '/aa', 0700, true);
+        file_put_contents($detached . '/aa/' . $key, 'OWN ENTRY');
+        file_put_contents($detached . '/foreign.txt', 'KEEP FOREIGN');
+        $cache = new FileCache(AbsolutePath::fromString($directory));
+
+        $first = $cache->clear();
+        self::assertFalse($first->complete);
+        self::assertFileDoesNotExist($detached . '/aa/' . $key);
+        self::assertSame('KEEP FOREIGN', file_get_contents($detached . '/foreign.txt'));
+
+        $sibling = $this->cacheDir . '/cache1/.clearing-bbbbbbbbbbbbbbbb/aa/' . $key;
+        mkdir(\dirname($sibling), 0700, true);
+        file_put_contents($sibling, 'KEEP SIBLING');
+        $second = $cache->clear();
+        self::assertFileExists($sibling);
+        self::assertSame('KEEP SIBLING', file_get_contents($sibling));
+        self::assertFalse($second->complete);
+        self::assertSame('KEEP FOREIGN', file_get_contents($detached . '/foreign.txt'));
+
+        unlink($detached . '/foreign.txt');
+        self::assertTrue($cache->clear()->complete);
+        self::assertDirectoryDoesNotExist($detached);
+        self::assertSame('KEEP SIBLING', file_get_contents($sibling));
     }
 
     #[Test]

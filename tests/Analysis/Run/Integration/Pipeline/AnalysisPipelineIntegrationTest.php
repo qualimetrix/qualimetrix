@@ -17,8 +17,8 @@ use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyDetector;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore;
-use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
-use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector;
+use Qualimetrix\Analysis\Evidence\Complexity\Cyclomatic\ComplexityRule;
+use Qualimetrix\Analysis\Evidence\Complexity\Cyclomatic\CyclomaticComplexityCollector;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
@@ -58,11 +58,11 @@ use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumen
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
-use Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
-use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
 use Qualimetrix\Analysis\Policy\Inline\Extraction\SourceControlExtractor;
+use Qualimetrix\Analysis\Policy\Inline\Threshold\RuleValidatorMapFactory;
+use Qualimetrix\Analysis\Policy\Inline\Threshold\ThresholdOverrideExtractor;
 use Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator;
 use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
@@ -103,8 +103,8 @@ use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
 use Qualimetrix\Infrastructure\Cache\FileCache;
 use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter;
-use Qualimetrix\Infrastructure\Console\RunSetup\CheckConfigurationResolvers;
-use Qualimetrix\Infrastructure\Console\RunSetup\FindingConfigurationPreparation;
+use Qualimetrix\Infrastructure\Console\RunSetup\Finding\CheckConfigurationResolvers;
+use Qualimetrix\Infrastructure\Console\RunSetup\Finding\FindingConfigurationPreparation;
 use Qualimetrix\Infrastructure\Console\RunSetup\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfiguration;
@@ -238,7 +238,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             FileProcessingResult::failure($paths[2], 'processing error', FileProcessingFailureKind::Processing),
         ];
 
-        $coverage = (new ReflectionMethod(AnalysisPipeline::class, 'buildCoverage'))->invoke(
+        $coverage = (new ReflectionMethod(\Qualimetrix\Analysis\Run\Preparation\RunPreparation::class, 'buildCoverage'))->invoke(
             null,
             $paths,
             [],
@@ -269,7 +269,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $lateFailure = RelativePath::fromString('late.php');
         $survivor = RelativePath::fromString('survivor.php');
 
-        $coverage = (new ReflectionMethod(AnalysisPipeline::class, 'buildCoverage'))->invoke(
+        $coverage = (new ReflectionMethod(\Qualimetrix\Analysis\Run\Preparation\RunPreparation::class, 'buildCoverage'))->invoke(
             null,
             [$collectedFailure, $lateFailure, $survivor],
             [],
@@ -647,7 +647,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
                 $document = LayeredDocument::of([['source' => 'test', 'values' => $values]], $projectRoot, ...$pipelineSections);
             }
             $findingConfiguration = $ruleInputValidator->resolve($document);
-            $runtimeConfigurator->configure($document, new \Qualimetrix\Infrastructure\Console\RunSetup\ResolvedRunConfiguration(self::runConfigurationFor($document), new CacheConfiguration(PathFactory::fromCliArgument('.qmx-cache', $projectRoot), true), new ParallelConfiguration()), $findingConfiguration, $input, new BufferedOutput());
+            $runtimeConfigurator->configure($document, new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\ResolvedRunConfiguration(self::runConfigurationFor($document), new CacheConfiguration(PathFactory::fromCliArgument('.qmx-cache', $projectRoot), true), new ParallelConfiguration()), $findingConfiguration, $input, new BufferedOutput());
             $result = $pipeline->analyze(new RunConfiguration(
                 pathExcludes: [],
                 projectRoot: AbsolutePath::fromString($fixtureRoot),
@@ -1385,7 +1385,7 @@ PHP);
             [],
             [ComplexityRule::class],
         );
-        $parallelStrategy = new AmphpParallelStrategy($fileProcessingTaskFactory, new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()), new \Qualimetrix\Infrastructure\Profiler\ProfileSession(), new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream(), $logger);
+        $parallelStrategy = new AmphpParallelStrategy($fileProcessingTaskFactory, new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()), new \Qualimetrix\Infrastructure\Profiler\ProfileSession(), new \Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream(), $logger);
         $parallelStrategy->setMinFilesForParallel(1);
         $selector = new StrategySelector(
             $parallelStrategy,

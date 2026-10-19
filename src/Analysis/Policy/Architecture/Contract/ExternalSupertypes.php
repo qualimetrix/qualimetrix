@@ -13,6 +13,9 @@ final readonly class ExternalSupertypes
     /**
      * @param list<string> $interfaces
      * @param list<string> $traits
+     *
+      * @qmx-threshold code-smell.long-parameter-list 10 -- Placement, readability and ancestry observations describe one external declaration; splitting them would allow inconsistent ancestry evidence.
+      * @qmx-threshold code-smell.constructor-overinjection 10 -- Placement, readability and ancestry observations describe one external declaration; splitting them would allow inconsistent ancestry evidence.
      */
     public function __construct(
         public bool $placed,

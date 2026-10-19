@@ -18,8 +18,6 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * Example for classCount:
  *   - Collected at: File level
  *   - Aggregations: Namespace→[Sum], Project→[Sum]
- *
- * @qmx-threshold coupling.cbo 38 -- Collectors and aggregators share this provider-owned metric definition; distributing the same aggregation facts transfers its inbound readership.
  */
 final readonly class MetricDefinition
 {

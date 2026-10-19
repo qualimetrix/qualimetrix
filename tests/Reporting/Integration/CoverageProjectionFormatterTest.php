@@ -9,12 +9,12 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
-use Qualimetrix\Reporting\CoverageFailure;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterRegistryInterface;
+use Qualimetrix\Reporting\Coverage\CoverageFailure;
+use Qualimetrix\Reporting\Coverage\ReportCoverage;
 use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
-use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
-use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\ReportBuilder;
-use Qualimetrix\Reporting\ReportCoverage;
 
 final class CoverageProjectionFormatterTest extends TestCase
 {

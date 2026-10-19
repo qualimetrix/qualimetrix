@@ -91,7 +91,11 @@ classes cannot change an enclosing declaration's facts.
 value. `cohesion.tcc-method-count` counts tracked public methods, the
 denominator for the pure-method fraction. TCC and LCC remain absent when fewer
 than two public methods qualify or when no instance property is declared or
-read. Builtin health cohesion uses only available measured contributions.
+read. Builtin health cohesion uses only available measured contributions and keeps
+nonempty one- and two-vertex graphs, independently of the LCOM rule's minimum.
+The pure-method and tracked TCC-method counts also publish namespace/project
+averages for the same health correction at those levels; the academic LCOM4,
+TCC and LCC values are unchanged.
 `LcomMethodPopulation` owns effective-name lifecycle and static/configured
 exclusion and the virtual stateless vertex decision shared by LCOM and its
 graph-method count.
@@ -181,3 +185,7 @@ denominator withhold declaration absence.
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
 
 The primary LCOM population checks the class coordinate, configured readonly exclusion, minimum method count and published LCOM value in that order. A missing graph-eligible method count retains the native zero fallback; missing LCOM values remain unjudged. Secondary configured-method-selector accounting is independent.
+
+Invalid trait method composition carries the exact declaration through
+`TraitCompositionFailure`; Run refuses that source file and publishes the rest
+of the analysis with incomplete coverage.

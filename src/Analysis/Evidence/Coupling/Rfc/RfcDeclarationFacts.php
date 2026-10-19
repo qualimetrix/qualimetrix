@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Coupling\Rfc;
 
 use Qualimetrix\Core\Symbol\DeclarationPath;
-use Qualimetrix\Core\Symbol\TraitDefinitionFacts;
-use Qualimetrix\Core\Symbol\TraitMethodSource;
-use Qualimetrix\Core\Symbol\TraitUseFacts;
+use Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitDefinitionFacts;
+use Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitMethodSource;
+use Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitUseFacts;
 
 /** Decodes one declaration's worker-safe rows for global response resolution. */
 final class RfcDeclarationFacts

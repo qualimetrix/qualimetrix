@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline\DocumentWriting;
 
 use Qualimetrix\Analysis\Policy\Baseline\ChannelRename\BaselineChannelRenamer;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\EntrySelector;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\EntrySelector;
 
 /**
  * Where an entry sorts among its siblings under one subject key.

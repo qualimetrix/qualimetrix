@@ -35,8 +35,14 @@ Run/
 ├── Discovery/                  # ProjectFiles, one walk/inspector and metadata queries
 ├── ExcludeBinding/             # per-walk selector facts and audit publication
 ├── FileSetInspection/          # rule-selected composite
-├── Pipeline/                   # ordered analysis pipeline, plus the prepared
-│                               # run both of its entry points share
+├── Measurement/                # repository creation and completed graph measurement
+│   ├── RunMeasurement.php
+│   └── CompletedMeasurements.php
+├── Preparation/                # discovery, collection retries and the shared measured rule context
+│   ├── RunPreparation.php
+│   └── PreparedRun.php
+├── Pipeline/                   # report and audit entry points over one prepared run
+│   └── AnalysisPipeline.php
 ├── InlineDirectiveRun.php     # authored Inline preparation, usage and ordered verdicts
 └── RuleProducerPreparation.php # capability-specific producer gating and reset
 ```
@@ -383,3 +389,18 @@ input-file, declaration or score coverage.
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+Trait composition failures name the exact affected declaration. Run removes
+that file from the collection input and rebuilds measurement from the remaining
+files; its parse failure keeps coverage incomplete (exit 4). Other files and
+their findings are published. Invalid input pays for recollection; successful
+runs retain one collection pass.
+
+`Measurement/RunMeasurement` starts each attempt's repository and completes
+measurement aggregation before computed-metric evaluation. Its
+`CompletedMeasurements` value carries the namespace tree and evaluation summary.
+`Preparation/RunPreparation` owns discovery, collection retries, graph preparation
+and the first rule execution over one measured context. `PreparedRun` retains
+that observation for both consumers. `Pipeline/AnalysisPipeline` selects normal
+publication or directive audit over the shared preparation. These are concrete
+internal operations, not new lifecycle ports.

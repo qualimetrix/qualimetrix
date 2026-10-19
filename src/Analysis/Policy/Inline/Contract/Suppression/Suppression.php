@@ -45,6 +45,9 @@ final readonly class Suppression
      * @param ?DirectiveRefusal $refusal what the extractor could not carry out here, if anything;
      *                                   a refused directive has no binding, which is what makes it
      *                                   the one case where the symbol form carries none
+     *
+      * @qmx-threshold code-smell.long-parameter-list 9 -- Authored spelling, source position and exact binding or refusal describe one directive; their paired invariants must be validated together.
+      * @qmx-threshold code-smell.constructor-overinjection 9 -- Authored spelling, source position and exact binding or refusal describe one directive; their paired invariants must be validated together.
      */
     public function __construct(
         public string $rule,

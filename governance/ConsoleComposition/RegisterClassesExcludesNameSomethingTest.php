@@ -221,12 +221,10 @@ final class RegisterClassesExcludesNameSomethingTest extends TestCase
     private static function configuratorFiles(): iterable
     {
         $root = \dirname(__DIR__, 2) . '/src/Infrastructure/DependencyInjection';
-        foreach (['Configurator', 'CodeSmell', 'Cohesion', 'Complexity', 'Coupling', 'Design', 'Maintainability', 'Security', 'Size', 'CircularDependency', 'Duplication', 'ComputedMetrics'] as $subject) {
-            yield from new RecursiveIteratorIterator(new RecursiveDirectoryIterator(
-                $root . '/' . $subject,
-                FilesystemIterator::SKIP_DOTS,
-            ));
-        }
+        yield from new RecursiveIteratorIterator(new RecursiveDirectoryIterator(
+            $root,
+            FilesystemIterator::SKIP_DOTS,
+        ));
     }
 
     /**

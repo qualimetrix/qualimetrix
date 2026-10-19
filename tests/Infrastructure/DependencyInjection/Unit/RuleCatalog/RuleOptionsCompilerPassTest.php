@@ -17,8 +17,8 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\EvalRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\ExitRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\GotoRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\SuperglobalsRule;
-use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
-use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
+use Qualimetrix\Analysis\Evidence\Complexity\Cyclomatic\ComplexityOptions;
+use Qualimetrix\Analysis\Evidence\Complexity\Cyclomatic\ComplexityRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceResolverInterface;
 use Qualimetrix\Analysis\Evidence\Security\DirectSinks\CommandInjectionRule;
 use Qualimetrix\Analysis\Evidence\Security\DirectSinks\SecurityPatternOptions;
@@ -129,7 +129,7 @@ final class RuleOptionsCompilerPassTest extends TestCase
         // a subprocess keeps that invalid declaration outside static fixtures.
         $script = <<<'PHP'
 require $argv[1];
-final class WrongOptionsRule extends \Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule {
+final class WrongOptionsRule extends \Qualimetrix\Analysis\Finding\Rule\AbstractRule {
     public const string NAME = 'fixture.wrong-options';
     public static function getOptionsClass(): string { return stdClass::class; }
     public function analyze(\Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext $context): array { return []; }

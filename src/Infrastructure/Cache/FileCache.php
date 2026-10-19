@@ -9,6 +9,7 @@ use PhpParser\Node;
 use Qualimetrix\Core\FileTarget\FileTargetFailure;
 use Qualimetrix\Core\Path\AbsolutePath;
 
+/** @qmx-threshold coupling.instability 0.857144 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies. */
 final class FileCache implements CacheInterface
 {
     private readonly AstEntryCodec $codec;

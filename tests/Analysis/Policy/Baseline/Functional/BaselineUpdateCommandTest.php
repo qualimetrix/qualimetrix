@@ -13,12 +13,12 @@ use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineWriter;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance\BaselineUpdater;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -28,7 +28,7 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\Console\Command\Baseline\Maintenance\BaselineUpdateCommand;
+use Qualimetrix\Infrastructure\Console\Baseline\Maintenance\BaselineUpdateCommand;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubBaselineRun;
@@ -248,7 +248,7 @@ final class BaselineUpdateCommandTest extends TestCase
             StubRuleCoverage::everyRuleRan(),
         );
 
-        $command->setRefusalPresenter(new \Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter(new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream()));
+        $command->setRefusalPresenter(new \Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter(new \Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream()));
         $tester = new CommandTester($command);
         $tester->execute(['baseline' => $this->baselinePath, 'paths' => $runScope, ...$options], ['capture_stderr_separately' => true]);
 
@@ -268,7 +268,7 @@ final class BaselineUpdateCommandTest extends TestCase
                 entries: $entries,
                 exclusions: self::fixtureExclusions(),
             ),
-            \Qualimetrix\Core\FileTarget\TargetPath::resolve($this->baselinePath),
+            \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($this->baselinePath),
             AbsolutePath::fromString($this->tempDir),
         );
     }

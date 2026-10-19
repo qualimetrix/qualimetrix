@@ -14,7 +14,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
 /**
  * @implements Task<bool, mixed, mixed>
  *
- * @qmx-threshold coupling.instability warning=0.800001 -- The bootstrap probe carries the same serialized composition and run settings as a real task for its few worker-pool consumers; splitting the request would transfer those dependencies.
+ * @qmx-threshold coupling.instability 0.800001 -- The bootstrap probe carries the same serialized composition and run settings as a real task for its few worker-pool consumers; splitting the request would transfer those dependencies.
  */
 final readonly class WorkerProbeTask implements Task
 {

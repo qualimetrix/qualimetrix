@@ -7,7 +7,7 @@ namespace Qualimetrix\Analysis\Policy\Baseline\Ceiling;
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntry;
 
 /** The complete measured membership of one baseline identity. */
 final readonly class GroupMeasurement

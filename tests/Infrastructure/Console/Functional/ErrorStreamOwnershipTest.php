@@ -12,7 +12,7 @@ use Qualimetrix\Infrastructure\Console\Profile\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
 use Qualimetrix\Infrastructure\Console\RuntimePolicy\RuntimeLoggerConfigurator;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
 use Qualimetrix\Infrastructure\Profiler\Contract\ProfileReportInterface;

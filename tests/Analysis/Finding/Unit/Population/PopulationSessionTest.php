@@ -32,6 +32,25 @@ use WeakReference;
 final class PopulationSessionTest extends TestCase
 {
     #[Test]
+    public function itPublishesPopulationGroupsBySemanticFieldsRatherThanStorageKeys(): void
+    {
+        $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
+        $identity = PopulationIdentity::selector('member', 'declaration');
+        foreach ([['z', 'z'], ['alpha', 'z'], ['alpha', 'alpha']] as [$producer, $gate]) {
+            $trace->record($producer, new FindingChannel('channel'), SymbolLevel::Class_, $identity, $gate, 'Missing value.');
+        }
+        foreach (['z', 'alpha'] as $producer) {
+            $trace->record($producer, new FindingChannel('channel'), SymbolLevel::Class_, $identity, null, null);
+        }
+        $population = $trace->freeze();
+        self::assertSame([['alpha', 'alpha'], ['alpha', 'z'], ['z', 'z']], array_map(
+            static fn($group): array => [$group->producer, $group->gate],
+            $population->abstentions(),
+        ));
+        self::assertSame(['alpha', 'z'], array_column($population->judgedCounts(), 'producer'));
+    }
+
+    #[Test]
     public function itCountsHealthyMembersWithoutRetainingTheirIdentities(): void
     {
         $population = $this->measured(20, true);

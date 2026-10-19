@@ -23,114 +23,151 @@ Reporting is responsible for formatting analysis results for user output. It sup
 
 **Benefits:** seamless PHPMD replacement in CI/CD, use of existing IDE plugins, integration with existing tools.
 
+The public report snapshot (`Report`, `ReportHealth`, `ReportProjectScope`) is
+owned by `Contract/Report`; Console assembly and every formatter read those
+values. `Contract/Formatting` owns the formatter and registry ports together
+with the rendering context and grouping vocabulary consumed by Console format
+binding. Services stay outside that surface: `ReportBuilder`, formatters,
+registry, health enrichment and finding projection remain implementation.
+Coverage projects collection failures; FindingPublication owns the common
+structured finding record; Publication owns rendered bytes and encoding policy.
+Each output protocol has its own formatter subject.
+
 ## Structure
 
-```
+```text
 Reporting/
-├── Report.php                              # Report aggregate (with health scores, worst offenders, tech debt)
-├── ReportBuilder.php                       # Builder for creating reports
-├── InheritanceDepthCompleteness.php        # Bounded exact-declaration DIT measurement outcomes
-├── ReportCoverage.php                      # Reporting-safe coverage projection
-├── ReportProjectScope.php                  # Covered / narrowed / unknown / unmeasured scope, unjudged values and typed source reasons
-├── Configuration/                          # OutputFormatSection, OutputFormatVocabulary and OutputFormatResolver
-├── CoverageFailure.php                     # One projected parse/processing failure
-├── FormatterContext.php                    # Context passed to formatters (color, grouping, filters, options)
-├── GroupBy.php                             # Grouping mode enum (None, File, Rule, Severity)
-├── GraphProjection/                        # Dependency graph output projection
-│   ├── Contract/
-│   │   ├── DependencyGraphProjectionInterface.php # Console-facing projection port
-│   │   └── GraphProjectionRequest.php      # Immutable DOT/JSON projection request
-│   ├── DependencyGraphProjector.php        # Internal format dispatcher
-│   ├── DotExporter.php                     # Internal DOT projection
-│   ├── DotExporterOptions.php              # Internal DOT options
-│   ├── JsonGraphExporter.php               # Internal JSON projection
-│   └── README.md
-├── Health/                                 # Health output assembly over capability contracts
-│   ├── HealthScoreResolver.php            # Selects project/namespace/class contract values
-│   ├── SummaryEnricher.php                # Assembles Report, debt, and impact
-│   └── HealthHintProjector.php             # Projects Health metadata for HTML
-├── FindingProjection/                      # Ordered user-visible finding projection
-│   ├── Contract/                          # Framework-free Git scope port and request/result
-│   ├── FindingProjectionOptions.php      # Immutable projection controls
-│   ├── FindingProjectionResult.php       # Reported, measured, accepted, and stale facts
-│   ├── FindingNamespaces.php             # One namespace answer for selection, grouping and records
-│   ├── FindingProjector.php              # Authoritative suppression/filtering order
-│   ├── BaselineFindingProjection.php     # One held-document ceiling judgement and late baseline audit
-│   ├── ConfiguredExclusionProjection.php # Ordered path and namespace exclusion operations
-│   ├── GitScopeFindingFilter.php          # Private Git publication predicate; the projector retains query and order
-│   ├── SuppressionMechanism.php           # Closed 7-value vocabulary: 5 FindingFilterStage cases + the 2 per-rule ledger halves
-│   ├── SuppressedFinding.php              # One finding x mechanism x suppressor pairing (multiset unit, not a finding-level fact)
-│   ├── InertSuppressor.php                # A configured suppressor (pattern/rule) that excluded nothing this run
-│   ├── SuppressionComposition.php         # `$all` (multiset) + `$neverMatched`, published by `--format=suppressed`
-│   ├── SuppressionCompositionBuilder.php  # Builds SuppressionComposition for the five global stages; delegates the ledger halves
-│   └── RuleExclusionLedgerAttributor.php  # Publishes each ledger-excluded finding from the RuleExclusionAttribution the ledger recorded; finds inert patterns, including suppress_namespace_channels
+├── Configuration/
+│   ├── OutputFormatResolver.php
+│   ├── OutputFormatSection.php
+│   └── OutputFormatVocabulary.php
+├── Contract/
+│   ├── Formatting/
+│   │   ├── FormatOptionKeysInterface.php
+│   │   ├── FormatterContext.php
+│   │   ├── FormatterInterface.php
+│   │   ├── FormatterRegistryInterface.php
+│   │   └── GroupBy.php
+│   ├── Report/
+│   │   ├── Report.php
+│   │   ├── ReportHealth.php
+│   │   └── ReportProjectScope.php
+│   ├── OutputFormat.php
+│   └── OutputFormatResolverInterface.php
+├── Coverage/
+│   ├── CoverageFailure.php
+│   └── ReportCoverage.php
 ├── DrillDown/
-│   ├── DrillDownBinding.php             # How many analyzed namespaces/classes a `--namespace` / `--class` value selects; zero is refused instead of emptying the report
-│   ├── FindingFilter.php                # What `--namespace` / `--class` selects from findings and offenders — the one copy of that rule
-│   ├── OutOfScopeIdentity.php           # Exact occurrence-preserving outside-scope identity
-│   └── OutOfScopeFindings.php           # Severity counts of the run's findings a selection left out, and the formats with no place to publish them
-└── Formatter/
-    ├── FormatterInterface.php              # Formatter contract
-    ├── FormattedReport.php                 # Published body and repaired-string count
-    ├── PublicationKind.php                 # Prose or native structured document kind
-    ├── FindingRecord.php                   # Twenty fields shared by JSON and HTML
-    ├── FindingPlace.php                    # Fileless namespace or project presentation
-    ├── Ordering/FindingSorter.php          # Severity/impact selection before grouping
-    ├── FormatOptionKeysInterface.php       # Opt-in: the --format-opt keys a formatter reads
-    ├── FormatOptionValue.php               # The value grammar of every --format-opt key, and which keys set one value; the CLI refuses by it, formatters read by it
-    ├── PublishedFinding.php                # Which composition of a finding's texts each surface publishes, and under which key
-    ├── PublishedUtf8.php                   # Repairs invalid UTF-8 from analysed identifiers and paths in structured formats and counts the repair
-    ├── FormatterRegistryInterface.php      # Registry contract
-    ├── FormatterRegistry.php               # Registry implementation
-    ├── TextFormatter.php                   # Compact text output (with colors)
-    ├── CheckstyleFormatter.php             # Checkstyle XML
-    ├── GithubActionsFormatter.php          # GitHub Actions annotation output
-    ├── MetricsJsonFormatter.php            # Raw metrics JSON export
-    ├── AcceptedLevelNarrator.php            # "accepted at 25, now 31" fragment for a breach or not-compared group
-    ├── CoverageNarrator.php                 # Complete/empty/incomplete human coverage summary and bounded failed paths
-    ├── Prose/                              # Prose narration and publication
-    │   ├── ComputedMetricAbsenceNarrator.php # Bounded computed-value absence groups
-    │   ├── RuleAbstentionNarrator.php        # Compact or verbose unjudged rule populations
-    │   ├── ProseText.php                   # Publishes one prose body and its repaired-string count
-    │   ├── GlyphMode.php                   # Unicode or closed-table ASCII publication
-    │   └── AsciiGlyphs.php                 # Product glyph replacements; other Unicode stays intact
-    ├── Ansi/                                # ANSI escape sequences
-    │   └── AnsiColor.php                   # Lightweight ANSI color wrapper
-    ├── Ordering/                            # The order and grouping findings appear in
-    │   └── FindingSorter.php               # Sorts and groups findings per GroupBy
-    ├── Detail/                              # The `--detail` block
-    │   ├── DetailedFindingRenderer.php     # Detailed-output compositor
-    │   ├── FindingDetailRenderer.php       # Sorted/grouped finding details
-    │   └── DebtBreakdownRenderer.php       # Per-rule technical-debt details
-    ├── Summary/
-    │   ├── SummaryFormatter.php           # Default: health overview + worst offenders + hints
-    │   ├── HealthBarRenderer.php          # Renders ANSI health bars for console output
-    │   ├── OffenderListRenderer.php       # Renders worst offender lists for console output
-    │   ├── FindingSummaryRenderer.php   # Renders finding count summary with severity breakdown and tech debt
-    │   ├── HintRenderer.php              # Renders contextual hints at the bottom of summary output
-    │   └── TopIssuesRenderer.php          # Renders "Top issues by impact" section
-    ├── Json/
-    │   ├── JsonFormatter.php              # Summary-oriented JSON (health, worst offenders, findings)
-    │   ├── JsonSanitizer.php              # Sanitizes metric values (NaN/INF → null) for JSON output
-    │   ├── JsonHealthSection.php          # Formats health scores section for JSON output
-    │   ├── JsonOffenderSection.php        # Formats worst offenders sections for JSON output
-    │   └── JsonFindingSection.php       # Formats findings section for JSON output
-    ├── Sarif/
-    │   ├── SarifFormatter.php             # SARIF 2.1.0
-    │   └── SarifRuleCollector.php         # Collects rule metadata for SARIF tool component, joined from ChannelPresentationInterface
-    ├── Health/
-    │   ├── HealthTextFormatter.php         # Text-based health report with scores and decomposition
-    │   └── HealthCoverageNarrator.php      # What share of its subject a health score was computed over: the decomposition line, the one-line form beside a score, the bare share for a table cell, and the coverage record both `--format=json` and the HTML payload publish
-    ├── Html/
-    │   ├── HtmlFormatter.php              # Interactive HTML report with D3 treemap
-    │   ├── HtmlTreeBuilder.php            # Builds namespace tree from MetricRepository
-    │   ├── HtmlTreeNode.php               # Internal VO for tree construction
-    │   ├── HtmlDebtCalculator.php         # Completes own debt and bottom-up totals for HTML trees
-    │   ├── HtmlProjectMetadata.php        # The report's `project` object: analysed project's name, version, docs addresses
-    │   └── HtmlFindingPartitioner.php   # Puts every finding on exactly one tree node (root at the latest)
-    ├── GitLabCodeQualityFormatter.php      # GitLab Code Climate JSON
-    └── Suppressed/
-        └── SuppressedFormatter.php          # Machine-readable suppression composition (`--format=suppressed`)
+│   ├── DrillDownBinding.php
+│   ├── FindingFilter.php
+│   ├── OutOfScopeFindings.php
+│   └── OutOfScopeIdentity.php
+├── FindingProjection/
+│   ├── Configuration/
+│   │   └── ConfiguredFindingExclusionsResolver.php
+│   ├── Contract/
+│   │   ├── ConfiguredFindingExclusions.php
+│   │   ├── ConfiguredFindingExclusionsResolverInterface.php
+│   │   ├── FindingProjectionOptions.php
+│   │   ├── FindingProjectionResult.php
+│   │   ├── GitScopeQueryInterface.php
+│   │   ├── GitScopeRequest.php
+│   │   └── GitScopeResult.php
+│   ├── BaselineFindingProjection.php
+│   ├── ConfiguredExclusionProjection.php
+│   ├── FindingNamespaces.php
+│   ├── FindingProjector.php
+│   ├── GitScopeFindingFilter.php
+│   ├── InertSuppressor.php
+│   ├── RuleExclusionLedgerAttributor.php
+│   ├── SuppressedFinding.php
+│   ├── SuppressionComposition.php
+│   ├── SuppressionCompositionBuilder.php
+│   └── SuppressionMechanism.php
+├── FindingPublication/
+│   ├── FindingPlace.php
+│   ├── FindingRecord.php
+│   └── PublishedFinding.php
+├── FormatOptions/
+│   └── FormatOptionValue.php
+├── Formatter/
+│   ├── Ansi/
+│   │   └── AnsiColor.php
+│   ├── Checkstyle/
+│   │   └── CheckstyleFormatter.php
+│   ├── Detail/
+│   │   ├── DebtBreakdownRenderer.php
+│   │   ├── DetailedFindingRenderer.php
+│   │   └── FindingDetailRenderer.php
+│   ├── GitLab/
+│   │   └── GitLabCodeQualityFormatter.php
+│   ├── GithubActions/
+│   │   └── GithubActionsFormatter.php
+│   ├── Health/
+│   │   ├── HealthCoverageNarrator.php
+│   │   └── HealthTextFormatter.php
+│   ├── Html/
+│   │   ├── HtmlDebtCalculator.php
+│   │   ├── HtmlFindingPartitioner.php
+│   │   ├── HtmlFormatter.php
+│   │   ├── HtmlProjectMetadata.php
+│   │   ├── HtmlTreeBuilder.php
+│   │   └── HtmlTreeNode.php
+│   ├── Json/
+│   │   ├── JsonFindingSection.php
+│   │   ├── JsonFormatter.php
+│   │   ├── JsonHealthSection.php
+│   │   ├── JsonOffenderSection.php
+│   │   └── JsonSanitizer.php
+│   ├── MetricsJson/
+│   │   └── MetricsJsonFormatter.php
+│   ├── Ordering/
+│   │   └── FindingSorter.php
+│   ├── Prose/
+│   │   ├── AsciiGlyphs.php
+│   │   ├── ComputedMetricAbsenceNarrator.php
+│   │   ├── GlyphMode.php
+│   │   ├── ProseText.php
+│   │   └── RuleAbstentionNarrator.php
+│   ├── Sarif/
+│   │   ├── SarifFormatter.php
+│   │   └── SarifRuleCollector.php
+│   ├── Summary/
+│   │   ├── FindingSummaryRenderer.php
+│   │   ├── HealthBarRenderer.php
+│   │   ├── HintRenderer.php
+│   │   ├── OffenderListRenderer.php
+│   │   ├── SummaryFormatter.php
+│   │   └── TopIssuesRenderer.php
+│   ├── Suppressed/
+│   │   └── SuppressedFormatter.php
+│   ├── Text/
+│   │   ├── AcceptedLevelNarrator.php
+│   │   ├── CoverageNarrator.php
+│   │   └── TextFormatter.php
+│   └── FormatterRegistry.php
+├── GraphProjection/
+│   ├── Contract/
+│   │   ├── DependencyGraphProjectionInterface.php
+│   │   ├── GraphDirection.php
+│   │   ├── GraphExportFormat.php
+│   │   └── GraphProjectionRequest.php
+│   ├── DependencyGraphProjector.php
+│   ├── DotExporter.php
+│   ├── DotExporterOptions.php
+│   ├── JsonGraphExporter.php
+│   ├── NamespaceFilter.php
+│   └── NamespaceSelection.php
+├── Health/
+│   ├── HealthHintProjector.php
+│   ├── HealthScoreResolver.php
+│   ├── InheritanceDepthCompleteness.php
+│   └── SummaryEnricher.php
+├── Publication/
+│   ├── FormattedReport.php
+│   ├── PublicationKind.php
+│   └── PublishedUtf8.php
+└── ReportBuilder.php
 ```
 
 ## Contracts
@@ -224,9 +261,9 @@ The CLI retains analysis paths, destination handling and coverage refusal.
 ```php
 namespace Qualimetrix\Reporting\Formatter;
 
-use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\GroupBy;
-use Qualimetrix\Reporting\Report;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\GroupBy;
+use Qualimetrix\Reporting\Contract\Report\Report;
 
 interface FormatterInterface
 {
@@ -402,7 +439,8 @@ partitions once; `SummaryEnricher` preserves that value in both branches. A
 repeated adoption of the same frozen partition is idempotent, while independent
 calls sum their native counts. Synthetic reports default to an empty population.
 
-JSON always publishes `abstentions`, including `[]`. Each group contains
+JSON always publishes `abstentions`, including `[]`. `dataGap` distinguishes
+missing evidence from ordinary population boundaries. Each group contains
 `producer`, `channel`, `level`, `gate`, `reason`, `unit`, `count` and at most five
 sorted distinct canonical `examples`. SARIF communicates nonempty groups through
 an invocation `note` (`QMX-RULE-POPULATION-INCOMPLETE`), GitHub through a
@@ -669,11 +707,12 @@ target. Established no-edge and fully typed fingerprints remain unchanged.
 
 **Name:** `checkstyle`
 
-Checkstyle XML for Jenkins/SonarQube. Ordinary findings require a real
-`location.file`; fileless namespace and project findings are omitted. A
-namespace finding tied to a real source file remains, with line 1 when no line
-is supplied. Incomplete-analysis diagnostics retain their separate `[analysis]`
-file group. JSON and SARIF retain the full finding set. Example:
+Checkstyle XML for Jenkins/SonarQube. Every finding is published. A source location
+retains its file; an unlocated namespace uses the common containing directory
+of its measured declarations, and an unlocated project uses `.`. These directory
+anchors use line 1 and do not claim a source line. Baseline audit findings name
+the baseline document when it is inside the project. Incomplete-analysis
+diagnostics retain their separate `[analysis]` file group. Example:
 
 ```xml
 <checkstyle version="3.0">
@@ -682,8 +721,6 @@ file group. JSON and SARIF retain the full finding set. Example:
   </file>
 </checkstyle>
 ```
-
----
 
 ---
 
@@ -750,10 +787,12 @@ Results will appear in **Security** -> **Code scanning alerts**.
 **Name:** `gitlab`
 
 Code Climate JSON for GitLab MR. Uses fingerprinting for tracking fixes.
-Ordinary findings require a real `location.file`; fileless namespace and
-project findings are omitted because the report schema requires a source path.
-Source-located namespace findings remain, defaulting to line 1. Analysis
-failures keep their real failure paths. JSON and SARIF retain the full set.
+Every finding is published. Source locations retain their files; namespace
+and project aggregates use the same truthful directory anchors as Checkstyle.
+A directory anchor satisfies the string path schema but does not link to a source
+line in the GitLab UI. The description names the namespace where applicable.
+Baseline audit findings use the baseline document path inside the project;
+analysis failures keep their real paths.
 
 ### Severity Mapping
 
@@ -992,8 +1031,8 @@ projection. The rule's remediation estimate is 5 minutes. Audit findings never
 enter the measured set, capture or accept-new; authored path/namespace
 suppression and Git projection cannot hide them. When unselected, stderr reports
 counts only. Uncompared entries likewise produce count diagnostics, not path dumps.
-Six finding formats publish the fileless audit: Text, JSON, SARIF, GitHub, HTML
-and Summary. Checkstyle and GitLab omit it; Metrics, Health and Suppressed retain
+Eight finding formats publish the audit: Text, JSON, SARIF, GitHub, HTML,
+Summary, Checkstyle and GitLab; Metrics, Health and Suppressed retain
 their own subjects. All eleven preserve the ordinary failure policy: an isolated
 audit warning exits 0 by default, with `--fail-on=error` or `none`, and 1 with
 `--fail-on=warning`. Incomplete analysis has priority and exits 4.
@@ -1157,8 +1196,10 @@ formatters keep their own encoders and canonical identities.
 
 `RuleAbstentionNarrator::lines(Report)` and `verboseLines(Report)` are the shared
 Text, Summary and Health routes for incomplete rule populations, including an
-empty findings or health-data report. Normal prose publishes one indication
-with judged and unjudged counts separated by unit. Verbose prose adds the
+empty findings or health-data report. Normal prose indicates only real missing
+evidence, with counts separated by affected unit. Kind/name boundaries,
+configured minimums and flags, and defined metric absence do not trigger it.
+Architecture without configured layers has no population to judge. Verbose prose adds the
 producer, channel, level, first failed gate, reason and bounded examples of
 each group. These are judgement counts, not globally unique symbol counts.
 The formatter context carries console verbosity through copied contexts;
@@ -1172,7 +1213,7 @@ Health snapshot. JSON and summary select candidates from those lists, apply
 the shared score/density comparator, then apply `top`. Namespace selectors
 form a union and the internal class selector preserves every matching exact
 declaration. JSON and summary `--class` require one exact declaration for the
-separate class health heading; duplicate logical names refuse with exit 5.
+separate class health heading; duplicate logical names refuse with exit 3.
 A namespace selection retains all those exact offender records. Class offender
 drill-down reuses captured records without rebuilding or
 intersecting them with a later finding filter.
@@ -1187,3 +1228,7 @@ and `--format-opt=top=<total>`. Namespace class counts are subtree counts,
 published as `size.class-count.sum`; component `healthScores` excludes overall.
 HTML orders its local children by score, name and exact node ID, displays up
 to ten and names the full local available population. See ADR 0110.
+
+Report severity counts are derived from its published findings. Health enrichment is one
+`ReportHealth` value applied with `Report::withHealth()`; enriching a report preserves
+its coverage, population, source diagnostics and suppression evidence.

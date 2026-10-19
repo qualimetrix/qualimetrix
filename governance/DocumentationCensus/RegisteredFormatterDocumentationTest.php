@@ -7,7 +7,7 @@ namespace Qualimetrix\Governance\DocumentationCensus;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
-use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterRegistryInterface;
 
 /**
  * Health-score documentation must only demonstrate format names that the

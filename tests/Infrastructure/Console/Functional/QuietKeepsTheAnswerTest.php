@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Application\Application;
 use Qualimetrix\Infrastructure\Console\Application\ConsoleDiagnostics;
-use Qualimetrix\Infrastructure\Console\Command\Baseline\Explanation\BaselineExplainCommand;
+use Qualimetrix\Infrastructure\Console\Baseline\Explanation\BaselineExplainCommand;
 use Qualimetrix\Infrastructure\Console\Hook\HookStatusCommand;
 use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
 use Qualimetrix\Infrastructure\Console\Terminal\ReportPublication\OutputHelper;

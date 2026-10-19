@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline\DocumentWriting;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertBaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineConflictException;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentWriter;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineFormatVersion;
-use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
 
-use Qualimetrix\Analysis\Policy\Baseline\Entry\InertBaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
 use Qualimetrix\Core\FileTarget\Publication\PreparedTarget;
-use Qualimetrix\Core\FileTarget\ResolvedTarget;
+use Qualimetrix\Core\FileTarget\Resolution\ResolvedTarget;
 use Qualimetrix\Core\FileTarget\TargetKind;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;

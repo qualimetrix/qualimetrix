@@ -18,6 +18,8 @@ use Throwable;
 /**
  * Decides whether a string literal stored under a sensitive name looks like a
  * secret rather than a placeholder, a key or a message.
+ *
+  * @qmx-threshold coupling.instability 0.818183 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
  */
 final readonly class CredentialValue
 {

@@ -8,7 +8,11 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 
-/** Exact named declaration facts and the dependencies declarations state about themselves. */
+/**
+ * Exact named declaration facts and the dependencies declarations state about themselves.
+ *
+ * @qmx-threshold health.cohesion 40.0 -- Independent immutable observations or stateless declaration operations intentionally have no shared instance-field graph; this finite class boundary keeps a further cohesion loss visible.
+ */
 final readonly class DeclarationEvidence
 {
     /**

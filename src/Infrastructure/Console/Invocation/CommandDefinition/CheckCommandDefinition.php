@@ -19,6 +19,8 @@ use Symfony\Component\Console\Input\InputOption;
  *
  * Extracted from CheckCommand::configure() to keep the command class focused
  * on orchestration logic.
+ *
+  * @qmx-threshold coupling.instability 0.800001 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
  */
 final class CheckCommandDefinition
 {

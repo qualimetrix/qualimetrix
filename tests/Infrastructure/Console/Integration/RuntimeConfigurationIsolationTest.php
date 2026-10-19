@@ -22,7 +22,7 @@ use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationStoreInterface;
 use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
-use Qualimetrix\Infrastructure\Console\RunSetup\FindingConfigurationPreparation;
+use Qualimetrix\Infrastructure\Console\RunSetup\Finding\FindingConfigurationPreparation;
 use Qualimetrix\Infrastructure\Console\RunSetup\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Parallel\Configuration\ParallelConfigurationResolver;
@@ -69,7 +69,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
             'parallel.workers' => 0,
         ]);
         $projectRoot = \Qualimetrix\Core\Path\AbsolutePath::fromString($this->temporaryDirectory);
-        $runtimeConfigurator->configure($customDocument, new \Qualimetrix\Infrastructure\Console\RunSetup\ResolvedRunConfiguration($this->runConfigurationFor($customDocument), $this->cacheConfiguration($customDocument, $projectRoot), $this->parallelConfiguration($customDocument)), $ruleInputValidator->resolve($customDocument), new ArrayInput([], $command->getDefinition()), new BufferedOutput());
+        $runtimeConfigurator->configure($customDocument, new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\ResolvedRunConfiguration($this->runConfigurationFor($customDocument), $this->cacheConfiguration($customDocument, $projectRoot), $this->parallelConfiguration($customDocument)), $ruleInputValidator->resolve($customDocument), new ArrayInput([], $command->getDefinition()), new BufferedOutput());
 
         $configuredCache = $this->cacheStore($runtimeConfigurator)->current();
         self::assertNotNull($configuredCache->directory);
@@ -79,7 +79,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
 
         $runtimeConfigurator->resetRunState();
         $defaultDocument = $this->document([]);
-        $runtimeConfigurator->configure($defaultDocument, new \Qualimetrix\Infrastructure\Console\RunSetup\ResolvedRunConfiguration($this->runConfigurationFor($defaultDocument), $this->cacheConfiguration($defaultDocument, $projectRoot), $this->parallelConfiguration($defaultDocument)), $ruleInputValidator->resolve($defaultDocument), new ArrayInput([], $command->getDefinition()), new BufferedOutput());
+        $runtimeConfigurator->configure($defaultDocument, new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\ResolvedRunConfiguration($this->runConfigurationFor($defaultDocument), $this->cacheConfiguration($defaultDocument, $projectRoot), $this->parallelConfiguration($defaultDocument)), $ruleInputValidator->resolve($defaultDocument), new ArrayInput([], $command->getDefinition()), new BufferedOutput());
 
         self::assertEquals($defaultCacheDirectory, $this->cacheStore($runtimeConfigurator)->current()->directory);
         self::assertTrue($this->cacheStore($runtimeConfigurator)->current()->enabled);
@@ -94,7 +94,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         $projectRoot = \Qualimetrix\Core\Path\AbsolutePath::fromString($this->temporaryDirectory);
         try {
             $invalidDocument = $this->document(['parallel.workers' => -1]);
-            $runtimeConfigurator->configure($invalidDocument, new \Qualimetrix\Infrastructure\Console\RunSetup\ResolvedRunConfiguration($this->runConfigurationFor($invalidDocument), $this->cacheConfiguration($invalidDocument, $projectRoot), $this->parallelConfiguration($invalidDocument)), $ruleInputValidator->resolve($invalidDocument), new ArrayInput([], $command->getDefinition()), new BufferedOutput());
+            $runtimeConfigurator->configure($invalidDocument, new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\ResolvedRunConfiguration($this->runConfigurationFor($invalidDocument), $this->cacheConfiguration($invalidDocument, $projectRoot), $this->parallelConfiguration($invalidDocument)), $ruleInputValidator->resolve($invalidDocument), new ArrayInput([], $command->getDefinition()), new BufferedOutput());
             self::fail('Invalid parallel configuration must fail before mutating owner stores.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertSame('parallel.workers must be a non-negative integer.', $refusal->summary());
@@ -111,7 +111,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         self::assertNull($this->parallelStore($runtimeConfigurator)->current()->workers);
 
         $defaultDocument = $this->document([]);
-        $runtimeConfigurator->configure($defaultDocument, new \Qualimetrix\Infrastructure\Console\RunSetup\ResolvedRunConfiguration($this->runConfigurationFor($defaultDocument), $this->cacheConfiguration($defaultDocument, $projectRoot), $this->parallelConfiguration($defaultDocument)), $ruleInputValidator->resolve($defaultDocument), new ArrayInput([], $command->getDefinition()), new BufferedOutput());
+        $runtimeConfigurator->configure($defaultDocument, new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\ResolvedRunConfiguration($this->runConfigurationFor($defaultDocument), $this->cacheConfiguration($defaultDocument, $projectRoot), $this->parallelConfiguration($defaultDocument)), $ruleInputValidator->resolve($defaultDocument), new ArrayInput([], $command->getDefinition()), new BufferedOutput());
 
         self::assertTrue($this->cacheStore($runtimeConfigurator)->current()->enabled);
         self::assertNull($this->parallelStore($runtimeConfigurator)->current()->workers);
@@ -133,7 +133,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         $input = new ArrayInput(['--profile' => true], $command->getDefinition());
 
         try {
-            $runtimeConfigurator->configure($invalidDocument, new \Qualimetrix\Infrastructure\Console\RunSetup\ResolvedRunConfiguration($this->runConfigurationFor($invalidDocument), $this->cacheConfiguration($invalidDocument, $projectRoot), $this->parallelConfiguration($invalidDocument)), $ruleInputValidator->resolve($invalidDocument), $input, new BufferedOutput());
+            $runtimeConfigurator->configure($invalidDocument, new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\ResolvedRunConfiguration($this->runConfigurationFor($invalidDocument), $this->cacheConfiguration($invalidDocument, $projectRoot), $this->parallelConfiguration($invalidDocument)), $ruleInputValidator->resolve($invalidDocument), $input, new BufferedOutput());
             self::fail('Invalid architecture configuration must fail before mutating owner stores or effects.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString('directed cycle', $refusal->getMessage());
@@ -144,7 +144,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
 
         $defaultDocument = $this->document([]);
         $defaultInput = new ArrayInput([], $command->getDefinition());
-        $runtimeConfigurator->configure($defaultDocument, new \Qualimetrix\Infrastructure\Console\RunSetup\ResolvedRunConfiguration($this->runConfigurationFor($defaultDocument), $this->cacheConfiguration($defaultDocument, $projectRoot), $this->parallelConfiguration($defaultDocument)), $ruleInputValidator->resolve($defaultDocument), $defaultInput, new BufferedOutput());
+        $runtimeConfigurator->configure($defaultDocument, new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\ResolvedRunConfiguration($this->runConfigurationFor($defaultDocument), $this->cacheConfiguration($defaultDocument, $projectRoot), $this->parallelConfiguration($defaultDocument)), $ruleInputValidator->resolve($defaultDocument), $defaultInput, new BufferedOutput());
 
         $this->assertDefaultOwnerState($runtimeConfigurator, $execution);
     }
@@ -188,7 +188,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         ]);
         $firstInput = new ArrayInput([], $command->getDefinition());
         $runtimeConfigurator->resetRunState();
-        $runtimeConfigurator->configure($first, new \Qualimetrix\Infrastructure\Console\RunSetup\ResolvedRunConfiguration($this->runConfigurationFor($first), $this->cacheConfiguration($first, $projectRoot), $this->parallelConfiguration($first)), $ruleInputValidator->resolve($first), $firstInput, new BufferedOutput());
+        $runtimeConfigurator->configure($first, new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\ResolvedRunConfiguration($this->runConfigurationFor($first), $this->cacheConfiguration($first, $projectRoot), $this->parallelConfiguration($first)), $ruleInputValidator->resolve($first), $firstInput, new BufferedOutput());
         self::assertContains('computed.first', $this->computedChannels($runtimeConfigurator));
 
         $second = $this->document([
@@ -197,7 +197,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         ]);
         $secondInput = new ArrayInput([], $command->getDefinition());
         $runtimeConfigurator->resetRunState();
-        $runtimeConfigurator->configure($second, new \Qualimetrix\Infrastructure\Console\RunSetup\ResolvedRunConfiguration($this->runConfigurationFor($second), $this->cacheConfiguration($second, $projectRoot), $this->parallelConfiguration($second)), $ruleInputValidator->resolve($second), $secondInput, new BufferedOutput());
+        $runtimeConfigurator->configure($second, new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\ResolvedRunConfiguration($this->runConfigurationFor($second), $this->cacheConfiguration($second, $projectRoot), $this->parallelConfiguration($second)), $ruleInputValidator->resolve($second), $secondInput, new BufferedOutput());
         self::assertContains('computed.second', $this->computedChannels($runtimeConfigurator));
         self::assertNotContains('computed.first', $this->computedChannels($runtimeConfigurator));
 
@@ -208,7 +208,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         $runtimeConfigurator->resetRunState();
         $this->expectException(RuntimeException::class);
         try {
-            $runtimeConfigurator->configure($invalid, new \Qualimetrix\Infrastructure\Console\RunSetup\ResolvedRunConfiguration($this->runConfigurationFor($invalid), $this->cacheConfiguration($invalid, $projectRoot), $this->parallelConfiguration($invalid)), $ruleInputValidator->resolve($invalid), $invalidInput, new BufferedOutput());
+            $runtimeConfigurator->configure($invalid, new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\ResolvedRunConfiguration($this->runConfigurationFor($invalid), $this->cacheConfiguration($invalid, $projectRoot), $this->parallelConfiguration($invalid)), $ruleInputValidator->resolve($invalid), $invalidInput, new BufferedOutput());
         } finally {
             $configuration = $this->ruleConfiguration($runtimeConfigurator);
             self::assertNull($configuration->enablement());

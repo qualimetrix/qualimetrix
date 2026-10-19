@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline\ChannelRename;
 
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertBaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineConflictException;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentWriter;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineFileShape;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineDocumentLayout;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineEntryOrder;
-use Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineWriter;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
 
-use Qualimetrix\Analysis\Policy\Baseline\Entry\InertBaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineWriter;
 use RuntimeException;
 
 /**
@@ -63,7 +63,7 @@ use RuntimeException;
  * What is left for this class alone is the map, and the one collision a carry
  * can create that no other writer would.
  *
- * @qmx-threshold coupling.instability warning=0.800001 error=0.95 -- Channel carry composes the existing loader, writer, layout, and map vocabulary for one command. Extracting a single-reader wrapper would move the same dependencies; the ceiling keeps added dependencies visible.
+ * @qmx-threshold coupling.instability 0.800001 -- Channel carry composes the existing loader, writer, layout, and map vocabulary for one command. Extracting a single-reader wrapper would move the same dependencies; the ceiling keeps added dependencies visible.
  */
 final readonly class BaselineChannelRenamer
 {

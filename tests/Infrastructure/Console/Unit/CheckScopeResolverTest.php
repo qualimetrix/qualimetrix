@@ -27,7 +27,7 @@ use Qualimetrix\Infrastructure\Console\CheckScope\CheckScopeResolver;
 use Qualimetrix\Infrastructure\Console\CheckScope\ResolvedCheckScope;
 use Qualimetrix\Infrastructure\Console\CheckScope\ScopeWarningChecker;
 use Qualimetrix\Infrastructure\Git\GitScopeResolver;
-use Qualimetrix\Reporting\ReportProjectScope;
+use Qualimetrix\Reporting\Contract\Report\ReportProjectScope;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
@@ -197,7 +197,7 @@ final class CheckScopeResolverTest extends TestCase
         ]];
         yield 'narrowed' => [['src', 'lib'], ['src'], false, [
             'state' => 'narrowed',
-            'uncoveredAutoloadTargets' => ['lib/Other.php'],
+            'uncoveredAutoloadTargets' => ['lib'],
             'unjudgedChannels' => self::sortedProjectChannels(),
             'unjudgedValues' => [],
         ]];
@@ -263,9 +263,9 @@ final class CheckScopeResolverTest extends TestCase
         return new CheckScopeResolver(
             new GitScopeResolver(),
             new ScopeWarningChecker(),
-            new \Qualimetrix\Infrastructure\Console\RunSetup\AnalysisInputPathValidator(),
+            new \Qualimetrix\Infrastructure\Console\RunSetup\Input\AnalysisInputPathValidator(),
             new \Qualimetrix\Infrastructure\Console\CheckScope\FindingProjectionOptionsResolver(new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader()),
-            new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream(),
+            new \Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream(),
         );
     }
 

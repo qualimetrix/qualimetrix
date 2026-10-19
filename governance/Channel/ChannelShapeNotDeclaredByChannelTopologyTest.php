@@ -46,7 +46,7 @@ use RecursiveIteratorIterator;
  *
  * **The two exemptions the plan names are structurally out of scope, not
  * allow-listed.** {@see \Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel::shape()}
- * and {@see \Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry::shape()}
+ * and {@see \Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntry::shape()}
  * derive a {@see ChannelShape} from their own stored data — neither method
  * calls `ChannelDeclaration::magnitude()` or `::occurrence()`, so this guard
  * never inspects them; excluding them by name would make the guard trust a

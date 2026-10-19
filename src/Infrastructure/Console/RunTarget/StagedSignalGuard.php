@@ -105,6 +105,7 @@ final class StagedSignalGuard
     {
         $currentPid = getmypid();
         if ($currentPid === false) {
+            // @qmx-ignore-next-line code-smell.exit -- Without a process identity the signal handler cannot claim parent cleanup; terminate with the received signal status.
             exit(128 + $signal);
         }
         if ($this->ownerPid !== $currentPid) {
@@ -112,6 +113,7 @@ final class StagedSignalGuard
             if (\function_exists('posix_kill')) {
                 posix_kill($currentPid, $signal);
             }
+            // @qmx-ignore-next-line code-smell.exit -- An inherited child handler must terminate that child with its signal status after restoring the native handler, without unwinding the parent output owner.
             exit(128 + $signal);
         }
         $this->interrupted ??= $signal;

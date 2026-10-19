@@ -195,6 +195,15 @@ three tags reading the same way.
 !!! note "Validation happens after configuration resolves"
     The channel universe used for validation is built from the run's own resolved configuration, including the computed-metric family (`health.*` and any `computed.*` metrics the project defines). So `@qmx-ignore health.cohesion` resolves exactly like a statically declared channel. Two consequences follow: removing a computed metric from configuration turns every annotation that referenced it into an `annotation.unresolved-directive` error, the same as a typo; and `@qmx-threshold` on a **disabled** rule is valid and silent — enabledness is an execution filter, not a fact about whether the rule's name exists.
 
+### Class health boundaries
+
+The six built-in health rules accept a class docblock boundary, for example
+`@qmx-threshold health.cohesion 40`. Write one number, or equal `warning` and
+`error` values; partial or unequal pairs are refused. The boundary applies only
+to that exact class declaration and follows the configured metric direction.
+Namespace and project thresholds remain in `computed_metrics`. The open
+`computed` producer does not support inline thresholds.
+
 ### Auditing what a directive still does
 
 The channels above answer whether a directive is *addressable* — whether it names something, and whether a suppression silenced anything. Neither of them answers what a `@qmx-threshold` is doing, because nothing a rule publishes says which boundary it decided with.

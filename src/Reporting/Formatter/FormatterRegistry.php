@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter;
 
 use InvalidArgumentException;
+use Qualimetrix\Reporting\Contract\Formatting\FormatOptionKeysInterface;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterInterface;
+
+use Qualimetrix\Reporting\Contract\Formatting\FormatterRegistryInterface;
 
 final class FormatterRegistry implements FormatterRegistryInterface
 {

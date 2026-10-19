@@ -257,7 +257,7 @@ final class ApplicationRefusalTest extends TestCase
             require '{$repoRoot}/vendor/autoload.php';
 
             use Qualimetrix\\Infrastructure\\Console\\Application\\Application;
-            use Qualimetrix\\Infrastructure\\Console\\Terminal\\ErrorStream;
+            use Qualimetrix\\Infrastructure\\Console\\Terminal\\Diagnostics\\ErrorStream;
             use Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter;
             use Symfony\\Component\\Console\\Command\\Command;
             use Symfony\\Component\\Console\\Input\\InputInterface;

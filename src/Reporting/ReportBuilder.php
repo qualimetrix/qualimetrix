@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting;
 
 use InvalidArgumentException;
-
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary;
+
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
+
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
-use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Reporting\Contract\Report\Report;
+use Qualimetrix\Reporting\Contract\Report\ReportProjectScope;
+use Qualimetrix\Reporting\Coverage\ReportCoverage;
 use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
 
@@ -217,29 +221,13 @@ final class ReportBuilder
      */
     public function build(): Report
     {
-        $errorCount = 0;
-        $warningCount = 0;
-        $infoCount = 0;
-
-        foreach ($this->findings as $finding) {
-            match ($finding->severity) {
-                Severity::Error => $errorCount++,
-                Severity::Warning => $warningCount++,
-                Severity::Info => $infoCount++,
-            };
-        }
-
         return new Report(
             fileNamespaces: $this->fileNamespaces ?? \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($this->metrics),
             findings: $this->findings,
             filesAnalyzed: $this->filesAnalyzed,
             filesSkipped: $this->filesSkipped,
             duration: $this->duration,
-            errorCount: $errorCount,
-            warningCount: $warningCount,
             metrics: $this->metrics,
-            namespaceTree: $this->namespaceTree,
-            infoCount: $infoCount,
             coverage: $this->coverage,
             suppressionComposition: $this->suppressionComposition,
             outOfScope: $this->outOfScope,
@@ -247,6 +235,7 @@ final class ReportBuilder
             configurationDiagnostics: $this->configurationDiagnostics,
             computedMetricEvaluation: $this->computedMetricEvaluation ?? new ComputedMetricEvaluationSummary(),
             population: $this->population ?? JudgedPopulation::empty(),
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(namespaceTree: $this->namespaceTree),
         );
     }
 }

@@ -908,8 +908,8 @@ final class EarnedTop
                 : [10.0, 10.0];
         }
         return match ($key) {
-            'size.symbol-method-count', 'size.method-count', 'cohesion.tcc-method-count' => [10.0, 10.0],
-            'cohesion.pure-method-count' => [0.0, 0.0],
+            'size.symbol-method-count', 'size.method-count', 'cohesion.tcc-method-count', 'cohesion.tcc-method-count.avg' => [10.0, 10.0],
+            'cohesion.pure-method-count', 'cohesion.pure-method-count.avg' => [0.0, 0.0],
             'complexity.ccn.avg' => [1.0, 3.0],
             'complexity.cognitive.avg' => [0.0, 2.0],
             'complexity.ccn.sum' => [10.0, 30.0],

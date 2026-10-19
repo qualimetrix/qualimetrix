@@ -24,6 +24,9 @@ final readonly class ClassWalkEvidence
      *                                              assigned while a layer bearing on the assignment went unanswered.
      * @param array<string, string> $excludedNames Canonical excluded symbol => display FQN.
      * @param array<string, array<string, array<string, ShadowedClass>>> $precedenceEvidence Later layer => earlier layer => canonical class => firing pair.
+     *
+      * @qmx-threshold code-smell.long-parameter-list 10 -- One class-universe walk produces assignment, uncertainty and precedence evidence together; splitting the result would lose that shared observation boundary.
+      * @qmx-threshold code-smell.constructor-overinjection 10 -- One class-universe walk produces assignment, uncertainty and precedence evidence together; splitting the result would lose that shared observation boundary.
      */
     public function __construct(
         public array $assignedHits,

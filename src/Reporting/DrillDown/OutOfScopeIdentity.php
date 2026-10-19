@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\DrillDown;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Reporting\Formatter\PublishedFinding;
+use Qualimetrix\Reporting\FindingPublication\PublishedFinding;
 
 /** The exact finding identity omitted by a report selection. */
 final readonly class OutOfScopeIdentity

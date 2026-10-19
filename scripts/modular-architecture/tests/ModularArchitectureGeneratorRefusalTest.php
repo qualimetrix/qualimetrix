@@ -37,13 +37,13 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
     public function itRejectsCompositionBindingsWhenOnlyIdentityEvidenceRemains(): void
     {
         $cases = [
-            ['OutputConfigurator.php', 'register(BaselineCleanupCommand::class)', "register('unrelated.service')"],
+            ['BaselineCommandsConfigurator.php', 'register(BaselineCleanupCommand::class)', "register('unrelated.service')"],
             ['FindingConfigurator.php', 'register(RulesSection::class . \'.\' . $root, RulesSection::class)', 'register(RulesSection::class . \'.\' . $root, \'unrelated.service\')'],
             ['FindingConfigurator.php', 'register(RulesSection::class . \'.\' . $root, RulesSection::class)', "register(RulesSection::class, 'unrelated.service')"],
             ['AnalysisConfigurator.php', 'new Reference(DelegatingLogger::class)', "new Reference('unrelated.service')"],
-            ['OutputConfigurator.php', 'setAlias(BaselineRunInterface::class, BaselineRun::class)', 'setUnrelatedAlias(BaselineRunInterface::class, BaselineRun::class)'],
-            ['OutputConfigurator.php', '$container->register(BaselineCleanupCommand::class)', '$unrelated->register(BaselineCleanupCommand::class)'],
-            ['OutputConfigurator.php', '$container->setAlias(BaselineRunInterface::class, BaselineRun::class)', '$unrelated->setAlias(BaselineRunInterface::class, BaselineRun::class)'],
+            ['BaselineCommandsConfigurator.php', 'setAlias(BaselineRunInterface::class, BaselineRun::class)', 'setUnrelatedAlias(BaselineRunInterface::class, BaselineRun::class)'],
+            ['BaselineCommandsConfigurator.php', '$container->register(BaselineCleanupCommand::class)', '$unrelated->register(BaselineCleanupCommand::class)'],
+            ['BaselineCommandsConfigurator.php', '$container->setAlias(BaselineRunInterface::class, BaselineRun::class)', '$unrelated->setAlias(BaselineRunInterface::class, BaselineRun::class)'],
             ['ChannelDeclarationCompilerPass.php', '->setArgument(', '->setUnrelatedArgument('],
             ['RuleOptionsCompilerPass.php', 'new Reference($serviceId)', "new Reference('unrelated.service')"],
         ];
@@ -78,6 +78,36 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 @unlink($overridePath);
                 @unlink($mappingPath);
             }
+        }
+    }
+
+    #[Test]
+    public function itRejectsATraitBodyReferenceAsADeclaredContractReturn(): void
+    {
+        $path = $this->root() . '/src/Analysis/Finding/Rule/RulePopulationDeclarations.php';
+        $source = file_get_contents($path);
+        self::assertIsString($source);
+        self::assertStringContainsString('): NameMatches', $source);
+        $overridePath = tempnam(sys_get_temp_dir(), 'qmx-trait-surface-');
+        $mappingPath = tempnam(sys_get_temp_dir(), 'qmx-trait-surface-map-');
+        self::assertIsString($overridePath);
+        self::assertIsString($mappingPath);
+        try {
+            file_put_contents($overridePath, str_replace('): NameMatches', '): GatePredicate', $source));
+            file_put_contents($mappingPath, json_encode([
+                $this->relativePath($path) => $overridePath,
+            ], \JSON_THROW_ON_ERROR));
+            [$exitCode, $output] = $this->runProcess([
+                \PHP_BINARY,
+                $this->root() . '/scripts/generate-modular-architecture-production-inventory.php',
+                '--check',
+                '--source-overrides=' . $mappingPath,
+            ]);
+            self::assertNotSame(0, $exitCode, $output);
+            self::assertStringContainsString('carrier lacks exact declared target containment', $output);
+        } finally {
+            @unlink($overridePath);
+            @unlink($mappingPath);
         }
     }
 
@@ -380,8 +410,13 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
 
     private function sourcePath(string $filename): string
     {
-        $paths = glob($this->root() . '/src/Infrastructure/DependencyInjection/{Configurator,CompilerPass,RuleCatalog}/' . $filename, \GLOB_BRACE);
-        self::assertIsArray($paths);
+        $paths = [];
+        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($this->root() . '/src/Infrastructure/DependencyInjection'));
+        foreach ($iterator as $file) {
+            if ($file instanceof SplFileInfo && $file->isFile() && $file->getFilename() === $filename) {
+                $paths[] = $file->getPathname();
+            }
+        }
         self::assertCount(1, $paths, $filename);
 
         return $paths[0];

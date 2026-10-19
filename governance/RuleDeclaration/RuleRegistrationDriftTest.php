@@ -27,14 +27,9 @@ use SplFileInfo;
  * hand-written list — so a rule that never enters the registry moves none of
  * them and ships documented, manifested, layered and inert.
  *
- * That gap was theoretical while every capability globbed `**\/*Rule.php`. It
- * stopped being theoretical when `DesignConfigurator` began naming its rules
- * one by one, which it does because the order channels enter the universe is
- * published (see the fixture `governance/Channel/Fixtures/order.txt`) and a glob would
- * have the file system decide it. The explicit list buys a decided order and
- * costs the automatic net; this test is the net, and it is written over every
- * capability rather than over Design alone, because the next configurator to
- * need a decided order should not have to remember to extend it.
+ * Explicit rule lists can omit a new declaration even when the registry's
+ * consumers agree. The filesystem remains an independent witness for every
+ * capability, including those registered with globs today.
  */
 #[CoversClass(RuleRegistryInterface::class)]
 final class RuleRegistrationDriftTest extends TestCase

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter\Prose;
 
 use Qualimetrix\Core\SourceText\SourceBytes;
-use Qualimetrix\Reporting\Formatter\FormattedReport;
+use Qualimetrix\Reporting\Publication\FormattedReport;
 
 /** A prose body is one published string, unlike a structured document's fields. */
 final class ProseText

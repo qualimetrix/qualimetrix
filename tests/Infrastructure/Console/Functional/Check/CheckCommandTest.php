@@ -10,8 +10,8 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Infrastructure\Console\Baseline\Generation\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
-use Qualimetrix\Infrastructure\Console\Command\Baseline\Generation\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use RuntimeException;
 use Symfony\Component\Console\Application;
@@ -65,6 +65,47 @@ final class CheckCommandTest extends TestCase
         if (is_dir($this->tempDir)) {
             $this->removeDirectory($this->tempDir);
         }
+    }
+
+    #[Test]
+    public function itRefusesOnlyTheFileWithConflictingTraitComposition(): void
+    {
+        file_put_contents($this->tempDir . '/Broken.php', '<?php trait First { public function shared() {} } trait Second { public function shared() {} } class Broken { use First, Second; }');
+        file_put_contents($this->tempDir . '/Valid.php', '<?php class Valid { public function valid() { goto done; done: return; } }');
+        $tester = $this->createCommandTester();
+        $tester->execute(['paths' => [$this->tempDir], '--format' => 'json', '--no-cache' => true, '--workers' => '0', '--only-rule' => ['code-smell.goto']]);
+        self::assertSame(4, $tester->getStatusCode(), $tester->getDisplay());
+        $report = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(1, $report['summary']['filesAnalyzed']);
+        self::assertStringContainsString('Broken.php', $tester->getDisplay());
+        self::assertStringContainsString('Broken', $tester->getDisplay());
+        self::assertStringContainsString('Conflicting trait methods', $tester->getDisplay());
+        self::assertStringContainsString('code-smell.goto', $tester->getDisplay());
+        self::assertStringNotContainsString('Configuration error', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itRefusesAnAmbiguousClassSelectionWithBothDeclarations(): void
+    {
+        file_put_contents($this->tempDir . '/First.php', '<?php class Repeated {}');
+        file_put_contents($this->tempDir . '/Second.php', '<?php class Repeated {}');
+        foreach (['json', 'summary'] as $format) {
+            $tester = $this->createCommandTester();
+            $tester->execute(['paths' => [$this->tempDir], '--format' => $format, '--no-cache' => true, '--workers' => '0', '--class' => 'Repeated']);
+            self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
+            self::assertStringContainsString('First.php', $tester->getDisplay());
+            self::assertStringContainsString('Second.php', $tester->getDisplay());
+            self::assertStringNotContainsString('Internal error', $tester->getDisplay());
+        }
+    }
+
+    #[Test]
+    public function itKeepsPopulationBoundariesAndUnconfiguredArchitectureOutOfTheIncompleteWarning(): void
+    {
+        file_put_contents($this->tempDir . '/Simple.php', '<?php interface Contract {} class Simple { public function method(): void {} }');
+        $tester = $this->createCommandTester();
+        $tester->execute(['paths' => [$this->tempDir], '--format' => 'summary', '--no-cache' => true, '--workers' => '0']);
+        self::assertStringNotContainsString('Rule population incomplete', $tester->getDisplay());
     }
 
     #[Test]

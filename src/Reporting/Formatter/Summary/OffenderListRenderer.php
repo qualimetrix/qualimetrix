@@ -7,16 +7,16 @@ namespace Qualimetrix\Reporting\Formatter\Summary;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\OffenderNamespaceSelection;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Report\Report;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
+use Qualimetrix\Reporting\FormatOptions\FormatOptionValue;
 use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
-use Qualimetrix\Reporting\Formatter\FormatOptionValue;
-use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\Report;
 
 /**
  * Renders the worst namespaces and worst classes sections for the summary formatter.
  *
- * @qmx-threshold coupling.instability warning=0.800001 -- Offender presentation composes selection, ranking, styling and report contracts through few consumers; extracting those steps transfers the same outward dependencies.
+ * @qmx-threshold coupling.instability 0.800001 -- Offender presentation composes selection, ranking, styling and report contracts through few consumers; extracting those steps transfers the same outward dependencies.
  */
 final class OffenderListRenderer
 {

@@ -6,14 +6,14 @@ namespace Qualimetrix\Analysis\Policy\Baseline\DocumentAccess;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineFileShape;
-use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineFormatVersion;
 
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineFormatVersion;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\CanonicalBaselineReader;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
 use Qualimetrix\Core\FileTarget\FileIdentity;
 use Qualimetrix\Core\FileTarget\NativeCall;
-use Qualimetrix\Core\FileTarget\TargetPath;
+use Qualimetrix\Core\FileTarget\Resolution\TargetPath;
 
 /** Reads and judges one held baseline document before analysis starts. */
 final readonly class BaselineDocumentReader
@@ -41,7 +41,7 @@ final readonly class BaselineDocumentReader
         );
     }
 
-    private function readHeld(string $path, \Qualimetrix\Core\FileTarget\ResolvedTarget $target): string
+    private function readHeld(string $path, \Qualimetrix\Core\FileTarget\Resolution\ResolvedTarget $target): string
     {
         $resolvedPath = $target->path?->value();
         if ($resolvedPath === null || $target->identity === null) {

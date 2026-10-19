@@ -174,7 +174,7 @@ jobs:
 <!-- llms:skip-begin -->
 ## 3. Docker
 
-The image caches ASTs below `/cache`. Mount a persistent volume there, separate for each uid, to retain them across runs. The old checkout `.qmx-cache` is not read; `--clear-cache` affects all projects sharing this user cache. Automatic process-worker selection can warn and fall back to sequential after a failed ten-second first-start probe.
+The image caches ASTs below `/cache`. Mount a persistent volume there, separate for each uid, to retain them across runs. The old checkout `.qmx-cache` is not read; `--clear-cache` affects all projects sharing this user cache. Automatic process-worker selection can warn and fall back to sequential after a failed ten-second first-start probe. The image includes pcntl: `docker stop` interrupts PID 1 with SIGTERM and releases temporary report files and worker startup logs, including runs reporting to stdout.
 
 Run analysis in a container without installing PHP locally.
 

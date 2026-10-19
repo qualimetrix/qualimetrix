@@ -13,7 +13,7 @@ use Qualimetrix\Infrastructure\Console\CheckScope\CheckScopeResolver;
 use Qualimetrix\Infrastructure\Console\Invocation\CommandDefinition\FilteredInputDefinition;
 use Qualimetrix\Infrastructure\Console\Invocation\CommandLineSpelling;
 use Qualimetrix\Infrastructure\Console\Invocation\Configuration\ConfigurationInputAdapter;
-use Qualimetrix\Infrastructure\Console\RunSetup\CheckConfigurationResolvers;
+use Qualimetrix\Infrastructure\Console\RunSetup\Finding\CheckConfigurationResolvers;
 use Qualimetrix\Infrastructure\Console\RunSetup\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -27,6 +27,10 @@ use Symfony\Component\Console\Output\OutputInterface;
     name: 'check',
     description: 'Check PHP code for complexity and structural issues',
 )]
+/**
+ * @qmx-threshold coupling.instability 0.923078 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
+ * @qmx-threshold health.cohesion 40.0 -- Independent immutable observations or stateless declaration operations intentionally have no shared instance-field graph; this finite class boundary keeps a further cohesion loss visible.
+ */
 final class CheckCommand extends Command
 {
     /** @var list<string> Rule-specific option names hidden from --help */
@@ -36,7 +40,7 @@ final class CheckCommand extends Command
         private readonly AnalysisPipelineInterface $analyzer,
         private readonly RuntimeConfigurator $runtimeConfigurator,
         private readonly \Qualimetrix\Infrastructure\Console\CheckReport\CheckReportDelivery $reportDelivery,
-        private readonly \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream $errorStream,
+        private readonly \Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream $errorStream,
         private readonly \Qualimetrix\Infrastructure\Console\CacheLifecycle\CacheRunLifecycle $cacheLifecycle,
         private readonly \Qualimetrix\Infrastructure\Console\Invocation\CommandDefinition\CheckCommandDefinition $commandDefinition,
         private readonly CheckScopeResolver $checkScopeResolver,

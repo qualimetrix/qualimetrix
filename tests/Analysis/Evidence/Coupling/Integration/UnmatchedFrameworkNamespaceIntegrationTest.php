@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceRule;
+use Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFramework\UnmatchedFrameworkNamespaceRule;
 use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Tester\CommandTester;

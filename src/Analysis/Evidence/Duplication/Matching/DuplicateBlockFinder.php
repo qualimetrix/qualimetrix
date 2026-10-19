@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Duplication\Matching;
 
+use Qualimetrix\Analysis\Evidence\Duplication\DataDeclarationTagger;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector;
 use Qualimetrix\Analysis\Evidence\Duplication\Index\HashIndexBuildResult;
 use Qualimetrix\Analysis\Evidence\Duplication\Index\PackedPosition;
-use Qualimetrix\Analysis\Evidence\Duplication\Normalization\DataDeclarationTagger;
-use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenStream;
+use Qualimetrix\Analysis\Evidence\Duplication\TokenStream;
 use Qualimetrix\Core\Path\RelativePath;
 
 /**

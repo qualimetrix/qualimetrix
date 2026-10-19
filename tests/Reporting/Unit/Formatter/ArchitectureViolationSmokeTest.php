@@ -26,11 +26,13 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationVa
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Report\Report;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
-use Qualimetrix\Reporting\Formatter\CheckstyleFormatter;
+use Qualimetrix\Reporting\Formatter\Checkstyle\CheckstyleFormatter;
 use Qualimetrix\Reporting\Formatter\Detail\DetailedFindingRenderer;
-use Qualimetrix\Reporting\Formatter\GithubActionsFormatter;
-use Qualimetrix\Reporting\Formatter\GitLabCodeQualityFormatter;
+use Qualimetrix\Reporting\Formatter\GithubActions\GithubActionsFormatter;
+use Qualimetrix\Reporting\Formatter\GitLab\GitLabCodeQualityFormatter;
 use Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter;
 use Qualimetrix\Reporting\Formatter\Html\HtmlFormatter;
 use Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder;
@@ -39,7 +41,7 @@ use Qualimetrix\Reporting\Formatter\Json\JsonFormatter;
 use Qualimetrix\Reporting\Formatter\Json\JsonHealthSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonOffenderSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonSanitizer;
-use Qualimetrix\Reporting\Formatter\MetricsJsonFormatter;
+use Qualimetrix\Reporting\Formatter\MetricsJson\MetricsJsonFormatter;
 use Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter;
 use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
 use Qualimetrix\Reporting\Formatter\Summary\FindingSummaryRenderer;
@@ -48,11 +50,9 @@ use Qualimetrix\Reporting\Formatter\Summary\HintRenderer;
 use Qualimetrix\Reporting\Formatter\Summary\OffenderListRenderer;
 use Qualimetrix\Reporting\Formatter\Summary\SummaryFormatter;
 use Qualimetrix\Reporting\Formatter\Summary\TopIssuesRenderer;
-use Qualimetrix\Reporting\Formatter\TextFormatter;
-use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\Formatter\Text\TextFormatter;
 use Qualimetrix\Reporting\Health\HealthHintProjector;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
-use Qualimetrix\Reporting\Report;
 use Qualimetrix\Reporting\ReportBuilder;
 use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
@@ -194,7 +194,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
                 new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues())),
                 self::createStub(ComputedMetricDefinitionCatalogInterface::class),
                 new \Qualimetrix\Reporting\Formatter\Html\HtmlProjectMetadata(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()),
-                new \Qualimetrix\Reporting\Formatter\FindingRecord(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()), new \Qualimetrix\Reporting\Formatter\Json\JsonSanitizer()),
+                new \Qualimetrix\Reporting\FindingPublication\FindingRecord(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()), new \Qualimetrix\Reporting\Formatter\Json\JsonSanitizer()),
             ),
             new HealthHintProjector(new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()))),
         );
@@ -236,11 +236,15 @@ final class ArchitectureViolationSmokeTest extends TestCase
         }
 
         $files = $doc->getElementsByTagName('file');
-        self::assertSame(1, $files->length);
-        self::assertSame(self::SOURCE_FILE, $files->item(0)?->getAttribute('name'));
+        self::assertSame(2, $files->length);
+        $fileNames = [];
+        foreach ($files as $file) {
+            $fileNames[] = $file->getAttribute('name');
+        }
+        self::assertSame([self::SOURCE_FILE, '.'], $fileNames);
 
         $errors = $doc->getElementsByTagName('error');
-        self::assertSame(1, $errors->length);
+        self::assertSame($this->expectedViolationCount(), $errors->length);
 
         $sources = [];
         foreach ($errors as $errorNode) {
@@ -250,7 +254,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
             $sources[] = $errorNode->getAttribute('source');
         }
 
-        foreach ([LayerViolationRule::NAME] as $rule) {
+        foreach ($this->expectedRuleNames() as $rule) {
             self::assertContains('qmx.' . $rule, $sources, "Checkstyle should emit source for rule {$rule}");
         }
     }
@@ -300,10 +304,10 @@ final class ArchitectureViolationSmokeTest extends TestCase
         $issues = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertIsArray($issues);
-        self::assertCount(1, $issues);
+        self::assertCount($this->expectedViolationCount(), $issues);
 
         $checkNames = array_map(static fn(array $issue): string => $issue['check_name'], $issues);
-        foreach ([LayerViolationRule::NAME] as $rule) {
+        foreach ($this->expectedRuleNames() as $rule) {
             self::assertContains($rule, $checkNames, "GitLab should emit issue for {$rule}");
         }
 
@@ -315,7 +319,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
         }
 
         $paths = array_map(static fn(array $issue): string => $issue['location']['path'], $issues);
-        self::assertSame([self::SOURCE_FILE], $paths);
+        self::assertSame([self::SOURCE_FILE, '.', '.', '.', '.', '.'], $paths);
     }
 
     #[Test]

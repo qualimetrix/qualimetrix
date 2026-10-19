@@ -37,6 +37,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  *
  * Requires classCount, implementingEnumCount, traitCount, abstractClassCount and
  * interfaceCount aggregated at namespace level.
+ *
+ * @qmx-threshold health.cohesion 40.0 -- Independent immutable observations or stateless declaration operations intentionally have no shared instance-field graph; this finite class boundary keeps a further cohesion loss visible.
  */
 final class AbstractnessCollector implements GlobalContextCollectorInterface
 {

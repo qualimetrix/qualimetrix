@@ -10,8 +10,8 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Duplication\Index\PackedPosition;
 use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlockFinder;
 use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateSearchRequest;
-use Qualimetrix\Analysis\Evidence\Duplication\Normalization\RetokenizedFiles;
-use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenNormalizer;
+use Qualimetrix\Analysis\Evidence\Duplication\RetokenizedFiles;
+use Qualimetrix\Analysis\Evidence\Duplication\TokenNormalizer;
 use Qualimetrix\Tests\Analysis\Evidence\Duplication\Support\SplitSameContentFixture;
 
 #[CoversClass(DuplicateBlockFinder::class)]

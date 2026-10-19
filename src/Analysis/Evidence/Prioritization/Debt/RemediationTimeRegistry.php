@@ -20,7 +20,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader;
  * declares its own via a `REMEDIATION_MINUTES` constant, read reflectively
  * by {@see RuleRemediationMinutesReader} at container-build time and handed
  * in as `$minutesByRule` — the same idiom, and the same compiler pass
- * ({@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\ChannelDeclarationCompilerPass}),
+ * ({@see \Qualimetrix\Infrastructure\DependencyInjection\ChannelCatalog\ChannelDeclarationCompilerPass}),
  * that already assembles `$docsPageByRule` for
  * {@see \Qualimetrix\Analysis\Finding\ChannelPresentationView}. A private
  * table here, kept in sync by hand across every capability that adds a rule,
@@ -56,7 +56,7 @@ final class RemediationTimeRegistry
     /**
      * @param array<string, int> $minutesByRule every registered rule name => its declared
      *                                          `REMEDIATION_MINUTES`, injected by
-     *                                          {@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\ChannelDeclarationCompilerPass}
+     *                                          {@see \Qualimetrix\Infrastructure\DependencyInjection\ChannelCatalog\ChannelDeclarationCompilerPass}
      */
     public function __construct(
         private ChannelDeclarationRegistryInterface $declarations,

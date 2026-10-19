@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
 use LogicException;
+
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
+use Qualimetrix\Analysis\Finding\Rule\AbstractRule;
 use ReflectionClass;
 
 /**

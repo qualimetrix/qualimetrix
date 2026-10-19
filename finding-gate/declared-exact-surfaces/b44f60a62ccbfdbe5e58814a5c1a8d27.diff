@@ -1,0 +1,12 @@
+--- candidate
++++ reference (mapped)
+@@ -2,2 +2,2 @@
+-src/Complex.php: error[complexity.ccn]: Cyclomatic complexity is 8, exceeds threshold of 3. Consider extracting methods or simplifying conditions (Complex::score)
+-src/Complex.php: error[complexity.cognitive]: Cognitive complexity is 7, exceeds threshold of 3. Top: if +1 L10, if +1 L11, if +1 L12. Reduce nesting and break into smaller methods (Complex::score)
++src/Complex.php: error[complexity.cognitive]: Cognitive complexity is 7, exceeds threshold of 3. Top: if +1 L10, if +1 L11, if +1 L12. Reduce nesting and break into smaller methods (Complex::score)
++src/Complex.php: error[complexity.ccn]: Cyclomatic complexity is 8, exceeds threshold of 3. Consider extracting methods or simplifying conditions (Complex::score)
+@@ -12,2 +12,2 @@
+-src/Complex.php: error[complexity.ccn]: Cyclomatic complexity is 8, exceeds threshold of 3. Consider extracting methods or simplifying conditions (Complex::score)
+-src/Complex.php: error[complexity.cognitive]: Cognitive complexity is 7, exceeds threshold of 3. Top: if +1 L10, if +1 L11, if +1 L12. Reduce nesting and break into smaller methods (Complex::score)
++src/Complex.php: error[complexity.cognitive]: Cognitive complexity is 7, exceeds threshold of 3. Top: if +1 L10, if +1 L11, if +1 L12. Reduce nesting and break into smaller methods (Complex::score)
++src/Complex.php: error[complexity.ccn]: Cyclomatic complexity is 8, exceeds threshold of 3. Consider extracting methods or simplifying conditions (Complex::score)

@@ -6,8 +6,8 @@ namespace Qualimetrix\Infrastructure\Console\Invocation\Configuration;
 
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ConfigurationDiagnostic;
 
+use Qualimetrix\Analysis\Configuration\Contract\Document\ConfigurationDiagnostic;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 
@@ -16,16 +16,17 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Infrastructure\Console\Invocation\CliSelectorDecoder;
 use Qualimetrix\Infrastructure\Console\Invocation\CommandLineSpelling;
+use Qualimetrix\Infrastructure\Console\Invocation\Configuration\Diagnostics\AnalysisPreflightProfile;
+use Qualimetrix\Infrastructure\Console\Invocation\Configuration\Diagnostics\ConfigurationDiagnosticsPublisher;
 use Qualimetrix\Infrastructure\Console\Invocation\RuleOptions\CliOptionsParser;
-use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisPreflightProfile;
-use Qualimetrix\Infrastructure\Console\RunSetup\ConfigurationDiagnosticsPublisher;
 use Qualimetrix\Infrastructure\Console\RuntimePolicy\ExitPolicy;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 

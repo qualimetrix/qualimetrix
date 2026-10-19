@@ -11,7 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
-use Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityOptions;
+use Qualimetrix\Analysis\Evidence\Complexity\Cognitive\CognitiveComplexityOptions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;

@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
 use Psr\Log\NullLogger;
 use Qualimetrix\Core\FileTarget\Publication\HeldTarget;
-use Qualimetrix\Core\FileTarget\TargetPath;
+use Qualimetrix\Core\FileTarget\Resolution\TargetPath;
 use Qualimetrix\Infrastructure\Logging\Contract\LogFileUnavailable;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Symfony\Component\Console\Output\BufferedOutput;

@@ -8,9 +8,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\ProductIdentity;
-use Qualimetrix\Infrastructure\Console\Application\RunningBinaryLocator;
 use Qualimetrix\Infrastructure\Console\Hook\HookStatusCommand;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Hook\RunningBinaryLocator;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 
 /**

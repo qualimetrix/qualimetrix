@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance;
 
-use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\InertEntryReason;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertEntryReason;
 use Qualimetrix\Analysis\Policy\Baseline\RunCoverage\RunRuleCoverage;
 
 /**

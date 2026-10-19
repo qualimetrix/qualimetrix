@@ -81,9 +81,15 @@ final class CohesionCompositionCollector implements GlobalContextCollectorInterf
                     SymbolLevel::Project->value => [AggregationStrategy::Average, AggregationStrategy::Min],
                 ],
             ),
-            new MetricDefinition(name: MetricName::COHESION_PURE_METHOD_COUNT, collectedAt: SymbolLevel::Class_, aggregations: []),
+            new MetricDefinition(name: MetricName::COHESION_PURE_METHOD_COUNT, collectedAt: SymbolLevel::Class_, aggregations: [
+                SymbolLevel::Namespace_->value => [AggregationStrategy::Average],
+                SymbolLevel::Project->value => [AggregationStrategy::Average],
+            ]),
             new MetricDefinition(name: MetricName::COHESION_LCOM_METHOD_COUNT, collectedAt: SymbolLevel::Class_, aggregations: []),
-            new MetricDefinition(name: MetricName::COHESION_TCC_METHOD_COUNT, collectedAt: SymbolLevel::Class_, aggregations: []),
+            new MetricDefinition(name: MetricName::COHESION_TCC_METHOD_COUNT, collectedAt: SymbolLevel::Class_, aggregations: [
+                SymbolLevel::Namespace_->value => [AggregationStrategy::Average],
+                SymbolLevel::Project->value => [AggregationStrategy::Average],
+            ]),
             new MetricDefinition(name: MetricName::COHESION_UNREAD_TRAIT_COUNT, collectedAt: SymbolLevel::Class_, aggregations: []),
         ];
     }
@@ -107,7 +113,12 @@ final class CohesionCompositionCollector implements GlobalContextCollectorInterf
         }
 
         foreach ($classes as [$subject, $own, $ownTcc]) {
-            $this->publishClass($subject, CohesionTraitComposition::compose($own, $ownTcc, $traits), $repository);
+            try {
+                $this->publishClass($subject, CohesionTraitComposition::compose($own, $ownTcc, $traits), $repository);
+            } catch (\Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitCompositionFailure $failure) {
+                $declaration = $subject->declarationPath() ?? throw new LogicException('Cohesion composition requires an exact declaration.');
+                throw $failure->at($declaration);
+            }
         }
     }
 

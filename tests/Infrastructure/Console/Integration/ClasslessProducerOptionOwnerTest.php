@@ -20,7 +20,7 @@ use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumen
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Console\Invocation\RuleOptions\CliOptionsParser;
-use Qualimetrix\Infrastructure\Console\RunSetup\FindingConfigurationPreparation;
+use Qualimetrix\Infrastructure\Console\RunSetup\Finding\FindingConfigurationPreparation;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
@@ -121,21 +121,13 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
         self::assertTrue($snapshot->hasRule($producerRuleName));
     }
 
-    /**
-     * Option ownership is addressability, not retunability — the two are
-     * separately declared facts about the same name, and this is what stops the
-     * cases above from being satisfied by "the seven became retunable".
-     *
-     * If this disappears, declaring `SUPPORTS_THRESHOLD_OVERRIDE = true` for
-     * the family would look like a way to make its `rules:` keys work.
-     */
     #[Test]
     #[DataProvider('provideFamilyProducers')]
-    public function itLetsAFamilyProducerOwnItsOptionsWhileDeclaringNoThresholdSupport(string $producerRuleName): void
+    public function itRetunesBuiltinHealthButKeepsTheOpenProducerUnretunable(string $producerRuleName): void
     {
-        self::assertFalse(
+        self::assertSame(
+            $producerRuleName !== 'computed',
             self::universe()->supportsThresholdOverride($producerRuleName),
-            \sprintf('"%s" is addressable as an option owner precisely without being retunable.', $producerRuleName),
         );
     }
 

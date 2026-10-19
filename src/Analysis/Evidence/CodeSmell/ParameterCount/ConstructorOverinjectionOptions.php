@@ -4,18 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount;
 
-use LogicException;
-
+use Qualimetrix\Analysis\Finding\Contract\Rule\IntegerThresholdOptionsTrait;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\BandDirection;
-use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape;
-use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ThresholdParser;
-use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Severity;
 
 /**
  * Options for ConstructorOverinjectionRule.
@@ -28,58 +22,13 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  */
 final readonly class ConstructorOverinjectionOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
-    use StandardOverrideValidatorTrait;
+    use IntegerThresholdOptionsTrait;
 
     public function __construct(
         public bool $enabled = true,
         public int $warning = 8,
         public int $error = 12,
     ) {}
-
-    public static function fromResolved(ResolvedRuleOptionValues $config): self
-    {
-        $thresholds = ThresholdParser::parse($config, RuleOptionSurface::bandFor(self::class, 'threshold'), 8, 12);
-        if (!\is_int($thresholds['warning']) || !\is_int($thresholds['error'])) {
-            throw new LogicException('An integer band resolved a non-integer value.');
-        }
-        return new self(
-            enabled: $config->boolean('enabled', true),
-            warning: $thresholds['warning'],
-            error: $thresholds['error'],
-        );
-    }
-
-    public function isEnabled(): bool
-    {
-        return $this->enabled;
-    }
-
-    public function getSeverity(int|float $value): ?Severity
-    {
-        if ($value >= $this->error) {
-            return Severity::Error;
-        }
-
-        if ($value >= $this->warning) {
-            return Severity::Warning;
-        }
-
-        return null;
-    }
-
-    public function withOverride(int|float|null $warning, int|float|null $error): static
-    {
-        return new static(
-            enabled: $this->enabled,
-            warning: $warning !== null ? (int) $warning : $this->warning,
-            error: $error !== null ? (int) $error : $this->error,
-        );
-    }
-
-    public function warningBoundary(): int
-    {
-        return $this->warning;
-    }
 
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
@@ -89,4 +38,5 @@ final readonly class ConstructorOverinjectionOptions implements RuleOptionsInter
             'warning' => RuleOptionShape::integer()->orNull(),
         ])->band('threshold', 'warning', 'error', BandDirection::Rising);
     }
+
 }

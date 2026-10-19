@@ -59,6 +59,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * it there accused the author of the caller's choice of path. A value skipped
  * that way is named by {@see unjudgedValues()} instead, so the skip reaches the
  * report rather than reading as a value judged and bound.
+ *
+  * @qmx-threshold coupling.instability 0.900001 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
  */
 final readonly class UnboundSuppressionAudit
 {
@@ -313,6 +315,6 @@ final readonly class UnboundSuppressionAudit
     {
         $inputs = $channel->code === UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER ? [$input, $input] : [$input];
         $failed = $declaration->populationFailure($channel, SymbolLevel::Project, $identity, $inputs);
-        $session->record(UnboundSuppressionRule::NAME, $channel, SymbolLevel::Project, $identity, $declaration, $failed['gate'] ?? null, $failed['reason'] ?? null);
+        $session->record(UnboundSuppressionRule::NAME, $channel, SymbolLevel::Project, $identity, $declaration, $failed['gate'] ?? null, $failed['reason'] ?? null, $failed['dataGap'] ?? true);
     }
 }

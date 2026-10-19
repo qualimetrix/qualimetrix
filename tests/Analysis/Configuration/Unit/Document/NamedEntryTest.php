@@ -27,8 +27,8 @@ use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
 use Qualimetrix\Analysis\Configuration\Document\LayerMerge;
 use Qualimetrix\Analysis\Configuration\Document\LayerReading;
-use Qualimetrix\Analysis\Configuration\Document\NameBinding\NamedEntryReading;
-use Qualimetrix\Analysis\Configuration\Document\NameBinding\NameRecognition;
+use Qualimetrix\Analysis\Configuration\Document\NamedEntryReading;
+use Qualimetrix\Analysis\Configuration\Document\NameRecognition;
 
 /**
  * An entry of a named map: its name is judged whatever is written under it,

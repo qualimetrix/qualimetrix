@@ -25,18 +25,23 @@ handler and turn an ambiguous or duplicate import into an explicit unreadable
 answer. Both modes use the same resolver; no consumer implements PHP name
 grammar itself.
 
+Trait-composition values are published under `Symbol/TraitComposition/Contract`.
+The executable composition service and its recursive scope and method pool stay
+beside that contract, depending on its immutable facts and result. Contract
+values never import the algorithm.
+
 ## Structure
 
 ```
 Core/
 ├── Ast/
-│   ├── FileParserInterface.php            # AST parsing contract
-│   ├── NameResolution.php                 # Class-name resolution before collection
-│   ├── ParseException.php                 # Parse error value
-│   ├── ResolvedName.php                   # Resolved declaration-name query
-│   └── SuperglobalRead.php               # Finite direct superglobal read shapes
+│   ├── FileParserInterface.php  # AST parsing contract
+│   ├── NameResolution.php  # Class-name resolution before collection
+│   ├── ParseException.php  # Parse error value
+│   ├── ResolvedName.php  # Resolved declaration-name query
+│   └── SuperglobalRead.php  # Finite direct superglobal read shapes
 ├── Environment/
-│   └── EnvironmentFailureInterface.php    # Neutral delivery/storage failure marker
+│   └── EnvironmentFailureInterface.php  # Neutral delivery/storage failure marker
 ├── FileTarget/
 │   ├── PrivateGroup/
 │   │   ├── CreatedDirectoryOwnership.php
@@ -52,76 +57,78 @@ Core/
 │   │   ├── HeldTarget.php
 │   │   ├── NewName.php
 │   │   ├── PreparedTarget.php
-│   │   ├── TargetClaim.php
-│   │   └── TemporarySibling.php
-│   ├── DirectoryFacts.php
-│   ├── EntryControl.php
-│   ├── EntryFacts.php
+│   │   └── TargetClaim.php
+│   ├── Resolution/
+│   │   ├── DirectoryFacts.php
+│   │   ├── EntryControl.php
+│   │   ├── EntryFacts.php
+│   │   ├── PathAbsenceProof.php
+│   │   ├── PathExposure.php
+│   │   ├── PathInspection.php
+│   │   ├── PathWalk.php
+│   │   ├── ResolvedTarget.php
+│   │   └── TargetPath.php
 │   ├── FileIdentity.php
 │   ├── FileTargetFailure.php
 │   ├── FileTargetFailureKind.php
 │   ├── NativeCall.php
-│   ├── PathAbsenceProof.php
-│   ├── PathExposure.php
-│   ├── PathInspection.php
-│   ├── PathWalk.php
-│   ├── ResolvedTarget.php
 │   ├── TargetKind.php
-│   └── TargetPath.php
+│   └── TemporarySibling.php
 ├── Observation/
-│   └── WorseDirection.php                 # Enum: higher-is-worse / lower-is-worse + the comparison operators
+│   └── WorseDirection.php  # Enum: higher-is-worse / lower-is-worse + the comparison operators
 ├── Path/
-│   ├── AbsolutePath.php                   # Absolute file path value object
-│   ├── PathFactory.php                    # Boundary factory creating absolute/relative paths
-│   └── RelativePath.php                   # Relative file path value object
+│   ├── AbsolutePath.php  # Absolute file path value object
+│   ├── PathFactory.php  # Boundary factory creating absolute/relative paths
+│   └── RelativePath.php  # Relative file path value object
 ├── Pattern/
-│   ├── CompiledSelector.php                # Shared separator-bound PCRE execution
-│   ├── NamespaceMatcher.php               # Ordered matching for bound namespace selectors
-│   ├── NamespacePattern.php               # Namespace-bound exact/subtree/regex selector
-│   ├── PathMatcher.php                    # Ordered matching for bound path selectors
-│   ├── PathPattern.php                    # Path-bound exact/subtree/regex selector
-│   ├── PatternMatch.php                   # The authored selector definition that fired
-│   ├── SelectorDefinition.php             # Authored exact/subtree/regex selector and budgets
-│   ├── SelectorKind.php                   # Explicit open-universe selector grammar
-│   └── SelectorMatchFailure.php           # Controlled PCRE resource failure
-├── ProductIdentity.php                    # Documentation addresses (site, llms.txt, a page's published URL) and the pointer text every output channel reads
+│   ├── CompiledSelector.php  # Shared separator-bound PCRE execution
+│   ├── NamespaceMatcher.php  # Ordered matching for bound namespace selectors
+│   ├── NamespacePattern.php  # Namespace-bound exact/subtree/regex selector
+│   ├── PathMatcher.php  # Ordered matching for bound path selectors
+│   ├── PathPattern.php  # Path-bound exact/subtree/regex selector
+│   ├── PatternMatch.php  # The authored selector definition that fired
+│   ├── SelectorDefinition.php  # Authored exact/subtree/regex selector and budgets
+│   ├── SelectorKind.php  # Explicit open-universe selector grammar
+│   └── SelectorMatchFailure.php  # Controlled PCRE resource failure
 ├── Profiler/
 │   └── Contract/
-│       └── ProfilerInterface.php          # Neutral instrumentation vocabulary
-├── SourceText/                             # SourceBytes: UTF-8 publication and reversible byte representation
+│       └── ProfilerInterface.php  # Neutral instrumentation vocabulary
+├── SourceText/  # SourceBytes: UTF-8 publication and reversible byte representation
+│   └── SourceBytes.php
 ├── Symbol/
-│   ├── CallableKind.php                   # PHP callable declaration kind enum
+│   ├── TraitComposition/
+│   │   ├── Contract/
+│   │   │   ├── TraitCompositionFailure.php  # Invalid source composition bound to its declaration
+│   │   │   ├── TraitCompositionResult.php  # Imported method sources and unread trait names
+│   │   │   ├── TraitDefinitionFacts.php  # Raw own trait methods and nested use facts
+│   │   │   ├── TraitMethodSource.php  # Original method identity and effective modifiers
+│   │   │   └── TraitUseFacts.php  # Resolved direct traits, aliases and precedences
+│   │   ├── TraitComposition.php  # Neutral effective imported PHP method composition
+│   │   ├── TraitCompositionScope.php  # Internal recursive raw-fact reads and cycles
+│   │   └── TraitMethodPool.php  # Internal direct candidates and adaptations
+│   ├── CallableKind.php  # PHP callable declaration kind enum
+│   ├── ClassNameSpelling.php
 │   ├── ClassType.php
-│   ├── DeclarationKey.php                 # What the file index groups positions by
-│   ├── DeclarationOrdinal.php             # Assigned rank of one declaration in its file
-│   ├── DeclarationPath.php                # Durable source declaration identity
-│   ├── FileDeclarationIndex.php           # Sole owner of declaration numbering per file
-│   ├── LogicalClassPath.php               # Validated class-level logical identity
-│   ├── MetricSubject.php                  # Declaration, class, or aggregate metric subject
-│   ├── MetricSubjectCodec.php             # Scalar wire codec for metric subjects
-│   ├── PhpBuiltinClassHierarchy.php       # Parent, interfaces and attributes of each registered
-│   │                                      # name (static; PhpBuiltinClassHierarchyCensusTest
-│   │                                      #  compares every name the running PHP declares)
-│   ├── PhpBuiltinClassRegistry.php        # Single source of truth for PHP built-in classes,
-│   │                                      # answered in any ASCII case spelling
-│   │                                      # (hand-written; PhpBuiltinClassRegistryCensusTest
-│   │                                      #  compares it against the loaded extensions)
+│   ├── DeclarationKey.php  # What the file index groups positions by
+│   ├── DeclarationOrdinal.php  # Assigned rank of one declaration in its file
+│   ├── DeclarationPath.php  # Durable source declaration identity
+│   ├── FileDeclarationIndex.php  # Sole owner of declaration numbering per file
+│   ├── LogicalClassPath.php  # Validated class-level logical identity
+│   ├── MetricSubject.php  # Declaration, class, or aggregate metric subject
+│   ├── MetricSubjectCodec.php  # Scalar wire codec for metric subjects
+│   ├── MixedSpelling.php
+│   ├── PhpBuiltinClassHierarchy.php  # Parent, interfaces and attributes of each registered
+│   ├── PhpBuiltinClassRegistry.php  # Single source of truth for PHP built-in classes,
 │   ├── SymbolInfo.php
-│   ├── SymbolLevel.php                    # The project's one level vocabulary
-│   ├── SymbolLevelProjection.php          # The one projection of declaration kind onto level
-│   ├── SymbolPath.php                     # Stable symbol identifier
-│   ├── SymbolType.php
-│   ├── TraitComposition.php               # Neutral effective imported PHP method composition
-│   ├── TraitCompositionResult.php         # Imported method sources and unread trait names
-│   ├── TraitCompositionScope.php          # Internal recursive raw-fact reads and cycles
-│   ├── TraitDefinitionFacts.php           # Raw own trait methods and nested use facts
-│   ├── TraitMethodPool.php                # Internal direct candidates and adaptations
-│   ├── TraitMethodSource.php              # Original method identity and effective modifiers
-│   └── TraitUseFacts.php                  # Resolved direct traits, aliases and precedences
+│   ├── SymbolLevel.php  # The project's one level vocabulary
+│   ├── SymbolLevelProjection.php  # The one projection of declaration kind onto level
+│   ├── SymbolPath.php  # Stable symbol identifier
+│   └── SymbolType.php
 ├── Time/
-│   ├── ClockInterface.php                 # "What time is it?" contract
-│   └── SystemClock.php                    # Wall-clock reading of ClockInterface
-└── Version.php                            # Package version at runtime
+│   ├── ClockInterface.php  # "What time is it?" contract
+│   └── SystemClock.php  # Wall-clock reading of ClockInterface
+├── ProductIdentity.php  # Documentation addresses (site, llms.txt, a page's published URL) and the pointer text every output channel reads
+└── Version.php  # Package version at runtime
 ```
 
 ---
@@ -960,10 +967,11 @@ Epsilon is a tolerance band around the allowance, never a shift of it: inside th
 ## File targets
 
 `Core\\FileTarget` is the first filesystem writer in Core. `Publication/`
-owns held descriptors, temporary siblings and atomic publication, including
+owns held descriptors and atomic publication, including
 `NewName` publication policy. `PrivateGroup/` owns effective-process ownership,
-NSS enumeration and the `PrivateGroupMembership` proof port. The root owns target
-resolution, entry-control judgement and target facts; `Core\\Path` only represents paths and its lexical normalization
+NSS enumeration and the `PrivateGroupMembership` proof port. `Resolution/` owns target
+resolution, entry-control judgement and target facts. The root owns native-call
+results, identity, failure vocabulary and temporary sibling resources; `Core\\Path` only represents paths and its lexical normalization
 is not a safety judgement. `Core\\Environment\\EnvironmentFailureInterface`
 marks storage or delivery failures with complete user-facing messages.
 
@@ -982,7 +990,8 @@ publication primitive for immediate replacement,
 and `HeldLock::acquire()` holds a named lock without truncating it, using a
 monotonic acquisition deadline. Native lock contention waits; another native
 lock failure refuses immediately with its cause.
-`TemporarySibling`, `ProcessOwner`, `FileIdentity`, the facts and enum values
+`TemporarySibling::ownsName()` supplies the exact temporary-name predicate to
+Cache cleanup as well as publication. `TemporarySibling`, `ProcessOwner`, `FileIdentity`, the facts and enum values
 support these operations. `NativeCall` captures the warning of one filesystem
 call and restores the previous PHP error handler even when the call throws.
 `FileTargetFailure` carries an explicit kind, path,

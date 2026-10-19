@@ -14,12 +14,13 @@ use Amp\Parallel\Context\ProcessContext;
 use Amp\Parallel\Ipc\LocalIpcHub;
 use Amp\Socket\SocketException;
 use Amp\TimeoutCancellation;
+use Closure;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Core\FileTarget\NativeCall;
 
 /**
- * @qmx-threshold coupling.instability warning=0.894737 -- The process-context factory binds IPC startup, cancellation, diagnostics and private startup logs for the worker pool; these transport dependencies stay together for its few consumers.
+ * @qmx-threshold coupling.instability 0.894738 -- The process-context factory binds IPC startup, cancellation, diagnostics and private startup logs for the worker pool; these transport dependencies stay together for its few consumers.
  */
 final class WorkerContextFactory implements ContextFactory
 {
@@ -28,9 +29,14 @@ final class WorkerContextFactory implements ContextFactory
     /** @var list<string> */
     private array $startupFiles = [];
     private ?WorkerStartFailure $failure = null;
+    private ?Closure $removeExhaustion = null;
+    private bool $closed = false;
 
-    /** @param non-empty-list<string> $binary */
-    public function __construct(private readonly WorkerRequest $request, private readonly WorkerNotes $notes, private readonly array $binary = [\PHP_BINARY], private readonly LoggerInterface $logger = new NullLogger())
+    /**
+     * @param non-empty-list<string> $binary
+     * @param (Closure(Closure(): void): (Closure(): void))|null $registerExhaustion
+     */
+    public function __construct(private readonly WorkerRequest $request, private readonly WorkerNotes $notes, private readonly array $binary = [\PHP_BINARY], private readonly LoggerInterface $logger = new NullLogger(), ?Closure $registerExhaustion = null)
     {
         try {
             $this->hub = new LocalIpcHub();
@@ -43,6 +49,10 @@ final class WorkerContextFactory implements ContextFactory
             $this->hub->close();
             throw WorkerStartFailure::failedToStart('cannot create worker startup directory ' . $this->directory . ': ' . ($warning ?? 'unknown error'), '', $request);
         }
+        $this->removeExhaustion = $registerExhaustion?->__invoke(function (): void {
+            $this->hub->close();
+            $this->cleanupDirectory();
+        });
     }
 
     /**
@@ -104,16 +114,32 @@ final class WorkerContextFactory implements ContextFactory
 
     public function close(): void
     {
+        if ($this->closed) {
+            return;
+        }
+        $this->closed = true;
+        $this->removeExhaustion?->__invoke();
+        $this->removeExhaustion = null;
         try {
             $this->hub->close();
             $this->notes->close();
         } finally {
-            foreach ($this->startupFiles as $file) {
-                if (is_file($file)) {
-                    unlink($file);
-                }
-            }
-            rmdir($this->directory);
+            $this->cleanupDirectory();
         }
+    }
+
+    private function cleanupDirectory(): void
+    {
+        $names = scandir($this->directory);
+        foreach ($names === false ? [] : $names as $name) {
+            if (!str_starts_with($name, 'start-') || !str_ends_with($name, '.log')) {
+                continue;
+            }
+            $file = $this->directory . '/' . $name;
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
+        rmdir($this->directory);
     }
 }

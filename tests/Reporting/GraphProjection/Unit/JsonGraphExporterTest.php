@@ -18,8 +18,8 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Reporting\Formatter\PublishedUtf8;
 use Qualimetrix\Reporting\GraphProjection\JsonGraphExporter;
+use Qualimetrix\Reporting\Publication\PublishedUtf8;
 use Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub;
 
 final class JsonGraphExporterTest extends TestCase

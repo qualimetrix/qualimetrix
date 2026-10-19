@@ -59,6 +59,11 @@ Finding/
 │   │   └── FindingNamespace.php # declared namespace of a finding, excluding project subjects
 │   ├── Rule/             # Rule authoring contracts
 │   │   ├── RuleDescriptionReader.php # validates each rule's own declared description
+│   │   ├── IntegerThresholdOptionsTrait.php # shared integer-band construction and queries
+│   │   ├── MaximumThresholdOptionsTrait.php # typed class-maximum fields
+│   │   ├── ThresholdOptionQueries.php # direction-aware severity and override queries
+│   │   ├── EnablementOptionsTrait.php # enabled-only construction and queries
+│   │   ├── HierarchicalOptionsQueries.php # typed metric-owned level slots
 │   │   ├── OptionLanguage/
 │   │   │   ├── BandDirection.php
 │   │   │   ├── FrameworkOptionKeys.php
@@ -75,18 +80,22 @@ Finding/
 │   │   │   ├── RuleOptionSurface.php
 │   │   │   ├── RuleOptionValueForm.php
 │   │   │   ├── RuleOptionWordSet.php
+│   │   │   ├── ThresholdPair.php # typed parsing result and severity comparison
 │   │   │   └── ThresholdParser.php
 │   │   ├── ChannelLevel/
 │   │   │   ├── ChannelLevelAddressing.php
 │   │   │   ├── ChannelLevelRefusalWording.php
 │   │   │   └── ChannelLevelSelector.php
 │   │   └── Override/     # numeric validation and authored request
+│   │       ├── OverrideValidationFailure.php # public rejected-override value
 │   │       ├── ThresholdOverrideRequest.php # values, syntax and written axes
 │   │       ├── OverrideAxis.php # warning or error
 │   │       └── OverrideSyntax.php # shorthand or explicit axes
 │   └── Threshold/        # threshold override value
 ├── Exclusion/            # Private namespace and path exclusion stores, plus the one reader of a producer's configured suppression options
-├── Rule/                 # Internal producer and channel implementations
+├── Rule/                 # Executable producer and channel implementations
+│   ├── AbstractRule.php # exact named rule-authoring extension; metadata readers use RuleDefinitionInterface
+│   ├── RulePopulationDeclarations.php # stateless protected population vocabulary
 │   └── Override/
 │       └── NonNegativeOverrideThresholds.php # shared numeric judgement and spelling
 ├── RuleConfiguration/    # private RulesSection schema, suppression decoder and invocation stores
@@ -600,3 +609,31 @@ This README is part of the subject boundary: keep its production code, tests, fi
 `baselineVerdict` is `breached`, `not-compared` or null; `baselineReason` is a
 nullable scalar reason. A comparable breach is promoted to Error; an incomparable
 current group keeps its own severity and may retain acceptedLevel.
+
+Population accounting groups observations without JSON keys or per-member
+abstention objects. Weak subject identity memoization does not retain subjects
+past their repository lifetime. Compact prose distinguishes missing evidence
+from ordinary population boundaries. `KeyPresent::absenceBoundaries` declares
+measured facts for which an absent value is defined (for example, an interface
+has no DIT value); it does not suppress the typed abstention record.
+
+Population groups publish in lexical producer, channel, level and gate order,
+then reason, unit and the missing-evidence flag. Judged counts use producer,
+channel, level and unit. Internal grouping-key encoding does not define either
+publication order.
+
+## Rule declaration and execution boundaries
+
+`Rule/RulePopulationDeclarations` supplies the protected eligibility-declaration
+vocabulary used by executable rules through `Rule/AbstractRule`. AbstractRule
+retains option validation, finding construction and runtime admission; the
+static declaration vocabulary has no execution state. Cross-owner metadata
+readers continue to depend only on `RuleDefinitionInterface`.
+
+`Contract/Rule/OptionLanguage/ThresholdPair` owns resolved numeric-band values,
+typed integer reads and severity comparison. `IntegerThresholdOptionsTrait`
+shares integer-band construction; `MaximumThresholdOptionsTrait` adapts the
+class-maximum field spelling without copying parsing. `ThresholdOptionQueries` shares band queries,
+`EnablementOptionsTrait` shares the resolved enabled-only value, and
+`HierarchicalOptionsQueries` queries exact declared level slots. Metric-owned
+Options retain their constructor defaults, field names and key/shape declarations.

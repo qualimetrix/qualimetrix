@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext;
 
+use Qualimetrix\Analysis\Policy\Architecture\Layer\CriterionOutcome;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CriterionOutcome;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 
 /**
@@ -125,6 +125,9 @@ final readonly class ClassContext
      * @param bool $declarationAnalysed Whether the subject's own declaration header was read.
      *
      * @qmx-ignore code-smell.boolean-argument -- declarationAnalysed is a measured completeness fact in this immutable context, not a behavior option.
+     *
+      * @qmx-threshold code-smell.long-parameter-list 11 -- Names, ancestry and attributes describe one declaration for all membership criteria; splitting those facts would duplicate declaration identity.
+      * @qmx-threshold code-smell.constructor-overinjection 11 -- Names, ancestry and attributes describe one declaration for all membership criteria; splitting those facts would duplicate declaration identity.
      */
     public function __construct(
         public string $fqn,

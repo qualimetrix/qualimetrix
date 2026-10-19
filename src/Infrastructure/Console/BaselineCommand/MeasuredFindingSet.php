@@ -8,7 +8,7 @@ use LogicException;
 
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
-use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
+use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
 
 final readonly class MeasuredFindingSet

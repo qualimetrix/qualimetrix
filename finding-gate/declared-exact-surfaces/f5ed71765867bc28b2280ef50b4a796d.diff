@@ -1,0 +1,67 @@
+--- candidate
++++ reference (mapped)
+@@ -82,0 +82,12 @@
++            "producer": "code-smell.boolean-argument",
++            "reason": "filtered",
++            "statement": "only_rules: [complexity.ccn, annotation.directive, annotation.unused-directive]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.constructor-overinjection",
++            "reason": "filtered",
++            "statement": "only_rules: [complexity.ccn, annotation.directive, annotation.unused-directive]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
+@@ -89,0 +101,6 @@
++            "reason": "filtered",
++            "statement": "only_rules: [complexity.ccn, annotation.directive, annotation.unused-directive]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.empty-catch",
+@@ -118,18 +136,0 @@
+-            "producer": "code-smell.superglobals",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, annotation.directive, annotation.unused-directive]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "code-smell.boolean-argument",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, annotation.directive, annotation.unused-directive]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "code-smell.empty-catch",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, annotation.directive, annotation.unused-directive]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+@@ -142,1 +142,1 @@
+-            "producer": "code-smell.constructor-overinjection",
++            "producer": "code-smell.long-parameter-list",
+@@ -148,1 +148,1 @@
+-            "producer": "code-smell.long-parameter-list",
++            "producer": "code-smell.superglobals",
+@@ -196,1 +196,1 @@
+-            "producer": "coupling.distance",
++            "producer": "coupling.class-rank",
+@@ -202,1 +202,1 @@
+-            "producer": "coupling.class-rank",
++            "producer": "coupling.distance",
+@@ -268,0 +268,6 @@
++            "producer": "security.command-injection",
++            "reason": "filtered",
++            "statement": "only_rules: [complexity.ccn, annotation.directive, annotation.unused-directive]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
+@@ -275,6 +281,0 @@
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, annotation.directive, annotation.unused-directive]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "security.command-injection",

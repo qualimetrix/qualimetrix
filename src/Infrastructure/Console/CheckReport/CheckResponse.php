@@ -6,19 +6,22 @@ namespace Qualimetrix\Infrastructure\Console\CheckReport;
 
 use Closure;
 use InvalidArgumentException;
+
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Core\Environment\EnvironmentFailureInterface;
 use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Infrastructure\Console\CheckReport\FormatBinding\FormatterContextFactory;
+use Qualimetrix\Infrastructure\Console\CheckReport\Projection\CheckFindingProjection;
 use Qualimetrix\Infrastructure\Console\CheckScope\ResolvedCheckScope;
 use Qualimetrix\Infrastructure\Console\Profile\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession;
 use Qualimetrix\Infrastructure\Console\RuntimePolicy\ExitPolicy;
 use Qualimetrix\Infrastructure\Console\Terminal\ReportPublication\ReportPublication;
 use Qualimetrix\Reporting\Contract\OutputFormat;
-use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
+use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionOptions;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;

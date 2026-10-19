@@ -163,7 +163,7 @@ final class FindingControls
     public static function droppedFindingMutation(): Mutation
     {
         return Mutation::edit(
-            'src/Analysis/Evidence/Size/PropertyCountRule.php',
+            'src/Analysis/Evidence/Size/PropertyCount/PropertyCountRule.php',
             ['        return $findings;' => '        return \array_slice($findings, 1);'],
             'size.property-count drops its first finding',
         );

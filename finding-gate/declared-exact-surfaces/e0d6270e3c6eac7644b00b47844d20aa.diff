@@ -1,0 +1,24 @@
+--- candidate
++++ reference (mapped)
+@@ -2,5 +2,5 @@
+-::error title=architecture.circular-dependency::Circular dependency (2 classes): K%FE → K%FF → K%FE
+-::warning file=src/First.php,line=23,title=architecture.layer-violation::Layer "public" must not depend on layer "private" (Corpus\Utf8\Public\K%FF → Corpus\Utf8\Private\W%FFX, instantiates)
+-::warning file=src/Second.php,line=23,title=architecture.layer-violation::Layer "public" must not depend on layer "private" (Corpus\Utf8\Public\K%FE → Corpus\Utf8\Private\W%FFX, instantiates)
+-::warning file=src/First.php,line=7,title=complexity.ccn::Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions
+-::warning file=src/Second.php,line=7,title=complexity.ccn::Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions
++::warning file=src/First.php,line=7,title=complexity.ccn::Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions
++::warning file=src/Second.php,line=7,title=complexity.ccn::Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions
++::warning file=src/First.php,line=23,title=architecture.layer-violation::Layer "public" must not depend on layer "private" (Corpus\Utf8\Public\K%FF → Corpus\Utf8\Private\W%FFX, instantiates)
++::warning file=src/Second.php,line=23,title=architecture.layer-violation::Layer "public" must not depend on layer "private" (Corpus\Utf8\Public\K%FE → Corpus\Utf8\Private\W%FFX, instantiates)
++::error title=architecture.circular-dependency::Circular dependency (2 classes): K%FE → K%FF → K%FE
+@@ -11,5 +11,5 @@
+-::error title=architecture.circular-dependency::Circular dependency (2 classes): K%FE → K%FF → K%FE
+-::warning file=src/First.php,line=23,title=architecture.layer-violation::Layer "public" must not depend on layer "private" (Corpus\Utf8\Public\K%FF → Corpus\Utf8\Private\W%FFX, instantiates)
+-::warning file=src/Second.php,line=23,title=architecture.layer-violation::Layer "public" must not depend on layer "private" (Corpus\Utf8\Public\K%FE → Corpus\Utf8\Private\W%FFX, instantiates)
+-::warning file=src/First.php,line=7,title=complexity.ccn::Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions
+-::warning file=src/Second.php,line=7,title=complexity.ccn::Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions
++::warning file=src/First.php,line=7,title=complexity.ccn::Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions
++::warning file=src/Second.php,line=7,title=complexity.ccn::Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions
++::warning file=src/First.php,line=23,title=architecture.layer-violation::Layer "public" must not depend on layer "private" (Corpus\Utf8\Public\K%FF → Corpus\Utf8\Private\W%FFX, instantiates)
++::warning file=src/Second.php,line=23,title=architecture.layer-violation::Layer "public" must not depend on layer "private" (Corpus\Utf8\Public\K%FE → Corpus\Utf8\Private\W%FFX, instantiates)
++::error title=architecture.circular-dependency::Circular dependency (2 classes): K%FE → K%FF → K%FE

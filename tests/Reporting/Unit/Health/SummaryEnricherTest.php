@@ -24,8 +24,8 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Contract\Report\Report;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
-use Qualimetrix\Reporting\Report;
 use Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\MetricRepositoryTestHelper;
 use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
@@ -76,13 +76,11 @@ final class SummaryEnricherTest extends TestCase
         ]);
         foreach ([null, $this->createMetricRepository(projectMetrics: MetricBag::fromArray(['size.loc.sum' => 10]))] as $metrics) {
             $report = new Report(
-                \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
-                [],
-                1,
-                0,
-                0.1,
-                0,
-                0,
+                fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
+                findings: [],
+                filesAnalyzed: 1,
+                filesSkipped: 0,
+                duration: 0.1,
                 metrics: $metrics,
                 computedMetricEvaluation: $summary,
                 population: $population,
@@ -109,8 +107,6 @@ final class SummaryEnricherTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
         );
 
         $result = $this->enricher->enrich($report);
@@ -147,8 +143,6 @@ final class SummaryEnricherTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 2,
-            warningCount: 0,
             metrics: $metrics,
         );
 
@@ -209,8 +203,6 @@ final class SummaryEnricherTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 1,
-            warningCount: 0,
             metrics: $metrics,
         );
 
@@ -261,8 +253,6 @@ final class SummaryEnricherTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
         );
 
@@ -305,8 +295,6 @@ final class SummaryEnricherTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
         );
 
@@ -343,8 +331,6 @@ final class SummaryEnricherTest extends TestCase
             filesAnalyzed: 42,
             filesSkipped: 3,
             duration: 5.5,
-            errorCount: 0,
-            warningCount: 1,
             metrics: $metrics,
         );
 
@@ -375,8 +361,6 @@ final class SummaryEnricherTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
         );
 
@@ -407,8 +391,6 @@ final class SummaryEnricherTest extends TestCase
             filesAnalyzed: 50,
             filesSkipped: 0,
             duration: 1.5,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
         );
 
@@ -434,8 +416,6 @@ final class SummaryEnricherTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: null,
         );
 
@@ -471,8 +451,6 @@ final class SummaryEnricherTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 2,
-            warningCount: 0,
             metrics: $metrics,
         );
 
@@ -499,8 +477,6 @@ final class SummaryEnricherTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
         );
 
@@ -524,8 +500,6 @@ final class SummaryEnricherTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
         );
 
@@ -555,8 +529,6 @@ final class SummaryEnricherTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
         );
 
@@ -590,8 +562,6 @@ final class SummaryEnricherTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
         );
 
@@ -613,7 +583,15 @@ final class SummaryEnricherTest extends TestCase
                 [\Qualimetrix\Core\Symbol\MetricSubject::aggregate(\Qualimetrix\Core\Symbol\SymbolPath::forProject())],
             ),
         ]);
-        $report = new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($this->createMetricRepository(new MetricBag())), [], 1, 0, 0.0, 0, 0, metrics: $this->createMetricRepository(new MetricBag()), computedMetricEvaluation: $summary);
+        $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($this->createMetricRepository(new MetricBag())),
+            findings: [],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 0.0,
+            metrics: $this->createMetricRepository(new MetricBag()),
+            computedMetricEvaluation: $summary,
+        );
         $enriched = $this->enricher->enrich($report);
         self::assertNotSame($report, $enriched);
         self::assertSame($summary, $enriched->computedMetricEvaluation);
@@ -660,7 +638,14 @@ final class SummaryEnricherTest extends TestCase
                 return $read(...$arguments);
             });
         }
-        $raw = new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($repository), [], 2, 0, 0.0, 0, 0, metrics: $trackedRepository);
+        $raw = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($repository),
+            findings: [],
+            filesAnalyzed: 2,
+            filesSkipped: 0,
+            duration: 0.0,
+            metrics: $trackedRepository,
+        );
         $report = $this->enricher->enrich($raw);
         $record = $report->worstClasses[0];
         $readsAtPublication = $repositoryReads;
@@ -674,7 +659,7 @@ final class SummaryEnricherTest extends TestCase
         $selector = new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown();
         $summary = new \Qualimetrix\Reporting\Formatter\Summary\OffenderListRenderer($filter, $selector);
         $json = new \Qualimetrix\Reporting\Formatter\Json\JsonOffenderSection($selector, $filter, new \Qualimetrix\Reporting\Formatter\Json\JsonSanitizer());
-        $context = new \Qualimetrix\Reporting\FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::exact('App'));
+        $context = new \Qualimetrix\Reporting\Contract\Formatting\FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::exact('App'));
         self::assertSame([$record], $summary->resolveWorstClasses($report, $context));
         $lines = [];
         $summary->renderWorstClasses($report, new \Qualimetrix\Reporting\Formatter\Ansi\AnsiColor(true), $context, $lines);

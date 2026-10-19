@@ -15,9 +15,9 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Report\Report;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
-use Qualimetrix\Reporting\Report;
 use Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\MetricRepositoryTestHelper;
 
 #[CoversClass(HealthScoreResolver::class)]
@@ -48,9 +48,7 @@ final class HealthScoreResolverTest extends TestCase
             filesAnalyzed: 5,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            healthScores: $projectScores,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: $projectScores),
         );
 
         $context = new FormatterContext();
@@ -73,10 +71,8 @@ final class HealthScoreResolverTest extends TestCase
             filesAnalyzed: 5,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: null,
-            healthScores: $projectScores,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: $projectScores),
         );
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App'));
@@ -110,10 +106,8 @@ final class HealthScoreResolverTest extends TestCase
             filesAnalyzed: 5,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
-            healthScores: [],
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: []),
         );
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'));
@@ -136,10 +130,8 @@ final class HealthScoreResolverTest extends TestCase
             filesAnalyzed: 5,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
-            healthScores: [],
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: []),
         );
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('NonExistent'));
@@ -173,10 +165,8 @@ final class HealthScoreResolverTest extends TestCase
             filesAnalyzed: 5,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
-            healthScores: [],
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: []),
         );
 
         $context = new FormatterContext(class: 'App\\UserService');
@@ -202,10 +192,8 @@ final class HealthScoreResolverTest extends TestCase
             filesAnalyzed: 5,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
-            healthScores: $projectScores,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: $projectScores),
         );
 
         $context = new FormatterContext(class: 'App\\NonExistent');
@@ -224,9 +212,17 @@ final class HealthScoreResolverTest extends TestCase
             classes: [new SymbolInfo($subject, RelativePath::fromString('src/Bare.php'), 1)],
             classMetrics: [$subject->toCanonical() => new MetricBag()],
         );
-        $report = new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($repository), [], 1, 0, 0.0, 0, 0, metrics: $repository, healthScores: [
-            'overall' => new HealthScore('overall', 80.0, 'Good', 50.0, 25.0, HealthCoverage::notApplicable('project')),
-        ]);
+        $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($repository),
+            findings: [],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 0.0,
+            metrics: $repository,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: [
+                'overall' => new HealthScore('overall', 80.0, 'Good', 50.0, 25.0, HealthCoverage::notApplicable('project')),
+            ]),
+        );
         self::assertSame([], $this->resolver->resolve($report, new FormatterContext(class: 'App\\Bare')));
     }
 

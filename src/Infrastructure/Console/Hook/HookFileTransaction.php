@@ -8,13 +8,15 @@ use Qualimetrix\Core\FileTarget\FileTargetFailure;
 use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
 use Qualimetrix\Core\FileTarget\Publication\FileReplacement;
 use Qualimetrix\Core\FileTarget\Publication\NewName;
-use Qualimetrix\Core\FileTarget\ResolvedTarget;
+use Qualimetrix\Core\FileTarget\Resolution\ResolvedTarget;
 use Qualimetrix\Core\FileTarget\TargetKind;
 use Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Symfony\Component\Console\Output\OutputInterface;
 
-/** Judges hook file identities and performs their replacement, removal and restoration. */
+/** Judges hook file identities and performs their replacement, removal and restoration.
+ * @qmx-threshold coupling.instability 0.857144 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
+ */
 final class HookFileTransaction
 {
     private readonly HookEntryAccess $access;

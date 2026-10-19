@@ -6,11 +6,14 @@ namespace Qualimetrix\Reporting\FindingProjection;
 
 use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
+
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Core\Pattern\NamespaceMatcher;
 use Qualimetrix\Core\Pattern\PathMatcher;
+use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionOptions;
+use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionResult;
 
 /**
  * Assembles {@see SuppressionComposition} from what a run's pipeline already
@@ -137,7 +140,7 @@ final readonly class SuppressionCompositionBuilder
     /**
      * `BaselineIdentity` itself is Baseline-internal (no cross-owner consumer
      * is declared for it), so its `describe()` is replicated here from the
-     * same public `Finding` fields {@see \Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity::forFinding()}
+     * same public `Finding` fields {@see \Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity::forFinding()}
      * builds from, rather than by constructing that type directly.
      *
      * Must stay byte-for-byte what `describe()` produces: the two occurrence

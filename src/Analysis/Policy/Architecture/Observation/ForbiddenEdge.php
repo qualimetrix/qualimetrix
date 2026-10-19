@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Observation;
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\LayerMatch;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
 
 /**
  * One dependency edge the allow-list rejects, with the layer each end was

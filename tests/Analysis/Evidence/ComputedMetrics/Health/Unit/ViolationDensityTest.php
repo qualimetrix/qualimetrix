@@ -24,7 +24,7 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Reporting\Report;
+use Qualimetrix\Reporting\Contract\Report\Report;
 
 /**
  * Tests finding density computation in worst offenders.
@@ -70,8 +70,6 @@ final class ViolationDensityTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 10,
-            warningCount: 0,
             metrics: $metrics,
         );
 
@@ -111,8 +109,6 @@ final class ViolationDensityTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 5,
-            warningCount: 0,
             metrics: $metrics,
         );
 
@@ -145,8 +141,6 @@ final class ViolationDensityTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
         );
 
@@ -181,8 +175,6 @@ final class ViolationDensityTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 3,
-            warningCount: 0,
             metrics: $metrics,
         );
 
@@ -217,8 +209,6 @@ final class ViolationDensityTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 2,
-            warningCount: 0,
             metrics: $metrics,
         );
 
@@ -254,8 +244,6 @@ final class ViolationDensityTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 7,
-            warningCount: 0,
             metrics: $metrics,
         );
 

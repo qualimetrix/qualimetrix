@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext;
 
 use Closure;
+
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ExternalSupertypeSourceInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\AnalysedDeclarations;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\KnownTypes;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -19,6 +21,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * rebinding either input rebuilds all derived facts and clears context memoization.
  * Each ancestry branch includes at most 256 links; a relation beyond that limit
  * is carried as an unresolved cut rather than a complete negative answer.
+ *
+  * @qmx-threshold coupling.instability 0.846155 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
  */
 final class ClassContextFactory
 {

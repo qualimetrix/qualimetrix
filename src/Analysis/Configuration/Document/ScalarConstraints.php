@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Configuration\Document;
 
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeScalarFacts;
+
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\TextRequirement;
 
 /** Value constraints applied after a written scalar passes its declared form. */

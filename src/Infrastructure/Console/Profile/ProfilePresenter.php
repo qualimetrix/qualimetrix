@@ -9,7 +9,7 @@ use Qualimetrix\Infrastructure\Console\Invocation\CommandLineSpelling;
 
 use Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\Profiler\Contract\ProfileFormat;
 use Qualimetrix\Infrastructure\Profiler\Contract\ProfileReportInterface;
 use Symfony\Component\Console\Input\InputInterface;

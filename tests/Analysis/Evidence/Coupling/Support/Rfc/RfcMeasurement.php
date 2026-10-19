@@ -6,7 +6,7 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Coupling\Support\Rfc;
 
 use LogicException;
 use PhpParser\ParserFactory;
-use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector;
+use Qualimetrix\Analysis\Evidence\Complexity\Cyclomatic\CyclomaticComplexityCollector;
 use Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcCollector;
 use Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcGlobalCollector;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ExternalClassSpellingInterface;

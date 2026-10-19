@@ -8,9 +8,11 @@ contracts and has no dependency on Reporting.
 
 ```text
 Prioritization/
+├── Contract/
+│   └── Debt/
+│       └── DebtSummary.php
 ├── Debt/
 │   ├── DebtCalculator.php
-│   ├── DebtSummary.php
 │   └── RemediationTimeRegistry.php
 └── Impact/
     ├── ClassRankIndex.php
@@ -18,6 +20,10 @@ Prioritization/
     ├── ImpactCalculator.php
     └── RankedIssue.php
 ```
+
+`Contract/Debt/DebtSummary` is the immutable result consumed by Reporting
+formatters and report enrichment. Calculation and remediation lookup stay
+private under `Debt`.
 
 Debt derives remediation minutes from finding identity and severity. Impact
 combines that debt with measured ClassRank share and returns deterministically

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter\Prose;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence;
-use Qualimetrix\Reporting\Report;
+use Qualimetrix\Reporting\Contract\Report\Report;
 
 final readonly class ComputedMetricAbsenceNarrator
 {

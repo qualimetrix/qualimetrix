@@ -25,6 +25,8 @@ final readonly class Finding
      * @param ?AcceptedLevel $acceptedLevel The recorded level on a measured breach or an explicitly
      *                                      uncompared group. Null when no applicable entry was found.
      * @param ?string $uncomparedReason Exact reason code when a recorded level could not be compared.
+     *
+      * @qmx-threshold code-smell.long-parameter-list 18 -- Identity, measurement, diagnostic and optional baseline judgement describe one published finding; splitting them would permit mismatched judgement and location.
      */
     public function __construct(
         public Location $location,
@@ -149,7 +151,7 @@ final readonly class Finding
      *
      * Format: channel:subject[:occurrence][:edge]
      *
-     * Used by {@see \Qualimetrix\Reporting\Formatter\GitLabCodeQualityFormatter::generateFingerprint()}
+     * Used by {@see \Qualimetrix\Reporting\Formatter\GitLab\GitLabCodeQualityFormatter::generateFingerprint()}
      * (hashed with md5, for cross-MR finding tracking) and by
      * {@see \Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter} (as
      * `partialFingerprints.primaryLocationLineHash`, for GitHub code scanning

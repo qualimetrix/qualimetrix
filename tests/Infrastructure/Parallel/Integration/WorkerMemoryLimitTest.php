@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore;
-use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector;
+use Qualimetrix\Analysis\Evidence\Complexity\Cyclomatic\CyclomaticComplexityCollector;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
@@ -131,7 +131,7 @@ final class WorkerMemoryLimitTest extends TestCase
             new RuleOptionDocumentForms(),
             DependencyVisitor::class,
             [LocCollector::class, CyclomaticComplexityCollector::class],
-        ), new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()), new \Qualimetrix\Infrastructure\Profiler\ProfileSession(), new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream());
+        ), new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()), new \Qualimetrix\Infrastructure\Profiler\ProfileSession(), new \Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream());
         if (WorkerPool::unavailableCapability() !== null) {
             self::markTestSkipped('Requires process workers.');
         }

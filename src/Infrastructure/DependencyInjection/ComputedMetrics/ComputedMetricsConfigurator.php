@@ -75,15 +75,16 @@ final class ComputedMetricsConfigurator implements ContainerConfiguratorInterfac
 
     private function registerHealth(ContainerBuilder $container): void
     {
+        $this->registerHealthMetadata($container);
+        $this->registerHealthSummaries($container);
+    }
+
+    private function registerHealthMetadata(ContainerBuilder $container): void
+    {
         $metricHintCatalog = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Metadata\\MetricHintCatalog';
         $healthDimensionCatalog = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Metadata\\HealthDimensionCatalog';
         $healthDecompositionCatalog = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Metadata\\HealthDecompositionCatalog';
         $healthMetricCatalog = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Metadata\\HealthMetricCatalog';
-        $healthSummaryBuilder = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Summary\\HealthSummaryBuilder';
-        $healthScoreDrillDown = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\HealthScoreDrillDown';
-        $worstClassDrillDown = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\WorstClassDrillDown';
-        $offenderRanking = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Offender\\OffenderRanking';
-        $worstOffenderBuilder = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Offender\\WorstOffenderBuilder';
 
         $container->register($metricHintCatalog);
         $container->register($healthDimensionCatalog);
@@ -94,14 +95,24 @@ final class ComputedMetricsConfigurator implements ContainerConfiguratorInterfac
             new Reference($healthDimensionCatalog),
         ]);
         $container->setAlias(self::METADATA_PROVIDER, $healthMetricCatalog);
+    }
+
+    private function registerHealthSummaries(ContainerBuilder $container): void
+    {
+        $healthSummaryBuilder = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Summary\\HealthSummaryBuilder';
+        $healthScoreDrillDown = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\HealthScoreDrillDown';
+        $worstClassDrillDown = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\WorstClassDrillDown';
+        $offenderRanking = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Offender\\OffenderRanking';
+        $worstOffenderBuilder = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Offender\\WorstOffenderBuilder';
+
         $container->register($healthSummaryBuilder)->setArguments([
-            new Reference($healthMetricCatalog),
+            new Reference(self::METADATA_PROVIDER),
             new Reference(self::CATALOG),
             new Reference($offenderRanking),
         ]);
         $container->register($healthScoreDrillDown)->setArguments([
             new Reference(self::CATALOG),
-            new Reference($healthDecompositionCatalog),
+            new Reference('Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Metadata\\HealthDecompositionCatalog'),
         ]);
         $container->register($worstOffenderBuilder);
         $container->register($offenderRanking)->setArguments([new Reference($worstOffenderBuilder)]);

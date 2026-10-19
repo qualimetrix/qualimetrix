@@ -14,7 +14,7 @@ use Qualimetrix\Infrastructure\Console\Application\Application;
 use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\RuleListing\RulesCommand;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\TestSupport\WorkingDirectory\RunsFromRepositoryRoot;
 use Symfony\Component\Console\Input\StringInput;
@@ -72,7 +72,7 @@ final class CheckCommandInputValidationTest extends TestCase
 
     #[Test]
     #[TestWith([\Qualimetrix\Infrastructure\Console\GraphExport\GraphExportCommand::class])]
-    #[TestWith([\Qualimetrix\Infrastructure\Console\Command\Baseline\Generation\BaselineGenerateCommand::class])]
+    #[TestWith([\Qualimetrix\Infrastructure\Console\Baseline\Generation\BaselineGenerateCommand::class])]
     public function itNamesInferredComposerTargetsThroughPreflightAndBaseline(string $commandClass): void
     {
         $root = sys_get_temp_dir() . '/qmx-inferred-adjacent-' . bin2hex(random_bytes(6));
@@ -89,7 +89,7 @@ final class CheckCommandInputValidationTest extends TestCase
             self::assertInstanceOf(RefusalPresenter::class, $presenter);
             (new Application(new ErrorStream(), $presenter, static fn() => new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()))->addCommand($command);
             $tester = new CommandTester($command);
-            $input = $commandClass === \Qualimetrix\Infrastructure\Console\Command\Baseline\Generation\BaselineGenerateCommand::class
+            $input = $commandClass === \Qualimetrix\Infrastructure\Console\Baseline\Generation\BaselineGenerateCommand::class
                 ? ['baseline' => $root . '/baseline.json']
                 : ['--format' => 'json'];
             $tester->execute($input, ['capture_stderr_separately' => true]);

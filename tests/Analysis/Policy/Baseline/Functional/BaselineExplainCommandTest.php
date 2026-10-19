@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\LongParameterListRule;
-use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
+use Qualimetrix\Analysis\Evidence\Complexity\Cyclomatic\ComplexityRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
@@ -23,13 +23,13 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntryMode;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineWriter;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntryMode;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\Explanation\BoundaryExplanationService;
 use Qualimetrix\Analysis\Policy\Baseline\RunCoverage\RunRuleCoverage;
 use Qualimetrix\Core\Observation\WorseDirection;
@@ -42,10 +42,10 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\Console\Command\Baseline\Explanation\BaselineConfiguredThresholds;
-use Qualimetrix\Infrastructure\Console\Command\Baseline\Explanation\BaselineExplainCommand;
+use Qualimetrix\Infrastructure\Console\Baseline\Explanation\BaselineConfiguredThresholds;
+use Qualimetrix\Infrastructure\Console\Baseline\Explanation\BaselineExplainCommand;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
@@ -580,6 +580,25 @@ final class BaselineExplainCommandTest extends TestCase
         }
     }
 
+    #[Test]
+    public function itPrintsChannelIdentitiesInOrderRegardlessOfFindingInsertion(): void
+    {
+        $symbol = SymbolPath::forMethod('App', 'OrderService', 'calculate');
+        $channels = ['code-smell.goto', 'code-smell.eval', 'code-smell.empty-catch', 'code-smell.exit'];
+        foreach ([$channels, array_reverse($channels)] as $order) {
+            $findings = array_map(static fn(string $channel): Finding => self::finding($symbol, $channel, 1), $order);
+            $tester = $this->execute($findings);
+            self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+            preg_match_all('/^  Channel: (.+)$/m', $tester->getDisplay(), $matches);
+            self::assertSame([
+                'code-smell.empty-catch',
+                'code-smell.eval',
+                'code-smell.exit',
+                'code-smell.goto',
+            ], $matches[1]);
+        }
+    }
+
     /**
      * @param list<Finding> $measured
      * @param array<string, mixed> $options
@@ -711,7 +730,7 @@ final class BaselineExplainCommandTest extends TestCase
     {
         (new BaselineWriter())->write(
             new Baseline(generated: (new FixedClock())->now(), scope: ['src'], entries: $entries, exclusions: self::fixtureExclusions()),
-            \Qualimetrix\Core\FileTarget\TargetPath::resolve($this->baselinePath),
+            \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($this->baselinePath),
             AbsolutePath::fromString($this->tempDir),
         );
     }

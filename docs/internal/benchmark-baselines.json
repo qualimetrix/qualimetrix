@@ -1,6 +1,6 @@
 {
     "version": 1,
-    "updated_at": "2026-10-14",
+    "updated_at": "2026-10-19",
     "description": "Expected health score ranges for benchmark projects. Used by scripts\/benchmark-regression.php to detect formula regressions.",
     "projects": {
         "flysystem": {
@@ -11,8 +11,8 @@
                     100
                 ],
                 "health.cohesion": [
-                    59,
-                    80
+                    71,
+                    92
                 ],
                 "health.coupling": [
                     78,
@@ -217,8 +217,8 @@
                     100
                 ],
                 "health.cohesion": [
-                    54,
-                    75
+                    71,
+                    92
                 ],
                 "health.coupling": [
                     48,
@@ -275,8 +275,8 @@
                     100
                 ],
                 "health.cohesion": [
-                    58,
-                    79
+                    76,
+                    97
                 ],
                 "health.coupling": [
                     66,
@@ -362,8 +362,8 @@
                     64
                 ],
                 "health.cohesion": [
-                    51,
-                    72
+                    70,
+                    91
                 ],
                 "health.coupling": [
                     68,
@@ -391,8 +391,8 @@
                     96
                 ],
                 "health.cohesion": [
-                    56,
-                    77
+                    77,
+                    98
                 ],
                 "health.coupling": [
                     56,
@@ -449,8 +449,8 @@
                     66
                 ],
                 "health.cohesion": [
-                    57,
-                    78
+                    69,
+                    90
                 ],
                 "health.coupling": [
                     90,
@@ -478,8 +478,8 @@
                     25
                 ],
                 "health.cohesion": [
-                    58,
-                    79
+                    76,
+                    97
                 ],
                 "health.coupling": [
                     73,

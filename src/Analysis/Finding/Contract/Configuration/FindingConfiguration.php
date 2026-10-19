@@ -11,6 +11,9 @@ use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions;
 use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 
+/**
+ * @qmx-threshold coupling.cbo 24 -- This public fact or option contract combines its declaration vocabulary with bounded implementation dependencies; its incoming readers do not independently justify a popularity exception.
+ */
 final readonly class FindingConfiguration
 {
     public function __construct(

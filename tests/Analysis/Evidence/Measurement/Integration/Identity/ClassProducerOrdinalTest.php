@@ -12,7 +12,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\UnusedPrivateCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\TccLccCollector;
-use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector;
+use Qualimetrix\Analysis\Evidence\Complexity\Cyclomatic\CyclomaticComplexityCollector;
 use Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcCollector;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector;
@@ -21,7 +21,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInte
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SourceMeasuringCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
-use Qualimetrix\Analysis\Evidence\Size\MethodCountCollector;
+use Qualimetrix\Analysis\Evidence\Size\MethodCount\MethodCountCollector;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\FileDeclarationIndex;
 use SplFileInfo;
@@ -55,11 +55,11 @@ final class ClassProducerOrdinalTest extends TestCase
         UnusedPrivateCollector::class => 'src/Analysis/Evidence/CodeSmell/UnusedPrivate/UnusedPrivateCollector.php',
         LcomCollector::class => 'src/Analysis/Evidence/Cohesion/LcomCollector.php',
         TccLccCollector::class => 'src/Analysis/Evidence/Cohesion/TccLccCollector.php',
-        CyclomaticComplexityCollector::class => 'src/Analysis/Evidence/Complexity/CyclomaticComplexityCollector.php',
+        CyclomaticComplexityCollector::class => 'src/Analysis/Evidence/Complexity/Cyclomatic/CyclomaticComplexityCollector.php',
         RfcCollector::class => 'src/Analysis/Evidence/Coupling/Rfc/RfcCollector.php',
         TypeCoverageCollector::class => 'src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageVisitor.php',
         LocCollector::class => 'src/Analysis/Evidence/Size/LocCollector.php',
-        MethodCountCollector::class => 'src/Analysis/Evidence/Size/MethodCountCollector.php',
+        MethodCountCollector::class => 'src/Analysis/Evidence/Size/MethodCount/MethodCountCollector.php',
     ];
 
     /** @param class-string<ClassMetricsProviderInterface&AbstractCollector> $producer */

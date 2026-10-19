@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Cohesion;
 
 use LogicException;
-use Qualimetrix\Core\Symbol\TraitMethodSource;
-use Qualimetrix\Core\Symbol\TraitUseFacts;
+use Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitMethodSource;
+use Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitUseFacts;
 
 /** Encodes declared members and trait composition inputs for a class or trait. */
 final class CohesionMemberWire

@@ -10,9 +10,9 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionAddress;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidationFailure;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\ThresholdOverrideRequest;
-use Qualimetrix\Analysis\Finding\Rule\Override\OverrideValidationFailure;
 
 /** The declared override forms and the existing value-pair strategy of one rule. */
 final readonly class RuleOptionForms implements OverrideValidatorInterface

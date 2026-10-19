@@ -1,0 +1,10 @@
+--- candidate
++++ reference (mapped)
+@@ -113,1 +113,6 @@
+-            "refusals": [{"channel":"annotation.unresolved-directive","message":"Suppression \"design.type-coverage.propurn\" addresses no channel. Addressable names closest to it: design.type-coverage.return, design.type-coverage.property. Prose belongs after \"--\"."}]
++            "refusals": [
++                {
++                    "channel": "annotation.unresolved-directive",
++                    "message": "Suppression \"design.type-coverage.propurn\" addresses no channel. Addressable names closest to it: design.type-coverage.return, design.type-coverage.property. Prose belongs after \"--\"."
++                }
++            ]

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Duplication\Matching;
 
-use Qualimetrix\Analysis\Evidence\Duplication\Normalization\RetokenizedFiles;
+use Qualimetrix\Analysis\Evidence\Duplication\RetokenizedFiles;
 
 /**
  * Bundles everything {@see DuplicateBlockFinder::find()} needs for one

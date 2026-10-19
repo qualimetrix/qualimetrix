@@ -21,7 +21,7 @@ interface RuleInterface extends RuleDefinitionInterface
      * (ADR 0031 / {@see ChannelShape}) — one answer for the whole rule, not
      * per channel.
      *
-     * Read by {@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\ChannelDeclarationCompilerPass}
+     * Read by {@see \Qualimetrix\Infrastructure\DependencyInjection\ChannelCatalog\ChannelDeclarationCompilerPass}
      * via a plain static call, the same way it already reads
      * {@see RuleDefinitionInterface::getOptionsClass()} — no instantiation, a
      * rule may take constructor dependencies beyond its Options object.

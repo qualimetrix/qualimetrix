@@ -149,8 +149,10 @@ declaration and report duplicates separately.
 - Expect WMC zero for named class-like declarations without methods and null
   source locations on namespace and project records.
 - Migrate namespace-finding suppressions from `suppress_paths` to
-  `suppress_namespaces`. Use JSON or SARIF when a consumer needs findings without
-  source files; GitLab Code Quality and Checkstyle carry the source-located subset.
+  `suppress_namespaces`. GitLab Code Quality and Checkstyle now retain every finding. Unlocated
+  namespace and project aggregates use truthful containing-directory anchors
+  at line 1, which do not promise a source-line link; baseline audits use
+  the baseline document when it is inside the project.
 - Same-name declarations can have different values, finding counts and
   densities. Their graph-only values remain shared by logical name.
 
@@ -163,3 +165,7 @@ existing public factory promise accepts finite definitions; Infrastructure
 resolves its two catalogs and delegates to an independently bound storage
 factory service. A native cross-owner constructor call is not a Symfony
 composition binding, so it does not authorize importing the private repository.
+
+Directory anchors satisfy the structural string-path schema; GitLab documentation
+describes source-file paths, so a directory anchor has no source-line navigation
+in its UI. The finding remains visible with its own identity and severity.

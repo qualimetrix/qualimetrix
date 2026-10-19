@@ -6,8 +6,8 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Support;
 
 use Qualimetrix\Analysis\Evidence\Duplication\Index\PackedPosition;
 use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateSearchRequest;
-use Qualimetrix\Analysis\Evidence\Duplication\Normalization\RetokenizedFiles;
-use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenNormalizer;
+use Qualimetrix\Analysis\Evidence\Duplication\RetokenizedFiles;
+use Qualimetrix\Analysis\Evidence\Duplication\TokenNormalizer;
 
 final class SplitSameContentFixture
 {

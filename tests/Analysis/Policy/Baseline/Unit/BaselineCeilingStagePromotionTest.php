@@ -14,7 +14,7 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\GroupCeilingVerdict;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntry;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Fixtures\CeilingStageFixtures;

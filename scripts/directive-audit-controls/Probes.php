@@ -92,7 +92,7 @@ final class Probes
 
     private const string FIXTURE = 'scripts/directive-audit/tests/Fixtures/AuthoredThresholdForms.php';
 
-    private const string EXTRACTOR = 'src/Analysis/Policy/Inline/Contract/ThresholdOverrideExtractor.php';
+    private const string EXTRACTOR = 'src/Analysis/Policy/Inline/Threshold/ThresholdOverrideExtractor.php';
 
     /**
      * Field of a finding => the line the fingerprint reads it with.
@@ -1970,8 +1970,14 @@ final class Probes
             Probe::breaking(
                 'missing-path-not-refused',
                 'a path that does not exist is not refused by name before the run',
-                'src/Infrastructure/Console/RunSetup/AnalysisPreflight.php',
-                ['        $this->pathValidator->validate($runConfiguration->paths, $document);' => ''],
+                'src/Infrastructure/Console/RunSetup/Input/AnalysisPreflight.php',
+                ["        \$this->pathValidator->validate(\n"
+                    . "            \$runConfiguration->paths,\n"
+                    . "            \$document,\n"
+                    . "            \$runConfiguration->projectScope->universe->pathsAuthored\n"
+                    . "                ? \\Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\PathsAuthorship::Authored\n"
+                    . "                : \\Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\PathsAuthorship::Inferred,\n"
+                    . "        );\n" => ''],
                 ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesANonExistentPath'],
             )->alsoReddens(
                 'the file-authored missing-path case reaches the same preflight validation; without it neither the named refusal nor its provenance is published',

@@ -6,9 +6,9 @@ namespace Qualimetrix\Reporting\Formatter\Json;
 
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Reporting\Formatter\FindingRecord;
-use Qualimetrix\Reporting\Formatter\PublishedFinding;
-use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\FindingPublication\FindingRecord;
+use Qualimetrix\Reporting\FindingPublication\PublishedFinding;
 
 final class JsonFindingSection
 {

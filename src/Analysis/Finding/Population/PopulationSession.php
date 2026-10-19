@@ -17,15 +17,19 @@ final class PopulationSession
 {
     private readonly PopulationTrace $trace;
 
+    /** @var array<string, bool> */
+    private array $published = [];
+
     /** @param Closure(string, FindingChannel, SymbolLevel, ?string): bool $publishes */
     public function __construct(private readonly Closure $publishes, private readonly ?string $addressedProducer = null)
     {
         $this->trace = new PopulationTrace();
     }
 
-    public function record(string $producer, FindingChannel $channel, SymbolLevel $level, PopulationIdentity $identity, ChannelDeclaration $declaration, ?string $failedGateId, ?string $reason): void
+    public function record(string $producer, FindingChannel $channel, SymbolLevel $level, PopulationIdentity $identity, ChannelDeclaration $declaration, ?string $failedGateId, ?string $reason, bool $dataGap = true): void
     {
-        if (!($this->publishes)($producer, $channel, $level, $this->addressedProducer)) {
+        $coordinate = \strlen($producer) . ":" . $producer . \strlen($channel->code) . ":" . $channel->code . "\0" . $level->value;
+        if (!($this->published[$coordinate] ??= ($this->publishes)($producer, $channel, $level, $this->addressedProducer))) {
             return;
         }
         $gates = $declaration->gatesFor($channel, $level);
@@ -34,7 +38,7 @@ final class PopulationSession
         } else {
             $this->assertFailedOutcome($gates, $identity, $failedGateId, $reason);
         }
-        $this->trace->record($producer, $channel, $level, $identity, $failedGateId, $reason);
+        $this->trace->record($producer, $channel, $level, $identity, $failedGateId, $reason, $dataGap);
     }
 
     /** @param list<PopulationGate> $gates */

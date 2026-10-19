@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Cache;
 
+use Qualimetrix\Core\FileTarget\NativeCall;
 use Qualimetrix\Core\FileTarget\Publication\FileReplacement;
 use Qualimetrix\Core\FileTarget\Publication\NewName;
-use Qualimetrix\Core\FileTarget\TargetPath;
+use Qualimetrix\Core\FileTarget\Resolution\TargetPath;
 
 final class CacheLayout
 {
@@ -65,6 +66,28 @@ final class CacheLayout
         }
 
         return $versions;
+    }
+
+    /** @return ?list<string> */
+    public static function clearableDirectories(string $root): ?array
+    {
+        $versions = self::versions($root);
+        if ($versions === null || !is_dir($root)) {
+            return $versions;
+        }
+        [$names] = NativeCall::attempt(static fn() => scandir($root));
+        if ($names === false) {
+            return null;
+        }
+        $detached = [];
+        foreach ($names as $name) {
+            $path = $root . '/' . $name;
+            if (preg_match('/^\.clearing-[0-9a-f]{16}$/D', $name) === 1 && !is_link($path)) {
+                $detached[] = $path;
+            }
+        }
+
+        return [...$detached, ...$versions];
     }
 
     public static function entryName(string $name): bool

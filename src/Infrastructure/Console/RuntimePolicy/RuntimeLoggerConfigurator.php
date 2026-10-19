@@ -10,14 +10,16 @@ use Psr\Log\LogLevel;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Infrastructure\Console\Invocation\CommandLineSpelling;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\Logging\Contract\LogFileUnavailable;
 use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-/** Creates and publishes the logger for one console run. */
+/** Creates and publishes the logger for one console run.
+ * @qmx-threshold coupling.instability 0.846155 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
+ */
 final readonly class RuntimeLoggerConfigurator
 {
     /** The levels the logger factory can build; anything else is refused, not substituted. */

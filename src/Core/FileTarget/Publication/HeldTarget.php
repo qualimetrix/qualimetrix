@@ -9,7 +9,7 @@ use Qualimetrix\Core\FileTarget\FileIdentity;
 use Qualimetrix\Core\FileTarget\FileTargetFailure;
 use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
 use Qualimetrix\Core\FileTarget\NativeCall;
-use Qualimetrix\Core\FileTarget\ResolvedTarget;
+use Qualimetrix\Core\FileTarget\Resolution\ResolvedTarget;
 
 use Qualimetrix\Core\FileTarget\TargetKind;
 

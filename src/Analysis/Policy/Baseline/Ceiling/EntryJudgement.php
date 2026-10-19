@@ -8,12 +8,11 @@ use Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntryMode;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntryMode;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\GroupAcceptance;
 use Qualimetrix\Analysis\Policy\Baseline\RunCoverage\RunCoverageGap;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -64,6 +63,11 @@ final readonly class EntryJudgement
             $group,
         );
         $comparison = EntryComparability::judge($region, $this->baseline, $this->coverage);
+        if (!$comparison->canCompare() && $direction === null
+            && array_all($group, static fn(Finding $finding): bool => $finding->dependencyTarget !== null)
+            && ($sourceFile = SubjectRegion::subjectFile($identity)) !== null) {
+            $comparison = EntryComparability::judge(Region::file($sourceFile), $this->baseline, $this->coverage);
+        }
         if (!$comparison->canCompare()) {
             return GroupCeilingVerdict::uncompared(self::levelOf($entry), $comparison->reason ?? IncomparabilityReason::MetadataUnknown);
         }

@@ -30,18 +30,51 @@ Coupling/
 │   ├── ClassRankCollector.php
 │   ├── ClassRankOptions.php
 │   └── ClassRankRule.php
+├── Configuration/
+│   ├── CouplingSection.php
+│   └── FrameworkNamespaceSelectorParser.php
+├── Contract/
+│   └── Configuration/
+│       └── CouplingConfiguratorInterface.php
 ├── Distance/
 │   ├── DistanceCollector.php
 │   ├── DistanceOptions.php
 │   └── DistanceRule.php
-└── Configuration/
-    ├── CouplingSection.php
-    └── FrameworkNamespaceSelectorParser.php
+├── Instability/
+│   ├── ClassInstabilityOptions.php
+│   ├── InstabilityOptions.php
+│   ├── InstabilityRule.php
+│   └── NamespaceInstabilityOptions.php
+├── Rfc/
+│   ├── RfcBodyResponses.php
+│   ├── RfcClassFacts.php
+│   ├── RfcCollector.php
+│   ├── RfcDeclarationFacts.php
+│   ├── RfcDeclarationIndex.php
+│   ├── RfcEffectiveMembers.php
+│   ├── RfcGlobalCollector.php
+│   ├── RfcLocalFlow.php
+│   ├── RfcPropertyTypes.php
+│   ├── RfcReceiverTypes.php
+│   ├── RfcResponseResolver.php
+│   └── RfcVisitor.php
+├── UnmatchedFramework/
+│   ├── UnmatchedFrameworkFinding.php
+│   ├── UnmatchedFrameworkNamespaceOptions.php
+│   └── UnmatchedFrameworkNamespaceRule.php
+├── AbstractnessCollector.php
+├── CoupledNamespaces.php
+├── CouplingAnalysis.php
+├── CouplingCollector.php
+└── FrameworkClassificationSites.php
 ```
 
 `CouplingCollector` remains the shared producer of Ca, Ce, CBO and instability;
 `Cbo/` owns interpretation, while `Distance/` and `ClassRank/` keep each derived
-collector with its options and rule. These are internal subjects of one capability.
+collector with its options and rule. `Instability/` owns instability judgement
+and all its option bands; `UnmatchedFramework/` owns unmatched framework-selector
+judgement. Shared graph collection and run classification state remain at the
+capability root. These are internal subjects of one capability.
 
 ## Metrics
 
@@ -459,7 +492,10 @@ classes, with positive `coupling.ca`. Interfaces, traits and enums retain graph
 rank evidence but are outside that rule population. The fixed share defaults
 are warning 5 and error 10, in multiples of the uniform rank; equality reaches
 the boundary. Overrides use the same units, with no project-size scaling.
-Messages use the shortest common precision from two through six decimal places
+The recommendation labels Ca as the number of direct dependents. PageRank
+also reflects transitive dependency paths but the report does not count
+transitive dependents. A single direct dependent can itself be a hub.
+ClassRank, Distance and Instability messages use the shortest common precision from two through six decimal places
 that distinguishes unequal value and threshold; a remaining collision is marked
 as rounded. The underlying comparison always uses the unrounded share.
 
@@ -585,3 +621,7 @@ builder receives the same full declaration used by its invocation.
 > aggregates sample physical declarations, so a logical name's graph value
 > contributes once per declaration. Namespace sums/counts/averages are
 > declaration-weighted, rather than graph-node or inheritance-edge counts.
+
+Invalid trait method composition carries the exact declaration through
+`TraitCompositionFailure`; Run refuses that source file and publishes the rest
+of the analysis with incomplete coverage.

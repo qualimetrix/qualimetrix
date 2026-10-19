@@ -71,7 +71,7 @@ final class ClassRankRuleTest extends TestCase
         self::assertSame($share, $findings[0]->metricValue);
         self::assertSame($severity, $findings[0]->severity);
         self::assertStringContainsString($fragment, $findings[0]->message);
-        self::assertStringContainsString('1 class depends', $findings[0]->recommendation ?? '');
+        self::assertStringContainsString('1 class depends directly; PageRank also reflects transitive dependency paths', $findings[0]->recommendation ?? '');
     }
 
     /** @return iterable<string, array{float, ?Severity, string}> */
@@ -226,6 +226,23 @@ final class ClassRankRuleTest extends TestCase
         self::expectException(LogicException::class);
         self::expectExceptionMessage('rosters disagree');
         (new ClassRankRule(new ClassRankOptions()))->analyze(new AnalysisContext($base->metrics, $extraGraph));
+    }
+
+    #[Test]
+    public function itRecordsDependentsBelowAndAtThePopulationBoundary(): void
+    {
+        $context = $this->context([
+            ['Isolate', ClassType::Class_, MetricBag::fromArray(['coupling.class-rank-share' => 1, 'coupling.ca' => 0])],
+            ['Used', ClassType::Class_, MetricBag::fromArray(['coupling.class-rank-share' => 1, 'coupling.ca' => 1])],
+        ]);
+        $session = new PopulationSession(($this->publication())->publishes(...));
+        self::assertSame([], (new ClassRankRule(new ClassRankOptions()))->analyze($context->withPopulationTrace($session)));
+        $population = $session->freeze();
+        self::assertSame(1, $population->judgedCount());
+        self::assertSame(1, $population->unjudgedCount());
+        self::assertSame('dependents', $population->abstentions()[0]->gate);
+        self::assertSame('declaration', $population->abstentions()[0]->unit);
+        self::assertSame(1, $population->abstentions()[0]->count);
     }
 
     private function publication(bool $selected = true): ChannelPublication

@@ -10,7 +10,6 @@ use PhpParser\Comment\Doc;
 use PhpParser\Node;
 use PhpParser\NodeFinder;
 use PhpToken;
-use Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor;
 
 /**
  * The directive comments of a file that php-parser attached to no node, and

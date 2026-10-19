@@ -9,6 +9,7 @@ use Qualimetrix\Core\SourceText\SourceBytes;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use WeakMap;
 
 final readonly class PopulationIdentity
 {
@@ -47,7 +48,12 @@ final readonly class PopulationIdentity
 
     public static function subject(MetricSubject $subject, string $unit = 'declaration'): self
     {
-        return new self($subject->toCanonical(), $unit);
+        static $identities = new WeakMap();
+        $existing = $identities[$subject] ?? null;
+        if ($existing instanceof self && $existing->unit === $unit) {
+            return $existing;
+        }
+        return $identities[$subject] = new self($subject->toCanonical(), $unit);
     }
 
     public static function occurrence(string $authority, int $ordinal, string $unit = 'occurrence'): self

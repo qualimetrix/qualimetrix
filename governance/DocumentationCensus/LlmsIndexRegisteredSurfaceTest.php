@@ -13,8 +13,8 @@ use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
-use Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor;
-use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
+use Qualimetrix\Analysis\Policy\Inline\Extraction\SuppressionExtractor;
+use Qualimetrix\Analysis\Policy\Inline\Threshold\ThresholdOverrideExtractor;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -103,7 +103,7 @@ final class LlmsIndexRegisteredSurfaceTest extends TestCase
 {
     private const string COMMAND_DIRECTORY = __DIR__ . '/../../src/Infrastructure/Console';
 
-    private const string BINARY_PATH = __DIR__ . '/../../src/Infrastructure/Console/Application/ProductCommandLoader.php';
+    private const string BINARY_PATH = __DIR__ . '/../../src/Infrastructure/Console/Application/CommandLoading/ProductCommandLoader.php';
 
     private const string LLMS_TXT_PATH = __DIR__ . '/../../website/docs/llms.txt';
 

@@ -147,6 +147,27 @@ final class ProjectScopeCoverageTest extends TestCase
     }
 
     #[Test]
+    public function itPublishesDeclaredAutoloadTargetsInsteadOfEveryMissingFile(): void
+    {
+        $this->writeManifest(['autoload' => ['psr-4' => ['Fixture\\' => 'src/']]]);
+        $root = AbsolutePath::fromString($this->tempDir);
+        $selection = [$root->joinRelative(RelativePath::fromString('src/Sub'))];
+        $measurement = $this->coverage()->measure(
+            $root,
+            $selection,
+            AutoloadDevPolicy::Exclude,
+            \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored,
+        );
+        $missing = [];
+        for ($index = 0; $index < 300; ++$index) {
+            $missing[] = RelativePath::fromString('src/Other/Class' . $index . '.php');
+        }
+        $measured = $measurement->withDiscoveredFiles(new DiscoveredProjectFiles([], [], [], [], [], new ScopeFacts($missing, [], [], false), 0));
+        self::assertSame(ProjectScopeState::Narrowed, $measured->state());
+        self::assertSame(['src'], $measured->uncoveredRoots);
+    }
+
+    #[Test]
     public function itCoversTheProjectWhenEveryProductionAutoloadRootIsAnalysed(): void
     {
         $this->writeComposerJson(['src/', 'lib/']);

@@ -14,11 +14,11 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionRefusal;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ThresholdParser;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ThresholdPair;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOptionQueries;
 use Qualimetrix\Core\Pattern\NamespaceMatcher;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Pattern\SelectorDefinition;
@@ -40,6 +40,8 @@ use Throwable;
  */
 final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
+    use ThresholdOptionQueries;
+
     use StandardOverrideValidatorTrait;
 
     private const string RULE_NAME = 'coupling.distance';
@@ -61,11 +63,11 @@ final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdA
 
     public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
-        $thresholds = ThresholdParser::parse($config, RuleOptionSurface::bandFor(self::class, 'threshold'), 0.3, 0.5);
+        $thresholds = ThresholdPair::fromResolved($config, RuleOptionSurface::bandFor(self::class, 'threshold'), 0.3, 0.5);
         return new self(
             enabled: $config->boolean('enabled', true),
-            maxDistanceWarning: $thresholds['warning'],
-            maxDistanceError: $thresholds['error'],
+            maxDistanceWarning: $thresholds->warning,
+            maxDistanceError: $thresholds->error,
             includeNamespaces: self::includeNamespaces($config->list('include-namespaces')),
             minTypeCount: $config->integer('min-type-count', 3),
         );
@@ -109,26 +111,6 @@ final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdA
         )->band('threshold', 'max-distance-warning', 'max-distance-error', BandDirection::Rising);
     }
 
-    public function isEnabled(): bool
-    {
-        return $this->enabled;
-    }
-
-    public function getSeverity(int|float $value): ?Severity
-    {
-        $distance = (float) $value;
-
-        if ($distance >= $this->maxDistanceError) {
-            return Severity::Error;
-        }
-
-        if ($distance >= $this->maxDistanceWarning) {
-            return Severity::Warning;
-        }
-
-        return null;
-    }
-
     public function withOverride(int|float|null $warning, int|float|null $error): static
     {
         return new static(
@@ -138,11 +120,6 @@ final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdA
             includeNamespaces: $this->includeNamespaces,
             minTypeCount: $this->minTypeCount,
         );
-    }
-
-    public function warningBoundary(): float
-    {
-        return $this->maxDistanceWarning;
     }
 
     /** @return list<NamespacePattern>|null */
@@ -193,4 +170,9 @@ final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdA
             $problem,
         ));
     }
+    protected function thresholdPair(): ThresholdPair
+    {
+        return new ThresholdPair($this->maxDistanceWarning, $this->maxDistanceError);
+    }
+
 }

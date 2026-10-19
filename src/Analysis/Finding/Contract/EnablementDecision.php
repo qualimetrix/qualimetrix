@@ -15,7 +15,11 @@ use Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch;
 use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
-/** The decision for one declared channel and level. */
+/**
+ * The decision for one declared channel and level.
+ *
+ * @qmx-threshold health.cohesion 40.0 -- Independent immutable observations or stateless declaration operations intentionally have no shared instance-field graph; this finite class boundary keeps a further cohesion loss visible.
+ */
 final readonly class EnablementDecision
 {
     public string $producer;

@@ -8,9 +8,9 @@ use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 
-use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Rule\AbstractRule;
 use Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsagePopulation;
 
 /**

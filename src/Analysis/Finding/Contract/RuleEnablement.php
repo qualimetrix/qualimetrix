@@ -15,7 +15,11 @@ use Qualimetrix\Analysis\Finding\Selection\EnablementIndex;
 use Qualimetrix\Analysis\Finding\Selection\SelectionCauses;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
-/** One immutable answer to execution, publication and audit selection. */
+/**
+ * One immutable answer to execution, publication and audit selection.
+ *
+ * @qmx-threshold coupling.cbo 21 -- One enablement decision combines explicit rules, channel choices and selection provenance; its typed inputs belong to that single judgement.
+ */
 final readonly class RuleEnablement
 {
     private EnablementIndex $index;

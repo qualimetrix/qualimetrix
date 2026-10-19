@@ -365,17 +365,19 @@ Size/
 │   ├── ClassCountOptions.php
 │   ├── ClassCountRule.php
 │   └── ClassCountVisitor.php
+├── MethodCount/
+│   ├── MethodCountCollector.php
+│   ├── MethodCountMetrics.php
+│   ├── MethodCountOptions.php
+│   ├── MethodCountRule.php
+│   └── MethodCountVisitor.php
+├── PropertyCount/
+│   ├── PropertyCountOptions.php
+│   └── PropertyCountRule.php
 ├── LocCollector.php
 ├── LocVisitor.php
-├── MethodCountCollector.php
-├── MethodCountMetrics.php
-├── MethodCountOptions.php
-├── MethodCountRule.php
-├── MethodCountVisitor.php
 ├── MethodStatementCountCollector.php
-├── MethodStatementCountVisitor.php
-├── PropertyCountOptions.php
-└── PropertyCountRule.php
+└── MethodStatementCountVisitor.php
 ```
 
 LOC classifies physical lines using native PHP tokens: punctuation beside a
@@ -395,7 +397,9 @@ anonymous classes, methods, properties, thresholds, and property exclusions.
 ## Definition of Done
 
 - Class cardinality collection, traversal, options and rule stay together in
-  `ClassCount/`; the capability publishes no `Contract/` surface.
+  `ClassCount/`. Method measurement, including its property facts, stays in
+  `MethodCount/`; `PropertyCount/` owns property-count policy. The capability
+  publishes no `Contract/` surface.
 - `size.class-count`, `size.method-count`, and `size.property-count` and their
   metric keys retain their existing behaviour. `design.woc` is the Lanza & Marinescu
   ratio described above; WMC stays the Complexity-owned sum of method CCN on each exact class declaration.

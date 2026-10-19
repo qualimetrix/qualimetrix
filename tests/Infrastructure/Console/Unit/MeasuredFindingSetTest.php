@@ -36,10 +36,10 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\BaselineCommand\MeasuredFindingSet;
+use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeResult;
-use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
@@ -210,7 +210,7 @@ final class MeasuredFindingSetTest extends TestCase
 
                 return $execution;
             })()),
-            fileScope: \Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelFileScope::create(),
+            fileScope: \Qualimetrix\Infrastructure\DependencyInjection\ChannelCatalog\DeclaredChannelFileScope::create(),
         );
 
         return new MeasuredFindingSet($analyzer, $projector);

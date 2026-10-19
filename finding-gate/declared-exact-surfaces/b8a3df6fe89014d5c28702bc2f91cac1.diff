@@ -1,0 +1,25 @@
+--- candidate
++++ reference (mapped)
+@@ -1,15 +1,7 @@
+-visible 309
+-<?xml version="1.0" encoding="UTF-8"?>
+-<checkstyle version="3.0">
+-  <file name=".">
+-    <error line="1" severity="warning" message="The exclude pattern &quot;subtree:NoSuchDir&quot; matched no entry in the project, so it leaves nothing out." source="qmx.discovery.unmatched-exclude"/>
+-  </file>
+-</checkstyle>
+-
+-invocation-format:checkstyle 309
+-<?xml version="1.0" encoding="UTF-8"?>
+-<checkstyle version="3.0">
+-  <file name=".">
+-    <error line="1" severity="warning" message="The exclude pattern &quot;subtree:NoSuchDir&quot; matched no entry in the project, so it leaves nothing out." source="qmx.discovery.unmatched-exclude"/>
+-  </file>
+-</checkstyle>
++visible 67
++<?xml version="1.0" encoding="UTF-8"?>
++<checkstyle version="3.0"/>
++
++invocation-format:checkstyle 67
++<?xml version="1.0" encoding="UTF-8"?>
++<checkstyle version="3.0"/>

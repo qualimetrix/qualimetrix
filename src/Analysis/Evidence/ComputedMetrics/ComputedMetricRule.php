@@ -15,8 +15,8 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
-use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Rule\AbstractRule;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -140,6 +140,9 @@ final class ComputedMetricRule extends AbstractRule
                 $symbolPath,
                 $location,
                 $definition->producerRuleName(),
+                $level === SymbolLevel::Class_ && \in_array($definition->name, ComputedMetricChannelFamily::HEALTH_PRODUCER_RULE_NAMES, true)
+                    ? $context->getThresholdOverride(ComputedMetricChannelFamily::producerFor($definition->name), $subject)
+                    : null,
             );
             if ($finding !== null) {
                 $findings[] = $finding;

@@ -19,11 +19,11 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterRegistryInterface;
+use Qualimetrix\Reporting\Coverage\ReportCoverage;
 use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
-use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
-use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\ReportBuilder;
-use Qualimetrix\Reporting\ReportCoverage;
 use Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub;
 
 /**
@@ -64,7 +64,7 @@ final class OutOfScopePublicationTest extends TestCase
 
     #[Test]
     #[DataProvider('filelessFormats')]
-    public function itPublishesTheNamespacePlaceOnlyInFormatsWithAFilelessLocation(string $format, string $namespace, string $label): void
+    public function itPublishesTheNamespacePlaceInEveryFormat(string $format, string $namespace, string $label): void
     {
         $symbol = SymbolPath::forNamespace($namespace);
         $finding = new Finding(Location::none(), MetricSubject::aggregate($symbol), $symbol, 'health.cohesion', 'health.cohesion', 'Low cohesion.', Severity::Warning);
@@ -72,12 +72,16 @@ final class OutOfScopePublicationTest extends TestCase
 
         match ($format) {
             'text' => self::assertStringStartsWith($label . ':', $output),
-            'checkstyle' => self::assertEmptyCheckstyle($output),
-            'gitlab' => self::assertSame([], self::decode($output)),
+            'checkstyle' => self::assertNamespaceCheckstyle($output, $label),
+            'gitlab' => self::assertSame($label . ': Low cohesion.', self::decode($output)[0]['description']),
             'github' => self::assertStringContainsString('::' . $label . ': Low cohesion.', $output),
             'sarif' => self::assertSame($label . ': Low cohesion.', self::decode($output)['runs'][0]['results'][0]['message']['text']),
             default => self::fail('Unknown format'),
         };
+        if ($format === 'gitlab') {
+            self::assertCount(1, self::decode($output));
+            self::assertSame('.', self::decode($output)[0]['location']['path']);
+        }
     }
 
     #[Test]
@@ -296,12 +300,14 @@ final class OutOfScopePublicationTest extends TestCase
         );
     }
 
-    private static function assertEmptyCheckstyle(string $output): void
+    private static function assertNamespaceCheckstyle(string $output, string $label): void
     {
-        $xml = new DOMDocument();
-        self::assertTrue($xml->loadXML($output));
-        self::assertSame(0, $xml->getElementsByTagName('file')->length);
-        self::assertSame(0, $xml->getElementsByTagName('error')->length);
+        $document = new DOMDocument();
+        self::assertTrue($document->loadXML($output));
+        self::assertSame('.', $document->getElementsByTagName('file')->item(0)?->getAttribute('name'));
+        $errors = $document->getElementsByTagName('error');
+        self::assertSame(1, $errors->length);
+        self::assertSame($label . ': Low cohesion.', $errors->item(0)?->getAttribute('message'));
     }
 
     /** @return array<mixed> */

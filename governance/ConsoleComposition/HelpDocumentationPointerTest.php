@@ -66,7 +66,7 @@ final class HelpDocumentationPointerTest extends TestCase
 {
     private const string COMMAND_DIRECTORY = __DIR__ . '/../../src/Infrastructure/Console';
 
-    private const string BINARY_PATH = __DIR__ . '/../../src/Infrastructure/Console/Application/ProductCommandLoader.php';
+    private const string BINARY_PATH = __DIR__ . '/../../src/Infrastructure/Console/Application/CommandLoading/ProductCommandLoader.php';
 
     /** @param class-string<Command> $class */
     #[Test]

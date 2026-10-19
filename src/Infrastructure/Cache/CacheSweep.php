@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Cache;
 
+use Qualimetrix\Core\FileTarget\TemporarySibling;
 use Qualimetrix\Core\Path\AbsolutePath;
 
 use Qualimetrix\Infrastructure\Cache\Root\CacheRootUntrusted;
@@ -25,6 +26,9 @@ final readonly class CacheSweep
             throw new CacheRootUntrusted('Cannot inspect cache version directories in "' . $this->directory->value() . '".');
         }
         foreach ($versions as $version) {
+            [$count, $size] = $this->sweepMetadata($version, $now, $policy);
+            $removed += $count;
+            $bytes += $size;
             for ($offset = 0; $offset < $policy->shardsPerStep; ++$offset) {
                 $shard = $version . '/' . \sprintf('%02x', ($cursor + $offset) % 256);
                 [$count, $size] = $this->sweepShard($shard, $now, $policy);
@@ -46,6 +50,23 @@ final readonly class CacheSweep
     }
 
     /** @return array{int, int} */
+    private function sweepMetadata(string $directory, int $now, SweepPolicy $policy): array
+    {
+        $removed = $bytes = 0;
+        foreach ($this->entriesIn($directory) as $entry) {
+            if (!TemporarySibling::ownsName(basename($entry['path'])) || $entry['mtime'] >= $now - $policy->maxAgeSeconds) {
+                continue;
+            }
+            if (@unlink($entry['path'])) {
+                ++$removed;
+                $bytes += $entry['size'];
+            }
+        }
+
+        return [$removed, $bytes];
+    }
+
+    /** @return array{int, int} */
     private function sweepShard(string $directory, int $now, SweepPolicy $policy): array
     {
         if (!is_dir($directory) || is_link($directory)) {
@@ -57,6 +78,9 @@ final readonly class CacheSweep
         $newest = \count($entries) - 1;
         $removed = $bytes = 0;
         foreach ($entries as $index => $entry) {
+            if (TemporarySibling::ownsName(basename($entry['path'])) && $entry['mtime'] >= $now - $policy->maxAgeSeconds) {
+                continue;
+            }
             if ($entry['mtime'] >= $now - $policy->maxAgeSeconds && ($total <= $policy->shardQuotaBytes || $index === $newest)) {
                 continue;
             }
@@ -77,7 +101,7 @@ final readonly class CacheSweep
         $names = @scandir($directory);
         foreach ($names === false ? [] : $names as $name) {
             $path = $directory . '/' . $name;
-            if (!CacheLayout::entryName(basename($path)) || !is_file($path) || is_link($path)) {
+            if ((!CacheLayout::entryName($name) && !TemporarySibling::ownsName($name)) || !is_file($path) || is_link($path)) {
                 continue;
             }
             $mtime = filemtime($path);

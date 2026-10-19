@@ -15,6 +15,8 @@ use Qualimetrix\Core\SourceText\SourceBytes;
  * one file. It is a rank, not a position, so editing text above a declaration
  * leaves its identity alone. There is no default: dropping the argument during
  * a migration must not silently mean "the first one".
+ *
+ * @qmx-threshold coupling.cbo 23 -- This public fact or option contract combines its declaration vocabulary with bounded implementation dependencies; its incoming readers do not independently justify a popularity exception.
  */
 final readonly class DeclarationPath
 {

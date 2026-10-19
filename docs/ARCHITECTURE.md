@@ -59,8 +59,11 @@ an uncovered project class fail even when it has no dependency edges.
 Every test, support file, and fixture directory is governed by the same
 manifest; `test-topology.tsv` in the generated directory reports how many of
 each. Self-analysis runs against the versioned v14 root baseline, whose
-275 groups across 231 subjects are checked against the file itself by
-`BaselineCountPublicationTest`, and the current dogfood result is zero findings.
+194 groups across 157 subjects are checked against the file itself by
+`BaselineCountPublicationTest`, and its residual rows accept warnings only, apart from the exact temporary
+namespace-CBO exceptions documented in ADR 0126. Class and method model
+limitations use finite symbol-local thresholds; intentional public readership
+uses exact signal exceptions. Each quality warning has a named closure owner.
 
 The manifest checker is the exact owner/visibility/import authority. It runs as
 `composer architecture:check` before selfcheck and rejects unlisted imports even

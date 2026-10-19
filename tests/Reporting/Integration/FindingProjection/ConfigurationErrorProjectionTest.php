@@ -36,9 +36,9 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Git\ReportingGitScopeQuery;
+use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionOptions;
+use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
-use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
-use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
@@ -300,7 +300,7 @@ final class ConfigurationErrorProjectionTest extends TestCase
 
                 return $execution;
             })()),
-            fileScope: \Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelFileScope::create(),
+            fileScope: \Qualimetrix\Infrastructure\DependencyInjection\ChannelCatalog\DeclaredChannelFileScope::create(),
         );
 
         if ($options->baselineDocument !== null) {

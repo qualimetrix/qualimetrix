@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Security\DirectSinks;
 
-use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOptionValues;
+use Qualimetrix\Analysis\Finding\Contract\Rule\EnablementOptionsTrait;
 
-use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 
@@ -18,21 +17,11 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  */
 final readonly class SecurityPatternOptions implements RuleOptionsInterface
 {
+    use EnablementOptionsTrait;
+
     public function __construct(
         public bool $enabled = true,
     ) {}
-
-    public static function fromResolved(ResolvedRuleOptionValues $config): self
-    {
-        return new self(
-            enabled: $config->boolean('enabled', true),
-        );
-    }
-
-    public function isEnabled(): bool
-    {
-        return $this->enabled;
-    }
 
     /**
      * Required by RuleOptionsInterface. Not used by AbstractSecurityPatternRule
@@ -43,9 +32,4 @@ final readonly class SecurityPatternOptions implements RuleOptionsInterface
         return $value > 0 ? Severity::Error : null;
     }
 
-    public static function acceptedOptionKeys(): RuleOptionKeySet
-    {
-        return RuleOptionKeySet::of([
-        ]);
-    }
 }

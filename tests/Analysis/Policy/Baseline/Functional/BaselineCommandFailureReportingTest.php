@@ -35,20 +35,20 @@ use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
 use Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap;
+use Qualimetrix\Infrastructure\Console\Baseline\BaselineCommand;
+use Qualimetrix\Infrastructure\Console\Baseline\Measurement\BaselineRun;
 use Qualimetrix\Infrastructure\Console\BaselineCommand\MeasuredFindingSet;
-use Qualimetrix\Infrastructure\Console\Command\Baseline\BaselineCommand;
-use Qualimetrix\Infrastructure\Console\Command\Baseline\Measurement\BaselineRun;
 use Qualimetrix\Infrastructure\Console\Invocation\Configuration\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
 use Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
-use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisRuntimeConfigurator;
-use Qualimetrix\Infrastructure\Console\RunSetup\FindingConfigurationPreparation;
+use Qualimetrix\Infrastructure\Console\RunSetup\CapabilityState\AnalysisRuntimeConfigurator;
+use Qualimetrix\Infrastructure\Console\RunSetup\Finding\FindingConfigurationPreparation;
 use Qualimetrix\Infrastructure\Console\RunSetup\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
 use Qualimetrix\Infrastructure\Console\RuntimePolicy\RuntimeLimitsController;
 use Qualimetrix\Infrastructure\Console\RuntimePolicy\RuntimeLoggerConfigurator;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfiguration;
@@ -224,7 +224,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
             ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml'),
             'qmx.yaml was not found',
         ));
-        $baselineRun = new BaselineRun($runtime, self::withoutConstructor(MeasuredFindingSet::class), self::ruleInputValidator(self::createStub(RuleRegistryInterface::class)), self::configurationInputAdapter($pipeline), new \Qualimetrix\Infrastructure\Console\RunSetup\RunConfigurationPreparation(self::createStub(RunConfigurationResolverInterface::class), self::createStub(CacheConfigurationResolverInterface::class), self::createStub(ParallelConfigurationResolverInterface::class)), self::createStub(ConfiguredFindingExclusionsResolverInterface::class), new ErrorStream(), self::createStub(\Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface::class), self::createStub(\Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface::class));
+        $baselineRun = new BaselineRun($runtime, self::withoutConstructor(MeasuredFindingSet::class), self::ruleInputValidator(self::createStub(RuleRegistryInterface::class)), self::configurationInputAdapter($pipeline), new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\RunConfigurationPreparation(self::createStub(RunConfigurationResolverInterface::class), self::createStub(CacheConfigurationResolverInterface::class), self::createStub(ParallelConfigurationResolverInterface::class)), self::createStub(ConfiguredFindingExclusionsResolverInterface::class), new ErrorStream(), self::createStub(\Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface::class), self::createStub(\Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface::class));
 
         try {
             $baselineRun->measure(new ArrayInput([]), new BufferedOutput());

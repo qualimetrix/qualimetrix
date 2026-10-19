@@ -10,6 +10,7 @@ use RuntimeException;
 final class ProductProbeTypes
 {
     private const array PREVIOUS = [
+        'Qualimetrix\\Infrastructure\\Console\\Terminal\\Diagnostics\\ErrorStream' => 'Qualimetrix\\Infrastructure\\Console\\Terminal\\ErrorStream',
         'Qualimetrix\\Analysis\\Finding\\Contract\\Channel\\ChannelDeclarationRegistryInterface' => 'Qualimetrix\\Analysis\\Finding\\Contract\\ChannelDeclarationRegistryInterface',
         'Qualimetrix\\Analysis\\Finding\\Contract\\Channel\\ChannelUniverseInterface' => 'Qualimetrix\\Analysis\\Finding\\Contract\\ChannelUniverseInterface',
         'Qualimetrix\\Analysis\\Policy\\Baseline\\Capture\\BaselineGenerator' => 'Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineGenerator',

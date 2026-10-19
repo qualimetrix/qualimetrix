@@ -12,11 +12,11 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\Worst
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Report\Report;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
 use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
 use Qualimetrix\Reporting\Formatter\Summary\OffenderListRenderer;
-use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\Report;
 
 #[CoversClass(OffenderListRenderer::class)]
 final class OffenderListRendererDensityTest extends TestCase
@@ -53,9 +53,7 @@ final class OffenderListRendererDensityTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            worstClasses: [$offender],
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(worstClasses: [$offender]),
         );
 
         $color = new AnsiColor(false);
@@ -91,9 +89,7 @@ final class OffenderListRendererDensityTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            worstClasses: [$offender],
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(worstClasses: [$offender]),
         );
 
         $color = new AnsiColor(false);
@@ -128,9 +124,7 @@ final class OffenderListRendererDensityTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            worstClasses: [$offender],
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(worstClasses: [$offender]),
         );
 
         $color = new AnsiColor(false);
@@ -181,9 +175,7 @@ final class OffenderListRendererDensityTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            worstClasses: [$offenderB, $offenderA], // B first by health score
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(worstClasses: [$offenderB, $offenderA]),
         );
 
         $color = new AnsiColor(false);
@@ -236,9 +228,7 @@ final class OffenderListRendererDensityTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            worstClasses: [$offenderA, $offenderB],
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(worstClasses: [$offenderA, $offenderB]),
         );
 
         $color = new AnsiColor(false);
@@ -291,9 +281,7 @@ final class OffenderListRendererDensityTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            worstClasses: [$offenderNullDensity, $offenderWithDensity],
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(worstClasses: [$offenderNullDensity, $offenderWithDensity]),
         );
 
         $color = new AnsiColor(false);
@@ -323,9 +311,7 @@ final class OffenderListRendererDensityTest extends TestCase
             filesAnalyzed: 15,
             filesSkipped: 0,
             duration: 0.0,
-            errorCount: 0,
-            warningCount: 0,
-            worstNamespaces: array_reverse($offenders),
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(worstNamespaces: array_reverse($offenders)),
         );
         foreach ([3 => 12, 12 => 3] as $top => $remaining) {
             $lines = [];

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Observation;
 
-use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\LayerMatch;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
 
 /** Shared set and counter updates for the two evidence walks. */
 final class LayerEvidenceTally

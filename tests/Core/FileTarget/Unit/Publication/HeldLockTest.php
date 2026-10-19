@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\FileTarget\FileTargetFailure;
 use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
 use Qualimetrix\Core\FileTarget\Publication\HeldLock;
-use Qualimetrix\Core\FileTarget\TargetPath;
+use Qualimetrix\Core\FileTarget\Resolution\TargetPath;
 use Qualimetrix\Subprocess\ChildProcess;
 
 require_once \dirname(__DIR__, 5) . '/scripts/subprocess/ChildProcess.php';
@@ -103,7 +103,7 @@ namespace {
     $message = null;
     try {
         \Qualimetrix\Core\FileTarget\Publication\HeldLock::acquire(
-            \Qualimetrix\Core\FileTarget\TargetPath::resolve($argv[2]),
+            \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($argv[2]),
             0.05,
         );
     } catch (\Qualimetrix\Core\FileTarget\FileTargetFailure $failure) {
@@ -167,7 +167,7 @@ namespace {
     $kind = null;
     try {
         $lock = \Qualimetrix\Core\FileTarget\Publication\HeldLock::acquire(
-            \Qualimetrix\Core\FileTarget\TargetPath::resolve($argv[2]),
+            \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($argv[2]),
             0.05,
         );
     } catch (\Qualimetrix\Core\FileTarget\FileTargetFailure $failure) {

@@ -16,3 +16,11 @@ For an eligible run with an explicit count greater than one, unavailable transpo
 ## Consequences
 
 An explicit count promises attempted process parallelism for a run large enough to cross the threshold, not a silent fallback. Small runs and explicit sequential modes retain sequential execution. Consumers should distinguish startup refusal, incomplete work and internal composition errors by exit code.
+
+The Docker image installs `ext-pcntl` for coordinator SIGINT/SIGTERM cleanup,
+including stdout-only runs and PID 1 under `docker stop`. Process-worker
+transport itself continues to require only `proc_open` and `ext-posix`. DI passes
+Console's exhaustion registrar as a closure to the parallel strategy; startup
+logs are therefore released on coordinator OOM without importing Console into
+Parallel. A context drains stdout/stderr before reporting its death; EOF with no
+shutdown note answers immediately instead of adding a second startup deadline.

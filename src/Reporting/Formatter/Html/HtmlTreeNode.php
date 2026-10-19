@@ -9,7 +9,7 @@ namespace Qualimetrix\Reporting\Formatter\Html;
  *
  * Used as a builder during tree construction, then serialized to array via toArray().
  *
- * @phpstan-import-type PublishedRecord from \Qualimetrix\Reporting\Formatter\FindingRecord
+ * @phpstan-import-type PublishedRecord from \Qualimetrix\Reporting\FindingPublication\FindingRecord
  *
  * @internal
  */

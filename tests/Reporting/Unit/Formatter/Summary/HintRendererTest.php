@@ -23,12 +23,12 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Report\Report;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
 use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
 use Qualimetrix\Reporting\Formatter\Summary\HintRenderer;
 use Qualimetrix\Reporting\Formatter\Summary\OffenderListRenderer;
-use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\Report;
 
 #[CoversClass(HintRenderer::class)]
 final class HintRendererTest extends TestCase
@@ -58,7 +58,14 @@ final class HintRendererTest extends TestCase
     {
         $offender = new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace($namespace)), 40.0, 'Needs work', 'Fixture', new WorstOffenderEvidence(1, 1, [], [], null), [50.0, 30.0]);
         $score = new HealthScore('overall', 40.0, 'Needs work', 60.0, 30.0, HealthCoverage::notApplicable('fixture'));
-        $report = new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 1, 0, 0, 0, 0, healthScores: ['overall' => $score], worstNamespaces: [$offender]);
+        $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            findings: [],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 0,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: ['overall' => $score], worstNamespaces: [$offender]),
+        );
         $lines = [];
         $this->renderer->render($report, new FormatterContext(), $this->color, $lines);
         preg_match('/(--namespace=.+?) to drill down/', implode("\n", $lines), $match);
@@ -89,8 +96,6 @@ final class HintRendererTest extends TestCase
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 1,
-            warningCount: 0,
         );
 
         $context = new FormatterContext();
@@ -124,8 +129,6 @@ final class HintRendererTest extends TestCase
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 1,
-            warningCount: 0,
         );
 
         $context = new FormatterContext(detailLimit: 200);
@@ -172,12 +175,9 @@ final class HintRendererTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            healthScores: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: [
                 'overall' => new HealthScore('overall', 60.0, 'Needs work', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
-            ],
-            worstNamespaces: [$worstNs],
+            ], worstNamespaces: [$worstNs]),
         );
 
         $context = new FormatterContext();
@@ -211,12 +211,9 @@ final class HintRendererTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            healthScores: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: [
                 'overall' => new HealthScore('overall', 60.0, 'Needs work', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
-            ],
-            worstClasses: [$worstClass],
+            ], worstClasses: [$worstClass]),
         );
 
         // Namespace-level context — drill-down hint should suggest --class, not --namespace
@@ -265,12 +262,9 @@ final class HintRendererTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            healthScores: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: [
                 'overall' => new HealthScore('overall', 60.0, 'Needs work', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
-            ],
-            worstNamespaces: [$worstNs],
+            ], worstNamespaces: [$worstNs]),
         );
 
         $context = new FormatterContext();
@@ -292,9 +286,7 @@ final class HintRendererTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            healthScores: [],
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: []),
         );
 
         $context = new FormatterContext();
@@ -316,11 +308,9 @@ final class HintRendererTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            healthScores: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: [
                 'overall' => new HealthScore('overall', 60.0, 'Needs work', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
-            ],
+            ]),
         );
 
         // Class-level context — no deeper drill-down possible
@@ -359,8 +349,6 @@ final class HintRendererTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
         );
 
         // isEmpty() is true AND detail is not enabled => hint shown
@@ -398,8 +386,6 @@ final class HintRendererTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
         );
     }
 }

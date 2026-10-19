@@ -140,7 +140,11 @@ final class DitAggregateRunTest extends TestCase
         }
         foreach (['Marker', 'ChildContract', 'Work', 'Plain', 'Backed'] as $name) {
             $metrics = $metricsByName['Chain\\' . $name];
-            self::assertSame(0, $metrics['design.is-exception']);
+            if (\in_array($name, ['Marker', 'ChildContract'], true)) {
+                self::assertArrayNotHasKey('design.is-exception', $metrics);
+            } else {
+                self::assertSame(0, $metrics['design.is-exception']);
+            }
             self::assertArrayNotHasKey('design.dit', $metrics);
             self::assertArrayNotHasKey('design.dit-unresolved', $metrics);
             self::assertArrayNotHasKey('design.noc', $metrics);

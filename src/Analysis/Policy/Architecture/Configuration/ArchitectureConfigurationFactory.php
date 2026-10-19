@@ -10,9 +10,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument;
 
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaqueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowValidator;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\ExactAllowCycleValidator;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\WildcardSelfAllowDetector;
+
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;

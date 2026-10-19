@@ -18,7 +18,7 @@ use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Application\Application;
 use Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Tests\Infrastructure\Console\Support\RestoresShellVerbosityEnvironment;
 use Qualimetrix\Tests\Infrastructure\Console\Support\SplitStreamConsoleOutput;
 use Qualimetrix\Tests\Infrastructure\Console\Support\TerminalScreen;

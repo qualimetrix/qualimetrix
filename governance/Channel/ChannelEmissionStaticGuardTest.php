@@ -32,7 +32,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
+use Qualimetrix\Analysis\Finding\Rule\AbstractRule;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use RecursiveDirectoryIterator;
@@ -407,7 +407,7 @@ final class ChannelEmissionStaticGuardTest extends TestCase
         return [
             'src/Analysis/Evidence/CircularDependency/CycleFinding.php' =>
                 'CircularDependencyRule delegates its prepared cycle message and occurrence projection here; CircularDependencyRuleTest pins the emitted channel and identity.',
-            'src/Analysis/Evidence/Coupling/UnmatchedFrameworkFinding.php' =>
+            'src/Analysis/Evidence/Coupling/UnmatchedFramework/UnmatchedFrameworkFinding.php' =>
                 'UnmatchedFrameworkNamespaceRule delegates its unbound selector finding here; its owning test pins the channel and selector occurrence.',
             'src/Analysis/Evidence/Cohesion/LcomExcludedMethods.php' =>
                 'LcomRule delegates its unmatched-exclusion channel here; the scanner follows rule inheritance'

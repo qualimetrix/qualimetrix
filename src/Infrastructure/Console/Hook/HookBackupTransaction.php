@@ -8,7 +8,7 @@ use Qualimetrix\Core\FileTarget\FileTargetFailure;
 use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
 use Qualimetrix\Core\FileTarget\Publication\FileReplacement;
 use Qualimetrix\Core\FileTarget\Publication\NewName;
-use Qualimetrix\Core\FileTarget\ResolvedTarget;
+use Qualimetrix\Core\FileTarget\Resolution\ResolvedTarget;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /** Creates a guarded backup of an existing hook before installation. */

@@ -10,11 +10,11 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOption
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ThresholdParser;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ThresholdPair;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOptionQueries;
 
 /**
  * Configuration options for ClassRank rule.
@@ -28,6 +28,8 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  */
 final readonly class ClassRankOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
+    use ThresholdOptionQueries;
+
     use StandardOverrideValidatorTrait;
 
     public function __construct(
@@ -38,11 +40,11 @@ final readonly class ClassRankOptions implements RuleOptionsInterface, Threshold
 
     public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
-        $thresholds = ThresholdParser::parse($config, RuleOptionSurface::bandFor(self::class, 'threshold'), 5.0, 10.0);
+        $thresholds = ThresholdPair::fromResolved($config, RuleOptionSurface::bandFor(self::class, 'threshold'), 5.0, 10.0);
         return new self(
             enabled: $config->boolean('enabled', true),
-            warning: $thresholds['warning'],
-            error: $thresholds['error'],
+            warning: $thresholds->warning,
+            error: $thresholds->error,
         );
     }
 
@@ -55,31 +57,6 @@ final readonly class ClassRankOptions implements RuleOptionsInterface, Threshold
         ])->band('threshold', 'warning', 'error', BandDirection::Rising);
     }
 
-    public function isEnabled(): bool
-    {
-        return $this->enabled;
-    }
-
-    /**
-     * Get severity for a given ClassRank value.
-     *
-     * Higher ClassRank = more important = higher change impact.
-     */
-    public function getSeverity(int|float $value): ?Severity
-    {
-        $rank = (float) $value;
-
-        if ($rank >= $this->error) {
-            return Severity::Error;
-        }
-
-        if ($rank >= $this->warning) {
-            return Severity::Warning;
-        }
-
-        return null;
-    }
-
     public function withOverride(int|float|null $warning, int|float|null $error): static
     {
         return new static(
@@ -89,8 +66,9 @@ final readonly class ClassRankOptions implements RuleOptionsInterface, Threshold
         );
     }
 
-    public function warningBoundary(): float
+    protected function thresholdPair(): ThresholdPair
     {
-        return $this->warning;
+        return new ThresholdPair($this->warning, $this->error);
     }
+
 }

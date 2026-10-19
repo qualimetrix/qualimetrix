@@ -17,10 +17,10 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Baseline\Capture\BaselineGenerator;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\CurrentMeasurement;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineWriter;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\Explanation\BoundaryExplanationService;
 use Qualimetrix\Analysis\Policy\Baseline\Explanation\BoundaryRunFacts;
 use Qualimetrix\Analysis\Policy\Baseline\Explanation\BoundaryThresholdSources;
@@ -127,7 +127,7 @@ final class BaselineWorkflowTest extends TestCase
 
         // Step 2: Write baseline to file
         $writer = new BaselineWriter();
-        $writer->write($baseline, \Qualimetrix\Core\FileTarget\TargetPath::resolve($this->baselinePath), AbsolutePath::fromString($this->tempDir));
+        $writer->write($baseline, \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($this->baselinePath), AbsolutePath::fromString($this->tempDir));
 
         self::assertFileExists($this->baselinePath);
         $written = json_decode((string) file_get_contents($this->baselinePath), true, flags: \JSON_THROW_ON_ERROR);
@@ -234,7 +234,7 @@ final class BaselineWorkflowTest extends TestCase
 
         (new BaselineWriter())->write(
             $baseline,
-            \Qualimetrix\Core\FileTarget\TargetPath::resolve($this->baselinePath),
+            \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($this->baselinePath),
             AbsolutePath::fromString($this->tempDir),
         );
 
@@ -301,7 +301,7 @@ final class BaselineWorkflowTest extends TestCase
 
         $baseline = $generator->generate($initialFindings, ['src'], self::fixtureExclusions())->baseline;
         $writer = new BaselineWriter();
-        $writer->write($baseline, \Qualimetrix\Core\FileTarget\TargetPath::resolve($this->baselinePath), AbsolutePath::fromString($this->tempDir));
+        $writer->write($baseline, \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($this->baselinePath), AbsolutePath::fromString($this->tempDir));
 
         // Load baseline
         $loader = new BaselineLoader(new BaselineEntryParser($declarations));
@@ -368,7 +368,7 @@ final class BaselineWorkflowTest extends TestCase
         $generator = new BaselineGenerator($declarations, new FixedClock());
         $baseline = $generator->generate($findings, ['src'], self::fixtureExclusions())->baseline;
         $writer = new BaselineWriter();
-        $writer->write($baseline, \Qualimetrix\Core\FileTarget\TargetPath::resolve($this->baselinePath), AbsolutePath::fromString($projectRoot));
+        $writer->write($baseline, \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($this->baselinePath), AbsolutePath::fromString($projectRoot));
 
         // Verify JSON contains relative file: path
         $data = json_decode((string) file_get_contents($this->baselinePath), true);

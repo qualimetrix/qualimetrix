@@ -14,7 +14,9 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
-/** Records the dependency facts collected for one named declaration. */
+/** Records the dependency facts collected for one named declaration.
+ * @qmx-threshold coupling.instability 0.846155 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
+ */
 final class DependencyRecorder
 {
     /** @var list<Dependency> */

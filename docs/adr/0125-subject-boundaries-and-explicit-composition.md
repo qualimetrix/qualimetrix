@@ -1,7 +1,7 @@
 # 0125. Subject Boundaries and Explicit Composition
 
 **Date:** 2026-10-15
-**Status:** Accepted
+**Status:** Partially superseded by [0128](0128-subject-boundaries-with-one-way-operations.md) for placement and directive-suggestion ordering
 
 ## Context
 

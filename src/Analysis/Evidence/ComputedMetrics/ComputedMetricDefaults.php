@@ -55,9 +55,7 @@ final class ComputedMetricDefaults
                     // TCC denominator and LCOM. Adjust both: boost TCC proportionally, reduce LCOM.
                     // D_tcc=0.4, D_lcom=0.7. Classes with no pure methods: formula unchanged.
                     SymbolLevel::Class_->value => 'clamp(weighted_mean((m["cohesion.tcc"] ?? null) === null ? null : (m["cohesion.tcc"] + (1 - m["cohesion.tcc"]) * ((m["cohesion.pure-method-count"] ?? 0) / max(m["cohesion.tcc-method-count"] ?? 1, 1)) * 0.4) ** 0.5 * 100, 0.5, (m["cohesion.lcom"] ?? null) === null ? null : (1 - clamp((max(m["cohesion.lcom"] - (m["cohesion.pure-method-count"] ?? 0) * 0.7, 1) - 1) / 5, 0, 1)) * 100, 0.5), 0, 100)',
-                    // The unadjusted LCOM contribution uses the class scale: identical
-                    // evidence must not be penalized more merely because it is aggregated.
-                    SymbolLevel::Namespace_->value => 'clamp(weighted_mean((m["cohesion.tcc.avg"] ?? null) === null ? null : m["cohesion.tcc.avg"] ** 0.5 * 100, 0.5, (m["cohesion.lcom.avg"] ?? null) === null ? null : (1 - clamp((m["cohesion.lcom.avg"] - 1) / 5, 0, 1)) * 100, 0.5), 0, 100)',
+                    SymbolLevel::Namespace_->value => 'clamp(weighted_mean((m["cohesion.tcc.avg"] ?? null) === null ? null : (m["cohesion.tcc.avg"] + (1 - m["cohesion.tcc.avg"]) * ((m["cohesion.pure-method-count.avg"] ?? 0) / max(m["cohesion.tcc-method-count.avg"] ?? 1, 1)) * 0.4) ** 0.5 * 100, 0.5, (m["cohesion.lcom.avg"] ?? null) === null ? null : (1 - clamp((max(m["cohesion.lcom.avg"] - (m["cohesion.pure-method-count.avg"] ?? 0) * 0.7, 1) - 1) / 5, 0, 1)) * 100, 0.5), 0, 100)',
                 ],
                 applicability: [
                     'class' => ComputedMetricApplicability::anyPresent(['cohesion.tcc', MetricName::COHESION_LCOM]),

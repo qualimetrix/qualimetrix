@@ -12,10 +12,10 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\Worst
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
 use Qualimetrix\Reporting\Formatter\Json\JsonOffenderSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonSanitizer;
-use Qualimetrix\Reporting\FormatterContext;
 
 #[CoversClass(JsonOffenderSection::class)]
 final class JsonOffenderSectionDensityTest extends TestCase
@@ -77,15 +77,13 @@ final class JsonOffenderSectionDensityTest extends TestCase
         // Use formatNamespaces with showClassCount=false by testing the private method via formatClasses
         // Instead, test with the raw formatWorstOffenders via formatNamespaces (since it delegates)
         // For classes, we need to use formatClasses via Report
-        $report = new \Qualimetrix\Reporting\Report(
+        $report = new \Qualimetrix\Reporting\Contract\Report\Report(
             fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            worstClasses: [$offender],
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(worstClasses: [$offender]),
         );
 
         $result = $this->section->formatClasses($report, $context, 10);
@@ -199,15 +197,13 @@ final class JsonOffenderSectionDensityTest extends TestCase
     public function itSelectsTheCompleteClassPopulationBeforeRankingAndTop(): void
     {
         $offenders = $this->completeClassPopulation();
-        $report = new \Qualimetrix\Reporting\Report(
+        $report = new \Qualimetrix\Reporting\Contract\Report\Report(
             fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 15,
             filesSkipped: 0,
             duration: 0.0,
-            errorCount: 0,
-            warningCount: 0,
-            worstClasses: array_reverse($offenders),
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(worstClasses: array_reverse($offenders)),
         );
         self::assertCount(15, $this->section->formatClasses($report, new FormatterContext(), 20));
         foreach ([

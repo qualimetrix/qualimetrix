@@ -56,7 +56,7 @@
 - **in_scope**: да (якорь — C4 и K5 в диффе; продуктовый код лежит в базе `main` и служит доказательством сегодняшнего порядка)
 - **anchor**:
   - `docs/internal/plans/shorthand-scope/01-contract.md:83-96` (C4), `02-cure.md:56-70` (K5)
-  - `src/Analysis/Evidence/Coupling/Cbo/CboOptions.php:34-39`, `src/Analysis/Evidence/Coupling/InstabilityOptions.php:35-40`
+  - `src/Analysis/Evidence/Coupling/Cbo/CboOptions.php:34-39`, `src/Analysis/Evidence/Coupling/Instability/InstabilityOptions.php:35-40`
   - `src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php:75`, `:94`, `:126`, `:129`
 - **evidence**:
   ```php

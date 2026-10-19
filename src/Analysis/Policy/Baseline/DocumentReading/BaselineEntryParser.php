@@ -10,11 +10,11 @@ use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInte
 use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineAuditChannels;
 
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEdge;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\InertBaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\InertEntryReason;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEdge;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertBaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertEntryReason;
 use Qualimetrix\Core\Symbol\MetricSubject;
 
 /**
@@ -34,6 +34,8 @@ use Qualimetrix\Core\Symbol\MetricSubject;
  * each unusable before any run is compared against them. Catching them at
  * load also means the reason survives into the report with the line still
  * in hand.
+ *
+  * @qmx-threshold coupling.instability 0.800001 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
  */
 final readonly class BaselineEntryParser
 {

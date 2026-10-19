@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Complexity\Npath;
 
-use InvalidArgumentException;
+use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalOptionsQueries;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
@@ -12,7 +12,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOption
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionRefusal;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape;
-use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
@@ -22,6 +21,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  */
 final readonly class NpathComplexityOptions implements HierarchicalRuleOptionsInterface
 {
+    use HierarchicalOptionsQueries;
+
     public function __construct(
         public MethodNpathComplexityOptions $callable = new MethodNpathComplexityOptions(),
         public ClassNpathComplexityOptions $class = new ClassNpathComplexityOptions(),
@@ -46,45 +47,6 @@ final readonly class NpathComplexityOptions implements HierarchicalRuleOptionsIn
         return new self(callable: $callable, class: $class);
     }
 
-    public function isEnabled(): bool
-    {
-        return $this->callable->isEnabled() || $this->class->isEnabled();
-    }
-
-    public function getSeverity(int|float $value): ?Severity
-    {
-        // For general rule-level checks, use callable level thresholds
-        return $this->callable->getSeverity($value);
-    }
-
-    public function forLevel(SymbolLevel $level): LevelOptionsInterface
-    {
-        return match ($level) {
-            SymbolLevel::Callable => $this->callable,
-            SymbolLevel::Class_ => $this->class,
-            default => throw new InvalidArgumentException(
-                \sprintf('Level %s is not supported by NpathComplexityRule', $level->value),
-            ),
-        };
-    }
-
-    public function isLevelEnabled(SymbolLevel $level): bool
-    {
-        return match ($level) {
-            SymbolLevel::Callable => $this->callable->isEnabled(),
-            SymbolLevel::Class_ => $this->class->isEnabled(),
-            default => false,
-        };
-    }
-
-    /**
-     * @return list<SymbolLevel>
-     */
-    public function getSupportedLevels(): array
-    {
-        return [SymbolLevel::Callable, SymbolLevel::Class_];
-    }
-
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
         return RuleOptionKeySet::of([
@@ -102,4 +64,10 @@ final readonly class NpathComplexityOptions implements HierarchicalRuleOptionsIn
             SymbolLevel::Class_->value => ClassNpathComplexityOptions::class,
         ];
     }
+    /** @return non-empty-array<string, LevelOptionsInterface> */
+    protected function levelOptions(): array
+    {
+        return ['callable' => $this->callable, 'class' => $this->class];
+    }
+
 }

@@ -9,10 +9,10 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
-use Qualimetrix\Infrastructure\Console\Command\Baseline\Explanation\BaselineExplainCommand;
-use Qualimetrix\Infrastructure\Console\Command\Baseline\Generation\BaselineGenerateCommand;
-use Qualimetrix\Infrastructure\Console\Command\Baseline\Maintenance\BaselineCleanupCommand;
-use Qualimetrix\Infrastructure\Console\Command\Baseline\Maintenance\BaselineUpdateCommand;
+use Qualimetrix\Infrastructure\Console\Baseline\Explanation\BaselineExplainCommand;
+use Qualimetrix\Infrastructure\Console\Baseline\Generation\BaselineGenerateCommand;
+use Qualimetrix\Infrastructure\Console\Baseline\Maintenance\BaselineCleanupCommand;
+use Qualimetrix\Infrastructure\Console\Baseline\Maintenance\BaselineUpdateCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory;
 use RuntimeException;
@@ -212,8 +212,10 @@ final class BaselineIncompleteAnalysisTest extends TestCase
         } else {
             $container = $factory->configure();
             $container->register('test.late_duplication_logger')->setSynthetic(true)->setPublic(true);
+            $container->getDefinition(\Qualimetrix\Analysis\Run\Preparation\RunPreparation::class)
+                ->setArgument(10, new Reference('test.late_duplication_logger'));
             $container->getDefinition('qmx.run.analysis_pipeline')
-                ->setArgument(12, new Reference('test.late_duplication_logger'));
+                ->setArgument(4, new Reference('test.late_duplication_logger'));
             $container->compile();
             $container->set('test.late_duplication_logger', $logger);
         }

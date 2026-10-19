@@ -13,8 +13,8 @@ use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineAuditChannels;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\InertBaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\InertEntryReason;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertBaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertEntryReason;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 final readonly class UnusedEntryAudit

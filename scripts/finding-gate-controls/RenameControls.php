@@ -190,7 +190,7 @@ final class RenameControls
             'moved-aggregated-spelling',
             'a published aggregated spelling moves while its base key stays put',
             Mutation::edit(
-                'src/Reporting/Formatter/MetricsJsonFormatter.php',
+                'src/Reporting/Formatter/MetricsJson/MetricsJsonFormatter.php',
                 [
                     "'metrics' => \$metricsArray," => "'metrics' => array_combine(array_map("
                         . "static fn(string \$key): string => str_ends_with(\$key, '.p95')"

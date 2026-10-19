@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Configuration\Document;
 
 use Closure;
 use LogicException;
+
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy;

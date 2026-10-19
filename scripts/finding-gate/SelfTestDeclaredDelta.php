@@ -83,12 +83,12 @@ final class SelfTestDeclaredDelta extends SelfTestGroup
     private function publicationVocabulary(): void
     {
         $formatters = [
-            'format:html' => 'src/Reporting/Formatter/FindingRecord.php',
+            'format:html' => 'src/Reporting/FindingPublication/FindingRecord.php',
             'format:sarif' => 'src/Reporting/Formatter/Sarif/SarifFormatter.php',
-            'format:gitlab' => 'src/Reporting/Formatter/GitLabCodeQualityFormatter.php',
-            'format:checkstyle' => 'src/Reporting/Formatter/CheckstyleFormatter.php',
+            'format:gitlab' => 'src/Reporting/Formatter/GitLab/GitLabCodeQualityFormatter.php',
+            'format:checkstyle' => 'src/Reporting/Formatter/Checkstyle/CheckstyleFormatter.php',
             'format:suppressed' => 'src/Reporting/Formatter/Suppressed/SuppressedFormatter.php',
-            'baseline-file' => 'src/Analysis/Policy/Baseline/Entry/BaselineEntry.php',
+            'baseline-file' => 'src/Analysis/Policy/Baseline/Contract/Entry/BaselineEntry.php',
         ];
 
         foreach ($formatters as $surface => $relative) {

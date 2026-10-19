@@ -19,9 +19,9 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\Console\Command\Baseline\Generation\BaselineGenerateCommand;
+use Qualimetrix\Infrastructure\Console\Baseline\Generation\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
@@ -136,8 +136,8 @@ final class BaselineGenerateCommandTest extends TestCase
         $ready = $this->tempDir . '/ready';
         $script = <<<'PHP'
 require $argv[1];
-$error = new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream();
-$command = new \Qualimetrix\Infrastructure\Console\Command\Baseline\Generation\BaselineGenerateCommand(
+$error = new \Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream();
+$command = new \Qualimetrix\Infrastructure\Console\Baseline\Generation\BaselineGenerateCommand(
     new \Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubBaselineRun(
         [],
         ['src'],

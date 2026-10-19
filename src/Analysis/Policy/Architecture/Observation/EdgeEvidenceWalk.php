@@ -15,13 +15,13 @@ use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\LayerMatch;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * Collects dependency-edge layer evidence from one prepared run.
  *
- * @qmx-threshold coupling.instability warning=0.89 -- The policy walk joins graph, assignment and population evidence for its owning collector; its few callers are intentional.
+ * @qmx-threshold coupling.instability 0.882354 -- The policy walk joins graph, assignment and population evidence for its owning collector; its few callers are intentional.
  */
 final readonly class EdgeEvidenceWalk
 {

@@ -7,7 +7,6 @@ namespace Qualimetrix\Infrastructure\Parallel;
 use Amp\ByteStream\ReadableResourceStream;
 use Amp\CancelledException;
 use Amp\DeferredCancellation;
-use Amp\DeferredFuture;
 use Amp\Future;
 use Amp\TimeoutCancellation;
 use Closure;
@@ -22,8 +21,6 @@ final class WorkerNotes
 {
     /** @var array<string, string> */
     private array $deaths = [];
-    /** @var array<string, DeferredFuture<string>> */
-    private array $awaitingDeaths = [];
     /** @var list<Future<void>> */
     private array $readers = [];
     private readonly DeferredCancellation $cancel;
@@ -126,10 +123,6 @@ final class WorkerNotes
     {
         $message = $detail . ' (worker file ' . $file . ', memory_limit="' . $limit . '").';
         $this->deaths[$file] = $message;
-        if (isset($this->awaitingDeaths[$file])) {
-            $this->awaitingDeaths[$file]->complete($message);
-            unset($this->awaitingDeaths[$file]);
-        }
     }
 
     public function diagnostic(string $message): void
@@ -139,17 +132,9 @@ final class WorkerNotes
 
     public function deathFor(string $file): ?string
     {
-        if (isset($this->deaths[$file])) {
-            return $this->deaths[$file];
-        }
-        $future = $this->awaitingDeaths[$file] ??= new DeferredFuture();
-        try {
-            return $future->getFuture()->await(new TimeoutCancellation(WorkerRequest::START_DEADLINE_SECONDS));
-        } catch (CancelledException) {
-            return null;
-        } finally {
-            unset($this->awaitingDeaths[$file]);
-        }
+        // WorkerContext drains the dying process's streams before its failure
+        // reaches the pool. No note can arrive after that EOF (notably SIGKILL).
+        return $this->deaths[$file] ?? null;
     }
 
     public function close(): void
@@ -166,7 +151,6 @@ final class WorkerNotes
             $this->cancel->cancel();
             $this->readers = [];
             $this->deaths = [];
-            $this->awaitingDeaths = [];
         }
     }
 }

@@ -8,7 +8,7 @@ use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Reporting\ReportCoverage;
+use Qualimetrix\Reporting\Coverage\ReportCoverage;
 
 /**
  * Determines process exit code based on finding severities and failOn configuration.

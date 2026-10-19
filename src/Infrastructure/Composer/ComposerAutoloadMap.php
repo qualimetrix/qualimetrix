@@ -19,6 +19,8 @@ use Qualimetrix\Infrastructure\Composer\Contract\ComposerRootOmission;
  * here loads a class: loading is what put the tool's own dependencies in the
  * answers, and what let an analysed file's top-level code run inside this
  * process.
+ *
+  * @qmx-threshold coupling.instability 0.818183 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
  */
 final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
 {

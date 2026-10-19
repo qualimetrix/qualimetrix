@@ -10,11 +10,11 @@ use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInte
 
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Policy\Baseline\Ceiling\GroupAcceptance;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\GroupMeasurement;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntryMode;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\GroupAcceptance;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntryMode;
 
 /** Tightens one existing entry against the shared ceiling verdict. */
 final readonly class BaselineEntryTightening

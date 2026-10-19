@@ -17,12 +17,12 @@ use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Baseline\Capture\BaselineGenerator;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntryMode;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineFormatVersion;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntryMode;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
@@ -38,9 +38,9 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\Console\Command\Baseline\Generation\BaselineGenerateCommand;
+use Qualimetrix\Infrastructure\Console\Baseline\Generation\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
-use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
+use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
@@ -100,7 +100,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
         self::assertSame([], $this->capture($result->measuredFindings)->entries);
         $direct = (new BaselineGenerator(StubChannelDeclarationRegistry::withDefaults(), new FixedClock()))->generate($result->findings, ['src'], self::fixtureExclusions());
         self::assertSame([], $direct->baseline->entries);
-        self::assertSame(\Qualimetrix\Analysis\Policy\Baseline\Capture\UncapturedReason::BaselineAuditChannel, $direct->uncaptured[0]->reason);
+        self::assertSame(\Qualimetrix\Analysis\Policy\Baseline\Ceiling\UncapturedReason::BaselineAuditChannel, $direct->uncaptured[0]->reason);
     }
 
     #[Test]
@@ -329,12 +329,12 @@ final class CaptureFromMeasuredSetTest extends TestCase
 
                 return $execution;
             })()),
-            fileScope: \Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelFileScope::create(),
+            fileScope: \Qualimetrix\Infrastructure\DependencyInjection\ChannelCatalog\DeclaredChannelFileScope::create(),
         );
     }
 
     /** @param list<Finding> $findings */
-    private function project(FindingProjector $projector, array $findings, FindingProjectionOptions $options): \Qualimetrix\Reporting\FindingProjection\FindingProjectionResult
+    private function project(FindingProjector $projector, array $findings, FindingProjectionOptions $options): \Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionResult
     {
         $projectionOptions = new FindingProjectionOptions(
             baselineDocument: $options->baselineDocument,

@@ -17,7 +17,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationHelper;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
-use Qualimetrix\Analysis\Evidence\Size\MethodCountCollector;
+use Qualimetrix\Analysis\Evidence\Size\MethodCount\MethodCountCollector;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Core\Path\RelativePath;

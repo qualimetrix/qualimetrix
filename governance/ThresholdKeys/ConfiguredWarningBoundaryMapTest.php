@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
-use Qualimetrix\Infrastructure\Console\Command\Baseline\Explanation\BaselineConfiguredThresholds;
+use Qualimetrix\Infrastructure\Console\Baseline\Explanation\BaselineConfiguredThresholds;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 
@@ -92,7 +92,7 @@ final class ConfiguredWarningBoundaryMapTest extends TestCase
     public function itReadsNoOptionsMemberByName(): void
     {
         $source = file_get_contents(
-            \dirname(__DIR__, 2) . '/src/Infrastructure/Console/Command/Baseline/Explanation/BaselineConfiguredThresholds.php',
+            \dirname(__DIR__, 2) . '/src/Infrastructure/Console/Baseline/Explanation/BaselineConfiguredThresholds.php',
         );
 
         self::assertIsString($source);

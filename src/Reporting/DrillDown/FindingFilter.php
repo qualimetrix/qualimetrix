@@ -10,7 +10,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingNamespace;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
 
 /**
  * What a `--namespace` or `--class` value selects from a report's findings and

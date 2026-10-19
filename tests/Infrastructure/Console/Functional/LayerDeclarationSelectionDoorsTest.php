@@ -11,7 +11,7 @@ use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
-use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ArchitectureConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Architecture\ArchitectureConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\DependencyInjection\ContainerBuilder;

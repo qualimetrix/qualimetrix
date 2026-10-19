@@ -4,15 +4,22 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Prose;
 
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Finding\Contract\Population\RuleAbstention;
-use Qualimetrix\Reporting\Report;
+use Qualimetrix\Reporting\Contract\Report\Report;
 
 final readonly class RuleAbstentionNarrator
 {
+    /** @return list<RuleAbstention> */
+    public static function dataGaps(JudgedPopulation $population): array
+    {
+        return array_values(array_filter($population->abstentions(), static fn(RuleAbstention $absence): bool => $absence->dataGap));
+    }
+
     /** @return list<string> */
     public static function lines(Report $report): array
     {
-        $abstentions = $report->population->abstentions();
+        $abstentions = self::dataGaps($report->population);
         if ($abstentions === []) {
             return [];
         }
@@ -27,7 +34,7 @@ final readonly class RuleAbstentionNarrator
 
     private static function counts(Report $report): string
     {
-        $abstentions = $report->population->abstentions();
+        $abstentions = self::dataGaps($report->population);
         $units = [];
         foreach ($report->population->judgedCounts() as $judged) {
             $units[$judged['unit']] = ['judged' => ($units[$judged['unit']]['judged'] ?? 0) + $judged['count'], 'unjudged' => 0];
@@ -38,6 +45,9 @@ final readonly class RuleAbstentionNarrator
         ksort($units, \SORT_STRING);
         $counts = [];
         foreach ($units as $unit => $count) {
+            if ($count['unjudged'] === 0) {
+                continue;
+            }
             $counts[] = \sprintf('%s: %d judged, %d not judged', $unit, $count['judged'], $count['unjudged']);
         }
         return 'Rule population incomplete — ' . implode('; ', $counts) . '.';

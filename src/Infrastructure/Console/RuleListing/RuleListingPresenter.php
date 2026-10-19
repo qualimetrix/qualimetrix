@@ -11,7 +11,7 @@ use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Selection\StatedEnablement;
 use Qualimetrix\Core\ProductIdentity;
-use Qualimetrix\Infrastructure\Console\CheckReport\ReportAssembler;
+use Qualimetrix\Infrastructure\Console\CheckReport\Assembly\ReportAssembler;
 use Qualimetrix\Infrastructure\Console\Directives\DirectiveAuditPresenter;
 use Qualimetrix\Infrastructure\Console\Terminal\ReportPublication\OutputHelper;
 use Symfony\Component\Console\Formatter\OutputFormatter;
@@ -33,6 +33,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  * it. The listing is where `check --help` sends a reader for "all available
  * rules and their options", so an option named only in a refusal was named
  * nowhere a reader looks.
+ *
+  * @qmx-threshold coupling.instability 0.833335 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
  */
 final readonly class RuleListingPresenter
 {

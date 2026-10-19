@@ -306,7 +306,7 @@ bin/qmx check src/ --format-opt=rank-by=density
 ```
 
 
-Offender selection uses the complete captured population before ranking and `top`. Namespace selectors form a union. JSON/summary `--class` requires a unique exact declaration for its separate class health heading; duplicate logical names refuse with exit 5. Use `--namespace` to retain all their exact offender records. `rank-by=count` is refused with exit 3; use `score` or `density`. Summary shows the true remaining count and advises `--format-opt=top=<total>`.
+Offender selection uses the complete captured population before ranking and `top`. Namespace selectors form a union. JSON/summary `--class` requires a unique exact declaration for its separate class health heading; duplicate logical names refuse with exit 3 and list their exact declarations. Use `--namespace` to retain all their exact offender records. `rank-by=count` is refused with exit 3; use `score` or `density`. Summary shows the true remaining count and advises `--format-opt=top=<total>`.
 
 !!! note "Two unrelated options named `top`"
     `--format-opt=top=N` (JSON and summary formats) caps the worst-namespace/worst-class
@@ -520,7 +520,7 @@ cannot be removed produces an environment error (exit 3), naming the directory,
 the remaining entry count and the reason. An incomplete clear never prints
 "Cache cleared.". Clearing removes only qmx entries, but includes entries
 from every project sharing this user root. Entries not read for 30 days are
-swept incrementally. Each open sweeps 16 of 256 shards; after 16 successful sweep steps, the per-format target is 2 GiB plus entries written since each shard's last sweep and one oversized newest entry per shard, rather than an immediate hard quota.
+swept incrementally. Each open sweeps 16 of 256 shards; after 16 successful sweep steps, the per-format target is 2 GiB plus entries written since each shard's last sweep and one oversized newest entry per shard, rather than an immediate hard quota. Temporary publication siblings are aged out after 30 days; recent siblings survive quota eviction so active writes keep their names. Their bytes are additional to the cache-entry target. Old temporary siblings in version metadata are swept too. If unrelated contents keep a detached directory present, clearing preserves them and reports refusal instead of "Cache cleared". A later clear retries retained detached directories.
 
 ---
 
@@ -899,7 +899,7 @@ star, or an `X.*` that matches nothing — fail closed with exit 3 before stdout
 report payload. When the starred spelling would have matched, the refusal names it:
 
 ```text
-Rule selector "complexity" does not match any registered producer or channel. A bare prefix is not a group: write "complexity.*" to select every rule under "complexity".
+Rule selector "complexity" does not match any registered producer or channel. Write "complexity.*" to select its descendants.
 ```
 
 `computed` is the one bare word that is accepted: it is the name of a producer, not a group.

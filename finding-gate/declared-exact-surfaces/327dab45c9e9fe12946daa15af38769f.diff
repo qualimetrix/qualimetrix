@@ -1,0 +1,36 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 3784
++visible 3947
+@@ -6,1 +6,1 @@
+-Rule population incomplete — namespace: 2 judged, 2 not judged.
++Rule population incomplete — callable: 57 judged, 20 not judged; configured-method-selector: 1 judged, 0 not judged; declaration: 45 judged, 38 not judged; invocation: 0 judged, 3 not judged; namespace: 2 judged, 6 not judged.
+@@ -33,5 +33,5 @@
+-         complexity.ccn: Cyclomatic complexity is 13, exceeds threshold of 8. Consider extracting methods or simplifying conditions (evaluateBatch)
+-         Recommendation: Cyclomatic complexity: 13 (threshold: 8) — too many code paths
+-  9. [ERR] 74.2  src/Router.php  [30min]
+-         complexity.cognitive: Cognitive complexity is 20, exceeds threshold of 8. Top: nested if +3 L13, nested catch +3 L22, nested if +3 L27. Reduce nesting and break into smaller methods (evaluateBatch)
+-         Recommendation: Cognitive complexity: 20 (threshold: 8). Top: nested if +3 L13, nested catch +3 L22, nested if +3 L27 — deeply nested, hard to follow
++         complexity.cognitive: Cognitive complexity is 20, exceeds threshold of 8. Top: nested if +3 L13, nested catch +3 L22, nested if +3 L27. Reduce nesting and break into smaller methods (evaluateBatch)
++         Recommendation: Cognitive complexity: 20 (threshold: 8). Top: nested if +3 L13, nested catch +3 L22, nested if +3 L27 — deeply nested, hard to follow
++  9. [ERR] 74.2  src/Router.php  [30min]
++         complexity.ccn: Cyclomatic complexity is 13, exceeds threshold of 8. Consider extracting methods or simplifying conditions (evaluateBatch)
++         Recommendation: Cyclomatic complexity: 13 (threshold: 8) — too many code paths
+@@ -46,1 +46,1 @@
+-invocation-format:summary 3784
++invocation-format:summary 3947
+@@ -51,1 +51,1 @@
+-Rule population incomplete — namespace: 2 judged, 2 not judged.
++Rule population incomplete — callable: 57 judged, 20 not judged; configured-method-selector: 1 judged, 0 not judged; declaration: 45 judged, 38 not judged; invocation: 0 judged, 3 not judged; namespace: 2 judged, 6 not judged.
+@@ -78,5 +78,5 @@
+-         complexity.ccn: Cyclomatic complexity is 13, exceeds threshold of 8. Consider extracting methods or simplifying conditions (evaluateBatch)
+-         Recommendation: Cyclomatic complexity: 13 (threshold: 8) — too many code paths
+-  9. [ERR] 74.2  src/Router.php  [30min]
+-         complexity.cognitive: Cognitive complexity is 20, exceeds threshold of 8. Top: nested if +3 L13, nested catch +3 L22, nested if +3 L27. Reduce nesting and break into smaller methods (evaluateBatch)
+-         Recommendation: Cognitive complexity: 20 (threshold: 8). Top: nested if +3 L13, nested catch +3 L22, nested if +3 L27 — deeply nested, hard to follow
++         complexity.cognitive: Cognitive complexity is 20, exceeds threshold of 8. Top: nested if +3 L13, nested catch +3 L22, nested if +3 L27. Reduce nesting and break into smaller methods (evaluateBatch)
++         Recommendation: Cognitive complexity: 20 (threshold: 8). Top: nested if +3 L13, nested catch +3 L22, nested if +3 L27 — deeply nested, hard to follow
++  9. [ERR] 74.2  src/Router.php  [30min]
++         complexity.ccn: Cyclomatic complexity is 13, exceeds threshold of 8. Consider extracting methods or simplifying conditions (evaluateBatch)
++         Recommendation: Cyclomatic complexity: 13 (threshold: 8) — too many code paths

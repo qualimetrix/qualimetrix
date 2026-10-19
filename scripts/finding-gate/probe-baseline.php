@@ -19,7 +19,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Time\SystemClock;
 use Qualimetrix\Infrastructure\Console\Invocation\CommandDefinition\CheckCommandDefinition;
 use Qualimetrix\Infrastructure\Console\Invocation\Configuration\ConfigurationInputAdapter;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;

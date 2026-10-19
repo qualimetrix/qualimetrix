@@ -18,7 +18,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Reporting\Report;
+use Qualimetrix\Reporting\Contract\Report\Report;
 
 #[CoversClass(HealthContributor::class)]
 #[CoversClass(HealthSummaryBuilder::class)]
@@ -185,8 +185,6 @@ final class HealthContributorTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
         );
 
@@ -330,8 +328,6 @@ final class HealthContributorTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
         );
     }

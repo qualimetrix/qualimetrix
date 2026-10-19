@@ -131,7 +131,9 @@ unknown exception status when duplicate parent declarations disagree.
 - `design.is-exception` is 1 when all parent alternatives prove `Throwable`,
   0 when all prove otherwise, and absent when their answers disagree or remain
   unknown. Proven `Throwable` evidence survives a later unread tail.
-  Interfaces, traits and enums receive 0. Size does not classify exceptions.
+  Interfaces receive no exception classification: their extends graph is not
+  the class ancestry chain. Traits and enums receive 0. Size does not classify
+  exceptions.
 - `InheritanceRule` emits at most one warning per enabled `analyze()` call,
   distinguishing floors, loops, or both. Its `design.dit-unresolved` pointer
   names at most five distinct obstruction/cause pairs and the exact remainder:
@@ -156,9 +158,8 @@ unknown exception status when duplicate parent declarations disagree.
   `TypeCoverageOptions` implementation for the shape of their configuration.
   Configuration is keyed by producer rule name, never by Options class, so
   sharing the class does not share the configured instance. They are registered
-  by name in `DesignConfigurator`, in the order `param, return, property`,
-  because channel order is published in a "did you mean" tie-break and would
-  otherwise be decided by alphabetical filenames.
+  by name in `DesignConfigurator`. Directive-name hints order tied candidates
+  by channel code independently of registration order.
 - `DataClassRule`, `GodClassRule`, `InheritanceRule`, and `NocRule` retain their
   IDs, options, and CLI aliases. All rules here read precomputed Measurement
   facts and never traverse an AST.
@@ -166,7 +167,7 @@ unknown exception status when duplicate parent declarations disagree.
   that carries behaviour rather than data access. Its finding channel is
   therefore `WorseDirection::Lower`, and both `@qmx-threshold` axes are upper
   bounds. What counts as data access is decided by both the accessor name and its
-  simple property-read or property-write body in `Size\MethodCountVisitor`,
+  simple property-read or property-write body in `Size\MethodCount\MethodCountVisitor`,
   and by public property declarations. A public forwarding method or computed
   `is*`/`has*` predicate is behaviour, even when its name has an accessor prefix. The
   constructor counts on neither side of the ratio. Classes with no public

@@ -11,8 +11,8 @@ use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Population\ContextGuard;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
-use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Rule\AbstractRule;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
@@ -76,7 +76,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  *
  * **Statelessness:** trivially — `analyze()` does nothing at all.
  *
- * @qmx-threshold coupling.instability warning=0.82 -- Hosted suppression metadata consumes its channel and option vocabulary through a narrow composition boundary.
+ * @qmx-threshold coupling.instability 0.818183 -- Hosted suppression metadata consumes its channel and option vocabulary through a narrow composition boundary.
  */
 final class UnboundSuppressionRule extends AbstractRule
 {

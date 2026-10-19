@@ -1,0 +1,8 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 4501
++visible 4511
+@@ -34,1 +34,1 @@
+-            "src"
++            "src/Other.php"

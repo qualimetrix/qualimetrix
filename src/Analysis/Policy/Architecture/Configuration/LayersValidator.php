@@ -10,7 +10,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\InvalidLayerDefinitionException;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerLifecycle;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchMode;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\NamedType;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
@@ -46,6 +46,8 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
  * {@see CarriedValueForm}, the criteria it carries unread; what is left here is
  * what a value means. Every refusal names the layer that wrote the entry,
  * through its {@see SectionSpot}.
+ *
+  * @qmx-threshold coupling.instability 0.866668 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
  */
 final class LayersValidator
 {

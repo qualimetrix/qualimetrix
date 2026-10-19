@@ -8,7 +8,7 @@ use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
@@ -51,8 +51,10 @@ final class ErrorStreamSoleOwnerTest extends TestCase
             => 'coordinator fatal-memory emergency diagnostic without a bound ErrorStream',
         'src/Infrastructure/Parallel/WorkerFatalNotes.php'
             => 'worker fatal note: the worker has no ErrorStream, and the coordinator parses the line',
-        'src/Infrastructure/Console/Terminal/ErrorStream.php'
-            => 'the owner itself',
+        'src/Infrastructure/Console/Terminal/Diagnostics/ErrorStream.php'
+            => 'the sole constructor of the private shared section-list lifecycle',
+        'src/Infrastructure/Console/Terminal/Diagnostics/ErrorSections.php'
+            => 'the owner’s private section-list lifecycle, constructed only by ErrorStream',
         'src/Infrastructure/Git/GitClient.php'
             => 'Symfony\\Component\\Process::getErrorOutput() returns a captured string, not a stream',
         'bin/qmx'
@@ -136,8 +138,8 @@ final class ErrorStreamSoleOwnerTest extends TestCase
                     $found[$token[2]] = 'error_log()';
                 }
 
-                if ($token[1] === 'ErrorStream' && self::isConstructed($tokens, $i)) {
-                    $found[$token[2]] = 'new ErrorStream (a second owner)';
+                if (\in_array($token[1], ['ErrorStream', 'ErrorSections'], true) && self::isConstructed($tokens, $i)) {
+                    $found[$token[2]] = 'new ' . $token[1] . ' (a second owner)';
                 }
             }
         }

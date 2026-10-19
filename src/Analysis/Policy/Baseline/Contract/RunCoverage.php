@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline\Contract;
 
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
-use Qualimetrix\Analysis\Policy\Baseline\RunCoverage\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface;
@@ -14,7 +13,11 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 
-/** Current baseline comparison facts from one analysis invocation. */
+/**
+ * Current baseline comparison facts from one analysis invocation.
+ *
+ * @qmx-threshold coupling.cbo 27 -- Path and channel coverage describe the same measured baseline run; separating them would allow a ceiling comparison against mismatched coverage.
+ */
 final class RunCoverage
 {
     private ?ProjectTreeSnapshot $snapshot = null;

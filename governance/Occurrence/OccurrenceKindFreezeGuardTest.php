@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CycleFinding;
 use Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionRule;
-use Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkFinding;
+use Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFramework\UnmatchedFrameworkFinding;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
 use Qualimetrix\Analysis\Evidence\Security\HardcodedCredentialsRule;
 use Qualimetrix\Analysis\Evidence\Security\SensitiveParameterRule;

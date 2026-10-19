@@ -29,6 +29,8 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
  * which folds the result into the prepared configuration; the rule layer
  * reads the post-expansion state through
  * {@see \Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy::getPreparedConfiguration()}.
+ *
+ * @qmx-threshold health.cohesion 40.0 -- Independent immutable observations or stateless declaration operations intentionally have no shared instance-field graph; this finite class boundary keeps a further cohesion loss visible.
  */
 final readonly class LayerExpansionResult
 {

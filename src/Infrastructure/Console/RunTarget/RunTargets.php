@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\RunTarget;
 
 use Qualimetrix\Core\FileTarget\FileTargetFailure;
-use Qualimetrix\Core\FileTarget\ResolvedTarget;
+use Qualimetrix\Core\FileTarget\Resolution\ResolvedTarget;
 use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
 use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
 use Throwable;

@@ -10,19 +10,19 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthSc
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Version;
+use Qualimetrix\Reporting\Contract\Formatting\FormatOptionKeysInterface;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterInterface;
+use Qualimetrix\Reporting\Contract\Formatting\GroupBy;
+use Qualimetrix\Reporting\Contract\Report\Report;
+use Qualimetrix\Reporting\FormatOptions\FormatOptionValue;
 use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
-use Qualimetrix\Reporting\Formatter\CoverageNarrator;
-use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
-use Qualimetrix\Reporting\Formatter\FormatOptionValue;
-use Qualimetrix\Reporting\Formatter\FormattedReport;
-use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\Prose\ComputedMetricAbsenceNarrator;
 use Qualimetrix\Reporting\Formatter\Prose\RuleAbstentionNarrator;
-use Qualimetrix\Reporting\Formatter\PublicationKind;
-use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\GroupBy;
+use Qualimetrix\Reporting\Formatter\Text\CoverageNarrator;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
-use Qualimetrix\Reporting\Report;
+use Qualimetrix\Reporting\Publication\FormattedReport;
+use Qualimetrix\Reporting\Publication\PublicationKind;
 
 /**
  * Text-based health report formatter for terminal output.

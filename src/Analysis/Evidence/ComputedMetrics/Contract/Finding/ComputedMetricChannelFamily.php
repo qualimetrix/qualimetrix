@@ -26,7 +26,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * {@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\RuleRegistryCompilerPass},
  * and six classes over one shared body would be six copies of the same rule.
  * So the facts a rule class would carry as constants are carried here, and
- * {@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\ChannelDeclarationCompilerPass}
+ * {@see \Qualimetrix\Infrastructure\DependencyInjection\ChannelCatalog\ChannelDeclarationCompilerPass}
  * reads them at container-build time exactly where it reads a class's own.
  *
  * **The split is not a preference, it is what the name spaces allow.** The six
@@ -121,16 +121,7 @@ final class ComputedMetricChannelFamily
      */
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
 
-    /**
-     * Explicitly `false`, not omitted. No producer of this family reads
-     * `thresholdOverrides`, and {@see \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRuleOptions}
-     * is not threshold-aware, so declaring `true` would promise a retune the
-     * runtime cannot perform.
-     *
-     * Naming one of these producers in `@qmx-threshold` therefore stops being
-     * "no such rule" and becomes "this rule cannot be retuned" — two different
-     * configuration diagnostics, and the second is the accurate one.
-     */
+    /** The open producer cannot name one runtime-defined metric's direction. */
     public const bool SUPPORTS_THRESHOLD_OVERRIDE = false;
 
     /**

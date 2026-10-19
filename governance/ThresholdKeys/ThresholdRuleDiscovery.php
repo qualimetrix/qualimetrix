@@ -88,17 +88,36 @@ final class ThresholdRuleDiscovery
      */
     public static function sourceFilesByPath(string $optionsClass): array
     {
-        $paths = ['' => self::fileNameOf($optionsClass)];
-
-        if (!is_a($optionsClass, HierarchicalRuleOptionsInterface::class, true)) {
-            return $paths;
-        }
-
-        foreach ($optionsClass::levelOptionsClasses() as $slot => $levelClass) {
-            $paths[$slot] = self::fileNameOf($levelClass);
+        $paths = [];
+        foreach (self::optionsClassesByPath($optionsClass) as $path => $class) {
+            $file = (new ReflectionClass($class))->getMethod('fromResolved')->getFileName();
+            if ($file === false) {
+                throw new RuntimeException(\sprintf('Could not locate the threshold reader for %s.', $class));
+            }
+            $paths[$path] = $file;
         }
 
         return $paths;
+    }
+
+    /**
+     * @param class-string $optionsClass
+     *
+     * @return array<string, class-string>
+     */
+    public static function optionsClassesByPath(string $optionsClass): array
+    {
+        $classes = ['' => $optionsClass];
+
+        if (!is_a($optionsClass, HierarchicalRuleOptionsInterface::class, true)) {
+            return $classes;
+        }
+
+        foreach ($optionsClass::levelOptionsClasses() as $slot => $levelClass) {
+            $classes[$slot] = $levelClass;
+        }
+
+        return $classes;
     }
 
     /**

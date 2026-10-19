@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
 use Qualimetrix\Infrastructure\Console\GraphExport\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\RunSetup\RuntimeConfigurator;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Parallel\Contract\WorkerDiagnosticsInterface;
 use ReflectionClass;
@@ -66,8 +66,8 @@ final class ErrorStreamContainerIdentityTest extends TestCase
      * @var list<class-string>
      */
     private const array CONSUMERS = [
-        'Qualimetrix\\Infrastructure\\Console\\CheckReport\\FindingDiagnostics',
-        'Qualimetrix\\Infrastructure\\Console\\CheckReport\\ReportFormatter',
+        'Qualimetrix\\Infrastructure\\Console\\CheckReport\\FormatBinding\\ReportFormatter',
+        'Qualimetrix\\Infrastructure\\Console\\CheckReport\\Projection\\FindingDiagnostics',
         'Qualimetrix\\Infrastructure\\Console\\CheckScope\\CheckScopeResolver',
         'Qualimetrix\\Infrastructure\\Console\\Check\\CheckCommand',
         'Qualimetrix\\Infrastructure\\Console\\GraphExport\\GraphExportCommand',

@@ -7,15 +7,12 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 use InvalidArgumentException;
 
 use LogicException;
+
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\InvalidSelectorException;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelector;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelectorParser;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LongFormAllowEntryNormalizer;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\InvalidLayerDefinitionException;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CapturePattern;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
 
 /**

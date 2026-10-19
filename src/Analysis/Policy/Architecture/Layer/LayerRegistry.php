@@ -10,8 +10,6 @@ use InvalidArgumentException;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContext;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContextFactory;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\LayerMatch;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MembershipResult;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**

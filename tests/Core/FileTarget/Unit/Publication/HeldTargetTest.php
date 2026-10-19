@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\FileTarget\FileTargetFailure;
 use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
 use Qualimetrix\Core\FileTarget\Publication\HeldTarget;
-use Qualimetrix\Core\FileTarget\TargetPath;
+use Qualimetrix\Core\FileTarget\Resolution\TargetPath;
 use Qualimetrix\Subprocess\ChildProcess;
 
 require_once \dirname(__DIR__, 5) . '/scripts/subprocess/ChildProcess.php';
@@ -86,7 +86,7 @@ namespace Qualimetrix\Core\FileTarget\Publication {
 namespace {
     require $argv[1];
     $GLOBALS['qmx_race_path'] = $argv[2];
-    $judged = \Qualimetrix\Core\FileTarget\TargetPath::resolve($argv[2]);
+    $judged = \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($argv[2]);
     $kind = null;
     try {
         $held = \Qualimetrix\Core\FileTarget\Publication\HeldTarget::claim($judged);
@@ -209,7 +209,7 @@ PHP;
         $root = \dirname(__DIR__, 5);
         $script = <<<'PHP'
 require $argv[1];
-$target = \Qualimetrix\Core\FileTarget\TargetPath::resolve('php://stdout');
+$target = \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve('php://stdout');
 $held = \Qualimetrix\Core\FileTarget\Publication\HeldTarget::claim($target);
 $held->write('after');
 $held->release();
@@ -299,7 +299,7 @@ namespace {
     require $argv[1];
     $GLOBALS['qmx_probe_mode'] = $argv[3];
     $GLOBALS['qmx_probe_writes'] = 0;
-    $target = \Qualimetrix\Core\FileTarget\TargetPath::resolve($argv[2]);
+    $target = \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($argv[2]);
     $held = \Qualimetrix\Core\FileTarget\Publication\HeldTarget::claim($target);
     $kind = null;
     $message = null;

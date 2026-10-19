@@ -311,10 +311,10 @@ final class LayerViolationRuleTest extends TestCase
             new LayerDefinition('service', new MembershipSpec(['App\\Service'])),
         ]);
         $policy = new \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy([
-            new \Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowListEntry(
-                \Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelector::exact('controller'),
-                [new \Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowTarget(
-                    \Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelector::glob('*-repository'),
+            new \Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowListEntry(
+                \Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerSelector::exact('controller'),
+                [new \Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowTarget(
+                    \Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerSelector::glob('*-repository'),
                 )],
             ),
         ]);

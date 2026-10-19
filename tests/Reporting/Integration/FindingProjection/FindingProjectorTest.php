@@ -17,9 +17,9 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\LayerMatch;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchedCriterion;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchedCriterionKind;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterionKind;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationFinding;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineEntryParser;
@@ -41,11 +41,11 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Git\ReportingGitScopeQuery;
+use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionOptions;
+use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeResult;
-use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
-use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
@@ -1157,7 +1157,7 @@ final class FindingProjectorTest extends TestCase
 
                 return $execution;
             })()),
-            fileScope: \Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelFileScope::create(),
+            fileScope: \Qualimetrix\Infrastructure\DependencyInjection\ChannelCatalog\DeclaredChannelFileScope::create(),
         );
     }
 
@@ -1185,7 +1185,7 @@ final class FindingProjectorTest extends TestCase
 
                 return $execution;
             })()),
-            fileScope: \Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelFileScope::create(),
+            fileScope: \Qualimetrix\Infrastructure\DependencyInjection\ChannelCatalog\DeclaredChannelFileScope::create(),
         );
 
         return $projector->project($findings, [], new FindingProjectionOptions(gitScope: new GitScopeRequest(

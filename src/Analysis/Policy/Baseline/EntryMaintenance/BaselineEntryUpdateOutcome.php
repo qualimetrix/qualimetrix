@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance;
 
 use Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity;
 
-use Qualimetrix\Analysis\Policy\Baseline\Entry\EntrySelector;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\EntrySelector;
 
 /**
  * What happened to one entry during a `baseline:update` run (ADR 0017).

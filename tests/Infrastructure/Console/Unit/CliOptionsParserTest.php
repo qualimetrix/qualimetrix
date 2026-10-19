@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Configuration\Loader\CommandLineLayer;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomOptions;
-use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
+use Qualimetrix\Analysis\Evidence\Complexity\Cyclomatic\ComplexityRule;
 use Qualimetrix\Analysis\Evidence\Coupling\Cbo\CboOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\Distance\DistanceOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\Distance\DistanceRule;
@@ -45,7 +45,7 @@ final class CliOptionsParserTest extends TestCase
     public function itRefusesUnregisteredRuleOptionOwnersWithTheirActualCliOrigin(): void
     {
         $parser = new CliOptionsParser(new RuleOptionDocumentForms(), new RuleOptionsParser([], [
-            'complexity.ccn' => \Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions::class,
+            'complexity.ccn' => \Qualimetrix\Analysis\Evidence\Complexity\Cyclomatic\ComplexityOptions::class,
             'cohesion.lcom' => LcomOptions::class,
         ]));
         $definition = new InputDefinition([
@@ -151,7 +151,7 @@ final class CliOptionsParserTest extends TestCase
     #[Test]
     public function itKeepsTheCanonicalIndexedSelectorPathAndOriginalCliOriginWhenTheSemanticValueIsInvalid(): void
     {
-        $surface = \Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface::of(\Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions::class);
+        $surface = \Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface::of(\Qualimetrix\Analysis\Evidence\Complexity\Cyclomatic\ComplexityOptions::class);
         $write = new \Qualimetrix\Analysis\Configuration\Contract\Pipeline\CommandLinePathWrite(
             ['rules', 'complexity.ccn', 'suppress-namespaces'],
             'unknown:App',

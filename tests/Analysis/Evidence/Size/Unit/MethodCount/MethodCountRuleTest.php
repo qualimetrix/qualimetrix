@@ -1,0 +1,320 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCount;
+
+use InvalidArgumentException;
+
+use LogicException;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Size\MethodCount\MethodCountOptions;
+use Qualimetrix\Analysis\Evidence\Size\MethodCount\MethodCountRule;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOptionValues;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
+
+#[CoversClass(MethodCountRule::class)]
+#[CoversClass(MethodCountOptions::class)]
+final class MethodCountRuleTest extends TestCase
+{
+    #[Test]
+    public function itCountsMeasuredZeroBeforeSeverityAndDistinguishesMissingPublication(): void
+    {
+        $rule = new MethodCountRule(new MethodCountOptions());
+        $repository = new \Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository([new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName::SIZE_METHOD_COUNT, \Qualimetrix\Core\Symbol\SymbolLevel::Class_)]);
+        foreach (['Healthy' => (new MetricBag())->with(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName::SIZE_METHOD_COUNT, 0), 'Missing' => new MetricBag()] as $name => $bag) {
+            $info = self::subjectInfo(SymbolPath::forClass('Population', $name), RelativePath::fromString('src/' . $name . '.php'), 1);
+            $repository->addSubject($info->subject ?? throw new LogicException('Exact fixture subject is required.'), $bag, $info->file, 1);
+        }
+        $decisions = [];
+        foreach (MethodCountRule::channelDeclarations() as $channel => $declaration) {
+            foreach ($declaration->levels as $level) {
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
+                    new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(MethodCountRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole::Selectable),
+                    new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct),
+                );
+            }
+        }
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
+        $context = (new AnalysisContext($repository))->withPopulationTrace($session);
+        self::assertSame([], $rule->analyze($context));
+        self::assertSame(1, $session->freeze()->judgedCount());
+        self::assertSame(1, $session->freeze()->unjudgedCount());
+        self::assertSame('declaration', $session->freeze()->abstentions()[0]->unit);
+        self::assertStringContainsString('Missing', $session->freeze()->abstentions()[0]->examples[0]);
+    }
+
+    #[Test]
+    public function itGetsName(): void
+    {
+        $rule = new MethodCountRule(new MethodCountOptions());
+
+        self::assertSame('size.method-count', $rule->getName());
+    }
+
+    #[Test]
+    public function itGetsDescription(): void
+    {
+        $rule = new MethodCountRule(new MethodCountOptions());
+
+        self::assertSame('Checks number of methods per class', $rule::getDescription());
+    }
+
+    #[Test]
+    public function itGetsOptionsClass(): void
+    {
+        self::assertSame(MethodCountOptions::class, MethodCountRule::getOptionsClass());
+    }
+
+    #[Test]
+    public function itGetsCliAliases(): void
+    {
+        self::assertSame(
+            ['method-count-warning' => 'warning', 'method-count-error' => 'error'],
+            CliAliasReader::read(MethodCountRule::class),
+        );
+    }
+
+    #[Test]
+    public function itRejectsWrongOptionsTypeInConstructor(): void
+    {
+        self::expectException(InvalidArgumentException::class);
+
+        new MethodCountRule(new class implements \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface {
+            public static function fromResolved(ResolvedRuleOptionValues $config): static
+            {
+                return new static();
+            }
+
+            public function isEnabled(): bool
+            {
+                return true;
+            }
+
+            public function getSeverity(int|float $value): ?Severity
+            {
+                return null;
+            }
+
+            public static function acceptedOptionKeys(): RuleOptionKeySet
+            {
+                return RuleOptionKeySet::of([]);
+            }
+        });
+    }
+
+    #[Test]
+    public function itReturnsEmptyWhenDisabled(): void
+    {
+        $rule = new MethodCountRule(new MethodCountOptions(enabled: false));
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->expects(self::never())->method('allClassDeclarations');
+
+        $context = new AnalysisContext($repository);
+
+        self::assertSame([], $rule->analyze($context));
+    }
+
+    #[Test]
+    public function itReturnsEmptyWhenBelowThreshold(): void
+    {
+        $rule = new MethodCountRule(new MethodCountOptions());
+
+        $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+
+        $metricBag = (new MetricBag())->with('size.method-count', 5);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allClassDeclarations')
+            ->willReturn([$classInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+
+        self::assertSame([], $rule->analyze($context));
+    }
+
+    #[Test]
+    public function itGeneratesWarning(): void
+    {
+        $rule = new MethodCountRule(new MethodCountOptions(warning: 10, error: 20));
+
+        $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+
+        $metricBag = (new MetricBag())->with('size.method-count', 15);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allClassDeclarations')
+            ->willReturn([$classInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $findings = $rule->analyze($context);
+
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame('Method count is 15, exceeds threshold of 10. Consider splitting into smaller focused classes', $findings[0]->message);
+        self::assertSame(15, $findings[0]->metricValue);
+        self::assertSame('size.method-count', $findings[0]->ruleName);
+        self::assertSame('size.method-count', $findings[0]->code);
+    }
+
+    #[Test]
+    public function itGeneratesError(): void
+    {
+        $rule = new MethodCountRule(new MethodCountOptions(warning: 10, error: 20));
+
+        $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+
+        $metricBag = (new MetricBag())->with('size.method-count', 25);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allClassDeclarations')
+            ->willReturn([$classInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $findings = $rule->analyze($context);
+
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Error, $findings[0]->severity);
+        self::assertSame('Method count is 25, exceeds threshold of 20. Consider splitting into smaller focused classes', $findings[0]->message);
+    }
+
+    #[Test]
+    #[DataProvider('thresholdDataProvider')]
+    public function itRespectsBoundaryThresholds(
+        int $methodCount,
+        int $warning,
+        int $error,
+        ?Severity $expectedSeverity,
+    ): void {
+        $rule = new MethodCountRule(new MethodCountOptions(warning: $warning, error: $error));
+
+        $symbolPath = SymbolPath::forClass('App\Test', 'TestClass');
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 10);
+
+        $metricBag = (new MetricBag())->with('size.method-count', $methodCount);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allClassDeclarations')
+            ->willReturn([$classInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $findings = $rule->analyze($context);
+
+        if ($expectedSeverity === null) {
+            self::assertCount(0, $findings);
+        } else {
+            self::assertCount(1, $findings);
+            self::assertSame($expectedSeverity, $findings[0]->severity);
+            $selectedThreshold = $expectedSeverity === Severity::Error ? $error : $warning;
+            self::assertStringContainsString(($methodCount === $selectedThreshold ? 'reaches' : 'exceeds') . ' threshold of', $findings[0]->message);
+        }
+    }
+
+    /**
+     * @return iterable<string, array{int, int, int, ?Severity}>
+     */
+    public static function thresholdDataProvider(): iterable
+    {
+        yield 'below warning' => [14, 15, 25, null];
+        yield 'at warning' => [15, 15, 25, Severity::Warning];
+        yield 'above warning, below error' => [20, 15, 25, Severity::Warning];
+        yield 'at error' => [25, 15, 25, Severity::Error];
+        yield 'above error' => [30, 15, 25, Severity::Error];
+    }
+
+    #[Test]
+    public function itLoadsOptionsDefaultsFromArray(): void
+    {
+        $options = MethodCountOptions::fromResolved(ResolvedOptionsFixture::values(MethodCountOptions::class, ['enabled' => true]));
+
+        self::assertTrue($options->isEnabled());
+        self::assertSame(20, $options->warning);
+        self::assertSame(30, $options->error);
+    }
+
+    #[Test]
+    public function itLoadsOptionsCustomValuesFromArray(): void
+    {
+        $options = MethodCountOptions::fromResolved(ResolvedOptionsFixture::values(MethodCountOptions::class, [
+            'enabled' => true,
+            'warning' => 10,
+            'error' => 20,
+        ]));
+
+        self::assertTrue($options->isEnabled());
+        self::assertSame(10, $options->warning);
+        self::assertSame(20, $options->error);
+    }
+
+    #[Test]
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
+    {
+        self::assertEquals(new MethodCountOptions(), MethodCountOptions::fromResolved(ResolvedOptionsFixture::values(MethodCountOptions::class, [])));
+        self::assertFalse(MethodCountOptions::fromResolved(ResolvedOptionsFixture::values(MethodCountOptions::class, ['enabled' => false]))->isEnabled());
+    }
+    #[Test]
+    public function itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations(): void
+    {
+        $class = SymbolPath::forClass('App\\Service', 'Twin');
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allClassDeclarations')->willReturn([
+            self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
+            self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
+        ]);
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('size.method-count', 15));
+
+        $findings = (new MethodCountRule(new MethodCountOptions(warning: 10, error: 20)))
+            ->analyze(new AnalysisContext($repository));
+
+        self::assertCount(2, $findings);
+        $subjects = array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings);
+        sort($subjects);
+        self::assertSame([
+            'declaration:class:App\\Service\\Twin@src/A.php',
+            'declaration:class:App\\Service\\Twin@src/B.php',
+        ], $subjects);
+    }
+
+    private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo
+    {
+        $type = $symbolPath->getType();
+        if (\in_array($type, [\Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project], true)) {
+            return new \Qualimetrix\Core\Symbol\SymbolInfo(\Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath), $file, $line);
+        }
+
+        \assert($file !== null);
+        $kind = $type === \Qualimetrix\Core\Symbol\SymbolType::Class_ ? null : ($type === \Qualimetrix\Core\Symbol\SymbolType::Function_ ? \Qualimetrix\Core\Symbol\CallableKind::Function : \Qualimetrix\Core\Symbol\CallableKind::Method);
+
+        return new \Qualimetrix\Core\Symbol\SymbolInfo(
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $file, \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
+            $file,
+            $line,
+            $kind,
+            $kind === \Qualimetrix\Core\Symbol\CallableKind::Method ? \Qualimetrix\Core\Symbol\DeclarationPath::of(\Qualimetrix\Core\Symbol\SymbolPath::forClass($symbolPath->namespace ?? '', $symbolPath->type ?? ''), $file, \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)) : null,
+        );
+    }
+}

@@ -12,10 +12,10 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCo
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Report\Report;
 use Qualimetrix\Reporting\Formatter\Health\HealthCoverageNarrator;
-use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
-use Qualimetrix\Reporting\Report;
 
 final class JsonHealthSection
 {

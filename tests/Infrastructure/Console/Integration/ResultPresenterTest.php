@@ -34,28 +34,28 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\Console\CheckReport\FormatterContextFactory;
-use Qualimetrix\Infrastructure\Console\CheckReport\ReportAssembler;
+use Qualimetrix\Infrastructure\Console\CheckReport\Assembly\ReportAssembler;
+use Qualimetrix\Infrastructure\Console\CheckReport\FormatBinding\FormatterContextFactory;
 use Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
 use Qualimetrix\Infrastructure\Console\RuntimePolicy\ExitCodeResolver;
 use Qualimetrix\Infrastructure\Console\RuntimePolicy\ExitPolicy;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Terminal\ReportPublication\OutputHelper;
 use Qualimetrix\Infrastructure\Git\GitScope;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Qualimetrix\Infrastructure\Profiler\ProfileSession;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterInterface;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterRegistryInterface;
+use Qualimetrix\Reporting\Contract\Formatting\GroupBy;
 use Qualimetrix\Reporting\Contract\OutputFormat;
+use Qualimetrix\Reporting\Contract\Report\Report;
+use Qualimetrix\Reporting\Contract\Report\ReportProjectScope;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
-use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
-use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
-use Qualimetrix\Reporting\Formatter\FormattedReport;
-use Qualimetrix\Reporting\Formatter\FormatterInterface;
-use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
-use Qualimetrix\Reporting\GroupBy;
+use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionOptions;
+use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionResult;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
-use Qualimetrix\Reporting\Report;
-use Qualimetrix\Reporting\ReportProjectScope;
+use Qualimetrix\Reporting\Publication\FormattedReport;
 use Qualimetrix\Subprocess\ChildProcess;
 use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
@@ -69,7 +69,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
 
 #[CoversClass(ReportAssembler::class)]
-#[CoversClass(\Qualimetrix\Infrastructure\Console\CheckReport\ReportFormatter::class)]
+#[CoversClass(\Qualimetrix\Infrastructure\Console\CheckReport\FormatBinding\ReportFormatter::class)]
 #[CoversClass(\Qualimetrix\Infrastructure\Console\Terminal\ReportPublication\ReportPublication::class)]
 #[CoversClass(OutputHelper::class)]
 final class ResultPresenterTest extends TestCase
@@ -103,7 +103,7 @@ final class ResultPresenterTest extends TestCase
             'callable-value',
             'Callable complexity was not published.',
         );
-        $filtered = new \Qualimetrix\Reporting\FindingProjection\FindingProjectionResult(
+        $filtered = new \Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionResult(
             [],
             new \Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionResult([], [], []),
             population: $population->merge($otherTrace->freeze()),
@@ -118,16 +118,17 @@ final class ResultPresenterTest extends TestCase
         );
         $formatter = $this->createMock(FormatterInterface::class);
         $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
-        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Formatter\PublicationKind::JsonDocument);
+        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Publication\PublicationKind::JsonDocument);
         $formatter->expects(self::once())->method('format')->with(
             self::callback(static function (Report $report) use ($summary): bool {
                 self::assertSame($summary, $report->computedMetricEvaluation);
                 self::assertSame(2, $report->population->abstentions()[0]->count);
+                self::assertStringContainsString('Rule population incomplete', implode(' ', \Qualimetrix\Reporting\Formatter\Prose\RuleAbstentionNarrator::lines($report)));
                 self::assertSame(['["missing",0]'], $report->population->abstentions()[0]->examples);
                 self::assertSame([], $report->findings);
                 return true;
             }),
-            self::callback(static fn(\Qualimetrix\Reporting\FormatterContext $context): bool => $context->verbose),
+            self::callback(static fn(\Qualimetrix\Reporting\Contract\Formatting\FormatterContext $context): bool => $context->verbose),
         )->willReturn(new FormattedReport('{}'));
         $registry = self::createStub(FormatterRegistryInterface::class);
         $registry->method('get')->willReturn($formatter);
@@ -183,7 +184,7 @@ final class ResultPresenterTest extends TestCase
     {
         $formatter = $this->createMock(FormatterInterface::class);
         $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
-        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Formatter\PublicationKind::JsonDocument);
+        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Publication\PublicationKind::JsonDocument);
         $formatter->expects(self::once())->method('format')->willReturn(new FormattedReport('rendered'));
 
         $registry = $this->createMock(FormatterRegistryInterface::class);
@@ -211,7 +212,7 @@ final class ResultPresenterTest extends TestCase
     {
         $formatter = self::createStub(FormatterInterface::class);
         $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
-        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Formatter\PublicationKind::JsonDocument);
+        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Publication\PublicationKind::JsonDocument);
         $formatter->method('format')->willReturn(new FormattedReport(''));
         $registry = self::createStub(FormatterRegistryInterface::class);
         $registry->method('get')->willReturn($formatter);
@@ -237,7 +238,7 @@ final class ResultPresenterTest extends TestCase
     {
         $formatter = self::createStub(FormatterInterface::class);
         $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
-        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Formatter\PublicationKind::JsonDocument);
+        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Publication\PublicationKind::JsonDocument);
         $formatter->method('format')->willReturn(new FormattedReport(''));
         $registry = self::createStub(FormatterRegistryInterface::class);
         $registry->method('get')->willReturn($formatter);
@@ -261,7 +262,7 @@ final class ResultPresenterTest extends TestCase
     {
         $formatter = $this->createMock(FormatterInterface::class);
         $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
-        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Formatter\PublicationKind::JsonDocument);
+        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Publication\PublicationKind::JsonDocument);
         $formatter->expects(self::once())->method('format')->willReturnCallback(
             static function (Report $report): FormattedReport {
                 self::assertNotNull($report->coverage);
@@ -402,11 +403,11 @@ final class ResultPresenterTest extends TestCase
                 $GLOBALS['qmx_report_hit'] = 0;
                 $fixture = new \Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest('itRefusesInsteadOfSwallowingAWriteFailureAndBeatsTheFindingsExitCode');
                 $stub = new \ReflectionMethod(\PHPUnit\Framework\TestCase::class, 'createStub');
-                $formatter = $stub->invoke(null, \Qualimetrix\Reporting\Formatter\FormatterInterface::class);
-                $formatter->method('getDefaultGroupBy')->willReturn(\Qualimetrix\Reporting\GroupBy::None);
-                $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Formatter\PublicationKind::JsonDocument);
-                $formatter->method('format')->willReturn(new \Qualimetrix\Reporting\Formatter\FormattedReport('rendered'));
-                $registry = $stub->invoke(null, \Qualimetrix\Reporting\Formatter\FormatterRegistryInterface::class);
+                $formatter = $stub->invoke(null, \Qualimetrix\Reporting\Contract\Formatting\FormatterInterface::class);
+                $formatter->method('getDefaultGroupBy')->willReturn(\Qualimetrix\Reporting\Contract\Formatting\GroupBy::None);
+                $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Publication\PublicationKind::JsonDocument);
+                $formatter->method('format')->willReturn(new \Qualimetrix\Reporting\Publication\FormattedReport('rendered'));
+                $registry = $stub->invoke(null, \Qualimetrix\Reporting\Contract\Formatting\FormatterRegistryInterface::class);
                 $registry->method('get')->willReturn($formatter);
                 $method = static fn (string $name, ...$args) => (new \ReflectionMethod($fixture, $name))->invoke($fixture, ...$args);
                 $finding = $method('finding', \Qualimetrix\Analysis\Finding\Contract\Severity::Error);
@@ -524,7 +525,7 @@ final class ResultPresenterTest extends TestCase
     {
         $formatter = self::createStub(FormatterInterface::class);
         $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
-        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Formatter\PublicationKind::JsonDocument);
+        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Publication\PublicationKind::JsonDocument);
         $registry = self::createStub(FormatterRegistryInterface::class);
         $registry->method('get')->willReturn($formatter);
 
@@ -554,12 +555,12 @@ final class ResultPresenterTest extends TestCase
     #[Test]
     public function itRepairsProseAtPublicationAndReportsStructuredRepairOnStderr(): void
     {
-        foreach ([\Qualimetrix\Reporting\Formatter\PublicationKind::Prose, \Qualimetrix\Reporting\Formatter\PublicationKind::JsonDocument] as $kind) {
+        foreach ([\Qualimetrix\Reporting\Publication\PublicationKind::Prose, \Qualimetrix\Reporting\Publication\PublicationKind::JsonDocument] as $kind) {
             $formatter = self::createStub(FormatterInterface::class);
             $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
             $formatter->method('publicationKind')->willReturn($kind);
-            $body = $kind === \Qualimetrix\Reporting\Formatter\PublicationKind::Prose ? "Café K\xFF — body" : '{"message":"K%FF — body"}';
-            $formatter->method('format')->willReturn(new FormattedReport($body, $kind === \Qualimetrix\Reporting\Formatter\PublicationKind::Prose ? 0 : 3));
+            $body = $kind === \Qualimetrix\Reporting\Publication\PublicationKind::Prose ? "Café K\xFF — body" : '{"message":"K%FF — body"}';
+            $formatter->method('format')->willReturn(new FormattedReport($body, $kind === \Qualimetrix\Reporting\Publication\PublicationKind::Prose ? 0 : 3));
             $registry = self::createStub(FormatterRegistryInterface::class);
             $registry->method('get')->willReturn($formatter);
             $output = new \Qualimetrix\Tests\Infrastructure\Console\Support\SplitStreamConsoleOutput(stderrDecorated: false);
@@ -580,8 +581,8 @@ final class ResultPresenterTest extends TestCase
             self::assertIsString($published);
             self::assertTrue(mb_check_encoding($published, 'UTF-8'));
             self::assertStringContainsString('K%FF', $published);
-            self::assertStringContainsString($kind === \Qualimetrix\Reporting\Formatter\PublicationKind::Prose ? '1 published string(s)' : '3 published string(s)', $output->errorOutputContent());
-            if ($kind === \Qualimetrix\Reporting\Formatter\PublicationKind::JsonDocument) {
+            self::assertStringContainsString($kind === \Qualimetrix\Reporting\Publication\PublicationKind::Prose ? '1 published string(s)' : '3 published string(s)', $output->errorOutputContent());
+            if ($kind === \Qualimetrix\Reporting\Publication\PublicationKind::JsonDocument) {
                 self::assertSame($body, $published);
             }
         }
@@ -606,7 +607,7 @@ final class ResultPresenterTest extends TestCase
                 ),
                 self::createStub(RuleConfigurationInterface::class),
             ),
-            new \Qualimetrix\Infrastructure\Console\CheckReport\ReportFormatter($registry, $contexts, $error),
+            new \Qualimetrix\Infrastructure\Console\CheckReport\FormatBinding\ReportFormatter($registry, $contexts, $error),
             $contexts,
             new ExitCodeResolver(StubChannelDeclarationRegistry::withDefaults()),
             new \Qualimetrix\Infrastructure\Console\Terminal\ReportPublication\ReportPublication($error),
@@ -705,7 +706,7 @@ final class ResultPresenterTest extends TestCase
         $report = $presenter->assembler->assemble($analysisResult, $projection, $context->context, $projectScope, $configurationDiagnostics, $suppressionOptions);
         $formatted = $presenter->formatter->format($report, $context, $output);
         $exit = $presenter->exit->resolve($findings, $report->coverage, $exitPolicy);
-        $presenter->publication->publishReport(new \Qualimetrix\Infrastructure\Console\CheckReport\RenderedCheckReport($formatted, $outputFormat->value, $exit), $input, $output, $runTargets);
+        $presenter->publication->publishReport(new \Qualimetrix\Infrastructure\Console\Terminal\ReportPublication\RenderedCheckReport($formatted, $outputFormat->value, $exit), $input, $output, $runTargets);
         return $exit;
     }
 
@@ -713,7 +714,7 @@ final class ResultPresenterTest extends TestCase
     {
         $formatter = self::createStub(FormatterInterface::class);
         $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
-        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Formatter\PublicationKind::JsonDocument);
+        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Publication\PublicationKind::JsonDocument);
         $formatter->method('format')->willReturn(new FormattedReport('No violations found.'));
         $registry = self::createStub(FormatterRegistryInterface::class);
         $registry->method('get')->willReturn($formatter);
@@ -763,7 +764,7 @@ final class ResultPresenterTest extends TestCase
         $payload = "{\"custom\":\"<info>literal</info>\"}\n";
         $formatter = $this->createMock(FormatterInterface::class);
         $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
-        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Formatter\PublicationKind::JsonDocument);
+        $formatter->method('publicationKind')->willReturn(\Qualimetrix\Reporting\Publication\PublicationKind::JsonDocument);
         $formatter->expects(self::exactly(2))->method('format')->with(self::callback(static fn(Report $report): bool => $report->computedMetricEvaluation === $summary), self::anything())->willReturn(new FormattedReport($payload));
         $registry = self::createStub(FormatterRegistryInterface::class);
         $registry->method('get')->willReturn($formatter);
@@ -863,8 +864,8 @@ final class ResultPresenterTest extends TestCase
             $base = [\PHP_BINARY, 'bin/qmx', '--working-dir=' . $directory, 'check', '.', '--config=qmx.yaml', '--workers=0', '--no-cache', '--no-progress', '--only-rule=code-smell.boolean-argument', '--format=text'];
             $normal = new \Symfony\Component\Process\Process($base, \dirname(__DIR__, 4));
             self::assertSame(0, $normal->run(), $normal->getErrorOutput());
-            self::assertSame(1, substr_count($normal->getOutput(), 'Rule population incomplete'));
-            self::assertStringContainsString('occurrence: 0 judged, 1 not judged', $normal->getOutput());
+            self::assertStringNotContainsString('Rule population incomplete', $normal->getOutput());
+            self::assertStringNotContainsString('occurrence: 0 judged, 1 not judged', $normal->getOutput());
             self::assertStringNotContainsString('gate allowed-extra', $normal->getOutput());
             $verbose = new \Symfony\Component\Process\Process([...$base, '-v'], \dirname(__DIR__, 4));
             self::assertSame(0, $verbose->run(), $verbose->getErrorOutput());

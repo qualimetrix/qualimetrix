@@ -29,7 +29,7 @@ Reporting retains both complete lists. Class drill-down selects those captured
 records without measuring or ranking again. Namespace selectors form a union
 and the internal class selector retains every matching exact declaration.
 JSON and summary `--class` still require one exact declaration for their
-separate class health heading; duplicate logical names refuse with exit 5.
+separate class health heading; duplicate logical names refuse with exit 3 and list their exact declarations.
 Use a namespace selection to display all their exact offender records. Each formatter
 selects the complete population, applies the shared comparator and only then
 limits its output. Score order is ascending health; density order is descending

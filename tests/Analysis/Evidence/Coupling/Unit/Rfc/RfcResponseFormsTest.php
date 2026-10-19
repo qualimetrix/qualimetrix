@@ -49,6 +49,19 @@ PHP;
     /** @return iterable<string, array{string, string, int, int}> */
     public static function forms(): iterable
     {
+        yield 'external static case and alias' => [<<<'PHP'
+<?php
+namespace App;
+use Vendor\Lib\Client;
+use Vendor\Lib\Client as C;
+class ExternalStatic { public function run(): void { Client::send(); \vendor\lib\client::SEND(); C::Send(); } }
+PHP, 'App\\ExternalStatic', 1, 1];
+        yield 'external typed case and alias' => [<<<'PHP'
+<?php
+namespace App;
+use Vendor\Lib\Client as C;
+class ExternalTyped { public function run(C $a, \VENDOR\LIB\CLIENT $b): void { $a->send(); $b->SEND(); } }
+PHP, 'App\\ExternalTyped', 1, 1];
         yield 'F01' => [<<<'PHP'
 <?php
 namespace App;

@@ -85,6 +85,11 @@ final class RuleCompilerPass implements CompilerPassInterface, ConsumerBoundPass
             ];
         }
 
+        usort($rules, static fn(array $left, array $right): int => strcmp(
+            (string) $left['metadata']->getArgument(0),
+            (string) $right['metadata']->getArgument(0),
+        ));
+
         return $rules;
     }
 }

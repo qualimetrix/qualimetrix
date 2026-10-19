@@ -59,7 +59,7 @@
     // ClassComplexityOptions:   maxWarning = 30, maxError = 50 (ключи max_warning/max_error)
     // ClassNpathComplexityOptions: maxWarning = 500, maxError = 1000; топ-сокращение npath: 200/1000
     ```
-  - Инверсия полосы (`src/Analysis/Evidence/Complexity/ClassComplexityOptions.php:69-80`):
+  - Инверсия полосы (`src/Analysis/Evidence/Complexity/Cyclomatic/ClassComplexityOptions.php:69-80`):
     ```php
     if ($value >= $this->maxError) { return Severity::Error; }
     if ($value >= $this->maxWarning) { return Severity::Warning; }
@@ -162,7 +162,7 @@
 - **mechanism**: `ThresholdParser::parse()` ищет ключ полосы по списку кандидатов, ПЕРВИЧНЫЙ спеллинг первым (`max_warning`, затем легаси `maxWarning`). Все двери нормализуют ключи рекурсивно, включая вложенные блоки, поэтому написанный автором `max_warning:`/`max-warning:` внутри `class:` приходит в `fromArray()` как `maxWarning`. Существующая ветка сокращения строит конфиг уровня с литеральным `'max_warning'` (`InstabilityOptions.php:62-66`). Если лечение построит массив уровня как «ключи блока плюс значения сокращения» (буквально то, что предписывает `02-cure.md:22-26`), в массиве окажутся ОБА спеллинга, и `ThresholdParser` возьмёт первичный — то есть значение СОКРАЩЕНИЯ, а не написанное автором. Юнит-тест по DoD («теми же словами таблицы», то есть `max_warning`) этого не увидит: дефект проявляется только в спеллинге, который производит реальная дверь.
 - **trigger**: воспроизводится в нормальной работе при одной из естественных реализаций; на сегодняшнем коде недостижим (ветки ещё нет)
 - **in_scope**: нет
-- **anchor**: `src/Analysis/Finding/Contract/Rule/OptionLanguage/ThresholdParser.php:102-135`; `src/Analysis/Evidence/Coupling/InstabilityOptions.php:62-66`; `src/Analysis/Configuration/Loader/YamlConfigLoader.php:159-178`
+- **anchor**: `src/Analysis/Finding/Contract/Rule/OptionLanguage/ThresholdParser.php:102-135`; `src/Analysis/Evidence/Coupling/Instability/InstabilityOptions.php:62-66`; `src/Analysis/Configuration/Loader/YamlConfigLoader.php:159-178`
 - **evidence**:
   ```php
   // ThresholdParser::candidateKeys() — первичный спеллинг впереди легаси

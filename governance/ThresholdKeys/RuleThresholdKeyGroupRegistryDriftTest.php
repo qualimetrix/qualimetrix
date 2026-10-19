@@ -29,12 +29,12 @@ use RuntimeException;
 #[CoversClass(RuleOptionSurface::class)]
 final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
 {
-    private const string MARKER = 'ThresholdParser::parse(';
+    private const array MARKERS = ['ThresholdParser::parse(', 'ThresholdPair::fromResolved('];
 
     private const int SENTINEL = 987654;
 
     // ------------------------------------------------------------------
-    // Test 1: every (rule, path) that actually calls ThresholdParser::parse()
+    // Test 1: every (rule, path) that actually calls threshold reader
     // must have a registry entry, with the right number of declared groups.
     // ------------------------------------------------------------------
 
@@ -58,7 +58,7 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
             [],
             $groups,
             \sprintf(
-                'Rule "%s" (path %s) calls ThresholdParser::parse() %d time(s) but RuleOptionSurface has no'
+                'Rule "%s" (path %s) calls threshold reader %d time(s) but RuleOptionSurface has no'
                 . ' entry for it — the read must use a band declared by its owning options class.',
                 $ruleName,
                 $path === '' ? '"(top level)"' : \sprintf('"%s"', $path),
@@ -70,7 +70,7 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
             $callCount,
             $groups,
             \sprintf(
-                'Rule "%s" (path %s) calls ThresholdParser::parse() %d time(s) but the registry declares %d group(s)'
+                'Rule "%s" (path %s) calls threshold reader %d time(s) but the registry declares %d group(s)'
                 . ' — they must match 1:1.',
                 $ruleName,
                 $path === '' ? '"(top level)"' : \sprintf('"%s"', $path),
@@ -82,7 +82,7 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
 
     // ------------------------------------------------------------------
     // Test 2: every registry entry must correspond to a real (rule, path)
-    // that actually calls ThresholdParser::parse() — no stray/orphaned entries.
+    // that actually calls threshold reader — no stray/orphaned entries.
     // ------------------------------------------------------------------
 
     /**
@@ -108,7 +108,7 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
             $requirements,
             \sprintf(
                 'RuleOptionSurface declares an entry for rule "%s" (path %s), but no real Options class at'
-                . ' that path calls ThresholdParser::parse() — the rule/level was removed or renamed and this entry'
+                . ' that path calls threshold reader — the rule/level was removed or renamed and this entry'
                 . ' is now a stray duplicate. Remove it.',
                 $ruleName,
                 $path === '' ? '"(top level)"' : \sprintf('"%s"', $path),
@@ -239,7 +239,11 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
                     throw new RuntimeException(\sprintf('Could not read %s.', $sourceFile));
                 }
 
-                $callCount = substr_count(self::stripComments($source), self::MARKER);
+                $code = self::stripComments($source);
+                $callCount = 0;
+                foreach (self::MARKERS as $marker) {
+                    $callCount += substr_count($code, $marker);
+                }
                 if ($callCount === 0) {
                     continue;
                 }
@@ -256,7 +260,7 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
     }
 
     /**
-     * Removes comment/docblock tokens before counting `ThresholdParser::parse(`
+     * Removes comment/docblock tokens before counting threshold reader
      * occurrences — a docblock merely MENTIONING the call (as several of
      * these Options classes do, e.g. `LongParameterListOptions`'s class
      * docblock) must not inflate the count against real call sites.

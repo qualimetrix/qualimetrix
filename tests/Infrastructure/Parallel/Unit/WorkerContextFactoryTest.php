@@ -4,17 +4,116 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Parallel\Unit;
 
+use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\Parallel\WorkerContextFactory;
 use Qualimetrix\Infrastructure\Parallel\WorkerNotes;
 use Qualimetrix\Infrastructure\Parallel\WorkerRequest;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 
 #[CoversClass(WorkerContextFactory::class)]
 final class WorkerContextFactoryTest extends TestCase
 {
+    #[Test]
+    #[TestWith(['w[1]'])]
+    #[TestWith(['w?'])]
+    #[TestWith(['w*'])]
+    public function itRemovesOnlyItsStartupLogsUnderALiteralTemporaryDirectory(string $name): void
+    {
+        if (\DIRECTORY_SEPARATOR !== '/') {
+            self::markTestSkipped('Literal wildcard filenames require a POSIX host.');
+        }
+        $root = '/tmp/qmx-w-' . bin2hex(random_bytes(6));
+        $directory = $root . '/' . $name;
+        $sibling = $root . '/w1';
+        mkdir($directory, 0700, true);
+        mkdir($sibling, 0700);
+        $script = $root . '/worker.php';
+        file_put_contents($script, '<?php error_log("real worker startup"); return static fn(): int => 7;');
+        $coordinator = <<<'PHP'
+require $argv[1];
+$notes = new \Qualimetrix\Infrastructure\Parallel\WorkerNotes(new \Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream());
+$factory = new \Qualimetrix\Infrastructure\Parallel\WorkerContextFactory(new \Qualimetrix\Infrastructure\Parallel\WorkerRequest(2), $notes);
+$directory = (new \ReflectionProperty($factory, 'directory'))->getValue($factory);
+$sibling = $argv[3] . '/' . basename($directory);
+mkdir($sibling, 0700);
+$siblingLog = $sibling . '/start-aaaaaaaaaaaaaaaa.log';
+file_put_contents($siblingLog, 'KEEP SIBLING');
+try {
+    $context = $factory->start($argv[2]);
+    $answer = $context->join();
+    $files = array_values(array_diff(scandir($directory), ['.', '..']));
+    $diagnostic = file_get_contents($directory . '/' . $files[0]);
+} finally {
+    $factory->close();
+}
+echo json_encode(['answer' => $answer, 'diagnostic' => $diagnostic, 'closed' => !is_dir($directory), 'siblingExists' => is_file($siblingLog)], JSON_THROW_ON_ERROR);
+PHP;
+        try {
+            $process = new \Symfony\Component\Process\Process([\PHP_BINARY, '-d', 'display_errors=stderr', '-d', 'sys_temp_dir=' . $directory, '-r', $coordinator, \dirname(__DIR__, 4) . '/vendor/autoload.php', $script, $sibling]);
+            $process->run();
+            self::assertSame(0, $process->getExitCode(), $process->getErrorOutput());
+            $record = json_decode($process->getOutput(), true, flags: \JSON_THROW_ON_ERROR);
+            self::assertSame(7, $record['answer']);
+            self::assertStringContainsString('real worker startup', $record['diagnostic']);
+            self::assertTrue($record['closed']);
+            self::assertTrue($record['siblingExists']);
+            self::assertSame('', $process->getErrorOutput());
+        } finally {
+            $entries = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
+            foreach ($entries as $entry) {
+                $entry->isDir() ? rmdir($entry->getPathname()) : unlink($entry->getPathname());
+            }
+            rmdir($root);
+        }
+    }
+
+    #[Test]
+    #[TestWith([false])]
+    #[TestWith([true])]
+    public function itRemovesStartupFilesWhenTheCoordinatorExhaustsMemory(bool $fromComposition): void
+    {
+        $script = <<<'PHP'
+require $argv[1];
+$hint = \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register();
+$registration = $hint->onExhaustion(...);
+if ($argv[2] === 'composition') {
+    $container = (new \Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory())->configure();
+    $strategyType = \Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy::class;
+    $container->getDefinition($strategyType)->setPublic(true);
+    $container->compile();
+    $strategy = $container->get($strategyType);
+    $registration = (new \ReflectionProperty($strategy, 'registerExhaustion'))->getValue($strategy);
+}
+$notes = new \Qualimetrix\Infrastructure\Parallel\WorkerNotes(new \Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream());
+$factory = new \Qualimetrix\Infrastructure\Parallel\WorkerContextFactory(new \Qualimetrix\Infrastructure\Parallel\WorkerRequest(2), $notes, [PHP_BINARY], new \Psr\Log\NullLogger(), $registration);
+$directory = (new \ReflectionProperty($factory, 'directory'))->getValue($factory);
+file_put_contents($directory . '/start-test.log', 'startup diagnostic');
+echo $directory;
+$limit = (int) ceil((memory_get_usage(true) + 2 * 1024 * 1024) / (1024 * 1024));
+ini_set('memory_limit', $limit . 'M');
+str_repeat('x', 4 * 1024 * 1024);
+PHP;
+        $process = new \Symfony\Component\Process\Process([\PHP_BINARY, '-d', 'xdebug.mode=off', '-r', $script, \dirname(__DIR__, 4) . '/vendor/autoload.php', $fromComposition ? 'composition' : 'direct']);
+        $process->run();
+        $directory = $process->getOutput();
+        try {
+            self::assertSame(4, $process->getExitCode(), $process->getErrorOutput());
+            self::assertStringContainsString('qmx-worker-start-', $directory);
+            self::assertDirectoryDoesNotExist($directory);
+        } finally {
+            if (is_dir($directory)) {
+                unlink($directory . '/start-test.log');
+                rmdir($directory);
+            }
+        }
+    }
+
     #[Test]
     public function itStartsOnlyAProcessWithMergedEnvironmentParseIniAndCapturedStreams(): void
     {
@@ -29,7 +128,7 @@ return static function (): array {
 PHP);
         $coordinator = <<<'PHP'
 require $argv[1];
-$owner = new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream();
+$owner = new \Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream();
 $owner->writer(new \Symfony\Component\Console\Output\ConsoleOutput());
 $notes = new \Qualimetrix\Infrastructure\Parallel\WorkerNotes($owner);
 $factory = new \Qualimetrix\Infrastructure\Parallel\WorkerContextFactory(new \Qualimetrix\Infrastructure\Parallel\WorkerRequest(2), $notes, [PHP_BINARY, '-d', 'short_open_tag=0']);
@@ -76,7 +175,7 @@ PHP;
         $coordinator = <<<'PHP'
 require $argv[1];
 $request = new \Qualimetrix\Infrastructure\Parallel\WorkerRequest(2, '--workers=2');
-$notes = new \Qualimetrix\Infrastructure\Parallel\WorkerNotes(new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream());
+$notes = new \Qualimetrix\Infrastructure\Parallel\WorkerNotes(new \Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream());
 try {
     new \Qualimetrix\Infrastructure\Parallel\WorkerContextFactory($request, $notes);
 } catch (\Qualimetrix\Infrastructure\Parallel\WorkerStartFailure $failure) {
@@ -103,7 +202,7 @@ PHP;
         $directory = sys_get_temp_dir() . '/qmx-context-held-' . bin2hex(random_bytes(6));
         mkdir($directory, 0700);
         $target = $directory . '/held-report.json';
-        $held = \Qualimetrix\Core\FileTarget\Publication\HeldTarget::claim(\Qualimetrix\Core\FileTarget\TargetPath::resolve($target));
+        $held = \Qualimetrix\Core\FileTarget\Publication\HeldTarget::claim(\Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($target));
         $script = $directory . '/inspect.php';
         file_put_contents($script, <<<'PHP'
 <?php

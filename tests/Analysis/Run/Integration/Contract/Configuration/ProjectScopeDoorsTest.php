@@ -77,7 +77,7 @@ final class ProjectScopeDoorsTest extends TestCase
 
         self::assertSame(ProjectScopeState::Narrowed, $measurement->state());
         self::assertSame([ProjectScopeDoor::Paths], $measurement->judgement()->selectorDoors());
-        self::assertSame(['src/Other.php'], $measurement->uncoveredRoots);
+        self::assertSame([], $measurement->uncoveredRoots);
     }
 
     /** @param list<ExcludeSelectorVerdict> $verdicts */

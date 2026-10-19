@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Configuration;
 
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
-use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterRegistryInterface;
 
 final readonly class OutputFormatVocabulary
 {

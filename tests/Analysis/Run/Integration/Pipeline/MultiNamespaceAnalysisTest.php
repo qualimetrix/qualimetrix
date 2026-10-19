@@ -171,7 +171,7 @@ PHP
                 new RuleOptionDocumentForms(),
                 DependencyVisitor::class,
                 [LocCollector::class, ClassCountCollector::class],
-            ), new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()), new \Qualimetrix\Infrastructure\Profiler\ProfileSession(), new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream());
+            ), new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()), new \Qualimetrix\Infrastructure\Profiler\ProfileSession(), new \Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream());
             if (WorkerPool::unavailableCapability() !== null) {
                 self::markTestSkipped('Parallel worker transport is unavailable.');
             }

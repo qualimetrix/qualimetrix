@@ -21,7 +21,7 @@ final class CommandLineValueTest extends TestCase
     public function itExplainsWhyAnAuthoredPositiveDecimalIsNotAnInteger(): void
     {
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage('Value was read as float (1.0). YAML interprets +2 and 2.0 as float; write 2 for an integer.');
+        $this->expectExceptionMessage('Value was read as float (1.0). YAML interprets signed and decimal spellings as float; write 1 for an integer.');
         CommandLineValue::read('+1', NodeSchema::scalar(ScalarForm::Integer), '--rule-opt');
     }
 

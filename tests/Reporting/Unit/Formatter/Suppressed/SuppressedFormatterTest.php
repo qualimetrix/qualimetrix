@@ -16,16 +16,16 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Reporting\CoverageFailure;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\GroupBy;
+use Qualimetrix\Reporting\Contract\Report\Report;
+use Qualimetrix\Reporting\Coverage\CoverageFailure;
+use Qualimetrix\Reporting\Coverage\ReportCoverage;
 use Qualimetrix\Reporting\FindingProjection\InertSuppressor;
 use Qualimetrix\Reporting\FindingProjection\SuppressedFinding;
 use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
 use Qualimetrix\Reporting\FindingProjection\SuppressionMechanism;
 use Qualimetrix\Reporting\Formatter\Suppressed\SuppressedFormatter;
-use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\GroupBy;
-use Qualimetrix\Reporting\Report;
-use Qualimetrix\Reporting\ReportCoverage;
 
 #[CoversClass(SuppressedFormatter::class)]
 final class SuppressedFormatterTest extends TestCase
@@ -102,7 +102,13 @@ final class SuppressedFormatterTest extends TestCase
     public function itRefusesToPublishAReportWhoseCompositionWasNeverBuilt(): void
     {
         $formatter = new SuppressedFormatter();
-        $report = new Report(fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), findings: [], filesAnalyzed: 0, filesSkipped: 0, duration: 0.0, errorCount: 0, warningCount: 0);
+        $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            findings: [],
+            filesAnalyzed: 0,
+            filesSkipped: 0,
+            duration: 0.0,
+        );
 
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('suppression composition');
@@ -152,8 +158,6 @@ final class SuppressedFormatterTest extends TestCase
             filesAnalyzed: 1,
             filesSkipped: 1,
             duration: 0.0,
-            errorCount: 0,
-            warningCount: 0,
             coverage: new ReportCoverage(2, 1, 0, 1, [new CoverageFailure('src/Bad.php', 'parse', 'Syntax error')]),
             suppressionComposition: new SuppressionComposition([]),
         );
@@ -173,8 +177,6 @@ final class SuppressedFormatterTest extends TestCase
             filesAnalyzed: 0,
             filesSkipped: 0,
             duration: 0.0,
-            errorCount: 0,
-            warningCount: 0,
             suppressionComposition: $composition,
         );
 

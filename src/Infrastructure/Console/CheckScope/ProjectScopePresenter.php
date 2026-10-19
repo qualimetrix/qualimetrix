@@ -9,8 +9,8 @@ use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorOutcome;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
-use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
-use Qualimetrix\Reporting\ReportProjectScope;
+use Qualimetrix\Reporting\Contract\Report\ReportProjectScope;
+use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionOptions;
 
 final readonly class ProjectScopePresenter
 {

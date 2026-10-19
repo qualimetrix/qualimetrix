@@ -17,7 +17,7 @@ use Qualimetrix\Core\FileTarget\FileTargetFailure;
 use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Tests\Infrastructure\Console\Support\SplitStreamConsoleOutput;
 use RuntimeException;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;

@@ -14,9 +14,9 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentInspectorIn
 use Qualimetrix\Core\Environment\EnvironmentFailureInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\Application\Application;
-use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
+use Qualimetrix\Infrastructure\Console\LayerAssignment\LayerAssignmentCommand;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Infrastructure\Console\Support\SplitStreamConsoleOutput;
 use Symfony\Component\Console\Command\Command;

@@ -52,7 +52,7 @@ final class ProcessOwnerTest extends TestCase
 require $argv[1];
 $uid = \Qualimetrix\Core\FileTarget\PrivateGroup\ProcessOwner::effectiveUid($argv[2]);
 try {
-    \Qualimetrix\Core\FileTarget\TargetPath::resolve($argv[2] . '/link');
+    \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($argv[2] . '/link');
     echo json_encode(['uid' => $uid, 'refused' => false]);
 } catch (\Qualimetrix\Core\FileTarget\FileTargetFailure $failure) {
     echo json_encode(['uid' => $uid, 'refused' => $failure->kind === \Qualimetrix\Core\FileTarget\FileTargetFailureKind::ExposedLink]);

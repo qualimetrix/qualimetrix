@@ -54,8 +54,17 @@ final class ReportRecordsTest extends TestCase
     }
 
     #[Test]
-    public function itReadsTheCurrentPublisherOnTheReferenceTreeAsCurrentHtmlAndProse(): void
+    #[TestWith([false])]
+    #[TestWith([true])]
+    public function itReadsTheCurrentPublisherOnTheReferenceTreeAsCurrentHtmlAndProse(bool $previousLocation): void
     {
+        if ($previousLocation) {
+            $current = 'src/Reporting/FindingPublication/FindingRecord.php';
+            $previous = 'src/Reporting/Formatter/FindingRecord.php';
+            Fs::write($this->root . '/' . $previous, Fs::read($this->root . '/' . $current));
+            $tuple = $this->root . '/' . \QmxFindingGate\EquivalenceTuple::TRACKED_PATH;
+            Fs::write($tuple, str_replace($current, $previous, Fs::read($tuple)));
+        }
         $record = array_replace(self::finding(), ['recommendation' => 'Advice']);
         $run = $this->context(true);
         $artifacts = self::artifacts([$record], 'candidate') + [

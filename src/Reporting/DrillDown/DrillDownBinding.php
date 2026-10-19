@@ -102,6 +102,19 @@ final readonly class DrillDownBinding
         return \count($this->namespaceUniverse($metrics, $namespaceTree));
     }
 
+    /** @return list<string> Exact declarations selected by this logical class name. */
+    public function classDeclarations(string $fqcn, MetricRepositoryInterface $metrics): array
+    {
+        $declarations = [];
+        foreach ($metrics->allClassDeclarations() as $info) {
+            if ($info->symbolPath->toString() === $fqcn && $info->subject !== null) {
+                $declarations[] = $info->subject->toCanonical();
+            }
+        }
+        sort($declarations, \SORT_STRING);
+        return $declarations;
+    }
+
     /**
      * Size of the universe a class value is offered, for the refusal to name.
      */

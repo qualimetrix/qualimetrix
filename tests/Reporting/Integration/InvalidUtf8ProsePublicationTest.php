@@ -17,11 +17,11 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
-use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterRegistryInterface;
 use Qualimetrix\Reporting\Formatter\Prose\AsciiGlyphs;
 use Qualimetrix\Reporting\Formatter\Prose\GlyphMode;
 use Qualimetrix\Reporting\Formatter\Prose\ProseText;
-use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\ReportBuilder;
 
 #[CoversClass(ProseText::class)]

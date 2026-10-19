@@ -19,14 +19,14 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
 use Qualimetrix\Reporting\Formatter\Json\JsonFindingSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonSanitizer;
-use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
 #[CoversClass(JsonFindingSection::class)]
-#[CoversClass(\Qualimetrix\Reporting\Formatter\PublishedFinding::class)]
+#[CoversClass(\Qualimetrix\Reporting\FindingPublication\PublishedFinding::class)]
 final class JsonFindingSectionTest extends TestCase
 {
     private JsonFindingSection $section;

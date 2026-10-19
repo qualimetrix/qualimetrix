@@ -25,7 +25,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchMode;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\DeclaredLayerReachability;
 use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\DoubtedAssignmentDiagnostic;

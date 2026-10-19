@@ -540,7 +540,7 @@ final class GoldenFileAggregationTest extends TestCase
     public function itExportsTheFileAndLineOfAClassWithoutMethods(): void
     {
         $report = \Qualimetrix\Reporting\ReportBuilder::create()->metrics(self::$repository)->build();
-        $json = (new \Qualimetrix\Reporting\Formatter\MetricsJsonFormatter())->format($report, new \Qualimetrix\Reporting\FormatterContext())->body;
+        $json = (new \Qualimetrix\Reporting\Formatter\MetricsJson\MetricsJsonFormatter())->format($report, new \Qualimetrix\Reporting\Contract\Formatting\FormatterContext())->body;
         $records = json_decode($json, true, flags: \JSON_THROW_ON_ERROR)['symbols'];
         $empty = array_values(array_filter($records, static fn(array $record): bool => $record['type'] === 'class' && $record['name'] === 'GoldenMetrics\\App\\ValueObject\\EmptyMarker'));
         self::assertCount(1, $empty);

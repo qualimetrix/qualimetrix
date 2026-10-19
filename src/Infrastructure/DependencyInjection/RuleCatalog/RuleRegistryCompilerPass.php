@@ -48,6 +48,10 @@ final class RuleRegistryCompilerPass implements CompilerPassInterface, ConsumerB
 
         /** @var list<class-string<RuleDefinitionInterface>> $ruleClasses */
         $this->validateNoDuplicateNames($ruleClasses);
+        usort($ruleClasses, static fn(string $left, string $right): int => strcmp(
+            RuleNameReader::read($left),
+            RuleNameReader::read($right),
+        ));
 
         $definition->setArgument('$ruleClasses', $ruleClasses);
     }

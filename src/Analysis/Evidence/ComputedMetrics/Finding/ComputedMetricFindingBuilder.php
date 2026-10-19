@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMe
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -20,13 +21,14 @@ final class ComputedMetricFindingBuilder
         SymbolPath $symbolPath,
         Location $location,
         string $ruleName,
+        ?ThresholdOverride $override = null,
     ): ?Finding {
-        $severity = $this->severity($definition, $value);
+        $severity = $this->severity($definition, $value, $override);
         if ($severity === null) {
             return null;
         }
 
-        $threshold = $severity === Severity::Error ? $definition->errorThreshold : $definition->warningThreshold;
+        $threshold = $severity === Severity::Error ? ($override->error ?? $definition->errorThreshold) : ($override->warning ?? $definition->warningThreshold);
         \assert($threshold !== null);
         $operator = $definition->inverted ? 'below' : 'above';
 
@@ -44,20 +46,22 @@ final class ComputedMetricFindingBuilder
         );
     }
 
-    private function severity(ComputedMetricDefinition $definition, float $value): ?Severity
+    private function severity(ComputedMetricDefinition $definition, float $value, ?ThresholdOverride $override): ?Severity
     {
+        $warning = $override->warning ?? $definition->warningThreshold;
+        $error = $override->error ?? $definition->errorThreshold;
         if ($definition->inverted) {
-            if ($definition->errorThreshold !== null && $value < $definition->errorThreshold) {
+            if ($error !== null && $value < $error) {
                 return Severity::Error;
             }
-            if ($definition->warningThreshold !== null && $value < $definition->warningThreshold) {
+            if ($warning !== null && $value < $warning) {
                 return Severity::Warning;
             }
         } else {
-            if ($definition->errorThreshold !== null && $value > $definition->errorThreshold) {
+            if ($error !== null && $value > $error) {
                 return Severity::Error;
             }
-            if ($definition->warningThreshold !== null && $value > $definition->warningThreshold) {
+            if ($warning !== null && $value > $warning) {
                 return Severity::Warning;
             }
         }

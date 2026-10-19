@@ -8,11 +8,11 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
-use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
+use Qualimetrix\Analysis\Evidence\Complexity\Cyclomatic\ComplexityRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Rule\AbstractRule;
 
 #[CoversClass(RuleNameReader::class)]
 final class RuleNameReaderTest extends TestCase

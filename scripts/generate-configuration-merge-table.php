@@ -40,7 +40,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclarati
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\Shorthand;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
-use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ConfigurationConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configuration\ConfigurationConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\Compiler\PassConfig;

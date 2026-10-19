@@ -11,7 +11,7 @@ use Qualimetrix\Core\Ast\ResolvedName;
  * Recognizes the declared and local receiver evidence supported by RFC.
  *
  * @qmx-threshold coupling.cbo warning=21 -- Receiver evidence recognizes the supported PHP type and write-target grammar; splitting its node vocabulary transfers the same dependencies.
- * @qmx-threshold coupling.instability warning=0.875001 -- Receiver evidence reads the supported PHP type and expression grammar; its small incoming population does not model that required outward composition.
+ * @qmx-threshold coupling.instability 0.850001 -- Receiver evidence reads the supported PHP type and expression grammar; its small incoming population does not model that required outward composition.
  */
 final class RfcReceiverTypes
 {

@@ -28,7 +28,7 @@ use SplFileInfo;
  *
  * @implements Task<FileProcessingResult, mixed, mixed>
  *
- * @qmx-threshold coupling.instability warning=0.833334 -- The worker task binds collection, configuration and transport with few coordinator consumers; extracting that protocol transfers its adapter dependencies.
+ * @qmx-threshold coupling.instability 0.833335 -- The worker task binds collection, configuration and transport with few coordinator consumers; extracting that protocol transfers its adapter dependencies.
  */
 final class FileProcessingTask implements Task
 {

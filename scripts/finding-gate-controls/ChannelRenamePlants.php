@@ -135,7 +135,7 @@ final class ChannelRenamePlants
             ],
             'the unused-private SARIF fingerprint gains an unmapped prefix',
         )->and(Mutation::edit(
-            'src/Reporting/Formatter/GitLabCodeQualityFormatter.php',
+            'src/Reporting/Formatter/GitLab/GitLabCodeQualityFormatter.php',
             [
                 '        return md5($finding->getFingerprint());'
                     => "        return md5((\$finding->code === 'code-smell.unused-private' ? 'unmapped:' : '') . \$finding->getFingerprint());",

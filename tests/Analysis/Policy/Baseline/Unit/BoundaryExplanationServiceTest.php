@@ -26,14 +26,14 @@ use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\CurrentMeasurement;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEdge;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntryMode;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertBaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertEntryReason;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEdge;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntryMode;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\InertBaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\InertEntryReason;
 use Qualimetrix\Analysis\Policy\Baseline\Explanation\BoundaryExplanation;
 use Qualimetrix\Analysis\Policy\Baseline\Explanation\BoundaryExplanationService;
 use Qualimetrix\Analysis\Policy\Baseline\Explanation\BoundaryExplanationStatus;
@@ -886,7 +886,7 @@ final class BoundaryExplanationServiceTest extends TestCase
             }
         };
         return new RunCoverage(
-            \Qualimetrix\Analysis\Policy\Baseline\RunCoverage\RunScope::fromRecorded(['src']),
+            \Qualimetrix\Analysis\Policy\Baseline\Contract\RunScope::fromRecorded(['src']),
             new \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage(array_map(RelativePath::fromString(...), $analyzed), [], []),
             $exclusions ?? self::fixtureExclusions(),
             new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse($root, true, $captured ? [['target' => 'src', 'path' => $root->joinRelative(RelativePath::fromString('src'))]] : [], [], [], true, [], (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root)),

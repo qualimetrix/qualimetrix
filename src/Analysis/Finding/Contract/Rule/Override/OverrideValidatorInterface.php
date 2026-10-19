@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract\Rule\Override;
 
-use Qualimetrix\Analysis\Finding\Rule\Override\OverrideValidationFailure;
-
 /**
  * Per-rule validation strategy for `@qmx-threshold` annotations.
  *

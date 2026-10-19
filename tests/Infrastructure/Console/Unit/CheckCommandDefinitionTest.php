@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
-use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
+use Qualimetrix\Analysis\Evidence\Complexity\Cyclomatic\ComplexityRule;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Infrastructure\Console\Invocation\CommandDefinition\CheckCommandDefinition;
 use Qualimetrix\Infrastructure\Rule\RuleRegistry;

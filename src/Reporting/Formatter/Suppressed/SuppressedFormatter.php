@@ -6,17 +6,17 @@ namespace Qualimetrix\Reporting\Formatter\Suppressed;
 
 use LogicException;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterInterface;
+use Qualimetrix\Reporting\Contract\Formatting\GroupBy;
+use Qualimetrix\Reporting\Contract\Report\Report;
 use Qualimetrix\Reporting\FindingProjection\InertSuppressor;
 use Qualimetrix\Reporting\FindingProjection\SuppressedFinding;
 use Qualimetrix\Reporting\FindingProjection\SuppressionMechanism;
-use Qualimetrix\Reporting\Formatter\FormattedReport;
-use Qualimetrix\Reporting\Formatter\FormatterInterface;
-use Qualimetrix\Reporting\Formatter\PublicationKind;
-use Qualimetrix\Reporting\Formatter\PublishedFinding;
-use Qualimetrix\Reporting\Formatter\PublishedUtf8;
-use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\GroupBy;
-use Qualimetrix\Reporting\Report;
+use Qualimetrix\Reporting\FindingPublication\PublishedFinding;
+use Qualimetrix\Reporting\Publication\FormattedReport;
+use Qualimetrix\Reporting\Publication\PublicationKind;
+use Qualimetrix\Reporting\Publication\PublishedUtf8;
 
 /**
  * The machine-readable composition of what a run suppressed — a separate
