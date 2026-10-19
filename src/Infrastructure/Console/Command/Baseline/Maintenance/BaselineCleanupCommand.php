@@ -170,7 +170,7 @@ final class BaselineCleanupCommand extends BaselineCommand
 
         $this->writer->write($removal->baseline, $document->target, $context->projectRoot, $prepared, $guard === null ? null : $guard->assertNotInterrupted(...));
 
-        self::reportRemoval(\count($removal->removed), $removal->baseline->count(), $removal->baseline->totalCount(), $output);
+        self::reportRemoval($baseline->totalCount() - $removal->baseline->totalCount(), $removal->baseline->count(), $removal->baseline->totalCount(), $output);
 
         return self::SUCCESS;
     }

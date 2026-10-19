@@ -191,6 +191,21 @@ final class BaselineCleanupCommandTest extends TestCase
     }
 
     #[Test]
+    public function itReportsTheNumberOfPhysicalDuplicateEntriesRemoved(): void
+    {
+        $entry = self::occurrenceEntry();
+        $this->writeBaseline([$entry], ['src']);
+        $document = json_decode((string) file_get_contents($this->baselinePath), true, flags: \JSON_THROW_ON_ERROR);
+        $subject = array_key_first($document['entries']);
+        $document['entries'][$subject][] = $document['entries'][$subject][0];
+        file_put_contents($this->baselinePath, json_encode($document, \JSON_THROW_ON_ERROR));
+        $tester = $this->execute(['--remove' => [$entry->selector()->value]]);
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertCount(0, self::allEntries($this->baselinePath));
+        self::assertStringContainsString('Removed 2 entries;', $tester->getDisplay());
+    }
+
+    #[Test]
     public function itReportsASelectorThatMatchesNothingAndWritesNothing(): void
     {
         $this->writeBaseline([self::occurrenceEntry()], ['src']);
