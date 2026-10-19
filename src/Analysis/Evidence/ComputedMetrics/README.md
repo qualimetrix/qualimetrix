@@ -43,6 +43,23 @@ resolved so the HTML report picks by the node's own level. Which class dragged a
 parent score down is a separate question with a separate list — the contributor
 keys — and the two must not be conflated.
 
+Namespace and project cohesion apply the class pure-method correction to the
+published means: `cohesion.pure-method-count.avg` and
+`cohesion.tcc-method-count.avg` accompany TCC/LCOM averages. A one-class
+namespace has the same score as its class. Means of heterogeneous inputs are
+not a mean of class scores, so multi-class containment comparisons remain
+diagnostic. Health cohesion accepts any nonempty measured LCOM graph rather
+than inheriting the LCOM rule's configurable minimum: one vertex necessarily
+gives the LCOM contribution 100 (the whole score is 100 when TCC is absent), and two disconnected vertices without purity adjustment score 40.
+These are graph-shape scores, not evidence of enough methods to judge a class's
+responsibility split. ADR 0116 records the small-graph corpus proportions.
+
+Project coupling retains Form B's breadth term, but that term was zero on all
+17 calibration projects. Its weight four was a grid-order tie-break, not an
+identified corpus effect; on that corpus the penalty used only own distance
+and the worst outgoing class. It makes no claim to distinguish ordinary
+project breadth below the combined knee four.
+
 Cohesion contributors use one ranking axis for the entire selected scope:
 TCC when any candidate has it, including measured zero; otherwise LCOM, with
 larger values first. Candidates missing that axis do not enter the ranking.

@@ -86,8 +86,8 @@ final class HealthDecompositionCatalog
                 ['key' => MetricName::COHESION_LCOM, 'sources' => [MetricName::COHESION_LCOM, 'cohesion.pure-method-count'], 'label' => 'LCOM', 'direction' => 'lower', 'coverage' => null],
             ],
             SymbolLevel::Namespace_->value => [
-                ['key' => 'cohesion.tcc.avg', 'sources' => ['cohesion.tcc.avg'], 'label' => 'TCC', 'direction' => 'higher', 'coverage' => CoverageUnit::Classes],
-                ['key' => 'cohesion.lcom.avg', 'sources' => ['cohesion.lcom.avg'], 'label' => 'LCOM', 'direction' => 'lower', 'coverage' => CoverageUnit::Classes],
+                ['key' => 'cohesion.tcc.avg', 'sources' => ['cohesion.tcc.avg', 'cohesion.tcc-method-count.avg', 'cohesion.pure-method-count.avg'], 'label' => 'TCC', 'direction' => 'higher', 'coverage' => CoverageUnit::Classes],
+                ['key' => 'cohesion.lcom.avg', 'sources' => ['cohesion.lcom.avg', 'cohesion.pure-method-count.avg'], 'label' => 'LCOM', 'direction' => 'lower', 'coverage' => CoverageUnit::Classes],
             ],
         ],
         'health.coupling' => [

@@ -76,6 +76,15 @@ Penalizes high average CCN and cognitive complexity, plus square-root-scaled pen
 
 Combines available TCC (Tight Class Cohesion) and LCOM4 contributions and divides by their participating weight sum. An absent half contributes no default, including for classes with fewer than six methods. TCC retains its square-root scaling; its purity adjustment divides by `cohesion.tcc-method-count`, not `size.method-count`. Classes with neither measured TCC nor LCOM have no cohesion score.
 
+Namespace and project cohesion apply the same pure-method correction using
+`cohesion.pure-method-count.avg` and `cohesion.tcc-method-count.avg`; a namespace
+containing one class receives that class's score. Health does not inherit the
+LCOM rule's minimum-method filter. A nonempty one-vertex graph gives the LCOM contribution 100 by
+construction (the whole score is 100 when TCC is absent); a two-vertex disconnected graph without purity adjustment scores
+40. These describe graph shape, not sufficient evidence of a responsibility
+split. In the reviewed corpus, one-vertex classes were 209/877 in Qualimetrix,
+164/242 in PHP-Parser, 359/826 in PHPUnit and 153/856 in Laravel.
+
 The class and namespace LCOM contributions use span five. The declared
 27-candidate search retained the earlier namespace scale. Project cohesion
 inherits that namespace formula and evaluates project aggregate inputs directly;
@@ -102,6 +111,13 @@ Uses hyperbolic decay (`K / (K + penalty)`) for smooth scoring.
   outliers (`coupling.ce.max`), and applicable `coupling.distance-own.avg`.
   The distance is weighted by eligible types in measured own scopes. Incoming
   popularity is not a project penalty; bidirectional CBO is not an input.
+
+On the 17-project calibration corpus, the breadth penalty was zero in every
+project: its combined input never reached the knee four (maximum 2.996722 in
+Guzzle). Breadth weight four was selected by grid-order tie-break, not by a
+measured corpus effect. On that corpus the penalty therefore follows own
+distance and the worst outgoing class; no broader discrimination below the knee
+is promised.
 
 Project Form B uses distance weight six and breadth weight four:
 

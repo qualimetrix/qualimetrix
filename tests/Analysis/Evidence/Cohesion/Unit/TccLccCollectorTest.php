@@ -501,7 +501,8 @@ PHP;
         $pureDef = $definitions[3];
         self::assertSame('cohesion.pure-method-count', $pureDef->name);
         self::assertSame(SymbolLevel::Class_, $pureDef->collectedAt);
-        self::assertSame([], $pureDef->getStrategiesForLevel(SymbolLevel::Namespace_));
+        self::assertSame([AggregationStrategy::Average], $pureDef->getStrategiesForLevel(SymbolLevel::Namespace_));
+        self::assertSame([AggregationStrategy::Average], $pureDef->getStrategiesForLevel(SymbolLevel::Project));
     }
 
     #[Test]

@@ -44,7 +44,7 @@ consumer-visible changes.
 Namespace cohesion, inherited by project cohesion over project aggregate inputs:
 
 ```text
-clamp(weighted_mean((m["cohesion.tcc.avg"] ?? null) === null ? null : m["cohesion.tcc.avg"] ** 0.5 * 100, 0.5, (m["cohesion.lcom.avg"] ?? null) === null ? null : (1 - clamp((m["cohesion.lcom.avg"] - 1) / 5, 0, 1)) * 100, 0.5), 0, 100)
+clamp(weighted_mean((m["cohesion.tcc.avg"] ?? null) === null ? null : (m["cohesion.tcc.avg"] + (1 - m["cohesion.tcc.avg"]) * ((m["cohesion.pure-method-count.avg"] ?? 0) / max(m["cohesion.tcc-method-count.avg"] ?? 1, 1)) * 0.4) ** 0.5 * 100, 0.5, (m["cohesion.lcom.avg"] ?? null) === null ? null : (1 - clamp((max(m["cohesion.lcom.avg"] - (m["cohesion.pure-method-count.avg"] ?? 0) * 0.7, 1) - 1) / 5, 0, 1)) * 100, 0.5), 0, 100)
 ```
 
 Its applicability requires a finite measured `cohesion.tcc.avg` or
@@ -62,6 +62,99 @@ Project applicability requires at least one finite measured input among
 `coupling.ce.max`. The expression's missing-term fallback does not publish a
 distance zero or fabricate measured coverage. Class and namespace coupling
 semantics remain unchanged.
+
+### Limits confirmed by final review
+
+The F6 correction retains the class purity adjustment when evaluating namespace
+and project cohesion: pure-method and tracked TCC-method means now accompany
+the raw TCC/LCOM means. A single-class namespace retains that class's score
+(78.879058 rather than the previous 60.432817 for TCC 0.167, LCOM 2 and two
+pure methods among four tracked public methods). The earlier explanation of
+C1 only justified scores above all children through nonlinear pooling. It did
+not justify losing purity below the minimum child. The historical tables below
+describe the earlier capture, not the corrected F6 formula.
+
+Health cohesion intentionally accepts every nonempty measured LCOM graph; it
+does not inherit `cohesion.lcom`'s configurable `min_methods` default of three.
+One vertex implies LCOM 1 and an LCOM contribution of 100 by construction;
+the whole score is 100 when TCC is absent. A virtual stateless LCOM vertex
+can still accompany several public TCC methods and a lower combined score. Two disconnected
+vertices can score 40 and warn even when the LCOM rule abstains. Review of the
+17-project capture found one-vertex scored classes in Qualimetrix 209/877
+(23.8%), PHP-Parser 164/242 (67.8%), PHPUnit 359/826 (43.5%) and Laravel 153/856
+(17.9%). Of class health-cohesion warnings, 11/22 in Qualimetrix and 31/85 in
+PHPUnit came from graphs with fewer than three vertices. The score describes
+this graph shape, not evidence that a sufficiently large method population
+has demonstrated a responsibility split. Keeping that distinction explicit
+avoids silently coupling the score to a configurable rule population.
+
+Project Form B's breadth term was zero on all 17 calibration projects. The
+maximum combined input was 2.996722 (Guzzle), below its knee four. Breadth
+weights 4, 6 and 8 therefore produced identical corpus values; weight four is
+a deterministic grid-order tie-break, not a fitted effect. On this corpus the
+penalty consists only of own distance and the worst outgoing class: that
+outlier supplies about 83% of Qualimetrix's penalty and 80% of Laravel's.
+Composer coupling 35.71→72.97 and Monolog 60.11→91.96 in the historical table
+must be read with this limitation; CodeIgniter reaches 100 with neither
+applicable distance nor a nonzero breadth/outlier penalty. The retained form
+can respond above the knee, but the calibration establishes no discrimination
+of ordinary project breadth below it. Changing that promise requires a new
+model and a search whose breadth parameter actually affects the corpus.
+
+### Reproducing the final-review census
+
+The final-review census was repeated on production source
+`59191fbec0d64e67c2220161f8899604f127791b`, PHP 8.5.11, with the same 17
+source selections in `docs/internal/benchmark-baselines.json`. All 17 runs
+published complete coverage with zero failed files. Use the native metrics
+capture command in [Capture and runtime provenance](#capture-and-runtime-provenance),
+adding `--no-cache --no-progress`; disable `duplication.clone` for PHP-Parser
+as in that original capture. Read `symbols` from each resulting JSON:
+
+```python
+classes = [s["metrics"] for s in data["symbols"] if s["type"] == "class"]
+scored = [m for m in classes if "health.cohesion" in m]
+singletons = [m for m in scored if m.get("cohesion.lcom-method-count") == 1]
+perfect = sum(m["health.cohesion"] == 100 for m in singletons)
+warnings = [m for m in scored if m["health.cohesion"] < 50]
+small = sum(m.get("cohesion.lcom-method-count", 3) < 3 for m in warnings)
+p = next(s["metrics"] for s in data["symbols"] if s["type"] == "project")
+breadth_input = p.get("coupling.ce-packages.avg", 0) * 3 + p.get("coupling.ce.avg", 0) ** 0.5 * 0.5
+breadth_penalty = max(breadth_input - 4, 0) * 4
+```
+
+`Small warnings` uses the default health warning boundary 50 and graph size
+below three, independently of the LCOM rule. `Perfect singletons` tests the
+whole health score, not just its LCOM contribution. In particular, PHP-Parser
+has virtual one-vertex LCOM graphs whose two public TCC methods still produce
+TCC zero and combined health 81.622777. The broad statement that every
+one-vertex class scores 100 is therefore false.
+
+| Project                 | Cohesion scored | One LCOM vertex | Perfect singletons | Small warnings / all warnings | Breadth input |
+| ----------------------- | --------------- | --------------- | ------------------ | ----------------------------- | ------------- |
+| flysystem               | 29              | 11              | 11                 | 0/1                           | 0.694131      |
+| symfony-console         | 131             | 30              | 30                 | 1/9                           | 1.240111      |
+| symfony-di              | 137             | 33              | 33                 | 3/9                           | 1.328880      |
+| symfony-http-foundation | 75              | 19              | 19                 | 1/2                           | 1.278649      |
+| symfony-http-kernel     | 109             | 42              | 42                 | 1/2                           | 1.383793      |
+| symfony-routing         | 41              | 10              | 10                 | 1/1                           | 1.024636      |
+| phpunit                 | 826             | 359             | 359                | 31/85                         | 1.093363      |
+| php-parser              | 242             | 164             | 74                 | 0/13                          | 1.111828      |
+| doctrine-orm            | 273             | 86              | 86                 | 1/6                           | 1.247605      |
+| doctrine-dbal           | 244             | 71              | 71                 | 2/29                          | 1.006917      |
+| composer                | 228             | 22              | 22                 | 1/43                          | 2.434484      |
+| monolog                 | 105             | 22              | 22                 | 0/3                           | 1.622741      |
+| guzzle                  | 28              | 2               | 2                  | 0/1                           | 2.996722      |
+| laravel-framework       | 856             | 153             | 153                | 8/101                         | 1.827424      |
+| qmx                     | 877             | 209             | 209                | 11/22                         | 1.688108      |
+| codeigniter             | 135             | 15              | 15                 | 0/30                          | 0.469117      |
+| wordpress               | 388             | 39              | 39                 | 5/20                          | 0.978759      |
+
+Every breadth penalty is zero. These measurements support the explicit model
+limits above; they do not turn the tied breadth weights into fitted evidence.
+The pure-method aggregation correction changes namespace/project cohesion and
+overall scores, so this source census is not a claim about F6 benchmark
+acceptance or the historical frozen search's candidate verdicts.
 
 ### Instrument verification
 

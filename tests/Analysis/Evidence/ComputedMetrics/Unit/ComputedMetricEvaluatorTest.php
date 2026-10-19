@@ -138,6 +138,65 @@ final class ComputedMetricEvaluatorTest extends TestCase
     }
 
     #[Test]
+    public function itKeepsPureMethodCorrectionForASingleClassNamespaceAndProject(): void
+    {
+        $definition = ComputedMetricDefaults::getDefaults()['health.cohesion'];
+        $evaluator = new ComputedMetricSubjectEvaluation();
+        $classInputs = [
+            'cohesion.tcc' => 0.167,
+            'cohesion.lcom' => 2,
+            'cohesion.pure-method-count' => 2,
+            'cohesion.tcc-method-count' => 4,
+        ];
+        $aggregateInputs = [];
+        foreach ($classInputs as $key => $value) {
+            $aggregateInputs[$key . '.avg'] = $value;
+        }
+        $class = $evaluator->evaluate($definition, SymbolLevel::Class_, $classInputs);
+        self::assertNotNull($class->value);
+        foreach ([SymbolLevel::Namespace_, SymbolLevel::Project] as $level) {
+            $aggregate = $evaluator->evaluate($definition, $level, $aggregateInputs);
+            self::assertEqualsWithDelta($class->value, $aggregate->value, 0.000001, $level->value);
+        }
+    }
+
+    #[Test]
+    public function itKeepsNonemptySmallGraphHealthIndependentOfTheLcomRuleMinimum(): void
+    {
+        $definition = ComputedMetricDefaults::getDefaults()['health.cohesion'];
+        $evaluator = new ComputedMetricSubjectEvaluation();
+        $singleton = $evaluator->evaluate($definition, SymbolLevel::Class_, ['cohesion.lcom' => 1, 'cohesion.lcom-method-count' => 1]);
+        $pair = $evaluator->evaluate($definition, SymbolLevel::Class_, ['cohesion.lcom' => 2, 'cohesion.lcom-method-count' => 2, 'cohesion.tcc' => 0]);
+        self::assertSame(100.0, $singleton->value);
+        self::assertSame(40.0, $pair->value);
+        $virtual = $evaluator->evaluate($definition, SymbolLevel::Class_, ['cohesion.lcom' => 1, 'cohesion.lcom-method-count' => 1, 'cohesion.tcc' => 0, 'cohesion.tcc-method-count' => 2, 'cohesion.pure-method-count' => 2]);
+        self::assertEqualsWithDelta((sqrt(0.4) * 100 + 100) / 2, $virtual->value, 0.000001);
+    }
+
+    #[Test]
+    public function itCarriesPureMethodInputsThroughNativeAggregation(): void
+    {
+        $definitions = (new \Qualimetrix\Analysis\Evidence\Cohesion\CohesionCompositionCollector())->getMetricDefinitions();
+        $repository = new InMemoryMetricRepository([...$definitions, new MetricDefinition(name: 'health.cohesion', collectedAt: SymbolLevel::Class_)]);
+        $class = SymbolPath::forClass('App', 'Writer');
+        $this->addFixture($repository, $class, MetricBag::fromArray([
+            'cohesion.tcc' => 0.167, 'cohesion.lcom' => 2,
+            'cohesion.pure-method-count' => 2, 'cohesion.tcc-method-count' => 4,
+        ]), RelativePath::fromString('Writer.php'), 1);
+        (new \Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MetricAggregator($definitions, self::createStub(ProfilerInterface::class)))->aggregate($repository);
+        foreach ([SymbolPath::forNamespace('App'), SymbolPath::forProject()] as $path) {
+            $metrics = $repository->get($path);
+            self::assertEquals(2.0, $metrics->get('cohesion.pure-method-count.avg'));
+            self::assertEquals(4.0, $metrics->get('cohesion.tcc-method-count.avg'));
+        }
+        $this->evaluate($repository, [ComputedMetricDefaults::getDefaults()['health.cohesion']]);
+        $classScore = $this->readFixture($repository, $class)->get('health.cohesion');
+        self::assertNotNull($classScore);
+        self::assertEqualsWithDelta($classScore, $repository->get(SymbolPath::forNamespace('App'))->get('health.cohesion'), 0.000001);
+        self::assertEqualsWithDelta($classScore, $repository->get(SymbolPath::forProject())->get('health.cohesion'), 0.000001);
+    }
+
+    #[Test]
     public function itKeepsCustomMissingAndNullAbsenceSeparateFromAuthoredHealthConstant(): void
     {
         $repo = $this->repository();
