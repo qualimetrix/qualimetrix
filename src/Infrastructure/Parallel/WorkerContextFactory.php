@@ -130,8 +130,12 @@ final class WorkerContextFactory implements ContextFactory
 
     private function cleanupDirectory(): void
     {
-        $files = glob($this->directory . '/start-*.log');
-        foreach ($files === false ? [] : $files as $file) {
+        $names = scandir($this->directory);
+        foreach ($names === false ? [] : $names as $name) {
+            if (!str_starts_with($name, 'start-') || !str_ends_with($name, '.log')) {
+                continue;
+            }
+            $file = $this->directory . '/' . $name;
             if (is_file($file)) {
                 unlink($file);
             }

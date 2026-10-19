@@ -77,7 +77,9 @@ file retains the PHP diagnostic and worker limit; a missing diagnostic falls
 back to the bounded shutdown-note drain and then a generic cause. `WorkerPool`
 re-submits a task the dead worker refused before starting it and routes pool
 crash notices to the log instead of stdout. The private log is removed when
-the pool closes. DI supplies Console's exhaustion registration as a closure,
+the pool closes. Cleanup reads the literal startup directory and checks only
+each entry name; temporary-parent metacharacters do not select sibling trees.
+DI supplies Console's exhaustion registration as a closure,
 so coordinator memory exhaustion also removes the private startup directory
 without a Parallel-to-Console dependency. Once the failed context's streams
 reach EOF, a missing shutdown note returns immediately; SIGKILL cannot emit one.

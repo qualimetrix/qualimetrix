@@ -8,6 +8,7 @@ use FilesystemIterator;
 use PhpParser\Node\Stmt\Nop;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\AstEntryCodec;
@@ -325,6 +326,43 @@ final class FileCacheTest extends TestCase
     public function itPreservesAnEntryAndRemovesTheTemporaryFileAfterAWriteReturnsFalse(): void
     {
         $this->assertFailedReplacementLeavesOriginal('false');
+    }
+
+    #[Test]
+    #[TestWith(['cache[1]'])]
+    #[TestWith(['cache?'])]
+    #[TestWith(['cache*'])]
+    public function itRetriesOnlyDetachedDirectoriesUnderTheLiteralCacheRoot(string $name): void
+    {
+        if (\DIRECTORY_SEPARATOR !== '/') {
+            self::markTestSkipped('Literal wildcard filenames require a POSIX host.');
+        }
+        $directory = $this->cacheDir . '/' . $name;
+        $detached = $directory . '/.clearing-aaaaaaaaaaaaaaaa';
+        $key = str_repeat('a', 64);
+        mkdir($detached . '/aa', 0700, true);
+        file_put_contents($detached . '/aa/' . $key, 'OWN ENTRY');
+        file_put_contents($detached . '/foreign.txt', 'KEEP FOREIGN');
+        $cache = new FileCache(AbsolutePath::fromString($directory));
+
+        $first = $cache->clear();
+        self::assertFalse($first->complete);
+        self::assertFileDoesNotExist($detached . '/aa/' . $key);
+        self::assertSame('KEEP FOREIGN', file_get_contents($detached . '/foreign.txt'));
+
+        $sibling = $this->cacheDir . '/cache1/.clearing-bbbbbbbbbbbbbbbb/aa/' . $key;
+        mkdir(\dirname($sibling), 0700, true);
+        file_put_contents($sibling, 'KEEP SIBLING');
+        $second = $cache->clear();
+        self::assertFileExists($sibling);
+        self::assertSame('KEEP SIBLING', file_get_contents($sibling));
+        self::assertFalse($second->complete);
+        self::assertSame('KEEP FOREIGN', file_get_contents($detached . '/foreign.txt'));
+
+        unlink($detached . '/foreign.txt');
+        self::assertTrue($cache->clear()->complete);
+        self::assertDirectoryDoesNotExist($detached);
+        self::assertSame('KEEP SIBLING', file_get_contents($sibling));
     }
 
     #[Test]

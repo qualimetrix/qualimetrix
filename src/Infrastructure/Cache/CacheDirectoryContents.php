@@ -16,9 +16,13 @@ final readonly class CacheDirectoryContents
         $remaining = 0;
         $reason = null;
         $retained = [];
-        $detachedDirectories = glob($this->directory->value() . '/.clearing-*');
-        foreach ($detachedDirectories === false ? [] : $detachedDirectories as $detached) {
-            if (preg_match('/^\.clearing-[0-9a-f]{16}$/D', basename($detached)) !== 1 || is_link($detached)) {
+        $names = is_dir($this->directory->value()) ? @scandir($this->directory->value()) : [];
+        if ($names === false) {
+            return new CacheClearOutcome(false, 0, $this->directory->value(), 'Cannot inspect cache directories.');
+        }
+        foreach ($names as $name) {
+            $detached = $this->directory->value() . '/' . $name;
+            if (preg_match('/^\.clearing-[0-9a-f]{16}$/D', $name) !== 1 || is_link($detached)) {
                 continue;
             }
             [$count, $failure, $retainedDirectory] = $this->clearVersion($detached);

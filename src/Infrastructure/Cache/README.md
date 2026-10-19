@@ -146,8 +146,9 @@ It removes only layout names, retains foreign files and reports incomplete clear
 when owned entries remain, the layout cannot be inspected, or a detached
 directory remains. Foreign files are preserved and their retained directory
 prevents a misleading successful clear. Root-level unrelated
-files are untouched. Clear affects all projects sharing this user's root; an
-invalid default is not cleared.
+files are untouched. Detached-directory retries enumerate the selected root
+literally, including names containing brackets, stars or question marks. Clear
+affects all projects sharing this user's root; an invalid default is not cleared.
 
 ## Definition of Done
 

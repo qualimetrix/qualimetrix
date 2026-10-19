@@ -3991,11 +3991,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itProcessesMultipleLevels
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarationsInEitherMergeOrder
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itRecordsOneProducerAsSwitchedOffWithoutItsNeighbours
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itRefusesAHealthBoundaryWhoseDecimalOverflowsToInfinity
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itRequiresOneNonnegativeHealthOverrideBoundary#0
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itRequiresOneNonnegativeHealthOverrideBoundary#1
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itRequiresOneNonnegativeHealthOverrideBoundary#2
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itRequiresOneNonnegativeHealthOverrideBoundary#3
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itRequiresOneNonnegativeHealthOverrideBoundary#4
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itRequiresOneNonnegativeHealthOverrideBoundary#5
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itRetunesOnlyTheExactClassForOneBuiltinHealthProducer#0
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itRetunesOnlyTheExactClassForOneBuiltinHealthProducer#1
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itReturnsCorrectName
@@ -11206,6 +11208,9 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itPreservesAnEntryAndRemovesTheTemporaryFileAfterAShortWrite
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itPreservesAnEntryAndRemovesTheTemporaryFileAfterAWriteReturnsFalse
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itReportsAnOwnedEntryLeftBehindByAClearFailure
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itRetriesOnlyDetachedDirectoriesUnderTheLiteralCacheRoot#0
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itRetriesOnlyDetachedDirectoriesUnderTheLiteralCacheRoot#1
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itRetriesOnlyDetachedDirectoriesUnderTheLiteralCacheRoot#2
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itReusesOwnershipOfDirectoriesItCreatedForRepeatedEntries
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itSurvivesAnUnreadableSubdirectoryWhenClearing
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itSweepsAllVersionsByCursorAgeAndQuotaAndPreservesForeignFiles
@@ -13055,6 +13060,9 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\WorkerBootstrapTest::itTreatsCollectorOrderAsIrrelevantInCacheKey
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\WorkerContextFactoryTest::itClassifiesAnUnavailableLocalIpcDirectoryAsWorkerStartupFailure
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\WorkerContextFactoryTest::itDoesNotInheritTheCoordinatorsHeldTargetDescriptor
+ - Qualimetrix\Tests\Infrastructure\Parallel\Unit\WorkerContextFactoryTest::itRemovesOnlyItsStartupLogsUnderALiteralTemporaryDirectory#0
+ - Qualimetrix\Tests\Infrastructure\Parallel\Unit\WorkerContextFactoryTest::itRemovesOnlyItsStartupLogsUnderALiteralTemporaryDirectory#1
+ - Qualimetrix\Tests\Infrastructure\Parallel\Unit\WorkerContextFactoryTest::itRemovesOnlyItsStartupLogsUnderALiteralTemporaryDirectory#2
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\WorkerContextFactoryTest::itRemovesStartupFilesWhenTheCoordinatorExhaustsMemory#0
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\WorkerContextFactoryTest::itRemovesStartupFilesWhenTheCoordinatorExhaustsMemory#1
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\WorkerContextFactoryTest::itStartsOnlyAProcessWithMergedEnvironmentParseIniAndCapturedStreams
