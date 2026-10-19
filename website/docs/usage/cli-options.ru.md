@@ -912,7 +912,7 @@ bin/qmx check src/ --only-rule=health.complexity
 report-payload в stdout. Если написание со звёздочкой что-то выбрало бы, отказ его называет:
 
 ```text
-Rule selector "complexity" does not match any registered producer or channel. A bare prefix is not a group: write "complexity.*" to select every rule under "complexity".
+Rule selector "complexity" does not match any registered producer or channel. Write "complexity.*" to select its descendants.
 ```
 
 Единственное голое слово, которое принимается, — `computed`: это имя производителя, а не группы.

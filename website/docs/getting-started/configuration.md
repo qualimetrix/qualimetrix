@@ -438,7 +438,7 @@ the name the same way:
 A bare prefix is **not** a group. `complexity` on its own selects nothing and is rejected:
 
 ```
-Configuration error: Rule selector "complexity" does not match any registered producer or channel. A bare prefix is not a group: write "complexity.*" to select every rule under "complexity".
+Configuration error: Rule selector "complexity" does not match any registered producer or channel. Write "complexity.*" to select its descendants.
 Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 

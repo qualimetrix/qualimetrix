@@ -899,7 +899,7 @@ star, or an `X.*` that matches nothing — fail closed with exit 3 before stdout
 report payload. When the starred spelling would have matched, the refusal names it:
 
 ```text
-Rule selector "complexity" does not match any registered producer or channel. A bare prefix is not a group: write "complexity.*" to select every rule under "complexity".
+Rule selector "complexity" does not match any registered producer or channel. Write "complexity.*" to select its descendants.
 ```
 
 `computed` is the one bare word that is accepted: it is the name of a producer, not a group.
