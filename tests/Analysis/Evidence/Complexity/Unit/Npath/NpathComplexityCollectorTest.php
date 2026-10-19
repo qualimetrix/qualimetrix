@@ -35,6 +35,11 @@ final class NpathComplexityCollectorTest extends TestCase
      */
     public static function provideNullOperatorForms(): iterable
     {
+        yield 'bare block' => ['{ if ($x) {} if ($y) {} }', 4];
+        yield 'declare block' => ['declare(ticks=1) { if ($x) {} }', 2];
+        yield 'unset expression' => ['unset($x[$y ?? 0]);', 2];
+        yield 'static initializer' => ['static $s = $x ?? 1;', 2];
+        yield 'dynamic global' => ['global ${$x ?? $y};', 2];
         yield 'return coalesce' => ['return $x ?? 5;', 2];
         yield 'assignment coalesce' => ['$value = $x ?? 5;', 2];
         yield 'argument coalesce' => ['strlen($x ?? "");', 2];

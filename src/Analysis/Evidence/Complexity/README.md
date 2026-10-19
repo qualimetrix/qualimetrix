@@ -231,6 +231,14 @@ NPath = sum of NPath(case_i)
 > coalesces have NPath 4, like a nested ternary with three distinct outcomes;
 > this retains the existing recurrence rather than counting runtime outcomes.
 
+Bare blocks and `declare` bodies retain their statement-sequence products.
+Expression slots in `unset`, dynamic `global`, and `static` initializers are
+counted like other expression-bearing statements.
+
+> **Note:** Arithmetic saturates at 1,000,000,000. A value at that cap is a
+> lower bound, not an exact path count; the text label `> 1M (extreme)` names
+> a display category rather than the saturation limit.
+
 ### Examples
 
 ```php

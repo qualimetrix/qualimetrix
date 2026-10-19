@@ -238,6 +238,10 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Declar
             $stmt instanceof Do_ => $this->calculateLoopNpath($stmt->cond, $stmt->stmts),
             $stmt instanceof Switch_ => $this->calculateSwitchNpath($stmt),
             $stmt instanceof TryCatch => $this->calculateTryCatchNpath($stmt),
+            $stmt instanceof Stmt\Block => $this->calculateSequenceNpath($stmt->stmts),
+            $stmt instanceof Stmt\Declare_ => $this->calculateSequenceNpath($stmt->stmts ?? []),
+            $stmt instanceof Stmt\Unset_, $stmt instanceof Stmt\Global_ => $this->calculateCallableExpressionsNpath($stmt->vars),
+            $stmt instanceof Stmt\Static_ => $this->calculateCallableExpressionsNpath(array_values(array_filter(array_map(static fn(Node\StaticVar $var): ?Expr => $var->default, $stmt->vars)))),
             $stmt instanceof Stmt\Expression => $this->calculateCallableExpressionNpath($stmt->expr),
             $stmt instanceof Stmt\Return_ => $stmt->expr !== null
                 ? $this->calculateCallableExpressionNpath($stmt->expr)
@@ -412,6 +416,11 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Declar
             $stmt instanceof Do_ => 'do',
             $stmt instanceof Switch_ => 'switch',
             $stmt instanceof TryCatch => 'try/catch',
+            $stmt instanceof Stmt\Block => 'block',
+            $stmt instanceof Stmt\Declare_ => 'declare',
+            $stmt instanceof Stmt\Unset_ => 'unset',
+            $stmt instanceof Stmt\Global_ => 'global',
+            $stmt instanceof Stmt\Static_ => 'static',
             $stmt instanceof Stmt\Expression => $this->getExprTypeLabel($stmt->expr),
             $stmt instanceof Stmt\Return_ => $stmt->expr !== null ? $this->getExprTypeLabel($stmt->expr) : 'return',
             default => 'stmt',

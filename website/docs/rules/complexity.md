@@ -401,6 +401,12 @@ Qualimetrix follows Nejmeh (1988) with PHP-specific extensions:
 - **`?->`:** Each nullsafe hop adds 1 separately from ordinary expression paths. At a callable statement boundary, `max(1, ordinary) + nullsafe` retains exactly one statement base.
 - **PHP-specific extensions:** `match`, `foreach`, `??`, and `?->` are all handled as path-generating constructs. Expression-bearing `for`, `foreach`, `switch`, and `echo` slots are traversed through transparent AST wrappers.
 
+Bare `{ ... }` blocks and `declare(...) { ... }` retain the product of their
+child statements. Expressions in `unset`, dynamic `global`, and `static`
+initializers contribute paths too. Arithmetic saturates at **1,000,000,000**;
+a published value at that cap is a lower bound, not an exact count. The text
+label `> 1M (extreme)` is a display category, not the saturation limit.
+
 **`match` expressions:** Qualimetrix uses an **additive** approach, consistent with Nejmeh's original formula for `switch`:
 
 ```
