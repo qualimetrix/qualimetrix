@@ -835,6 +835,19 @@ final class DitGlobalCollectorTest extends TestCase
     }
 
     #[Test]
+    public function itDoesNotPublishAFalseExceptionClassificationForAThrowableInterface(): void
+    {
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
+        $declaration = $this->declarationFor('App\\Failure');
+        $subject = MetricSubject::declaration($declaration);
+        $repository->addSubject($subject, new MetricBag(), $declaration->file, 1);
+        $fact = ClassLikeDeclaration::of($declaration, ClassType::Interface_, false, false);
+        $graph = AdjacencyGraphBuilder::builder()->build([$this->createExtends('App\\Failure', 'Throwable')], [$fact])->graph;
+        $this->collector->calculate($graph, $repository);
+        self::assertFalse($repository->getSubject($subject)->has('design.is-exception'));
+    }
+
+    #[Test]
     public function itPublishesTheFullPositiveRosterWithoutALocalDitSeed(): void
     {
         $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
@@ -850,7 +863,7 @@ final class DitGlobalCollectorTest extends TestCase
             $bag = $repository->getSubject(MetricSubject::declaration($fact->declaration));
             self::assertSame($i === 0 ? 0 : null, $bag->get('design.dit'));
             self::assertSame($i === 0 ? 0 : null, $bag->get('design.dit-unresolved'));
-            self::assertSame(0, $bag->get('design.is-exception'));
+            self::assertSame($i === 1 ? null : 0, $bag->get('design.is-exception'));
         }
     }
 

@@ -90,7 +90,9 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
                 throw new LogicException('Graph class-like declaration requires an exact repository subject: ' . $fact->declaration->toCanonical());
             }
             if ($fact->type !== \Qualimetrix\Core\Symbol\ClassType::Class_) {
-                $repository->addSubjectScalar($subject, MetricName::DESIGN_IS_EXCEPTION, 0);
+                if ($fact->type !== \Qualimetrix\Core\Symbol\ClassType::Interface_) {
+                    $repository->addSubjectScalar($subject, MetricName::DESIGN_IS_EXCEPTION, 0);
+                }
                 continue;
             }
             $this->publishResolution($subject, $resolver->depthOf($fact->declaration), $repository);

@@ -660,7 +660,9 @@ Exception exclusion follows resolved ancestry to PHP's `Throwable`, including
 project descendants and readable external parents; it does not match a parent's
 short name. `design.is-exception` is 1 for proven exceptions, 0 for proven
 non-exceptions, and absent for unknown ancestry. Duplicate parent alternatives
-must agree; a known depth can still have unknown exception status.
+must agree; a known depth can still have unknown exception status. Interfaces
+publish no exception classification: their interface-extends graph is not the
+class ancestry chain. Traits and enums publish 0.
 With `exclude_exceptions: true` (the default), both proven exceptions and
 unknown status are skipped. With `false`, the rule judges the remaining WOC,
 WMC and member criteria without consulting exception classification.

@@ -131,7 +131,9 @@ unknown exception status when duplicate parent declarations disagree.
 - `design.is-exception` is 1 when all parent alternatives prove `Throwable`,
   0 when all prove otherwise, and absent when their answers disagree or remain
   unknown. Proven `Throwable` evidence survives a later unread tail.
-  Interfaces, traits and enums receive 0. Size does not classify exceptions.
+  Interfaces receive no exception classification: their extends graph is not
+  the class ancestry chain. Traits and enums receive 0. Size does not classify
+  exceptions.
 - `InheritanceRule` emits at most one warning per enabled `analyze()` call,
   distinguishing floors, loops, or both. Its `design.dit-unresolved` pointer
   names at most five distinct obstruction/cause pairs and the exact remainder:
