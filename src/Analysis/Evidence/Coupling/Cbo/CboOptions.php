@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Coupling\Cbo;
 
-use InvalidArgumentException;
+use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalOptionsQueries;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
@@ -13,7 +13,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionRefusal;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionWordSet;
-use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
@@ -23,6 +22,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  */
 final readonly class CboOptions implements HierarchicalRuleOptionsInterface
 {
+    use HierarchicalOptionsQueries;
+
     public function __construct(
         public ClassCboOptions $class = new ClassCboOptions(),
         public NamespaceCboOptions $namespace = new NamespaceCboOptions(),
@@ -69,41 +70,10 @@ final readonly class CboOptions implements HierarchicalRuleOptionsInterface
         ];
     }
 
-    public function isEnabled(): bool
+    /** @return non-empty-array<string, LevelOptionsInterface> */
+    protected function levelOptions(): array
     {
-        return $this->class->isEnabled() || $this->namespace->isEnabled();
+        return ['class' => $this->class, 'namespace' => $this->namespace];
     }
 
-    public function getSeverity(int|float $value): ?Severity
-    {
-        return $this->class->getSeverity($value);
-    }
-
-    public function forLevel(SymbolLevel $level): LevelOptionsInterface
-    {
-        return match ($level) {
-            SymbolLevel::Class_ => $this->class,
-            SymbolLevel::Namespace_ => $this->namespace,
-            default => throw new InvalidArgumentException(
-                \sprintf('Level %s is not supported by CboRule', $level->value),
-            ),
-        };
-    }
-
-    public function isLevelEnabled(SymbolLevel $level): bool
-    {
-        return match ($level) {
-            SymbolLevel::Class_ => $this->class->isEnabled(),
-            SymbolLevel::Namespace_ => $this->namespace->isEnabled(),
-            default => false,
-        };
-    }
-
-    /**
-     * @return list<SymbolLevel>
-     */
-    public function getSupportedLevels(): array
-    {
-        return [SymbolLevel::Class_, SymbolLevel::Namespace_];
-    }
 }

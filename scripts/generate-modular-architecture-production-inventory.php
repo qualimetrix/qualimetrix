@@ -121,6 +121,7 @@ function declarations(string $root, array $sourceOverrides = []): array
     $developmentPrefixes = developmentNamespacePrefixes($root);
     $rows = [];
     $seen = [];
+    $traitUsesByFqcn = [];
     $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root . '/src'));
 
     /** @var SplFileInfo $file */
@@ -262,6 +263,13 @@ function declarations(string $root, array $sourceOverrides = []): array
             $dependencies = array_keys($dependencies);
             sort($dependencies, SORT_STRING);
 
+            $traitUsesByFqcn[$fqcn] = [];
+            foreach ($declaration->getTraitUses() as $use) {
+                foreach ($use->traits as $trait) {
+                    $traitUsesByFqcn[$fqcn][] = $trait->toString();
+                }
+            }
+
             $rows[] = [
                 'path' => relativePath($root, $path),
                 'fqcn' => $fqcn,
@@ -284,6 +292,26 @@ function declarations(string $root, array $sourceOverrides = []): array
             ];
         }
     }
+
+    $indices = array_combine(array_column($rows, 'fqcn'), array_keys($rows));
+    do {
+        $changed = false;
+        foreach ($rows as &$row) {
+            $surface = $row['contract_surface_containments'];
+            foreach ($traitUsesByFqcn[$row['fqcn']] as $trait) {
+                if (isset($indices[$trait]) && $rows[$indices[$trait]]['kind'] === 'trait') {
+                    $surface = [...$surface, ...$rows[$indices[$trait]]['contract_surface_containments']];
+                }
+            }
+            $surface = array_values(array_unique($surface));
+            sort($surface, SORT_STRING);
+            if ($surface !== $row['contract_surface_containments']) {
+                $row['contract_surface_containments'] = $surface;
+                $changed = true;
+            }
+        }
+        unset($row);
+    } while ($changed);
 
     usort($rows, static fn(array $left, array $right): int => $left['fqcn'] <=> $right['fqcn']);
 
@@ -722,7 +750,7 @@ function phaseParticipants(): array
         ['phase' => 'rule execution', 'participant' => 'Analysis\\Finding\\RuleExecution + 41 RuleInterface implementations', 'inputs' => 'AnalysisContext', 'outputs' => 'list<Finding> and last RuleExclusionStats', 'state_owner' => 'Analysis.Finding and feature rules', 'dependency' => 'producer selection then per-rule exclusions and channel selection', 'source' => 'src/Analysis/Finding/RuleExecution.php'],
         ['phase' => 'finding projection', 'participant' => 'FindingProjector', 'inputs' => 'list<Finding>, suppressions, FindingProjectionOptions', 'outputs' => 'FindingProjectionResult', 'state_owner' => 'Reporting', 'dependency' => 'annotation suppression -> path -> namespace -> baseline -> unused-entry audit -> annotation rejoin -> git', 'source' => 'src/Reporting/FindingProjection/FindingProjector.php'],
         ['phase' => 'report enrichment', 'participant' => 'SummaryEnricher', 'inputs' => 'Report', 'outputs' => 'health/debt/impact summary', 'state_owner' => 'mixed ComputedMetrics/Prioritization/Reporting seam', 'dependency' => 'cross-capability orchestration before formatters', 'source' => 'src/Reporting/Health/SummaryEnricher.php'],
-        ['phase' => 'report projection', 'participant' => '11 FormatterInterface implementations', 'inputs' => 'Report, FormatterContext', 'outputs' => 'string', 'state_owner' => 'Reporting', 'dependency' => 'selected after filtering/enrichment', 'source' => 'src/Reporting/Formatter/FormatterInterface.php'],
+        ['phase' => 'report projection', 'participant' => '11 FormatterInterface implementations', 'inputs' => 'Report, FormatterContext', 'outputs' => 'string', 'state_owner' => 'Reporting', 'dependency' => 'selected after filtering/enrichment', 'source' => 'src/Reporting/Contract/Formatting/FormatterInterface.php'],
     ];
 }
 
@@ -1098,7 +1126,7 @@ $extensionDefinitions = [
     'regular_collector' => ['Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\MetricCollectorInterface', 'qmx.collector', 'capability configurator -> CollectorCompilerPass -> CompositeCollector'],
     'derived_collector' => ['Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\DerivedCollectorInterface', 'qmx.derived_collector', 'capability configurator -> CollectorCompilerPass -> CompositeCollector'],
     'global_collector' => ['Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\GlobalContextCollectorInterface', 'qmx.global_collector', 'capability configurator -> GlobalCollectorCompilerPass -> GlobalCollectorRunner'],
-    'formatter' => ['Qualimetrix\\Reporting\\Formatter\\FormatterInterface', 'qmx.formatter', 'OutputConfigurator -> FormatterCompilerPass -> FormatterRegistry'],
+    'formatter' => ['Qualimetrix\\Reporting\\Contract\\Formatting\\FormatterInterface', 'qmx.formatter', 'OutputConfigurator -> FormatterCompilerPass -> FormatterRegistry'],
     'configuration_stage' => ['Qualimetrix\\Analysis\\Configuration\\Pipeline\\ConfigurationStageInterface', 'qmx.configuration_stage', 'ConfigurationConfigurator -> ConfigurationStageCompilerPass -> ConfigurationPipeline'],
 ];
 $extensionRows = [];
@@ -2475,6 +2503,9 @@ function documentationDisposition(string $path): array
         'docs/adr/0123-worker-process-boundary-and-strategy-port.md' => 'Infrastructure.Parallel',
         'docs/adr/0124-finding-publication-and-rule-execution-contracts.md' => 'Analysis.Finding',
         'docs/adr/0125-subject-boundaries-and-explicit-composition.md' => 'Architecture.Governance',
+        'docs/adr/0126-warning-only-ratchet-and-exact-signal-decisions.md' => 'Architecture.Governance',
+        'docs/adr/0128-subject-boundaries-with-one-way-operations.md' => 'Architecture.Governance',
+        'docs/adr/0129-public-report-and-baseline-values-with-subject-owned-delivery.md' => 'Architecture.Governance',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/ProjectManifest/README.md' => 'Analysis.ProjectManifest',

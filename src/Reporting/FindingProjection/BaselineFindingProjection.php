@@ -5,15 +5,17 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\FindingProjection;
 
 use LogicException;
-use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface;
 
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication;
+
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
+use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionOptions;
 
 /** Judges one configured baseline and publishes its late audit. */
 final readonly class BaselineFindingProjection

@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
-use Qualimetrix\Analysis\Evidence\Complexity\ClassComplexityOptions;
+use Qualimetrix\Analysis\Evidence\Complexity\Cyclomatic\ClassComplexityOptions;
 use Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassOptions;
 use Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassOptions;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
@@ -208,7 +208,7 @@ final class RuleOptionKeySetTest extends TestCase
         self::expectExceptionMessage('is declared twice');
 
         RuleOptionKeySet::of(['callable' => RuleOptionShape::block()])
-            ->withLevelSlots(['callable' => \Qualimetrix\Analysis\Evidence\Complexity\MethodComplexityOptions::class]);
+            ->withLevelSlots(['callable' => \Qualimetrix\Analysis\Evidence\Complexity\Cyclomatic\MethodComplexityOptions::class]);
     }
 
     #[Test]
@@ -216,8 +216,8 @@ final class RuleOptionKeySetTest extends TestCase
     {
         $set = RuleOptionKeySet::of(['enabled' => RuleOptionShape::boolean()])
             ->withLevelSlots([
-                'callable' => \Qualimetrix\Analysis\Evidence\Complexity\MethodComplexityOptions::class,
-                'class' => \Qualimetrix\Analysis\Evidence\Complexity\ClassComplexityOptions::class,
+                'callable' => \Qualimetrix\Analysis\Evidence\Complexity\Cyclomatic\MethodComplexityOptions::class,
+                'class' => \Qualimetrix\Analysis\Evidence\Complexity\Cyclomatic\ClassComplexityOptions::class,
             ]);
 
         self::assertSame(['callable', 'class', 'enabled'], $set->acceptedForDisplay());

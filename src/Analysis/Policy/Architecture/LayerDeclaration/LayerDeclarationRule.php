@@ -12,9 +12,9 @@ use Qualimetrix\Analysis\Finding\Contract\Population\ContextGuard;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
-use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Rule\AbstractRule;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidenceCollector;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -65,11 +65,10 @@ final class LayerDeclarationRule extends AbstractRule
         $declarations = self::channelDeclarations();
         $doubted = ArchitectureChannels::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME;
         $overlap = ArchitectureChannels::LAYER_OVERLAP_DIAGNOSTIC_NAME;
-        $context->admit(self::NAME, new FindingChannel($doubted), SymbolLevel::Project, PopulationIdentity::invocation(self::NAME), $declarations[$doubted], [GateInput::context('preparedEvidenceAvailable', $evidence !== null)]);
         if ($evidence === null) {
-            $context->admit(self::NAME, new FindingChannel($overlap), SymbolLevel::Project, PopulationIdentity::invocation(self::NAME), $declarations[$overlap], [GateInput::context('preparedEvidenceAvailable', false)]);
             return [];
         }
+        $context->admit(self::NAME, new FindingChannel($doubted), SymbolLevel::Project, PopulationIdentity::invocation(self::NAME), $declarations[$doubted], [GateInput::context('preparedEvidenceAvailable', true)]);
         foreach ($evidence->architecture->registry()->layerNames() as $later) {
             foreach ($evidence->lostByPrecedence($later) as $pair) {
                 $context->admit(self::NAME, new FindingChannel($overlap), SymbolLevel::Project, PopulationIdentity::selector(json_encode([$later, $pair['earlier']], \JSON_THROW_ON_ERROR), 'precedence-pair'), $declarations[$overlap], [GateInput::context('preparedEvidenceAvailable', true)]);

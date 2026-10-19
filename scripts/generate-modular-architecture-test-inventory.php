@@ -27,7 +27,7 @@ const CACHE_UNIT_LOCAL_FIXTURES = [
 // group-measurement, subject-region, update-mode, unused-entry, file-lookup, layer-migration and environment-failure regressions.
 // Re-hash only against a diff of the path list; refreshing the digest without
 // checking that delta asserts nothing.
-const P6_C_BASELINE_PATHS_SHA256 = '5250923fd479f570c3d10fd949b5c7e428b964eecde980892bbae9d56d8f5e27';
+const P6_C_BASELINE_PATHS_SHA256 = '5ce5409415c2e4c2487711e1ecd028d22fea166ea1198ca1929f0984956e9f94';
 
 $arguments = $_SERVER['argv'] ?? [];
 $check = in_array('--check', $arguments, true);
@@ -306,7 +306,7 @@ const P6_A_FINDING_TEST_PATHS = [
     'tests/Analysis/Finding/Unit/AbstractRuleThresholdSeamTest.php',
     'tests/Analysis/Finding/Unit/Contract/Channel/AcceptedLevelTest.php',
     'tests/Analysis/Finding/Unit/AnalysisContextTest.php',
-    'tests/Infrastructure/DependencyInjection/Unit/RuleCatalog/ChannelDeclarationCompilerPassTest.php',
+    'tests/Infrastructure/DependencyInjection/Unit/ChannelCatalog/ChannelDeclarationCompilerPassTest.php',
     'tests/Analysis/Finding/Unit/ChannelDeclarationReaderTest.php',
     'tests/Analysis/Finding/Unit/Contract/Channel/ChannelDeclarationTest.php',
     'tests/Analysis/Finding/Unit/LocationNullFileTest.php',
@@ -353,10 +353,10 @@ const P6_B_INLINE_TEST_PATHS = [
     'tests/Analysis/Policy/Inline/Unit/InvertedOverrideValidatorTest.php',
     'tests/Analysis/Policy/Inline/Unit/Extraction/SourceControlExtractorTest.php',
     'tests/Analysis/Policy/Inline/Unit/StandardOverrideValidatorTest.php',
-    'tests/Analysis/Policy/Inline/Unit/SuppressionExtractorTest.php',
+    'tests/Analysis/Policy/Inline/Unit/Extraction/SuppressionExtractorTest.php',
     'tests/Analysis/Policy/Inline/Unit/SuppressionFilterTest.php',
     'tests/Analysis/Policy/Inline/Unit/SuppressionTest.php',
-    'tests/Analysis/Policy/Inline/Unit/ThresholdOverrideExtractorTest.php',
+    'tests/Analysis/Policy/Inline/Unit/Threshold/ThresholdOverrideExtractorTest.php',
     'tests/Analysis/Policy/Inline/Unit/WarningOnlyValidatorTest.php',
 ];
 

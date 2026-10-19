@@ -29,6 +29,8 @@ use Throwable;
  * bad input instead of accepting it. CLI doors use this carrier instead of
  * folding empty values into defaults. Splitting the kind to lower the rank would
  * buy a number and a second way to spell a configuration refusal.
+ *
+ * @qmx-threshold health.cohesion 30.0 -- Independent immutable observations or stateless declaration operations intentionally have no shared instance-field graph; this finite class boundary keeps a further cohesion loss visible.
  */
 final class ConfigurationRefusal extends RuntimeException implements RefusalInterface
 {

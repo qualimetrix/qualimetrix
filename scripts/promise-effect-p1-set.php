@@ -89,7 +89,7 @@ final class PromiseEffectP1Set
     private const array P4_ADAPTERS = [
         'src/Infrastructure/Console/Invocation/Configuration/ConfigurationInputAdapter.php',
         'src/Infrastructure/Console/Invocation/RuleOptions/CliOptionsParser.php',
-        'src/Infrastructure/Console/RunSetup/FindingConfigurationPreparation.php',
+        'src/Infrastructure/Console/RunSetup/Finding/FindingConfigurationPreparation.php',
         'src/Infrastructure/Console/RuntimePolicy/ExitPolicy.php',
     ];
 

@@ -8,14 +8,14 @@ use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInte
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
-use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\EntrySelector;
 
-use Qualimetrix\Analysis\Policy\Baseline\Entry\EntrySelector;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\InertBaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\InertEntryReason;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertBaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertEntryReason;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
 use Qualimetrix\Analysis\Policy\Baseline\RunCoverage\RunCoverageGap;
 use Qualimetrix\Analysis\Policy\Baseline\RunCoverage\RunRuleCoverage;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -35,6 +35,8 @@ use Qualimetrix\Core\Time\ClockInterface;
  * returns is recomputed inside the same invocation that would consume it —
  * `baseline:cleanup file.json src/ --all-listed` run in CI after a threshold
  * loosened would delete the very entries recording the now-invisible debt.
+ *
+  * @qmx-threshold coupling.instability 0.88889 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
  */
 final readonly class BaselineCleaner
 {

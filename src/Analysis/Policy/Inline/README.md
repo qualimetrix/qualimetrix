@@ -10,65 +10,76 @@ Inline-owned extraction contract once; it owns no annotation policy state.
 ```text
 Inline/
 ├── Contract/
-│   ├── Directive/               # the four annotation.* channel names, run state,
-│   │                            # the threshold audit's contract and input, the
-│   │                            # verdict vocabulary a report renders:
-│   │                            # DirectiveVerdict, DirectiveSite, DirectiveEffect
-│   │                            # (effective / overrun / inert / unmeasured / refused) and
-│   │                            # DirectiveUnmeasurableReason — and the two halves of
-│   │                            # what extraction could do with a tag: DeclarationBinding
-│   │                            # (bound here), DeclarationReach (whole or lines),
-│   │                            # DirectiveRefusal (not carried out), and DirectiveVerdictRefusal
-│   ├── Suppression/             # suppression value and type
-│   ├── Threshold/               # annotation diagnostic value
+│   ├── Directive/
+│   │   ├── DeclarationBinding.php
+│   │   ├── DeclarationReach.php
+│   │   ├── DirectiveEffect.php
+│   │   ├── DirectiveRefusal.php
+│   │   ├── DirectiveRefusalReason.php
+│   │   ├── DirectiveSite.php
+│   │   ├── DirectiveSweepScope.php
+│   │   ├── DirectiveUnmeasurableReason.php
+│   │   ├── DirectiveVerdict.php
+│   │   ├── DirectiveVerdictRefusal.php
+│   │   ├── InlineDirectivePolicyInterface.php
+│   │   ├── ThresholdDirectiveAuditInput.php
+│   │   └── ThresholdDirectiveAuditInterface.php
+│   ├── Suppression/
+│   │   ├── Suppression.php
+│   │   ├── SuppressionTarget.php
+│   │   └── SuppressionType.php
+│   ├── Threshold/
+│   │   └── ThresholdDiagnostic.php
 │   ├── AnnotationSuppressionInterface.php
 │   ├── AnnotationSuppressionResult.php
-│   ├── DirectiveObservations.php # run-level suppression and threshold-override maps
-│   ├── DocumentationRegions.php # which parts of a comment quote a tag rather
-│   │                            # than write one; read by both extractors
+│   ├── DirectiveObservations.php
+│   ├── DocumentationRegions.php
 │   ├── SourceControlExtractorInterface.php
-│   ├── SourceControls.php       # immutable extraction result
-│   ├── SuppressionSyntax.php      # authored spelling and arguments without binding
-│   ├── SuppressionExtractor.php
-│   ├── ThresholdOverrideExtractor.php
-│   └── RuleValidatorMapFactory.php
-├── Extraction/
-│   ├── DeclarationControlBindings.php
-│   ├── DeclarationRanges.php      # measured enclosing declaration ranges
-│   ├── DeclarationSource.php      # source carrier descriptions and direct anonymous values
-│   ├── SourceControlExtractor.php
-│   └── UnattachedComments.php
-├── Directive/                      # the directive itself: store, addressing, validation
-│   ├── Audit/                      # what each authored directive did, both halves
-│   │   ├── AuthoredDirectiveGroup.php # one authored @qmx-threshold, its bindings, site and subjects
-│   │   ├── DirectiveMaskingCoalition.php # which threshold directives of one rule hide one another
-│   │   ├── DirectiveUsage.php      # what each authored suppression did
-│   │   ├── DirectiveUsagePopulation.php # selected judgement of authored suppression sites
-│   │   ├── DirectiveMeasurability.php # addressed producer and subject-coverage evidence
-│   │   ├── ExecutionFingerprint.php # what one rule execution produced, compared as a whole
-│   │   ├── MaskingOutcome.php      # what the sweep decided about one group, before it is reported
-│   │   ├── StaleDirectiveFinding.php # the finding that says a directive silenced nothing
-│   │   ├── ThresholdDirectiveEligibility.php # enabled and executed producer eligibility
-│   │   └── ThresholdDirectiveAudit.php # what each authored @qmx-threshold did
-│   ├── DirectiveAddressability.php # is this directive able to do anything?
-│   ├── DirectiveChannelBan.php     # the channels no directive may address or silence
-│   ├── DirectiveLevels.php         # which levels one directive can silence a channel at
-│   ├── DirectiveNameHints.php      # "did you mean" by reverse query, incl. metric -> judging channel
+│   ├── SourceControls.php
+│   └── SuppressionSyntax.php
+├── Directive/
+│   ├── Audit/
+│   │   ├── AuthoredDirectiveGroup.php
+│   │   ├── DirectiveMaskingCoalition.php
+│   │   ├── DirectiveMeasurability.php
+│   │   ├── DirectiveUsage.php
+│   │   ├── DirectiveUsagePopulation.php
+│   │   ├── ExecutionFingerprint.php
+│   │   ├── MaskingOutcome.php
+│   │   ├── StaleDirectiveFinding.php
+│   │   ├── ThresholdDirectiveAudit.php
+│   │   └── ThresholdDirectiveEligibility.php
+│   ├── DirectiveAddressability.php
+│   ├── DirectiveChannelBan.php
+│   ├── DirectiveLevels.php
+│   ├── DirectiveNameHints.php
+│   ├── DirectiveRefusalChannel.php
 │   ├── DirectiveRejection.php
 │   ├── InlineDirectiveOptions.php
-│   ├── RefusedDirective.php        # one classified site and refusal details
-│   ├── RefusedDirectives.php       # shared validator/audit classifier
-│   ├── DirectiveRefusalChannel.php # unresolved / unsupported / invalid
-│   ├── InlineDirectivePolicy.php   # per-run directive store; delegates usage accounting
-│   ├── InlineDirectiveValidator.php # owns the three annotation.* directive errors
-│   └── UnusedDirectiveRule.php     # owns annotation.unused-directive; arms usage reporting
-├── Threshold/
-│   ├── ThresholdOverrideValueParser.php # authored number or axis tokens
-│   └── DeclaredOverrideForms.php # every declared level and written axis
+│   ├── InlineDirectivePolicy.php
+│   ├── InlineDirectiveValidator.php
+│   ├── RefusedDirective.php
+│   ├── RefusedDirectives.php
+│   └── UnusedDirectiveRule.php
+├── Extraction/
+│   ├── DeclarationControlBindings.php
+│   ├── DeclarationRanges.php
+│   ├── DeclarationSource.php
+│   ├── SourceControlExtractor.php
+│   ├── SuppressionExtractor.php
+│   └── UnattachedComments.php
 ├── Suppression/
-│   └── SuppressionFilter.php   # internal annotation matching
+│   └── SuppressionFilter.php
+├── Threshold/
+│   ├── DeclaredOverrideForms.php
+│   ├── RuleValidatorMapFactory.php
+│   ├── ThresholdOverrideExtractor.php
+│   └── ThresholdOverrideValueParser.php
 └── ThresholdOverrideExtractionResult.php
 ```
+
+Near-spelling suggestions sort by edit distance and then by channel or rule name.
+Equal-distance candidates retain that order regardless of DI registration or source layout.
 
 ## Public contracts
 
@@ -415,3 +426,15 @@ unresolvable and unsupported annotations.
 Directive-site population identities frame authored file, form and target bytes
 before JSON tuple encoding. Invalid source bytes remain distinct from literal
 percent escapes; valid UTF-8 identities keep their existing representation.
+
+Suppression extraction is implemented in `Extraction/SuppressionExtractor`;
+threshold parsing and validator composition live in `Threshold`. These services
+are composition implementations. Worker bootstrap and container registration
+retain their existing exact construction access; Run consumes the existing
+`Contract/SourceControlExtractorInterface` port.
+
+Builtin health producers accept one nonnegative class boundary, written as
+`@qmx-threshold health.cohesion 40` or equal explicit axes. Partial and unequal
+health pairs are refused; the open `computed` producer remains unsupported.
+These validators are supplied by the ComputedMetrics owner to the existing
+validator-map composition in both the main process and workers.

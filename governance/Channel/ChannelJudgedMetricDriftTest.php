@@ -68,7 +68,7 @@ use RuntimeException;
  * **What this guard does not cover — six, named, so the set cannot grow in
  * silence.** The same six the build-time half names, for the same reasons
  * (see `assertJudgedMetricsAreDeclarable()` in
- * {@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\ChannelDeclarationCompilerPass}):
+ * {@see \Qualimetrix\Infrastructure\DependencyInjection\ChannelCatalog\ChannelDeclarationCompilerPass}):
  *
  * 1. `architecture.circular-dependency` — magnitude of its own making (a
  *    cycle's member count).

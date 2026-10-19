@@ -36,7 +36,7 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\TraitUseFacts;
+use Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitUseFacts;
 
 #[CoversClass(CohesionCompositionCollector::class)]
 final class CohesionSemanticCompositionTest extends TestCase

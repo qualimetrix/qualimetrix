@@ -169,6 +169,10 @@
             "cohesion.lcc.avg": 0,
             "cohesion.lcc.min": 0,
             "cohesion.lcc.count": 1,
+            "cohesion.pure-method-count.avg": 1,
+            "cohesion.pure-method-count.count": 1,
+            "cohesion.tcc-method-count.avg": 1,
+            "cohesion.tcc-method-count.count": 3,
             "coupling.ce.sum": 3,
             "coupling.ce.avg": 0.42857142857142855,
             "coupling.ce.max": 2,
@@ -226,11 +230,11 @@
             "coupling.class-rank-share.p95": 1.3859192648034746,
             "coupling.class-rank-share.count": 7,
             "health.complexity": 98,
-            "health.cohesion": 45,
+            "health.cohesion": 81.6227766016838,
             "health.coupling": 93.75,
             "health.typing": 100,
             "health.maintainability": 100,
-            "health.overall": 87.15
+            "health.overall": 94.47455532033676
         },
         "violations": [],
         "violationCountTotal": 4,
@@ -364,6 +368,8 @@
                     "coupling.ce-own": 0,
                     "coupling.instability-own": 0,
                     "coupling.cbo-own": 0,
+                    "cohesion.tcc-method-count.avg": 0,
+                    "cohesion.tcc-method-count.count": 1,
                     "coupling.ca.sum": 0,
                     "coupling.ce.sum": 0,
                     "coupling.ce.avg": 0,
@@ -660,6 +666,10 @@
                     "cohesion.lcc.avg": 0,
                     "cohesion.lcc.min": 0,
                     "cohesion.lcc.count": 1,
+                    "cohesion.pure-method-count.avg": 1,
+                    "cohesion.pure-method-count.count": 1,
+                    "cohesion.tcc-method-count.avg": 1.5,
+                    "cohesion.tcc-method-count.count": 2,
                     "coupling.ca.sum": 3,
                     "coupling.ce.sum": 3,
                     "coupling.ce.avg": 0.5,
@@ -720,11 +730,11 @@
                     "coupling.class-rank-share.p95": 1.4030169537504642,
                     "coupling.class-rank-share.count": 6,
                     "health.complexity": 98,
-                    "health.cohesion": 45,
+                    "health.cohesion": 75.81988897471611,
                     "health.coupling": 100,
                     "health.typing": 100,
                     "health.maintainability": 100,
-                    "health.overall": 88.4
+                    "health.overall": 94.56397779494321
                 },
                 "violations": [],
                 "violationCountTotal": 4,
@@ -913,6 +923,10 @@
                             "cohesion.lcc.avg": 0,
                             "cohesion.lcc.min": 0,
                             "cohesion.lcc.count": 1,
+                            "cohesion.pure-method-count.avg": 1,
+                            "cohesion.pure-method-count.count": 1,
+                            "cohesion.tcc-method-count.avg": 1.5,
+                            "cohesion.tcc-method-count.count": 2,
                             "coupling.ca.sum": 2,
                             "coupling.ce.sum": 3,
                             "coupling.ce.avg": 0.6,
@@ -973,11 +987,11 @@
                             "coupling.class-rank-share.p95": 1.1465516195456233,
                             "coupling.class-rank-share.count": 5,
                             "health.complexity": 95.8,
-                            "health.cohesion": 45,
+                            "health.cohesion": 75.81988897471611,
                             "health.coupling": 92.3076923076923,
                             "health.typing": 100,
                             "health.maintainability": 100,
-                            "health.overall": 86.20153846153846
+                            "health.overall": 92.36551625648168
                         },
                         "violations": [
                             {
@@ -1118,6 +1132,33 @@
                                 "violations": [
                                     {
                                         "file": "src/Growth.php",
+                                        "line": 9,
+                                        "subject": "declaration:class:App\\Cx\\Bytes%FF@src/Growth.php",
+                                        "symbol": "App\\Cx\\Bytes%FF",
+                                        "channel": "architecture.layer-violation",
+                                        "occurrence": "23689553381cd4b5",
+                                        "edge": {
+                                            "type": "property_type",
+                                            "target": "class:App\\Domain\\Port"
+                                        },
+                                        "namespace": "App\\Cx",
+                                        "namespaces": [
+                                            "App\\Cx"
+                                        ],
+                                        "rule": "architecture.layer-violation",
+                                        "code": "architecture.layer-violation",
+                                        "severity": "warning",
+                                        "message": "Layer \"service\" must not depend on layer \"domain\" (App\\Cx\\Bytes%FF → App\\Domain\\Port, uses as property type)",
+                                        "recommendation": "Layer \"service\" is not allowed to depend on any other declared layer.",
+                                        "metricValue": null,
+                                        "threshold": null,
+                                        "techDebtMinutes": 15,
+                                        "acceptedLevel": null,
+                                        "baselineVerdict": null,
+                                        "baselineReason": null
+                                    },
+                                    {
+                                        "file": "src/Growth.php",
                                         "line": 11,
                                         "subject": "declaration:callable:App\\Cx\\Bytes%FF::choose@src/Growth.php",
                                         "symbol": "App\\Cx\\Bytes%FF::choose",
@@ -1160,33 +1201,6 @@
                                         "metricValue": 4,
                                         "threshold": 4,
                                         "techDebtMinutes": 30,
-                                        "acceptedLevel": null,
-                                        "baselineVerdict": null,
-                                        "baselineReason": null
-                                    },
-                                    {
-                                        "file": "src/Growth.php",
-                                        "line": 9,
-                                        "subject": "declaration:class:App\\Cx\\Bytes%FF@src/Growth.php",
-                                        "symbol": "App\\Cx\\Bytes%FF",
-                                        "channel": "architecture.layer-violation",
-                                        "occurrence": "23689553381cd4b5",
-                                        "edge": {
-                                            "type": "property_type",
-                                            "target": "class:App\\Domain\\Port"
-                                        },
-                                        "namespace": "App\\Cx",
-                                        "namespaces": [
-                                            "App\\Cx"
-                                        ],
-                                        "rule": "architecture.layer-violation",
-                                        "code": "architecture.layer-violation",
-                                        "severity": "warning",
-                                        "message": "Layer \"service\" must not depend on layer \"domain\" (App\\Cx\\Bytes%FF → App\\Domain\\Port, uses as property type)",
-                                        "recommendation": "Layer \"service\" is not allowed to depend on any other declared layer.",
-                                        "metricValue": null,
-                                        "threshold": null,
-                                        "techDebtMinutes": 15,
                                         "acceptedLevel": null,
                                         "baselineVerdict": null,
                                         "baselineReason": null
@@ -1484,7 +1498,6 @@
                                     "coupling.rfc": 1,
                                     "coupling.rfc-own": 1,
                                     "coupling.rfc-external": 0,
-                                    "design.is-exception": 0,
                                     "health.complexity": 100,
                                     "health.coupling": 100,
                                     "health.typing": 100,
@@ -1711,7 +1724,6 @@
                             "coupling.rfc-external.max": 0,
                             "coupling.rfc-external.p95": 0,
                             "coupling.rfc-external.count": 1,
-                            "design.is-exception.sum": 0,
                             "coupling.class-rank.max": 0.21264362835505873,
                             "coupling.class-rank.avg": 0.21264362835505873,
                             "coupling.class-rank.p95": 0.21264362835505873,
@@ -1812,7 +1824,6 @@
                                     "coupling.rfc": 1,
                                     "coupling.rfc-own": 1,
                                     "coupling.rfc-external": 0,
-                                    "design.is-exception": 0,
                                     "health.complexity": 100,
                                     "health.coupling": 100,
                                     "health.typing": 100,
@@ -1836,11 +1847,11 @@
         "totalDebtMinutes": 105,
         "healthScores": {
             "health.complexity": 98,
-            "health.cohesion": 45,
+            "health.cohesion": 81.6227766016838,
             "health.coupling": 93.75,
             "health.typing": 100,
             "health.maintainability": 100,
-            "health.overall": 87.15
+            "health.overall": 94.47455532033676
         },
         "healthDecomposition": {
             "health.complexity": [

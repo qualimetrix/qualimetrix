@@ -270,7 +270,13 @@ final class TestPipelineBuilder
             $configuration->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), $execution->allRules()));
         }
 
-        return new AnalysisPipeline(
+        $pipelinePublication = new FindingPublication($configuration, new RuleMaterialization([], [], []));
+        $pipelineInlineDirectives = new InlineDirectiveRun(
+            $this->resolveInlineDirectivePolicy($configuration),
+            $this->thresholdDirectiveAudit ?? self::inertThresholdAudit(),
+        );
+        $pipelineLogger = $this->logger ?? new NullLogger();
+        $runPreparation = new \Qualimetrix\Analysis\Run\Preparation\RunPreparation(
             projectFiles: $this->projectFiles ?? throw new LogicException(
                 'TestPipelineBuilder: projectFiles is required (call withProjectFiles())',
             ),
@@ -279,7 +285,7 @@ final class TestPipelineBuilder
                 'TestPipelineBuilder: collectionOrchestrator is required (call withCollectionOrchestrator())',
             ),
             ruleExecutor: $execution,
-            rulePublication: new FindingPublication($configuration, new RuleMaterialization([], [], [])),
+            rulePublication: $pipelinePublication,
             ruleProducerPreparation: new RuleProducerPreparation(
                 $this->resolveLayerPolicyPreparation(),
                 $this->circularDependencyPreparation ?? throw new LogicException(
@@ -291,28 +297,30 @@ final class TestPipelineBuilder
                 ),
                 $this->producerGate ?? new RuleSelectorProducerGate($configuration),
             ),
-            inlineDirectiveRun: new InlineDirectiveRun(
-                $this->resolveInlineDirectivePolicy($configuration),
-                $this->thresholdDirectiveAudit ?? self::inertThresholdAudit(),
+            inlineDirectiveRun: $pipelineInlineDirectives,
+            graphBuilder: $this->graphBuilder ?? AdjacencyGraphBuilder::builder(),
+            logger: $pipelineLogger,
+            profiler: $this->profiler ?? throw new LogicException(
+                'TestPipelineBuilder: profiler is required (call withProfiler())',
             ),
-            measurementAggregation: $this->measurementAggregation ?? throw new LogicException(
+            runMeasurement: new \Qualimetrix\Analysis\Run\Measurement\RunMeasurement(measurementAggregation: $this->measurementAggregation ?? throw new LogicException(
                 'TestPipelineBuilder: measurementAggregation is required (call withMeasurementAggregation())',
-            ),
-            computedMetricEvaluation: $this->computedMetricEvaluation ?? throw new LogicException(
+            ), computedMetricEvaluation: $this->computedMetricEvaluation ?? throw new LogicException(
                 'TestPipelineBuilder: computedMetricEvaluation is required (call withComputedMetricEvaluation())',
-            ),
-            repositoryFactory: $this->repositoryFactory ?? new MeasurementRepositoryFactory(
+            ), repositoryFactory: $this->repositoryFactory ?? new MeasurementRepositoryFactory(
                 $this->measurementAggregation instanceof MetricDefinitionCatalogInterface
                     ? $this->measurementAggregation
                     : throw new LogicException('TestPipelineBuilder: measurement aggregation must supply finite definitions'),
                 new ResolvedComputedMetricDefinitions([]),
                 new DefaultMetricRepositoryFactory(),
-            ),
-            graphBuilder: $this->graphBuilder ?? AdjacencyGraphBuilder::builder(),
-            logger: $this->logger ?? new NullLogger(),
-            profiler: $this->profiler ?? throw new LogicException(
-                'TestPipelineBuilder: profiler is required (call withProfiler())',
-            ),
+            )),
+        );
+        return new AnalysisPipeline(
+            preparation: $runPreparation,
+            ruleExecutor: $execution,
+            rulePublication: $pipelinePublication,
+            inlineDirectiveRun: $pipelineInlineDirectives,
+            logger: $pipelineLogger,
         );
     }
 

@@ -46,6 +46,8 @@ What follows from the decision: trade-offs, constraints, and implications.
 
 ## Current decisions
 
+- [0128 — One-Way Subject Operations](0128-subject-boundaries-with-one-way-operations.md) — authored facts, file-target resources, named metric families and deterministic directive advice.
+
 - [0001 — Computed Metrics](0001-computed-metrics.md) — formula-based computed metrics and health scores.
 - [0002 — Interactive HTML Report](0002-html-report.md) — self-contained interactive report delivery.
 - [0003 — Reporting UX Redesign](0003-reporting-ux-redesign.md) — summary-first reporting and progressive disclosure.

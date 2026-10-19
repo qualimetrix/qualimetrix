@@ -7,18 +7,20 @@ namespace Qualimetrix\Reporting\Formatter\Sarif;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 
 use Qualimetrix\Analysis\Finding\Contract\Location;
+
 use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\SourceText\SourceBytes;
 use Qualimetrix\Core\Version;
-use Qualimetrix\Reporting\Formatter\FormattedReport;
-use Qualimetrix\Reporting\Formatter\FormatterInterface;
-use Qualimetrix\Reporting\Formatter\PublicationKind;
-use Qualimetrix\Reporting\Formatter\PublishedFinding;
-use Qualimetrix\Reporting\Formatter\PublishedUtf8;
-use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\GroupBy;
-use Qualimetrix\Reporting\Report;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterInterface;
+use Qualimetrix\Reporting\Contract\Formatting\GroupBy;
+use Qualimetrix\Reporting\Contract\Report\Report;
+use Qualimetrix\Reporting\FindingPublication\PublishedFinding;
+use Qualimetrix\Reporting\Formatter\Prose\RuleAbstentionNarrator;
+use Qualimetrix\Reporting\Publication\FormattedReport;
+use Qualimetrix\Reporting\Publication\PublicationKind;
+use Qualimetrix\Reporting\Publication\PublishedUtf8;
 
 /**
  * Formats report as SARIF (Static Analysis Results Interchange Format) JSON.
@@ -150,7 +152,7 @@ final class SarifFormatter implements FormatterInterface
             $absence->count,
             $absence->unit,
             $absence->reason,
-        )]], $population->abstentions());
+        )]], RuleAbstentionNarrator::dataGaps($population));
     }
 
     public function publicationKind(): PublicationKind

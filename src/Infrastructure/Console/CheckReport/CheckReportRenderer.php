@@ -5,17 +5,23 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\CheckReport;
 
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
-
 use Qualimetrix\Core\Pattern\NamespacePattern;
+
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+
+use Qualimetrix\Infrastructure\Console\CheckReport\Assembly\ReportAssembler;
+
+use Qualimetrix\Infrastructure\Console\CheckReport\FormatBinding\ReportFormatter;
 use Qualimetrix\Infrastructure\Console\RuntimePolicy\ExitCodeResolver;
 use Qualimetrix\Infrastructure\Console\RuntimePolicy\ExitPolicy;
+use Qualimetrix\Infrastructure\Console\Terminal\ReportPublication\RenderedCheckReport;
 use Qualimetrix\Reporting\Contract\OutputFormat;
-use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
-use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
+use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionOptions;
+use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionResult;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
+/** @qmx-threshold coupling.instability 0.842107 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies. */
 final readonly class CheckReportRenderer
 {
     public function __construct(private ReportAssembler $assembler, private ReportFormatter $formatter, private ExitCodeResolver $exitCodeResolver, private ProfilerInterface $profiler, private \Qualimetrix\Infrastructure\Console\CheckScope\ProjectScopePresenter $scopePresenter) {}

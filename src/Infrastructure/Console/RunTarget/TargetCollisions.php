@@ -7,9 +7,9 @@ namespace Qualimetrix\Infrastructure\Console\RunTarget;
 use Qualimetrix\Core\FileTarget\FileIdentity;
 use Qualimetrix\Core\FileTarget\Publication\HeldTarget;
 use Qualimetrix\Core\FileTarget\Publication\PreparedTarget;
-use Qualimetrix\Core\FileTarget\ResolvedTarget;
+use Qualimetrix\Core\FileTarget\Resolution\ResolvedTarget;
+use Qualimetrix\Core\FileTarget\Resolution\TargetPath;
 use Qualimetrix\Core\FileTarget\TargetKind;
-use Qualimetrix\Core\FileTarget\TargetPath;
 use Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal;
 
 /** Identity and name collisions among the targets of one console run. */

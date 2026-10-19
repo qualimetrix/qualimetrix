@@ -6,14 +6,16 @@ namespace Qualimetrix\Analysis\Policy\Baseline\Ceiling;
 
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageObservation;
 use Qualimetrix\Analysis\Finding\Contract\ValueReach;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\RunCoverage\RunScope;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
-/** One proof that a recorded entry's population was measured again. */
+/** One proof that a recorded entry's population was measured again.
+ * @qmx-threshold coupling.instability 0.800001 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
+ */
 final readonly class EntryComparability
 {
     private function __construct(public ?IncomparabilityReason $reason) {}

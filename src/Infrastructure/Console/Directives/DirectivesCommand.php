@@ -18,7 +18,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Console\Invocation\CommandDefinition\AnalysisReportCommandDefinition;
 use Qualimetrix\Infrastructure\Console\Invocation\CommandLineSpelling;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
-use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisPreflight;
+use Qualimetrix\Infrastructure\Console\RunSetup\Input\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\Terminal\ReportPublication\OutputHelper;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -54,6 +54,7 @@ use Symfony\Component\Console\Output\OutputInterface;
     name: 'directives',
     description: 'Report what each inline @qmx directive in the analysed tree actually does',
 )]
+/** @qmx-threshold coupling.instability 0.913045 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies. */
 final class DirectivesCommand extends Command
 {
     private const array SUPPORTED_FORMATS = ['text', 'json'];

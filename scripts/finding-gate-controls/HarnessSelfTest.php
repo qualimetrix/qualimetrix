@@ -172,7 +172,7 @@ final class HarnessSelfTest
             $dirtyProduct = $originalProduct . "\n// A private working-tree variation.\n";
             Shell::replace($scratch->path($productPath), $dirtyProduct);
             $this->same(true, $hasPermissions->invoke($harness), 'the inherited transition is present before preparation');
-            $sourcePath = 'src/Reporting/Formatter/FindingRecord.php';
+            $sourcePath = 'src/Reporting/FindingPublication/FindingRecord.php';
             $originalSource = Shell::read($repository . '/' . $sourcePath);
             $fieldIndex = 'finding-gate/' . DeclaredFields::INDEX;
             $fieldDerived = 'finding-gate/' . DeclaredFields::DERIVED;
@@ -195,7 +195,7 @@ final class HarnessSelfTest
                 require getcwd() . '/scripts/finding-gate/classes.php';
                 require getcwd() . '/scripts/finding-gate-controls/classes.php';
                 $root = getcwd();
-                $producer = 'src/Reporting/Formatter/FindingRecord.php';
+                $producer = 'src/Reporting/FindingPublication/FindingRecord.php';
                 $index = 'finding-gate/' . DeclaredFields::INDEX;
                 $derived = 'finding-gate/' . DeclaredFields::DERIVED;
                 $snapshot = static fn(string $path): array => is_file($path) ? [true, Shell::read($path)] : [false, null];

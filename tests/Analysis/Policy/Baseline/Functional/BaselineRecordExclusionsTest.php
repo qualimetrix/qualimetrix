@@ -7,17 +7,17 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Functional;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineWriter;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance\BaselineUpdater;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
-use Qualimetrix\Core\FileTarget\TargetPath;
+use Qualimetrix\Core\FileTarget\Resolution\TargetPath;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Console\Baseline\Generation\BaselineGenerateCommand;
+use Qualimetrix\Infrastructure\Console\Baseline\Maintenance\BaselineCleanupCommand;
+use Qualimetrix\Infrastructure\Console\Baseline\Maintenance\BaselineUpdateCommand;
 use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
-use Qualimetrix\Infrastructure\Console\Command\Baseline\Generation\BaselineGenerateCommand;
-use Qualimetrix\Infrastructure\Console\Command\Baseline\Maintenance\BaselineCleanupCommand;
-use Qualimetrix\Infrastructure\Console\Command\Baseline\Maintenance\BaselineUpdateCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory;
@@ -55,10 +55,14 @@ final class BaselineRecordExclusionsTest extends TestCase
     #[Test]
     public function itRecordsTheDefinitionAndMakesTheAffectedAggregateComparable(): void
     {
-        $generated = $this->execute(BaselineGenerateCommand::class, ['baseline' => $this->path, 'paths' => ['src'], '--only-rule' => ['architecture.layer-violation']]);
+        file_put_contents($this->root . '/src/Peer.php', '<?php namespace App; class Peer {}');
+        file_put_contents($this->root . '/src/Other.php', '<?php namespace App; class Other {}');
+        $selection = ['--only-rule' => ['size.class-count'], '--rule-opt' => ['size.class-count:warning=2', 'size.class-count:error=100']];
+        $generated = $this->execute(BaselineGenerateCommand::class, ['baseline' => $this->path, 'paths' => ['src'], ...$selection]);
         self::assertSame(0, $generated->getStatusCode(), $generated->getDisplay() . $generated->getErrorOutput());
         $payload = $this->payload();
-        self::assertNotEmpty($payload['entries']);
+        self::assertSame(['ns:App'], array_keys($payload['entries']));
+        self::assertSame([4], $payload['entries']['ns:App'][0]['magnitudes']);
         foreach ($payload['entries'] as &$entries) {
             foreach ($entries as &$entry) {
                 $entry['mode'] = 'suppress';
@@ -70,16 +74,17 @@ final class BaselineRecordExclusionsTest extends TestCase
         $before = (string) file_get_contents($this->path);
         $this->configuration(true);
 
-        $ordinary = $this->execute(BaselineUpdateCommand::class, ['baseline' => $this->path, 'paths' => ['src'], '--only-rule' => ['architecture.layer-violation']]);
+        $ordinary = $this->execute(BaselineUpdateCommand::class, ['baseline' => $this->path, 'paths' => ['src'], ...$selection]);
         self::assertSame(0, $ordinary->getStatusCode(), $ordinary->getDisplay() . $ordinary->getErrorOutput());
         self::assertStringContainsString('exclusions-differ', $ordinary->getDisplay());
         self::assertSame($before, file_get_contents($this->path));
 
-        $record = $this->execute(BaselineUpdateCommand::class, ['baseline' => $this->path, 'paths' => ['src'], '--record-exclusions' => true, '--only-rule' => ['architecture.layer-violation']]);
+        $record = $this->execute(BaselineUpdateCommand::class, ['baseline' => $this->path, 'paths' => ['src'], '--record-exclusions' => true, ...$selection]);
         self::assertSame(0, $record->getStatusCode(), $record->getDisplay() . $record->getErrorOutput());
         self::assertStringContainsString('re-recorded', $record->getDisplay());
-        self::assertStringContainsString('exclusions changed: 1 occurrence -> 1 occurrence', $record->getDisplay());
+        self::assertStringContainsString('exclusions changed: 4 -> 3', $record->getDisplay());
         $after = $this->payload();
+        self::assertSame([3], $after['entries']['ns:App'][0]['magnitudes']);
         self::assertSame(['patterns' => ['exact:src/Extra.php'], 'generated' => 'excluded'], $after['exclusions']);
         self::assertSame($payload['scope'], $after['scope']);
         foreach ($after['entries'] as $entries) {
@@ -87,9 +92,33 @@ final class BaselineRecordExclusionsTest extends TestCase
                 self::assertSame('suppress', $entry['mode']);
             }
         }
-        $check = $this->execute(CheckCommand::class, ['paths' => ['src'], '--baseline' => $this->path, '--only-rule' => ['architecture.layer-violation'], '--format' => 'json']);
+        $check = $this->execute(CheckCommand::class, ['paths' => ['src'], '--baseline' => $this->path, ...$selection, '--format' => 'json']);
         self::assertSame(0, $check->getStatusCode(), $check->getDisplay() . $check->getErrorOutput());
         self::assertStringNotContainsString('exclusions-differ', $check->getDisplay());
+    }
+
+    #[Test]
+    public function itKeepsSourceOwnedLayerOccurrencesComparableWhenAnUnrelatedFileIsExcluded(): void
+    {
+        $selection = ['--only-rule' => ['architecture.layer-violation']];
+        $generated = $this->execute(BaselineGenerateCommand::class, ['baseline' => $this->path, 'paths' => ['src'], ...$selection]);
+        self::assertSame(0, $generated->getStatusCode(), $generated->getDisplay() . $generated->getErrorOutput());
+        self::assertSame(1, array_sum(array_map('count', $this->payload()['entries'])));
+        $before = (string) file_get_contents($this->path);
+        $this->configuration(true);
+
+        $unaccepted = $this->execute(CheckCommand::class, ['paths' => ['src'], ...$selection, '--format' => 'json']);
+        $findings = json_decode($unaccepted->getDisplay(), true, 512, \JSON_THROW_ON_ERROR);
+        self::assertCount(1, $findings['violations']);
+        $accepted = $this->execute(CheckCommand::class, ['paths' => ['src'], '--baseline' => $this->path, ...$selection, '--format' => 'json', '--fail-on' => 'warning']);
+        self::assertSame(0, $accepted->getStatusCode(), $accepted->getErrorOutput());
+        $findings = json_decode($accepted->getDisplay(), true, 512, \JSON_THROW_ON_ERROR);
+        self::assertSame([], $findings['violations']);
+        $ordinary = $this->execute(BaselineUpdateCommand::class, ['baseline' => $this->path, 'paths' => ['src'], ...$selection]);
+        self::assertSame(0, $ordinary->getStatusCode(), $ordinary->getDisplay() . $ordinary->getErrorOutput());
+        self::assertStringContainsString('1 unchanged', $ordinary->getDisplay());
+        self::assertStringNotContainsString('exclusions-differ', $ordinary->getDisplay());
+        self::assertSame($before, file_get_contents($this->path));
     }
 
     #[Test]

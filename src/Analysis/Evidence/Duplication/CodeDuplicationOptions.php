@@ -14,6 +14,8 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 
 /**
  * Options for the code duplication rule.
+ *
+ * @qmx-threshold health.cohesion 40.0 -- Independent immutable observations or stateless declaration operations intentionally have no shared instance-field graph; this finite class boundary keeps a further cohesion loss visible.
  */
 final readonly class CodeDuplicationOptions implements RuleOptionsInterface
 {

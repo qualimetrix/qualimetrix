@@ -14,7 +14,7 @@ use Psr\Log\LogLevel;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\FileTarget\Publication\HeldTarget;
-use Qualimetrix\Core\FileTarget\TargetPath;
+use Qualimetrix\Core\FileTarget\Resolution\TargetPath;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
 use Qualimetrix\Infrastructure\Logging\FileLogger;
 use Qualimetrix\Subprocess\ChildProcess;
@@ -505,7 +505,7 @@ final class FileLoggerTest extends TestCase
                 require $argv[1];
                 $GLOBALS['qmx_native_hits'] = 0;
                 $held = \Qualimetrix\Core\FileTarget\Publication\HeldTarget::claim(
-                    \Qualimetrix\Core\FileTarget\TargetPath::resolve($argv[2]),
+                    \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($argv[2]),
                 );
                 $logger = new \Qualimetrix\Infrastructure\Logging\FileLogger($argv[2]);
                 $logger->attach($held);

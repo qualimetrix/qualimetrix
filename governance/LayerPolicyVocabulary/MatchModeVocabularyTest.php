@@ -7,7 +7,7 @@ namespace Qualimetrix\Governance\LayerPolicyVocabulary;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchMode;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 
 /**
  * Split off from `LayerDefinitionTest` (which keeps the behavioural

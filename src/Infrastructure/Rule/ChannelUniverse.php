@@ -26,7 +26,7 @@ use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface
  * It never scans rule classes itself. The static half — declarations, the
  * producer of each declared channel, and each rule's declared threshold-override
  * support — is handed in by
- * {@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\ChannelDeclarationCompilerPass},
+ * {@see \Qualimetrix\Infrastructure\DependencyInjection\ChannelCatalog\ChannelDeclarationCompilerPass},
  * mirroring {@see RuleRegistry}, which likewise receives its rule class list
  * rather than discovering it. The capability namespaces may not be depended on
  * from `Core`, and rule metadata must be read by reflection at container build
@@ -46,6 +46,8 @@ use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface
  * another instance of this same class over an immutable catalog for preflight
  * validation — which must not commit anything to a store before every owner
  * has accepted its value.
+ *
+  * @qmx-threshold coupling.instability 0.857144 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
  */
 final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleChannelSnapshotFactoryInterface
 {

@@ -17,7 +17,7 @@ final class UnusedEntryFinding
     public static function of(string $cause, string $selector, string $entry, string $reason, string $baselinePath): Finding
     {
         return new Finding(
-            location: Location::none(),
+            location: new Location(\Qualimetrix\Core\Path\PathFactory::tryProjectRelative($baselinePath, \Qualimetrix\Core\Path\AbsolutePath::fromString((string) getcwd()))),
             subject: MetricSubject::aggregate(SymbolPath::forProject()),
             symbolPath: SymbolPath::forProject(),
             ruleName: BaselineAuditChannels::UNUSED_ENTRY,

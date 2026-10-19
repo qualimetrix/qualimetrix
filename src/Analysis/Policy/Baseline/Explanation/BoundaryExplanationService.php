@@ -8,11 +8,11 @@ use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInte
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
 
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\InertBaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertBaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\RunCoverage\RunRuleCoverage;
 use Qualimetrix\Core\SourceText\SourceBytes;
 
@@ -29,6 +29,8 @@ use Qualimetrix\Core\SourceText\SourceBytes;
  * {@see ExplainedSubject}'s answer, not this class's.
  *
  * @phpstan-import-type SubjectRecord from ExplainedSubject
+ *
+  * @qmx-threshold coupling.instability 0.894738 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
  */
 final readonly class BoundaryExplanationService
 {

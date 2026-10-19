@@ -6,7 +6,7 @@ namespace Qualimetrix\Analysis\Evidence\Duplication\Matching;
 
 use Closure;
 use Qualimetrix\Analysis\Evidence\Duplication\Index\PackedPosition;
-use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenStream;
+use Qualimetrix\Analysis\Evidence\Duplication\TokenStream;
 
 final class BalancedSegments
 {

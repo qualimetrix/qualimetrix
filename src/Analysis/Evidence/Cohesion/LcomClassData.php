@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Cohesion;
 
 use Qualimetrix\Core\Symbol\ClassNameSpelling;
-use Qualimetrix\Core\Symbol\TraitMethodSource;
-use Qualimetrix\Core\Symbol\TraitUseFacts;
+use Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitMethodSource;
+use Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitUseFacts;
 
 /**
  * Data structure for LCOM calculation.

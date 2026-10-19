@@ -14,6 +14,8 @@ use Qualimetrix\Core\Path\RelativePath;
  * Paths are project-relative. The git boundary translation from git-toplevel-relative
  * (raw `git diff` output) to project-relative happens eagerly in {@see fromGitOutput()};
  * see ADR 0015 D5.
+ *
+ * @qmx-threshold health.cohesion 40.0 -- Independent immutable observations or stateless declaration operations intentionally have no shared instance-field graph; this finite class boundary keeps a further cohesion loss visible.
  */
 final readonly class ChangedFile
 {

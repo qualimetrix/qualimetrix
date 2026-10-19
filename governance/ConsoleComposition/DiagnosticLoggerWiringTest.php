@@ -81,6 +81,7 @@ final class DiagnosticLoggerWiringTest extends TestCase
         'Qualimetrix\\Analysis\\Evidence\\Measurement\\Aggregation\\MeasurementAggregationService',
         'Qualimetrix\\Analysis\\Run\\Collection\\CollectionOrchestrator',
         'Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline',
+        'Qualimetrix\\Analysis\\Run\\Preparation\\RunPreparation',
         'Qualimetrix\\Infrastructure\\Ast\\PhpFileParser',
         'Qualimetrix\\Infrastructure\\Composer\\ComposerAutoloadMap',
         'Qualimetrix\\Infrastructure\\Console\\GraphExport\\GraphExportCommand',

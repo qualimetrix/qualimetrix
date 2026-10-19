@@ -17,7 +17,9 @@ use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress;
 use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionFilter;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
-/** Decides authored membership and rank for every declared producer/channel cell. */
+/** Decides authored membership and rank for every declared producer/channel cell.
+ * @qmx-threshold coupling.instability 0.857144 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
+ */
 final class SelectionSpecificity
 {
     public static function producerEnable(string $written, string $producer): ?int

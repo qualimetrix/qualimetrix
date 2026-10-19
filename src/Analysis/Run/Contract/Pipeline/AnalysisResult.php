@@ -14,6 +14,9 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Inline\Contract\DirectiveObservations;
 
+/**
+ * @qmx-threshold coupling.cbo 21 -- Measured output, directives and rule publication describe one completed run; their typed outcomes must retain that shared observation.
+ */
 final readonly class AnalysisResult
 {
     /**

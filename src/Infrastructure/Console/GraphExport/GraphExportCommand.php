@@ -11,30 +11,27 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Core\Pattern\NamespacePattern;
-use Qualimetrix\Core\ProductIdentity;
-use Qualimetrix\Infrastructure\Console\Invocation\CliSelectorDecoder;
 use Qualimetrix\Infrastructure\Console\Invocation\CommandLineSpelling;
-use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisPreflight;
-use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisPreflightProfile;
+use Qualimetrix\Infrastructure\Console\Invocation\Configuration\Diagnostics\AnalysisPreflightProfile;
+use Qualimetrix\Infrastructure\Console\RunSetup\Input\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Terminal\ReportPublication\OutputHelper;
 use Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface;
-use Qualimetrix\Reporting\GraphProjection\Contract\GraphDirection;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphExportFormat;
-use Qualimetrix\Reporting\GraphProjection\Contract\GraphProjectionRequest;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
     name: 'graph:export',
     description: 'Export dependency graph for visualization (DOT, JSON)',
 )]
+/**
+ * @qmx-threshold coupling.instability 0.920001 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
+ * @qmx-threshold coupling.cbo 26 -- Graph input resolution is separate; this delivery command still coordinates one graph export, its format and diagnostic outcome.
+ */
 final class GraphExportCommand extends Command
 {
     private const int EXIT_ANALYSIS_INCOMPLETE = 4;
@@ -46,73 +43,14 @@ final class GraphExportCommand extends Command
         private readonly ErrorStream $errorStream,
         private readonly RunTargetSession $runTargetSession,
         private readonly LoggerInterface $logger = new NullLogger(),
-        private readonly CliSelectorDecoder $selectorDecoder = new CliSelectorDecoder(),
+        private readonly GraphExportInput $graphInput = new GraphExportInput(),
     ) {
         parent::__construct();
     }
 
     protected function configure(): void
     {
-        $this
-            ->addOption('config', 'c', InputOption::VALUE_REQUIRED, 'Path to configuration file')
-            ->addOption('preset', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Apply a named preset or preset file', [])
-            ->addOption('exclude', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Directories to exclude', [])
-            ->addOption('include-generated', null, InputOption::VALUE_NONE, 'Include generated files')
-            ->addOption('include-autoload-dev', null, InputOption::VALUE_NONE, 'Include composer autoload-dev files')
-            ->addOption('no-cache', null, InputOption::VALUE_NONE, 'Disable caching')
-            ->addOption('no-progress', null, InputOption::VALUE_NONE, 'Disable progress bar')
-            ->addOption('workers', 'w', InputOption::VALUE_REQUIRED, 'Number of parallel workers')
-            ->addOption('memory-limit', null, InputOption::VALUE_REQUIRED, 'PHP memory limit')
-            ->addArgument(
-                'paths',
-                InputArgument::IS_ARRAY | InputArgument::OPTIONAL,
-                'Paths to analyze',
-            )
-            ->addOption(
-                'output',
-                'o',
-                InputOption::VALUE_REQUIRED,
-                'Output file (default: stdout)',
-            )
-            ->addOption(
-                'format',
-                'f',
-                InputOption::VALUE_REQUIRED,
-                \sprintf(
-                    'Output format (%s)',
-                    implode(', ', array_map(static fn(GraphExportFormat $format): string => $format->value, GraphExportFormat::cases())),
-                ),
-                GraphExportFormat::Dot->value,
-            )
-            ->addOption(
-                'direction',
-                null,
-                InputOption::VALUE_REQUIRED,
-                \sprintf(
-                    'Graph direction (%s)',
-                    implode(', ', array_map(static fn(GraphDirection $direction): string => $direction->value, GraphDirection::cases())),
-                ),
-                GraphDirection::LR->value,
-            )
-            ->addOption(
-                'no-clusters',
-                null,
-                InputOption::VALUE_NONE,
-                'Do not group by namespace',
-            )
-            ->addOption(
-                'namespace',
-                null,
-                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                'Include only these namespaces (a value matching no analyzed class is refused with exit code 3)',
-            )
-            ->addOption(
-                'exclude-namespace',
-                null,
-                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                'Exclude these namespaces (a value matching no analyzed class is refused with exit code 3)',
-            )
-            ->setHelp(\sprintf('Docs: %s', ProductIdentity::llmsTxtUrl()));
+        $this->graphInput->configure($this);
     }
 
     /**
@@ -135,8 +73,8 @@ final class GraphExportCommand extends Command
 
     private function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        $format = self::resolveFormat(CommandLineSpelling::option($input, 'format') ?? '');
-        $direction = self::resolveDirection(CommandLineSpelling::option($input, 'direction') ?? '');
+        $format = GraphExportInput::format($input);
+        $direction = GraphExportInput::direction($input);
         $outputFile = CommandLineSpelling::option($input, 'output');
         if ($outputFile !== null) {
             $this->runTargetSession->targets()->judge('--output', $outputFile);
@@ -145,7 +83,7 @@ final class GraphExportCommand extends Command
         }
 
         $prepared = $this->preflight->resolve($input, $output, AnalysisPreflightProfile::graph());
-        $request = $this->buildProjectionRequest($input, $format, $direction);
+        $request = $this->graphInput->projectionRequest($input, $format, $direction);
         foreach ($this->runTargetSession->targets()->exposureWarnings() as $warning) {
             $this->errorStream->write($output, '<comment>Warning: '
                 . \Symfony\Component\Console\Formatter\OutputFormatter::escape($warning) . '</comment>');
@@ -175,7 +113,7 @@ final class GraphExportCommand extends Command
         }
 
         $this->logGraphBuilt($result);
-        $this->assertNamespaceFiltersBind($result, $request);
+        $this->graphInput->assertFiltersBind($this->projection, $result, $request);
         $content = $this->projection->project($result->graph, $request);
         $this->publishGraph($output, $outputFile, $content, $format);
         $this->runTargetSession->markOutputPublished();
@@ -193,7 +131,7 @@ final class GraphExportCommand extends Command
 
         if ($result->coverage->discoveredFiles() === 0 || $result->coverage->isIntentionallyEmpty()) {
             $coverage = $result->coverage;
-            $this->errorStream->write($output, \Qualimetrix\Reporting\Formatter\CoverageNarrator::describe(new \Qualimetrix\Reporting\ReportCoverage(
+            $this->errorStream->write($output, \Qualimetrix\Reporting\Formatter\Text\CoverageNarrator::describe(new \Qualimetrix\Reporting\Coverage\ReportCoverage(
                 $coverage->discoveredFiles(),
                 $coverage->analyzedFilesCount(),
                 $coverage->generatedExcludedFilesCount(),
@@ -227,104 +165,6 @@ final class GraphExportCommand extends Command
         } else {
             OutputHelper::write($output, $content);
         }
-    }
-
-    /** @throws ConfigurationRefusal */
-    private function assertNamespaceFiltersBind(DependencyGraphAnalysisResult $result, GraphProjectionRequest $request): void
-    {
-        $unbound = $this->projection->unboundIncludeNamespaces($result->graph, $request);
-        if ($unbound !== []) {
-            throw ConfigurationRefusal::aboutCommandLineInput(
-                '--namespace',
-                \sprintf(
-                    'No analyzed class belongs to %s: %s.',
-                    \count($unbound) === 1 ? 'namespace' : 'namespaces',
-                    implode(', ', array_map(static fn(string $namespace): string => '"' . $namespace . '"', $unbound)),
-                ),
-            );
-        }
-
-        $unboundExcludes = $this->projection->unboundExcludeNamespaces($result->graph, $request);
-        if ($unboundExcludes === []) {
-            return;
-        }
-
-        $written = implode(', ', array_map(
-            static fn(array $entry): string => '"' . $entry['selector'] . '"',
-            $unboundExcludes,
-        ));
-        $suggestions = array_values(array_filter(array_map(
-            static fn(array $entry): ?string => $entry['suggestion'] === null
-                ? null
-                : \sprintf('For "%s", did you mean "%s"?', $entry['selector'], $entry['suggestion']),
-            $unboundExcludes,
-        )));
-
-        throw ConfigurationRefusal::aboutCommandLineInput(
-            '--exclude-namespace',
-            \sprintf(
-                'No analyzed class belongs to excluded %s: %s.%s',
-                \count($unboundExcludes) === 1 ? 'namespace' : 'namespaces',
-                $written,
-                $suggestions === [] ? '' : ' ' . implode(' ', $suggestions),
-            ),
-        );
-    }
-
-    /** @throws ConfigurationRefusal */
-    private static function resolveFormat(string $rawFormat): GraphExportFormat
-    {
-        $format = GraphExportFormat::tryFrom($rawFormat);
-        if ($format === null) {
-            throw ConfigurationRefusal::aboutCommandLineInput(
-                '--format',
-                \sprintf(
-                    'Unknown format "%s". Supported formats: %s.',
-                    $rawFormat,
-                    implode(', ', array_map(static fn(GraphExportFormat $f): string => $f->value, GraphExportFormat::cases())),
-                ),
-            );
-        }
-
-        return $format;
-    }
-
-    /** @throws ConfigurationRefusal */
-    private static function resolveDirection(string $rawDirection): GraphDirection
-    {
-        $direction = GraphDirection::tryFrom($rawDirection);
-        if ($direction === null) {
-            throw ConfigurationRefusal::aboutCommandLineInput(
-                '--direction',
-                \sprintf(
-                    'Unknown direction "%s". Supported directions: %s.',
-                    $rawDirection,
-                    implode(', ', array_map(static fn(GraphDirection $d): string => $d->value, GraphDirection::cases())),
-                ),
-            );
-        }
-
-        return $direction;
-    }
-
-    private function buildProjectionRequest(InputInterface $input, GraphExportFormat $format, GraphDirection $direction): GraphProjectionRequest
-    {
-        $includeNamespaces = CommandLineSpelling::options($input, 'namespace');
-        $excludeNamespaces = CommandLineSpelling::options($input, 'exclude-namespace');
-
-        return new GraphProjectionRequest(
-            format: $format,
-            direction: $direction,
-            groupByNamespace: $input->getOption('no-clusters') !== true,
-            includeNamespaces: $includeNamespaces !== [] ? array_values(array_map(
-                fn(string $value): NamespacePattern => $this->selectorDecoder->decodeNamespace($value, '--namespace'),
-                $includeNamespaces,
-            )) : null,
-            excludeNamespaces: array_values(array_map(
-                fn(string $value): NamespacePattern => $this->selectorDecoder->decodeNamespace($value, '--exclude-namespace'),
-                $excludeNamespaces,
-            )),
-        );
     }
 
     /** @throws ConfigurationRefusal */

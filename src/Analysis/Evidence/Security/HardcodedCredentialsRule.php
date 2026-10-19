@@ -13,8 +13,8 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
-use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Rule\AbstractRule;
 use Qualimetrix\Core\Symbol\MetricSubjectCodec;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -138,7 +138,7 @@ final class HardcodedCredentialsRule extends AbstractRule
      * `security.hardcoded-credentials` reports a fixed `1.0` occurrence
      * marker per entry (see the emission above). Severity receives the same
      * fixed per-occurrence value `1` via
-     * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule::getEffectiveSeverity()}, and
+     * {@see \Qualimetrix\Analysis\Finding\Rule\AbstractRule::getEffectiveSeverity()}, and
      * {@see HardcodedCredentialsOptions::getSeverity()} only checks that the
      * value is greater than zero. There is no live threshold that varies the
      * outcome, so no direction to declare.

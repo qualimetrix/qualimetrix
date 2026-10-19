@@ -104,9 +104,9 @@ final class ChannelLevelRefusalTopologyTest extends TestCase
         'src/Infrastructure/Rule/ChannelUniverse.php' =>
             'the adapter that answers the question rather than asking it: levelsOf() reads the declaration'
             . ' registry it holds',
-        'src/Infrastructure/DependencyInjection/RuleCatalog/ChannelDeclarationCompilerPass.php' =>
+        'src/Infrastructure/DependencyInjection/ChannelCatalog/ChannelDeclarationCompilerPass.php' =>
             'builds the registry: it reads every rule class to compose the universe, and no user text reaches it',
-        'src/Infrastructure/Console/Command/Baseline/Explanation/BaselineConfiguredThresholds.php' =>
+        'src/Infrastructure/Console/Baseline/Explanation/BaselineConfiguredThresholds.php' =>
             'enumerates the configured warning boundary of each channel at each level it declares, for'
             . ' baseline:explain; it judges no authored text and refuses nothing',
         'src/Analysis/Finding/Selection/SelectionSpecificity.php' =>

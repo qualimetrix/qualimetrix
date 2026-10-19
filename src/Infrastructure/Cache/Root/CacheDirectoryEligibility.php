@@ -6,7 +6,7 @@ namespace Qualimetrix\Infrastructure\Cache\Root;
 
 use Qualimetrix\Core\FileTarget\FileTargetFailure;
 use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
-use Qualimetrix\Core\FileTarget\TargetPath;
+use Qualimetrix\Core\FileTarget\Resolution\TargetPath;
 use Qualimetrix\Core\Path\AbsolutePath;
 
 final class CacheDirectoryEligibility

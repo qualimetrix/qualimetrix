@@ -104,7 +104,7 @@ final class ConfigurationErrorClassificationTopologyTest extends TestCase
         $allowed = [
             'src/Analysis/Finding/Contract/Channel/ChannelDeclaration.php',
             'src/Analysis/Finding/Contract/ConfigurationValidatorInterface.php',
-            'src/Infrastructure/DependencyInjection/RuleCatalog/ChannelDeclarationCompilerPass.php',
+            'src/Infrastructure/DependencyInjection/ChannelCatalog/ChannelDeclarationCompilerPass.php',
         ];
 
         $mentions = [];

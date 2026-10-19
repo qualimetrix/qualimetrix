@@ -12,7 +12,7 @@ use Qualimetrix\Core\FileTarget\FileTargetFailure;
 use Qualimetrix\Core\FileTarget\Publication\HeldTarget;
 use Qualimetrix\Core\FileTarget\Publication\NewName;
 use Qualimetrix\Core\FileTarget\Publication\PreparedTarget;
-use Qualimetrix\Core\FileTarget\ResolvedTarget;
+use Qualimetrix\Core\FileTarget\Resolution\ResolvedTarget;
 use Qualimetrix\Core\FileTarget\TargetKind;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal;
@@ -23,8 +23,6 @@ use Throwable;
 
 /**
  * Owns claimed targets and interruption cleanup for one console run.
- *
- * @qmx-threshold complexity.wmc 53 -- Claim, publication, interruption and exhaustion share the same held target identities; splitting their owner would duplicate lifecycle state.
  */
 final class RunTargetClaimLifecycle
 {

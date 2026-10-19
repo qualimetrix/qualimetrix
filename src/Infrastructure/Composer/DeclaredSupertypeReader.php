@@ -24,6 +24,8 @@ use Qualimetrix\Core\Symbol\ClassNameSpelling;
  * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContextFactory},
  * while ComposerAutoloadMap owns and resets the placement snapshot when the
  * analysed project changes.
+ *
+  * @qmx-threshold coupling.instability 0.866668 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
  */
 final readonly class DeclaredSupertypeReader implements ExternalSupertypeSourceInterface
 {

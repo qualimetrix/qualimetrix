@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\Parallel\WorkerContextFactory;
 use Qualimetrix\Infrastructure\Parallel\WorkerNotes;
 use Qualimetrix\Infrastructure\Parallel\WorkerRequest;
@@ -33,7 +33,7 @@ if ($argv[2] === 'composition') {
     $strategy = $container->get($strategyType);
     $registration = (new \ReflectionProperty($strategy, 'registerExhaustion'))->getValue($strategy);
 }
-$notes = new \Qualimetrix\Infrastructure\Parallel\WorkerNotes(new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream());
+$notes = new \Qualimetrix\Infrastructure\Parallel\WorkerNotes(new \Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream());
 $factory = new \Qualimetrix\Infrastructure\Parallel\WorkerContextFactory(new \Qualimetrix\Infrastructure\Parallel\WorkerRequest(2), $notes, [PHP_BINARY], new \Psr\Log\NullLogger(), $registration);
 $directory = (new \ReflectionProperty($factory, 'directory'))->getValue($factory);
 file_put_contents($directory . '/start-test.log', 'startup diagnostic');
@@ -71,7 +71,7 @@ return static function (): array {
 PHP);
         $coordinator = <<<'PHP'
 require $argv[1];
-$owner = new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream();
+$owner = new \Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream();
 $owner->writer(new \Symfony\Component\Console\Output\ConsoleOutput());
 $notes = new \Qualimetrix\Infrastructure\Parallel\WorkerNotes($owner);
 $factory = new \Qualimetrix\Infrastructure\Parallel\WorkerContextFactory(new \Qualimetrix\Infrastructure\Parallel\WorkerRequest(2), $notes, [PHP_BINARY, '-d', 'short_open_tag=0']);
@@ -118,7 +118,7 @@ PHP;
         $coordinator = <<<'PHP'
 require $argv[1];
 $request = new \Qualimetrix\Infrastructure\Parallel\WorkerRequest(2, '--workers=2');
-$notes = new \Qualimetrix\Infrastructure\Parallel\WorkerNotes(new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream());
+$notes = new \Qualimetrix\Infrastructure\Parallel\WorkerNotes(new \Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream());
 try {
     new \Qualimetrix\Infrastructure\Parallel\WorkerContextFactory($request, $notes);
 } catch (\Qualimetrix\Infrastructure\Parallel\WorkerStartFailure $failure) {
@@ -145,7 +145,7 @@ PHP;
         $directory = sys_get_temp_dir() . '/qmx-context-held-' . bin2hex(random_bytes(6));
         mkdir($directory, 0700);
         $target = $directory . '/held-report.json';
-        $held = \Qualimetrix\Core\FileTarget\Publication\HeldTarget::claim(\Qualimetrix\Core\FileTarget\TargetPath::resolve($target));
+        $held = \Qualimetrix\Core\FileTarget\Publication\HeldTarget::claim(\Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($target));
         $script = $directory . '/inspect.php';
         file_put_contents($script, <<<'PHP'
 <?php

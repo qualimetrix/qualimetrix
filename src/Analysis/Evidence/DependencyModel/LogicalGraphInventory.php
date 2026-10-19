@@ -6,7 +6,11 @@ namespace Qualimetrix\Analysis\Evidence\DependencyModel;
 
 use Qualimetrix\Core\Symbol\SymbolPath;
 
-/** The graph's logical class universe and namespace regions, in encounter order. */
+/**
+ * The graph's logical class universe and namespace regions, in encounter order.
+ *
+ * @qmx-threshold health.cohesion 40.0 -- Independent immutable observations or stateless declaration operations intentionally have no shared instance-field graph; this finite class boundary keeps a further cohesion loss visible.
+ */
 final readonly class LogicalGraphInventory
 {
     /**

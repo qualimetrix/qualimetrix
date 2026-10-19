@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline\DocumentReading;
 
 use Qualimetrix\Analysis\Policy\Baseline\ChannelRename\BaselineChannelRenamer;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
 
 /**
  * The version number of the baseline file format this build reads and writes

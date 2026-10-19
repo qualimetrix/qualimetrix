@@ -8,6 +8,9 @@ use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
+/**
+ * @qmx-threshold coupling.cbo 26 -- Population admission carries the exact predicate vocabulary and its evaluated inputs; separating that vocabulary would duplicate the same judgement contract.
+ */
 final readonly class PopulationGate
 {
     public function __construct(
@@ -33,6 +36,16 @@ final readonly class PopulationGate
             || !\in_array($this->predicate->source, ['graphAvailable', 'preparedEvidenceAvailable'], true))) {
             throw new LogicException('Only graph or prepared-evidence absence can override a member failure to invocation.');
         }
+    }
+
+    public function isDataGap(GateInput $input): bool
+    {
+        return match (true) {
+            $this->predicate instanceof KeyPresent => !array_any(array_keys($this->predicate->absenceBoundaries), fn(string $key): bool => $input->metricBag()->get($key) === $this->predicate->absenceBoundaries[$key]),
+            $this->predicate instanceof KeyThreshold => $this->predicate->missing !== 'zero' && array_any($this->predicate->keys, static fn(string $key): bool => $input->metricBag()->get($key) === null),
+            $this->predicate instanceof ContextGuard => !\in_array($this->predicate->source, ['edgeSourceAssigned', 'edgeTargetAssigned', 'callableHasClassContext', 'excludeClauseActive'], true),
+            default => false,
+        };
     }
 
     public function evaluate(GateInput $input): ?string

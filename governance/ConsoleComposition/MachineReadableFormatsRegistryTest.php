@@ -9,10 +9,10 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Refusal\MachineReadableFormats;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterRegistryInterface;
 use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
-use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
-use Qualimetrix\Reporting\Formatter\PublicationKind;
-use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\Publication\PublicationKind;
 use Qualimetrix\Reporting\ReportBuilder;
 
 /**

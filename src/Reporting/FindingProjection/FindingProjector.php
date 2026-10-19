@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication;
 
 use Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
+
 use Qualimetrix\Analysis\Finding\Contract\Filter\PredicateFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
@@ -16,10 +17,12 @@ use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
+use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionOptions;
+use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 
 /**
- * @qmx-threshold coupling.instability warning=0.888890 error=0.95 -- The ordered projection composes separate Inline, Baseline, and Git policies for a small incoming population. A further single-reader split would move the same policy vocabulary; the ceiling keeps added dependencies visible.
+ * @qmx-threshold coupling.instability 0.88889 -- The ordered projection composes separate Inline, Baseline, and Git policies for a small incoming population. A further single-reader split would move the same policy vocabulary; the ceiling keeps added dependencies visible.
  */
 final readonly class FindingProjector
 {

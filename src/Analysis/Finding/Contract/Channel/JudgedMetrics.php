@@ -12,7 +12,7 @@ use InvalidArgumentException;
  * **What this type does and does not buy.** It takes `string`s, so it is not a
  * typed reference to a metric: the type gives non-emptiness by arity, the
  * existence of the key is decided by registry assembly
- * ({@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\ChannelDeclarationCompilerPass}),
+ * ({@see \Qualimetrix\Infrastructure\DependencyInjection\ChannelCatalog\ChannelDeclarationCompilerPass}),
  * and nothing here or there protects against a typo in the *value* of a
  * constant. What is typed is the **call site**: an author writes
  * `MetricName::COMPLEXITY_CCN` rather than `'complexity.ccn'`, which is what a

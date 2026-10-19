@@ -39,14 +39,14 @@ use Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
 use Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter;
 use Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal;
-use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisRuntimeConfigurator;
-use Qualimetrix\Infrastructure\Console\RunSetup\FindingConfigurationPreparation;
+use Qualimetrix\Infrastructure\Console\RunSetup\CapabilityState\AnalysisRuntimeConfigurator;
+use Qualimetrix\Infrastructure\Console\RunSetup\Finding\FindingConfigurationPreparation;
 use Qualimetrix\Infrastructure\Console\RunSetup\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
 use Qualimetrix\Infrastructure\Console\RuntimePolicy\RuntimeLimits;
 use Qualimetrix\Infrastructure\Console\RuntimePolicy\RuntimeLimitsController;
 use Qualimetrix\Infrastructure\Console\RuntimePolicy\RuntimeLoggerConfigurator;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
 use Qualimetrix\Infrastructure\Parallel\Configuration\ParallelConfigurationResolver;
@@ -255,7 +255,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $configurator = $this->createConfigurator(loggerFactoryOverride: $factory);
         $document = $this->customDocument();
         $root = AbsolutePath::fromString($this->projectRoot);
-        $run = new \Qualimetrix\Infrastructure\Console\RunSetup\ResolvedRunConfiguration(
+        $run = new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\ResolvedRunConfiguration(
             $this->runConfigurationFor($document),
             new CacheConfiguration(AbsolutePath::fromString($this->projectRoot . '/cache'), false, $reason),
             (new ParallelConfigurationResolver())->resolve($document),
@@ -283,7 +283,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $configurator = $this->createConfigurator(loggerFactoryOverride: $factory);
         $document = $this->customDocument();
         $root = AbsolutePath::fromString($this->projectRoot);
-        $run = new \Qualimetrix\Infrastructure\Console\RunSetup\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, $root), (new ParallelConfigurationResolver())->resolve($document));
+        $run = new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, $root), (new ParallelConfigurationResolver())->resolve($document));
         $configurator->configure($document, $run, $this->findingConfigurationFor($document), $this->input(), new BufferedOutput());
         $directory = $this->projectRoot . '/cache';
         $this->cacheFactory->replaceConfiguration(new CacheConfiguration(AbsolutePath::fromString($directory)));
@@ -306,7 +306,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $configurator = $this->createConfigurator(loggerFactoryOverride: $factory);
         $document = $this->customDocument();
         $root = AbsolutePath::fromString($this->projectRoot);
-        $run = new \Qualimetrix\Infrastructure\Console\RunSetup\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, $root), (new ParallelConfigurationResolver())->resolve($document));
+        $run = new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, $root), (new ParallelConfigurationResolver())->resolve($document));
         $configurator->configure($document, $run, $this->findingConfigurationFor($document), $this->input(), new BufferedOutput());
         self::assertSame($logger, (new ReflectionProperty($this->cacheFactory, 'logger'))->getValue($this->cacheFactory));
         $configurator->resetRunState();
@@ -725,7 +725,7 @@ PHP, var_export(\dirname(__DIR__, 4) . '/vendor/autoload.php', true));
         $this->configurator->resetRunState();
 
         $document = $this->customDocument();
-        $this->configurator->configure($document, new \Qualimetrix\Infrastructure\Console\RunSetup\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, AbsolutePath::fromString($this->projectRoot)), (new ParallelConfigurationResolver())->resolve($document)), $this->findingConfigurationFor($document), $input, $output);
+        $this->configurator->configure($document, new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, AbsolutePath::fromString($this->projectRoot)), (new ParallelConfigurationResolver())->resolve($document)), $this->findingConfigurationFor($document), $input, $output);
     }
 
     private function configure(
@@ -734,7 +734,7 @@ PHP, var_export(\dirname(__DIR__, 4) . '/vendor/autoload.php', true));
         ArrayInput $input,
         BufferedOutput $output,
     ): void {
-        $this->configurator->configure($document, new \Qualimetrix\Infrastructure\Console\RunSetup\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, $projectRoot), (new ParallelConfigurationResolver())->resolve($document)), $this->findingConfigurationFor($document), $input, $output);
+        $this->configurator->configure($document, new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, $projectRoot), (new ParallelConfigurationResolver())->resolve($document)), $this->findingConfigurationFor($document), $input, $output);
     }
 
     private function customDocument(): ConfigurationDocument

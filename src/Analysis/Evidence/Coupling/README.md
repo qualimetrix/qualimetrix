@@ -30,18 +30,51 @@ Coupling/
 │   ├── ClassRankCollector.php
 │   ├── ClassRankOptions.php
 │   └── ClassRankRule.php
+├── Configuration/
+│   ├── CouplingSection.php
+│   └── FrameworkNamespaceSelectorParser.php
+├── Contract/
+│   └── Configuration/
+│       └── CouplingConfiguratorInterface.php
 ├── Distance/
 │   ├── DistanceCollector.php
 │   ├── DistanceOptions.php
 │   └── DistanceRule.php
-└── Configuration/
-    ├── CouplingSection.php
-    └── FrameworkNamespaceSelectorParser.php
+├── Instability/
+│   ├── ClassInstabilityOptions.php
+│   ├── InstabilityOptions.php
+│   ├── InstabilityRule.php
+│   └── NamespaceInstabilityOptions.php
+├── Rfc/
+│   ├── RfcBodyResponses.php
+│   ├── RfcClassFacts.php
+│   ├── RfcCollector.php
+│   ├── RfcDeclarationFacts.php
+│   ├── RfcDeclarationIndex.php
+│   ├── RfcEffectiveMembers.php
+│   ├── RfcGlobalCollector.php
+│   ├── RfcLocalFlow.php
+│   ├── RfcPropertyTypes.php
+│   ├── RfcReceiverTypes.php
+│   ├── RfcResponseResolver.php
+│   └── RfcVisitor.php
+├── UnmatchedFramework/
+│   ├── UnmatchedFrameworkFinding.php
+│   ├── UnmatchedFrameworkNamespaceOptions.php
+│   └── UnmatchedFrameworkNamespaceRule.php
+├── AbstractnessCollector.php
+├── CoupledNamespaces.php
+├── CouplingAnalysis.php
+├── CouplingCollector.php
+└── FrameworkClassificationSites.php
 ```
 
 `CouplingCollector` remains the shared producer of Ca, Ce, CBO and instability;
 `Cbo/` owns interpretation, while `Distance/` and `ClassRank/` keep each derived
-collector with its options and rule. These are internal subjects of one capability.
+collector with its options and rule. `Instability/` owns instability judgement
+and all its option bands; `UnmatchedFramework/` owns unmatched framework-selector
+judgement. Shared graph collection and run classification state remain at the
+capability root. These are internal subjects of one capability.
 
 ## Metrics
 

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Baseline\DocumentReading;
 
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntryMode;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\InertEntryReason;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntryMode;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertEntryReason;
 
 /**
  * The decoded value half of one baseline entry.

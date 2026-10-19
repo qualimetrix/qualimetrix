@@ -9,10 +9,11 @@ use Qualimetrix\Infrastructure\Console\Invocation\CliSelectorDecoder;
 use Qualimetrix\Infrastructure\Console\Invocation\CommandLineSpelling;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions;
+use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
-use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Symfony\Component\Console\Input\InputInterface;
 
+/** @qmx-threshold coupling.instability 0.800001 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies. */
 final readonly class FindingProjectionOptionsResolver
 {
     public function __construct(private BaselineDocumentReader $documentReader) {}

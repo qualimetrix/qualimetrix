@@ -102,10 +102,13 @@ final class MeasurementAggregationService implements MeasurementAggregationInter
             $this->logger->debug('Running global collectors', ['count' => \count($this->sortedCollectors)]);
         }
         self::start($profiler, 'global');
-        foreach ($this->sortedCollectors as $collector) {
-            $collector->calculate($dependencies, $repository);
+        try {
+            foreach ($this->sortedCollectors as $collector) {
+                $collector->calculate($dependencies, $repository);
+            }
+        } finally {
+            self::stop($profiler, 'global');
         }
-        self::stop($profiler, 'global');
 
         if ($this->globalDefinitions !== []) {
             self::start($profiler, 'aggregation.global');

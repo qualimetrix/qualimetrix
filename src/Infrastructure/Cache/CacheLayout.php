@@ -6,7 +6,7 @@ namespace Qualimetrix\Infrastructure\Cache;
 
 use Qualimetrix\Core\FileTarget\Publication\FileReplacement;
 use Qualimetrix\Core\FileTarget\Publication\NewName;
-use Qualimetrix\Core\FileTarget\TargetPath;
+use Qualimetrix\Core\FileTarget\Resolution\TargetPath;
 
 final class CacheLayout
 {

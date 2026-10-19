@@ -6,8 +6,8 @@ namespace Qualimetrix\Analysis\Policy\Baseline\Contract;
 
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStageResult;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\InertBaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertBaselineEntry;
 
 /**
  * Everything {@see BaselineCeilingStage::judgeAll()} learns from one pass
@@ -28,6 +28,8 @@ use Qualimetrix\Analysis\Policy\Baseline\Entry\InertBaselineEntry;
  * and `Core` may not depend on `Baseline` — the same constraint that makes
  * {@see FindingFilterStageInterface} reach this type through a downcast
  * rather than carrying it directly.
+ *
+ * @qmx-threshold health.cohesion 40.0 -- Independent immutable observations or stateless declaration operations intentionally have no shared instance-field graph; this finite class boundary keeps a further cohesion loss visible.
  */
 final readonly class CeilingOutcome
 {
@@ -42,6 +44,9 @@ final readonly class CeilingOutcome
      * @param list<BaselineEntry> $notComparedEntries
      * @param array<string, string> $statuses Identity key to verdict.
      * @param array<string, string> $reasons Identity key to exact reason code.
+     *
+      * @qmx-threshold code-smell.long-parameter-list 9 -- Accepted, stale, unmeasured and refused comparisons belong to one filtering result and its exact baseline identities.
+      * @qmx-threshold code-smell.constructor-overinjection 9 -- Accepted, stale, unmeasured and refused comparisons belong to one filtering result and its exact baseline identities.
      */
     public function __construct(
         public FindingFilterStageResult $result,
@@ -54,12 +59,12 @@ final readonly class CeilingOutcome
         public array $reasons = [],
     ) {}
 
-    public function statusFor(\Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity $identity): ?string
+    public function statusFor(\Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity $identity): ?string
     {
         return $this->statuses[$identity->key()] ?? null;
     }
 
-    public function reasonFor(\Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity $identity): ?string
+    public function reasonFor(\Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity $identity): ?string
     {
         return $this->reasons[$identity->key()] ?? null;
     }

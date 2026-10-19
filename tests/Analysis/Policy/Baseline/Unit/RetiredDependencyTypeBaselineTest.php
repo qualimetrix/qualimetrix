@@ -9,10 +9,10 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertEntryReason;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\InertEntryReason;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory;
 

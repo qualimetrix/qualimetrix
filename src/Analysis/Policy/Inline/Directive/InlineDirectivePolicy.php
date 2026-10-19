@@ -38,6 +38,8 @@ use Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsage;
  * them into findings needs the channel universe, the rule selection and the
  * finding vocabulary on top. This class keeps the state and forwards the
  * question.
+ *
+  * @qmx-threshold coupling.instability 0.866668 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
  */
 final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
 {

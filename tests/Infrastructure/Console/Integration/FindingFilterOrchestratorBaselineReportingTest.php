@@ -39,15 +39,15 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\Console\CheckReport\FindingProjection;
+use Qualimetrix\Infrastructure\Console\CheckReport\Projection\FindingProjection;
 use Qualimetrix\Infrastructure\Console\CheckScope\ResolvedCheckScope;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
+use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionOptions;
+use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeResult;
-use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
-use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
@@ -71,9 +71,9 @@ use Symfony\Component\Console\Output\OutputInterface;
  * A run with no `--baseline` is confirmed to print none of the three.
  */
 #[CoversClass(FindingProjection::class)]
-#[CoversClass(\Qualimetrix\Infrastructure\Console\CheckReport\FindingDiagnostics::class)]
-#[CoversClass(\Qualimetrix\Infrastructure\Console\CheckReport\CheckFindingProjection::class)]
-#[CoversClass(\Qualimetrix\Infrastructure\Console\CheckReport\BaselineFilterReporter::class)]
+#[CoversClass(\Qualimetrix\Infrastructure\Console\CheckReport\Projection\FindingDiagnostics::class)]
+#[CoversClass(\Qualimetrix\Infrastructure\Console\CheckReport\Projection\CheckFindingProjection::class)]
+#[CoversClass(\Qualimetrix\Infrastructure\Console\CheckReport\Projection\BaselineFilterReporter::class)]
 #[CoversClass(FindingProjectionResult::class)]
 final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
 {
@@ -110,8 +110,8 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
     #[Test]
     public function itReportsUncomparedReasonCountsAndOnlyStaleResolvedCounts(): void
     {
-        $entry = static fn(string $path): \Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry => new \Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry(
-            new \Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity('file:' . $path, new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel('code-smell.goto')),
+        $entry = static fn(string $path): \Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntry => new \Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntry(
+            new \Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity('file:' . $path, new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel('code-smell.goto')),
             null,
             1,
         );
@@ -119,7 +119,7 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
         $unmeasured = $entry('src/DisabledSecret.php');
         $outside = $entry('tests/OutsideSecret.php');
         $uncompared = $entry('src/IncompleteSecret.php');
-        $inert = \Qualimetrix\Analysis\Policy\Baseline\Entry\InertBaselineEntry::forRaw('secret invalid entry', null, \Qualimetrix\Analysis\Policy\Baseline\Entry\InertEntryReason::Malformed, 'invalid count', []);
+        $inert = \Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertBaselineEntry::forRaw('secret invalid entry', null, \Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertEntryReason::Malformed, 'invalid count', []);
         $outcome = new \Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome(
             new \Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStageResult(\Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage::Baseline, [], []),
             [$stale],
@@ -142,7 +142,7 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
             unusedAuditPublished: false,
         );
         $output = new BufferedOutput();
-        (new \Qualimetrix\Infrastructure\Console\CheckReport\BaselineFilterReporter($output, true))->report($result, [], AbsolutePath::fromString('/project'));
+        (new \Qualimetrix\Infrastructure\Console\CheckReport\Projection\BaselineFilterReporter($output, true))->report($result, [], AbsolutePath::fromString('/project'));
         $display = $output->fetch();
         self::assertStringContainsString('1 baseline entries have been resolved', $display);
         self::assertStringContainsString('2 baseline entries are unused (1 stale, 1 inert)', $display);
@@ -371,7 +371,7 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
     }
 
     private function filterAndReport(
-        \Qualimetrix\Infrastructure\Console\CheckReport\CheckFindingProjection $orchestrator,
+        \Qualimetrix\Infrastructure\Console\CheckReport\Projection\CheckFindingProjection $orchestrator,
         AnalysisResult $result,
         ArrayInput $input,
         OutputInterface $output,
@@ -400,7 +400,7 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
         );
     }
 
-    private function createOrchestrator(): \Qualimetrix\Infrastructure\Console\CheckReport\CheckFindingProjection
+    private function createOrchestrator(): \Qualimetrix\Infrastructure\Console\CheckReport\Projection\CheckFindingProjection
     {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $declarations->declare('code-smell.goto', ChannelDeclaration::occurrence(SymbolLevel::File));
@@ -421,15 +421,15 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
 
                 return $execution;
             })()),
-            fileScope: \Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelFileScope::create(),
+            fileScope: \Qualimetrix\Infrastructure\DependencyInjection\ChannelCatalog\DeclaredChannelFileScope::create(),
         );
 
         $reader = new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader();
         $tree = new ProjectTree(new EntryInspector());
 
-        return new \Qualimetrix\Infrastructure\Console\CheckReport\CheckFindingProjection(
+        return new \Qualimetrix\Infrastructure\Console\CheckReport\Projection\CheckFindingProjection(
             new FindingProjection($pipeline, self::silentSuppressionAudit(), new \Qualimetrix\Infrastructure\Console\BaselineCommand\BaselineProjectionCoverage($reader, $tree, StubRuleCoverage::everyRuleRan())),
-            new \Qualimetrix\Infrastructure\Console\CheckReport\FindingDiagnostics(new ErrorStream()),
+            new \Qualimetrix\Infrastructure\Console\CheckReport\Projection\FindingDiagnostics(new ErrorStream()),
         );
     }
 

@@ -21,52 +21,105 @@ context, or a carrier for feature fields.
 ```text
 Configuration/
 ├── Contract/
-│   ├── ConfigurationDocument.php # resolved document, diagnostics and Composer target facts
-│   ├── Document/                 # the resolved document: provenance, diagnostics and read-only
-│   │                             # Resolved{Map,List,Opaque,BareName}Interface forms
-│   │   └── Schema/               # the port an owner declares its section through
-│   │       ├── NodeSchema.php        # merge policy and typed scalar/map/collection facts
-│   │       ├── NodeScalarFacts.php   # scalar forms, floor, vocabulary and text requirement
-│   │       ├── NodeMapFacts.php      # fixed keys, bare fields and named-entry schemas
-│   │       ├── NodeCollectionFacts.php # list element and bare-element policy
-│   │       ├── SchemaWordSet.php     # sensitive/folding words, with WordComparison
-│   │       ├── TextRequirement.php  # unconstrained or non-blank text
-│   │       ├── BareElementPolicy.php # list-only or one bare element
-│   │       ├── IntegerJudgement.php # pure integer grammar
-│   │       └── SectionDeclaration.php # atomic canonical key and node schema
-│   ├── Pipeline/                 # resolution request and pipeline contracts
-│   └── Refusal/                  # RefusalInterface — shared summary, position and source metadata;
-│                                  # ConfigurationRefusal carries a configuration
-│                                  # refusal by user input, and its origin/position vocabulary;
-│                                  # per-source shorthands (atResolvedKey, aboutCommandLineInput, …)
-│                                  # let a throw site name its source without importing the vocabulary
-├── Document/           # the engine composing written layers into the resolved document
-│   ├── ShorthandExpansion.php # canonical leaf expansion and overlap refusals
-│   ├── ShorthandTarget.php    # one typed expansion destination
-│   ├── NameBinding/          # authored keys/names, their vocabulary and pending merged recognition
-│   │   ├── KeyClaims.php
-│   │   ├── KeyRecognition.php
-│   │   ├── NameRecognition.php
-│   │   ├── NamedEntryReading.php
-│   │   ├── PendingName.php
-│   │   └── WrittenNames.php
-│   ├── ScalarConstraints.php  # value judgement after scalar-form admission
-│   ├── EmptyListOverrides.php # live diagnostic for a standing empty replacement
-│   └── Resolved/       # internal concrete resolved forms, including ResolvedScalar
-├── Loader/             # each source as a written layer for the engine (YAML file or preset →
-│                       # LoadedDocument; command line → CommandLineLayer), plus the narrow
-│                       # source-origin and positioned-node preservation
-│   └── CommandLineSyntax.php # scalar/flow-list grammar before declared judgement
-├── Pipeline/           # ordered source stages and authored layer assembly
-│   └── Stage/          # defaults, Composer, preset, file, CLI stages
-├── Preset/             # built-in and custom preset resolution
-├── ConfigKeySpelling.php   # the snake/kebab/camel fold of a key, and its inverse
-├── ConfigSchema.php        # canonical ingress keys and legacy flat mappings
-├── ConfigurationRoot.php   # the roots Configuration declares: one atomic declaration each
-├── DocumentRoots.php       # canonical root dictionary and CLI document paths
-├── SelectorYamlDecoder.php  # explicit selector mapping → Core path/namespace pattern
-└── RetiredSuppressionOptions.php # the retired `exclude*` spellings and the one refusal
+│   ├── Document/
+│   │   ├── Schema/
+│   │   │   ├── BareElementPolicy.php
+│   │   │   ├── DocumentSectionSchemaInterface.php
+│   │   │   ├── IntegerJudgement.php
+│   │   │   ├── KeyDictionary.php
+│   │   │   ├── MergePolicy.php
+│   │   │   ├── NameVocabulary.php
+│   │   │   ├── NodeCollectionFacts.php
+│   │   │   ├── NodeMapFacts.php
+│   │   │   ├── NodeScalarFacts.php
+│   │   │   ├── NodeSchema.php
+│   │   │   ├── NodeWording.php
+│   │   │   ├── RefusedName.php
+│   │   │   ├── ScalarForm.php
+│   │   │   ├── SchemaWordSet.php
+│   │   │   ├── SectionDeclaration.php
+│   │   │   ├── Shorthand.php
+│   │   │   ├── TextRequirement.php
+│   │   │   └── WordComparison.php
+│   │   ├── ConfigurationDiagnostic.php
+│   │   ├── Provenance.php
+│   │   ├── ResolvedBareNameInterface.php
+│   │   ├── ResolvedDocument.php
+│   │   ├── ResolvedListInterface.php
+│   │   ├── ResolvedMapInterface.php
+│   │   ├── ResolvedOpaqueInterface.php
+│   │   ├── ResolvedValueInterface.php
+│   │   └── ResolvedWriteHistoryInterface.php
+│   ├── Pipeline/
+│   │   ├── CommandLinePathWrite.php
+│   │   ├── ConfigurationPipelineInterface.php
+│   │   └── ConfigurationResolutionRequest.php
+│   ├── Refusal/
+│   │   ├── ConfigurationOrigin.php
+│   │   ├── ConfigurationRefusal.php
+│   │   ├── ConfigurationSource.php
+│   │   ├── RefusalInterface.php
+│   │   └── RefusedPosition.php
+│   └── ConfigurationDocument.php
+├── Document/
+│   ├── Resolved/
+│   │   ├── ResolvedBareName.php
+│   │   ├── ResolvedList.php
+│   │   ├── ResolvedMap.php
+│   │   ├── ResolvedOpaque.php
+│   │   └── ResolvedScalar.php
+│   ├── AuthoredLayer.php
+│   ├── AuthoredNode.php
+│   ├── AuthoredShape.php
+│   ├── DocumentComposer.php
+│   ├── DocumentSchema.php
+│   ├── EmptyListOverrides.php
+│   ├── KeyClaims.php
+│   ├── KeyRecognition.php
+│   ├── LayerMerge.php
+│   ├── LayerReading.php
+│   ├── NameRecognition.php
+│   ├── NamedEntryReading.php
+│   ├── PendingName.php
+│   ├── ReadingContext.php
+│   ├── ScalarConstraints.php
+│   ├── ShorthandExpansion.php
+│   ├── ShorthandTarget.php
+│   ├── WrittenForm.php
+│   └── WrittenNames.php
+├── Loader/
+│   ├── CommandLineLayer.php
+│   ├── CommandLineSyntax.php
+│   ├── CommandLineValue.php
+│   ├── ConfigLoaderInterface.php
+│   ├── DocumentKeyNormalizer.php
+│   ├── LoadedDocument.php
+│   ├── RootContainerShapes.php
+│   ├── SectionNormalizationPolicy.php
+│   └── YamlConfigLoader.php
+├── Pipeline/
+│   ├── Stage/
+│   │   ├── CliStage.php
+│   │   ├── ComposerDiscoveryStage.php
+│   │   ├── ConfigFileStage.php
+│   │   ├── DefaultsStage.php
+│   │   └── PresetStage.php
+│   ├── ConfigurationLayer.php
+│   ├── ConfigurationPipeline.php
+│   └── ConfigurationStageInterface.php
+├── Preset/
+│   └── PresetResolver.php
+├── ConfigKeySpelling.php
+├── ConfigSchema.php
+├── ConfigurationRoot.php
+├── DocumentRoots.php
+├── RetiredSuppressionOptions.php
+└── SelectorYamlDecoder.php
 ```
+
+`Document/` owns written nodes, layer identity and positioned reading
+context. Both document composition and name binding consume these facts; authored
+facts depend on neither operation.
 
 ## Resolution model
 
@@ -455,3 +508,7 @@ This README is part of the subject boundary: keep its production code, tests, fi
 
 The atomic declaration and shared Reporting format vocabulary are described in
 [ADR 0088](../../../docs/adr/0088-atomic-section-declarations-and-format-vocabulary.md).
+
+Authored tree values, name binding and reading context share the Document
+operation: binding reads the same authored nodes and provenance as layer
+composition. They do not declare separate module lifecycles.

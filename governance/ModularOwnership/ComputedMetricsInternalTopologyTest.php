@@ -59,7 +59,7 @@ final class ComputedMetricsInternalTopologyTest extends TestCase
     public function itAcceptsTheMaterializedInternalDag(): void
     {
         $declarations = $this->productionDeclarations();
-        self::assertCount(73, $declarations);
+        self::assertCount(75, $declarations);
 
         foreach ($declarations as $source => $path) {
             $sourceZone = $this->zone($source);
@@ -87,11 +87,11 @@ final class ComputedMetricsInternalTopologyTest extends TestCase
         $projectDeclarations = $this->projectDeclarations();
         self::assertNotContains(
             'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricRule',
-            $this->imports($projectDeclarations['Qualimetrix\\Infrastructure\\DependencyInjection\\RuleCatalog\\ChannelDeclarationCompilerPass']),
+            $this->imports($projectDeclarations['Qualimetrix\\Infrastructure\\DependencyInjection\\ChannelCatalog\\ChannelDeclarationCompilerPass']),
         );
         self::assertNotContains(
             'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricFormulaValidator',
-            $this->imports($projectDeclarations['Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator']),
+            $this->imports($projectDeclarations['Qualimetrix\\Infrastructure\\DependencyInjection\\Reporting\\OutputConfigurator']),
         );
     }
 

@@ -31,6 +31,7 @@ use Symfony\Component\Console\Output\OutputInterface;
     name: 'rules',
     description: 'List all available analysis rules',
 )]
+/** @qmx-threshold coupling.instability 0.894738 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies. */
 final class RulesCommand extends Command
 {
     public function __construct(

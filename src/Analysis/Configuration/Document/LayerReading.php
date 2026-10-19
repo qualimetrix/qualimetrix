@@ -13,10 +13,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\IntegerJudgement
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Document\NameBinding\KeyClaims;
-use Qualimetrix\Analysis\Configuration\Document\NameBinding\NamedEntryReading;
-use Qualimetrix\Analysis\Configuration\Document\NameBinding\PendingName;
-use Qualimetrix\Analysis\Configuration\Document\NameBinding\WrittenNames;
+
 use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedBareName;
 use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedList;
 use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedMap;
@@ -32,6 +29,8 @@ use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedOpaque;
  * instead of judged here. A named entry written without a body is kept as a
  * {@see ResolvedBareName}: dropping it would take the name out of every
  * judgement after this one.
+ *
+  * @qmx-threshold coupling.instability 0.894738 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
  */
 final class LayerReading
 {

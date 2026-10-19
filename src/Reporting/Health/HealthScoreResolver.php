@@ -6,8 +6,8 @@ namespace Qualimetrix\Reporting\Health;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\HealthScoreDrillDown;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
-use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\Report;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Report\Report;
 
 /**
  * Resolves health scores based on context (project/namespace/class level).

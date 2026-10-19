@@ -8,7 +8,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Reporting\Formatter\PublishedUtf8;
+use Qualimetrix\Reporting\Publication\PublishedUtf8;
 
 /**
  * Exports dependency graphs to JSON format.

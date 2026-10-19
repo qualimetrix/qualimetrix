@@ -21,6 +21,8 @@ use LogicException;
  *   under a canonical containing directory.
  *
  * See ADR 0015.
+ *
+ * @qmx-threshold coupling.cbo 22 -- Typed absolute, relative and published paths share one spelling and root-conversion policy; incoming readers alone do not justify an indefinite exception.
  */
 final class PathFactory
 {

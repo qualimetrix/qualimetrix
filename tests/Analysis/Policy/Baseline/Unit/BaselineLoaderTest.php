@@ -13,10 +13,10 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertEntryReason;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\CanonicalBaselineReader;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\InertEntryReason;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use RuntimeException;
@@ -936,7 +936,7 @@ final class BaselineLoaderTest extends TestCase
      *
      * @return list<string>
      */
-    private static function describe(\Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline $baseline): array
+    private static function describe(\Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline $baseline): array
     {
         $described = [
             'generated=' . $baseline->generated->format('c'),
@@ -960,7 +960,7 @@ final class BaselineLoaderTest extends TestCase
     private function loadJson(
         string $json,
         string $name = 'baseline.json',
-    ): \Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline {
+    ): \Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline {
         $path = $this->tempDir . '/' . $name;
         file_put_contents($path, $json);
 

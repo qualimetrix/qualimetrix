@@ -4,25 +4,23 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Complexity\Npath;
 
-use LogicException;
-
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\MaximumThresholdOptionsTrait;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\BandDirection;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ThresholdPair;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ThresholdParser;
-use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Severity;
 
 /**
  * Options for class-level NPath complexity checks (max NPath among methods).
  */
 final readonly class ClassNpathComplexityOptions implements LevelOptionsInterface, ThresholdAwareOptionsInterface
 {
-    use StandardOverrideValidatorTrait;
+    use MaximumThresholdOptionsTrait;
 
     public function __construct(
         public bool $enabled = false,
@@ -32,47 +30,12 @@ final readonly class ClassNpathComplexityOptions implements LevelOptionsInterfac
 
     public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
-        $thresholds = ThresholdParser::parse($config, RuleOptionSurface::bandFor(self::class, 'threshold'), 500, 1000);
-        if (!\is_int($thresholds['warning']) || !\is_int($thresholds['error'])) {
-            throw new LogicException('An integer band resolved a non-integer value.');
-        }
+        $thresholds = ThresholdPair::fromResolved($config, RuleOptionSurface::bandFor(self::class, 'threshold'), 500, 1000);
         return new self(
             enabled: $config->boolean('enabled', ThresholdParser::wasWritten($config, RuleOptionSurface::bandFor(self::class, 'threshold'))),
-            maxWarning: $thresholds['warning'],
-            maxError: $thresholds['error'],
+            maxWarning: $thresholds->integerWarning(),
+            maxError: $thresholds->integerError(),
         );
-    }
-
-    public function isEnabled(): bool
-    {
-        return $this->enabled;
-    }
-
-    public function getSeverity(int|float $value): ?Severity
-    {
-        if ($value >= $this->maxError) {
-            return Severity::Error;
-        }
-
-        if ($value >= $this->maxWarning) {
-            return Severity::Warning;
-        }
-
-        return null;
-    }
-
-    public function withOverride(int|float|null $warning, int|float|null $error): static
-    {
-        return new static(
-            enabled: $this->enabled,
-            maxWarning: $warning !== null ? (int) $warning : $this->maxWarning,
-            maxError: $error !== null ? (int) $error : $this->maxError,
-        );
-    }
-
-    public function warningBoundary(): int
-    {
-        return $this->maxWarning;
     }
 
     public static function acceptedOptionKeys(): RuleOptionKeySet
@@ -84,4 +47,5 @@ final readonly class ClassNpathComplexityOptions implements LevelOptionsInterfac
             'threshold' => RuleOptionShape::integer()->orNull(),
         ])->band('threshold', 'max-warning', 'max-error', BandDirection::Rising);
     }
+
 }

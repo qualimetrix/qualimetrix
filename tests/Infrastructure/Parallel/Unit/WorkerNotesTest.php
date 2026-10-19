@@ -8,7 +8,7 @@ use Amp\ByteStream\ReadableResourceStream;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\Parallel\WorkerNotes;
 use ReflectionProperty;
 use Symfony\Component\Console\Output\BufferedOutput;

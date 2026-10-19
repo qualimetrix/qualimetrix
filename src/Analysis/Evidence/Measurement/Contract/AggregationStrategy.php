@@ -6,8 +6,6 @@ namespace Qualimetrix\Analysis\Evidence\Measurement\Contract;
 
 /**
  * Defines how metrics are aggregated when rolling up from child to parent symbols.
- *
- * @qmx-threshold coupling.cbo 38 -- Aggregation definitions and consumers intentionally share this provider-owned enum; current raw CBO 37 gets one-edge headroom.
  */
 enum AggregationStrategy: string
 {

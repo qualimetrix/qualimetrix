@@ -7,8 +7,10 @@ namespace Qualimetrix\Analysis\Policy\Baseline\RunCoverage;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelIdentityInterface;
 
 use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
+
 use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RunScope;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 

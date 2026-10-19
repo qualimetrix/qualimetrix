@@ -9,8 +9,8 @@ use DateTimeImmutable;
 use JsonException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
 use stdClass;
 
 /** The grammar shared by every baseline document reader; channel semantics are judged separately. */

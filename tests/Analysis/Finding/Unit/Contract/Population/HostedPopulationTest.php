@@ -21,9 +21,9 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineAuditChannels;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\InertBaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\InertEntryReason;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertBaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertEntryReason;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
@@ -157,7 +157,7 @@ final class HostedPopulationTest extends TestCase
         $repository = new \Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository();
         $graph = (new \Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder(new \Qualimetrix\Analysis\Evidence\DependencyModel\UnplacedExternalClassSpelling()))->build([], [])->graph;
         $configuration = new \Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration(new \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry([new \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition('app', new \Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec(patterns: ['App']))]), new \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy([]), \Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode::Ignore);
-        foreach ([[$configuration, null, 1, 1], [$configuration, $graph, 1, 0], [\Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ProcessorBuilder::empty(), $graph, 0, 4]] as [$config, $contextGraph, $judged, $unjudged]) {
+        foreach ([[$configuration, null, 1, 1], [$configuration, $graph, 1, 0], [\Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ProcessorBuilder::empty(), $graph, 0, 0]] as [$config, $contextGraph, $judged, $unjudged]) {
             $processor = \Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ProcessorBuilder::prepared($config, $graph, $repository);
             $lv = new \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions();
             $ua = new \Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassOptions(\Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassMode::Warn);

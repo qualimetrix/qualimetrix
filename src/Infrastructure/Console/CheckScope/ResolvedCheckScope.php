@@ -6,7 +6,7 @@ namespace Qualimetrix\Infrastructure\Console\CheckScope;
 
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
-use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
+use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionOptions;
 
 /** Accepted check scope, diagnostics and preflighted finding projection for that exact scope. */
 final readonly class ResolvedCheckScope

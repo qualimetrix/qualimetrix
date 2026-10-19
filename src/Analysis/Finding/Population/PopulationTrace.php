@@ -16,35 +16,50 @@ final class PopulationTrace
     /** @var array<string, array{producer: string, channel: FindingChannel, level: SymbolLevel, unit: string, count: int}> */
     private array $judged = [];
 
-    /** @var array<string, RuleAbstention> */
+    /** @var array<string, array{producer: string, channel: FindingChannel, level: SymbolLevel, gate: string, reason: string, unit: string, count: int, examples: array<array-key, true>, dataGap: bool}> */
     private array $abstentions = [];
 
     private ?JudgedPopulation $frozen = null;
 
-    public function record(string $producer, FindingChannel $channel, SymbolLevel $level, PopulationIdentity $identity, ?string $gate, ?string $reason): void
+    public function record(string $producer, FindingChannel $channel, SymbolLevel $level, PopulationIdentity $identity, ?string $gate, ?string $reason, bool $dataGap = true): void
     {
         if ($this->frozen !== null) {
             throw new LogicException('Cannot record into a frozen population.');
         }
         if ($gate === null) {
-            $key = json_encode([$producer, $channel->code, $level->value, $identity->unit], \JSON_THROW_ON_ERROR);
+            $key = \strlen($producer) . ":" . $producer . \strlen($channel->code) . ":" . $channel->code . "\0" . $level->value . "\0" . $identity->unit;
             $this->judged[$key] = ['producer' => $producer, 'channel' => $channel, 'level' => $level, 'unit' => $identity->unit, 'count' => ($this->judged[$key]['count'] ?? 0) + 1];
             return;
         }
         if ($reason === null) {
             throw new LogicException('An unjudged population member requires its declared reason.');
         }
-        $key = json_encode([$producer, $channel->code, $level->value, $gate, $reason, $identity->unit], \JSON_THROW_ON_ERROR);
-        $previous = $this->abstentions[$key] ?? null;
-        $examples = array_values(array_unique([...($previous->examples ?? []), $identity->canonical]));
-        sort($examples, \SORT_STRING);
-        $this->abstentions[$key] = new RuleAbstention($producer, $channel, $level, $gate, $reason, $identity->unit, ($previous->count ?? 0) + 1, \array_slice($examples, 0, 5));
+        $key = \strlen($producer) . ":" . $producer . \strlen($channel->code) . ":" . $channel->code . "\0" . $level->value . "\0" . \strlen($gate) . ":" . $gate . "\0" . $identity->unit . "\0" . ($dataGap ? "1" : "0") . $reason;
+        if (!isset($this->abstentions[$key])) {
+            $this->abstentions[$key] = ['producer' => $producer, 'channel' => $channel, 'level' => $level, 'gate' => $gate,
+                'reason' => $reason, 'unit' => $identity->unit, 'count' => 0, 'examples' => [], 'dataGap' => $dataGap];
+        }
+        $group = &$this->abstentions[$key];
+        ++$group['count'];
+        if (!isset($group['examples'][$identity->canonical])
+            && (\count($group['examples']) < 5 || strcmp($identity->canonical, (string) array_key_last($group['examples'])) < 0)) {
+            $group['examples'][$identity->canonical] = true;
+            ksort($group['examples'], \SORT_STRING);
+            if (\count($group['examples']) > 5) {
+                array_pop($group['examples']);
+            }
+        }
     }
 
     /** @return array{judged: array<string, array{producer: string, channel: FindingChannel, level: SymbolLevel, unit: string, count: int}>, abstentions: list<RuleAbstention>} */
     public function summary(): array
     {
-        return ['judged' => $this->judged, 'abstentions' => array_values($this->abstentions)];
+        $abstentions = [];
+        foreach ($this->abstentions as $group) {
+            $examples = array_map(static fn(string|int $key): string => (string) $key, array_keys($group['examples']));
+            $abstentions[] = new RuleAbstention($group['producer'], $group['channel'], $group['level'], $group['gate'], $group['reason'], $group['unit'], $group['count'], $examples, $group['dataGap']);
+        }
+        return ['judged' => $this->judged, 'abstentions' => $abstentions];
     }
 
     public function freeze(): JudgedPopulation

@@ -22,8 +22,8 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
-use Qualimetrix\Reporting\FormatterContext;
 
 #[CoversClass(FindingFilter::class)]
 final class FindingFilterTest extends TestCase
@@ -75,13 +75,13 @@ final class FindingFilterTest extends TestCase
         $selected = $this->filter->filterFindings([$finding], $context, $index);
         self::assertSame([$finding], $selected);
         self::assertSame($finding->getFingerprint(), $selected[0]->getFingerprint());
-        $record = (new \Qualimetrix\Reporting\Formatter\FindingRecord(
+        $record = (new \Qualimetrix\Reporting\FindingPublication\FindingRecord(
             new \Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry(self::createStub(\Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface::class), ['duplication.clone' => 1]),
             new \Qualimetrix\Reporting\Formatter\Json\JsonSanitizer(),
         ))->of($selected[0], $context, $index);
         self::assertSame(\count($expected) === 1 ? $expected[0] : null, $record['namespace']);
         self::assertSame($expected, $record['namespaces']);
-        self::assertSame([$group => [$finding]], \Qualimetrix\Reporting\Formatter\Ordering\FindingSorter::group($selected, \Qualimetrix\Reporting\GroupBy::NamespaceName, $index));
+        self::assertSame([$group => [$finding]], \Qualimetrix\Reporting\Formatter\Ordering\FindingSorter::group($selected, \Qualimetrix\Reporting\Contract\Formatting\GroupBy::NamespaceName, $index));
     }
 
     // --- filterFindings ---

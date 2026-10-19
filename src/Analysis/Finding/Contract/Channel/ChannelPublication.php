@@ -22,6 +22,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * own options (`class: { enabled: false }`) is part of the activity, which the
  * selection never sees. Either alone would call the level the other one
  * stopped published.
+ *
+ * @qmx-threshold coupling.cbo 22 -- This public fact or option contract combines its declaration vocabulary with bounded implementation dependencies; its incoming readers do not independently justify a popularity exception.
  */
 final readonly class ChannelPublication
 {
@@ -48,7 +50,7 @@ final readonly class ChannelPublication
         $session = new PopulationSession(($this)->publishes(...), $addressedProducer);
         foreach ($members as $member) {
             $failed = $declaration->populationFailure($channel, $level, $member['identity'], $member['inputs']);
-            $session->record($producer, $channel, $level, $member['identity'], $declaration, $failed['gate'] ?? null, $failed['reason'] ?? null);
+            $session->record($producer, $channel, $level, $member['identity'], $declaration, $failed['gate'] ?? null, $failed['reason'] ?? null, $failed['dataGap'] ?? true);
             unset($member);
         }
         unset($members);

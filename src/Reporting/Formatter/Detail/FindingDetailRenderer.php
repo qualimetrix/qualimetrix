@@ -7,11 +7,11 @@ namespace Qualimetrix\Reporting\Formatter\Detail;
 use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\GroupBy;
+use Qualimetrix\Reporting\FindingPublication\PublishedFinding;
 use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
 use Qualimetrix\Reporting\Formatter\Ordering\FindingSorter;
-use Qualimetrix\Reporting\Formatter\PublishedFinding;
-use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\GroupBy;
 
 /** Renders sorted and grouped finding details. */
 final class FindingDetailRenderer
@@ -153,7 +153,7 @@ final class FindingDetailRenderer
         if ($finding->recommendation !== null) {
             $lines[] = '    Recommendation: ' . $finding->recommendation;
         }
-        $baseline = \Qualimetrix\Reporting\Formatter\AcceptedLevelNarrator::describe($finding);
+        $baseline = \Qualimetrix\Reporting\Formatter\Text\AcceptedLevelNarrator::describe($finding);
         if ($baseline !== null) {
             $lines[] = '    ' . $baseline;
         }

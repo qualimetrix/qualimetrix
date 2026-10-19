@@ -13,19 +13,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 
-/**
- * Registers the exact collector and rule roots owned by Design.
- *
- * The rules are named one by one rather than globbed, and the order they are
- * named in is the order their channels enter the universe — which is
- * published, because a "did you mean" answer breaks ties between equidistant
- * names by it. Three of these rules are equidistant siblings
- * (`param`/`return`/`property` type coverage), so under a glob the published
- * order of a finding's text would be decided by alphabetical filenames. The
- * order below is the decision the fixture
- * `governance/Channel/Fixtures/order.txt` records. Collectors
- * declare no channels, so they stay globbed.
- */
+/** Registers the exact collector and rule roots owned by Design. */
 final class DesignConfigurator implements ContainerConfiguratorInterface
 {
     private const string NAMESPACE = 'Qualimetrix\\Analysis\\Evidence\\Design\\';
@@ -35,8 +23,6 @@ final class DesignConfigurator implements ContainerConfiguratorInterface
     private const string PARENT_READER = 'Qualimetrix\\Infrastructure\\Composer\\DeclaredParentReader';
 
     /**
-     * In published-channel order.
-     *
      * @var list<string>
      */
     private const array RULES = [

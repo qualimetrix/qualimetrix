@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Rule\Override;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideAxis;
+
+use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidationFailure;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\ThresholdOverrideRequest;
 
 final class NonNegativeOverrideThresholds

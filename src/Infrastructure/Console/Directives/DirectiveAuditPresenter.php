@@ -10,10 +10,10 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdictRefusal;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
 use Qualimetrix\Core\ProductIdentity;
-use Qualimetrix\Reporting\Formatter\CoverageNarrator;
-use Qualimetrix\Reporting\Formatter\PublishedUtf8;
-use Qualimetrix\Reporting\ReportCoverage;
-use Qualimetrix\Reporting\ReportProjectScope;
+use Qualimetrix\Reporting\Contract\Report\ReportProjectScope;
+use Qualimetrix\Reporting\Coverage\ReportCoverage;
+use Qualimetrix\Reporting\Formatter\Text\CoverageNarrator;
+use Qualimetrix\Reporting\Publication\PublishedUtf8;
 
 /**
  * The two projections of one directive audit.

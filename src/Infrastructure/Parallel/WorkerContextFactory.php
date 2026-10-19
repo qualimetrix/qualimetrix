@@ -20,7 +20,7 @@ use Psr\Log\NullLogger;
 use Qualimetrix\Core\FileTarget\NativeCall;
 
 /**
- * @qmx-threshold coupling.instability warning=0.894737 -- The process-context factory binds IPC startup, cancellation, diagnostics and private startup logs for the worker pool; these transport dependencies stay together for its few consumers.
+ * @qmx-threshold coupling.instability 0.894738 -- The process-context factory binds IPC startup, cancellation, diagnostics and private startup logs for the worker pool; these transport dependencies stay together for its few consumers.
  */
 final class WorkerContextFactory implements ContextFactory
 {

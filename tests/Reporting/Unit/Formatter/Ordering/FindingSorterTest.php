@@ -12,8 +12,8 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Contract\Formatting\GroupBy;
 use Qualimetrix\Reporting\Formatter\Ordering\FindingSorter;
-use Qualimetrix\Reporting\GroupBy;
 
 #[CoversClass(FindingSorter::class)]
 final class FindingSorterTest extends TestCase

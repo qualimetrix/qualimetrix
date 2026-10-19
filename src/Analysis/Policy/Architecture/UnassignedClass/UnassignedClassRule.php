@@ -12,10 +12,10 @@ use Qualimetrix\Analysis\Finding\Contract\Population\ContextGuard;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
-use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Rule\AbstractRule;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidenceCollector;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -108,7 +108,6 @@ final class UnassignedClassRule extends AbstractRule
         $declaration = self::channelDeclarations()[self::NAME];
         $channel = new FindingChannel(self::NAME);
         if ($evidence === null) {
-            $context->admit(self::NAME, $channel, SymbolLevel::Project, PopulationIdentity::invocation(self::NAME), $declaration, [GateInput::context('preparedEvidenceAvailable', false)]);
             return [];
         }
         foreach ($context->metrics->allLogicalClasses() as $class) {

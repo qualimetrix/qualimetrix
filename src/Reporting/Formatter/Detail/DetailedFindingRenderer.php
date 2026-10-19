@@ -6,11 +6,11 @@ namespace Qualimetrix\Reporting\Formatter\Detail;
 
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
 use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
-use Qualimetrix\Reporting\FormatterContext;
 
 /** Composes detailed finding output and its technical-debt breakdown. *
- * @qmx-threshold coupling.instability warning=0.800001 -- Detail publication composes ordering, namespace attribution, finding and debt rendering through few consumers; extracting the composition transfers its outward dependencies.
+ * @qmx-threshold coupling.instability 0.800001 -- Detail publication composes ordering, namespace attribution, finding and debt rendering through few consumers; extracting the composition transfers its outward dependencies.
  */
 final class DetailedFindingRenderer
 {
@@ -24,7 +24,7 @@ final class DetailedFindingRenderer
     }
 
     /** Selects the worst findings before applying the requested print grouping. */
-    public function renderCapped(\Qualimetrix\Reporting\Report $report, FormatterContext $context): string
+    public function renderCapped(\Qualimetrix\Reporting\Contract\Report\Report $report, FormatterContext $context): string
     {
         $findings = $report->findings;
         $cap = $context->detailLimit;

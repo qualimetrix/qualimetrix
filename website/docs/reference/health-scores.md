@@ -439,3 +439,12 @@ This is not an exhaustive list — any metric collected by Qualimetrix can be re
 
 !!! tip "Choose meaningful defaults"
     Use `??` when the fallback has meaning for your formula. Leaving an input absent is distinct from choosing 0 or a neutral value; nullable weighted-mean values can remain absent.
+
+### Per-class boundary
+
+A class docblock may set a finite boundary with
+`@qmx-threshold health.cohesion 40` (or another exact built-in health rule).
+Only one boundary is supported: use a number or equal warning/error values.
+This affects that declaration's findings, keeps namespace/project thresholds
+configured above, and remains visible to `qmx directives`. User-defined
+`computed.*` metrics retain configuration-level thresholds.

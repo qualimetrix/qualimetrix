@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Observation;
 
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\KnownTypes;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchedCriterionKind;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\KnownTypes;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterionKind;
 
 /**
  * Everything one run's walk over the classes and the dependency graph
@@ -63,6 +63,9 @@ final readonly class LayerEvidence
      * @param array<string, string> $excludedNames Canonical excluded symbol => display FQN.
      * @param array<string, array<string, array<string, ShadowedClass>>> $precedenceEvidence Later layer => earlier layer => canonical class => firing pair.
      * @param array<string, int> $assignedClassHits Layer name => analysed classes assigned to it, excluding edge ends.
+     *
+      * @qmx-threshold code-smell.long-parameter-list 11 -- Assignments, coverage, exclusions and shadow evidence must refer to the same completed layer-policy observation.
+      * @qmx-threshold code-smell.constructor-overinjection 11 -- Assignments, coverage, exclusions and shadow evidence must refer to the same completed layer-policy observation.
      */
     public function __construct(
         public ArchitectureConfiguration $architecture,
@@ -219,7 +222,7 @@ final readonly class LayerEvidence
      * not answer about it, and whether the run analysed the symbol.
      * `unmetTypes` lists each type the layer's `attributes:`, `member_attributes:`, `implements:`
      * and `extends:` criteria name that the run did not meet — see
-     * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\KnownTypes}.
+     * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\KnownTypes}.
      * `installConsulted` says whether the analysed project's composer install
      * was among the places asked, which the finding naming unmet types needs
      * to say what their absence rests on.

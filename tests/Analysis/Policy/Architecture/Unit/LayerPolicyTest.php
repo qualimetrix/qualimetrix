@@ -8,10 +8,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowListEntry;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowTarget;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelector;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelectorParser;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowListEntry;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowTarget;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerSelector;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerSelectorParser;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\AllowListBuilder;
 

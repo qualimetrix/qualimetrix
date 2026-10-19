@@ -7,10 +7,11 @@ namespace Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\RuleCatalog;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
+use Qualimetrix\Analysis\Evidence\Complexity\Cyclomatic\ComplexityRule;
 use Qualimetrix\Analysis\Evidence\Size\ClassCount\ClassCountRule;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\RuleMaterialization;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Infrastructure\Console\RuleListing\RulesCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\RuleCompilerPass;
 use ReflectionClass;
@@ -22,6 +23,29 @@ use Symfony\Component\DependencyInjection\Reference;
 #[CoversClass(RuleCompilerPass::class)]
 final class RuleCompilerPassTest extends TestCase
 {
+    #[Test]
+    public function itOrdersMaterializedProducersByNameRegardlessOfRegistrationOrder(): void
+    {
+        foreach ([
+            [ClassCountRule::class, ComplexityRule::class, LayerViolationRule::class],
+            [LayerViolationRule::class, ClassCountRule::class, ComplexityRule::class],
+            [ComplexityRule::class, LayerViolationRule::class, ClassCountRule::class],
+        ] as $classes) {
+            $container = new ContainerBuilder();
+            $container->register(RuleMaterialization::class);
+            foreach ($classes as $class) {
+                $container->register($class, $class)->addTag(RuleCompilerPass::TAG);
+            }
+            (new RuleCompilerPass())->process($container);
+
+            self::assertEquals([
+                self::lookup(LayerViolationRule::class),
+                self::lookup(ComplexityRule::class),
+                self::lookup(ClassCountRule::class),
+            ], $container->getDefinition(RuleMaterialization::class)->getArgument(0));
+        }
+    }
+
     #[Test]
     public function itCollectsTaggedRulesIntoRuleExecution(): void
     {

@@ -113,7 +113,7 @@ final class ChannelPresentationViewTest extends TestCase
 
     /**
      * Every producer the universe can name must have contributed a DOCS_PAGE
-     * entry to the map {@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\ChannelDeclarationCompilerPass}
+     * entry to the map {@see \Qualimetrix\Infrastructure\DependencyInjection\ChannelCatalog\ChannelDeclarationCompilerPass}
      * builds; a producer missing from that map means the compiler pass and
      * the rule registry have drifted apart, which must fail loud rather than
      * silently answer null.

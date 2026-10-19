@@ -14,6 +14,7 @@ use Qualimetrix\Core\Pattern\NamespaceMatcher;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Pattern\SelectorDefinition;
 
+/** @qmx-threshold coupling.instability 0.800001 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies. */
 final class FrameworkNamespaceSelectorParser
 {
     /** @return list<NamespacePattern> */

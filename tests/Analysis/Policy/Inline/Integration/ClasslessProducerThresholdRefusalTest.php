@@ -20,23 +20,7 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 
-/**
- * The producers of the computed-metric family are addressable rule names that
- * cannot be retuned — two facts that only hold together.
- *
- * Splitting `computed.health` into seven producers moved
- * `@qmx-threshold health.cohesion` from one configuration diagnostic to another: from "names no
- * rule" (the name resolved to nothing) to "declares no `@qmx-threshold` support"
- * (it resolves, and still can never do anything). Both are refusals and both
- * end in the same rejected directive, so nothing about the *count* of findings
- * changes — which is exactly why the finding-equivalence gate cannot express
- * this move, and why it is pinned here instead.
- *
- * Answered against the production container, not a hand-built universe: the
- * claim is about what `ChannelDeclarationCompilerPass` actually assembles for a
- * producer that has no rule class, and a fixture universe filled in by this
- * test would agree with whatever the test wrote into it.
- */
+/** Exact health producers support class thresholds; the open producer remains unretunable. */
 #[CoversClass(DirectiveAddressability::class)]
 #[CoversClass(DirectiveRejection::class)]
 final class ClasslessProducerThresholdRefusalTest extends TestCase
@@ -66,9 +50,14 @@ final class ClasslessProducerThresholdRefusalTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideFamilyProducers')]
-    public function itRefusesAThresholdNamingAFamilyProducerAsUnretunableNotAsUnknown(string $producerRuleName): void
+    public function itDistinguishesBuiltinHealthThresholdsFromTheOpenProducer(string $producerRuleName): void
     {
         $rejection = self::addressability()->problemWithThreshold(self::threshold($producerRuleName));
+
+        if ($producerRuleName !== 'computed') {
+            self::assertNull($rejection);
+            return;
+        }
 
         self::assertNotNull(
             $rejection,
@@ -101,9 +90,15 @@ final class ClasslessProducerThresholdRefusalTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideFamilyProducers')]
-    public function itRefusesAPairedThresholdOnAFamilyProducerWithoutAdvisingANoOpRetune(string $producerRuleName): void
+    public function itRefusesTheLevelPairForEveryProducer(string $producerRuleName): void
     {
         $rejection = self::addressability()->problemWithThreshold(self::threshold($producerRuleName . ':class'));
+
+        if ($producerRuleName !== 'computed') {
+            self::assertNotNull($rejection);
+            self::assertStringContainsString('addresses a rule at a level', $rejection->message);
+            return;
+        }
 
         self::assertNotNull($rejection);
         self::assertStringContainsString(

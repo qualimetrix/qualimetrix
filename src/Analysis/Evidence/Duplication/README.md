@@ -1,5 +1,9 @@
 # Duplication
 
+Token normalization belongs to the duplication operation itself. Its token
+stream and retokenized-file records are private algorithm state shared by the
+detection phases, rather than an independently consumed module.
+
 ## Subject, promise and owners
 
 - **Subject:** token- and block-based code duplication evidence.
@@ -18,8 +22,6 @@
 
 ```text
 Duplication/
-├── DuplicationDetector.php
-├── DuplicationResultProvider.php
 ├── Index/
 │   ├── HashIndexBuildResult.php
 │   ├── HashIndexBuilder.php
@@ -31,17 +33,18 @@ Duplication/
 │   ├── CopyCoverIndex.php
 │   ├── DuplicateBlock.php
 │   ├── DuplicateBlockFinder.php
-│   ├── DuplicateContentMerger.php # collision-checked content groups and copy reduction
+│   ├── DuplicateContentMerger.php
 │   ├── DuplicateLocation.php
 │   ├── DuplicateMatchCandidates.php
 │   └── DuplicateSearchRequest.php
-├── Normalization/
-│   ├── DataDeclarationTagger.php
-│   ├── RetokenizedFiles.php
-│   ├── TokenNormalizer.php
-│   └── TokenStream.php
 ├── CodeDuplicationOptions.php
-└── CodeDuplicationRule.php
+├── CodeDuplicationRule.php
+├── DataDeclarationTagger.php
+├── DuplicationDetector.php
+├── DuplicationResultProvider.php
+├── RetokenizedFiles.php
+├── TokenNormalizer.php
+└── TokenStream.php
 ```
 
 ## External integration
@@ -98,7 +101,7 @@ the body does. Unit tests live below `Unit/`, where the owning test root is
 `Duplication`; subject folders group the classes within that root. `Unit/Index/`
 contains `PackedPositionTest` and `SaturatingCandidateFilterTest`.
 `Unit/Matching/` owns balanced segments, display hints, connected coverage,
-block finding, candidate storage and copy identity. `Unit/Normalization/`
+block finding, candidate storage and copy identity. `Unit/`
 owns data tagging, normalization and packed coordinate alignment.
 `CodeDuplicationRuleTest` stays directly under `Unit/` because the rule stays
 in the root. These tests run in memory.

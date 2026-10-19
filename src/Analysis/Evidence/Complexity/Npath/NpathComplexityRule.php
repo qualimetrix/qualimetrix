@@ -12,12 +12,12 @@ use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 
 use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
+use Qualimetrix\Analysis\Finding\Rule\AbstractRule;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
 
@@ -127,7 +127,7 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
             )->withGates(
                 self::populationGate('callable-value', self::NAME, SymbolLevel::Callable, 'callable', self::keyPresent('callable-value', [MetricName::COMPLEXITY_NPATH]), 'Callable complexity was not published.'),
                 self::populationGate('class-coordinate', self::NAME, SymbolLevel::Class_, 'declaration', self::kindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the class coordinate.'),
-                self::populationGate('class-maximum', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('class-maximum', [MetricName::agg(MetricName::COMPLEXITY_NPATH, AggregationStrategy::Max)]), 'Maximum method complexity was not published.'),
+                self::populationGate('class-maximum', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('class-maximum', [MetricName::agg(MetricName::COMPLEXITY_NPATH, AggregationStrategy::Max)], absenceBoundaries: [MetricName::DESIGN_IS_INTERFACE => 1, MetricName::SIZE_METHOD_COUNT => 0]), 'Maximum method complexity was not published.'),
             ),
         ];
     }

@@ -9,6 +9,9 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetri
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
+/**
+ * @qmx-threshold coupling.cbo 24 -- This public fact or option contract combines its declaration vocabulary with bounded implementation dependencies; its incoming readers do not independently justify a popularity exception.
+ */
 final readonly class ComputedMetricDefinition
 {
     /** `health.` or `computed.`, then one or more lower-case kebab segments. */
@@ -18,6 +21,9 @@ final readonly class ComputedMetricDefinition
      * @param array<string, string> $formulas Keys: 'class', 'namespace', 'project'
      * @param list<SymbolLevel> $levels
      * @param array<string, ComputedMetricApplicability> $applicability Builtin policy by stored formula level; absent means authored/synthetic Always
+     *
+      * @qmx-threshold code-smell.long-parameter-list 9 -- Formula, applicability, direction and thresholds declare one computed producer; splitting them would weaken definition validation.
+      * @qmx-threshold code-smell.constructor-overinjection 9 -- Formula, applicability, direction and thresholds declare one computed producer; splitting them would weaken definition validation.
      */
     public function __construct(
         public string $name,

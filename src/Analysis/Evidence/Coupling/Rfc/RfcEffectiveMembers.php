@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Coupling\Rfc;
 
-use Qualimetrix\Core\Symbol\TraitComposition;
-use Qualimetrix\Core\Symbol\TraitCompositionResult;
-use Qualimetrix\Core\Symbol\TraitDefinitionFacts;
+use Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitCompositionFailure;
+use Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitCompositionResult;
+use Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitDefinitionFacts;
+use Qualimetrix\Core\Symbol\TraitComposition\TraitComposition;
 
 /** Composes exposed RFC members and their original body and property sources. */
 final class RfcEffectiveMembers
@@ -48,11 +49,15 @@ final class RfcEffectiveMembers
 
     private function compose(RfcDeclarationFacts $facts): TraitCompositionResult
     {
-        return TraitComposition::compose(array_keys($facts->methods), $facts->uses, function (string $name): ?TraitDefinitionFacts {
-            $trait = $this->index->unique($name);
+        try {
+            return TraitComposition::compose(array_keys($facts->methods), $facts->uses, function (string $name): ?TraitDefinitionFacts {
+                $trait = $this->index->unique($name);
 
-            return $trait?->kind === 'Stmt_Trait' ? $trait->traitFacts() : null;
-        });
+                return $trait?->kind === 'Stmt_Trait' ? $trait->traitFacts() : null;
+            });
+        } catch (TraitCompositionFailure $failure) {
+            throw $failure->at($facts->declaration);
+        }
     }
 
     /** @param array<string, true> $active

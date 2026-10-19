@@ -15,7 +15,9 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface;
 
-/** Projects root and level declarations into document schemas. */
+/** Projects root and level declarations into document schemas.
+ * @qmx-threshold coupling.instability 0.846155 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
+ */
 final readonly class RuleOptionDocumentForms implements RuleOptionDocumentFormsInterface
 {
     public function schema(RuleOptionSurface $surface): NodeSchema

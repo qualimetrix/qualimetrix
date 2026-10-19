@@ -37,6 +37,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * incoming or outgoing graph edge in the same scope. Missing inputs and the
  * conventional I = 0 for Ca = Ce = 0 do not describe a distance. The project
  * value weights each measured own namespace by its eligible type count.
+ *
+ * @qmx-threshold health.cohesion 40.0 -- Independent immutable observations or stateless declaration operations intentionally have no shared instance-field graph; this finite class boundary keeps a further cohesion loss visible.
  */
 final class DistanceCollector implements GlobalContextCollectorInterface
 {

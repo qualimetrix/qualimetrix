@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Profile\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Qualimetrix\Infrastructure\Profiler\Contract\ProfileFormat;
 use Qualimetrix\Infrastructure\Profiler\Contract\ProfileReportInterface;
@@ -63,7 +63,7 @@ final class ProfilePresenterTest extends TestCase
                         new \Symfony\Component\Console\Input\InputOption('profile-format', null, \Symfony\Component\Console\Input\InputOption::VALUE_REQUIRED, '', 'json'),
                     ]),
                 );
-                $presenter = new \Qualimetrix\Infrastructure\Console\Profile\ProfilePresenter($report, new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream(), new \Qualimetrix\Infrastructure\Profiler\ProfileSession());
+                $presenter = new \Qualimetrix\Infrastructure\Console\Profile\ProfilePresenter($report, new \Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream(), new \Qualimetrix\Infrastructure\Profiler\ProfileSession());
                 try {
                     $presenter->present($input, new \Symfony\Component\Console\Output\BufferedOutput(), $targets);
                     $failure = null;

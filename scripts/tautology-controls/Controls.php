@@ -43,7 +43,7 @@ final class Controls
             'Qualimetrix.Governance.Channel.ProjectScopedChannelRollCallTest::itAsksEveryCapabilityThatDeclaresProjectScopedChannels',
             'Qualimetrix.Tests.Analysis.Evidence.ComputedMetrics.Health.Unit.DecompositionItemTest::itRefusesAWriteToAConstructedItem',
             'Qualimetrix.Tests.Analysis.Evidence.ComputedMetrics.Health.Unit.HealthScoreTest::itRequiresEveryScoreToStateWhatItCovers',
-            'Qualimetrix.Tests.Analysis.Evidence.Coupling.Unit.NamespaceInstabilityOptionsTest::itIsDisabledWhenTheEnabledFlagIsFalse',
+            'Qualimetrix.Tests.Analysis.Evidence.Coupling.Unit.Instability.NamespaceInstabilityOptionsTest::itIsDisabledWhenTheEnabledFlagIsFalse',
             'Qualimetrix.Tests.Analysis.Evidence.DependencyModel.Unit.DependencyTest::itRefusesAWriteToAConstructedDependency',
             'Qualimetrix.Tests.Analysis.Finding.Unit.LocationTest::itRefusesAWriteToAConstructedLocation',
             'Qualimetrix.Tests.Analysis.Policy.Baseline.Unit.ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared with data set "one-row"',
@@ -51,7 +51,7 @@ final class Controls
             'Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.RuleCatalog.RuleCompilerPassTest::itInjectsIntoEveryConsumerItDeclaresAndIntoNothingElse',
             'Qualimetrix.Tests.Infrastructure.Parallel.Unit.Strategy.AmphpParallelStrategyTest::itUsesLoggerForDebugMessages',
             'Qualimetrix.Tests.Infrastructure.Rule.Unit.RuleRegistryTest::itReadsMetadataOffARuleClassItCouldNotHaveBuilt',
-            'Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.Configurator.DeclaredChannelFileScopeTest::itKeepsDeclaredProjectChannelsExemptAndLayerViolationsFileScoped',
+            'Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.ChannelCatalog.DeclaredChannelFileScopeTest::itKeepsDeclaredProjectChannelsExemptAndLayerViolationsFileScoped',
             'Qualimetrix.Tests.Core.Symbol.Unit.CallableKindTest::itUsesValuesNoCompositeKeyCanSplitInTheWrongPlace',
             'Qualimetrix.Tests.Core.Symbol.Unit.SymbolInfoTest::itKeepsTheExactSubjectItWasConstructedFrom',
             'Qualimetrix.Tests.Core.Symbol.Unit.SymbolInfoTest::itRefusesAWriteToAConstructedSymbolInfo',
@@ -140,9 +140,9 @@ final class Controls
                 'namespace-instability-reads-the-flag',
                 'R122',
                 'NamespaceInstabilityOptions reads the enabled flag instead of defaulting past it',
-                'src/Analysis/Evidence/Coupling/NamespaceInstabilityOptions.php',
+                'src/Analysis/Evidence/Coupling/Instability/NamespaceInstabilityOptions.php',
                 ["enabled: \$config->boolean('enabled', true)," => 'enabled: true,'],
-                ['Qualimetrix.Tests.Analysis.Evidence.Coupling.Unit.NamespaceInstabilityOptionsTest::itIsDisabledWhenTheEnabledFlagIsFalse'],
+                ['Qualimetrix.Tests.Analysis.Evidence.Coupling.Unit.Instability.NamespaceInstabilityOptionsTest::itIsDisabledWhenTheEnabledFlagIsFalse'],
             ),
 
             Control::breaking(
@@ -165,14 +165,14 @@ final class Controls
                 'every-declaring-capability-is-asked',
                 'R065',
                 'the assembled channel scope asks every capability that declares project-scoped channels',
-                'src/Infrastructure/DependencyInjection/Configurator/DeclaredChannelFileScope.php',
+                'src/Infrastructure/DependencyInjection/ChannelCatalog/DeclaredChannelFileScope.php',
                 ['            ...CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS,' . "\n" => ''],
                 [
                     // Both halves of the repair: the roll-call reads the
                     // declaring capabilities off the tree, and the unit case
                     // writes out a channel of each capability by hand.
                     'Qualimetrix.Governance.Channel.ProjectScopedChannelRollCallTest::itAsksEveryCapabilityThatDeclaresProjectScopedChannels',
-                    'Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.Configurator.DeclaredChannelFileScopeTest::itKeepsDeclaredProjectChannelsExemptAndLayerViolationsFileScoped',
+                    'Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.ChannelCatalog.DeclaredChannelFileScopeTest::itKeepsDeclaredProjectChannelsExemptAndLayerViolationsFileScoped',
                 ],
             ),
 
@@ -218,7 +218,7 @@ final class Controls
                 'known-rule-names-carry-the-classless-producers',
                 'R183',
                 'the rules vocabulary the configuration pipeline validates against carries producers no rule class declares',
-                'src/Infrastructure/DependencyInjection/RuleCatalog/ChannelDeclarationCompilerPass.php',
+                'src/Infrastructure/DependencyInjection/ChannelCatalog/ChannelDeclarationCompilerPass.php',
                 [
                     "->setArgument('\$classlessProducers', \$classlessProducers);"
                         => "->setArgument('\$classlessProducers', array_filter(\$classlessProducers, static fn(ProducerDeclaration \$producer): bool => !str_starts_with(\$producer->name, 'health.')));",

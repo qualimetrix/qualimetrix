@@ -11,9 +11,6 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\InvalidSelectorException;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelectorParser;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LongFormAllowEntryNormalizer;
 
 /**
  * The `architecture:` section as the configuration document declares it:

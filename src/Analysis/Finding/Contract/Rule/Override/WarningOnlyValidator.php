@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract\Rule\Override;
 
 use Qualimetrix\Analysis\Finding\Rule\Override\NonNegativeOverrideThresholds;
-use Qualimetrix\Analysis\Finding\Rule\Override\OverrideValidationFailure;
 
 /**
  * Validator for rules where only the warning threshold is meaningful.

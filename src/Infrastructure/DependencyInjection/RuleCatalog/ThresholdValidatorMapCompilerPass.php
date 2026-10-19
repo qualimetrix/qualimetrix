@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog;
 
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Finding\HealthThresholdOverrideValidator;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionDocumentFormsInterface;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
-use Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory;
-use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
+use Qualimetrix\Analysis\Policy\Inline\Threshold\RuleValidatorMapFactory;
+use Qualimetrix\Analysis\Policy\Inline\Threshold\ThresholdOverrideExtractor;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConsumerBoundPassInterface;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -50,6 +51,6 @@ final class ThresholdValidatorMapCompilerPass implements CompilerPassInterface, 
         $container->getDefinition(ThresholdOverrideExtractor::class)
             ->setArgument('$validators', (new Definition())
                 ->setFactory([RuleValidatorMapFactory::class, 'build'])
-                ->setArguments([new Reference(RuleOptionDocumentFormsInterface::class), $ruleClasses]));
+                ->setArguments([new Reference(RuleOptionDocumentFormsInterface::class), $ruleClasses, (new Definition())->setFactory([HealthThresholdOverrideValidator::class, 'forBuiltinHealthProducers'])]));
     }
 }

@@ -12,10 +12,10 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionDocumentFormsInterface;
-use Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory;
 use Qualimetrix\Analysis\Policy\Inline\Contract\SourceControlExtractorInterface;
-use Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor;
-use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
+use Qualimetrix\Analysis\Policy\Inline\Extraction\SuppressionExtractor;
+use Qualimetrix\Analysis\Policy\Inline\Threshold\RuleValidatorMapFactory;
+use Qualimetrix\Analysis\Policy\Inline\Threshold\ThresholdOverrideExtractor;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Ast\WorkerParserFactory;
@@ -36,7 +36,7 @@ use RuntimeException;
  * Collector classes are passed from the main process to ensure workers
  * use the same set of collectors as configured in the DI container.
  *
- * @qmx-threshold coupling.instability warning=0.875001 -- The worker-side composition rebuilds the registered collector, parser and source-control services for its few task consumers; moving the assembly only transfers those required dependencies.
+ * @qmx-threshold coupling.instability 0.882354 -- The worker-side composition rebuilds the registered collector, parser and source-control services for its few task consumers; moving the assembly only transfers those required dependencies.
  */
 final class WorkerBootstrap
 {
@@ -180,7 +180,7 @@ final class WorkerBootstrap
         );
 
         // Build per-rule threshold-override validator map (static lookup, no DI)
-        $validators = RuleValidatorMapFactory::build($documentForms, $composition->ruleClasses);
+        $validators = RuleValidatorMapFactory::build($documentForms, $composition->ruleClasses, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Finding\HealthThresholdOverrideValidator::forBuiltinHealthProducers());
         $thresholdOverrideExtractor = new ThresholdOverrideExtractor($validators);
         $sourceControlExtractorClass = self::validatedImplementationClass(
             self::SOURCE_CONTROL_EXTRACTOR_CLASS,

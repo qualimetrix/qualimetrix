@@ -35,7 +35,7 @@ final class EquivalenceTuple
 
     public const TRACKED_PATH = 'finding-gate/equivalence-tuple.tsv';
 
-    private const SOURCE_FILE = 'src/Reporting/Formatter/FindingRecord.php';
+    private const SOURCE_FILE = 'src/Reporting/FindingPublication/FindingRecord.php';
 
     private const SOURCE_METHOD = 'of';
 

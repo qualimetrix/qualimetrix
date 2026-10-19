@@ -109,7 +109,7 @@ final class StrategySelectorTest extends TestCase
             new LcomCollectionConfigurationStore(),
             new RuleOptionDocumentForms(),
             DependencyVisitor::class,
-        ), new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()), new \Qualimetrix\Infrastructure\Profiler\ProfileSession(), new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream());
+        ), new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()), new \Qualimetrix\Infrastructure\Profiler\ProfileSession(), new \Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream());
         $sequential = new SequentialStrategy($profiler);
 
         $parallelStore = new ParallelConfigurationStore();

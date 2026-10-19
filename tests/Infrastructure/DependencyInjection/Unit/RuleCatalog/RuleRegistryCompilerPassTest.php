@@ -8,13 +8,14 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
-use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
+use Qualimetrix\Analysis\Evidence\Complexity\Cyclomatic\ComplexityOptions;
+use Qualimetrix\Analysis\Evidence\Complexity\Cyclomatic\ComplexityRule;
 use Qualimetrix\Analysis\Evidence\Size\ClassCount\ClassCountRule;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\RuleRegistryCompilerPass;
 use Qualimetrix\Infrastructure\Rule\RuleRegistry;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -22,6 +23,29 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 #[CoversClass(RuleRegistryCompilerPass::class)]
 final class RuleRegistryCompilerPassTest extends TestCase
 {
+    #[Test]
+    public function itOrdersCatalogProducersByNameRegardlessOfRegistrationOrder(): void
+    {
+        foreach ([
+            [ClassCountRule::class, ComplexityRule::class, LayerViolationRule::class],
+            [LayerViolationRule::class, ClassCountRule::class, ComplexityRule::class],
+            [ComplexityRule::class, LayerViolationRule::class, ClassCountRule::class],
+        ] as $classes) {
+            $container = new ContainerBuilder();
+            $container->register(RuleRegistry::class);
+            foreach ($classes as $class) {
+                $container->register($class, $class)->addTag(RuleRegistryCompilerPass::TAG);
+            }
+            (new RuleRegistryCompilerPass())->process($container);
+
+            self::assertSame([
+                LayerViolationRule::class,
+                ComplexityRule::class,
+                ClassCountRule::class,
+            ], $container->getDefinition(RuleRegistry::class)->getArgument('$ruleClasses'));
+        }
+    }
+
     #[Test]
     public function itCollectsRuleClassesIntoRegistry(): void
     {

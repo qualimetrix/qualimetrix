@@ -12,7 +12,7 @@ final class CorpusCaseControls
     {
         return self::product(
             'config-precedence',
-            'src/Analysis/Evidence/Complexity/ComplexityOptions.php',
+            'src/Analysis/Evidence/Complexity/Cyclomatic/ComplexityOptions.php',
             "])->withLevelSlots(self::levelOptionsClasses())->spreadingInto('threshold', ['callable.threshold']);",
             '])->withLevelSlots(self::levelOptionsClasses());',
             [

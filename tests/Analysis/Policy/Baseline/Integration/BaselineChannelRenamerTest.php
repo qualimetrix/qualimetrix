@@ -16,6 +16,10 @@ use Qualimetrix\Analysis\Policy\Baseline\ChannelRename\BaselineChannelRenamer;
 use Qualimetrix\Analysis\Policy\Baseline\ChannelRename\ChannelRenameMap;
 use Qualimetrix\Analysis\Policy\Baseline\ChannelRename\ChannelRenameRefusal;
 use Qualimetrix\Analysis\Policy\Baseline\ChannelRename\ChannelRenameReport;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEdge;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineConflictException;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentWriter;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineEntryParser;
@@ -23,10 +27,6 @@ use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineFileShape;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineFormatVersion;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineWriter;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEdge;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory;
@@ -180,7 +180,7 @@ final class BaselineChannelRenamerTest extends TestCase
         $carried = (string) file_get_contents($path);
 
         $loader = new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults()));
-        (new BaselineWriter())->write($loader->load((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($path)), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), AbsolutePath::fromString($this->tempDir));
+        (new BaselineWriter())->write($loader->load((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($path)), \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path), AbsolutePath::fromString($this->tempDir));
 
         self::assertSame($carried, (string) file_get_contents($path));
         self::assertStringContainsString('"channel":"b.renamed"', $carried);
@@ -254,7 +254,7 @@ final class BaselineChannelRenamerTest extends TestCase
         $carried = (string) file_get_contents($path);
 
         $loader = new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults()));
-        (new BaselineWriter())->write($loader->load((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($path)), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), AbsolutePath::fromString($this->tempDir));
+        (new BaselineWriter())->write($loader->load((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($path)), \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path), AbsolutePath::fromString($this->tempDir));
         $rewritten = (string) file_get_contents($path);
 
         self::assertSame(
@@ -549,7 +549,7 @@ final class BaselineChannelRenamerTest extends TestCase
         self::assertStringContainsString('{"channel":"mid.two","count":1}', $carried);
 
         $loader = new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults()));
-        (new BaselineWriter())->write($loader->load((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($path)), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), AbsolutePath::fromString($this->tempDir));
+        (new BaselineWriter())->write($loader->load((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($path)), \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path), AbsolutePath::fromString($this->tempDir));
 
         self::assertSame($carried, (string) file_get_contents($path));
     }
@@ -577,7 +577,7 @@ final class BaselineChannelRenamerTest extends TestCase
         self::assertStringNotContainsString('App\\\\Empty', $carried);
 
         $loader = new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults()));
-        (new BaselineWriter())->write($loader->load((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($path)), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), AbsolutePath::fromString($this->tempDir));
+        (new BaselineWriter())->write($loader->load((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($path)), \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path), AbsolutePath::fromString($this->tempDir));
 
         self::assertSame($carried, (string) file_get_contents($path));
     }
@@ -838,7 +838,7 @@ final class BaselineChannelRenamerTest extends TestCase
 
         (new BaselineWriter())->write(
             new Baseline(new DateTimeImmutable('2026-01-01T00:00:00+00:00'), ['src'], $entries, exclusions: self::fixtureExclusions()),
-            \Qualimetrix\Core\FileTarget\TargetPath::resolve($path),
+            \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path),
             AbsolutePath::fromString($this->tempDir),
         );
 

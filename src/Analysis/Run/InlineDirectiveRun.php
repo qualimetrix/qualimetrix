@@ -22,7 +22,11 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAudi
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
 
-/** Coordinates the authored Inline directives across one prepared Run. */
+/**
+ * Coordinates the authored Inline directives across one prepared Run.
+ *
+ * @qmx-threshold coupling.instability 0.846155 -- This run-owned protocol coordinates independent outward participants while its exact readers remain local; another dependency must be reviewed.
+ */
 final readonly class InlineDirectiveRun
 {
     public function __construct(

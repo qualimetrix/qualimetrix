@@ -407,7 +407,7 @@ The `worstNamespaces` and `worstClasses` entries include a `violationDensity` fi
 
 `healthScores` contains available complexity, cohesion, coupling, typing and maintainability dimensions; it never contains `overall`. The composite is `healthOverall`. Reasons, labels and summary colors follow the effective computed-metric thresholds.
 
-JSON and summary select from the complete population before ranking and limiting it. JSON/summary `--class` requires a unique exact declaration for the class health heading. A duplicate logical name refuses with exit 5; use `--namespace` to retain every exact offender record. `--format-opt=rank-by=score` is the default ascending health order; `density` orders density descending. `count` is refused with exit 3. Summary reports the true remaining population, for example `+12 more (use --format-opt=top=15)` after showing three of fifteen candidates. Namespace class counts read "N classes in subtree". HTML displays at most ten local children and names the full local available count; its list is not the global JSON ranking.
+JSON and summary select from the complete population before ranking and limiting it. JSON/summary `--class` requires a unique exact declaration for the class health heading. A duplicate logical name refuses with exit 3 and lists its exact declarations; use `--namespace` to retain every exact offender record. `--format-opt=rank-by=score` is the default ascending health order; `density` orders density descending. `count` is refused with exit 3. Summary reports the true remaining population, for example `+12 more (use --format-opt=top=15)` after showing three of fifteen candidates. Namespace class counts read "N classes in subtree". HTML displays at most ten local children and names the full local available count; its list is not the global JSON ranking.
 
 `topIssues` is the same ranked list the `summary` format prints as "Top issues
 by impact"; no other format renders it. Each entry names the rule-specific
@@ -659,9 +659,11 @@ Checkstyle XML format. Widely supported by CI tools.
 
 Checkstyle 3.0 XML: `<file name="...">` with nested `<error line="" severity="error|warning|info" message="" source="qmx.<rule>"/>`.
 
-Ordinary findings require a source file. Fileless namespace and project findings
-are omitted; use JSON or SARIF for the complete finding set. Coverage failures
-retain their separate projection.
+Every finding is published. Source findings retain their files; an unlocated
+namespace uses the common containing directory of its measured declarations,
+and a project aggregate uses `.`. Line 1 anchors that directory and does not
+claim a source line. Baseline audits name the baseline document inside the
+project. Coverage failures retain their separate projection.
 
 A `--namespace`/`--class` selection is refused with this format (exit 3): every
 `<error>` is an error to its reader, so nothing could say the report lists only
@@ -802,9 +804,11 @@ GitLab Code Quality JSON format. Shows violations directly in Merge Request diff
 
 Array of objects with `description`, `check_name`, `fingerprint`, `severity` (critical/major/info), `location.{path,lines.begin}`. Severity mapping: error → critical, warning → major, info → info.
 
-Ordinary findings require a source `location.path`. Fileless namespace and
-project findings are omitted; use JSON or SARIF for the complete finding set.
-Coverage failures retain their separate projection.
+Every finding is published. `location.path` retains the source file or uses
+the directory anchor described for Checkstyle above. Directory anchors use
+line 1 and cannot link to a source line in the GitLab UI. Baseline audits name
+the baseline document inside the project. Coverage failures retain their
+separate projection.
 
 A `--namespace`/`--class` selection is refused with this format (exit 3): every
 entry is an issue in the merge-request widget, so nothing could say the report
@@ -1209,12 +1213,16 @@ finding. Disabled and unselected channels contribute no population records.
 
 Every successful check JSON document contains `abstentions`, including `[]`.
 Each nonempty group has `producer`, `channel`, `level`, `gate`, `reason`,
-`unit`, `count` and `examples`. The first failed declared gate owns the group;
+`unit`, `count`, `examples` and `dataGap`. The first failed declared gate owns the group;
 examples are at most five sorted distinct canonical identities. Counts describe
 that gate's native unit, such as declarations, namespaces, cycles or configured
 selectors; do not add different units into a subject total. Independent analysis
 calls retain separate populations when combined; adopting the same frozen
 population twice does not double its counts.
+
+`dataGap` is true only when missing evidence prevents judgement. Subjects
+outside the rule's defined population remain in this metadata with a false
+flag. Compact notices and banners include only groups whose flag is true.
 
 | Format                      | Selected subjects left unjudged                                                                     |
 | --------------------------- | --------------------------------------------------------------------------------------------------- |

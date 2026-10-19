@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Cache;
 
-use Qualimetrix\Core\FileTarget\Publication\TemporarySibling;
+use Qualimetrix\Core\FileTarget\TemporarySibling;
 use Qualimetrix\Core\Path\AbsolutePath;
 
 final readonly class CacheDirectoryContents

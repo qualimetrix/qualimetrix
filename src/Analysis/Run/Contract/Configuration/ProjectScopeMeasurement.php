@@ -82,7 +82,7 @@ final readonly class ProjectScopeMeasurement
             $this->universe,
             $this->paths,
             $state,
-            $pathsMissing ? array_map(static fn($path): string => $path->value(), $facts->missingByPaths) : [],
+            $pathsMissing ? $this->universe->uncoveredBy($this->paths) : [],
             new ProjectScopeJudgement(self::uniqueDoors($namespaceDoors), self::uniqueDoors($selectorDoors), $selectors),
             $reasons,
         );

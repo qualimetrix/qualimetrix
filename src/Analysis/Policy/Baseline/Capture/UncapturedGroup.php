@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Baseline\Capture;
 
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\Ceiling\UncapturedReason;
+
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity;
 
 /**
  * A group of findings the capture refused to record, and why.

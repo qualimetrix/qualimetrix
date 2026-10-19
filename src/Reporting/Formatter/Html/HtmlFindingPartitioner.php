@@ -8,8 +8,8 @@ use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Reporting\Formatter\FindingRecord;
-use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\FindingPublication\FindingRecord;
 
 /**
  * Partitions findings by tree node and attaches formatted finding data.

@@ -279,6 +279,13 @@ final class AnalysisPipelineTest extends TestCase
 
                     return $nanoseconds;
                 }
+
+                namespace Qualimetrix\Analysis\Run\Preparation;
+
+                function hrtime(bool $asNumber = false): int
+                {
+                    return \Qualimetrix\Analysis\Run\Pipeline\hrtime($asNumber);
+                }
                 PHP);
             require $prefix;
 
@@ -364,20 +371,28 @@ final class AnalysisPipelineTest extends TestCase
         $publication->method('publishable')->willReturnArgument(0);
         $rules->method('allRules')->willReturn([]);
 
+        $pipelinePublication = $publication;
+        $pipelineInlineDirectives = $inlineDirectives;
+        $pipelineLogger = $logger ?? new NullLogger();
+        $runPreparation = new \Qualimetrix\Analysis\Run\Preparation\RunPreparation(
+            projectFiles: $discovery,
+            unmatchedExcludeAudit: new UnmatchedExcludeAudit(new UnmatchedExcludeOptions()),
+            collectionOrchestrator: $collection,
+            ruleExecutor: $rules,
+            rulePublication: $pipelinePublication,
+            ruleProducerPreparation: $preparation,
+            inlineDirectiveRun: $pipelineInlineDirectives,
+            graphBuilder: $graphBuilder,
+            profiler: $profiler,
+            logger: $pipelineLogger,
+            runMeasurement: new \Qualimetrix\Analysis\Run\Measurement\RunMeasurement(measurementAggregation: $aggregation, computedMetricEvaluation: $computed, repositoryFactory: $repositoryFactory),
+        );
         return new AnalysisPipeline(
-            $discovery,
-            new UnmatchedExcludeAudit(new UnmatchedExcludeOptions()),
-            $collection,
-            $rules,
-            $publication,
-            $preparation,
-            $inlineDirectives,
-            $aggregation,
-            $computed,
-            $graphBuilder,
-            $repositoryFactory,
-            $profiler,
-            $logger ?? new NullLogger(),
+            preparation: $runPreparation,
+            ruleExecutor: $rules,
+            rulePublication: $pipelinePublication,
+            inlineDirectiveRun: $pipelineInlineDirectives,
+            logger: $pipelineLogger,
         );
     }
 

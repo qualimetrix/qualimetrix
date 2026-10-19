@@ -18,7 +18,7 @@ use SplFileInfo;
 /**
  * Publishes raw declaration facts; final RFC is computed after collection.
  *
- * @qmx-threshold coupling.instability warning=0.800001 -- The collection adapter reads exact declaration and metric transports; its small incoming population does not model that required outward composition.
+ * @qmx-threshold coupling.instability 0.800001 -- The collection adapter reads exact declaration and metric transports; its small incoming population does not model that required outward composition.
  */
 final class RfcCollector extends AbstractCollector implements DeclarationIndexAwareInterface, ClassMetricsProviderInterface
 {

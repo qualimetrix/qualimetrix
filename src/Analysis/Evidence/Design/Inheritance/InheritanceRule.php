@@ -12,11 +12,11 @@ use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
-use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
+use Qualimetrix\Analysis\Finding\Rule\AbstractRule;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -191,7 +191,7 @@ final class InheritanceRule extends AbstractRule
                 SymbolLevel::Class_,
             )->withGates(
                 self::populationGate('logical-class-kind', self::NAME, SymbolLevel::Class_, 'declaration', self::kindIn('logicalKind', [SymbolType::Class_]), 'Only class declarations are judged.'),
-                self::populationGate('dit-present', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('dit-present', [MetricName::DESIGN_DIT]), 'Numeric inheritance depth was not published.'),
+                self::populationGate('dit-present', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('dit-present', [MetricName::DESIGN_DIT], absenceBoundaries: [MetricName::DESIGN_IS_INTERFACE => 1]), 'Numeric inheritance depth was not published.'),
             ),
         ];
     }

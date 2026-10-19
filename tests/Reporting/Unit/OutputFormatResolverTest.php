@@ -18,8 +18,8 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Reporting\Configuration\OutputFormatResolver;
 use Qualimetrix\Reporting\Configuration\OutputFormatSection;
 use Qualimetrix\Reporting\Configuration\OutputFormatVocabulary;
-use Qualimetrix\Reporting\Formatter\FormatterInterface;
-use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterInterface;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterRegistryInterface;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 final class OutputFormatResolverTest extends TestCase

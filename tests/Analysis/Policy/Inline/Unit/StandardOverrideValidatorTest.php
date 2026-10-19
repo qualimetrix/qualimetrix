@@ -10,8 +10,8 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideAxis;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideSyntax;
+use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidationFailure;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\ThresholdOverrideRequest;
-use Qualimetrix\Analysis\Finding\Rule\Override\OverrideValidationFailure;
 use Qualimetrix\Analysis\Finding\Rule\Override\StandardOverrideValidator;
 
 #[CoversClass(StandardOverrideValidator::class)]

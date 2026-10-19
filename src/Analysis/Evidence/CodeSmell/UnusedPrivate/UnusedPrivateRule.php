@@ -13,9 +13,9 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
 
-use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Rule\AbstractRule;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -146,7 +146,7 @@ final class UnusedPrivateRule extends AbstractRule
                 SymbolLevel::Class_,
             )->withGates(
                 self::populationGate('class-coordinate', self::NAME, SymbolLevel::Class_, 'declaration', self::kindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the declared symbol coordinate.'),
-                self::populationGate('published-value', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('published-value', [MetricName::CODE_SMELL_UNUSED_PRIVATE_TOTAL]), 'The rule metric was not published.'),
+                self::populationGate('published-value', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('published-value', [MetricName::CODE_SMELL_UNUSED_PRIVATE_TOTAL], absenceBoundaries: [MetricName::DESIGN_IS_INTERFACE => 1]), 'The rule metric was not published.'),
             ),
         ];
     }

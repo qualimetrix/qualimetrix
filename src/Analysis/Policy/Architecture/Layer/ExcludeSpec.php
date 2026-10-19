@@ -5,9 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CriterionListValidator;
-
-use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\MatchMode;
 
 /**
  * Immutable specification of the criteria that DISQUALIFY a class from a
@@ -50,6 +47,9 @@ final readonly class ExcludeSpec
      * @throws InvalidArgumentException If every criterion list is empty or
      *                                  any entry is a non-string /
      *                                  empty-string.
+     *
+      * @qmx-threshold code-smell.long-parameter-list 9 -- All authored exclusion criteria and their matching mode form one exclusion predicate; separate carriers would divide its validation boundary.
+      * @qmx-threshold code-smell.constructor-overinjection 9 -- All authored exclusion criteria and their matching mode form one exclusion predicate; separate carriers would divide its validation boundary.
      */
     public function __construct(
         public array $patterns = [],

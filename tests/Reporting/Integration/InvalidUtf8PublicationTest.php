@@ -22,14 +22,14 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterRegistryInterface;
+use Qualimetrix\Reporting\Coverage\ReportCoverage;
 use Qualimetrix\Reporting\FindingProjection\SuppressedFinding;
 use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
 use Qualimetrix\Reporting\FindingProjection\SuppressionMechanism;
-use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
-use Qualimetrix\Reporting\Formatter\PublishedUtf8;
-use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\Publication\PublishedUtf8;
 use Qualimetrix\Reporting\ReportBuilder;
-use Qualimetrix\Reporting\ReportCoverage;
 
 /**
  * The parser accepts a byte like 0xFF inside an identifier, so an analysis can

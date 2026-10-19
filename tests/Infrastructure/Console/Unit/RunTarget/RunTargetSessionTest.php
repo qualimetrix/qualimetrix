@@ -13,7 +13,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -51,7 +51,7 @@ $targets = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargets(
 $session = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession(
     $targets,
     new \Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter(
-        new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream(),
+        new \Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream(),
     ),
 );
 $exit = $session->run(new \Symfony\Component\Console\Output\BufferedOutput(), 'json', static function () use ($targets, $argv): int {
@@ -137,14 +137,14 @@ $factory = new \Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory(
     \Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor::class,
     [\Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\SignalWorkerCollector::class],
 );
-$strategy = new \Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy($factory, new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()), new \Qualimetrix\Infrastructure\Profiler\ProfileSession(), new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream());
+$strategy = new \Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy($factory, new \Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy(new \Qualimetrix\Infrastructure\Profiler\ProfileSession()), new \Qualimetrix\Infrastructure\Profiler\ProfileSession(), new \Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream());
 $strategy->setMinFilesForParallel(1);
 $strategy->setWorkerCount(2);
 $strategy->setProjectRoot(\Qualimetrix\Core\Path\AbsolutePath::fromString($argv[3]));
 $targets = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargets(new \Qualimetrix\Infrastructure\Logging\LoggerFactory(), \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register());
 $session = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession(
     $targets,
-    new \Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter(new \Qualimetrix\Infrastructure\Console\Terminal\ErrorStream()),
+    new \Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter(new \Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream()),
 );
 $exit = $session->run(new \Symfony\Component\Console\Output\BufferedOutput(), 'json', static function () use ($targets, $strategy, $argv): int {
     if ($argv[4] === 'staged') {

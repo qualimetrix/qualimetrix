@@ -33,13 +33,6 @@ final readonly class DirectiveNameHints
      * How far a name may be from a real one and still be offered as a
      * suggestion. A list is useful only while it is short: past this,
      * "no close match" tells the author more than five unrelated names.
-     *
-     * Public because it is the radius the published channel order becomes
-     * observable within, and the guard that measures that
-     * ({@see \Qualimetrix\Tests\Analysis\Finding\Integration\ChannelSuggestionTieTest})
-     * has to read it rather than restate it: a raised radius with a stale
-     * literal beside it would leave the guard passing on a distance nothing
-     * uses any more.
      */
     public const int SUGGESTION_DISTANCE = 5;
 
@@ -265,7 +258,10 @@ final readonly class DirectiveNameHints
             }
         }
 
-        asort($scored);
+        uksort($scored, static fn(string $left, string $right): int =>
+            $scored[$left] === $scored[$right]
+                ? strcmp($left, $right)
+                : $scored[$left] <=> $scored[$right]);
 
         return \array_slice(array_keys($scored), 0, self::SUGGESTION_LIMIT);
     }

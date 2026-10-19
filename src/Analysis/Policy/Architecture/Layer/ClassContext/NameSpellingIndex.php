@@ -8,7 +8,11 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Core\Symbol\ClassNameSpelling;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
-/** Canonical observed spelling for each PHP class-name identity in one run. */
+/**
+ * Canonical observed spelling for each PHP class-name identity in one run.
+ *
+ * @qmx-threshold health.cohesion 40.0 -- Independent immutable observations or stateless declaration operations intentionally have no shared instance-field graph; this finite class boundary keeps a further cohesion loss visible.
+ */
 final readonly class NameSpellingIndex
 {
     /** @var array<string, string> folded identity => spelling */

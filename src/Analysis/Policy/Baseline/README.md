@@ -8,15 +8,19 @@ rename-channels and explain operations. Inline source controls are a separate pe
 `Analysis/Policy/Inline`; this capability consumes their Finding-owned contract
 values only where an effective boundary must be explained.
 
+`Contract/RunScope` owns portable path normalization and scope comparison, and is
+the scope input of `RunCoverage`. Stored entries consume that same normalization.
+`Ceiling/UncapturedReason` describes the result of judging a group for capture;
+Capture consumes the judgement without defining its result vocabulary.
+
 ## Structure
 
-```
+```text
 Baseline/
 ├── Capture/
 │   ├── BaselineCapture.php
 │   ├── BaselineGenerator.php
-│   ├── UncapturedGroup.php
-│   └── UncapturedReason.php
+│   └── UncapturedGroup.php
 ├── Ceiling/
 │   ├── Absence.php
 │   ├── BaselineCeilingStage.php
@@ -24,13 +28,15 @@ Baseline/
 │   ├── EntryComparability.php
 │   ├── EntryJudgement.php
 │   ├── ExclusionDelta.php
+│   ├── GroupAcceptance.php
 │   ├── GroupCapture.php
 │   ├── GroupCeilingVerdict.php
 │   ├── GroupMeasurement.php
 │   ├── IncomparabilityReason.php
 │   ├── RecordedRootPresence.php
 │   ├── Region.php
-│   └── SubjectRegion.php
+│   ├── SubjectRegion.php
+│   └── UncapturedReason.php
 ├── ChannelRename/
 │   ├── BaselineChannelRenamer.php
 │   ├── BaselineEntryPayload.php
@@ -38,12 +44,22 @@ Baseline/
 │   ├── ChannelRenameRefusal.php
 │   └── ChannelRenameReport.php
 ├── Contract/
+│   ├── Entry/
+│   │   ├── Baseline.php
+│   │   ├── BaselineEdge.php
+│   │   ├── BaselineEntry.php
+│   │   ├── BaselineEntryMode.php
+│   │   ├── BaselineIdentity.php
+│   │   ├── EntrySelector.php
+│   │   ├── InertBaselineEntry.php
+│   │   └── InertEntryReason.php
 │   ├── BaselineAuditChannels.php
 │   ├── BaselineDocument.php
 │   ├── CeilingOutcome.php
 │   ├── CurrentMeasurement.php
 │   ├── RecordedExclusions.php
-│   └── RunCoverage.php
+│   ├── RunCoverage.php
+│   └── RunScope.php
 ├── DocumentAccess/
 │   ├── BaselineConflictException.php
 │   ├── BaselineDocumentReader.php
@@ -66,16 +82,6 @@ Baseline/
 │   ├── BaselineDocumentLayout.php
 │   ├── BaselineEntryOrder.php
 │   └── BaselineWriter.php
-├── Entry/
-│   ├── Baseline.php
-│   ├── BaselineEdge.php
-│   ├── BaselineEntry.php
-│   ├── BaselineEntryMode.php
-│   ├── BaselineIdentity.php
-│   ├── EntrySelector.php
-│   ├── GroupAcceptance.php
-│   ├── InertBaselineEntry.php
-│   └── InertEntryReason.php
 ├── EntryBinding/
 │   ├── UnusedEntryAudit.php
 │   ├── UnusedEntryFinding.php
@@ -108,11 +114,15 @@ Baseline/
 │   └── IdentityBoundaryExplanation.php
 └── RunCoverage/
     ├── RunCoverageGap.php
-    ├── RunRuleCoverage.php
-    └── RunScope.php
+    └── RunRuleCoverage.php
 ```
 
-The root is a navigation boundary. `Entry` owns accepted identities and groups;
+The root is a navigation boundary. `Contract/Entry` owns immutable snapshots,
+accepted identities, selectors and rejected-entry records promised to Console
+baseline commands and Reporting finding projection. Their identity, shape and
+normalization checks are value invariants; loading, writing, acceptance,
+cleanup and explanation remain private services. `Ceiling/GroupAcceptance`
+owns the internal acceptance decision;
 `DocumentReading`, `DocumentWriting` and `DocumentAccess` own grammar,
 serialization and held-file access respectively. `Capture` measures candidates,
 `RunCoverage` supplies comparison evidence, and `EntryMaintenance` shares the
@@ -598,3 +608,8 @@ scope or selector is not UTF-8 refuses with a native encoding reason; these
 fields cannot be renamed without changing their comparisons. Analyse a
 containing UTF-8 directory to record a byte-named entry. Raw-byte JSON
 selectors remain unsupported.
+
+Source-owned dependency occurrences from a completely analysed source file can
+be accepted against a recorded ceiling in a source-only hook run. A larger
+visible count still breaches the ceiling. This present-group comparison never
+tightens the stored count and does not make absent run-wide entries comparable.

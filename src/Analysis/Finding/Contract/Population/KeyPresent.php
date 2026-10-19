@@ -8,8 +8,11 @@ use LogicException;
 
 final readonly class KeyPresent implements GatePredicate
 {
-    /** @param non-empty-list<string>|non-empty-array<string, string> $keys */
-    public function __construct(public string $source, public array $keys, public ?bool $activeWhen = null)
+    /**
+     * @param non-empty-list<string>|non-empty-array<string, string> $keys
+     * @param array<string, int|float> $absenceBoundaries Measured facts for which absence is defined, rather than missing evidence.
+     */
+    public function __construct(public string $source, public array $keys, public ?bool $activeWhen = null, public array $absenceBoundaries = [])
     {
         if ($source === '' || $keys === [] || \in_array('', $keys, true) || \count(array_unique($keys)) !== \count($keys)) {
             throw new LogicException('Presence requires distinct nonempty declared keys.');

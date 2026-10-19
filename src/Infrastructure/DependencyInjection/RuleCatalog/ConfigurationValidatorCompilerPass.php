@@ -7,7 +7,9 @@ namespace Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog;
 use LogicException;
 
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
+
 use Qualimetrix\Analysis\Finding\RuleMaterialization;
+use Qualimetrix\Infrastructure\DependencyInjection\ChannelCatalog\ChannelDeclarationCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConsumerBoundPassInterface;
 use Qualimetrix\Infrastructure\Rule\ConfigurationValidatorRegistry;
 use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
@@ -23,6 +25,8 @@ use Symfony\Component\DependencyInjection\Reference;
  * Mirrors {@see RuleCompilerPass} deliberately: a validator, like a rule, may
  * declare constructor dependencies only the container can resolve, so
  * consumers never build one themselves.
+ *
+  * @qmx-threshold coupling.instability 0.800001 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
  */
 final class ConfigurationValidatorCompilerPass implements CompilerPassInterface, ConsumerBoundPassInterface
 {

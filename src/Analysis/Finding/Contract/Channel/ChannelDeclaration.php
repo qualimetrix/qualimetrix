@@ -28,7 +28,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * instead is `$direction` alone: non-null for every channel of a `magnitude`
  * producer, null for every channel of an `occurrence` one. Registry assembly
  * is what checks the two agree — see
- * {@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\ChannelDeclarationCompilerPass}.
+ * {@see \Qualimetrix\Infrastructure\DependencyInjection\ChannelCatalog\ChannelDeclarationCompilerPass}.
  *
  * **One more thing does belong here, and it was added against that list:**
  * {@see $judges}, the catalog metric keys a `magnitude` channel's reported
@@ -78,6 +78,9 @@ final readonly class ChannelDeclaration
     /** @var non-empty-list<SymbolLevel> the levels this channel reports at, in {@see SymbolLevel} case order */
     public array $levels;
 
+    /** @var array<string, list<PopulationGate>> */
+    private array $gatesByLevel;
+
     /**
      * The constructor is private, so the only callers are the three factories
      * below. That makes the refusal in {@see canonicalLevels()} — an empty
@@ -90,6 +93,9 @@ final readonly class ChannelDeclaration
      *
      * @param array<SymbolLevel> $levels non-empty, in any order; both factories
      *                                   guarantee non-emptiness by arity
+     *
+      * @qmx-threshold code-smell.long-parameter-list 10 -- Population gates, admitted levels and judgement direction declare one channel contract and are validated as one rule-language statement.
+      * @qmx-threshold code-smell.constructor-overinjection 10 -- Population gates, admitted levels and judgement direction declare one channel contract and are validated as one rule-language statement.
      */
     private function __construct(
         public ?WorseDirection $direction,
@@ -104,6 +110,11 @@ final readonly class ChannelDeclaration
         public array $populationGates = [],
     ) {
         $this->levels = self::canonicalLevels($levels);
+        $indexed = [];
+        foreach ($populationGates as $gate) {
+            $indexed[$gate->level->value][] = $gate;
+        }
+        $this->gatesByLevel = $indexed;
     }
 
     /**
@@ -145,7 +156,7 @@ final readonly class ChannelDeclaration
      *
      * That the named keys exist, and that only a `magnitude` producer names
      * any, is checked at container build by
-     * {@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\ChannelDeclarationCompilerPass}
+     * {@see \Qualimetrix\Infrastructure\DependencyInjection\ChannelCatalog\ChannelDeclarationCompilerPass}
      * — not here, because `MetricName` belongs to
      * `Analysis\Evidence\Measurement` and a check in this class would give
      * `Analysis\Finding` an edge onto it for the sake of a build-time
@@ -259,13 +270,13 @@ final readonly class ChannelDeclaration
                 throw new LogicException('Population declaration belongs to a different channel.');
             }
         }
-        return array_values(array_filter($this->populationGates, static fn(PopulationGate $gate): bool => $gate->level === $level));
+        return $this->gatesByLevel[$level->value] ?? [];
     }
 
     /**
      * @param iterable<GateInput> $inputs
      *
-     * @return array{gate: string, reason: string}|null
+     * @return array{gate: string, reason: string, dataGap: bool}|null
      */
     public function populationFailure(FindingChannel $channel, SymbolLevel $level, PopulationIdentity $identity, iterable $inputs): ?array
     {
@@ -281,7 +292,7 @@ final readonly class ChannelDeclaration
                 if ($identity->unit !== ($gate->failureUnit ?? $gate->unit)) {
                     throw new LogicException('Population failure identity has the wrong declared unit.');
                 }
-                return ['gate' => $gate->id, 'reason' => $reason];
+                return ['gate' => $gate->id, 'reason' => $reason, 'dataGap' => $gate->isDataGap($input)];
             }
             ++$index;
         }

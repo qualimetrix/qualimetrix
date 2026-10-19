@@ -18,10 +18,10 @@ use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineAuditChannels;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\InertBaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\InertEntryReason;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertBaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertEntryReason;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryOptions;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule;
@@ -79,7 +79,7 @@ final class UnusedEntryAuditTest extends TestCase
             self::assertSame(SymbolLevel::Project, $finding->level());
             self::assertSame(Severity::Warning, $finding->severity);
             self::assertNull($finding->acceptedLevel);
-            self::assertTrue($finding->location->isNone());
+            self::assertSame("baseline's file.json", $finding->location->file?->value());
         }
         self::assertStringContainsString($stale->identity->describe(), $findings[0]->message);
         self::assertStringContainsString($stale->selector()->value, $findings[0]->message);

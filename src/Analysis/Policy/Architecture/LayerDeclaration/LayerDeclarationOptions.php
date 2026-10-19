@@ -4,29 +4,16 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration;
 
-use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOptionValues;
-use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\EnablementOptionsTrait;
+
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 
 final readonly class LayerDeclarationOptions implements RuleOptionsInterface
 {
+    use EnablementOptionsTrait;
+
     public function __construct(public bool $enabled = true) {}
-
-    public static function fromResolved(ResolvedRuleOptionValues $config): self
-    {
-        return new self(enabled: $config->boolean('enabled', true));
-    }
-
-    public static function acceptedOptionKeys(): RuleOptionKeySet
-    {
-        return RuleOptionKeySet::of([]);
-    }
-
-    public function isEnabled(): bool
-    {
-        return $this->enabled;
-    }
 
     public function getSeverity(int|float $value): ?Severity
     {

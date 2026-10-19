@@ -9,8 +9,8 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
+use Qualimetrix\Infrastructure\Console\Baseline\Generation\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
-use Qualimetrix\Infrastructure\Console\Command\Baseline\Generation\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use RuntimeException;
 use Symfony\Component\Console\Application;
@@ -318,7 +318,7 @@ final class CheckCommandBaselineTest extends TestCase
     }
 
     #[Test]
-    public function itPublishesUnusedEntriesInSixFormatsAndGatesAllElevenFormats(): void
+    public function itPublishesUnusedEntriesInEightFormatsAndGatesAllElevenFormats(): void
     {
         $this->writeFixture("<?php\nfinal class Clean {}\n");
         file_put_contents($this->configPath, "only_rules: ['code-smell.goto', 'baseline.unused-entry']\nsuppress_paths: [{regex: '.*'}]\nsuppress_namespaces: [{regex: '.*'}]\n");
@@ -344,8 +344,8 @@ final class CheckCommandBaselineTest extends TestCase
         $this->git('git config user.name Test');
         $this->git('git add .');
         $this->git('git commit -qm initial');
-        $findingFormats = ['text', 'json', 'sarif', 'github', 'html', 'summary'];
-        foreach ([...$findingFormats, 'checkstyle', 'gitlab', 'metrics', 'health', 'suppressed'] as $format) {
+        $findingFormats = ['text', 'json', 'sarif', 'github', 'html', 'summary', 'checkstyle', 'gitlab'];
+        foreach ([...$findingFormats, 'metrics', 'health', 'suppressed'] as $format) {
             $options = ['--baseline' => $this->baselinePath, '--format' => $format, '--report' => 'git:staged'];
             foreach (['warning' => 1, 'error' => 0, 'none' => 0] as $policy => $exit) {
                 $tester = $this->runCheck([...$options, '--fail-on' => $policy], captureErrors: true, container: $container);

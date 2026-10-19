@@ -21,9 +21,9 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
 use Qualimetrix\Reporting\Formatter\Html\HtmlFindingPartitioner;
 use Qualimetrix\Reporting\Formatter\Html\HtmlTreeNode;
-use Qualimetrix\Reporting\FormatterContext;
 
 #[CoversClass(HtmlFindingPartitioner::class)]
 final class HtmlFindingPartitionerTest extends TestCase
@@ -32,7 +32,7 @@ final class HtmlFindingPartitionerTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->partitioner = new HtmlFindingPartitioner(new \Qualimetrix\Reporting\Formatter\FindingRecord(new \Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry(\Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry::alwaysHigherMagnitude(), \Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes::withRealValues()), new \Qualimetrix\Reporting\Formatter\Json\JsonSanitizer()));
+        $this->partitioner = new HtmlFindingPartitioner(new \Qualimetrix\Reporting\FindingPublication\FindingRecord(new \Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry(\Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry::alwaysHigherMagnitude(), \Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes::withRealValues()), new \Qualimetrix\Reporting\Formatter\Json\JsonSanitizer()));
     }
 
     // --- partition() tests ---

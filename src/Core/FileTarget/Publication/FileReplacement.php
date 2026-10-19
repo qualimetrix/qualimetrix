@@ -5,14 +5,16 @@ declare(strict_types=1);
 namespace Qualimetrix\Core\FileTarget\Publication;
 
 use LogicException;
+
 use Qualimetrix\Core\FileTarget\FileIdentity;
 use Qualimetrix\Core\FileTarget\FileTargetFailure;
 use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
 use Qualimetrix\Core\FileTarget\NativeCall;
-use Qualimetrix\Core\FileTarget\ResolvedTarget;
+use Qualimetrix\Core\FileTarget\Resolution\ResolvedTarget;
+use Qualimetrix\Core\FileTarget\Resolution\TargetPath;
 use Qualimetrix\Core\FileTarget\TargetKind;
 
-use Qualimetrix\Core\FileTarget\TargetPath;
+use Qualimetrix\Core\FileTarget\TemporarySibling;
 use Qualimetrix\Core\Path\AbsolutePath;
 
 final class FileReplacement

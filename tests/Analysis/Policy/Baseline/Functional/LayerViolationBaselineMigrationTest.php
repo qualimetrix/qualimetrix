@@ -7,12 +7,12 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Functional;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
+use Qualimetrix\Infrastructure\Console\Baseline\Maintenance\BaselineCleanupCommand;
+use Qualimetrix\Infrastructure\Console\Baseline\Maintenance\BaselineUpdateCommand;
 use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
-use Qualimetrix\Infrastructure\Console\Command\Baseline\Maintenance\BaselineCleanupCommand;
-use Qualimetrix\Infrastructure\Console\Command\Baseline\Maintenance\BaselineUpdateCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory;
 use ReflectionProperty;
@@ -58,22 +58,23 @@ final class LayerViolationBaselineMigrationTest extends TestCase
     public function itKeepsAcceptedLayerOccurrencesWhenOnlyTheSourceIsSelected(): void
     {
         $generated = $this->command(
-            \Qualimetrix\Infrastructure\Console\Command\Baseline\Generation\BaselineGenerateCommand::class,
+            \Qualimetrix\Infrastructure\Console\Baseline\Generation\BaselineGenerateCommand::class,
             ['baseline' => 'fresh.json', '--only-rule' => [self::CHANNEL]],
         );
         self::assertSame(0, $generated->getStatusCode(), $generated->getDisplay());
         $full = $this->command(CheckCommand::class, ['--format' => 'json', '--only-rule' => [self::CHANNEL]]);
         $narrow = $this->command(CheckCommand::class, ['paths' => ['src/Application/Consumer.php'], '--baseline' => 'fresh.json', '--format' => 'json', '--only-rule' => [self::CHANNEL], '--fail-on' => 'warning']);
-        self::assertSame(1, $narrow->getStatusCode(), $narrow->getDisplay());
+        self::assertSame(0, $narrow->getStatusCode(), $narrow->getDisplay());
         $original = json_decode($full->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
         $selected = json_decode($narrow->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
         $occurrences = static fn(array $report): array => array_column(array_values(array_filter($report['violations'], static fn(array $finding): bool => $finding['channel'] === self::CHANNEL)), 'occurrence');
-        self::assertSame($occurrences($original), $occurrences($selected));
-        foreach ($selected['violations'] as $finding) {
-            self::assertSame(1, $finding['acceptedLevel']['count']);
-            self::assertSame('not-compared', $finding['baselineVerdict']);
-            self::assertSame('outside-coverage', $finding['baselineReason']);
-        }
+        self::assertSame([], $selected['violations']);
+        $source = file_get_contents('src/Application/Consumer.php');
+        self::assertIsString($source);
+        file_put_contents('src/Application/Consumer.php', str_replace('return new OrdinaryTarget();', 'new OrdinaryTarget(); return new OrdinaryTarget();', $source));
+        $breach = $this->command(CheckCommand::class, ['paths' => ['src/Application/Consumer.php'], '--baseline' => 'fresh.json', '--only-rule' => [self::CHANNEL], '--fail-on' => 'warning']);
+        self::assertSame(2, $breach->getStatusCode(), $breach->getDisplay());
+        file_put_contents('src/Application/Consumer.php', $source);
         rename('src/Domain/UnionTarget.php', 'src/Domain/RenamedUnionTarget.php');
         $renamed = $this->command(CheckCommand::class, ['--baseline' => 'fresh.json', '--format' => 'json', '--only-rule' => [self::CHANNEL], '--fail-on' => 'warning', '--show-suppressed' => true]);
         self::assertSame(0, $renamed->getStatusCode(), $renamed->getDisplay());

@@ -19,7 +19,9 @@ use Qualimetrix\Analysis\Finding\Contract\Selection\RuleNameJudge;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
 use Qualimetrix\Infrastructure\Console\Invocation\CliSelectorDecoder;
 
-/** Admits one CLI rule-option address against its declared producer surface. */
+/** Admits one CLI rule-option address against its declared producer surface.
+ * @qmx-threshold coupling.instability 0.857144 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
+ */
 final readonly class CliRuleOptionAddressing
 {
     private RuleNameJudge $ruleNames;

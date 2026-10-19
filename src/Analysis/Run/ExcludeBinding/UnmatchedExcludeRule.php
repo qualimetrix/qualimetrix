@@ -11,8 +11,8 @@ use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Population\ContextGuard;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
-use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Rule\AbstractRule;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
@@ -53,7 +53,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  *
  * **Statelessness:** trivially — `analyze()` does nothing at all.
  *
- * @qmx-threshold coupling.instability warning=0.82 -- Discovery diagnostic metadata is composed through its owner and registered rule metadata consumers.
+ * @qmx-threshold coupling.instability 0.818183 -- Discovery diagnostic metadata is composed through its owner and registered rule metadata consumers.
  */
 final class UnmatchedExcludeRule extends AbstractRule
 {

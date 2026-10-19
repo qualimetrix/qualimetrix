@@ -20,11 +20,11 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Report\Report;
 use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
 use Qualimetrix\Reporting\Formatter\Summary\HealthBarRenderer;
-use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
-use Qualimetrix\Reporting\Report;
 
 #[CoversClass(HealthBarRenderer::class)]
 final class HealthBarRendererTest extends TestCase
@@ -509,12 +509,10 @@ final class HealthBarRendererTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
-            healthScores: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: [
                 'overall' => new HealthScore('overall', $overallScore, 'Acceptable', 60.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
-            ],
+            ]),
         );
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::exact('App\\Service'));
@@ -576,9 +574,7 @@ final class HealthBarRendererTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            healthScores: $healthScores,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: $healthScores),
         );
     }
 

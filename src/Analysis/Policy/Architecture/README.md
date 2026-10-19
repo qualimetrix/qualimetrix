@@ -58,76 +58,138 @@ Debug shadow verdicts are mandatory typed projections of the same authority;
 disabled policy output retains observed spelling without claiming a reported
 shadow or publishing a diagnostic hint.
 
+`Configuration/` owns the whole shape-reading and validation operation.
+`Configuration/` retains selector and policy values without importing the
+reader. Matching owns criterion values, including `NamedType`; the whole-layer
+`LayerCriteriaMatcher` reads declaration context beside the layer operation.
+
 ## Layout
 
 ```text
 Architecture/
-├── Contract/                  # exact external promises and debug values
+├── Configuration/
+│   ├── AllowAliasExpander.php
+│   ├── AllowListEntry.php
+│   ├── AllowTarget.php
+│   ├── AllowValidator.php
+│   ├── ArchitectureConfiguration.php
+│   ├── ArchitectureConfigurationFactory.php
+│   ├── ArchitectureFactoryResult.php
+│   ├── ArchitectureSection.php
+│   ├── CaptureBinding.php
+│   ├── CarriedValueForm.php
+│   ├── CoverageMode.php
+│   ├── CoverageValidator.php
+│   ├── DuplicatePatternRejector.php
+│   ├── ExactAllowCycleValidator.php
+│   ├── ExcludeBlockValidator.php
+│   ├── InvalidSelectorException.php
+│   ├── LayerCriterionNormalizer.php
+│   ├── LayerSelector.php
+│   ├── LayerSelectorParser.php
+│   ├── LayersValidator.php
+│   ├── LongFormAllowEntryNormalizer.php
+│   ├── ParseCapturedState.php
+│   ├── SectionSpot.php
+│   ├── SelectorKind.php
+│   ├── SelectorSegment.php
+│   └── WildcardSelfAllowDetector.php
+├── Contract/
+│   ├── ArchitectureChannels.php
+│   ├── ArchitectureConfigurationWarning.php
+│   ├── ArchitecturePolicyConfiguratorInterface.php
 │   ├── ExternalSupertypeSourceInterface.php
 │   ├── ExternalSupertypes.php
 │   ├── LayerAssignment.php
 │   ├── LayerAssignmentInspectorInterface.php
 │   ├── LayerAssignmentMatch.php
 │   ├── LayerAssignmentShadowVerdict.php
+│   ├── LayerPolicyPreparationInterface.php
+│   ├── ResolvedArchitecturePolicyInterface.php
 │   ├── ShadowExemption.php
 │   ├── UnassignedClassLayerRequirementInterface.php
 │   └── UnmatchedTypeWarningInterface.php
-├── Configuration/              # the `architecture:` section: its schema and validators
-│   └── Allow/                  # allow selectors, binding values, validation, cycle and wildcard judgement
-│       ├── AllowAliasExpander.php
-│       ├── AllowListEntry.php
-│       ├── AllowTarget.php
-│       ├── AllowValidator.php
-│       ├── CaptureBinding.php
-│       ├── ExactAllowCycleValidator.php
-│       ├── InvalidSelectorException.php
-│       ├── LayerSelector.php
-│       ├── LayerSelectorParser.php
-│       ├── LongFormAllowEntryNormalizer.php
-│       ├── ParseCapturedState.php
-│       ├── SelectorKind.php
-│       ├── SelectorSegment.php
-│       └── WildcardSelfAllowDetector.php
-├── Layer/                      # layer policy, declaration facts and registry primitives
-│   ├── Matching/               # capture compilation, criteria evaluation and membership results
-│   │   ├── CapturePattern.php
-│   │   ├── CapturePatternCompiler.php
-│   │   ├── CriteriaEvaluation.php
-│   │   ├── CriterionListValidator.php
-│   │   ├── CriterionOutcome.php
-│   │   ├── LayerCriteriaMatcher.php
-│   │   ├── LayerMatch.php
-│   │   ├── MatchMode.php
-│   │   ├── MatchedCriterion.php
-│   │   ├── MatchedCriterionKind.php
-│   │   ├── MembershipResult.php
-│   │   └── PatternScope.php
-│   ├── ClassContext/           # one run's declaration relations, ancestry and observed names
+├── Layer/
+│   ├── ClassContext/
 │   │   ├── Ancestry.php
 │   │   ├── ClassContext.php
 │   │   ├── ClassContextFactory.php
 │   │   ├── DeclarationRelationIndex.php
 │   │   ├── DeclarationRelations.php
 │   │   ├── ImplicitStringability.php
-│   │   ├── KnownTypes.php
 │   │   └── NameSpellingIndex.php
+│   ├── Expansion/
+│   │   ├── LayerExpansionResult.php
+│   │   ├── LayerExpansionStage.php
+│   │   ├── LayerInstantiator.php
+│   │   └── TupleExtractor.php
+│   ├── AnalysedDeclarations.php
+│   ├── CapturePattern.php
+│   ├── CapturePatternCompiler.php
+│   ├── ClassSet.php
+│   ├── CriteriaEvaluation.php
+│   ├── CriterionListValidator.php
+│   ├── CriterionOutcome.php
+│   ├── ExcludeSpec.php
+│   ├── InvalidLayerDefinitionException.php
+│   ├── KnownTypes.php
+│   ├── LayerCriteriaMatcher.php
+│   ├── LayerDefinition.php
+│   ├── LayerLifecycle.php
+│   ├── LayerMatch.php
+│   ├── LayerPolicy.php
+│   ├── LayerRegistry.php
 │   ├── LayerShadowVerdict.php
-│   ├── UnmatchedTypeOccurrence.php
+│   ├── LayerShadowing.php
+│   ├── MatchMode.php
+│   ├── MatchedCriterion.php
+│   ├── MatchedCriterionKind.php
+│   ├── MembershipResult.php
+│   ├── MembershipSpec.php
+│   ├── NamedType.php
+│   ├── PatternScope.php
+│   ├── TemplateLayerDefinition.php
 │   ├── UnmatchedTypeJudgement.php
-│   └── Expansion/              # observed-template expansion
+│   └── UnmatchedTypeOccurrence.php
 ├── LayerAssignment/
-│   └── LayerAssignmentProjection.php # prepared assignment facts for the public debug value
-├── Observation/                # class/edge walks, evidence tally and bounded samples
-├── LayerViolation/             # forbidden dependency edges and routing guidance
-├── LayerDeclaration/           # declaration diagnostics and configuration validator
+│   └── LayerAssignmentProjection.php
+├── LayerDeclaration/
+│   ├── DeclaredLayerReachability.php
+│   ├── DoubtedAssignmentDiagnostic.php
+│   ├── LayerDeclarationOptions.php
+│   ├── LayerDeclarationRule.php
+│   ├── LayerDeclarationValidator.php
 │   ├── LayerOverlapDiagnostic.php
+│   ├── PotentialShadowDiagnostic.php
+│   ├── UnmatchedExcludeDiagnostic.php
 │   └── UnmatchedTypeDiagnostic.php
-├── UnassignedClass/            # analysed-class assignment summary and mode
-│   └── UnassignedClassLayerRequirement.php
-└── ArchitecturePolicy.php      # instance-owned configuration/preparation
+├── LayerViolation/
+│   ├── LayerRoutingGuidance.php
+│   ├── LayerViolationFinding.php
+│   ├── LayerViolationOptions.php
+│   ├── LayerViolationRule.php
+│   └── OwnedLayerTargets.php
+├── Observation/
+│   ├── ClassEvidenceWalk.php
+│   ├── ClassWalkEvidence.php
+│   ├── DiagnosticSampleList.php
+│   ├── EdgeEvidenceWalk.php
+│   ├── EdgeWalkEvidence.php
+│   ├── ForbiddenEdge.php
+│   ├── LayerEvidence.php
+│   ├── LayerEvidenceCollector.php
+│   ├── LayerEvidenceTally.php
+│   └── ShadowedClass.php
+├── UnassignedClass/
+│   ├── UnassignedClassLayerRequirement.php
+│   ├── UnassignedClassMode.php
+│   ├── UnassignedClassOptions.php
+│   ├── UnassignedClassRule.php
+│   └── UnassignedClassSummary.php
+└── ArchitecturePolicy.php
 ```
 
-`Configuration/`, `Configuration/Allow/`, `Layer/Matching/`, `Layer/`, `Layer/ClassContext/`, `Layer/Expansion/`,
+`Configuration/`, `Configuration/`, `Layer/`, `Layer/`, `Layer/ClassContext/`, `Layer/Expansion/`,
 `LayerAssignment/`, `Observation/`,
 `LayerViolation/`, `LayerDeclaration/`, `UnassignedClass/`, and the policy coordinator are internal zones of one leaf. The
 manifest-backed Architecture topology test enforces their exact DAG; sibling
@@ -221,8 +283,9 @@ selection or renaming a target file cannot move the accepted identity. Multiple
 owned target declarations remain count units within the same occurrence group.
 When the run does not know the target declaration, it emits one logical-target
 unit; it cannot infer that target's physical file or declaration cardinality.
-A narrowed Run-reach population remains `not-compared` with the matched accepted
-level and its ordinary severity; it does not tighten the baseline count.
+A source-owned occurrence from a completely analysed source file can be accepted
+against its recorded count in a source-only run. A larger visible count breaches
+the ceiling; the narrowed run does not tighten the baseline count.
 
 `ClassContextFactory` coordinates the run's **class universe** alongside its
 graph and Architecture's external-supertype source
@@ -597,3 +660,13 @@ native authored-type roster once, including met types that emit no finding.
 predicate. Authored provenance distinguishes equal FQNs at separate positions;
 expanded copies retain the native coalescing. The five configuration-validator
 channels stay outside ordinary rule population accounting.
+
+Configuration reads and validates the layer-policy language in one subject,
+including allow selectors, their parsing and the checks over their meaning.
+Layer owns membership criteria and their evaluation together. Their concrete
+values have no independent module lifecycle; the earlier role subdivisions
+made internal readers appear to be external stability dependencies.
+
+`Layer/KnownTypes` judges whether a type named by a membership criterion was
+met in the analysed project. It shares ownership with `NamedType` and unmatched
+type judgements. ClassContext keeps ancestry and per-class fact preparation.

@@ -12,19 +12,19 @@ use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEdge;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\EntrySelector;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertBaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertEntryReason;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RunScope;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineConflictException;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentWriter;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineWriter;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEdge;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\EntrySelector;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\InertBaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\InertEntryReason;
-use Qualimetrix\Analysis\Policy\Baseline\RunCoverage\RunScope;
 use Qualimetrix\Core\FileTarget\FileTargetFailure;
 use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -73,7 +73,7 @@ final class BaselineWriterTest extends TestCase
             exclusions: self::fixtureExclusions(),
         );
         $path = $this->tempDir . '/encoded.json';
-        $this->writer->write($baseline, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $root);
+        $this->writer->write($baseline, \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path), $root);
         $loaded = $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($path));
 
         self::assertSame('file:src/100%25.php', $loaded->entries[0]->identity->subjectKey);
@@ -96,7 +96,7 @@ final class BaselineWriterTest extends TestCase
             ),
         );
         try {
-            $this->writer->write($baseline, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+            $this->writer->write($baseline, \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path), $this->projectRoot);
             self::fail('A raw byte path cannot be recorded as a UTF-8 JSON scope.');
         } catch (Throwable $failure) {
             self::assertInstanceOf(InvalidArgumentException::class, $failure);
@@ -231,7 +231,7 @@ final class BaselineWriterTest extends TestCase
         file_put_contents($path . '/keep-me', 'x');
 
         try {
-            $this->writer->write($this->baseline(), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+            $this->writer->write($this->baseline(), \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path), $this->projectRoot);
             self::fail('Expected the write to fail.');
         } catch (RuntimeException) {
             // expected
@@ -325,12 +325,12 @@ final class BaselineWriterTest extends TestCase
         $readByBoth = $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($path));
 
         // Writer A lands.
-        $this->writer->write($readByBoth, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+        $this->writer->write($readByBoth, \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path), $this->projectRoot);
         file_put_contents($path, (string) file_get_contents($path) . "\n");
 
         // Writer B still holds the reading from before A.
         $this->expectException(BaselineConflictException::class);
-        $this->writer->write($readByBoth, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+        $this->writer->write($readByBoth, \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path), $this->projectRoot);
     }
 
     #[Test]
@@ -346,7 +346,7 @@ final class BaselineWriterTest extends TestCase
 
         $this->writer->write(
             $this->baseline()->withSourceContentHash(hash('sha256', $contents)),
-            \Qualimetrix\Core\FileTarget\TargetPath::resolve($path),
+            \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path),
             $this->projectRoot,
         );
 
@@ -358,7 +358,7 @@ final class BaselineWriterTest extends TestCase
         self::assertSame(0o600, fileperms($referent) & 0o7777);
 
         $loaded = $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($referent));
-        $prepared = \Qualimetrix\Core\FileTarget\TargetPath::resolve($path);
+        $prepared = \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path);
         file_put_contents($referent, 'concurrent replacement');
 
         try {
@@ -377,7 +377,7 @@ final class BaselineWriterTest extends TestCase
 
         $this->writer->write(
             $this->baseline()->withExpectedSourceAbsence(),
-            \Qualimetrix\Core\FileTarget\TargetPath::resolve($path),
+            \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path),
             $this->projectRoot,
         );
 
@@ -394,7 +394,7 @@ final class BaselineWriterTest extends TestCase
         try {
             $this->writer->write(
                 $this->baseline()->withExpectedSourceAbsence(),
-                \Qualimetrix\Core\FileTarget\TargetPath::resolve($path),
+                \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path),
                 $this->projectRoot,
             );
             self::fail('Expected the write to be refused.');
@@ -451,7 +451,7 @@ final class BaselineWriterTest extends TestCase
             $impatient = new BaselineWriter(lockTimeoutSeconds: 0.2);
 
             try {
-                $impatient->write($this->baseline(), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+                $impatient->write($this->baseline(), \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path), $this->projectRoot);
                 self::fail('The write must not proceed while another holder has the lock.');
             } catch (RuntimeException $e) {
                 self::assertStringContainsString($path . '.lock', $e->getMessage());
@@ -479,7 +479,7 @@ final class BaselineWriterTest extends TestCase
         unlink($path);
 
         try {
-            $this->writer->write($loaded, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+            $this->writer->write($loaded, \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path), $this->projectRoot);
             self::fail('Expected the write to be refused.');
         } catch (BaselineConflictException $e) {
             self::assertStringContainsString('no longer exists', $e->getMessage());
@@ -500,10 +500,10 @@ final class BaselineWriterTest extends TestCase
 
         // Each step drops an entry, so each write really changes the file and
         // the previous reading genuinely goes out of date.
-        $token = $this->writer->write($this->without($loaded, 2), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+        $token = $this->writer->write($this->without($loaded, 2), \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path), $this->projectRoot);
         $this->writer->write(
             $this->without($loaded, 1)->withSourceContentHash($token),
-            \Qualimetrix\Core\FileTarget\TargetPath::resolve($path),
+            \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path),
             $this->projectRoot,
         );
 
@@ -511,7 +511,7 @@ final class BaselineWriterTest extends TestCase
 
         self::assertSame($current, $this->writer->write(
             $this->without($loaded, 1)->withSourceContentHash($current),
-            \Qualimetrix\Core\FileTarget\TargetPath::resolve($path),
+            \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path),
             $this->projectRoot,
         ));
     }
@@ -563,7 +563,7 @@ final class BaselineWriterTest extends TestCase
         $loaded = $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($path));
         self::assertCount(4, $loaded->inertEntries, 'Both duplicates and both unreadable lines are inert.');
 
-        $this->writer->write($loaded, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+        $this->writer->write($loaded, \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path), $this->projectRoot);
 
         /** @var array{entries: array<string, list<array<string, mixed>>>} $rewritten */
         $rewritten = json_decode((string) file_get_contents($path), true, 512, \JSON_THROW_ON_ERROR);
@@ -633,7 +633,7 @@ final class BaselineWriterTest extends TestCase
             ],
         ], \JSON_THROW_ON_ERROR));
 
-        $this->writer->write($this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($path)), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+        $this->writer->write($this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($path)), \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path), $this->projectRoot);
 
         /** @var array{entries: array<string, list<array<string, mixed>>>} $rewritten */
         $rewritten = json_decode((string) file_get_contents($path), true, 512, \JSON_THROW_ON_ERROR);
@@ -654,7 +654,7 @@ final class BaselineWriterTest extends TestCase
         $path = $this->write($this->baseline());
         $loaded = $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($path));
 
-        $hash = $this->writer->write($loaded, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+        $hash = $this->writer->write($loaded, \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path), $this->projectRoot);
 
         self::assertSame(hash_file('sha256', $path), $hash);
     }
@@ -666,7 +666,7 @@ final class BaselineWriterTest extends TestCase
         file_put_contents($path, 'whatever was here before');
 
         // No source hash: nothing was read, so there is nothing to conflict with.
-        $this->writer->write($this->baseline(), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+        $this->writer->write($this->baseline(), \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path), $this->projectRoot);
 
         self::assertStringContainsString('"version": 14', (string) file_get_contents($path));
     }
@@ -730,7 +730,7 @@ final class BaselineWriterTest extends TestCase
                 sourceContentHash: $loaded->sourceContentHash,
                 exclusions: $loaded->exclusions,
             );
-            $this->writer->write($tightened, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+            $this->writer->write($tightened, \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path), $this->projectRoot);
 
             $rewritten = json_decode((string) file_get_contents($path), false, 512, \JSON_THROW_ON_ERROR);
             self::assertInstanceOf(stdClass::class, $rewritten);
@@ -760,7 +760,7 @@ final class BaselineWriterTest extends TestCase
                 exclusions: $reloaded->exclusions,
             );
             try {
-                $this->writer->write($collision, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+                $this->writer->write($collision, \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path), $this->projectRoot);
                 self::fail('A malformed bucket cannot be combined with an entry under the same subject.');
             } catch (InvalidArgumentException $e) {
                 self::assertSame(
@@ -819,7 +819,7 @@ final class BaselineWriterTest extends TestCase
                 entries: [],
                 exclusions: self::fixtureExclusions(),
             ),
-            \Qualimetrix\Core\FileTarget\TargetPath::resolve($path),
+            \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path),
             $projectRoot,
         );
 
@@ -879,7 +879,7 @@ final class BaselineWriterTest extends TestCase
         $path = $this->write($this->baseline());
         $first = (string) file_get_contents($path);
 
-        $this->writer->write($this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($path)), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+        $this->writer->write($this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($path)), \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path), $this->projectRoot);
 
         self::assertSame($first, (string) file_get_contents($path));
     }
@@ -902,7 +902,7 @@ final class BaselineWriterTest extends TestCase
         });
 
         try {
-            $this->writer->write($this->baseline(), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+            $this->writer->write($this->baseline(), \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path), $this->projectRoot);
         } catch (\Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineLockFailure $failure) {
             $cause = $failure->getPrevious();
             self::assertInstanceOf(FileTargetFailure::class, $cause);
@@ -929,7 +929,7 @@ final class BaselineWriterTest extends TestCase
     private function write(Baseline $baseline, string $name = 'baseline.json'): string
     {
         $path = $this->tempDir . '/' . $name;
-        $this->writer->write($baseline, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+        $this->writer->write($baseline, \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path), $this->projectRoot);
 
         return $path;
     }

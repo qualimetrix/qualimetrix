@@ -18,17 +18,17 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
-use Qualimetrix\Reporting\Formatter\GitLabCodeQualityFormatter;
+use Qualimetrix\Reporting\Formatter\GitLab\GitLabCodeQualityFormatter;
 use Qualimetrix\Reporting\Formatter\Json\JsonFindingSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonFormatter;
 use Qualimetrix\Reporting\Formatter\Json\JsonHealthSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonOffenderSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonSanitizer;
-use Qualimetrix\Reporting\Formatter\MetricsJsonFormatter;
+use Qualimetrix\Reporting\Formatter\MetricsJson\MetricsJsonFormatter;
 use Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter;
 use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
-use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
 use Qualimetrix\Reporting\ReportBuilder;
 use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
@@ -41,7 +41,7 @@ use Qualimetrix\Tests\Reporting\Support\StubChannelPresentation;
  * value types as before the migration. The test does not commit a literal
  * golden file (the rest of the report contains volatile fields like
  * timestamps and versions); instead it pins the shape — keys, types, and
- * the omission of fileless findings on path-required surfaces.
+ * the project-root path of findings with no narrower file evidence.
  */
 #[CoversNothing]
 final class JsonShapePreservationTest extends TestCase
@@ -59,7 +59,7 @@ final class JsonShapePreservationTest extends TestCase
         $data = json_decode($formatter->format($report, new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertIsList($data);
-        self::assertCount(1, $data);
+        self::assertCount(2, $data);
 
         foreach ($data as $entry) {
             self::assertArrayHasKey('location', $entry);
@@ -69,7 +69,7 @@ final class JsonShapePreservationTest extends TestCase
 
         $paths = array_column(array_column($data, 'location'), 'path');
         self::assertContains('src/Service/UserService.php', $paths);
-        self::assertSame(['src/Service/UserService.php'], $paths);
+        self::assertSame(['src/Service/UserService.php', '.'], $paths);
     }
 
     #[Test]

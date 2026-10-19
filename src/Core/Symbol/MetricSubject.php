@@ -12,11 +12,17 @@ use LogicException;
  */
 final readonly class MetricSubject
 {
+    private string $canonical;
     private function __construct(
         private ?DeclarationPath $declarationPath,
         private ?LogicalClassPath $logicalClassPath,
         private ?SymbolPath $aggregatePath,
-    ) {}
+    ) {
+        $this->canonical = $declarationPath?->toCanonical()
+            ?? $logicalClassPath?->toCanonical()
+            ?? $aggregatePath?->toCanonical()
+            ?? throw new LogicException('MetricSubject must contain one identity');
+    }
 
     public static function declaration(DeclarationPath $path): self
     {
@@ -57,10 +63,7 @@ final readonly class MetricSubject
      */
     public function toCanonical(): string
     {
-        return $this->declarationPath?->toCanonical()
-            ?? $this->logicalClassPath?->toCanonical()
-            ?? $this->aggregatePath?->toCanonical()
-            ?? throw new LogicException('MetricSubject must contain one identity');
+        return $this->canonical;
     }
 
     /**

@@ -7,9 +7,9 @@ namespace Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\ExclusionDelta;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\SubjectRegion;
 
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence;
 
 /** Proof that an identity's own source file was removed by a new exclusion. */

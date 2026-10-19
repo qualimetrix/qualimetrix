@@ -24,6 +24,8 @@ use PhpParser\Node\Identifier;
  * - $this->property           → usedProperties
  * - self::$prop / static::    → usedProperties
  * - self::CONST / static::    → usedConstants
+ *
+  * @qmx-threshold coupling.instability 0.857144 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
  */
 trait UsageTrackingTrait
 {

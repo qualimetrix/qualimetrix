@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Cohesion;
 
 use Qualimetrix\Core\Symbol\ClassNameSpelling;
-use Qualimetrix\Core\Symbol\TraitComposition;
-use Qualimetrix\Core\Symbol\TraitDefinitionFacts;
-use Qualimetrix\Core\Symbol\TraitMethodSource;
-use Qualimetrix\Core\Symbol\TraitUseFacts;
+use Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitDefinitionFacts;
+use Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitMethodSource;
+use Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitUseFacts;
+use Qualimetrix\Core\Symbol\TraitComposition\TraitComposition;
 
 /** Composes read trait bodies into one class's cohesion populations. */
 final class CohesionTraitComposition

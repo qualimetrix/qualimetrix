@@ -7,7 +7,7 @@ namespace Qualimetrix\Core\FileTarget\PrivateGroup;
 use Qualimetrix\Core\FileTarget\FileTargetFailure;
 use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
 use Qualimetrix\Core\FileTarget\NativeCall;
-use Qualimetrix\Core\FileTarget\Publication\TemporarySibling;
+use Qualimetrix\Core\FileTarget\TemporarySibling;
 
 use Qualimetrix\Core\Path\AbsolutePath;
 use Throwable;

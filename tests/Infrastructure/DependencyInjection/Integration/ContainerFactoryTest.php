@@ -38,13 +38,13 @@ use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationS
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomRule;
 use Qualimetrix\Analysis\Evidence\Cohesion\TccLccCollector;
-use Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityCollector;
-use Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityRule;
-use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
-use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector;
+use Qualimetrix\Analysis\Evidence\Complexity\Cognitive\CognitiveComplexityCollector;
+use Qualimetrix\Analysis\Evidence\Complexity\Cognitive\CognitiveComplexityRule;
+use Qualimetrix\Analysis\Evidence\Complexity\Cyclomatic\ComplexityRule;
+use Qualimetrix\Analysis\Evidence\Complexity\Cyclomatic\CyclomaticComplexityCollector;
 use Qualimetrix\Analysis\Evidence\Complexity\Npath\NpathComplexityCollector;
 use Qualimetrix\Analysis\Evidence\Complexity\Npath\NpathComplexityRule;
-use Qualimetrix\Analysis\Evidence\Complexity\WmcRule;
+use Qualimetrix\Analysis\Evidence\Complexity\Wmc\WmcRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricAnalysis;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
@@ -59,10 +59,10 @@ use Qualimetrix\Analysis\Evidence\Coupling\ClassRank\ClassRankRule;
 use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
 use Qualimetrix\Analysis\Evidence\Coupling\Distance\DistanceRule;
-use Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule;
+use Qualimetrix\Analysis\Evidence\Coupling\Instability\InstabilityRule;
 use Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcCollector;
 use Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcGlobalCollector;
-use Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceRule;
+use Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFramework\UnmatchedFrameworkNamespaceRule;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
 use Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassRule;
@@ -96,9 +96,9 @@ use Qualimetrix\Analysis\Evidence\Security\SensitiveParameterRule;
 use Qualimetrix\Analysis\Evidence\Size\ClassCount\ClassCountCollector;
 use Qualimetrix\Analysis\Evidence\Size\ClassCount\ClassCountRule;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
-use Qualimetrix\Analysis\Evidence\Size\MethodCountCollector;
-use Qualimetrix\Analysis\Evidence\Size\MethodCountRule;
-use Qualimetrix\Analysis\Evidence\Size\PropertyCountRule;
+use Qualimetrix\Analysis\Evidence\Size\MethodCount\MethodCountCollector;
+use Qualimetrix\Analysis\Evidence\Size\MethodCount\MethodCountRule;
+use Qualimetrix\Analysis\Evidence\Size\PropertyCount\PropertyCountRule;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
@@ -121,7 +121,9 @@ use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeRule;
+use Qualimetrix\Analysis\Run\Measurement\RunMeasurement;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
+use Qualimetrix\Analysis\Run\Preparation\RunPreparation;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -133,16 +135,16 @@ use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\CacheInterface;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
 use Qualimetrix\Infrastructure\Composer\DeclaredSupertypeReader;
+use Qualimetrix\Infrastructure\Console\Baseline\Measurement\BaselineRun;
 use Qualimetrix\Infrastructure\Console\BaselineCommand\MeasuredFindingSet;
 use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
 use Qualimetrix\Infrastructure\Console\CheckScope\CheckScopeResolver;
-use Qualimetrix\Infrastructure\Console\Command\Baseline\Measurement\BaselineRun;
 use Qualimetrix\Infrastructure\Console\GraphExport\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\RuleListing\RulesCommand;
-use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisRuntimeConfigurator;
-use Qualimetrix\Infrastructure\Console\RunSetup\CheckConfigurationResolvers;
-use Qualimetrix\Infrastructure\Console\RunSetup\FindingConfigurationPreparation;
-use Qualimetrix\Infrastructure\Console\RunSetup\RunConfigurationPreparation;
+use Qualimetrix\Infrastructure\Console\RunSetup\CapabilityState\AnalysisRuntimeConfigurator;
+use Qualimetrix\Infrastructure\Console\RunSetup\Execution\RunConfigurationPreparation;
+use Qualimetrix\Infrastructure\Console\RunSetup\Finding\CheckConfigurationResolvers;
+use Qualimetrix\Infrastructure\Console\RunSetup\Finding\FindingConfigurationPreparation;
 use Qualimetrix\Infrastructure\Console\RunSetup\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\CodeSmell\CodeSmellConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -155,10 +157,10 @@ use Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy;
 use Qualimetrix\Infrastructure\Parallel\Strategy\StrategySelector;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterRegistryInterface;
 use Qualimetrix\Reporting\Contract\OutputFormatResolverInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
-use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface;
 use Qualimetrix\Subprocess\ChildProcess;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
@@ -272,14 +274,14 @@ final class ContainerFactoryTest extends TestCase
 
         $pipeline = $container->get(AnalysisPipelineInterface::class);
         $ruleConfiguration = $container->get(RuleConfigurationInterface::class);
-        $producerPreparation = (new ReflectionProperty(AnalysisPipeline::class, 'ruleProducerPreparation'))->getValue($pipeline);
+        $producerPreparation = (new ReflectionProperty(RunPreparation::class, 'ruleProducerPreparation'))->getValue($this->runPreparation($pipeline));
         $producerGate = (new ReflectionProperty($producerPreparation, 'producerGate'))->getValue($producerPreparation);
         self::assertSame(
             $ruleConfiguration,
             (new ReflectionProperty($producerGate, 'ruleConfiguration'))->getValue($producerGate),
         );
         self::assertFalse((new ReflectionClass(AnalysisPipeline::class))->hasProperty('ruleConfiguration'));
-        $collectionOrchestrator = (new ReflectionProperty(AnalysisPipeline::class, 'collectionOrchestrator'))->getValue($pipeline);
+        $collectionOrchestrator = (new ReflectionProperty(RunPreparation::class, 'collectionOrchestrator'))->getValue($this->runPreparation($pipeline));
         self::assertInstanceOf(CollectionOrchestrator::class, $collectionOrchestrator);
         $fileProcessor = (new ReflectionProperty(CollectionOrchestrator::class, 'fileProcessor'))->getValue($collectionOrchestrator);
         self::assertInstanceOf(FileProcessor::class, $fileProcessor);
@@ -288,7 +290,9 @@ final class ContainerFactoryTest extends TestCase
             'Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\SourceControlExtractor',
             $sourceControlExtractor::class,
         );
-        $evaluator = (new ReflectionProperty(AnalysisPipeline::class, 'computedMetricEvaluation'))->getValue($pipeline);
+        $measurements = (new ReflectionProperty(RunPreparation::class, 'runMeasurement'))->getValue($this->runPreparation($pipeline));
+        self::assertInstanceOf(RunMeasurement::class, $measurements);
+        $evaluator = (new ReflectionProperty(RunMeasurement::class, 'computedMetricEvaluation'))->getValue($measurements);
         self::assertInstanceOf(ComputedMetricEvaluator::class, $evaluator);
         $evaluatorLogger = (new ReflectionProperty(ComputedMetricEvaluator::class, 'logger'))->getValue($evaluator);
         $pipelineLogger = (new ReflectionProperty(AnalysisPipeline::class, 'logger'))->getValue($pipeline);
@@ -341,7 +345,9 @@ final class ContainerFactoryTest extends TestCase
         )]));
 
         $pipeline = $container->get(AnalysisPipelineInterface::class);
-        $factory = (new ReflectionProperty(AnalysisPipeline::class, 'repositoryFactory'))->getValue($pipeline);
+        $measurements = (new ReflectionProperty(RunPreparation::class, 'runMeasurement'))->getValue($this->runPreparation($pipeline));
+        self::assertInstanceOf(RunMeasurement::class, $measurements);
+        $factory = (new ReflectionProperty(RunMeasurement::class, 'repositoryFactory'))->getValue($measurements);
         self::assertInstanceOf(MetricRepositoryFactoryInterface::class, $factory);
         $subject = MetricSubject::declaration(DeclarationPath::of(
             SymbolPath::forClass('App', 'Fixture'),
@@ -372,7 +378,7 @@ final class ContainerFactoryTest extends TestCase
         );
 
         $pipeline = $container->get(AnalysisPipelineInterface::class);
-        $pipelineBuilder = (new ReflectionProperty(AnalysisPipeline::class, 'graphBuilder'))->getValue($pipeline);
+        $pipelineBuilder = (new ReflectionProperty(RunPreparation::class, 'graphBuilder'))->getValue($this->runPreparation($pipeline));
         self::assertSame($graphBuilder, $pipelineBuilder);
 
         $projection = $container->get(DependencyGraphProjectionInterface::class);
@@ -445,7 +451,7 @@ final class ContainerFactoryTest extends TestCase
         $container = $this->factory->create();
 
         $pipeline = $container->get(AnalysisPipelineInterface::class);
-        $producerPreparation = (new ReflectionProperty(AnalysisPipeline::class, 'ruleProducerPreparation'))->getValue($pipeline);
+        $producerPreparation = (new ReflectionProperty(RunPreparation::class, 'ruleProducerPreparation'))->getValue($this->runPreparation($pipeline));
         $fileSetInspection = (new ReflectionProperty($producerPreparation, 'fileSetInspection'))->getValue($producerPreparation);
         $participants = (new ReflectionProperty($fileSetInspection, 'participants'))->getValue($fileSetInspection);
         self::assertCount(1, $participants);
@@ -572,7 +578,7 @@ PHP;
         self::assertInstanceOf(DependencyTraversalParticipantInterface::class, $participant);
 
         $pipeline = $container->get(AnalysisPipelineInterface::class);
-        $orchestrator = (new ReflectionProperty(AnalysisPipeline::class, 'collectionOrchestrator'))->getValue($pipeline);
+        $orchestrator = (new ReflectionProperty(RunPreparation::class, 'collectionOrchestrator'))->getValue($this->runPreparation($pipeline));
         $selector = (new ReflectionProperty($orchestrator, 'strategySelector'))->getValue($orchestrator);
         self::assertInstanceOf(StrategySelector::class, $selector);
         $factory = (new ReflectionProperty(AmphpParallelStrategy::class, 'fileProcessingTaskFactory'))
@@ -608,7 +614,13 @@ PHP;
         self::assertCount(2, $measuredFindingSetConstructor->getParameters());
         $pipelineConstructor = (new ReflectionClass(AnalysisPipeline::class))->getConstructor();
         self::assertNotNull($pipelineConstructor);
-        self::assertCount(13, $pipelineConstructor->getParameters());
+        self::assertCount(5, $pipelineConstructor->getParameters());
+        $preparationConstructor = (new ReflectionClass(RunPreparation::class))->getConstructor();
+        self::assertNotNull($preparationConstructor);
+        self::assertCount(11, $preparationConstructor->getParameters());
+        $measurementConstructor = (new ReflectionClass(RunMeasurement::class))->getConstructor();
+        self::assertNotNull($measurementConstructor);
+        self::assertCount(3, $measurementConstructor->getParameters());
 
         $runtimeConfigurator = $container->get(RuntimeConfigurator::class);
         self::assertInstanceOf(RuntimeConfigurator::class, $runtimeConfigurator);
@@ -657,7 +669,7 @@ PHP;
             self::assertInstanceOf(LcomCollectionConfigurableInterface::class, $runtimeCollector);
         }
 
-        $producerPreparation = (new ReflectionProperty(AnalysisPipeline::class, 'ruleProducerPreparation'))->getValue($pipeline);
+        $producerPreparation = (new ReflectionProperty(RunPreparation::class, 'ruleProducerPreparation'))->getValue($this->runPreparation($pipeline));
         $fileSetComposite = (new ReflectionProperty($producerPreparation, 'fileSetInspection'))->getValue($producerPreparation);
         $participants = (new ReflectionProperty($fileSetComposite, 'participants'))->getValue($fileSetComposite);
         self::assertCount(1, $participants);
@@ -720,9 +732,9 @@ PHP;
     {
         $container = $this->factory->create();
 
-        self::assertTrue($container->has(\Qualimetrix\Infrastructure\Console\Command\Baseline\Maintenance\BaselineCleanupCommand::class));
-        $command = $container->get(\Qualimetrix\Infrastructure\Console\Command\Baseline\Maintenance\BaselineCleanupCommand::class);
-        self::assertInstanceOf(\Qualimetrix\Infrastructure\Console\Command\Baseline\Maintenance\BaselineCleanupCommand::class, $command);
+        self::assertTrue($container->has(\Qualimetrix\Infrastructure\Console\Baseline\Maintenance\BaselineCleanupCommand::class));
+        $command = $container->get(\Qualimetrix\Infrastructure\Console\Baseline\Maintenance\BaselineCleanupCommand::class);
+        self::assertInstanceOf(\Qualimetrix\Infrastructure\Console\Baseline\Maintenance\BaselineCleanupCommand::class, $command);
     }
 
     #[Test]
@@ -970,7 +982,9 @@ PHP;
         $pipeline = $container->get(AnalysisPipelineInterface::class);
         self::assertInstanceOf(AnalysisPipeline::class, $pipeline);
 
-        $aggregation = (new ReflectionProperty(AnalysisPipeline::class, 'measurementAggregation'))->getValue($pipeline);
+        $measurements = (new ReflectionProperty(RunPreparation::class, 'runMeasurement'))->getValue($this->runPreparation($pipeline));
+        self::assertInstanceOf(RunMeasurement::class, $measurements);
+        $aggregation = (new ReflectionProperty(RunMeasurement::class, 'measurementAggregation'))->getValue($measurements);
         self::assertInstanceOf(MeasurementAggregationService::class, $aggregation);
 
         /** @var list<object> $collectors */
@@ -1191,5 +1205,13 @@ PHP;
         }
 
         rmdir($dir);
+    }
+
+    private function runPreparation(object $pipeline): RunPreparation
+    {
+        self::assertInstanceOf(AnalysisPipeline::class, $pipeline);
+        $preparation = (new ReflectionProperty(AnalysisPipeline::class, 'preparation'))->getValue($pipeline);
+        self::assertInstanceOf(RunPreparation::class, $preparation);
+        return $preparation;
     }
 }

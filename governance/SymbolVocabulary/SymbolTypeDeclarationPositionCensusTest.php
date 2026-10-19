@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Reporting\Formatter\MetricsJsonFormatter;
+use Qualimetrix\Reporting\Formatter\MetricsJson\MetricsJsonFormatter;
 use ReflectionClass;
 
 /**

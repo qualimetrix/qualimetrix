@@ -8,15 +8,15 @@ use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInte
 use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
+use Qualimetrix\Analysis\Policy\Baseline\Ceiling\GroupAcceptance;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\GroupCapture;
-use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
 
+use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\GroupAcceptance;
 use Qualimetrix\Analysis\Policy\Baseline\RunCoverage\RunCoverageGap;
 use Qualimetrix\Analysis\Policy\Baseline\RunCoverage\RunRuleCoverage;
 use Qualimetrix\Core\Time\ClockInterface;
@@ -73,6 +73,7 @@ use Qualimetrix\Core\Time\ClockInterface;
  * loaded — `update` does not read {@see Baseline::$inertEntries} at all, and
  * must not lose a line an unrelated defect put there; `cleanup` is the only
  * command with an opinion about them (ADR 0017).
+  * @qmx-threshold coupling.instability 0.850001 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
  */
 final readonly class BaselineUpdater
 {

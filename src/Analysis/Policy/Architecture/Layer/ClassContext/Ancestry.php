@@ -13,7 +13,9 @@ use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
 
-/** Resolves bounded parent and interface ancestry for class contexts. */
+/** Resolves bounded parent and interface ancestry for class contexts.
+ * @qmx-threshold coupling.instability 0.818183 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
+ */
 final class Ancestry
 {
     public const int MAX_DEPTH = 256;

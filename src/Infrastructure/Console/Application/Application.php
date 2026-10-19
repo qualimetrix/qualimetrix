@@ -5,19 +5,21 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Application;
 
 use Closure;
+
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface;
-use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 
+use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Core\ProductIdentity;
+
 use Qualimetrix\Core\Version;
+use Qualimetrix\Infrastructure\Console\Application\CommandLoading\ProductCommandLoader;
 use Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode;
 use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
-use Qualimetrix\Infrastructure\Console\Terminal\OutputEncoding;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Glyphs\OutputEncoding;
 use Qualimetrix\Infrastructure\Console\Terminal\ReportPublication\OutputHelper;
 use Symfony\Component\Console\Application as BaseApplication;
 use Symfony\Component\Console\Command\Command;

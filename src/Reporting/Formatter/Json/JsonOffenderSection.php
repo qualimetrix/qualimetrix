@@ -7,10 +7,10 @@ namespace Qualimetrix\Reporting\Formatter\Json;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\OffenderNamespaceSelection;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Report\Report;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
-use Qualimetrix\Reporting\Formatter\FormatOptionValue;
-use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\Report;
+use Qualimetrix\Reporting\FormatOptions\FormatOptionValue;
 
 final class JsonOffenderSection
 {

@@ -6,8 +6,6 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 
 use InvalidArgumentException;
 
-use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CapturePattern;
-
 /**
  * A layer entry parameterised by capture variables. Expanded into one or more
  * concrete {@see LayerDefinition} instances by
@@ -22,7 +20,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CapturePattern;
  *
  * **How the criteria combine.** Exactly as they do for a static layer:
  * {@see MembershipSpec::$mode} governs cross-kind combination, and
- * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CriteriaEvaluation::outcome()}
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\CriteriaEvaluation::outcome()}
  * is the one place that applies it — for template observation and for runtime
  * membership alike. An earlier docblock here claimed an invariant in the
  * opposite direction, that non-capturing criteria always AND regardless of
@@ -55,6 +53,8 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\Matching\CapturePattern;
  * Variables are sorted in alphabetic order at construction so the
  * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage} can produce
  * stable tuple ordering regardless of declaration order in the YAML.
+ *
+ * @qmx-threshold health.cohesion 30.0 -- Independent immutable observations or stateless declaration operations intentionally have no shared instance-field graph; this finite class boundary keeps a further cohesion loss visible.
  */
 final readonly class TemplateLayerDefinition
 {

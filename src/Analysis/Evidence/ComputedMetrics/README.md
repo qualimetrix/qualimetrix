@@ -174,7 +174,8 @@ ComputedMetrics/
 │   ├── ComputedMetricAuthorship.php          # which layers wrote each metric, for a refusal to name
 │   └── ComputedMetricRefusalWording.php      # the words of every refusal about what a value means
 ├── Finding/
-│   └── ComputedMetricFindingBuilder.php
+│   ├── ComputedMetricFindingBuilder.php
+│   └── HealthThresholdOverrideValidator.php # one nonnegative class boundary for builtin health producers
 ├── ComputedMetricAnalysis.php        # instance-owned catalog and configuration facade
 ├── ComputedMetricsConfigResolver.php # validated definition resolution
 ├── ComputedMetricFormulaValidator.php
@@ -258,7 +259,7 @@ two native positions.
 
 - `ComputedMetricConfiguratorInterface` —
   `Infrastructure\Console\AnalysisRuntimeConfigurator`.
-- `ComputedMetricEvaluatorInterface` — `Analysis\Run\Pipeline\AnalysisPipeline`.
+- `ComputedMetricEvaluatorInterface` — `Analysis\Run\Pipeline\RunMeasurement`.
 - `ComputedMetricExpressionInterface` — Health's `HealthFormulaExcluder`,
   `WeightedHealthFormula`, and `HealthDecompositionCatalog`. Composition injects
   the same formula implementation; Health never constructs an internal engine.
@@ -447,3 +448,29 @@ Reporting selects the full offender population, ranks by `RankBy::Score` or
 `Density`, then applies a display limit. The separate class health heading
 requires a unique declaration: JSON/summary `--class` refuse duplicate logical
 names with exit 5; namespace selection retains their exact offender records. See ADR 0110.
+
+## Exact class health boundaries
+
+The six builtin health producers accept an exact class docblock override such as
+`@qmx-threshold health.cohesion 40`. The scalar supplies one boundary to both
+severity axes; equal explicit warning/error values also work. Partial or unequal
+pairs are refused before rule execution. This single-boundary form stays coherent
+when an authored definition changes its direction: comparison follows that
+resolved definition, rather than a worker-side assumption about its formula.
+Namespace and project judgements keep their configured thresholds. The open
+`computed` producer remains unretunable because one producer hosts multiple
+runtime-defined metrics and directions. The existing directive audit measures
+these class overrides with the same exact declaration identity as other rules.
+
+### Builtin health threshold validation boundary
+
+`Finding/HealthThresholdOverrideValidator` is an executable public capability
+service, outside the vocabulary-only `Contract` subtree. Its two named consumers
+are `Infrastructure\Parallel\WorkerBootstrap` and
+`Infrastructure\DependencyInjection\RuleCatalog\ThresholdValidatorMapCompilerPass`.
+`forBuiltinHealthProducers()` supplies validators for the six declared builtin
+health producers; each accepts one nonnegative boundary (a scalar or equal
+warning/error axes). The resolved definition supplies the comparison direction.
+The service does not enrol user-defined computed metrics or publish executable
+rule construction. `Contract/Finding/ComputedMetricChannelFamily` publishes the
+producer vocabulary and has no dependency on the validator implementation.

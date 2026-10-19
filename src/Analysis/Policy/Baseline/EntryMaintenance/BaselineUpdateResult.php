@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance;
 
 use Qualimetrix\Analysis\Policy\Baseline\Capture\BaselineCapture;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineWriter;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\Baseline;
 
 /**
  * What one `baseline:update` run produced: the new baseline, and what

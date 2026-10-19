@@ -10,12 +10,12 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOption
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ThresholdParser;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ThresholdPair;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\InvertedOverrideValidator;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOptionQueries;
 
 /**
  * Options for MaintainabilityRule.
@@ -29,6 +29,8 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  */
 final readonly class MaintainabilityOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
+    use ThresholdOptionQueries;
+
     public function __construct(
         public bool $enabled = true,
         public float $warning = 40.0,
@@ -39,40 +41,14 @@ final readonly class MaintainabilityOptions implements RuleOptionsInterface, Thr
 
     public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
-        $thresholds = ThresholdParser::parse($config, RuleOptionSurface::bandFor(self::class, 'threshold'), 40.0, 20.0);
+        $thresholds = ThresholdPair::fromResolved($config, RuleOptionSurface::bandFor(self::class, 'threshold'), 40.0, 20.0);
         return new self(
             enabled: $config->boolean('enabled', true),
-            warning: $thresholds['warning'],
-            error: $thresholds['error'],
+            warning: $thresholds->warning,
+            error: $thresholds->error,
             excludeTests: $config->boolean('exclude-tests', true),
             minStatements: $config->integer('min-statements', 10),
         );
-    }
-
-    public function isEnabled(): bool
-    {
-        return $this->enabled;
-    }
-
-    /**
-     * Get severity for a given MI value.
-     *
-     * Lower MI = worse maintainability.
-     */
-    public function getSeverity(int|float $value): ?Severity
-    {
-        // Design decision: strict `<` is intentional (not `<=`).
-        // The threshold is the first "acceptable" value for the better category:
-        // MI=20.0 is a warning (not error), MI=40.0 is good (not warning).
-        if ($value < $this->error) {
-            return Severity::Error;
-        }
-
-        if ($value < $this->warning) {
-            return Severity::Warning;
-        }
-
-        return null;
     }
 
     public function withOverride(int|float|null $warning, int|float|null $error): static
@@ -91,11 +67,6 @@ final readonly class MaintainabilityOptions implements RuleOptionsInterface, Thr
         return InvertedOverrideValidator::instance();
     }
 
-    public function warningBoundary(): float
-    {
-        return $this->warning;
-    }
-
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
         return RuleOptionKeySet::of([
@@ -106,4 +77,9 @@ final readonly class MaintainabilityOptions implements RuleOptionsInterface, Thr
             'warning' => RuleOptionShape::number()->orNull(),
         ])->band('threshold', 'warning', 'error', BandDirection::Falling);
     }
+    protected function thresholdPair(): ThresholdPair
+    {
+        return new ThresholdPair($this->warning, $this->error, BandDirection::Falling);
+    }
+
 }

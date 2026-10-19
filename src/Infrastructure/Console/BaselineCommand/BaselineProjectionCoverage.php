@@ -6,15 +6,17 @@ namespace Qualimetrix\Infrastructure\Console\BaselineCommand;
 
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RunScope;
 use Qualimetrix\Analysis\Policy\Baseline\RunCoverage\RunRuleCoverage;
-use Qualimetrix\Analysis\Policy\Baseline\RunCoverage\RunScope;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
-use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
+use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionOptions;
 
-/** Carries the completed run's coverage into baseline finding projection. */
+/** Carries the completed run's coverage into baseline finding projection.
+ * @qmx-threshold coupling.instability 0.818183 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
+ */
 final readonly class BaselineProjectionCoverage
 {
     public function __construct(

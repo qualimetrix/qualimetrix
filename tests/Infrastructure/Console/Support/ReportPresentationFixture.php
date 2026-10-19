@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Support;
 
-use Qualimetrix\Infrastructure\Console\CheckReport\FormatterContextFactory;
-use Qualimetrix\Infrastructure\Console\CheckReport\ReportAssembler;
-use Qualimetrix\Infrastructure\Console\CheckReport\ReportFormatter;
+use Qualimetrix\Infrastructure\Console\CheckReport\Assembly\ReportAssembler;
+use Qualimetrix\Infrastructure\Console\CheckReport\FormatBinding\FormatterContextFactory;
+use Qualimetrix\Infrastructure\Console\CheckReport\FormatBinding\ReportFormatter;
 use Qualimetrix\Infrastructure\Console\RuntimePolicy\ExitCodeResolver;
 use Qualimetrix\Infrastructure\Console\Terminal\ReportPublication\ReportPublication;
 

@@ -46,7 +46,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Console\Invocation\Configuration\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\RuleListing\RuleListingPresenter;
 use Qualimetrix\Infrastructure\Console\RuleListing\RulesCommand;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 use Symfony\Component\Console\Tester\CommandTester;
 

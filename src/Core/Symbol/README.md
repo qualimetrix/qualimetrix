@@ -24,7 +24,8 @@ themselves. `PhpBuiltinClassRegistry::spelling()` is the name a caller records
 a class under — that spelling for a PHP class, the written name for any other —
 for readers that compare class names by exact string.
 
-`TraitComposition::compose()` calculates PHP's effective imported method names
+`TraitComposition/` owns PHP trait method composition, independently of symbol
+identity. Its `TraitComposition::compose()` calculates PHP's effective imported method names
 from neutral facts. Coupling uses their source identities for RFC membership;
 Cohesion can use the same identities and effective visibility to find method
 bodies. The primitive owns no AST traversal, declaration lookup, repository or
@@ -32,13 +33,15 @@ metric arithmetic. Its state lasts for one composition call.
 
 ```
 Symbol/
-├── TraitComposition.php        # Composition entry point
-├── TraitCompositionResult.php  # Imported method map and unread trait names
-├── TraitCompositionScope.php   # Internal recursive reads and active-cycle detection
-├── TraitDefinitionFacts.php    # Raw own methods and nested uses of one trait
-├── TraitMethodPool.php         # Internal direct candidates and adaptations
-├── TraitMethodSource.php       # Final declaring trait, original method and effective modifiers
-└── TraitUseFacts.php           # Resolved direct trait names, aliases and precedences
+└── TraitComposition/
+    ├── TraitComposition.php        # Composition entry point
+    ├── TraitCompositionFailure.php # Invalid source composition and declaration
+    ├── TraitCompositionResult.php  # Imported method map and unread trait names
+    ├── TraitCompositionScope.php   # Internal recursive reads and cycle detection
+    ├── TraitDefinitionFacts.php    # Raw own methods and nested uses of one trait
+    ├── TraitMethodPool.php         # Internal direct candidates and adaptations
+    ├── TraitMethodSource.php       # Original method and effective modifiers
+    └── TraitUseFacts.php           # Resolved traits, aliases and precedences
 ```
 
 The entry point accepts all own method names (including abstract methods),
@@ -61,7 +64,7 @@ source visibility independently of those changes.
 
 Concrete methods satisfy abstract candidates of the same name. Identical diamond
 imports are one method; different concrete sources, different effective
-visibility, or colliding concrete aliases throw `InvalidArgumentException`
+visibility, or colliding concrete aliases throw `TraitCompositionFailure`
 naming the method. PHP signature compatibility and type-system validation are
 outside this contract. Unread nested traits retain known independent methods.
 Active cycle members contribute no methods and appear in `unread`; repeated DAG
@@ -69,7 +72,7 @@ reads are cached per call and are not cycles. Unread names are deduplicated by
 ASCII identity. An unqualified alias with an unread candidate remains unresolved
 instead of guessing its source.
 
-The owning tests are in `tests/Core/Symbol/Unit/TraitCompositionTest.php`. Keep
+The owning tests are in `tests/Core/Symbol/Unit/TraitComposition/TraitCompositionTest.php`. Keep
 these facts neutral as further consumers are added; a sole remaining capability
 consumer would require reassessing ownership rather than importing its state
 into Core.

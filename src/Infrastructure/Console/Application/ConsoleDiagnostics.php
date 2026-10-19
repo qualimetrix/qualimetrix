@@ -7,7 +7,7 @@ namespace Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
 
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 
 final readonly class ConsoleDiagnostics
 {

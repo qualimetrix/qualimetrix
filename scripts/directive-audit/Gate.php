@@ -33,7 +33,7 @@ use RuntimeException;
  *
  *    **The two measures are written differently on purpose.** The enumeration
  *    used to hold a hand-copied duplicate of
- *    {@see \Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor}'s
+ *    {@see \Qualimetrix\Analysis\Policy\Inline\Threshold\ThresholdOverrideExtractor}'s
  *    private extraction pattern, kept byte-identical to it by a test — so a
  *    regression inside the pattern (a character class narrowed, an anchor
  *    loosened) was authored once and landed in both measurements, and this

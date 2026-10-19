@@ -7,15 +7,16 @@ namespace Qualimetrix\Reporting\Health;
 use LogicException;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummary;
+
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummaryBuilder;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Evidence\Prioritization\Impact\ImpactCalculator;
-use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Reporting\Report;
+use Qualimetrix\Reporting\Contract\Report\Report;
+use Qualimetrix\Reporting\Contract\Report\ReportHealth;
 
 /**
  * Assembles report-level debt and impact data with Health-owned summaries.
@@ -51,15 +52,7 @@ final readonly class SummaryEnricher
             : null;
         $topIssues = $this->impactCalculator->computeTopIssues($report->findings, $metrics, $tree);
 
-        return new Report(
-            fileNamespaces: $report->fileNamespaces,
-            findings: $report->findings,
-            filesAnalyzed: $report->filesAnalyzed,
-            filesSkipped: $report->filesSkipped,
-            duration: $report->duration,
-            errorCount: $report->errorCount,
-            warningCount: $report->warningCount,
-            metrics: $report->metrics,
+        return $report->withHealth(new ReportHealth(
             healthScores: $health->healthScores,
             worstNamespaces: $health->worstNamespaces,
             worstClasses: $health->worstClasses,
@@ -67,18 +60,6 @@ final readonly class SummaryEnricher
             debtPer1kLoc: $debtPer1kLoc,
             topIssues: $topIssues,
             namespaceTree: $tree,
-            infoCount: $report->infoCount,
-            coverage: $report->coverage,
-            suppressionComposition: $report->suppressionComposition,
-            outOfScope: $report->outOfScope,
-            projectScope: $report->projectScope,
-            configurationDiagnostics: $report->configurationDiagnostics,
-            computedMetricEvaluation: $report->computedMetricEvaluation,
-            population: $this->copiedPopulation($report),
-        );
-    }
-    private function copiedPopulation(Report $report): JudgedPopulation
-    {
-        return $report->population;
+        ));
     }
 }

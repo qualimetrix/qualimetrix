@@ -25,7 +25,12 @@ use RuntimeException;
  * list ({@see itFlagsTheAuditsChainedReadWhenItIsNotExcused()},
  * {@see itFlagsTheOwningTypesOwnReadWhenItIsNotExcused()}).
  *
- * Inside the rule layer, the invariant holds only because every
+ * The computed family is the one executable serving several closed health
+ * producers: its checkLevel call uses the canonical producer arbiter over the
+ * same definition that emits the finding. This exact call site and expression
+ * are admitted below; another rule cannot borrow that expression.
+ *
+ * Inside the ordinary rule layer, the invariant holds only because every
  * `AnalysisContext::getThresholdOverride()` call site passes `$this->getName()`
  * for the rule name, which
  * {@see \Qualimetrix\Analysis\Finding\RuleExecution::isEnabled()} narrows by
@@ -67,7 +72,8 @@ use RuntimeException;
  *   recognised and skipped. Every occurrence *on a recognized context* must be
  *   a plain `->` or `?->` call — comments between the operator and the name are
  *   skipped, not treated as breaking the pattern — with a first argument that
- *   tokenizes to exactly `$this->getName()`; anything else (a foreign name, a
+ *   tokenizes to exactly `$this->getName()`, or the exact computed-family
+ *   producer arbiter at its named definition call site; anything else (a foreign name, an unrecognised
  *   static reference, a first-class callable) is a violation. A string literal
  *   spelling the method's name anywhere in `src/` is a violation outright and
  *   regardless of receiver: `call_user_func([$x, 'getThresholdOverride'], ...)`
@@ -112,14 +118,15 @@ final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
      * Every production call site of `AnalysisContext::getThresholdOverride()`,
      * by file and by the method that makes the call. The sweep must find
      * exactly these: a canonical call that disappears is as much a change to
-     * the invariant's perimeter as a third one that appears, and a count could
+     * the invariant's perimeter as an unregistered one that appears, and a count could
      * not tell the two apart.
      *
      * @var array<string, list<string>> relative path => enclosing method names
      */
     private const array KNOWN_CALL_SITES = [
         'src/Analysis/Evidence/CodeSmell/ParameterCount/LongParameterListRule.php' => ['checkVoConstructor'],
-        'src/Analysis/Finding/Contract/Rule/AbstractRule.php' => ['getEffectiveOptions'],
+        'src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php' => ['checkLevel'],
+        'src/Analysis/Finding/Rule/AbstractRule.php' => ['getEffectiveOptions'],
     ];
 
     /**
@@ -149,7 +156,7 @@ final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
             $relative = self::relativePath($root, $absolutePath);
             $source = self::readSource($absolutePath);
 
-            foreach (self::violations($source, self::isLegitimateDirectReader($relative), $fields) as [$line, $message]) {
+            foreach (self::violations($source, self::isLegitimateDirectReader($relative), $fields, $relative === 'src/Analysis/Evidence/ComputedMetrics/ComputedMetricRule.php') as [$line, $message]) {
                 $violations[] = \sprintf('%s:%d %s', $relative, $line, $message);
             }
         }
@@ -159,10 +166,10 @@ final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
 
     /**
      * The control that keeps the sweep attached to the places it names: the
-     * two known callers must be found, in those files, in those methods, and
+     * named callers must be found, in those files, in those methods, and
      * nothing else may call the accessor. A guard finding zero call sites
      * would pass {@see itPassesItsOwnRuleNameAsTheFirstArgumentOnEveryContextCallSite()}
-     * by having nothing to check; a guard finding two *different* ones would
+     * by having nothing to check; a guard finding *different* ones would
      * pass a count.
      */
     #[Test]
@@ -220,7 +227,7 @@ final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
 
     /**
      * The correct, canonical call is not itself a violation. Without this, a
-     * defect that flags every call site — including the two real ones — would
+     * defect that flags every call site — including the real ones — would
      * still turn {@see itPassesItsOwnRuleNameAsTheFirstArgumentOnEveryContextCallSite()}
      * red for the wrong reason and could be "fixed" by weakening the guard
      * instead of the call site.
@@ -498,13 +505,13 @@ final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
      *
      * @return list<array{0: int, 1: string}> [line, message] pairs
      */
-    private static function violations(string $source, bool $isLegitimateDirectReader, array $contextBearingFields): array
+    private static function violations(string $source, bool $isLegitimateDirectReader, array $contextBearingFields, bool $computedFamily = false): array
     {
         $tokens = token_get_all($source);
         $variables = self::contextTypedVariables($tokens);
 
         return [
-            ...self::methodCallViolations($tokens, $variables, $contextBearingFields),
+            ...self::methodCallViolations($tokens, $variables, $contextBearingFields, $computedFamily),
             ...self::propertyReadViolations($tokens, $variables, $contextBearingFields, $isLegitimateDirectReader),
         ];
     }
@@ -516,7 +523,7 @@ final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
      *
      * @return list<array{0: int, 1: string}>
      */
-    private static function methodCallViolations(array $tokens, array $contextVariables, array $contextBearingFields): array
+    private static function methodCallViolations(array $tokens, array $contextVariables, array $contextBearingFields, bool $computedFamily): array
     {
         $violations = [];
 
@@ -569,7 +576,10 @@ final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
                 continue;
             }
 
-            if (!self::firstArgumentIsOwnRuleName(self::firstArgumentTokens($tokens, $openParenIndex))) {
+            if (!self::firstArgumentIsOwnRuleName(
+                self::firstArgumentTokens($tokens, $openParenIndex),
+                $computedFamily && self::enclosingFunctionName($tokens, $index) === 'checkLevel',
+            )) {
                 $violations[] = [$token[2], \sprintf(
                     'calls %s() with a first argument other than $this->getName().',
                     self::METHOD,
@@ -940,12 +950,12 @@ final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
     }
 
     /**
-     * Whether a first argument's tokens spell exactly `$this->getName()`,
-     * whitespace and comments aside.
+     * Whether the argument spells the owning producer accessor, including the
+     * computed family arbiter only at its named definition call site.
      *
      * @param list<array{0: int, 1: string, 2: int}|string> $argumentTokens raw tokens, `token_get_all` shape
      */
-    private static function firstArgumentIsOwnRuleName(array $argumentTokens): bool
+    private static function firstArgumentIsOwnRuleName(array $argumentTokens, bool $computedDefinition = false): bool
     {
         $meaningful = [];
 
@@ -957,7 +967,8 @@ final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
             $meaningful[] = \is_array($token) ? $token[1] : $token;
         }
 
-        return $meaningful === ['$this', '->', 'getName', '(', ')'];
+        return $meaningful === ['$this', '->', 'getName', '(', ')']
+            || ($computedDefinition && $meaningful === ['ComputedMetricChannelFamily', '::', 'producerFor', '(', '$definition', '->', 'name', ')']);
     }
 
     /**

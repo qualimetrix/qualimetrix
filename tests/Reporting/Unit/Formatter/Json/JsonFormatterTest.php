@@ -27,6 +27,9 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\GroupBy;
+use Qualimetrix\Reporting\Contract\Report\Report;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
 use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\Formatter\Json\JsonFindingSection;
@@ -34,10 +37,7 @@ use Qualimetrix\Reporting\Formatter\Json\JsonFormatter;
 use Qualimetrix\Reporting\Formatter\Json\JsonHealthSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonOffenderSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonSanitizer;
-use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
-use Qualimetrix\Reporting\Report;
 use Qualimetrix\Reporting\ReportBuilder;
 use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
@@ -81,7 +81,15 @@ final class JsonFormatterTest extends TestCase
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::exact('Shop'), groupBy: GroupBy::NamespaceName);
         $selected = (new \Qualimetrix\Reporting\DrillDown\FindingFilter())->filterFindings([$finding], $context, $index);
         $ranked = new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($finding, 10, null, 5, 3);
-        $report = new Report($index, $selected, 1, 0, 0, 0, 1, metrics: $repository, topIssues: [$ranked]);
+        $report = new Report(
+            fileNamespaces: $index,
+            findings: $selected,
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 0,
+            metrics: $repository,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(topIssues: [$ranked]),
+        );
         $data = json_decode($this->formatter->format($report, $context)->body, true, flags: \JSON_THROW_ON_ERROR);
         self::assertSame(1, $data['summary']['violationCount']);
         self::assertSame(['Other, Shop'], array_keys($data['violationGroups']));
@@ -134,7 +142,7 @@ final class JsonFormatterTest extends TestCase
         $data = json_decode($this->formatter->format($report, new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
         self::assertSame([['producer' => 'complexity.ccn', 'channel' => 'complexity.ccn', 'level' => 'callable',
             'gate' => 'callable-value', 'reason' => 'Missing <value> & publication.', 'unit' => 'callable',
-            'count' => 1, 'examples' => ['["missing<&>",0]']]], $data['abstentions']);
+            'count' => 1, 'examples' => ['["missing<&>",0]'], 'dataGap' => true]], $data['abstentions']);
         self::assertSame([], $data['violations']);
         self::assertSame(0, $data['summary']['errorCount']);
         self::assertSame([], $data['computedMetricOutcomes']);
@@ -147,7 +155,14 @@ final class JsonFormatterTest extends TestCase
         $low = self::finding(new Location(RelativePath::fromString('src/A.php'), 1), SymbolPath::forClass('Shop', 'A'), 'complexity.ccn', 'complexity.ccn', 'Low error', Severity::Error);
         $high = self::finding(new Location(RelativePath::fromString('src/Z.php'), 1), SymbolPath::forClass('Shop', 'Z'), 'complexity.ccn', 'complexity.ccn', 'High error', Severity::Error);
         $ranked = [new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($high, 50, null, 5, 3), new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($low, 10, null, 5, 3)];
-        $report = new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [$info, $low, $high], 2, 0, 0, 2, 0, topIssues: $ranked);
+        $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            findings: [$info, $low, $high],
+            filesAnalyzed: 2,
+            filesSkipped: 0,
+            duration: 0,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(topIssues: $ranked),
+        );
         $data = json_decode($this->formatter->format($report, new FormatterContext(options: ['violations' => '1']))->body, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame(['High error'], array_column($data['violations'], 'message'));
@@ -159,7 +174,13 @@ final class JsonFormatterTest extends TestCase
     {
         $info = self::finding(Location::none(), SymbolPath::forNamespace('A'), 'code-smell.goto', 'code-smell.goto', 'Info', Severity::Info);
         $error = self::finding(new Location(RelativePath::fromString('src/Z.php'), 1), SymbolPath::forClass('Shop', 'Z'), 'complexity.ccn', 'complexity.ccn', 'Error', Severity::Error);
-        $data = json_decode($this->formatter->format(new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [$info, $error], 1, 0, 0, 1, 0), new FormatterContext(options: ['violations' => '1']))->body, true, 512, \JSON_THROW_ON_ERROR);
+        $data = json_decode($this->formatter->format(new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            findings: [$info, $error],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 0,
+        ), new FormatterContext(options: ['violations' => '1']))->body, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame(['Error'], array_column($data['violations'], 'message'));
     }
@@ -169,7 +190,14 @@ final class JsonFormatterTest extends TestCase
     {
         $finding = self::finding(Location::none(), SymbolPath::forNamespace('Shop'), 'computed', 'health.cohesion', 'Low cohesion', Severity::Warning, 20, recommendation: 'Split the namespace.', threshold: 30)->reportedAsBreach(new \Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel([25], 1));
         $issue = new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($finding, 10, null, 5, 3);
-        $data = json_decode($this->formatter->format(new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [$finding], 1, 0, 0, 1, 0, topIssues: [$issue]), new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
+        $data = json_decode($this->formatter->format(new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            findings: [$finding],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 0,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(topIssues: [$issue]),
+        ), new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertArrayHasKey('acceptedLevel', $data['topIssues'][0]);
         foreach ($data['violations'][0] as $key => $value) {
@@ -302,7 +330,13 @@ final class JsonFormatterTest extends TestCase
     #[Test]
     public function itProducesIso8601Timestamp(): void
     {
-        $report = new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 0, 0, 0.0, 0, 0);
+        $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            findings: [],
+            filesAnalyzed: 0,
+            filesSkipped: 0,
+            duration: 0.0,
+        );
         $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
@@ -418,9 +452,7 @@ final class JsonFormatterTest extends TestCase
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 0.1,
-            errorCount: 1,
-            warningCount: 0,
-            topIssues: [new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($finding, 10.0, null, 30, 3)],
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(topIssues: [new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($finding, 10.0, null, 30, 3)]),
         );
 
         $data = json_decode($this->formatter->format($report, new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
@@ -439,9 +471,7 @@ final class JsonFormatterTest extends TestCase
             filesAnalyzed: 100,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            healthScores: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: [
                 'complexity' => new HealthScore(
                     name: 'complexity',
                     score: 65.0,
@@ -468,7 +498,7 @@ final class JsonFormatterTest extends TestCase
                     errorThreshold: 25.0,
                     coverage: HealthCoverage::notApplicable('fixture: this test is not about coverage'),
                 ),
-            ],
+            ]),
         );
 
         $output = $this->formatter->format($report, new FormatterContext())->body;
@@ -506,11 +536,9 @@ final class JsonFormatterTest extends TestCase
             filesAnalyzed: 8,
             filesSkipped: 0,
             duration: 0.4,
-            errorCount: 0,
-            warningCount: 0,
-            healthScores: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: [
                 'complexity' => new HealthScore('complexity', 65.0, 'Fair', 50.0, 25.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
-            ],
+            ]),
         );
 
         $context = new FormatterContext(scopedReporting: true);
@@ -531,9 +559,7 @@ final class JsonFormatterTest extends TestCase
             filesAnalyzed: 100,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            worstNamespaces: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(worstNamespaces: [
                 new WorstOffender(
                     subject: \Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\Payment')),
                     healthOverall: 31.0,
@@ -547,7 +573,7 @@ final class JsonFormatterTest extends TestCase
                     ),
                     overallThresholds: [50.0, 30.0],
                 ),
-            ],
+            ]),
         );
 
         $output = $this->formatter->format($report, new FormatterContext())->body;
@@ -576,9 +602,7 @@ final class JsonFormatterTest extends TestCase
             filesAnalyzed: 100,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            worstClasses: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(worstClasses: [
                 new WorstOffender(
                     subject: \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass('App\Payment', 'PaymentService'), RelativePath::fromString('src/Payment/PaymentService.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
                     healthOverall: 28.0,
@@ -592,7 +616,7 @@ final class JsonFormatterTest extends TestCase
                     ),
                     overallThresholds: [50.0, 30.0],
                 ),
-            ],
+            ]),
         );
 
         $output = $this->formatter->format($report, new FormatterContext())->body;
@@ -812,9 +836,7 @@ final class JsonFormatterTest extends TestCase
             filesAnalyzed: 3,
             filesSkipped: 0,
             duration: 0.1,
-            errorCount: 0,
-            warningCount: 0,
-            debtPer1kLoc: 5.4,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(debtPer1kLoc: 5.4),
         );
         $selected = new Report(
             fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
@@ -822,10 +844,8 @@ final class JsonFormatterTest extends TestCase
             filesAnalyzed: 3,
             filesSkipped: 0,
             duration: 0.1,
-            errorCount: 0,
-            warningCount: 0,
-            debtPer1kLoc: 5.4,
             outOfScope: new OutOfScopeFindings(1, 0, 0),
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(debtPer1kLoc: 5.4),
         );
 
         $plainData = json_decode($this->formatter->format($plain, new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
@@ -1167,13 +1187,11 @@ final class JsonFormatterTest extends TestCase
             filesAnalyzed: 100,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            worstNamespaces: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(worstNamespaces: [
                 new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\A')), 20.0, 'Critical', 'bad', new WorstOffenderEvidence(5, 3), [50.0, 30.0]),
                 new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\B')), 25.0, 'Critical', 'bad', new WorstOffenderEvidence(3, 2), [50.0, 30.0]),
                 new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\C')), 30.0, 'Critical', 'bad', new WorstOffenderEvidence(2, 1), [50.0, 30.0]),
-            ],
+            ]),
         );
 
         $context = new FormatterContext(options: ['top' => '2']);
@@ -1192,9 +1210,7 @@ final class JsonFormatterTest extends TestCase
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 0.1,
-            errorCount: 0,
-            warningCount: 0,
-            healthScores: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: [
                 'test' => new HealthScore(
                     name: 'test',
                     score: \NAN,
@@ -1206,7 +1222,7 @@ final class JsonFormatterTest extends TestCase
                         new DecompositionItem('metric', 'Test', \INF, 'below 10', 'lower_is_better', 'bad'),
                     ],
                 ),
-            ],
+            ]),
         );
 
         // Should not throw — NaN/INF are sanitized to null
@@ -1220,7 +1236,13 @@ final class JsonFormatterTest extends TestCase
     #[Test]
     public function itProducesNullForEmptyHealthScores(): void
     {
-        $report = new Report(\Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null), [], 10, 0, 0.5, 0, 0);
+        $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            findings: [],
+            filesAnalyzed: 10,
+            filesSkipped: 0,
+            duration: 0.5,
+        );
 
         $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
@@ -1237,13 +1259,11 @@ final class JsonFormatterTest extends TestCase
             filesAnalyzed: 100,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            worstNamespaces: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(worstNamespaces: [
                 new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\Payment')), 30.0, 'Critical', 'bad', new WorstOffenderEvidence(5, 3), [50.0, 30.0]),
                 new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\Payment\Gateway')), 25.0, 'Critical', 'bad', new WorstOffenderEvidence(3, 2), [50.0, 30.0]),
                 new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\User')), 35.0, 'Critical', 'bad', new WorstOffenderEvidence(2, 1), [50.0, 30.0]),
-            ],
+            ]),
         );
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Payment'));
@@ -1294,14 +1314,11 @@ final class JsonFormatterTest extends TestCase
             filesAnalyzed: 8,
             filesSkipped: 0,
             duration: 0.4,
-            errorCount: 0,
-            warningCount: 0,
-            worstNamespaces: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(worstNamespaces: [
                 new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App')), 30.0, 'Critical', 'bad', new WorstOffenderEvidence(5, 3), [50.0, 30.0]),
-            ],
-            worstClasses: [
+            ], worstClasses: [
                 new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass('App', 'Foo'), RelativePath::fromString('src/Foo.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))), 20.0, 'Critical', 'bad', new WorstOffenderEvidence(1, 0), [50.0, 30.0]),
-            ],
+            ]),
         );
 
         $context = new FormatterContext(scopedReporting: true);
@@ -1382,12 +1399,10 @@ final class JsonFormatterTest extends TestCase
             filesAnalyzed: 50,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
-            healthScores: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: [
                 'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
-            ],
+            ]),
         );
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'));
@@ -1442,20 +1457,17 @@ final class JsonFormatterTest extends TestCase
             filesAnalyzed: 50,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
-            healthScores: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: [
                 'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
-            ],
-            worstClasses: [new WorstOffender(
+            ], worstClasses: [new WorstOffender(
                 $subject,
                 42.0,
                 'Poor',
                 'carried reason',
                 new WorstOffenderEvidence(2, 0, ['size.method-count' => 32], ['complexity' => 20.0, 'cohesion' => 15.0]),
                 [50.0, 30.0],
-            )],
+            )]),
         );
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'));
@@ -1485,12 +1497,10 @@ final class JsonFormatterTest extends TestCase
             filesAnalyzed: 50,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
-            healthScores: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: [
                 'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
-            ],
+            ]),
         );
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\NonExistent'));

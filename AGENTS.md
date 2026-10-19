@@ -220,7 +220,7 @@ Adapters (CLI commands, HTTP endpoints, message handlers, shell hooks) live
 in `src/Infrastructure/` regardless of which feature they touch. They
 depend on the slice through its public service contracts. Example:
 `LayerAssignmentCommand` stays at
-`src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php` and
+`src/Infrastructure/Console/LayerAssignment/LayerAssignmentCommand.php` and
 injects `LayerAssignmentInspectorInterface` plus Collection services — pulling
 the command into the Architecture slice would force the slice to depend on
 `symfony/console`, which is an infrastructure concern.
@@ -842,8 +842,10 @@ Run `bin/qmx check src/` after modifying metric collection or aggregation logic 
 ### Dogfooding: Finding Management Strategy
 
 We analyze `src/` with `qmx.yaml` and the versioned root
-`qmx-baseline.json`. The ratchet snapshot tracks accepted residual magnitudes and
-occurrences. `composer selfcheck` first checks the exact manifest and generated
+`qmx-baseline.json`. The ratchet snapshot holds residual, currently accepted warnings only.
+The only temporary exception is the exact namespace-CBO list in ADR 0126.
+Class and method model limitations use finite `@qmx-threshold` ceilings;
+intentional contract popularity uses exact signal exceptions, never ratchet entries. `composer selfcheck` first checks the exact manifest and generated
 architecture projection, then runs the ratchet with `--fail-on=warning`. A direct
 `bin/qmx check` omits repository governance.
 
@@ -858,9 +860,17 @@ Resolve each new finding in this order:
    would enroll by construction. An exception that hides no finding is inert.
 3. Where the metric mis-models a specific design but still measures a quality
    signal, keep a finite ceiling: `@qmx-threshold` for a class or method, or a
-   precise ratchet entry for a namespace or project finding.
+   precise warning-only ratchet entry for a namespace or project finding.
+   Error-level quality findings require refactoring. Accepted quality debt needs
+   a named owner and a measurable closure condition.
 4. If an intended change increases an accepted magnitude, recalibrate only its
    specific ratchet entry with a reviewed reason.
+
+The following structural exception is narrower than an Options class category:
+
+| Signal              | Exact population                                    | Why it is inapplicable                                                                                                                                                                                                                                 | What remains judged                                                                                                                                                       |
+| ------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `duplication.clone` | The fifteen exact Options paths named in `qmx.yaml` | Their remaining clone ranges contain interface/trait declarations, empty promoted constructors and attribute or literal option-key metadata. Executable threshold parsing, overrides, enablement and severity queries use shared Finding-owned traits. | Every other Options path; existing controls and the directive audit still judge semantic behavior. Any executable clone requires refactoring and invalidates this reason. |
 
 A quality signal must remain bounded. Never move it into an indefinite
 `suppress_paths`, `suppress_namespaces`, or `suppress_namespace_channels`

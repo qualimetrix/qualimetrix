@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance;
 
-use Qualimetrix\Analysis\Policy\Baseline\Entry\EntrySelector;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\InertEntryReason;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\EntrySelector;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertEntryReason;
 
 /**
  * One entry `baseline:cleanup` offers for removal: what it is, why it is

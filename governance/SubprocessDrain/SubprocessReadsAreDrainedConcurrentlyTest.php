@@ -215,7 +215,7 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
         'src/Infrastructure/Parallel/WorkerPool.php:31' => 'Capability-name strings passed to function_exists and compared against disable_functions;'
             . ' neither spelling executes a child.',
         'src/Infrastructure/Parallel/WorkerPool.php:32' => 'The unavailable capability name returned for diagnostics, never evaluated as source.',
-        'tests/Infrastructure/Console/Unit/RunTarget/RunTargetSessionTest.php:114' => 'A function_exists capability probe used to skip the real-worker witness when process'
+        'tests/Infrastructure/Console/Unit/RunTarget/RunTargetSessionTest.php:119' => 'A function_exists capability probe used to skip the real-worker witness when process'
             . ' execution is unavailable.',
         'tests/Infrastructure/Git/Integration/GitProcessAvailabilityTest.php:25' => 'An ini setting disables the process capability in the child; the string is configuration,'
             . ' not executable source.',
@@ -233,11 +233,11 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . ' regression spawns controlled PHP code that creates a ready file then sleeps until terminated;'
             . ' its normal path emits no stream output. Both pipes are closed after termination, but this is not'
             . ' a general-purpose concurrent drain.',
-        'tests/Infrastructure/Console/Unit/RunTarget/RunTargetSessionTest.php:71' => 'The controlled signal'
+        'tests/Infrastructure/Console/Unit/RunTarget/RunTargetSessionTest.php:74' => 'The controlled signal'
             . ' child writes one READY line to stdout and sleeps until termination; the test reads that line'
             . ' before reaping. Stderr is not drained concurrently, so this entry is limited to that bounded'
             . ' child script, not reusable subprocess capture.',
-        'tests/Infrastructure/Console/Unit/RunTarget/RunTargetSessionTest.php:156' => 'The controlled'
+        'tests/Infrastructure/Console/Unit/RunTarget/RunTargetSessionTest.php:166' => 'The controlled'
             . ' worker-signal child uses files for readiness and waits until termination; the test reads stderr'
             . ' only after exit for an assertion. This is a bounded interruption witness, not a concurrent'
             . ' drain suitable for arbitrary child output.',
@@ -309,7 +309,7 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
         'tests/Analysis/Evidence/Security/Unit/DirectSinks/SecurityPatternVisitorTest.php:357' => 'PHP source inside that '
             . 'case\'s fixture string — embedded source, never executed by this process.',
 
-        'tests/Analysis/Evidence/Duplication/Unit/Normalization/DataDeclarationTaggerTest.php:380' => 'Not a spawn and not the '
+        'tests/Analysis/Evidence/Duplication/Unit/DataDeclarationTaggerTest.php:380' => 'Not a spawn and not the '
             . 'name: a test method whose camelCase seam spells the single-stream spawner once case is folded — the '
             . '`p` ends one word and `Open` begins the next. It is the only occurrence in the tree that the '
             . 'case-fold adds, and it is therefore also this control\'s witness that the fold is live: fold the '

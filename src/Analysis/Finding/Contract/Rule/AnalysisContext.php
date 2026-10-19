@@ -18,6 +18,9 @@ use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
+/**
+ * @qmx-threshold health.cohesion 30.0 -- Independent immutable observations or stateless declaration operations intentionally have no shared instance-field graph; this finite class boundary keeps a further cohesion loss visible.
+ */
 final readonly class AnalysisContext
 {
     /** @var array<string, array<string, ThresholdOverride>> */
@@ -61,7 +64,7 @@ final readonly class AnalysisContext
     public function admit(string $producer, FindingChannel $channel, SymbolLevel $level, PopulationIdentity $identity, ChannelDeclaration $declaration, iterable $inputs): bool
     {
         $failed = $declaration->populationFailure($channel, $level, $identity, $inputs);
-        $this->populationSession?->record($producer, $channel, $level, $identity, $declaration, $failed['gate'] ?? null, $failed['reason'] ?? null);
+        $this->populationSession?->record($producer, $channel, $level, $identity, $declaration, $failed['gate'] ?? null, $failed['reason'] ?? null, $failed['dataGap'] ?? true);
         return $failed === null;
     }
 

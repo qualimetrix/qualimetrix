@@ -12,17 +12,17 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\SourceText\SourceBytes;
+use Qualimetrix\Reporting\Contract\Formatting\FormatOptionKeysInterface;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterInterface;
+use Qualimetrix\Reporting\Contract\Formatting\GroupBy;
+use Qualimetrix\Reporting\Contract\Report\Report;
 use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
-use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
-use Qualimetrix\Reporting\Formatter\FormatOptionValue;
-use Qualimetrix\Reporting\Formatter\FormattedReport;
-use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Reporting\FormatOptions\FormatOptionValue;
 use Qualimetrix\Reporting\Formatter\Ordering\FindingSorter;
-use Qualimetrix\Reporting\Formatter\PublicationKind;
-use Qualimetrix\Reporting\Formatter\PublishedUtf8;
-use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\GroupBy;
-use Qualimetrix\Reporting\Report;
+use Qualimetrix\Reporting\Publication\FormattedReport;
+use Qualimetrix\Reporting\Publication\PublicationKind;
+use Qualimetrix\Reporting\Publication\PublishedUtf8;
 
 /**
  * Formats report as JSON with summary structure.
@@ -108,13 +108,13 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
         return new FormattedReport($body, $repairs);
     }
 
-    /** @return list<array{producer: string, channel: string, level: string, gate: string, reason: string, unit: string, count: int, examples: list<string>}> */
+    /** @return list<array{producer: string, channel: string, level: string, gate: string, reason: string, unit: string, count: int, examples: list<string>, dataGap: bool}> */
     private function populationDocument(Report $report): array
     {
         return array_map(static fn($absence): array => [
             'producer' => $absence->producer, 'channel' => $absence->channel->code,
             'level' => $absence->level->value, 'gate' => $absence->gate, 'reason' => $absence->reason,
-            'unit' => $absence->unit, 'count' => $absence->count, 'examples' => $absence->examples,
+            'unit' => $absence->unit, 'count' => $absence->count, 'examples' => $absence->examples, 'dataGap' => $absence->dataGap,
         ], $report->population->abstentions());
     }
 

@@ -10,7 +10,7 @@ use PhpParser\Node\Stmt\TraitUse;
 use PhpParser\Node\Stmt\TraitUseAdaptation\Alias;
 use PhpParser\Node\Stmt\TraitUseAdaptation\Precedence;
 use Qualimetrix\Core\Ast\ResolvedName;
-use Qualimetrix\Core\Symbol\TraitUseFacts;
+use Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitUseFacts;
 
 /** Converts one resolved trait-use statement into worker-safe composition facts. */
 final class CohesionTraitUses

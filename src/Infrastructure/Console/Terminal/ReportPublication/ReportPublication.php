@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Terminal\ReportPublication;
 
-use Qualimetrix\Infrastructure\Console\CheckReport\RenderedCheckReport;
-
 use Qualimetrix\Infrastructure\Console\Invocation\CommandLineSpelling;
+
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
-use Qualimetrix\Infrastructure\Console\Terminal\ErrorStream;
-use Qualimetrix\Reporting\Formatter\FormattedReport;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
+use Qualimetrix\Reporting\Publication\FormattedReport;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 

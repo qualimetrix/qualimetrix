@@ -35,8 +35,9 @@ A forbidden edge belongs to its exact source declaration. Owned target
 declarations remain ordered count units, including duplicate targets. Occurrence
 identity uses exact source, logical target and dependency kind, independently of
 which physical target files were selected. An unmeasured target contributes one
-logical unit; a narrowed population retains the accepted identity as
-not-compared and cannot tighten its count. Source
+logical unit. A completely analysed source file permits acceptance of its
+source-owned occurrence against the recorded count, even in a narrowed run.
+A larger visible count still breaches the ceiling; narrowing cannot tighten it. Source
 annotations control outgoing projections. A target annotation does not waive an
 incoming violation, and its unused verdict still requires judged coverage.
 

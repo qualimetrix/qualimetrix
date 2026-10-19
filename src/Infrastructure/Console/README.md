@@ -10,17 +10,57 @@ CLI application based on Symfony Console with support for:
 - Baseline management
 - Graph export
 
+Terminal diagnostics own one progress/diagnostic stream lifecycle. Glyphs own
+the selected output alphabet, its environment spelling and Symfony output
+adapters. ReportPublication owns raw answer writes and completed report
+publication; neither writer reinterprets serialized payloads as console markup.
+
+Configuration input owns its preflight profile and diagnostic publication. Hook
+owns the binary-location port it consumes. Terminal owns raw output, while
+`Terminal/ReportPublication` owns a completed report awaiting publication.
+`Baseline/` and `LayerAssignment/` directly name the actions their commands deliver.
+
+Application command loading owns lazy product-container lookup and container-build
+failures separately from process-wide diagnostic setup. Check-report assembly,
+finding projection and format binding have separate lifecycles: assembly builds
+the published snapshot, projection selects findings, and format binding judges
+rendering options before analysis. `--format-opt` belongs to that binding.
+Run setup separates input preflight, finding configuration, execution settings
+and capability-state replacement; its root coordinates runtime effects and the
+analysed project source.
+
 ## Structure
 
-```
+```text
 Console/
 ├── Application/
+│   ├── CommandLoading/
+│   │   ├── ContainerBuildFailure.php
+│   │   └── ProductCommandLoader.php
 │   ├── Application.php
-│   ├── ConsoleDiagnostics.php
-│   ├── ContainerBuildFailure.php
-│   ├── ProductCommandLoader.php
-│   ├── RunningBinaryLocator.php
-│   └── RunningBinaryLocatorInterface.php
+│   └── ConsoleDiagnostics.php
+├── Baseline/
+│   ├── ChannelRename/
+│   │   ├── BaselineRenameChannelsCommand.php
+│   │   └── ChannelRenameReporter.php
+│   ├── Explanation/
+│   │   ├── BaselineConfiguredThresholds.php
+│   │   ├── BaselineExplainCommand.php
+│   │   └── BaselineExplanationRenderer.php
+│   ├── Generation/
+│   │   ├── BaselineCaptureReporter.php
+│   │   └── BaselineGenerateCommand.php
+│   ├── Maintenance/
+│   │   ├── BaselineCleanupCommand.php
+│   │   ├── BaselineUpdateCommand.php
+│   │   └── BaselineUpdateInvocation.php
+│   ├── Measurement/
+│   │   └── BaselineRun.php
+│   ├── BaselineCommand.php
+│   ├── BaselineCommandDefinition.php
+│   ├── BaselineRunContext.php
+│   ├── BaselineRunInterface.php
+│   └── LoadedBaselineRun.php
 ├── BaselineCommand/
 │   ├── BaselineProjectionCoverage.php
 │   ├── MeasuredAnalysisRun.php
@@ -30,19 +70,22 @@ Console/
 ├── Check/
 │   └── CheckCommand.php
 ├── CheckReport/
-│   ├── BaselineFilterReporter.php
-│   ├── BoundCheckReportFormat.php
-│   ├── CheckFindingProjection.php
+│   ├── Assembly/
+│   │   ├── ReportAssembler.php
+│   │   └── ReportCoverageProjection.php
+│   ├── FormatBinding/
+│   │   ├── BoundCheckReportFormat.php
+│   │   ├── FormatOptionPairs.php
+│   │   ├── FormatterContextFactory.php
+│   │   └── ReportFormatter.php
+│   ├── Projection/
+│   │   ├── BaselineFilterReporter.php
+│   │   ├── CheckFindingProjection.php
+│   │   ├── FindingDiagnostics.php
+│   │   └── FindingProjection.php
 │   ├── CheckReportDelivery.php
 │   ├── CheckReportRenderer.php
-│   ├── CheckResponse.php
-│   ├── FindingDiagnostics.php
-│   ├── FindingProjection.php
-│   ├── FormatterContextFactory.php
-│   ├── RenderedCheckReport.php
-│   ├── ReportAssembler.php
-│   ├── ReportCoverageProjection.php
-│   └── ReportFormatter.php
+│   └── CheckResponse.php
 ├── CheckScope/
 │   ├── CheckScopeResolver.php
 │   ├── FindingProjectionOptionsResolver.php
@@ -50,41 +93,14 @@ Console/
 │   ├── ProjectScopePresenter.php
 │   ├── ResolvedCheckScope.php
 │   └── ScopeWarningChecker.php
-├── Command/
-│   ├── Baseline/
-│   │   ├── ChannelRename/
-│   │   │   ├── BaselineRenameChannelsCommand.php
-│   │   │   └── ChannelRenameReporter.php
-│   │   ├── Explanation/
-│   │   │   ├── BaselineConfiguredThresholds.php
-│   │   │   ├── BaselineExplainCommand.php
-│   │   │   └── BaselineExplanationRenderer.php
-│   │   ├── Generation/
-│   │   │   ├── BaselineCaptureReporter.php
-│   │   │   └── BaselineGenerateCommand.php
-│   │   ├── Maintenance/
-│   │   │   ├── BaselineCleanupCommand.php
-│   │   │   ├── BaselineUpdateCommand.php
-│   │   │   └── BaselineUpdateInvocation.php
-│   │   ├── Measurement/
-│   │   │   └── BaselineRun.php
-│   │   ├── BaselineCommand.php
-│   │   ├── BaselineCommandDefinition.php
-│   │   ├── BaselineRunContext.php
-│   │   ├── BaselineRunInterface.php
-│   │   └── LoadedBaselineRun.php
-│   └── Debug/
-│       ├── LayerAssignmentCommand.php
-│       ├── LayerAssignmentJsonPresenter.php
-│       ├── LayerAssignmentResolver.php
-│       └── LayerAssignmentTextPresenter.php
 ├── Directives/
 │   ├── DirectiveAuditPresenter.php
 │   ├── DirectiveAuditTextPresenter.php
 │   ├── DirectiveVerdictTally.php
 │   └── DirectivesCommand.php
 ├── GraphExport/
-│   └── GraphExportCommand.php
+│   ├── GraphExportCommand.php
+│   └── GraphExportInput.php
 ├── Hook/
 │   ├── AbstractHookCommand.php
 │   ├── HookBackupTransaction.php
@@ -93,13 +109,18 @@ Console/
 │   ├── HookInstallCommand.php
 │   ├── HookStatusCommand.php
 │   ├── HookUninstallCommand.php
-│   └── PreCommitHook.php
+│   ├── PreCommitHook.php
+│   ├── RunningBinaryLocator.php
+│   └── RunningBinaryLocatorInterface.php
 ├── Invocation/
 │   ├── CommandDefinition/
 │   │   ├── AnalysisReportCommandDefinition.php
 │   │   ├── CheckCommandDefinition.php
 │   │   └── FilteredInputDefinition.php
 │   ├── Configuration/
+│   │   ├── Diagnostics/
+│   │   │   ├── AnalysisPreflightProfile.php
+│   │   │   └── ConfigurationDiagnosticsPublisher.php
 │   │   ├── ConfigurationInputAdapter.php
 │   │   └── WorkerCountParser.php
 │   ├── RuleOptions/
@@ -108,8 +129,12 @@ Console/
 │   │   ├── CliRuleOptionAddressing.php
 │   │   └── RuleOptionArgv.php
 │   ├── CliSelectorDecoder.php
-│   ├── CommandLineSpelling.php
-│   └── FormatOptionPairs.php
+│   └── CommandLineSpelling.php
+├── LayerAssignment/
+│   ├── LayerAssignmentCommand.php
+│   ├── LayerAssignmentJsonPresenter.php
+│   ├── LayerAssignmentResolver.php
+│   └── LayerAssignmentTextPresenter.php
 ├── Profile/
 │   ├── ProfilePresenter.php
 │   └── ProfileSummaryRenderer.php
@@ -128,19 +153,21 @@ Console/
 │   ├── RuleListingPresenter.php
 │   └── RulesCommand.php
 ├── RunSetup/
-│   ├── AnalysisInputPathValidator.php
-│   ├── AnalysisPreflight.php
-│   ├── AnalysisPreflightProfile.php
-│   ├── AnalysisRuntimeConfigurator.php
-│   ├── CheckConfigurationResolvers.php
-│   ├── CheckResolvedConfiguration.php
-│   ├── ConfigurationDiagnosticsPublisher.php
-│   ├── FindingConfigurationPreparation.php
-│   ├── PreparedAnalysisInput.php
-│   ├── PreparedAnalysisRuntimeConfiguration.php
+│   ├── CapabilityState/
+│   │   ├── AnalysisRuntimeConfigurator.php
+│   │   └── PreparedAnalysisRuntimeConfiguration.php
+│   ├── Execution/
+│   │   ├── ResolvedRunConfiguration.php
+│   │   └── RunConfigurationPreparation.php
+│   ├── Finding/
+│   │   ├── CheckConfigurationResolvers.php
+│   │   ├── CheckResolvedConfiguration.php
+│   │   └── FindingConfigurationPreparation.php
+│   ├── Input/
+│   │   ├── AnalysisInputPathValidator.php
+│   │   ├── AnalysisPreflight.php
+│   │   └── PreparedAnalysisInput.php
 │   ├── ProjectSourceConfigurator.php
-│   ├── ResolvedRunConfiguration.php
-│   ├── RunConfigurationPreparation.php
 │   └── RuntimeConfigurator.php
 ├── RunTarget/
 │   ├── ProcessStreams.php
@@ -160,13 +187,17 @@ Console/
 │   ├── RuntimeLimitsController.php
 │   └── RuntimeLoggerConfigurator.php
 └── Terminal/
-    ├── ReportPublication/
-    │   ├── OutputHelper.php
-    │   └── ReportPublication.php
-    ├── ErrorStream.php
-    ├── GlyphConsoleSection.php
-    ├── GlyphOutput.php
-    └── OutputEncoding.php
+    ├── Diagnostics/
+    │   ├── ErrorSections.php
+    │   └── ErrorStream.php
+    ├── Glyphs/
+    │   ├── GlyphConsoleSection.php
+    │   ├── GlyphOutput.php
+    │   └── OutputEncoding.php
+    └── ReportPublication/
+        ├── OutputHelper.php
+        ├── RenderedCheckReport.php
+        └── ReportPublication.php
 ```
 
 `ExitPolicySection` and `MemoryLimitSection` declare the Console-owned
@@ -417,6 +448,9 @@ For a borrowed `StreamOutput` resource it checks complete writes and flush,
 preserving raw bytes; other `OutputInterface` implementations retain their own
 write contract. Multiline answers are assembled in a `BufferedOutput` with the
 caller's formatter and decoration before publication.
+Baseline explanation groups are printed in lexicographic channel-identity order.
+Multiple occurrences of one channel retain their measured report order.
+
 The styled Docs pointer for `directives`, `hook:status`, and `baseline:explain`
 is included in that same answer publication, not written to the stream later.
 
@@ -527,7 +561,9 @@ has completed; count pluralization is separate from selection and publication.
 
 ### GraphExportCommand
 
-Export dependency graph in DOT or JSON format.
+Export dependency graph in DOT or JSON format. `GraphExportInput` defines the
+command options, decodes projection selectors and refuses unbound namespace
+filters; the command coordinates analysis, completeness and publication.
 
 The command is an adapter: it obtains the graph through
 `DependencyGraphAnalyzerInterface` and renders it through Reporting's public

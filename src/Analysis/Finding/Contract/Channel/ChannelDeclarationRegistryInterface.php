@@ -22,7 +22,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * Two contributors feed one answer:
  *
  * - the **static** per-rule declarations, assembled at container build time by
- *   {@see \Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\ChannelDeclarationCompilerPass}
+ *   {@see \Qualimetrix\Infrastructure\DependencyInjection\ChannelCatalog\ChannelDeclarationCompilerPass}
  *   from every tagged rule's optional `channelDeclarations()` method;
  * - the **configured** `computed.*` / `health.*` family, resolved from the
  *   {@see \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition}

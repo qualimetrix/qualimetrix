@@ -6,7 +6,7 @@ namespace Qualimetrix\Reporting\Formatter\Ordering;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Reporting\GroupBy;
+use Qualimetrix\Reporting\Contract\Formatting\GroupBy;
 
 /**
  * Sorts findings based on GroupBy mode.
@@ -98,7 +98,7 @@ final class FindingSorter
     private static function placeKey(Finding $finding): string
     {
         return $finding->location->file === null
-            ? \Qualimetrix\Reporting\Formatter\PublishedFinding::place($finding)->name
+            ? \Qualimetrix\Reporting\FindingPublication\PublishedFinding::place($finding)->name
             : $finding->location->pathString();
     }
 

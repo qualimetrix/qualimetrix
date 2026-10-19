@@ -65,14 +65,15 @@ semantics remain unchanged.
 
 ### Limits confirmed by final review
 
-The F6 correction retains the class purity adjustment when evaluating namespace
-and project cohesion: pure-method and tracked TCC-method means now accompany
-the raw TCC/LCOM means. A single-class namespace retains that class's score
-(78.879058 rather than the previous 60.432817 for TCC 0.167, LCOM 2 and two
-pure methods among four tracked public methods). The earlier explanation of
-C1 only justified scores above all children through nonlinear pooling. It did
-not justify losing purity below the minimum child. The historical tables below
-describe the earlier capture, not the corrected F6 formula.
+The aggregate-cohesion correction retains the class purity adjustment when
+evaluating namespace and project cohesion: pure-method and tracked TCC-method
+means now accompany the raw TCC/LCOM means. A single-class namespace retains
+that class's score (78.879058 rather than the previous 60.432817 for TCC 0.167,
+LCOM 2 and two pure methods among four tracked public methods). The earlier
+explanation of C1 only justified scores above all children through nonlinear
+pooling. It did not justify losing purity below the minimum child. The
+historical tables below describe the earlier capture, not the corrected
+aggregate formula.
 
 Health cohesion intentionally accepts every nonempty measured LCOM graph; it
 does not inherit `cohesion.lcom`'s configurable `min_methods` default of three.
@@ -153,7 +154,7 @@ one-vertex class scores 100 is therefore false.
 Every breadth penalty is zero. These measurements support the explicit model
 limits above; they do not turn the tied breadth weights into fitted evidence.
 The pure-method aggregation correction changes namespace/project cohesion and
-overall scores, so this source census is not a claim about F6 benchmark
+overall scores, so this source census is not a claim about revised benchmark
 acceptance or the historical frozen search's candidate verdicts.
 
 ### Instrument verification

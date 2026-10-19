@@ -1,0 +1,1495 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration;
+
+use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\ExcludeBlockValidator;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerCriterionNormalizer;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\LayersValidator;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\CriterionListValidator;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerLifecycle;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\NamedType;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
+use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
+
+#[CoversClass(LayersValidator::class)]
+#[CoversClass(LayerCriterionNormalizer::class)]
+#[CoversClass(ExcludeBlockValidator::class)]
+#[CoversClass(MembershipSpec::class)]
+#[CoversClass(ExcludeSpec::class)]
+#[CoversClass(MatchMode::class)]
+#[CoversClass(CriterionListValidator::class)]
+#[CoversClass(NamedType::class)]
+final class LayersValidatorTest extends TestCase
+{
+    private LayersValidator $validator;
+
+    protected function setUp(): void
+    {
+        $this->validator = new LayersValidator();
+    }
+
+    #[Test]
+    public function itAcceptsThePendingFlagAndCarriesItOntoTheDefinition(): void
+    {
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'reporting', 'patterns' => ['App\\Reporting\\**'], 'pending' => true],
+            ['name' => 'domain', 'patterns' => ['App\\Domain\\**']],
+        ]));
+
+        self::assertInstanceOf(LayerDefinition::class, $entries[0]);
+        self::assertSame(LayerLifecycle::Pending, $entries[0]->lifecycle);
+        self::assertInstanceOf(LayerDefinition::class, $entries[1]);
+        self::assertSame(
+            LayerLifecycle::Active,
+            $entries[1]->lifecycle,
+            'A layer that does not declare the key must not inherit it.',
+        );
+    }
+
+    #[Test]
+    public function itRejectsAPendingValueThatIsNotABoolean(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/"architecture\.layers\[0\]\.pending" in configuration file ".+" must be boolean, got string/');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'reporting', 'patterns' => ['App\\Reporting\\**'], 'pending' => 'later'],
+        ]));
+    }
+
+    #[Test]
+    public function itRejectsPendingOnATemplateLayer(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/not applicable to a template layer/');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'module-{mod}', 'patterns' => ['App\\{mod}\\**'], 'pending' => true],
+        ]));
+    }
+
+    /**
+     * Extracts display names from a mixed entry list (static layers expose
+     * {@code name()}; templates expose {@code nameTemplate()}).
+     *
+     * @param list<LayerDefinition|TemplateLayerDefinition> $entries
+     *
+     * @return list<string>
+     */
+    private static function namesOf(array $entries): array
+    {
+        return array_map(
+            static fn(LayerDefinition|TemplateLayerDefinition $entry): string => $entry instanceof TemplateLayerDefinition
+                ? $entry->nameTemplate()
+                : $entry->name(),
+            $entries,
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // Happy path
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function itProducesAnEmptyRegistryForAnEmptyInput(): void
+    {
+        $entries = $this->validator->validate(ArchitectureDocument::layers([]));
+
+        self::assertSame([], $entries);
+        self::assertSame([], self::namesOf($entries));
+    }
+
+    #[Test]
+    public function itProducesAnEmptyRegistryForNullInput(): void
+    {
+        $entries = $this->validator->validate(ArchitectureDocument::layers(null));
+
+        self::assertSame([], $entries);
+    }
+
+    #[Test]
+    public function itRegistersEveryPatternFromASingleLayersPatternList(): void
+    {
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'service', 'patterns' => ['App\\Service', 'App\\Domain\\Service']],
+        ]));
+
+        self::assertCount(1, $entries);
+        $entry = $entries[0];
+        \assert($entry instanceof LayerDefinition);
+        self::assertSame('service', $entry->name());
+        self::assertSame(['App\\Service', 'App\\Domain\\Service'], $entry->patterns());
+    }
+
+    #[Test]
+    public function itPreservesDeclarationOrderAcrossLayers(): void
+    {
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'zebra', 'patterns' => ['App\\Zebra']],
+            ['name' => 'alpha', 'patterns' => ['App\\Alpha']],
+            ['name' => 'beta', 'patterns' => ['App\\Beta']],
+        ]));
+
+        // NOT sorted — declaration order is preserved through the registry.
+        self::assertSame(['zebra', 'alpha', 'beta'], self::namesOf($entries));
+    }
+
+    // -------------------------------------------------------------------------
+    // Layer-list shape validation
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function itRejectsTheLegacyMapShapeForLayers(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/"architecture\.layers" in configuration file ".+" must be a list, got a map/');
+
+        // Legacy map shape ('layer-name' => pattern) is no longer accepted.
+        $this->validator->validate(ArchitectureDocument::layers(['controller' => 'App\\Controller']));
+    }
+
+    #[Test]
+    public function itRejectsTheSingleKeyMapShorthandForALayerEntry(): void
+    {
+        // ADR 0006 explicitly rejects the `- controller: 'App\Controller\**'`
+        // shorthand. Only the long form (`- name: ... patterns: [...]`) is accepted.
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/Unknown key "architecture\.layers\[0\]\.controller"/');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['controller' => 'App\\Controller\\**'],
+        ]));
+    }
+
+    #[Test]
+    public function itRejectsAScalarLayersValue(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('architecture.layers');
+
+        $this->validator->validate(ArchitectureDocument::layers('App\\Controller'));
+    }
+
+    // -------------------------------------------------------------------------
+    // Per-entry validation
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function itRejectsALayerEntryWithoutAName(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/missing or empty "name"/');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['patterns' => ['App\\Controller']],
+        ]));
+    }
+
+    #[Test]
+    public function itRejectsALayerEntryWithAnEmptyName(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/missing or empty "name"/');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => '', 'patterns' => ['App\\Controller']],
+        ]));
+    }
+
+    #[Test]
+    public function itRejectsALayerEntryWithANonStringName(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/"architecture\.layers\[0\]\.name" in configuration file ".+" must be string, got int/');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 42, 'patterns' => ['App\\Controller']],
+        ]));
+    }
+
+    #[Test]
+    public function itRejectsAScalarLayerEntry(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/"architecture\.layers\[0\]" in configuration file ".+" must be a map, got string/');
+
+        $this->validator->validate(ArchitectureDocument::layers(['just-a-string']));
+    }
+
+    #[Test]
+    public function itRejectsAListShapedLayerEntry(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/"architecture\.layers\[0\]" in configuration file ".+" must be a map, got a list/');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            [0 => 'foo', 1 => 'bar'],
+        ]));
+    }
+
+    #[Test]
+    public function itRejectsAnUnknownKeyOnALayerEntry(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/Unknown key "architecture\.layers\[0\]\.unexpected"/');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'controller', 'patterns' => ['App\\Controller'], 'unexpected' => 'foo'],
+        ]));
+    }
+
+    #[Test]
+    public function itRefusesAMisspeltLayerEntryKeyWrittenAsTilde(): void
+    {
+        // Accepted before: the null-valued key was erased before the entry's
+        // keys were checked, and the layer silently had no such criterion.
+        try {
+            ArchitectureDocument::layers([
+                ['name' => 'controller', 'patterns' => ['App\\Controller'], 'sufix' => null],
+            ]);
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
+            self::assertCount(1, $e->sources());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
+            self::assertSame(['architecture', 'layers', '0', 'sufix'], $e->position()?->segments);
+            self::assertStringContainsString('did you mean "suffix"', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function itDefaultsTheOmittedMatchKeyToAny(): void
+    {
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'service', 'patterns' => ['App\\Service']],
+        ]));
+
+        $definitions = $entries;
+        self::assertCount(1, $definitions);
+        self::assertSame(MatchMode::Any, $definitions[0]->membership()->mode);
+    }
+
+    #[Test]
+    public function itParsesAnExplicitMatchAnyToTheAnyMode(): void
+    {
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'service', 'patterns' => ['App\\Service'], 'match' => 'any'],
+        ]));
+
+        self::assertSame(MatchMode::Any, $entries[0]->membership()->mode);
+    }
+
+    #[Test]
+    public function itParsesAnExplicitMatchAllToTheAllMode(): void
+    {
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'service', 'patterns' => ['App\\Service'], 'match' => 'all'],
+        ]));
+
+        self::assertSame(MatchMode::All, $entries[0]->membership()->mode);
+    }
+
+    /**
+     * @return iterable<string, array{0: string, 1: MatchMode}>
+     */
+    public static function caseInsensitiveMatchModeProvider(): iterable
+    {
+        yield 'lowercase any' => ['any', MatchMode::Any];
+        yield 'mixed-case Any' => ['Any', MatchMode::Any];
+        yield 'uppercase ANY' => ['ANY', MatchMode::Any];
+        yield 'lowercase all' => ['all', MatchMode::All];
+        yield 'mixed-case aLL' => ['aLL', MatchMode::All];
+        yield 'titlecase All' => ['All', MatchMode::All];
+        yield 'uppercase ALL' => ['ALL', MatchMode::All];
+    }
+
+    #[Test]
+    #[DataProvider('caseInsensitiveMatchModeProvider')]
+    public function itParsesTheMatchKeyCaseInsensitively(string $rawValue, MatchMode $expected): void
+    {
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'service', 'patterns' => ['App\\Service'], 'match' => $rawValue],
+        ]));
+
+        self::assertSame($expected, $entries[0]->membership()->mode);
+    }
+
+    #[Test]
+    public function itRejectsAnUnknownMatchValueNamingBothAcceptedModes(): void
+    {
+        try {
+            $this->validator->validate(ArchitectureDocument::layers([
+                ['name' => 'service', 'patterns' => ['App\\Service'], 'match' => 'maybe'],
+            ]));
+            self::fail('Expected ConfigurationRefusal for unknown match mode.');
+        } catch (ConfigurationRefusal $e) {
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
+            self::assertStringContainsString('"match"', $e->getMessage());
+            self::assertStringContainsString('"any"', $e->getMessage());
+            self::assertStringContainsString('"all"', $e->getMessage());
+            self::assertStringContainsString('"maybe"', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function itRejectsANonStringMatchValue(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/"architecture\.layers\[0\]\.match" in configuration file ".+" must be string, got int/');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'service', 'patterns' => ['App\\Service'], 'match' => 42],
+        ]));
+    }
+
+    #[Test]
+    public function itRejectsALayerEntryDeclaringNoMembershipCriterion(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/must declare at least one of "patterns", "suffix", "attributes", "member_attributes", "implements" or "extends"/');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'controller'],
+        ]));
+    }
+
+    #[Test]
+    public function itRejectsALayerEntryWithAnEmptyPatternsList(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/"patterns" must contain at least one entry/');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'controller', 'patterns' => []],
+        ]));
+    }
+
+    #[Test]
+    public function itAcceptsAScalarPatternsValueAsSingletonShorthand(): void
+    {
+        // YAML scalar shorthand: `patterns: 'App\Foo'` is equivalent to
+        // `patterns: ['App\Foo']`. The shorthand is consistent across all
+        // five criterion kinds (suffix / attributes / implements / extends),
+        // see website/docs/rules/architecture.md "Single-value shorthand".
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'controller', 'patterns' => 'App\\Controller'],
+        ]));
+
+        $entry = $entries[0];
+        \assert($entry instanceof LayerDefinition);
+        self::assertSame(['App\\Controller'], $entry->patterns());
+    }
+
+    #[Test]
+    public function itRejectsAMapShapedPatternsValue(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/"patterns" must be a string or a non-empty list of strings/');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'controller', 'patterns' => ['foo' => 'App\\Controller']],
+        ]));
+    }
+
+    #[Test]
+    public function itRejectsAnEmptyPatternStringInsideTheList(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/non-empty string/');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'controller', 'patterns' => ['App\\Controller', '']],
+        ]));
+    }
+
+    #[Test]
+    public function itRejectsANonStringPatternInsideTheList(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/non-empty string/');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'controller', 'patterns' => ['App\\Controller', 42]],
+        ]));
+    }
+
+    #[Test]
+    public function itRejectsALayerNameThatIsNotLowercaseKebabCase(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/UpperCaseName/');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'UpperCaseName', 'patterns' => ['App\\Foo']],
+        ]));
+    }
+
+    /**
+     * @return iterable<string, array{0: string}>
+     */
+    public static function selectorMetacharsInLayerNameProvider(): iterable
+    {
+        // ADR 0059 reserves selector metachars (`* ? [ { }`)
+        // for the allow-list grammar must NOT appear in layer names. The
+        // existing layer-name regex {@code [a-z][a-z0-9_-]*} already enforces
+        // this; the dataset pins each individual metachar so a future regex
+        // relaxation cannot silently break selector parsing.
+        yield 'star' => ['foo*'];
+        yield 'question' => ['foo?'];
+        yield 'open bracket' => ['foo['];
+        yield 'open brace' => ['foo{'];
+        yield 'close brace' => ['foo}'];
+    }
+
+    #[Test]
+    #[\PHPUnit\Framework\Attributes\DataProvider('selectorMetacharsInLayerNameProvider')]
+    public function itRejectsALayerNameContainingASelectorMetacharacter(string $invalidName): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => $invalidName, 'patterns' => ['App\\Foo']],
+        ]));
+    }
+
+    // -------------------------------------------------------------------------
+    // Per-criterion validation (Phase 2 direction 1)
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function itAcceptsAShortClassNameForTheSuffixCriterion(): void
+    {
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'repository', 'suffix' => 'Repository'],
+        ]));
+
+        self::assertSame(['Repository'], $entries[0]->membership()->suffix);
+    }
+
+    #[Test]
+    public function itAcceptsAListOfShortClassNamesForTheSuffixCriterion(): void
+    {
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'persistence', 'suffix' => ['Repository', 'Dao']],
+        ]));
+
+        self::assertSame(['Repository', 'Dao'], $entries[0]->membership()->suffix);
+    }
+
+    #[Test]
+    public function itRejectsAFqnShapedSuffixEntry(): void
+    {
+        try {
+            $this->validator->validate(ArchitectureDocument::layers([
+                ['name' => 'r', 'suffix' => 'App\\Repository'],
+            ]));
+            self::fail('Expected ConfigurationRefusal for FQN-shaped suffix.');
+        } catch (ConfigurationRefusal $e) {
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
+            self::assertStringContainsString('"suffix"', $e->getMessage());
+            self::assertStringContainsString('short class-name suffix', $e->getMessage());
+            self::assertStringContainsString('App\\Repository', $e->getMessage());
+        }
+    }
+
+    /**
+     * @return iterable<string, array{0: string}>
+     */
+    public static function fqnCriterionProvider(): iterable
+    {
+        yield 'attributes' => ['attributes'];
+        yield 'member attributes' => ['member_attributes'];
+        yield 'implements' => ['implements'];
+        yield 'extends' => ['extends'];
+    }
+
+    #[DataProvider('fqnCriterionProvider')]
+    #[Test]
+    public function itAcceptsAFqnStringForAFullyQualifiedCriterion(string $kind): void
+    {
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'r', $kind => 'App\\Some\\Fqn'],
+        ]));
+
+        self::assertSame(['App\\Some\\Fqn'], self::criterionField($entries[0]->membership(), $kind));
+    }
+
+    #[DataProvider('fqnCriterionProvider')]
+    #[Test]
+    public function itAcceptsAListOfFqnsForAFullyQualifiedCriterion(string $kind): void
+    {
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'r', $kind => ['App\\A', 'App\\B']],
+        ]));
+
+        self::assertSame(['App\\A', 'App\\B'], self::criterionField($entries[0]->membership(), $kind));
+    }
+
+    #[DataProvider('fqnCriterionProvider')]
+    #[Test]
+    public function itReadsALeadingNamespaceSeparatorAsTheGlobalNamespace(string $kind): void
+    {
+        // The only way to name a class in the global namespace — `\Throwable`
+        // — used to be accepted and kept verbatim, so it never equalled the
+        // `Throwable` the run records and the criterion silently never fired.
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            [
+                'name' => 'r',
+                $kind => ['\\Throwable', '\\App\\A'],
+                'exclude' => [$kind => '\\Exception'],
+            ],
+        ]));
+
+        self::assertSame(['Throwable', 'App\\A'], self::criterionField($entries[0]->membership(), $kind));
+        $exclude = $entries[0]->membership()->exclude;
+        self::assertNotNull($exclude);
+        self::assertSame(['Exception'], match ($kind) {
+            'attributes' => $exclude->attributes,
+            'member_attributes' => $exclude->memberAttributes,
+            'implements' => $exclude->implements,
+            default => $exclude->extends,
+        });
+    }
+
+    #[DataProvider('fqnCriterionProvider')]
+    #[Test]
+    public function itRejectsANamespaceSeparatorThatNamesNoClass(string $kind): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'r', $kind => '\\'],
+        ]));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function criterionField(MembershipSpec $spec, string $kind): array
+    {
+        return match ($kind) {
+            'patterns' => $spec->patterns,
+            'suffix' => $spec->suffix,
+            'attributes' => $spec->attributes,
+            'member_attributes' => $spec->memberAttributes,
+            'implements' => $spec->implements,
+            'extends' => $spec->extends,
+            default => throw new InvalidArgumentException('Unknown criterion kind: ' . $kind),
+        };
+    }
+
+    #[DataProvider('fqnCriterionProvider')]
+    #[Test]
+    public function itRejectsAShortNameEntryForAFullyQualifiedCriterion(string $kind): void
+    {
+        try {
+            $this->validator->validate(ArchitectureDocument::layers([
+                ['name' => 'r', $kind => 'Entity'],
+            ]));
+            self::fail('Expected ConfigurationRefusal for short-name "' . $kind . '" entry.');
+        } catch (ConfigurationRefusal $e) {
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
+            self::assertStringContainsString('"' . $kind . '"', $e->getMessage());
+            self::assertStringContainsString('fully-qualified', $e->getMessage());
+            self::assertStringContainsString('Entity', $e->getMessage());
+            self::assertStringContainsString(
+                '"\\Entity"',
+                $e->getMessage(),
+                'The refusal must show how a global-namespace class is written.',
+            );
+        }
+    }
+
+    /**
+     * @return iterable<string, array{0: string}>
+     */
+    public static function allCriterionKindsProvider(): iterable
+    {
+        yield 'patterns' => ['patterns'];
+        yield 'suffix' => ['suffix'];
+        yield 'attributes' => ['attributes'];
+        yield 'member attributes' => ['member_attributes'];
+        yield 'implements' => ['implements'];
+        yield 'extends' => ['extends'];
+    }
+
+    #[DataProvider('allCriterionKindsProvider')]
+    #[Test]
+    public function itRejectsAnEmptyListForAnyCriterionKind(string $kind): void
+    {
+        try {
+            $this->validator->validate(ArchitectureDocument::layers([
+                ['name' => 'r', $kind => []],
+            ]));
+            self::fail('Expected ConfigurationRefusal for empty "' . $kind . '" list.');
+        } catch (ConfigurationRefusal $e) {
+            self::assertStringContainsString('"' . $kind . '"', $e->getMessage());
+            self::assertStringContainsString('must contain at least one entry', $e->getMessage());
+        }
+    }
+
+    #[DataProvider('allCriterionKindsProvider')]
+    #[Test]
+    public function itRejectsAnEmptyStringEntryForAnyCriterionKind(string $kind): void
+    {
+        // Empty-string entry must be rejected BEFORE any kind-specific
+        // semantic validation runs, so the index-0 spot is fine for every
+        // criterion kind (we can't seed it with a kind-shape-valid string
+        // first because suffix rejects backslashes and attributes/implements/
+        // extends require them — empty-first is the only universal probe).
+        try {
+            $this->validator->validate(ArchitectureDocument::layers([
+                ['name' => 'r', $kind => ['']],
+            ]));
+            self::fail('Expected ConfigurationRefusal for empty entry in "' . $kind . '" list.');
+        } catch (ConfigurationRefusal $e) {
+            self::assertStringContainsString('non-empty string', $e->getMessage());
+        }
+    }
+
+    #[DataProvider('allCriterionKindsProvider')]
+    #[Test]
+    public function itRejectsAMapShapedValueForAnyCriterionKind(string $kind): void
+    {
+        try {
+            $this->validator->validate(ArchitectureDocument::layers([
+                ['name' => 'r', $kind => ['foo' => 'App\\Foo']],
+            ]));
+            self::fail('Expected ConfigurationRefusal for map-shaped "' . $kind . '" value.');
+        } catch (ConfigurationRefusal $e) {
+            self::assertStringContainsString('"' . $kind . '"', $e->getMessage());
+            self::assertStringContainsString('string or a non-empty list of strings', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function itCarriesEveryDeclaredCriterionIntoTheMembershipSpec(): void
+    {
+        // End-to-end: a single layer entry with all five criteria flows through
+        // the validator and produces a MembershipSpec with the expected fields.
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            [
+                'name' => 'kitchen-sink',
+                'patterns' => ['App\\Foo'],
+                'suffix' => ['Bar'],
+                'attributes' => ['App\\Attr\\X'],
+                'member_attributes' => ['App\\Attr\\Member'],
+                'implements' => ['App\\Iface\\Y'],
+                'extends' => ['App\\Base\\Z'],
+                'match' => 'all',
+            ],
+        ]));
+
+        $spec = $entries[0]->membership();
+        self::assertSame(['App\\Foo'], $spec->patterns);
+        self::assertSame(['Bar'], $spec->suffix);
+        self::assertSame(['App\\Attr\\X'], $spec->attributes);
+        self::assertSame(['App\\Attr\\Member'], $spec->memberAttributes);
+        self::assertSame(['App\\Iface\\Y'], $spec->implements);
+        self::assertSame(['App\\Base\\Z'], $spec->extends);
+        self::assertSame(MatchMode::All, $spec->mode);
+    }
+
+    #[Test]
+    public function itCarriesNamedTypeAuthorshipFromTheConfigurationDocument(): void
+    {
+        $entries = $this->validator->validate(ArchitectureDocument::spot(
+            [
+                'layers' => [[
+                    'name' => 'domain',
+                    'attributes' => ['App\\ClassMarker'],
+                    'member_attributes' => ['App\\Route'],
+                    'implements' => ['App\\Port'],
+                    'extends' => ['App\\Base'],
+                    'exclude' => ['member_attributes' => ['App\\Internal']],
+                ]],
+            ],
+            'layers',
+        ));
+
+        $membership = $entries[0]->membership();
+        self::assertSame(
+            ['App\\ClassMarker', 'App\\Route', 'App\\Port', 'App\\Base'],
+            array_map(static fn(NamedType $type): string => $type->fqn, $membership->namedTypes),
+        );
+        self::assertSame(
+            [
+                ['architecture', 'layers', '0', 'attributes', '0'],
+                ['architecture', 'layers', '0', 'member_attributes', '0'],
+                ['architecture', 'layers', '0', 'implements', '0'],
+                ['architecture', 'layers', '0', 'extends', '0'],
+            ],
+            array_map(static fn(NamedType $type): ?array => $type->provenance->path, $membership->namedTypes),
+        );
+        self::assertSame(ArchitectureDocument::FILE, $membership->namedTypes[0]->provenance->origin->locator());
+
+        $exclude = $membership->exclude;
+        self::assertNotNull($exclude);
+        self::assertSame(['App\\Internal'], array_map(static fn(NamedType $type): string => $type->fqn, $exclude->namedTypes));
+        self::assertSame(
+            ['architecture', 'layers', '0', 'exclude', 'member_attributes', '0'],
+            $exclude->namedTypes[0]->provenance->path,
+        );
+    }
+
+    #[Test]
+    public function itRefusesSelectorDslStringsInArchitecturePatternsWithTheEquivalent(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('write "App\\Domain\\**"');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'domain', 'patterns' => ['subtree:App\\Domain']],
+        ]));
+    }
+
+    #[Test]
+    public function itRefusesSelectorDslMappingsInArchitecturePatternsWithTheEquivalent(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('write "App\\Domain\\**"');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'domain', 'patterns' => ['subtree' => 'App\\Domain']],
+        ]));
+    }
+
+    #[Test]
+    public function itRefusesACapturelessPatternInAnAnyTemplate(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('captureless pattern "Shared\\**" cannot be combined with "match: any"');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'app-{module}', 'patterns' => ['App\\{module}\\**', 'Shared\\**'], 'match' => 'any'],
+        ]));
+    }
+
+    #[Test]
+    public function itAcceptsACapturelessPatternInAnAllTemplate(): void
+    {
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'app-{module}', 'patterns' => ['App\\{module}\\**', 'Shared\\**'], 'match' => 'all'],
+        ]));
+
+        self::assertCount(1, $entries);
+    }
+
+    // -------------------------------------------------------------------------
+    // Cross-entry validation
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function itRejectsADuplicateLayerNameAcrossListEntries(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/duplicate layer name "service"/');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'service', 'patterns' => ['App\\Service']],
+            ['name' => 'service', 'patterns' => ['App\\OtherService']],
+        ]));
+    }
+
+    #[Test]
+    public function itRejectsADuplicatePatternAcrossLayersAsUnreachable(): void
+    {
+        try {
+            $this->validator->validate(ArchitectureDocument::layers([
+                ['name' => 'a', 'patterns' => ['App\\Shared']],
+                ['name' => 'b', 'patterns' => ['App\\Shared']],
+            ]));
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
+            self::assertStringContainsString('App\\Shared', $e->getMessage());
+            self::assertStringContainsString('"a"', $e->getMessage());
+            self::assertStringContainsString('"b"', $e->getMessage());
+            self::assertStringContainsString('unreachable', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function itRejectsADuplicateWildcardPatternAcrossLayers(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/App\\\\\\*\\*/');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'a', 'patterns' => ['App\\**']],
+            ['name' => 'b', 'patterns' => ['App\\**']],
+        ]));
+    }
+
+    #[Test]
+    public function itRejectsATrailingNamespaceSeparatorBeforeDuplicateAnalysis(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('trailing');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'a', 'patterns' => ['App\\Service']],
+            ['name' => 'b', 'patterns' => ['App\\Service\\']],
+        ]));
+    }
+
+    #[Test]
+    public function itAllowsTheSamePatternRepeatedWithinOneLayer(): void
+    {
+        // Cross-layer duplicates are rejected; within-layer repetition is allowed.
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'a', 'patterns' => ['App\\Shared', 'App\\Shared']],
+        ]));
+
+        self::assertSame(['a'], self::namesOf($entries));
+    }
+
+    // -------------------------------------------------------------------------
+    // Mode-aware duplicate-pattern skip (H1 remediation, Phase 1.2)
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function itRejectsADuplicatePatternWhenBothEntriesMatchAny(): void
+    {
+        // Pin OLD behavior: `match: any` (default) on both sides keeps the
+        // duplicate-pattern check active because pattern alone is sufficient
+        // for the earlier entry to claim every match.
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/unreachable/');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'a', 'patterns' => ['App\\Shared'], 'match' => 'any'],
+            ['name' => 'b', 'patterns' => ['App\\Shared'], 'match' => 'any'],
+        ]));
+    }
+
+    #[Test]
+    public function itAllowsADuplicatePatternWhenBothEntriesNarrowWithMatchAll(): void
+    {
+        // H1 fix: when BOTH duplicates declare `match: all` together with a
+        // non-empty non-pattern criterion, each one narrows its pattern
+        // matches to a different subset and the patterns can legitimately
+        // overlap.
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'a', 'patterns' => ['App\\Shared'], 'suffix' => 'Service', 'match' => 'all'],
+            ['name' => 'b', 'patterns' => ['App\\Shared'], 'suffix' => 'Repository', 'match' => 'all'],
+        ]));
+
+        self::assertSame(['a', 'b'], self::namesOf($entries));
+    }
+
+    #[Test]
+    public function itAllowsADuplicatePatternWhenOnlyTheEarlierEntryNarrowsWithMatchAll(): void
+    {
+        // H1 fix: the earlier entry narrows its claim with `suffix`, so the
+        // later entry can legitimately catch the residue of `App\Shared`
+        // classes whose short name does not end with "Service".
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'a', 'patterns' => ['App\\Shared'], 'suffix' => 'Service', 'match' => 'all'],
+            ['name' => 'b', 'patterns' => ['App\\Shared']],
+        ]));
+
+        self::assertSame(['a', 'b'], self::namesOf($entries));
+    }
+
+    #[Test]
+    public function itAllowsADuplicatePatternWhenOnlyTheLaterEntryNarrowsWithMatchAll(): void
+    {
+        // H1 fix (order-symmetric "one or both" predicate): the later entry's
+        // narrowing condition is recognized even though, in isolation, this
+        // case is technically unreachable. Trade-off documented on
+        // `LayersValidator::rejectDuplicatePatterns`: losing a rare
+        // "unreachable layer" warning is preferred over false-positives.
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'a', 'patterns' => ['App\\Shared']],
+            ['name' => 'b', 'patterns' => ['App\\Shared'], 'suffix' => 'Service', 'match' => 'all'],
+        ]));
+
+        self::assertSame(['a', 'b'], self::namesOf($entries));
+    }
+
+    /**
+     * @return iterable<string, array{0: string, 1: string|list<string>}>
+     */
+    public static function nonPatternCriterionProvider(): iterable
+    {
+        yield 'suffix' => ['suffix', 'Service'];
+        yield 'attributes' => ['attributes', 'App\\Attr\\Service'];
+        yield 'implements' => ['implements', 'App\\Iface\\Service'];
+        yield 'extends' => ['extends', 'App\\Base\\Service'];
+    }
+
+    /**
+     * @param string|list<string> $value
+     */
+    #[DataProvider('nonPatternCriterionProvider')]
+    #[Test]
+    public function itAllowsADuplicatePatternNarrowedByAnyNonPatternCriterionUnderMatchAll(string $kind, string|array $value): void
+    {
+        // H1 fix: any of suffix / attributes / implements / extends qualifies
+        // as a narrowing non-pattern criterion under `match: all`.
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'a', 'patterns' => ['App\\Shared'], $kind => $value, 'match' => 'all'],
+            ['name' => 'b', 'patterns' => ['App\\Shared']],
+        ]));
+
+        self::assertSame(['a', 'b'], self::namesOf($entries));
+    }
+
+    #[Test]
+    public function itRejectsADuplicatePatternWhenMatchAllNarrowsWithNoCriteria(): void
+    {
+        // Pin OLD behavior: `match: all` without any non-pattern criterion
+        // collapses to the same semantics as `match: any` (patterns alone
+        // claim every match), so the duplicate is still unreachable.
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/unreachable/');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'a', 'patterns' => ['App\\Shared'], 'match' => 'all'],
+            ['name' => 'b', 'patterns' => ['App\\Shared'], 'match' => 'all'],
+        ]));
+    }
+
+    #[Test]
+    public function itRejectsADuplicatePatternWhenNeitherEntryNarrowsItsMatch(): void
+    {
+        // Pin OLD behavior: neither side narrows — the earlier blanket
+        // `match: any` entry claims every match of the pattern and the
+        // later `match: all` entry without extra criteria is unreachable.
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/unreachable/');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'a', 'patterns' => ['App\\Shared']],
+            ['name' => 'b', 'patterns' => ['App\\Shared'], 'match' => 'all'],
+        ]));
+    }
+
+    #[Test]
+    public function itAppliesTheModeAwareDuplicateSkipAcrossMoreThanTwoEntries(): void
+    {
+        // Mode-aware skip is pair-wise. When several entries share a pattern
+        // and at least one of any colliding pair narrows, all are accepted.
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'a', 'patterns' => ['App\\Shared'], 'suffix' => 'Service', 'match' => 'all'],
+            ['name' => 'b', 'patterns' => ['App\\Shared'], 'suffix' => 'Repository', 'match' => 'all'],
+            ['name' => 'c', 'patterns' => ['App\\Shared'], 'suffix' => 'Controller', 'match' => 'all'],
+        ]));
+
+        self::assertSame(['a', 'b', 'c'], self::namesOf($entries));
+    }
+
+    #[Test]
+    public function itAppliesTheModeAwareDuplicateSkipToTemplateLayerEntries(): void
+    {
+        // The skip walks LayerDefinition and TemplateLayerDefinition
+        // uniformly through `membership()`, so template-vs-template
+        // collisions follow the same rule.
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            [
+                'name' => 'module-{m}',
+                'patterns' => ['App\\Module\\{m}\\**'],
+                'suffix' => 'Service',
+                'match' => 'all',
+            ],
+            ['name' => 'shared-{m}', 'patterns' => ['App\\Module\\{m}\\**']],
+        ]));
+
+        self::assertSame(['module-{m}', 'shared-{m}'], self::namesOf($entries));
+    }
+
+    #[Test]
+    public function itAllowsADuplicateWildcardPatternNarrowedByMatchAll(): void
+    {
+        // The normalized-pattern key is the same for both entries; the
+        // mode-aware skip still applies and the wildcard duplicate passes.
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'a', 'patterns' => ['App\\**'], 'suffix' => 'Service', 'match' => 'all'],
+            ['name' => 'b', 'patterns' => ['App\\**'], 'suffix' => 'Repository', 'match' => 'all'],
+        ]));
+
+        self::assertSame(['a', 'b'], self::namesOf($entries));
+    }
+
+    // -------------------------------------------------------------------------
+    // Duplicate pattern behind an earlier layer's exclude clause (carve-out)
+    // -------------------------------------------------------------------------
+
+    /**
+     * The earlier layer hands the classes its `exclude:` removes to the next
+     * layer declaring the same pattern, so the second occurrence is reachable
+     * for exactly those classes. Whether it reaches any is a question about
+     * the code, which `architecture.unreachable-layer` answers at run time.
+     */
+    #[Test]
+    public function itAllowsTheSamePatternBehindAnEarlierLayersExcludeClause(): void
+    {
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'repo-plain', 'patterns' => ['App\\Repository\\**'], 'exclude' => ['extends' => ['Doctrine\\ORM\\EntityRepository']]],
+            ['name' => 'repo-doctrine', 'patterns' => ['App\\Repository\\**']],
+        ]));
+
+        self::assertSame(['repo-plain', 'repo-doctrine'], self::namesOf($entries));
+    }
+
+    #[Test]
+    public function itAllowsTheSamePatternBehindAnEarlierTemplatesExcludeClause(): void
+    {
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'domain-{m}', 'patterns' => ['App\\Module\\{m}\\**'], 'exclude' => ['suffix' => ['Generated']]],
+            ['name' => 'generated-{m}', 'patterns' => ['App\\Module\\{m}\\**']],
+        ]));
+
+        self::assertSame(['domain-{m}', 'generated-{m}'], self::namesOf($entries));
+    }
+
+    /**
+     * Only the EARLIER layer's clause makes room: a later layer's own
+     * `exclude:` narrows what it takes, and the earlier layer already took
+     * everything its pattern names.
+     */
+    #[Test]
+    public function itStillRejectsTheSamePatternWhenOnlyTheLaterLayerExcludes(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/"a" \\(architecture\\.layers\\[0\\]\\) and "b" \\(architecture\\.layers\\[1\\]\\)/');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'a', 'patterns' => ['App\\Shared']],
+            ['name' => 'b', 'patterns' => ['App\\Shared'], 'exclude' => ['suffix' => ['Proxy']]],
+        ]));
+    }
+
+    /**
+     * The carve-out hands its classes to the first layer that takes the whole
+     * pattern; a third layer on the same pattern is unreachable behind that
+     * one, and the refusal names the layer that actually shadows it.
+     */
+    #[Test]
+    public function itRejectsAThirdOccurrenceBehindTheLayerThatTookTheCarvedOutClasses(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/"b" \\(architecture\\.layers\\[1\\]\\) and "c" \\(architecture\\.layers\\[2\\]\\)/');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'a', 'patterns' => ['App\\Shared'], 'exclude' => ['suffix' => ['Proxy']]],
+            ['name' => 'b', 'patterns' => ['App\\Shared']],
+            ['name' => 'c', 'patterns' => ['App\\Shared']],
+        ]));
+    }
+
+    /**
+     * The refusal says how the second layer can be reached, because the
+     * shape it rejects is one keystroke away from a legitimate carve-out.
+     */
+    #[Test]
+    public function itNamesTheExcludeCarveOutInTheDuplicateRefusal(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessageMatches('/"exclude" on "a" hands the classes it removes to "b"/');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'a', 'patterns' => ['App\\Shared']],
+            ['name' => 'b', 'patterns' => ['App\\Shared']],
+        ]));
+    }
+
+    #[Test]
+    public function itNamesTheWritingFileForEveryError(): void
+    {
+        try {
+            $this->validator->validate(ArchitectureDocument::layers('bad'));
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
+            self::assertCount(1, $e->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // exclude clause (Step F)
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function itParsesAnExcludeBlockIntoAnExcludeSpec(): void
+    {
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            [
+                'name' => 'service',
+                'patterns' => ['App\\Service\\**'],
+                'exclude' => ['patterns' => ['App\\Service\\Legacy\\**']],
+            ],
+        ]));
+
+        self::assertCount(1, $entries);
+        $layer = $entries[0];
+        self::assertInstanceOf(LayerDefinition::class, $layer);
+        self::assertNotNull($layer->membership()->exclude);
+        self::assertSame(['App\\Service\\Legacy\\**'], $layer->membership()->exclude->patterns);
+        self::assertSame(MatchMode::Any, $layer->membership()->exclude->mode);
+    }
+
+    #[Test]
+    public function itAcceptsStringShorthandForExcludeCriterionLists(): void
+    {
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            [
+                'name' => 'service',
+                'patterns' => ['App\\Service\\**'],
+                'exclude' => [
+                    'patterns' => 'App\\Service\\Legacy\\**',
+                    'suffix' => 'Bridge',
+                ],
+            ],
+        ]));
+
+        $layer = $entries[0];
+        self::assertInstanceOf(LayerDefinition::class, $layer);
+        self::assertNotNull($layer->membership()->exclude);
+        self::assertSame(['App\\Service\\Legacy\\**'], $layer->membership()->exclude->patterns);
+        self::assertSame(['Bridge'], $layer->membership()->exclude->suffix);
+    }
+
+    #[Test]
+    public function itAcceptsAQuotedDigitStringShorthandForExcludeCriterionLists(): void
+    {
+        // A quoted all-digit string (YAML "string-number") is still a string:
+        // the singleton-shorthand coercion in LayerCriterionNormalizer reads
+        // is_string(), not the digit content, so it qualifies exactly like
+        // any other bare value (see also the non-numeric case above).
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            [
+                'name' => 'service',
+                'patterns' => ['App\\Service\\**'],
+                'exclude' => [
+                    'patterns' => '7331',
+                    'suffix' => '7331',
+                ],
+            ],
+        ]));
+
+        $layer = $entries[0];
+        self::assertInstanceOf(LayerDefinition::class, $layer);
+        self::assertNotNull($layer->membership()->exclude);
+        self::assertSame(['7331'], $layer->membership()->exclude->patterns);
+        self::assertSame(['7331'], $layer->membership()->exclude->suffix);
+    }
+
+    #[Test]
+    public function itParsesTheExcludeMatchKeyIntoTheExcludeSpecMode(): void
+    {
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            [
+                'name' => 'service',
+                'patterns' => ['App\\Service\\**'],
+                'exclude' => [
+                    'patterns' => ['App\\Service\\Legacy\\**'],
+                    'suffix' => ['Bridge'],
+                    'match' => 'all',
+                ],
+            ],
+        ]));
+
+        $layer = $entries[0];
+        self::assertInstanceOf(LayerDefinition::class, $layer);
+        self::assertNotNull($layer->membership()->exclude);
+        self::assertSame(MatchMode::All, $layer->membership()->exclude->mode);
+    }
+
+    #[Test]
+    public function itDefaultsTheOmittedExcludeMatchKeyToAny(): void
+    {
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            [
+                'name' => 'service',
+                'patterns' => ['App\\Service\\**'],
+                'exclude' => ['patterns' => ['App\\Service\\Legacy\\**']],
+            ],
+        ]));
+
+        $layer = $entries[0];
+        self::assertInstanceOf(LayerDefinition::class, $layer);
+        self::assertNotNull($layer->membership()->exclude);
+        self::assertSame(MatchMode::Any, $layer->membership()->exclude->mode);
+    }
+
+    #[Test]
+    public function itLeavesMembershipExcludeNullWhenTheExcludeKeyIsOmitted(): void
+    {
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'service', 'patterns' => ['App\\Service\\**']],
+        ]));
+
+        $layer = $entries[0];
+        self::assertInstanceOf(LayerDefinition::class, $layer);
+        self::assertNull($layer->membership()->exclude);
+    }
+
+    #[Test]
+    public function itRejectsAnExcludeBlockDeclaringNoCriterion(): void
+    {
+        try {
+            $this->validator->validate(ArchitectureDocument::layers([
+                [
+                    'name' => 'service',
+                    'patterns' => ['App\\Service\\**'],
+                    'exclude' => ['match' => 'any'],
+                ],
+            ]));
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
+            self::assertStringContainsString('"exclude" must declare at least one of', $e->getMessage());
+            self::assertStringContainsString('omit the "exclude" key to leave it undeclared', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function itRejectsASequentialListShapedExcludeBlock(): void
+    {
+        try {
+            $this->validator->validate(ArchitectureDocument::layers([
+                [
+                    'name' => 'service',
+                    'patterns' => ['App\\Service\\**'],
+                    'exclude' => ['App\\Service\\Legacy\\**'],
+                ],
+            ]));
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
+            self::assertStringContainsString('"architecture.layers[0].exclude" in configuration file', $e->getMessage());
+            self::assertStringContainsString('must be a map, got a list', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function itReadsAnEmptyExcludeBlockAsNoClauseLikeATildeOne(): void
+    {
+        // An empty map writes nothing and changes nothing anywhere in the
+        // configuration document, and `exclude: ~` is not written: both leave
+        // the layer without a clause instead of disagreeing on the same slip.
+        foreach ([[], null] as $written) {
+            $entries = $this->validator->validate(ArchitectureDocument::layers([
+                [
+                    'name' => 'service',
+                    'patterns' => ['App\\Service\\**'],
+                    'exclude' => $written,
+                ],
+            ]));
+
+            self::assertInstanceOf(LayerDefinition::class, $entries[0]);
+            self::assertNull($entries[0]->membership()->exclude);
+        }
+    }
+
+    #[Test]
+    public function itRejectsAScalarExcludeBlock(): void
+    {
+        try {
+            $this->validator->validate(ArchitectureDocument::layers([
+                [
+                    'name' => 'service',
+                    'patterns' => ['App\\Service\\**'],
+                    'exclude' => 'App\\Service\\Legacy',
+                ],
+            ]));
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
+            self::assertStringContainsString('"architecture.layers[0].exclude" in configuration file', $e->getMessage());
+            self::assertStringContainsString('must be a map, got string', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function itRejectsAnUnknownKeyInsideTheExcludeBlock(): void
+    {
+        try {
+            $this->validator->validate(ArchitectureDocument::layers([
+                [
+                    'name' => 'service',
+                    'patterns' => ['App\\Service\\**'],
+                    'exclude' => [
+                        'patterns' => ['App\\Service\\Legacy\\**'],
+                        'mode' => 'all',
+                    ],
+                ],
+            ]));
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
+            self::assertStringContainsString('Unknown key "architecture.layers[0].exclude.mode"', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function itRefusesAMisspeltExcludeKeyWrittenAsTilde(): void
+    {
+        try {
+            ArchitectureDocument::layers([
+                [
+                    'name' => 'service',
+                    'patterns' => ['App\\Service\\**'],
+                    'exclude' => ['patterns' => ['App\\Service\\Legacy\\**'], 'sufix' => null],
+                ],
+            ]);
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
+            self::assertCount(1, $e->sources());
+            self::assertSame(ArchitectureDocument::FILE, $e->sources()[0]->locator());
+            self::assertSame(['architecture', 'layers', '0', 'exclude', 'sufix'], $e->position()?->segments);
+        }
+    }
+
+    #[Test]
+    public function itRejectsANestedExcludeInsideExclude(): void
+    {
+        try {
+            $this->validator->validate(ArchitectureDocument::layers([
+                [
+                    'name' => 'service',
+                    'patterns' => ['App\\Service\\**'],
+                    'exclude' => [
+                        'patterns' => ['App\\Service\\Legacy\\**'],
+                        'exclude' => ['patterns' => ['App\\Service\\Legacy\\Internal\\**']],
+                    ],
+                ],
+            ]));
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
+            self::assertStringContainsString('Unknown key "architecture.layers[0].exclude.exclude"', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function itRejectsACaptureVariableInAStaticLayersExcludePatterns(): void
+    {
+        try {
+            $this->validator->validate(ArchitectureDocument::layers([
+                [
+                    'name' => 'service',
+                    'patterns' => ['App\\Service\\**'],
+                    'exclude' => ['patterns' => ['App\\Service\\{module}\\Legacy\\**']],
+                ],
+            ]));
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
+            self::assertStringContainsString('contains a capture variable', $e->getMessage());
+            self::assertStringContainsString('the layer name "service" has none', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function itRejectsACaptureVariableInAStaticLayersExcludeSuffix(): void
+    {
+        try {
+            $this->validator->validate(ArchitectureDocument::layers([
+                [
+                    'name' => 'service',
+                    'patterns' => ['App\\Service\\**'],
+                    'exclude' => ['suffix' => ['{m}Bridge']],
+                ],
+            ]));
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
+            self::assertStringContainsString('contains a capture variable', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function itRejectsACaptureVariableInATemplateLayersExcludeSuffix(): void
+    {
+        // Even for template layers, captures are accepted in exclude.patterns
+        // only — suffix/attributes/implements/extends remain fixed strings.
+        try {
+            $this->validator->validate(ArchitectureDocument::layers([
+                [
+                    'name' => 'module-{m}',
+                    'patterns' => ['App\\Module\\{m}\\**'],
+                    'exclude' => ['suffix' => ['{m}Bridge']],
+                ],
+            ]));
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
+            self::assertStringContainsString('contains a capture variable', $e->getMessage());
+            self::assertStringContainsString('only allowed in exclude.patterns', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function itAcceptsADeclaredCaptureVariableInATemplateLayersExcludePatterns(): void
+    {
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            [
+                'name' => 'module-{m}',
+                'patterns' => ['App\\Module\\{m}\\**'],
+                'exclude' => ['patterns' => ['App\\Module\\{m}\\Generated\\**']],
+            ],
+        ]));
+
+        $template = $entries[0];
+        self::assertInstanceOf(TemplateLayerDefinition::class, $template);
+        self::assertNotNull($template->membership()->exclude);
+        self::assertSame(['App\\Module\\{m}\\Generated\\**'], $template->membership()->exclude->patterns);
+    }
+
+    #[Test]
+    public function itRejectsAnUndeclaredCaptureVariableInATemplateLayersExclude(): void
+    {
+        // `{n}` does not appear in the template name or capture-producing
+        // patterns — exclude can't introduce new variables.
+        try {
+            $this->validator->validate(ArchitectureDocument::layers([
+                [
+                    'name' => 'module-{m}',
+                    'patterns' => ['App\\Module\\{m}\\**'],
+                    'exclude' => ['patterns' => ['App\\Module\\{n}\\Generated\\**']],
+                ],
+            ]));
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
+            self::assertStringContainsString('exclude clause references undeclared variable(s) "n"', $e->getMessage());
+            self::assertStringContainsString('declared variables: "m"', $e->getMessage());
+        }
+    }
+
+    #[Test]
+    public function itQualifiesTheErrorPathWithTheLayerNameForExcludeCriterionValidation(): void
+    {
+        // The exclude-path layer name is "<layer>.exclude" so the user can
+        // tell which clause the per-criterion validation message refers to.
+        try {
+            $this->validator->validate(ArchitectureDocument::layers([
+                [
+                    'name' => 'service',
+                    'patterns' => ['App\\Service\\**'],
+                    'exclude' => ['suffix' => ['App\\Backslash']],
+                ],
+            ]));
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
+            self::assertStringContainsString('"service.exclude"', $e->getMessage());
+            self::assertStringContainsString('"suffix"', $e->getMessage());
+            self::assertStringContainsString('no backslash', $e->getMessage());
+        }
+    }
+}

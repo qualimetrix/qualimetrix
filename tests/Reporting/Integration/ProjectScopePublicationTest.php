@@ -11,14 +11,14 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterRegistryInterface;
+use Qualimetrix\Reporting\Contract\Report\ReportProjectScope;
+use Qualimetrix\Reporting\Coverage\ReportCoverage;
 use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
-use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\Formatter\Prose\GlyphMode;
 use Qualimetrix\Reporting\Formatter\Prose\ProseText;
-use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\ReportBuilder;
-use Qualimetrix\Reporting\ReportCoverage;
-use Qualimetrix\Reporting\ReportProjectScope;
 
 /**
  * A run over a slice of the project silences the channels that judge only a

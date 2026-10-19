@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Configuration\Document;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+
 use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedScalar;
 
 /**

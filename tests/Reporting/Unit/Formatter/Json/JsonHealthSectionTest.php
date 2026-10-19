@@ -14,11 +14,11 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\Decompos
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthContributor;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Report\Report;
 use Qualimetrix\Reporting\Formatter\Json\JsonHealthSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonSanitizer;
-use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
-use Qualimetrix\Reporting\Report;
 
 #[CoversClass(JsonHealthSection::class)]
 final class JsonHealthSectionTest extends TestCase
@@ -42,9 +42,7 @@ final class JsonHealthSectionTest extends TestCase
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            healthScores: $healthScores,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: $healthScores),
         );
     }
 

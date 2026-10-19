@@ -28,8 +28,8 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContextFact
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\DeclarationRelationIndex;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\DeclarationRelations;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ImplicitStringability;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\KnownTypes;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\NameSpellingIndex;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\KnownTypes;
 use Qualimetrix\Core\Ast\NameResolution;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\ClassType;

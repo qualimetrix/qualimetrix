@@ -7,7 +7,7 @@ namespace Qualimetrix\Analysis\Policy\Baseline\ChannelRename;
 use InvalidArgumentException;
 
 use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity;
 
 /**
  * The declared `old channel name -> new channel name` map a carry is

@@ -117,6 +117,7 @@ final class OutOfMemoryHint
         } else {
             fwrite(\STDERR, $message . "\n");
         }
+        // @qmx-ignore-next-line code-smell.exit -- A memory-fatal shutdown is already terminal; after releasing targets and publishing the exhaustion answer, the process must select the incomplete-analysis exit status.
         exit(ConsoleExitCode::AnalysisIncomplete->value);
     }
 

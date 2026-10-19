@@ -7,7 +7,7 @@ namespace Qualimetrix\Analysis\Policy\Baseline\Explanation;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 
 use Qualimetrix\Analysis\Policy\Baseline\Contract\CurrentMeasurement;
-use Qualimetrix\Analysis\Policy\Baseline\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity;
 
 /**
  * The effective boundary for one identity, and where each part of it comes

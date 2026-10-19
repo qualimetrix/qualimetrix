@@ -13,9 +13,9 @@ use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Report\Report;
 use Qualimetrix\Reporting\Formatter\Health\HealthCoverageNarrator;
-use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\Report;
 
 /**
  * Builds the complete data structure for the HTML report.
@@ -38,7 +38,7 @@ final class HtmlTreeBuilder
         private readonly DebtCalculator $debtCalculator,
         private readonly ComputedMetricDefinitionCatalogInterface $definitionCatalog,
         private readonly HtmlProjectMetadata $projectMetadata,
-        \Qualimetrix\Reporting\Formatter\FindingRecord $findingRecord,
+        \Qualimetrix\Reporting\FindingPublication\FindingRecord $findingRecord,
     ) {
         $this->findingPartitioner = new HtmlFindingPartitioner($findingRecord);
         $this->htmlDebtCalculator = new HtmlDebtCalculator($this->debtCalculator);

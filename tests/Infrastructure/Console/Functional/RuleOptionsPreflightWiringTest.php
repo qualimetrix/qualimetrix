@@ -9,11 +9,11 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
-use Qualimetrix\Infrastructure\Console\RunSetup\AnalysisPreflight;
+use Qualimetrix\Infrastructure\Console\RunSetup\Input\AnalysisPreflight;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Tester\CommandTester;
 
-#[\PHPUnit\Framework\Attributes\CoversClass(\Qualimetrix\Infrastructure\Console\RunSetup\AnalysisPreflight::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\Qualimetrix\Infrastructure\Console\RunSetup\Input\AnalysisPreflight::class)]
 final class RuleOptionsPreflightWiringTest extends TestCase
 {
     /** @return iterable<string, array{string, array<string, mixed>}> */
