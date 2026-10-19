@@ -80,11 +80,12 @@ final class ComputedMetricRuleTest extends TestCase
 
     #[Test]
     #[\PHPUnit\Framework\Attributes\TestWith([40, 40, true])]
+    #[\PHPUnit\Framework\Attributes\TestWith([1000000.0, 1000000.0, true])]
     #[\PHPUnit\Framework\Attributes\TestWith([null, 40, false])]
     #[\PHPUnit\Framework\Attributes\TestWith([40, null, false])]
     #[\PHPUnit\Framework\Attributes\TestWith([50, 40, false])]
     #[\PHPUnit\Framework\Attributes\TestWith([-1, -1, false])]
-    public function itRequiresOneNonnegativeHealthOverrideBoundary(?int $warning, ?int $error, bool $accepted): void
+    public function itRequiresOneNonnegativeHealthOverrideBoundary(int|float|null $warning, int|float|null $error, bool $accepted): void
     {
         $axes = [];
         if ($warning !== null) {
@@ -95,6 +96,24 @@ final class ComputedMetricRuleTest extends TestCase
         }
         $request = new \Qualimetrix\Analysis\Finding\Contract\Rule\Override\ThresholdOverrideRequest($warning, $error, \Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideSyntax::ExplicitAxes, $axes);
         self::assertSame($accepted, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Finding\HealthThresholdOverrideValidator::forBuiltinHealthProducers()['health.cohesion']->validate($request) === null);
+    }
+
+    #[Test]
+    public function itRefusesAHealthBoundaryWhoseDecimalOverflowsToInfinity(): void
+    {
+        $boundary = (float) (str_repeat('9', 400) . '.0');
+        self::assertTrue(is_infinite($boundary));
+        $request = new \Qualimetrix\Analysis\Finding\Contract\Rule\Override\ThresholdOverrideRequest(
+            $boundary,
+            $boundary,
+            \Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideSyntax::Shorthand,
+            [],
+        );
+
+        $failure = \Qualimetrix\Analysis\Evidence\ComputedMetrics\Finding\HealthThresholdOverrideValidator::forBuiltinHealthProducers()['health.cohesion']->validate($request);
+
+        self::assertNotNull($failure);
+        self::assertSame('nonfinite_boundary', $failure->code);
     }
 
     #[Test]

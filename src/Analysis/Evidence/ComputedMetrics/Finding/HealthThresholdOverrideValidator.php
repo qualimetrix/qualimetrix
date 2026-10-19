@@ -27,6 +27,9 @@ final class HealthThresholdOverrideValidator implements OverrideValidatorInterfa
                 'A health threshold override requires one boundary; use a number or equal warning and error values.',
             );
         }
+        if (!is_finite($request->warning)) {
+            return new OverrideValidationFailure('nonfinite_boundary', 'A health threshold boundary must be finite.');
+        }
         if ($request->warning < 0) {
             return new OverrideValidationFailure('negative_warning', 'A health threshold boundary must be non-negative.');
         }

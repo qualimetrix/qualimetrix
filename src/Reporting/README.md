@@ -1213,7 +1213,7 @@ Health snapshot. JSON and summary select candidates from those lists, apply
 the shared score/density comparator, then apply `top`. Namespace selectors
 form a union and the internal class selector preserves every matching exact
 declaration. JSON and summary `--class` require one exact declaration for the
-separate class health heading; duplicate logical names refuse with exit 5.
+separate class health heading; duplicate logical names refuse with exit 3.
 A namespace selection retains all those exact offender records. Class offender
 drill-down reuses captured records without rebuilding or
 intersecting them with a later finding filter.

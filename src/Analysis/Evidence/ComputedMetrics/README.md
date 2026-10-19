@@ -175,7 +175,7 @@ ComputedMetrics/
 │   └── ComputedMetricRefusalWording.php      # the words of every refusal about what a value means
 ├── Finding/
 │   ├── ComputedMetricFindingBuilder.php
-│   └── HealthThresholdOverrideValidator.php # one nonnegative class boundary for builtin health producers
+│   └── HealthThresholdOverrideValidator.php # one finite nonnegative class boundary for builtin health producers
 ├── ComputedMetricAnalysis.php        # instance-owned catalog and configuration facade
 ├── ComputedMetricsConfigResolver.php # validated definition resolution
 ├── ComputedMetricFormulaValidator.php
@@ -259,7 +259,7 @@ two native positions.
 
 - `ComputedMetricConfiguratorInterface` —
   `Infrastructure\Console\AnalysisRuntimeConfigurator`.
-- `ComputedMetricEvaluatorInterface` — `Analysis\Run\Pipeline\RunMeasurement`.
+- `ComputedMetricEvaluatorInterface` — `Analysis\Run\Measurement\RunMeasurement`.
 - `ComputedMetricExpressionInterface` — Health's `HealthFormulaExcluder`,
   `WeightedHealthFormula`, and `HealthDecompositionCatalog`. Composition injects
   the same formula implementation; Health never constructs an internal engine.
@@ -447,7 +447,7 @@ second ranking; a later report captures the newly resolved catalog again.
 Reporting selects the full offender population, ranks by `RankBy::Score` or
 `Density`, then applies a display limit. The separate class health heading
 requires a unique declaration: JSON/summary `--class` refuse duplicate logical
-names with exit 5; namespace selection retains their exact offender records. See ADR 0110.
+names with exit 3; namespace selection retains their exact offender records. See ADR 0110.
 
 ## Exact class health boundaries
 
@@ -469,7 +469,7 @@ service, outside the vocabulary-only `Contract` subtree. Its two named consumers
 are `Infrastructure\Parallel\WorkerBootstrap` and
 `Infrastructure\DependencyInjection\RuleCatalog\ThresholdValidatorMapCompilerPass`.
 `forBuiltinHealthProducers()` supplies validators for the six declared builtin
-health producers; each accepts one nonnegative boundary (a scalar or equal
+health producers; each accepts one finite nonnegative boundary (a scalar or equal
 warning/error axes). The resolved definition supplies the comparison direction.
 The service does not enrol user-defined computed metrics or publish executable
 rule construction. `Contract/Finding/ComputedMetricChannelFamily` publishes the
