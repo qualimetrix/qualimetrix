@@ -43,7 +43,11 @@ final class WrittenForm
         if ($forms !== []) {
             $refusal = \sprintf('%s must be %s, got %s.', ucfirst($at->where()), $expected, get_debug_type($node->scalar));
             if (\is_float($node->scalar) && \in_array(ScalarForm::Integer, $forms, true)) {
-                $refusal .= \sprintf(' Value was read as float (%s). YAML interprets +2 and 2.0 as float; write 2 for an integer.', var_export($node->scalar, true));
+                $refusal .= \sprintf(' Value was read as float (%s).', var_export($node->scalar, true));
+                if (is_finite($node->scalar) && $node->scalar >= \PHP_INT_MIN && $node->scalar < \PHP_INT_MAX && floor($node->scalar) === $node->scalar) {
+                    $integer = (int) $node->scalar;
+                    $refusal .= \sprintf(' YAML interprets signed and decimal spellings as float; write %d for an integer.', $integer);
+                }
             }
             throw $at->refusal(self::hinted($refusal, $schema));
         }

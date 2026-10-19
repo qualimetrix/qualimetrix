@@ -62,12 +62,34 @@ final class RuleOptionKeyDoorSymmetryTest extends TestCase
         $run = $this->check($input);
         self::assertSame(3, $run['exit'], $run['stderr']);
         self::assertStringContainsString('read as float (2.0)', $run['refusal']);
-        self::assertStringContainsString('YAML interprets +2 and 2.0 as float; write 2 for an integer.', $run['refusal']);
+        self::assertStringContainsString('YAML interprets signed and decimal spellings as float; write 2 for an integer.', $run['refusal']);
         self::assertStringContainsString(match ($door) {
             'file' => $path,
             'alias' => '--cyclomatic-warning=' . $written,
             'flag' => '--rule-opt=complexity.ccn:callable.warning=' . $written,
         }, $run['refusal']);
+    }
+
+    #[Test]
+    #[TestWith(['+12', 'write 12 for an integer.'])]
+    #[TestWith(['1e1', 'write 10 for an integer.'])]
+    #[TestWith(['7.5', null])]
+    public function itSuggestsOnlyAnExactIntegerSpelling(string $written, ?string $suggestion): void
+    {
+        foreach (['file', 'alias', 'flag'] as $door) {
+            $path = $this->configFile("  complexity.ccn:\n    callable:\n      warning: " . $written . "\n");
+            $run = $this->check(match ($door) {
+                'file' => ['--config' => $path],
+                'alias' => ['--cyclomatic-warning' => $written],
+                'flag' => ['--rule-opt' => ['complexity.ccn:callable.warning=' . $written]],
+            });
+            self::assertSame(3, $run['exit'], $run['stderr']);
+            if ($suggestion === null) {
+                self::assertStringNotContainsString('write ', $run['refusal']);
+            } else {
+                self::assertStringContainsString($suggestion, $run['refusal']);
+            }
+        }
     }
 
     #[Test]
