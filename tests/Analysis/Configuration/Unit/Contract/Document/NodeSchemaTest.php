@@ -105,12 +105,12 @@ final class NodeSchemaTest extends TestCase
     public function itKeepsEveryDeclarationWhenAHintAndAnEmptyOverrideNoticeAreAdded(): void
     {
         $element = NodeSchema::scalar(ScalarForm::String);
-        $hintedThenAnnounced = NodeSchema::list($element)->withHint('Quote it.', onlyFor: false)->announcingEmptyOverride('Lifted.');
-        $announcedThenHinted = NodeSchema::list($element)->announcingEmptyOverride('Lifted.')->withHint('Quote it.', onlyFor: false);
+        $hintedThenAnnounced = NodeSchema::list($element)->withHint('Quote it.', onlyFor: [false, null])->announcingEmptyOverride('Lifted.');
+        $announcedThenHinted = NodeSchema::list($element)->announcingEmptyOverride('Lifted.')->withHint('Quote it.', onlyFor: [false, null]);
 
         foreach ([$hintedThenAnnounced, $announcedThenHinted] as $schema) {
             self::assertSame('Quote it.', $schema->wording->hint);
-            self::assertFalse($schema->wording->hintOnlyFor);
+            self::assertSame([false, null], $schema->wording->hintOnlyFor);
             self::assertSame('Lifted.', $schema->wording->emptyOverrideNotice);
             self::assertSame($element, $schema->collection?->element);
             self::assertSame(MergePolicy::Replace, $schema->policy);

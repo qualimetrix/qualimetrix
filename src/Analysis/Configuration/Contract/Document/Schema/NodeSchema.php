@@ -80,8 +80,8 @@ final readonly class NodeSchema
         return $this->recompose(wording: $this->wording->with(emptyOverrideNotice: $notice));
     }
 
-    /** A non-null restriction matches only that exact scalar value and type. */
-    public function withHint(string $hint, int|float|string|bool|null $onlyFor = null): self
+    /** @param list<int|float|string|bool|null>|null $onlyFor Exact scalar literals; null leaves the hint unrestricted. */
+    public function withHint(string $hint, ?array $onlyFor = null): self
     {
         return $this->recompose(wording: $this->wording->with(hint: $hint, hintOnlyFor: $onlyFor));
     }

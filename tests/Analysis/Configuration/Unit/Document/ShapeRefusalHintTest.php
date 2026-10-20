@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Configuration\Unit\Document;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
@@ -61,6 +62,29 @@ final class ShapeRefusalHintTest extends TestCase
 
         self::assertStringEndsWith('remove it or write a value.', $summary);
         self::assertStringNotContainsString('hint', $summary);
+    }
+
+    /** @param array<mixed> $collection */
+    #[Test]
+    #[TestWith([[]])]
+    #[TestWith([[false]])]
+    #[TestWith([['value' => false]])]
+    public function itDoesNotTreatACollectionAsAScalarNullForAHint(array $collection): void
+    {
+        $schema = new DocumentSchema([self::section(
+            'name',
+            NodeSchema::scalar(ScalarForm::String)->withHint('Null hint.', onlyFor: [null]),
+        )]);
+
+        try {
+            DocumentComposer::compose($schema, [new AuthoredLayer(
+                ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/p/qmx.yaml'),
+                AuthoredNode::fromPlain(['name' => $collection]),
+            )]);
+            self::fail('A collection cannot be written for a string scalar.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringNotContainsString('Null hint.', $refusal->summary());
+        }
     }
 
     #[Test]

@@ -98,7 +98,9 @@ final class WrittenForm
     {
         $hint = $schema->wording->hint;
 
-        if ($schema->wording->hintOnlyFor !== null && $schema->wording->hintOnlyFor !== $node->scalar) {
+        if ($schema->wording->hintOnlyFor !== null
+            && ($node->shape !== AuthoredShape::Scalar || !\in_array($node->scalar, $schema->wording->hintOnlyFor, true))
+        ) {
             return $refusal;
         }
 

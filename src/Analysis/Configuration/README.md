@@ -245,9 +245,11 @@ precedence index within this composed document).
 - A node may carry a hint (`NodeSchema::withHint()`): the engine adds it to its
   refusal of the form written at that node — `paths: [2024]` is told to quote
   the name, a bare string in `exclude` is shown the selector kinds. Its optional
-  `onlyFor` scalar restricts the hint by exact value and type; `null` leaves it
-  unrestricted. Console's retired `fail_on: false` hint therefore names `none`
-  only for boolean `false`, preserving other malformed-value refusals.
+  `onlyFor` list restricts the hint to exact scalar values and types; `null`
+  leaves it unrestricted, while `[]` matches nothing. Collection shapes never
+  match a scalar literal, including `[null]`. Console declares `[false]` for
+  the retired `fail_on: false` hint, so it names `none` only for boolean `false`,
+  preserving other malformed-value refusals.
 - The engine never learns the format: a loader hands it an `AuthoredLayer` —
   the source's `ConfigurationOrigin` and an `AuthoredNode` tree with the keys as
   written. A new format is a loader producing that tree (with lines, if it has
