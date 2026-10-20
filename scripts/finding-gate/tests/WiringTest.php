@@ -70,6 +70,10 @@ final class WiringTest extends TestCase
                 Fs::write($scripts . '/' . $directory . '/' . basename($file), Fs::read($file));
             }
         }
+        Fs::write(
+            $scripts . '/subprocess/GitProcessEnvironment.php',
+            Fs::read(\dirname(__DIR__, 2) . '/subprocess/GitProcessEnvironment.php'),
+        );
 
         Fs::write($scripts . '/finding-gate/RecordProbe.php', "<?php\n\nnamespace QmxFindingGate;\n\nfinal class RecordProbe {}\n");
         Fs::write($scripts . '/finding-gate-controls/RecordProbeControls.php', "<?php\n\nnamespace QmxFindingGateControls;\n\nfinal class RecordProbeControls {}\n");

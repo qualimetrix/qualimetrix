@@ -83,6 +83,10 @@ final class GateModesTest extends TestCase
         foreach ($files === false ? [] : $files as $file) {
             Fs::write($this->copy . '/scripts/finding-gate/' . basename($file), Fs::read($file));
         }
+        Fs::write(
+            $this->copy . '/scripts/subprocess/GitProcessEnvironment.php',
+            Fs::read($source . '/subprocess/GitProcessEnvironment.php'),
+        );
 
         Fs::write($this->copy . '/scripts/finding-gate/SelfTest.php', \sprintf(
             "<?php\n\nnamespace QmxFindingGate;\n\nfinal class SelfTest\n{\n    public function __construct(string \$root) {}\n\n"
