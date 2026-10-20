@@ -11,6 +11,8 @@ namespace QmxFindingGate\Tests {
     use PHPUnit\Framework\TestCase;
     use QmxFindingGate\Fs;
     use QmxFindingGate\GateError;
+    use QmxFindingGate\ProcessHandle;
+    use QmxFindingGate\RemovalFailureDiagnostics;
     use QmxFindingGateControls\Shell;
     use RuntimeException;
     use Throwable;
@@ -150,6 +152,87 @@ namespace QmxFindingGate\Tests {
             $remove($path);
         }
 
+        /** @param class-string<Throwable> $expectedException */
+        #[Test]
+        #[DataProvider('removers')]
+        public function itReportsTheNativeFailureResidualEntriesAndProcessesInsideTheTree(Closure $remove, string $expectedException): void
+        {
+            $path = $this->root . '/directory';
+            $sibling = $this->root . '/directory-sibling';
+            self::assertTrue(mkdir($path));
+            self::assertTrue(mkdir($sibling));
+            $inside = ProcessHandle::start([\PHP_BINARY, '-r', 'sleep(30);'], $path);
+            $outside = ProcessHandle::start([\PHP_BINARY, '-r', 'sleep(30);'], $sibling);
+            FsNativeProbe::makeNonemptyDuringRmdir($path);
+
+            try {
+                $remove($path);
+                self::fail('A residual directory must be refused.');
+            } catch (Throwable $error) {
+                self::assertInstanceOf($expectedException, $error);
+                self::assertStringContainsString('Cannot remove directory ' . $path . '.', $error->getMessage());
+                self::assertStringContainsString('errno=unknown', $error->getMessage());
+                self::assertStringContainsString('native error=', $error->getMessage());
+                self::assertStringContainsString('Directory not empty', $error->getMessage());
+                self::assertStringContainsString('remaining entries=["residual"]', $error->getMessage());
+                self::assertStringContainsString('cwd=' . $path, $error->getMessage());
+                self::assertStringNotContainsString('cwd=' . $sibling, $error->getMessage());
+            } finally {
+                $inside->terminate();
+                $outside->terminate();
+            }
+        }
+
+        #[Test]
+        public function itDoesNotLetADiagnosticFailureReplaceTheCleanupRefusal(): void
+        {
+            $message = RemovalFailureDiagnostics::message(
+                'Original cleanup refusal.',
+                "invalid\0path",
+                'native refusal (errno 39)',
+                true,
+            );
+
+            self::assertStringStartsWith('Original cleanup refusal. [errno=39;', $message);
+            self::assertStringContainsString('native error="native refusal (errno 39)"', $message);
+            self::assertStringContainsString('live processes="unavailable (', $message);
+        }
+
+        #[Test]
+        public function itTransportsGitConfigurationEnvironmentWithoutInterpretingItInControlsShell(): void
+        {
+            $before = self::gitConfigurationEnvironment();
+            $transported = [
+                'GIT_CONFIG_COUNT' => 'not-a-count',
+                'GIT_CONFIG_KEY_unusual' => 'section.key',
+                'GIT_CONFIG_VALUE_unusual' => 'value',
+                'GIT_CONFIG_KEY_9' => 'orphan.key',
+            ];
+
+            try {
+                self::replaceGitConfigurationEnvironment($transported);
+                $probe = <<<'PHP'
+                    echo json_encode([
+                        'GIT_CONFIG_COUNT' => getenv('GIT_CONFIG_COUNT'),
+                        'GIT_CONFIG_KEY_unusual' => getenv('GIT_CONFIG_KEY_unusual'),
+                        'GIT_CONFIG_VALUE_unusual' => getenv('GIT_CONFIG_VALUE_unusual'),
+                        'GIT_CONFIG_KEY_9' => getenv('GIT_CONFIG_KEY_9'),
+                        'GIT_CONFIG_VALUE_9' => getenv('GIT_CONFIG_VALUE_9'),
+                    ], JSON_THROW_ON_ERROR);
+                    PHP;
+                $result = Shell::run([\PHP_BINARY, '-r', $probe], $this->root);
+
+                self::assertSame(0, $result['exit']);
+                self::assertSame('', $result['stderr']);
+                self::assertSame([
+                    ...$transported,
+                    'GIT_CONFIG_VALUE_9' => false,
+                ], json_decode($result['stdout'], true, 512, \JSON_THROW_ON_ERROR));
+            } finally {
+                self::replaceGitConfigurationEnvironment($before);
+            }
+        }
+
         #[Test]
         #[DataProvider('removers')]
         public function itUnlinksASymlinkWithoutWalkingItsTarget(Closure $remove, string $expectedException): void
@@ -176,6 +259,41 @@ namespace QmxFindingGate\Tests {
             $remove($link);
 
             self::assertFalse(is_link($link));
+        }
+
+        /** @return array<string, string> */
+        private static function gitConfigurationEnvironment(): array
+        {
+            $environment = getenv();
+            if ($environment === false) {
+                throw new RuntimeException('Cannot snapshot the test process environment.');
+            }
+
+            $configuration = [];
+            foreach ($environment as $name => $value) {
+                if ($name === 'GIT_CONFIG_COUNT'
+                    || str_starts_with($name, 'GIT_CONFIG_KEY_')
+                    || str_starts_with($name, 'GIT_CONFIG_VALUE_')) {
+                    $configuration[$name] = $value;
+                }
+            }
+
+            return $configuration;
+        }
+
+        /** @param array<string, string> $replacement */
+        private static function replaceGitConfigurationEnvironment(array $replacement): void
+        {
+            foreach (array_keys(self::gitConfigurationEnvironment()) as $name) {
+                if (!putenv($name)) {
+                    throw new RuntimeException('Cannot remove ' . $name . ' from the test process environment.');
+                }
+            }
+            foreach ($replacement as $name => $value) {
+                if (!putenv($name . '=' . $value)) {
+                    throw new RuntimeException('Cannot set ' . $name . ' in the test process environment.');
+                }
+            }
         }
     }
 

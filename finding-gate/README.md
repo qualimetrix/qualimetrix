@@ -721,9 +721,15 @@ Recursive cleanup accepts an entry disappearing during traversal only when a
 readable parent proves that its name is absent. It still refuses inaccessible
 parents, failed removals that leave an entry and residual nonempty directories;
 symlinks observed during entry classification are unlinked without walking
-their targets. Cleanup assumes entries are not concurrently substituted or
-created: path-based classification, traversal and removal are not atomic and
-do not protect against those races.
+their targets. A refusal reports the warning from the failed filesystem call,
+the numeric errno when that warning exposes one (otherwise `errno=unknown`), up
+to 32 residual entries and up to 16 processes whose current directory is the
+tree or one of its descendants. Linux reads `/proc`; macOS uses a supervised
+`lsof` probe with a two-second deadline. Diagnostic failures are reported in
+the same line and never replace the original cleanup refusal. Cleanup assumes
+entries are not concurrently substituted or created: path-based
+classification, traversal and removal are not atomic and do not protect
+against those races.
 
 `composer gate:controls` runs each declared mutation on an independent clone
 with its own repository. It resolves the reference before cloning and leaves

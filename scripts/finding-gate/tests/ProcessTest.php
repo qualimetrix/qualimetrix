@@ -75,10 +75,50 @@ final class ProcessTest extends TestCase
         self::assertSame(0, $measurement['wallReads']);
     }
 
+    #[Test]
+    public function itTransportsGitConfigurationVerbatimAndLeavesValidationToGit(): void
+    {
+        $names = ['GIT_CONFIG_COUNT', 'GIT_CONFIG_KEY_weird', 'GIT_CONFIG_VALUE_weird', 'GIT_CONFIG_PARAMETERS'];
+        $before = [];
+        foreach ($names as $name) {
+            $before[$name] = getenv($name);
+        }
+
+        try {
+            putenv('GIT_CONFIG_COUNT=not-a-number');
+            putenv('GIT_CONFIG_KEY_weird=maintenance.auto');
+            putenv('GIT_CONFIG_VALUE_weird=false');
+            putenv('GIT_CONFIG_PARAMETERS=must-not-be-inherited');
+
+            $probe = Process::run([
+                \PHP_BINARY,
+                '-r',
+                'echo json_encode([getenv("GIT_CONFIG_COUNT"), getenv("GIT_CONFIG_KEY_weird"), getenv("GIT_CONFIG_VALUE_weird"), getenv("GIT_CONFIG_PARAMETERS")]);',
+            ], __DIR__);
+            self::assertSame(0, $probe['exit'], $probe['stderr']);
+            self::assertSame('["not-a-number","maintenance.auto","false",false]', $probe['stdout']);
+
+            $git = Process::run(['git', 'config', '--get', 'maintenance.auto'], __DIR__);
+            self::assertNotSame(0, $git['exit']);
+            self::assertStringContainsString('GIT_CONFIG_COUNT', $git['stderr']);
+        } finally {
+            foreach ($before as $name => $value) {
+                putenv($value === false ? $name : $name . '=' . $value);
+            }
+        }
+    }
+
     /** @return iterable<string,array{string}> */
     public static function fixedKeys(): iterable
     {
-        foreach (['PATH', 'HOME', 'LC_ALL', 'TZ', 'COLUMNS', 'NO_COLOR', 'TMPDIR'] as $key) {
+        $keys = ['PATH', 'HOME', 'LC_ALL', 'TZ', 'COLUMNS', 'NO_COLOR', 'TMPDIR', 'GIT_CONFIG_COUNT'];
+        $count = (int) getenv('GIT_CONFIG_COUNT');
+        for ($index = 0; $index < $count; ++$index) {
+            $keys[] = 'GIT_CONFIG_KEY_' . $index;
+            $keys[] = 'GIT_CONFIG_VALUE_' . $index;
+        }
+
+        foreach ($keys as $key) {
             yield $key => [$key];
         }
     }

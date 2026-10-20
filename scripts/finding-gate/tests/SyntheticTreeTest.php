@@ -16,6 +16,8 @@ use QmxFindingGate\SyntheticTree;
 
 final class SyntheticTreeTest extends TestCase
 {
+    private const string DETACHED_AUTO_MAINTENANCE_VERSION = '2.56.0';
+
     public static function setUpBeforeClass(): void
     {
         require_once \dirname(__DIR__) . '/classes.php';
@@ -38,6 +40,61 @@ final class SyntheticTreeTest extends TestCase
         } finally {
             SyntheticTree::remove($root);
             Fs::removeRecursively($cache);
+        }
+    }
+
+    #[Test]
+    public function itBuildsSyntheticRepositoriesWithInheritedAutomaticMaintenanceDisabled(): void
+    {
+        $root = SyntheticTree::create(SyntheticTree::clean());
+
+        try {
+            foreach (['maintenance.auto' => 'false', 'gc.auto' => '0'] as $key => $expected) {
+                $effective = Process::run(['git', 'config', '--get', $key], $root);
+                self::assertSame(0, $effective['exit'], $effective['stderr']);
+                self::assertSame($expected . "\n", $effective['stdout']);
+
+                $local = Process::run(['git', 'config', '--local', '--get', $key], $root);
+                self::assertSame(1, $local['exit'], $local['stderr']);
+                self::assertSame('', $local['stdout']);
+            }
+        } finally {
+            SyntheticTree::remove($root);
+        }
+    }
+
+    #[Test]
+    public function itLeavesNoDetachedAutomaticMaintenanceInsideTheSyntheticRepository(): void
+    {
+        $version = self::gitVersion();
+        if (version_compare($version, self::DETACHED_AUTO_MAINTENANCE_VERSION, '<')) {
+            self::markTestSkipped(\sprintf(
+                'Git %s predates the detached automatic-maintenance behavior exercised by Git %s and newer.',
+                $version,
+                self::DETACHED_AUTO_MAINTENANCE_VERSION,
+            ));
+        }
+
+        $root = SyntheticTree::create(SyntheticTree::clean());
+
+        try {
+            $inside = [];
+            $unreadable = [];
+
+            for ($attempt = 0; $attempt < 10; ++$attempt) {
+                [$observed, $unknown] = self::maintenanceProcesses($root);
+                $inside = [...$inside, ...$observed];
+                $unreadable = [...$unreadable, ...$unknown];
+                usleep(25_000);
+            }
+
+            if ($unreadable !== []) {
+                self::markTestSkipped('Cannot inspect cwd for git maintenance process(es): ' . implode(', ', array_unique($unreadable)));
+            }
+
+            self::assertSame([], array_values(array_unique($inside)), 'Detached git maintenance remained inside the synthetic repository.');
+        } finally {
+            SyntheticTree::remove($root);
         }
     }
     #[Test]
@@ -299,6 +356,67 @@ final class SyntheticTreeTest extends TestCase
         self::assertArrayHasKey('stdout', $answer);
 
         return $answer['stdout'];
+    }
+
+    private static function gitVersion(): string
+    {
+        $result = Process::run(['git', '--version'], __DIR__);
+        self::assertSame(0, $result['exit'], $result['stderr']);
+        self::assertSame(1, preg_match('/\bgit version ([0-9]+\.[0-9]+\.[0-9]+)/', $result['stdout'], $matches));
+
+        return $matches[1];
+    }
+
+    /** @return array{list<string>, list<string>} */
+    private static function maintenanceProcesses(string $root): array
+    {
+        $listed = Process::run(['/bin/ps', '-axo', 'pid=,command='], $root);
+        self::assertSame(0, $listed['exit'], $listed['stderr']);
+        $inside = [];
+        $unreadable = [];
+
+        foreach (explode("\n", $listed['stdout']) as $line) {
+            if (preg_match('~^\s*([0-9]+)\s+(?:\S*/)?git\s+maintenance(?:\s|$)~', $line, $matches) !== 1) {
+                continue;
+            }
+
+            $pid = (int) $matches[1];
+            $cwd = self::processWorkingDirectory($pid, $root);
+            if ($cwd === null) {
+                if (@posix_kill($pid, 0)) {
+                    $unreadable[] = (string) $pid;
+                }
+
+                continue;
+            }
+
+            $prefix = rtrim($root, '/') . '/';
+            if ($cwd === $root || str_starts_with($cwd, $prefix)) {
+                $inside[] = $pid . ':' . $cwd;
+            }
+        }
+
+        return [$inside, $unreadable];
+    }
+
+    private static function processWorkingDirectory(int $pid, string $workingDirectory): ?string
+    {
+        $proc = @readlink('/proc/' . $pid . '/cwd');
+        if (\is_string($proc)) {
+            return $proc;
+        }
+
+        $lsof = '/usr/sbin/lsof';
+        if (!is_executable($lsof)) {
+            return null;
+        }
+
+        $result = Process::run([$lsof, '-a', '-p', (string) $pid, '-d', 'cwd', '-Fn'], $workingDirectory);
+        if ($result['exit'] !== 0 || preg_match('/^n(.+)$/m', $result['stdout'], $matches) !== 1) {
+            return null;
+        }
+
+        return $matches[1];
     }
 
 }

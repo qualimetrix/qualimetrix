@@ -69,6 +69,7 @@ final class ProcessHandle
             'COLUMNS' => '120',
             'NO_COLOR' => '1',
             'TMPDIR' => (string) getenv('TMPDIR'),
+            ...self::inheritedGitConfiguration(),
         ];
         foreach ($environmentAdditions as $key => $value) {
             if (!\is_string($key) || $key === '' || str_contains($key, '=') || str_contains($key, "\0")
@@ -104,6 +105,23 @@ final class ProcessHandle
         self::waitForOwnProcessGroup($handle, $pid, $command);
 
         return new self($handle, $pipes, $pid);
+    }
+
+    /** @return array<string, string> */
+    public static function inheritedGitConfiguration(): array
+    {
+        $parent = getenv();
+        if ($parent === false) {
+            throw new GateError('Cannot read the parent environment.');
+        }
+
+        return array_filter(
+            $parent,
+            static fn(string $name): bool => $name === 'GIT_CONFIG_COUNT'
+                || str_starts_with($name, 'GIT_CONFIG_KEY_')
+                || str_starts_with($name, 'GIT_CONFIG_VALUE_'),
+            \ARRAY_FILTER_USE_KEY,
+        );
     }
 
     /** @return list<resource> */

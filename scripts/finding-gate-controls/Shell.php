@@ -93,6 +93,7 @@ final class Shell
             'TZ' => 'UTC',
             'COLUMNS' => '120',
             'NO_COLOR' => '1',
+            ...self::inheritedGitConfiguration(),
             ...$environment,
         ]);
 
@@ -304,13 +305,29 @@ final class Shell
 
     public static function removeRecursively(string $path): void
     {
+        self::removeEntry($path, $path);
+    }
+
+    private static function removeEntry(string $path, string $root): void
+    {
         if (@is_link($path)) {
-            if (!@unlink($path) && !self::entryIsAbsent($path)) {
-                throw new RuntimeException(\sprintf('Cannot unlink %s while removing it.', $path));
+            [$removed, $nativeError] = self::captureRemoval(static fn(): bool => @unlink($path));
+            if (!$removed && !self::entryIsAbsent($path)) {
+                throw new RuntimeException(self::removalFailure(
+                    \sprintf('Cannot unlink %s while removing it.', $path),
+                    $root,
+                    $nativeError,
+                    true,
+                ));
             }
 
             if (!self::entryIsAbsent($path)) {
-                throw new RuntimeException(\sprintf('Cannot unlink %s while removing it.', $path));
+                throw new RuntimeException(self::removalFailure(
+                    \sprintf('Cannot unlink %s while removing it.', $path),
+                    $root,
+                    $nativeError,
+                    !$removed,
+                ));
             }
 
             return;
@@ -321,25 +338,41 @@ final class Shell
                 return;
             }
 
-            if (!@unlink($path) && !self::entryIsAbsent($path)) {
-                throw new RuntimeException(\sprintf('Cannot unlink %s while removing it.', $path));
+            [$removed, $nativeError] = self::captureRemoval(static fn(): bool => @unlink($path));
+            if (!$removed && !self::entryIsAbsent($path)) {
+                throw new RuntimeException(self::removalFailure(
+                    \sprintf('Cannot unlink %s while removing it.', $path),
+                    $root,
+                    $nativeError,
+                    true,
+                ));
             }
 
             if (!self::entryIsAbsent($path)) {
-                throw new RuntimeException(\sprintf('Cannot unlink %s while removing it.', $path));
+                throw new RuntimeException(self::removalFailure(
+                    \sprintf('Cannot unlink %s while removing it.', $path),
+                    $root,
+                    $nativeError,
+                    !$removed,
+                ));
             }
 
             return;
         }
 
-        $entries = @scandir($path);
+        [$entries, $nativeError] = self::captureRemoval(static fn(): array|false => @scandir($path));
 
         if ($entries === false) {
             if (self::entryIsAbsent($path)) {
                 return;
             }
 
-            throw new RuntimeException(\sprintf('Cannot list %s while removing it.', $path));
+            throw new RuntimeException(self::removalFailure(
+                \sprintf('Cannot list %s while removing it.', $path),
+                $root,
+                $nativeError,
+                true,
+            ));
         }
 
         foreach ($entries as $entry) {
@@ -347,16 +380,112 @@ final class Shell
                 continue;
             }
 
-            self::removeRecursively($path . '/' . $entry);
+            self::removeEntry($path . '/' . $entry, $root);
         }
 
-        if (!@rmdir($path) && !self::entryIsAbsent($path)) {
-            throw new RuntimeException(\sprintf('Cannot remove directory %s.', $path));
+        [$removed, $nativeError] = self::captureRemoval(static fn(): bool => @rmdir($path));
+        if (!$removed && !self::entryIsAbsent($path)) {
+            throw new RuntimeException(self::removalFailure(
+                \sprintf('Cannot remove directory %s.', $path),
+                $root,
+                $nativeError,
+                true,
+            ));
         }
 
         if (!self::entryIsAbsent($path)) {
-            throw new RuntimeException(\sprintf('Cannot remove directory %s.', $path));
+            throw new RuntimeException(self::removalFailure(
+                \sprintf('Cannot remove directory %s.', $path),
+                $root,
+                $nativeError,
+                !$removed,
+            ));
         }
+    }
+
+    /** @return array<string, string> */
+    private static function inheritedGitConfiguration(): array
+    {
+        $environment = getenv();
+        if ($environment === false) {
+            throw new RuntimeException('Cannot read the process environment for the controls child.');
+        }
+
+        $configuration = [];
+        foreach ($environment as $name => $value) {
+            if ($name === 'GIT_CONFIG_COUNT'
+                || str_starts_with($name, 'GIT_CONFIG_KEY_')
+                || str_starts_with($name, 'GIT_CONFIG_VALUE_')) {
+                $configuration[$name] = $value;
+            }
+        }
+
+        return $configuration;
+    }
+
+    private static function removalFailure(
+        string $base,
+        string $root,
+        ?string $nativeError,
+        bool $operationFailed,
+    ): string {
+        require_once __DIR__ . '/../finding-gate/RemovalFailureDiagnostics.php';
+
+        return \QmxFindingGate\RemovalFailureDiagnostics::message(
+            $base,
+            $root,
+            $nativeError,
+            $operationFailed,
+            self::runDiagnostic(...),
+        );
+    }
+
+    /**
+     * @template T
+     *
+     * @param Closure(): T $operation
+     *
+     * @return array{T, ?string}
+     */
+    private static function captureRemoval(Closure $operation): array
+    {
+        require_once __DIR__ . '/../finding-gate/RemovalFailureDiagnostics.php';
+
+        return \QmxFindingGate\RemovalFailureDiagnostics::capture($operation);
+    }
+
+    /**
+     * @param list<string> $command
+     *
+     * @return array{stdout: string, stderr: string, exit: int}
+     */
+    private static function runDiagnostic(array $command, string $workingDirectory, float $deadlineSeconds): array
+    {
+        $child = self::start($command, $workingDirectory);
+        $deadline = (hrtime(true) / 1_000_000_000) + $deadlineSeconds;
+
+        while (!$child->settled()) {
+            if ((hrtime(true) / 1_000_000_000) >= $deadline) {
+                if (!\function_exists('posix_kill')) {
+                    throw new RuntimeException('The diagnostic process deadline requires the PHP POSIX extension.');
+                }
+                @posix_kill($child->pid, \defined('SIGKILL') ? \SIGKILL : 9);
+                $killDeadline = (hrtime(true) / 1_000_000_000) + 0.3;
+                do {
+                    self::poll(10_000);
+                } while ((hrtime(true) / 1_000_000_000) < $killDeadline);
+
+                throw new RuntimeException(\sprintf(
+                    'Timed out after %.1f seconds while running %s.',
+                    $deadlineSeconds,
+                    implode(' ', $command),
+                ));
+            }
+
+            self::poll(50_000);
+        }
+
+        return $child->result();
     }
 
     /**

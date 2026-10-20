@@ -50,6 +50,11 @@ The bootstrap is the sole owner of process-root cleanup. Future process
 concerns add independent subdirectories. An XDG cache concern uses
 `<root>/xdg-cache` with mode `0700` and publishes `XDG_CACHE_HOME` using
 `putenv()`, `$_ENV` and `$_SERVER`; the window inspects only `<root>/cwd`.
+The same process bootstrap appends `maintenance.auto=false` and `gc.auto=0`
+to any existing `GIT_CONFIG_*` entries and publishes every entry through the
+same three environment channels. Repository fixtures and their descendants
+therefore cannot start detached maintenance or automatic garbage collection,
+while tests remain free to append their own Git configuration entries.
 
 The suppression-loading regression already uses deterministic evidence:
 2048 canonical subject reads plus an in-process measured map-copy memory
@@ -81,4 +86,6 @@ Checks about the repository's tracked population still require Git metadata.
 Focused relative invocations keep working. Unintended cwd or host-repository
 dependencies become visible during execution. Temporary default-cache
 tolerance retires when the aggregate observes that no suite uses it.
+Automatic Git maintenance stays disabled only for the test process and its
+children; no repository-local configuration is written.
 There is no product contract or user-facing behavior change.
