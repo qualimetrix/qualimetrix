@@ -1,1 +1,5 @@
 kind	key	level	reason
+metric	design.is-trait	class	Declaration kind is explicit evidence for rule population boundaries; absent class-only evidence is not a data gap for this kind.
+metric	design.is-trait.sum	*	Kind totals aggregate exact declaration facts without substituting missing class-only metrics.
+metric	design.is-enum	class	Declaration kind is explicit evidence for rule population boundaries; absent class-only evidence is not a data gap for this kind.
+metric	design.is-enum.sum	*	Kind totals aggregate exact declaration facts without substituting missing class-only metrics.

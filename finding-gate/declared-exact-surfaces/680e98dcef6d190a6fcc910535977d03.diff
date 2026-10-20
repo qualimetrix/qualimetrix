@@ -1,0 +1,52 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 32476
++visible 33527
+@@ -683,1 +683,20 @@
+-                    "toolExecutionNotifications": []
++                    "toolExecutionNotifications": [
++                        {
++                            "level": "note",
++                            "message": {
++                                "text": "Selected judgement incomplete: coupling.distance (namespace), 1 unjudged namespace; Own distance was not published. Missing metric \"coupling.distance-own\"."
++                            },
++                            "descriptor": {
++                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
++                            }
++                        },
++                        {
++                            "level": "note",
++                            "message": {
++                                "text": "Selected judgement incomplete: size.class-count (namespace), 1 unjudged namespace; The own class count was not published. Missing metric \"size.class-count\"."
++                            },
++                            "descriptor": {
++                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
++                            }
++                        }
++                    ]
+@@ -694,1 +713,1 @@
+-invocation-format:sarif 32476
++invocation-format:sarif 33527
+@@ -1376,1 +1395,20 @@
+-                    "toolExecutionNotifications": []
++                    "toolExecutionNotifications": [
++                        {
++                            "level": "note",
++                            "message": {
++                                "text": "Selected judgement incomplete: coupling.distance (namespace), 1 unjudged namespace; Own distance was not published. Missing metric \"coupling.distance-own\"."
++                            },
++                            "descriptor": {
++                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
++                            }
++                        },
++                        {
++                            "level": "note",
++                            "message": {
++                                "text": "Selected judgement incomplete: size.class-count (namespace), 1 unjudged namespace; The own class count was not published. Missing metric \"size.class-count\"."
++                            },
++                            "descriptor": {
++                                "id": "QMX-RULE-POPULATION-INCOMPLETE"
++                            }
++                        }
++                    ]

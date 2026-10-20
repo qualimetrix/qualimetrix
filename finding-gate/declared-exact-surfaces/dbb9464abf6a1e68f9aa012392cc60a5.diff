@@ -1,0 +1,12 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 1096
++visible 1162
+@@ -6,0 +6,1 @@
++Rule population incomplete — namespace: 1 judged, 1 not judged.
+@@ -21,1 +22,1 @@
+-invocation-format:summary 1096
++invocation-format:summary 1162
+@@ -26,0 +27,1 @@
++Rule population incomplete — namespace: 1 judged, 1 not judged.

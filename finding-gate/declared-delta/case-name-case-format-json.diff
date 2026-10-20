@@ -1,0 +1,18 @@
+--- candidate
++++ reference (mapped)
+@@ -164,2 +164,2 @@
+-            "gate": "own-coupling",
+-            "reason": "Distance requires at least one own coupling edge. Metric population boundary was not met.",
++            "gate": "own-distance",
++            "reason": "Own distance was not published. Missing metric \"coupling.distance-own\".",
+@@ -171,1 +171,1 @@
+-            "dataGap": false
++            "dataGap": true
+@@ -365,2 +365,2 @@
+-            "gate": "own-count-expected",
+-            "reason": "The namespace has no direct declaration population. Required population context was not judged.",
++            "gate": "own-count",
++            "reason": "The own class count was not published. Missing metric \"size.class-count\".",
+@@ -372,1 +372,1 @@
+-            "dataGap": false
++            "dataGap": true

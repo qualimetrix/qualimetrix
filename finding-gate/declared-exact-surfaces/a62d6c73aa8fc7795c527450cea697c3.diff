@@ -1,0 +1,23 @@
+--- candidate
++++ reference (mapped)
+@@ -1,9 +1,11 @@
+-visible 545
+-::warning file=src/Retuned.php,line=17,title=complexity.ccn::Cyclomatic complexity is 3, exceeds threshold of 2. Consider extracting methods or simplifying conditions
+-::warning file=src/ClassScoped.php,line=16,title=complexity.cognitive::Cognitive complexity is 3, exceeds threshold of 1. Top: nested if +2 L21, foreach +1 L20. Reduce nesting and break into smaller methods
+-::warning file=src/ClassScoped.php,line=14,title=complexity.cognitive::Maximum method cognitive complexity is 3, exceeds threshold of 1. Refactor the most complex methods
+-
+-invocation-format:github 545
+-::warning file=src/Retuned.php,line=17,title=complexity.ccn::Cyclomatic complexity is 3, exceeds threshold of 2. Consider extracting methods or simplifying conditions
+-::warning file=src/ClassScoped.php,line=16,title=complexity.cognitive::Cognitive complexity is 3, exceeds threshold of 1. Top: nested if +2 L21, foreach +1 L20. Reduce nesting and break into smaller methods
+-::warning file=src/ClassScoped.php,line=14,title=complexity.cognitive::Maximum method cognitive complexity is 3, exceeds threshold of 1. Refactor the most complex methods
++visible 871
++::warning file=src/Retuned.php,line=17,title=complexity.ccn::Cyclomatic complexity is 3, exceeds threshold of 2. Consider extracting methods or simplifying conditions
++::warning file=src/ClassScoped.php,line=16,title=complexity.cognitive::Cognitive complexity is 3, exceeds threshold of 1. Top: nested if +2 L21, foreach +1 L20. Reduce nesting and break into smaller methods
++::warning file=src/ClassScoped.php,line=14,title=complexity.cognitive::Maximum method cognitive complexity is 3, exceeds threshold of 1. Refactor the most complex methods
++::notice title=rule-population.incomplete::Selected judgement incomplete: coupling.distance (namespace): 1 unjudged namespace; Own distance was not published. Missing metric "coupling.distance-own".; size.class-count (namespace): 1 unjudged namespace; The own class count was not published. Missing metric "size.class-count".
++
++invocation-format:github 871
++::warning file=src/Retuned.php,line=17,title=complexity.ccn::Cyclomatic complexity is 3, exceeds threshold of 2. Consider extracting methods or simplifying conditions
++::warning file=src/ClassScoped.php,line=16,title=complexity.cognitive::Cognitive complexity is 3, exceeds threshold of 1. Top: nested if +2 L21, foreach +1 L20. Reduce nesting and break into smaller methods
++::warning file=src/ClassScoped.php,line=14,title=complexity.cognitive::Maximum method cognitive complexity is 3, exceeds threshold of 1. Refactor the most complex methods
++::notice title=rule-population.incomplete::Selected judgement incomplete: coupling.distance (namespace): 1 unjudged namespace; Own distance was not published. Missing metric "coupling.distance-own".; size.class-count (namespace): 1 unjudged namespace; The own class count was not published. Missing metric "size.class-count".

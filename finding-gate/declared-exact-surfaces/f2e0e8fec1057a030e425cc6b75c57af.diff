@@ -1,0 +1,13 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 12359
++visible 12559
+@@ -92,2 +92,3 @@
+-
+-invocation-format:github 12359
++::notice title=rule-population.incomplete::Selected judgement incomplete: size.class-count (namespace): 2 unjudged namespace; The own class count was not published. Missing metric "size.class-count".
++
++invocation-format:github 12559
+@@ -184,0 +185,1 @@
++::notice title=rule-population.incomplete::Selected judgement incomplete: size.class-count (namespace): 2 unjudged namespace; The own class count was not published. Missing metric "size.class-count".

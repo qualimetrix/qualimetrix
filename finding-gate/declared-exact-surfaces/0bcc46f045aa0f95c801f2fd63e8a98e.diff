@@ -1,0 +1,13 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 4036
++visible 4362
+@@ -27,2 +27,3 @@
+-
+-invocation-format:github 4036
++::notice title=rule-population.incomplete::Selected judgement incomplete: coupling.distance (namespace): 1 unjudged namespace; Own distance was not published. Missing metric "coupling.distance-own".; size.class-count (namespace): 1 unjudged namespace; The own class count was not published. Missing metric "size.class-count".
++
++invocation-format:github 4362
+@@ -54,0 +55,1 @@
++::notice title=rule-population.incomplete::Selected judgement incomplete: coupling.distance (namespace): 1 unjudged namespace; Own distance was not published. Missing metric "coupling.distance-own".; size.class-count (namespace): 1 unjudged namespace; The own class count was not published. Missing metric "size.class-count".
