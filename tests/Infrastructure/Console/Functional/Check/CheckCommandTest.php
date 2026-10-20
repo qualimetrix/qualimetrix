@@ -113,6 +113,32 @@ final class CheckCommandTest extends TestCase
     }
 
     #[Test]
+    public function itDoesNotSuggestAFileWhenEveryDeclaringFileRemainsAmbiguous(): void
+    {
+        file_put_contents($this->tempDir . '/First.php', '<?php if (true) { class Repeated {} } else { class Repeated {} }');
+        file_put_contents($this->tempDir . '/Second.php', '<?php if (true) { class Repeated {} } else { class Repeated {} }');
+        $tester = $this->createCommandTester();
+        $tester->execute(['paths' => [$this->tempDir], '--format' => 'summary', '--no-cache' => true, '--workers' => '0', '--class' => 'Repeated']);
+
+        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('Every declaring file contains the class more than once; analyse without --class or rename declarations.', $tester->getDisplay());
+        self::assertStringNotContainsString('Analyse one declaring file', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itSuggestsADeclaringFileWhenOneFileSelectsASingleDeclaration(): void
+    {
+        file_put_contents($this->tempDir . '/Ambiguous.php', '<?php if (true) { class Repeated {} } else { class Repeated {} }');
+        file_put_contents($this->tempDir . '/Singleton.php', '<?php class Repeated {}');
+        $tester = $this->createCommandTester();
+        $tester->execute(['paths' => [$this->tempDir], '--format' => 'summary', '--no-cache' => true, '--workers' => '0', '--class' => 'Repeated']);
+
+        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('Analyse one declaring file to select an exact declaration.', $tester->getDisplay());
+        self::assertStringNotContainsString('Every declaring file contains the class more than once', $tester->getDisplay());
+    }
+
+    #[Test]
     public function itKeepsPopulationBoundariesAndUnconfiguredArchitectureOutOfTheIncompleteWarning(): void
     {
         mkdir($this->tempDir . '/Child');

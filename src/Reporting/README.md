@@ -642,6 +642,12 @@ finding keeps its declared namespace even in a multi-namespace file. Class
 selection never selects a file aggregate. Binding counts retain their existing
 namespace and ranked-offender universe.
 
+An ambiguous class binding carries its exact declaration identities, declaring
+file count and count of files containing exactly one matching declaration. The
+Console adapter suggests narrowing analysis to a declaring file only when such
+a singleton file exists; otherwise it explains that file selection cannot make
+the logical class exact.
+
 **`projectScope`:** always has
 `{state, uncoveredAutoloadTargets, unjudgedChannels, unjudgedValues, reasons}`.
 `state` remains `covered`, `narrowed`, `unknown` or `unmeasured`; the pipeline's

@@ -211,6 +211,7 @@ final class DrillDownBindingTest extends TestCase
                     'declaration:class:Demo\\Repeated@src/Same.php#1',
                 ],
                 'fileCount' => 2,
+                'singletonFileCount' => 1,
             ],
             (new DrillDownBinding())->classDeclarationSelection('Demo\\Repeated', $repository),
         );
