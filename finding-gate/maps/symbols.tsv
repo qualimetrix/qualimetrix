@@ -1,3 +1,1 @@
 old	new	reason
-# Exact FQN, declaration symbol or source path correspondence; prefix neighbours are never included.
-# Generated proposals carry reason ? and must be justified before the gate accepts them.
