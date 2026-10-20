@@ -379,6 +379,24 @@ Available tests:
  - QmxFindingGate\Tests\FieldValuesCheckTest::itRequiresTheActualSupplierAndRefusesAWritingCallBeforeMeasurement
  - QmxFindingGate\Tests\FieldValuesCheckTest::itSharesLiveRolesAndReleasesTheRunAfterItsLastRoleIsDropped
  - QmxFindingGate\Tests\FieldValuesCheckTest::itUsesOneInstanceAndOneWriterForTheCompleteReportAndViewUnion
+ - QmxFindingGate\Tests\FsTest::itRefusesAResidualNonemptyDirectory"controls"
+ - QmxFindingGate\Tests\FsTest::itRefusesAResidualNonemptyDirectory"finding gate"
+ - QmxFindingGate\Tests\FsTest::itRefusesAnInaccessibleEntryInsteadOfCallingItAbsent"controls"
+ - QmxFindingGate\Tests\FsTest::itRefusesAnInaccessibleEntryInsteadOfCallingItAbsent"finding gate"
+ - QmxFindingGate\Tests\FsTest::itRefusesAnUnlinkFailureThatLeavesTheEntryPresent"controls"
+ - QmxFindingGate\Tests\FsTest::itRefusesAnUnlinkFailureThatLeavesTheEntryPresent"finding gate"
+ - QmxFindingGate\Tests\FsTest::itRemovesADanglingSymlink"controls"
+ - QmxFindingGate\Tests\FsTest::itRemovesADanglingSymlink"finding gate"
+ - QmxFindingGate\Tests\FsTest::itTreatsADirectoryDisappearingBetweenInspectionAndListingAsRemoved"controls"
+ - QmxFindingGate\Tests\FsTest::itTreatsADirectoryDisappearingBetweenInspectionAndListingAsRemoved"finding gate"
+ - QmxFindingGate\Tests\FsTest::itTreatsADirectoryDisappearingDuringRmdirAsRemoved"controls"
+ - QmxFindingGate\Tests\FsTest::itTreatsADirectoryDisappearingDuringRmdirAsRemoved"finding gate"
+ - QmxFindingGate\Tests\FsTest::itTreatsAFileAndItsParentDisappearingDuringUnlinkAsRemoved"controls"
+ - QmxFindingGate\Tests\FsTest::itTreatsAFileAndItsParentDisappearingDuringUnlinkAsRemoved"finding gate"
+ - QmxFindingGate\Tests\FsTest::itTreatsAFileDisappearingDuringUnlinkAsRemoved"controls"
+ - QmxFindingGate\Tests\FsTest::itTreatsAFileDisappearingDuringUnlinkAsRemoved"finding gate"
+ - QmxFindingGate\Tests\FsTest::itUnlinksASymlinkWithoutWalkingItsTarget"controls"
+ - QmxFindingGate\Tests\FsTest::itUnlinksASymlinkWithoutWalkingItsTarget"finding gate"
  - QmxFindingGate\Tests\GateModesTest::itExitsOneWhenTheSelfTestFails
  - QmxFindingGate\Tests\GateModesTest::itExitsThreeWhenTheGateCannotRun
  - QmxFindingGate\Tests\GateModesTest::itExitsZeroWhenTheSelfTestIsGreen
