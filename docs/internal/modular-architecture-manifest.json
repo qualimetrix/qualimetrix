@@ -4409,6 +4409,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Measurement\\RunMeasurement"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Preparation\\CollectionResult"
         }
       ]
     },
@@ -6837,6 +6841,10 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Preparation\\RunPreparation"
         },
         {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Preparation\\CollectionResult"
+        },
+        {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingPublication\\PublishedFinding"
         }
@@ -8221,10 +8229,6 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\DirectiveUsagePopulation"
-        },
-        {
-          "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Preparation\\RunPreparation"
         }
       ]
     },
@@ -18814,6 +18818,20 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Run\\Preparation\\CollectionResult": {
+      "path": "src/Analysis/Run/Preparation/CollectionResult.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Run\\Preparation\\DiscoveryResult": {
+      "path": "src/Analysis/Run/Preparation/DiscoveryResult.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Run\\Preparation\\PreparedRun": {
       "path": "src/Analysis/Run/Preparation/PreparedRun.php",
       "kind": "class",
@@ -20532,6 +20550,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Preparation\\RunPreparation"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Preparation\\DiscoveryResult"
         }
       ]
     },

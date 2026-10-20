@@ -4,36 +4,25 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\Preparation;
 
-use LogicException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
-use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
-use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
-use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
-use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailure;
-use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\SkippedEntry;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeRule;
 use Qualimetrix\Analysis\Run\InlineDirectiveRun;
-use Qualimetrix\Analysis\Run\Measurement\CompletedMeasurements;
 use Qualimetrix\Analysis\Run\Measurement\RunMeasurement;
 use Qualimetrix\Analysis\Run\RuleProducerPreparation;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -49,8 +38,8 @@ use SplFileInfo;
 /**
  * Prepares one measured execution context shared by normal reporting and directive audit.
  *
- * @qmx-threshold coupling.cbo 35 -- Preparation combines discovery, collection retry, measured graph and one rule context. The typed immutable ChannelPublication snapshot is shared by discovery and the final PreparedRun; the finite class boundary exposes another dependency.
- * @qmx-threshold coupling.instability 0.941177 -- The typed immutable ChannelPublication snapshot preserves one publication view across discovery and the final PreparedRun; the finite class boundary exposes another outward dependency.
+ * @qmx-threshold coupling.cbo 34 -- Preparation combines discovery, collection retry, measured graph and one rule context. The execution and measurement subjects were separated; further splitting these connected inputs would move the same dependency set to another coordinator.
+ * @qmx-threshold coupling.instability 0.939395 -- The preparation coordinator calls the participants needed for one measured context after measurement and publication were separated; its outward protocol retains a finite instability boundary.
  */
 final class RunPreparation
 {
@@ -101,117 +90,85 @@ final class RunPreparation
         ]);
 
         $populationPublication = $this->rulePublication->publication();
-        [
-            $measuredScope,
-            $discoveryPopulation,
-            $files,
-            $eligiblePaths,
-            $generatedExcludedFiles,
-            $publishedByInput,
-            $skippedFailures,
-            $namedExcluded,
-        ] = $this->discover($configuration, $populationPublication);
-        [
-            $repository,
-            $graph,
-            $measurements,
-            $analyzedFiles,
-            $collectionFailures,
-            $suppressions,
-            $thresholdOverrides,
-            $thresholdDiagnostics,
-            $files,
-        ] = $this->collectWithTraitRetry($files, $publishedByInput, $configuration);
-        $namespaceTree = $measurements->namespaceTree;
-        $computedMetricEvaluation = $measurements->computedMetricEvaluation;
+        $discovery = $this->discover($configuration);
+        $discoveryPopulation = $this->unmatchedExcludeAudit->population(
+            $discovery->measuredScope->judgement(),
+            $populationPublication,
+            new FindingChannel(UnmatchedExcludeRule::NAME),
+            UnmatchedExcludeRule::channelDeclarations()[UnmatchedExcludeRule::NAME],
+        );
+        $collection = $this->collectWithTraitRetry($discovery->files, $discovery->publishedByInput, $configuration);
+        $namespaceTree = $collection->measurements->namespaceTree;
+        $computedMetricEvaluation = $collection->measurements->computedMetricEvaluation;
 
         // Phase 5: Circular dependency preparation.
         $this->ruleProducerPreparation->prepareCircularDependencies(
-            $graph,
+            $collection->graph,
             $profiler,
         );
 
         // Phase 6: File-set inspection.
         $inspectionFailures = $this->ruleProducerPreparation->inspectFiles(
-            $files,
+            $collection->files,
             $configuration->projectRoot,
-            $publishedByInput,
+            $discovery->publishedByInput,
         );
 
         // Phase 6.5: hand this run's inline directives to their owning
         // capability, so the rule that reports on them reads prepared state
         // rather than receiving it through the shared analysis context.
         $this->inlineDirectiveRun->prepare(
-            $suppressions,
-            $thresholdOverrides,
-            $thresholdDiagnostics,
+            $collection->suppressions,
+            $collection->thresholdOverrides,
+            $collection->thresholdDiagnostics,
         );
 
         $context = new AnalysisContext(
-            metrics: $repository,
-            dependencyGraph: $graph,
+            metrics: $collection->repository,
+            dependencyGraph: $collection->graph,
             namespaceTree: $namespaceTree,
-            thresholdOverrides: $thresholdOverrides,
-            projectScope: $measuredScope->judgement(),
+            thresholdOverrides: $collection->thresholdOverrides,
+            projectScope: $discovery->measuredScope->judgement(),
         );
-        $ruleExecution = $this->executeRules($context);
+        $unmatchedTypeWarning = $this->ruleProducerPreparation->unmatchedTypeWarning(
+            $context->projectScope,
+            $populationPublication,
+        );
+        $ruleExecution = $this->executeRules($context, $unmatchedTypeWarning);
 
         $profiler->stop('analysis');
 
-        $coverage = self::buildCoverage(
-            $eligiblePaths,
-            $generatedExcludedFiles,
-            $analyzedFiles,
-            $collectionFailures,
-            $skippedFailures,
-            $namedExcluded,
-            $inspectionFailures,
+        $coverage = $discovery->coverage(
+            analyzedFiles: $collection->analyzedFiles,
+            collectionFailures: $collection->failures,
+            inspectionFailures: $inspectionFailures,
         );
         $subjectCoverage = SubjectCoverageFacts::fromMeasured(
-            $measuredScope->judgement(),
+            $discovery->measuredScope->judgement(),
             $coverage->analyzedFiles,
             array_map(static fn(AnalysisFailure $failure): RelativePath => $failure->path, $coverage->failures),
         );
 
         return [new PreparedRun(
             namespaceTree: $namespaceTree,
-            suppressions: $suppressions,
-            thresholdOverrides: $thresholdOverrides,
+            suppressions: $collection->suppressions,
+            thresholdOverrides: $collection->thresholdOverrides,
             context: $context,
             ruleExecution: $ruleExecution,
             coverage: $coverage,
             subjectCoverage: $subjectCoverage,
-            unmatchedExcludeFindings: $this->unmatchedExcludeAudit->findings($measuredScope->judgement(), $configuration->projectRoot),
+            unmatchedExcludeFindings: $this->unmatchedExcludeAudit->findings($discovery->measuredScope->judgement(), $configuration->projectRoot),
             computedMetricEvaluation: $computedMetricEvaluation,
             discoveryPopulation: $discoveryPopulation,
             populationPublication: $populationPublication,
-        ), $measuredScope];
+        ), $discovery->measuredScope];
     }
 
-    /**
-     * @return array{
-     *     ProjectScopeMeasurement,
-     *     JudgedPopulation,
-     *     list<SplFileInfo>,
-     *     list<RelativePath>,
-     *     list<RelativePath>,
-     *     array<string, RelativePath>,
-     *     list<AnalysisFailure>,
-     *     list<RelativePath>
-     * }
-     */
-    private function discover(RunConfiguration $configuration, ChannelPublication $populationPublication): array
+    private function discover(RunConfiguration $configuration): DiscoveryResult
     {
         $this->profiler->start('discovery', 'pipeline');
         $discoveredFiles = $this->projectFiles->discover($configuration);
         $measuredScope = $configuration->projectScope->withDiscoveredFiles($discoveredFiles);
-        $discoveryPopulation = $this->unmatchedExcludeAudit->population(
-            $measuredScope->judgement(),
-            $populationPublication,
-            new FindingChannel(UnmatchedExcludeRule::NAME),
-            UnmatchedExcludeRule::channelDeclarations()[UnmatchedExcludeRule::NAME],
-        );
-
         $eligiblePaths = [];
         $publishedByInput = [];
         foreach ($discoveredFiles->eligibleFiles as $file) {
@@ -235,35 +192,22 @@ final class RunPreparation
             $this->logger->info('Skipped @generated files', ['count' => \count($discoveredFiles->generatedExcludedFiles)]);
         }
 
-        return [
-            $measuredScope,
-            $discoveryPopulation,
-            $discoveredFiles->eligibleFiles,
-            $eligiblePaths,
-            $discoveredFiles->generatedExcludedFiles,
-            $publishedByInput,
-            $skippedFailures,
-            $discoveredFiles->namedExcluded,
-        ];
+        return new DiscoveryResult(
+            measuredScope: $measuredScope,
+            files: $discoveredFiles->eligibleFiles,
+            eligiblePaths: $eligiblePaths,
+            generatedExcludedFiles: $discoveredFiles->generatedExcludedFiles,
+            publishedByInput: $publishedByInput,
+            skippedFailures: $skippedFailures,
+            namedExcluded: $discoveredFiles->namedExcluded,
+        );
     }
 
     /**
      * @param list<SplFileInfo> $files
      * @param array<string, RelativePath> $publishedByInput
-     *
-     * @return array{
-     *     MetricRepositoryInterface,
-     *     DependencyGraphInterface,
-     *     CompletedMeasurements,
-     *     list<RelativePath>,
-     *     list<FileProcessingResult>,
-     *     array<string, list<Suppression>>,
-     *     array<string, list<ThresholdOverride>>,
-     *     array<string, list<ThresholdDiagnostic>>,
-     *     list<SplFileInfo>
-     * }
      */
-    private function collectWithTraitRetry(array $files, array $publishedByInput, RunConfiguration $configuration): array
+    private function collectWithTraitRetry(array $files, array $publishedByInput, RunConfiguration $configuration): CollectionResult
     {
         $compositionFailures = [];
         while (true) {
@@ -310,17 +254,17 @@ final class RunPreparation
 
                 $measurements = $this->runMeasurement->complete($repository, $graph, $filesAnalyzed);
 
-                return [
-                    $repository,
-                    $graph,
-                    $measurements,
-                    $analyzedFiles,
-                    $collectionFailures,
-                    $suppressions,
-                    $thresholdOverrides,
-                    $thresholdDiagnostics,
-                    $files,
-                ];
+                return new CollectionResult(
+                    repository: $repository,
+                    graph: $graph,
+                    measurements: $measurements,
+                    analyzedFiles: $analyzedFiles,
+                    failures: $collectionFailures,
+                    suppressions: $suppressions,
+                    thresholdOverrides: $thresholdOverrides,
+                    thresholdDiagnostics: $thresholdDiagnostics,
+                    files: $files,
+                );
             } catch (TraitCompositionFailure $failure) {
                 $declaration = $failure->declaration;
                 if ($declaration === null) {
@@ -346,16 +290,12 @@ final class RunPreparation
         }
     }
 
-    private function executeRules(AnalysisContext $context): \Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult
+    private function executeRules(AnalysisContext $context, ?string $unmatchedTypeWarning): \Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult
     {
         $phaseStartTime = hrtime(true);
         $this->logger->debug('Starting analysis phase');
         $this->profiler->start('rules', 'pipeline');
         $execution = $this->ruleExecutor->execute($context);
-        $unmatchedTypeWarning = $this->ruleProducerPreparation->unmatchedTypeWarning(
-            $context->projectScope,
-            $this->rulePublication->publication(),
-        );
         if ($unmatchedTypeWarning !== null) {
             $this->logger->warning($unmatchedTypeWarning);
         }
@@ -374,100 +314,6 @@ final class RunPreparation
             ...$counts,
             'duration' => \sprintf('%.2fs', (hrtime(true) - $startTime) / 1e9),
         ]);
-    }
-
-    /**
-     * @param list<RelativePath> $eligiblePaths
-     * @param list<RelativePath> $generatedExcludedFiles
-     * @param list<RelativePath> $analyzedFiles
-     * @param list<FileProcessingResult> $collectionFailures
-     * @param list<AnalysisFailure> $skippedFailures published during discovery
-     * @param list<RelativePath> $namedExcluded
-     * @param list<AnalysisFailure> $inspectionFailures
-     */
-    private static function buildCoverage(
-        array $eligiblePaths,
-        array $generatedExcludedFiles,
-        array $analyzedFiles,
-        array $collectionFailures,
-        array $skippedFailures,
-        array $namedExcluded,
-        array $inspectionFailures,
-    ): AnalysisCoverage {
-        $failures = array_map(
-            static function ($failure): AnalysisFailure {
-                return new AnalysisFailure(
-                    $failure->filePath,
-                    match ($failure->failureKind()) {
-                        FileProcessingFailureKind::Parse => AnalysisFailureKind::Parse,
-                        FileProcessingFailureKind::UnreadableFile => AnalysisFailureKind::UnreadableFile,
-                        FileProcessingFailureKind::Processing => AnalysisFailureKind::Processing,
-                    },
-                    $failure->error(),
-                );
-            },
-            $collectionFailures,
-        );
-
-        $collectionFailurePaths = [];
-        foreach ($failures as $failure) {
-            $collectionFailurePaths[$failure->path->value()] = true;
-        }
-
-        $lateFailures = [];
-        foreach ($inspectionFailures as $failure) {
-            $key = $failure->path->value();
-            if (!isset($collectionFailurePaths[$key])) {
-                $lateFailures[$key] ??= $failure;
-            }
-        }
-
-        $analyzed = array_values(array_filter(
-            $analyzedFiles,
-            static fn(RelativePath $path): bool => !isset($lateFailures[$path->value()]),
-        ));
-
-        $coverage = new AnalysisCoverage(
-            $analyzed,
-            $generatedExcludedFiles,
-            [...$failures, ...array_values($lateFailures)],
-            $namedExcluded,
-        );
-
-        // A skipped entry is a discovered path with a terminal state, so it
-        // belongs on both sides of the invariant below — not only in the
-        // coverage it is recorded in.
-        $skippedPaths = [];
-        foreach ($skippedFailures as $skip) {
-            $skippedPaths[] = $skip->path;
-            $coverage = $coverage->withSkipped($skip->path, $skip->kind, $skip->message);
-        }
-
-        self::assertCoverageMatchesDiscovery($coverage, [...$eligiblePaths, ...$skippedPaths]);
-
-        return $coverage;
-    }
-
-    /** @param list<RelativePath> $eligiblePaths */
-    private static function assertCoverageMatchesDiscovery(
-        AnalysisCoverage $coverage,
-        array $eligiblePaths,
-    ): void {
-        $expected = array_map(static fn(RelativePath $path): string => $path->value(), $eligiblePaths);
-        sort($expected);
-
-        $actual = array_map(
-            static fn(RelativePath $path): string => $path->value(),
-            $coverage->analyzedFiles,
-        );
-        foreach ($coverage->failures as $failure) {
-            $actual[] = $failure->path->value();
-        }
-        sort($actual);
-
-        if ($actual !== $expected) {
-            throw new LogicException('Collection terminal states do not match the discovered analysis paths');
-        }
     }
 
     /** @param list<MixedSpelling> $mixedSpellings */

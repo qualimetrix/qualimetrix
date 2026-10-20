@@ -1114,6 +1114,8 @@ architecture:
         - 'Qualimetrix\Analysis\Run\Measurement\RunMeasurement'
         - 'Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline'
         - 'Qualimetrix\Analysis\Run\Pipeline\DependencyGraphAnalyzer'
+        - 'Qualimetrix\Analysis\Run\Preparation\CollectionResult'
+        - 'Qualimetrix\Analysis\Run\Preparation\DiscoveryResult'
         - 'Qualimetrix\Analysis\Run\Preparation\PreparedRun'
         - 'Qualimetrix\Analysis\Run\Preparation\RunPreparation'
         - 'Qualimetrix\Analysis\Run\RuleProducerPreparation'
@@ -2016,9 +2018,6 @@ rules:
       - exact: src/Analysis/Configuration/Contract/Refusal/RefusedPosition.php
       - exact: src/Analysis/Finding/Contract/Channel/ChannelDeclaration.php
       - exact: src/Analysis/Finding/Contract/Channel/ChannelDeclarationRegistryInterface.php
-      # Publication is the shared channel-population contract read by Finding,
-      # Run, Baseline, Inline and Reporting; its CBO growth is inbound readership.
-      - exact: src/Analysis/Finding/Contract/Channel/ChannelPublication.php
       - exact: src/Analysis/Finding/Contract/Channel/ChannelShape.php
       - exact: src/Analysis/Finding/Contract/Finding.php
       - exact: src/Analysis/Finding/Contract/Channel/FindingChannel.php

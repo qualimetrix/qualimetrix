@@ -59,7 +59,7 @@ an uncovered project class fail even when it has no dependency edges.
 Every test, support file, and fixture directory is governed by the same
 manifest; `test-topology.tsv` in the generated directory reports how many of
 each. Self-analysis runs against the versioned v14 root baseline, whose
-191 groups across 154 subjects are checked against the file itself by
+193 groups across 155 subjects are checked against the file itself by
 `BaselineCountPublicationTest`, and its residual rows accept warnings only, apart from the exact temporary
 namespace-CBO exceptions documented in ADR 0126. Class and method model
 limitations use finite symbol-local thresholds; intentional public readership

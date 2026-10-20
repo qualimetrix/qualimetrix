@@ -125,7 +125,6 @@ rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/Size/Metho
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/Size/MethodStatementCountVisitor.php	Qualimetrix\Analysis\Evidence\Size\MethodStatementCountVisitor	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Channel/ChannelDeclaration.php	Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Channel/ChannelDeclarationRegistryInterface.php	Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface	error	1
-rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Channel/ChannelPublication.php	Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Channel/ChannelShape.php	Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Channel/FindingChannel.php	Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Finding.php	Qualimetrix\Analysis\Finding\Contract\Finding	error	1

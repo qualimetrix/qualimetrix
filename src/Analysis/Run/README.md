@@ -42,6 +42,8 @@ Run/
 │   ├── RunMeasurement.php
 │   └── CompletedMeasurements.php
 ├── Preparation/                # discovery, collection retries and the shared measured rule context
+│   ├── CollectionResult.php
+│   ├── DiscoveryResult.php
 │   ├── RunPreparation.php
 │   └── PreparedRun.php
 ├── Pipeline/                   # report and audit entry points over one prepared run
@@ -225,11 +227,11 @@ duration negative.
   profiling with file-set inspection while `AnalysisPipeline` retains the
   complete phase order. It stores no capability result. Its Architecture input
   implements the preparation and `UnmatchedTypeWarningInterface` promises on
-  the same object. After execution, it asks the pure warning query only when
-  `ChannelPublication` publishes `architecture.layer-declaration` /
-  `architecture.unmatched-type` / `project`. The pipeline logs a returned warning
-  once; the rule and preparation perform no logging, and the execution result
-  gains no warning transport state.
+  the same object. The pipeline asks the pure warning query against the captured
+  publication only when `ChannelPublication` publishes
+  `architecture.layer-declaration` / `architecture.unmatched-type` / `project`,
+  then logs a returned warning after execution. The rule and preparation perform
+  no logging, and the execution result gains no warning transport state.
 - `InlineDirectiveRun` prepares authored Inline state and asks its two
   post-execution questions through `InlineDirectivePolicyInterface` and
   `ThresholdDirectiveAuditInterface`. It retains the same policy and audit
@@ -410,8 +412,12 @@ measurement aggregation before computed-metric evaluation. Its
 `CompletedMeasurements` value carries the namespace tree and evaluation summary.
 `Preparation/RunPreparation` owns discovery, trait-failure recollection, graph
 preparation and the first rule execution over one measured context. Its
-`discover()` and `collectWithTraitRetry()` operations keep the successful path
-short while preserving one retry authority. `PreparedRun` retains that
-observation for analysis and directive audit. `Pipeline/AnalysisPipeline`
+`discover()` and `collectWithTraitRetry()` operations return named immutable
+phase results, keeping the successful path short while preserving one retry
+authority. `DiscoveryResult` reconciles later collection and inspection terminal
+states with its captured input roster; `CollectionResult` releases dependency
+inputs while retaining the successful collection observations by name. `PreparedRun`
+retains the resulting observation for analysis and directive audit.
+`Pipeline/AnalysisPipeline`
 selects normal publication or directive audit over the shared preparation.
 These are concrete internal operations, not new lifecycle ports.

@@ -69,7 +69,7 @@ Qualimetrix\Analysis\Evidence\DependencyModel\Contract\AttributeSite	Analysis.Ev
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration	Analysis.Evidence.DependencyModel	2	1
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency	Analysis.Evidence.DependencyModel	5	2
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface	Analysis.Evidence.DependencyModel	7	3
-Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	Analysis.Evidence.DependencyModel	35	9
+Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	Analysis.Evidence.DependencyModel	36	9
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyLocationInterface	Analysis.Evidence.DependencyModel	1	1
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface	Analysis.Evidence.DependencyModel	7	4
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType	Analysis.Evidence.DependencyModel	8	5
@@ -102,7 +102,7 @@ Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach	Analysis.Evidence.Measurement	11	5
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface	Analysis.Evidence.Measurement	3	3
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface	Analysis.Evidence.Measurement	6	3
-Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface	Analysis.Evidence.Measurement	38	12
+Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface	Analysis.Evidence.Measurement	39	12
 Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceMetricProviderInterface	Analysis.Evidence.Measurement	3	2
 Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree	Analysis.Evidence.Measurement	14	5
 Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceWithMetrics	Analysis.Evidence.Measurement	2	1
@@ -124,7 +124,7 @@ Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterfac
 Qualimetrix\Analysis\Finding\Contract\Channel\ChannelIdentityInterface	Analysis.Finding	11	3
 Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPresentation	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPresentationInterface	Analysis.Finding	3	3
-Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication	Analysis.Finding	13	4
+Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication	Analysis.Finding	12	4
 Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole	Analysis.Finding	3	3
 Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape	Analysis.Finding	49	17
 Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface	Analysis.Finding	4	3
@@ -365,7 +365,7 @@ Qualimetrix\Core\FileTarget\TemporarySibling	Core.FileTarget	2	1
 Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	10	8
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	95	14
 Qualimetrix\Core\Path\PathFactory	Core.Path	19	7
-Qualimetrix\Core\Path\RelativePath	Core.Path	104	22
+Qualimetrix\Core\Path\RelativePath	Core.Path	105	22
 Qualimetrix\Core\Pattern\NamespaceMatcher	Core.Neutral	9	4
 Qualimetrix\Core\Pattern\NamespacePattern	Core.Neutral	20	7
 Qualimetrix\Core\Pattern\PathMatcher	Core.Neutral	4	2

@@ -57,7 +57,8 @@ the finite category-3 warning ratchet. Its closure condition is a complete
 `src/` analysis without a baseline measuring this namespace below the 0.50
 warning boundary.
 
-The F7 contract split recalibrates three warning ceilings by one exact
+Moving executable selection resolution and terminal coverage contracts into
+their subject-owned namespaces recalibrates three warning ceilings by one exact
 far-side namespace; none reaches the rule's error boundary:
 
 | Subject                                          | Before | After | Added subject boundary                                         |
@@ -65,6 +66,16 @@ far-side namespace; none reaches the rule's error boundary:
 | `Qualimetrix\Analysis\Finding\RuleConfiguration` | 19     | 20    | executable selection resolution beside rule configuration      |
 | `Qualimetrix\Infrastructure\Console\Baseline`    | 22     | 23    | terminal coverage separated from the remaining pipeline result |
 | `Qualimetrix\Infrastructure\Console\CheckReport` | 20     | 21    | terminal coverage separated from the remaining pipeline result |
+
+Two private immutable phase-fact carriers make the existing
+`Qualimetrix\Analysis\Run\Preparation` namespace measurable by increasing its
+declaration population from two to four, across the configured three-class
+floor. They preserve the existing discovery, retry, coverage and audit
+responsibilities through explicit phase facts. Run therefore owns
+finite category-3 warning ceilings at namespace CBO 22 and instability
+0.9487179487179487. Each entry closes when its value in a complete `src/`
+analysis without the baseline falls below its configured warning boundary:
+CBO 16 and instability 0.90, respectively.
 
 Immutable fact carriers retain finite arity/property ceilings at the first
 unaccepted magnitude. Report severity counts are derived from the published

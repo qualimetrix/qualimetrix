@@ -1017,6 +1017,20 @@
         ]
       }
     ],
+    "ns:Qualimetrix\\Analysis\\Run\\Preparation": [
+      {
+        "channel": "coupling.cbo",
+        "magnitudes": [
+          22
+        ]
+      },
+      {
+        "channel": "coupling.instability",
+        "magnitudes": [
+          0.9487179487179487
+        ]
+      }
+    ],
     "ns:Qualimetrix\\Core\\FileTarget\\Publication": [
       {
         "channel": "coupling.distance",

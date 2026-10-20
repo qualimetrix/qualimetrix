@@ -73,7 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - AST entries use a new allowlisted codec instead of igbinary; old formats become cache misses and `ext-igbinary` is no longer suggested. `--clear-cache` removes only qmx-owned entries, across every project/worktree sharing that root, after all invocation checks pass. Rerun a valid invocation to clear the cache and retain foreign files separately.
 
-- `--clear-cache` with foreign content in the cache root now exits 3 before analysis; it previously printed `Cache cleared`, ran analysis and exited 0 or 2 according to findings. Remove the foreign files or configure a dedicated `cache.dir`/`--cache-dir`, then retry.
+- `--clear-cache` with foreign files inside a versioned cache directory now retains that directory as `.clearing-*` and exits 3 before analysis; a foreign file directly in the cache root is preserved and does not prevent success. It previously printed `Cache cleared`, ran analysis and exited 0 or 2 according to findings. After a refusal, recover or remove the foreign files from the named `.clearing-*` directory, or configure a dedicated `cache.dir`/`--cache-dir`, then retry.
 
 - Parallel collection uses worker processes only; `ext-parallel` transport is removed. For an eligible explicit worker request, failed startup/first probe now exits 3 instead of silently running sequentially; automatic selection falls back with a warning. A startup refusal may take up to ten seconds. Configure `--workers=0` for sequential execution.
 
