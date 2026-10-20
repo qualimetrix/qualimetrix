@@ -17,7 +17,7 @@ final class ExitPolicySection implements DocumentSectionSchemaInterface
         return new SectionDeclaration(
             ExitPolicy::CONFIGURATION_KEY,
             NodeSchema::scalar(ScalarForm::String)
-                ->withHint('Boolean false was retired; use "none" to keep findings from failing the run.')
+                ->withHint('Boolean false was retired; use "none" to keep findings from failing the run.', onlyFor: false)
                 ->judgedInEachLayer(static function (ResolvedValueInterface $value): void {
                     ExitPolicy::fromResolvedValue($value);
                 }),

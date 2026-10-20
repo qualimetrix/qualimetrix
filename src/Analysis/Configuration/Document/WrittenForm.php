@@ -30,7 +30,7 @@ final class WrittenForm
         $expected = $schema->describe();
 
         if ($node->shape !== AuthoredShape::Scalar || $node->scalar === null) {
-            throw $at->refusal(self::hinted(\sprintf('%s must be %s, got %s.', ucfirst($at->where()), $expected, self::shapeName($node)), $schema));
+            throw $at->refusal(self::hinted(\sprintf('%s must be %s, got %s.', ucfirst($at->where()), $expected, self::shapeName($node)), $schema, $node));
         }
 
         foreach ($forms as $form) {
@@ -50,7 +50,7 @@ final class WrittenForm
                     $refusal .= \sprintf(' YAML interprets signed and decimal spellings as float; write %d for an integer.', $integer);
                 }
             }
-            throw $at->refusal(self::hinted($refusal, $schema));
+            throw $at->refusal(self::hinted($refusal, $schema, $node));
         }
 
         ScalarConstraints::judge($schema->scalar, $node->scalar, $at);
@@ -70,7 +70,7 @@ final class WrittenForm
         }
 
         if ($node->shape === AuthoredShape::Scalar || ($node->shape === AuthoredShape::Sequence && $node->children !== [])) {
-            throw $at->refusal(self::hinted(\sprintf('%s must be a map, got %s.', ucfirst($at->where()), self::shapeName($node)), $schema));
+            throw $at->refusal(self::hinted(\sprintf('%s must be a map, got %s.', ucfirst($at->where()), self::shapeName($node)), $schema, $node));
         }
 
         return true;
@@ -88,15 +88,19 @@ final class WrittenForm
         }
 
         if ($node->shape === AuthoredShape::Scalar || $node->shape === AuthoredShape::Mapping) {
-            throw $at->refusal(self::hinted(\sprintf('%s must be a list, got %s.', ucfirst($at->where()), self::shapeName($node)), $schema));
+            throw $at->refusal(self::hinted(\sprintf('%s must be a list, got %s.', ucfirst($at->where()), self::shapeName($node)), $schema, $node));
         }
 
         return true;
     }
 
-    private static function hinted(string $refusal, NodeSchema $schema): string
+    private static function hinted(string $refusal, NodeSchema $schema, AuthoredNode $node): string
     {
         $hint = $schema->wording->hint;
+
+        if ($schema->wording->hintOnlyFor !== null && $schema->wording->hintOnlyFor !== $node->scalar) {
+            return $refusal;
+        }
 
         return $hint === null ? $refusal : $refusal . ' ' . $hint;
     }

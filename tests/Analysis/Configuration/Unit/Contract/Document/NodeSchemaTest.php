@@ -105,11 +105,12 @@ final class NodeSchemaTest extends TestCase
     public function itKeepsEveryDeclarationWhenAHintAndAnEmptyOverrideNoticeAreAdded(): void
     {
         $element = NodeSchema::scalar(ScalarForm::String);
-        $hintedThenAnnounced = NodeSchema::list($element)->withHint('Quote it.')->announcingEmptyOverride('Lifted.');
-        $announcedThenHinted = NodeSchema::list($element)->announcingEmptyOverride('Lifted.')->withHint('Quote it.');
+        $hintedThenAnnounced = NodeSchema::list($element)->withHint('Quote it.', onlyFor: false)->announcingEmptyOverride('Lifted.');
+        $announcedThenHinted = NodeSchema::list($element)->announcingEmptyOverride('Lifted.')->withHint('Quote it.', onlyFor: false);
 
         foreach ([$hintedThenAnnounced, $announcedThenHinted] as $schema) {
             self::assertSame('Quote it.', $schema->wording->hint);
+            self::assertFalse($schema->wording->hintOnlyFor);
             self::assertSame('Lifted.', $schema->wording->emptyOverrideNotice);
             self::assertSame($element, $schema->collection?->element);
             self::assertSame(MergePolicy::Replace, $schema->policy);
@@ -120,6 +121,7 @@ final class NodeSchemaTest extends TestCase
         self::assertCount(1, $map->map->keys->shorthands());
         self::assertSame([ScalarForm::String], $element->withHint('x')->scalar->forms);
         self::assertNull($element->wording->hint);
+        self::assertNull($hintedThenAnnounced->withHint('Another hint.')->wording->hintOnlyFor);
     }
 
     #[Test]

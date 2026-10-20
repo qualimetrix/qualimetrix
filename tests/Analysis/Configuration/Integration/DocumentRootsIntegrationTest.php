@@ -198,6 +198,24 @@ fail_on: error
         self::assertStringNotContainsString('selector', $this->refusal("only_rules: [5]\n")->summary());
     }
 
+    #[Test]
+    #[DataProvider('provideFailOnValuesWithoutARetirementHint')]
+    public function itKeepsTheFalseMigrationHintToTheRetiredValue(string $yaml): void
+    {
+        self::assertStringNotContainsString('Boolean false was retired', $this->refusal($yaml)->summary());
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function provideFailOnValuesWithoutARetirementHint(): iterable
+    {
+        yield 'integer' => ["fail_on: 5\n"];
+        yield 'zero' => ["fail_on: 0\n"];
+        yield 'float' => ["fail_on: 2.5\n"];
+        yield 'true' => ["fail_on: true\n"];
+        yield 'empty collection' => ["fail_on: []\n"];
+        yield 'map' => ["fail_on: {threshold: error}\n"];
+    }
+
     /**
      * Form is judged in every layer: a malformed value a later layer overrides
      * is still refused, and the refusal names the layer that wrote it.

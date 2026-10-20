@@ -80,9 +80,10 @@ final readonly class NodeSchema
         return $this->recompose(wording: $this->wording->with(emptyOverrideNotice: $notice));
     }
 
-    public function withHint(string $hint): self
+    /** A non-null restriction matches only that exact scalar value and type. */
+    public function withHint(string $hint, int|float|string|bool|null $onlyFor = null): self
     {
-        return $this->recompose(wording: $this->wording->with(hint: $hint));
+        return $this->recompose(wording: $this->wording->with(hint: $hint, hintOnlyFor: $onlyFor));
     }
 
     /** @param Closure(ResolvedValueInterface, list<string>): void|IntegerJudgement $judge */
