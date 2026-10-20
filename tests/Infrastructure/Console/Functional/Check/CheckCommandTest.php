@@ -124,7 +124,6 @@ final class CheckCommandTest extends TestCase
             '--no-cache' => true,
             '--workers' => '0',
             '--fail-on' => 'warning',
-            '--only-rule' => ['design.dit', 'design.noc', 'code-smell.unused-private', 'size.class-count'],
         ]);
         self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
         self::assertStringNotContainsString('Rule population incomplete', $tester->getDisplay());
