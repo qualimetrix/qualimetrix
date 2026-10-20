@@ -111,13 +111,6 @@ jobs:
     name: Full validation (composer check)
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    env:
-      GIT_CONFIG_COUNT: '2'
-      GIT_CONFIG_KEY_0: maintenance.auto
-      GIT_CONFIG_VALUE_0: 'false'
-      GIT_CONFIG_KEY_1: gc.auto
-      GIT_CONFIG_VALUE_1: '0'
-
     strategy:
       fail-fast: false
       matrix:
@@ -305,13 +298,6 @@ jobs:
   phar:
     name: Phar (built, and equal to the tree it came from)
     runs-on: ubuntu-latest
-    env:
-      GIT_CONFIG_COUNT: '2'
-      GIT_CONFIG_KEY_0: maintenance.auto
-      GIT_CONFIG_VALUE_0: 'false'
-      GIT_CONFIG_KEY_1: gc.auto
-      GIT_CONFIG_VALUE_1: '0'
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v5

@@ -5,10 +5,18 @@ declare(strict_types=1);
 namespace QmxFindingGateControls;
 
 use Closure;
+use QmxFindingGate\Fs;
+use QmxFindingGate\RemovalFailureDiagnostics;
+use Qualimetrix\Subprocess\GitProcessEnvironment;
 use RuntimeException;
 
+require_once __DIR__ . '/../subprocess/GitProcessEnvironment.php';
+require_once __DIR__ . '/../finding-gate/GateError.php';
+require_once __DIR__ . '/../finding-gate/RemovalFailureDiagnostics.php';
+require_once __DIR__ . '/../finding-gate/Fs.php';
+
 /**
- * Process and filesystem primitives, kept local so the harness owns them.
+ * Supervised process primitives and harness-owned filesystem publication.
  *
  * Every child is *supervised*, not merely started. Two failure modes cost a
  * measured seven minutes of invisible work and a scratch tree each:
@@ -305,102 +313,18 @@ final class Shell
 
     public static function removeRecursively(string $path): void
     {
-        self::removeEntry($path, $path);
-    }
-
-    private static function removeEntry(string $path, string $root): void
-    {
-        if (@is_link($path)) {
-            [$removed, $nativeError] = self::captureRemoval(static fn(): bool => @unlink($path));
-            if (!$removed && !self::entryIsAbsent($path)) {
-                throw new RuntimeException(self::removalFailure(
-                    \sprintf('Cannot unlink %s while removing it.', $path),
+        Fs::removeRecursively(
+            $path,
+            static function (string $message, string $root, ?string $nativeError, bool $operationFailed): never {
+                throw new RuntimeException(RemovalFailureDiagnostics::message(
+                    $message,
                     $root,
                     $nativeError,
-                    true,
+                    $operationFailed,
+                    self::runDiagnostic(...),
                 ));
-            }
-
-            if (!self::entryIsAbsent($path)) {
-                throw new RuntimeException(self::removalFailure(
-                    \sprintf('Cannot unlink %s while removing it.', $path),
-                    $root,
-                    $nativeError,
-                    !$removed,
-                ));
-            }
-
-            return;
-        }
-
-        if (!@is_dir($path)) {
-            if (self::entryIsAbsent($path)) {
-                return;
-            }
-
-            [$removed, $nativeError] = self::captureRemoval(static fn(): bool => @unlink($path));
-            if (!$removed && !self::entryIsAbsent($path)) {
-                throw new RuntimeException(self::removalFailure(
-                    \sprintf('Cannot unlink %s while removing it.', $path),
-                    $root,
-                    $nativeError,
-                    true,
-                ));
-            }
-
-            if (!self::entryIsAbsent($path)) {
-                throw new RuntimeException(self::removalFailure(
-                    \sprintf('Cannot unlink %s while removing it.', $path),
-                    $root,
-                    $nativeError,
-                    !$removed,
-                ));
-            }
-
-            return;
-        }
-
-        [$entries, $nativeError] = self::captureRemoval(static fn(): array|false => @scandir($path));
-
-        if ($entries === false) {
-            if (self::entryIsAbsent($path)) {
-                return;
-            }
-
-            throw new RuntimeException(self::removalFailure(
-                \sprintf('Cannot list %s while removing it.', $path),
-                $root,
-                $nativeError,
-                true,
-            ));
-        }
-
-        foreach ($entries as $entry) {
-            if ($entry === '.' || $entry === '..') {
-                continue;
-            }
-
-            self::removeEntry($path . '/' . $entry, $root);
-        }
-
-        [$removed, $nativeError] = self::captureRemoval(static fn(): bool => @rmdir($path));
-        if (!$removed && !self::entryIsAbsent($path)) {
-            throw new RuntimeException(self::removalFailure(
-                \sprintf('Cannot remove directory %s.', $path),
-                $root,
-                $nativeError,
-                true,
-            ));
-        }
-
-        if (!self::entryIsAbsent($path)) {
-            throw new RuntimeException(self::removalFailure(
-                \sprintf('Cannot remove directory %s.', $path),
-                $root,
-                $nativeError,
-                !$removed,
-            ));
-        }
+            },
+        );
     }
 
     /** @return array<string, string> */
@@ -411,47 +335,7 @@ final class Shell
             throw new RuntimeException('Cannot read the process environment for the controls child.');
         }
 
-        $configuration = [];
-        foreach ($environment as $name => $value) {
-            if ($name === 'GIT_CONFIG_COUNT'
-                || str_starts_with($name, 'GIT_CONFIG_KEY_')
-                || str_starts_with($name, 'GIT_CONFIG_VALUE_')) {
-                $configuration[$name] = $value;
-            }
-        }
-
-        return $configuration;
-    }
-
-    private static function removalFailure(
-        string $base,
-        string $root,
-        ?string $nativeError,
-        bool $operationFailed,
-    ): string {
-        require_once __DIR__ . '/../finding-gate/RemovalFailureDiagnostics.php';
-
-        return \QmxFindingGate\RemovalFailureDiagnostics::message(
-            $base,
-            $root,
-            $nativeError,
-            $operationFailed,
-            self::runDiagnostic(...),
-        );
-    }
-
-    /**
-     * @template T
-     *
-     * @param Closure(): T $operation
-     *
-     * @return array{T, ?string}
-     */
-    private static function captureRemoval(Closure $operation): array
-    {
-        require_once __DIR__ . '/../finding-gate/RemovalFailureDiagnostics.php';
-
-        return \QmxFindingGate\RemovalFailureDiagnostics::capture($operation);
+        return GitProcessEnvironment::forChild($environment);
     }
 
     /**
@@ -486,31 +370,6 @@ final class Shell
         }
 
         return $child->result();
-    }
-
-    /**
-     * A failed stat is ambiguous when a parent denies traversal. A readable
-     * ancestor proves that the entry or one of its parents is absent.
-     *
-     * @phpstan-impure
-     */
-    private static function entryIsAbsent(string $path): bool
-    {
-        clearstatcache(true, $path);
-
-        if (@lstat($path) !== false) {
-            return false;
-        }
-
-        $entries = @scandir(\dirname($path));
-
-        if ($entries !== false) {
-            return !\in_array(basename($path), $entries, true);
-        }
-
-        $parent = \dirname($path);
-
-        return $parent !== $path && self::entryIsAbsent($parent);
     }
 
     public static function temporaryDirectory(string $prefix): string

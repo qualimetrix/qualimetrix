@@ -21,6 +21,8 @@ declare(strict_types=1);
  * redeclaration error.
  */
 
+require_once __DIR__ . '/../subprocess/GitProcessEnvironment.php';
+
 foreach (
     [
         'CommandLine',
