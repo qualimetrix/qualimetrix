@@ -105,15 +105,24 @@ final class GitSubdirScopeTest extends TestCase
             $client->getChangedFiles('staged'),
         ));
 
+        $count = getenv('GIT_CONFIG_COUNT');
+        self::assertIsString($count);
+        self::assertMatchesRegularExpression('/^(?:0|[1-9][0-9]*)$/D', $count);
+        $index = (int) $count;
+        $keyName = 'GIT_CONFIG_KEY_' . $index;
+        $valueName = 'GIT_CONFIG_VALUE_' . $index;
         $previous = [];
-        foreach (['GIT_CONFIG_COUNT', 'GIT_CONFIG_KEY_0', 'GIT_CONFIG_VALUE_0'] as $key) {
+        foreach (['GIT_CONFIG_COUNT', $keyName, $valueName] as $key) {
             $previous[$key] = getenv($key);
         }
 
         try {
-            putenv('GIT_CONFIG_COUNT=1');
-            putenv('GIT_CONFIG_KEY_0=diff.relative');
-            putenv('GIT_CONFIG_VALUE_0=true');
+            putenv($keyName . '=diff.relative');
+            putenv($valueName . '=true');
+            putenv('GIT_CONFIG_COUNT=' . ($index + 1));
+
+            self::assertSame("false\n", $this->commandOutput('git config --get maintenance.auto', $this->gitToplevel));
+            self::assertSame("0\n", $this->commandOutput('git config --get gc.auto', $this->gitToplevel));
 
             self::assertSame(['Inside.php'], array_map(
                 static fn(ChangedFile $file): string => $file->path->value(),
@@ -307,6 +316,14 @@ final class GitSubdirScopeTest extends TestCase
     {
         $process = Process::fromShellCommandline($command, $cwd);
         $process->mustRun();
+    }
+
+    private function commandOutput(string $command, string $cwd): string
+    {
+        $process = Process::fromShellCommandline($command, $cwd);
+        $process->mustRun();
+
+        return $process->getOutput();
     }
 
     private function removeRecursive(string $dir): void

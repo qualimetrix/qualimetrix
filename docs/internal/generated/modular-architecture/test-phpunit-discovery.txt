@@ -379,6 +379,7 @@ Available tests:
  - QmxFindingGate\Tests\FieldValuesCheckTest::itRequiresTheActualSupplierAndRefusesAWritingCallBeforeMeasurement
  - QmxFindingGate\Tests\FieldValuesCheckTest::itSharesLiveRolesAndReleasesTheRunAfterItsLastRoleIsDropped
  - QmxFindingGate\Tests\FieldValuesCheckTest::itUsesOneInstanceAndOneWriterForTheCompleteReportAndViewUnion
+ - QmxFindingGate\Tests\FsTest::itDoesNotLetADiagnosticFailureReplaceTheCleanupRefusal
  - QmxFindingGate\Tests\FsTest::itRefusesAResidualNonemptyDirectory"controls"
  - QmxFindingGate\Tests\FsTest::itRefusesAResidualNonemptyDirectory"finding gate"
  - QmxFindingGate\Tests\FsTest::itRefusesAnInaccessibleEntryInsteadOfCallingItAbsent"controls"
@@ -387,6 +388,12 @@ Available tests:
  - QmxFindingGate\Tests\FsTest::itRefusesAnUnlinkFailureThatLeavesTheEntryPresent"finding gate"
  - QmxFindingGate\Tests\FsTest::itRemovesADanglingSymlink"controls"
  - QmxFindingGate\Tests\FsTest::itRemovesADanglingSymlink"finding gate"
+ - QmxFindingGate\Tests\FsTest::itReportsATruncatedLinuxProcessPopulationAndMatchingResults
+ - QmxFindingGate\Tests\FsTest::itReportsAnIncompleteLinuxObservationWhenAProcessCwdCannotBeRead
+ - QmxFindingGate\Tests\FsTest::itReportsAnUnavailableLinuxProcessPopulationWhenProcCannotBeListed
+ - QmxFindingGate\Tests\FsTest::itReportsTheNativeFailureResidualEntriesAndProcessesInsideTheTree"controls"
+ - QmxFindingGate\Tests\FsTest::itReportsTheNativeFailureResidualEntriesAndProcessesInsideTheTree"finding gate"
+ - QmxFindingGate\Tests\FsTest::itTransportsGitConfigurationEnvironmentWithoutInterpretingItInControlsShell
  - QmxFindingGate\Tests\FsTest::itTreatsADirectoryDisappearingBetweenInspectionAndListingAsRemoved"controls"
  - QmxFindingGate\Tests\FsTest::itTreatsADirectoryDisappearingBetweenInspectionAndListingAsRemoved"finding gate"
  - QmxFindingGate\Tests\FsTest::itTreatsADirectoryDisappearingDuringRmdirAsRemoved"controls"
@@ -448,6 +455,8 @@ Available tests:
  - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"PATH"
  - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"TMPDIR"
  - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"TZ"
+ - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingEveryInheritedGitConfigurationKey
+ - QmxFindingGate\Tests\ProcessTest::itTransportsGitConfigurationVerbatimAndLeavesValidationToGit
  - QmxFindingGate\Tests\ProductProbeTypesTest::itComparesTheOptionalInterfaceNameWithoutLoadingIt
  - QmxFindingGate\Tests\ProductProbeTypesTest::itRefusesWhenNeitherSupportedTypeExists
  - QmxFindingGate\Tests\ProductProbeTypesTest::itSelectsTheNativeExistingType"both prefer current"
@@ -606,9 +615,11 @@ Available tests:
  - QmxFindingGate\Tests\SurfaceComparisonTest::itRunsARegisteredStageBeforeTheStepItNames
  - QmxFindingGate\Tests\SurfaceComparisonTest::itSuppliesRequiredSchemaDuringAnExactMetricTrial
  - QmxFindingGate\Tests\SurfaceComparisonTest::itUsesAnExactMetricSurfaceWithoutPairingItsChangedRecords
+ - QmxFindingGate\Tests\SyntheticTreeTest::itBuildsSyntheticRepositoriesWithInheritedAutomaticMaintenanceDisabled
  - QmxFindingGate\Tests\SyntheticTreeTest::itKeepsBreachAnnotationsAndRawStructuredMessagesInTheirPublishedViews
  - QmxFindingGate\Tests\SyntheticTreeTest::itKeepsGeneratedSummaryRowsWhenReusingAnAnswerAsAnOverride
  - QmxFindingGate\Tests\SyntheticTreeTest::itKeepsIndependentPrivateAnswerOverridesAndTheirOwnMetadata
+ - QmxFindingGate\Tests\SyntheticTreeTest::itLeavesNoDetachedAutomaticMaintenanceInsideTheSyntheticRepository
  - QmxFindingGate\Tests\SyntheticTreeTest::itOmitsDetailedCaptionsForNamespaceAndFileSymbolsWithExactCallableSubjects
  - QmxFindingGate\Tests\SyntheticTreeTest::itPreservesExplicitJsonBytesWhileSlicingOnlyTheRawTopList
  - QmxFindingGate\Tests\SyntheticTreeTest::itPreservesNamespaceMembershipsInJsonHtmlAndRankedRecords
@@ -1307,6 +1318,8 @@ Available tests:
  - Qualimetrix\Governance\TestSuiteHygiene\SeededFixtureIsolationTest::itKeepsTheSeededDirectivesOutOfTheEnumerationOverSrc
  - Qualimetrix\Governance\TestSuiteHygiene\SuiteCacheIsIsolatedTest::itExportsCacheHomeToEveryProcessChannel
  - Qualimetrix\Governance\TestSuiteHygiene\SuiteCacheIsIsolatedTest::itKeepsTheProductDefaultCacheUnderTheSuiteHome
+ - Qualimetrix\Governance\TestSuiteHygiene\SuiteGitEnvironmentTest::itAppendsToExistingGitConfiguration
+ - Qualimetrix\Governance\TestSuiteHygiene\SuiteGitEnvironmentTest::itExportsAutomaticMaintenanceConfigurationToEveryProcessChannel
  - Qualimetrix\Governance\TestSuiteHygiene\SuiteRunsOutsideTheRepositoryTest::itKeepsNativePhpunitInvocationPathsAndChildLifecycles"filter and random order"
  - Qualimetrix\Governance\TestSuiteHygiene\SuiteRunsOutsideTheRepositoryTest::itKeepsNativePhpunitInvocationPathsAndChildLifecycles"isolated child drops globals"
  - Qualimetrix\Governance\TestSuiteHygiene\SuiteRunsOutsideTheRepositoryTest::itKeepsNativePhpunitInvocationPathsAndChildLifecycles"isolated child preserves globals"

@@ -395,7 +395,11 @@ final class SelfTestResources extends SelfTestGroup
         $environment = null;
 
         if ($pathPrefix !== null) {
-            $environment = ['PATH' => $pathPrefix . ':' . (string) getenv('PATH'), 'HOME' => (string) getenv('HOME')];
+            $environment = [
+                'PATH' => $pathPrefix . ':' . (string) getenv('PATH'),
+                'HOME' => (string) getenv('HOME'),
+                ...ProcessHandle::inheritedGitConfiguration(),
+            ];
         }
 
         $handle = proc_open(

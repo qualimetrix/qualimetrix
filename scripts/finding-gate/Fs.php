@@ -71,13 +71,29 @@ final class Fs
      */
     public static function removeRecursively(string $path): void
     {
+        self::removeEntry($path, $path);
+    }
+
+    private static function removeEntry(string $path, string $root): void
+    {
         if (@is_link($path)) {
-            if (!@unlink($path) && !self::entryIsAbsent($path)) {
-                throw new GateError(\sprintf('Cannot unlink %s while removing it.', $path));
+            [$removed, $nativeError] = RemovalFailureDiagnostics::capture(static fn(): bool => @unlink($path));
+            if (!$removed && !self::entryIsAbsent($path)) {
+                throw new GateError(RemovalFailureDiagnostics::message(
+                    \sprintf('Cannot unlink %s while removing it.', $path),
+                    $root,
+                    $nativeError,
+                    true,
+                ));
             }
 
             if (!self::entryIsAbsent($path)) {
-                throw new GateError(\sprintf('Cannot unlink %s while removing it.', $path));
+                throw new GateError(RemovalFailureDiagnostics::message(
+                    \sprintf('Cannot unlink %s while removing it.', $path),
+                    $root,
+                    $nativeError,
+                    !$removed,
+                ));
             }
 
             return;
@@ -88,25 +104,41 @@ final class Fs
                 return;
             }
 
-            if (!@unlink($path) && !self::entryIsAbsent($path)) {
-                throw new GateError(\sprintf('Cannot unlink %s while removing it.', $path));
+            [$removed, $nativeError] = RemovalFailureDiagnostics::capture(static fn(): bool => @unlink($path));
+            if (!$removed && !self::entryIsAbsent($path)) {
+                throw new GateError(RemovalFailureDiagnostics::message(
+                    \sprintf('Cannot unlink %s while removing it.', $path),
+                    $root,
+                    $nativeError,
+                    true,
+                ));
             }
 
             if (!self::entryIsAbsent($path)) {
-                throw new GateError(\sprintf('Cannot unlink %s while removing it.', $path));
+                throw new GateError(RemovalFailureDiagnostics::message(
+                    \sprintf('Cannot unlink %s while removing it.', $path),
+                    $root,
+                    $nativeError,
+                    !$removed,
+                ));
             }
 
             return;
         }
 
-        $entries = @scandir($path);
+        [$entries, $nativeError] = RemovalFailureDiagnostics::capture(static fn(): array|false => @scandir($path));
 
         if ($entries === false) {
             if (self::entryIsAbsent($path)) {
                 return;
             }
 
-            throw new GateError(\sprintf('Cannot list %s while removing it.', $path));
+            throw new GateError(RemovalFailureDiagnostics::message(
+                \sprintf('Cannot list %s while removing it.', $path),
+                $root,
+                $nativeError,
+                true,
+            ));
         }
 
         foreach ($entries as $entry) {
@@ -114,15 +146,26 @@ final class Fs
                 continue;
             }
 
-            self::removeRecursively($path . '/' . $entry);
+            self::removeEntry($path . '/' . $entry, $root);
         }
 
-        if (!@rmdir($path) && !self::entryIsAbsent($path)) {
-            throw new GateError(\sprintf('Cannot remove directory %s.', $path));
+        [$removed, $nativeError] = RemovalFailureDiagnostics::capture(static fn(): bool => @rmdir($path));
+        if (!$removed && !self::entryIsAbsent($path)) {
+            throw new GateError(RemovalFailureDiagnostics::message(
+                \sprintf('Cannot remove directory %s.', $path),
+                $root,
+                $nativeError,
+                true,
+            ));
         }
 
         if (!self::entryIsAbsent($path)) {
-            throw new GateError(\sprintf('Cannot remove directory %s.', $path));
+            throw new GateError(RemovalFailureDiagnostics::message(
+                \sprintf('Cannot remove directory %s.', $path),
+                $root,
+                $nativeError,
+                !$removed,
+            ));
         }
     }
 

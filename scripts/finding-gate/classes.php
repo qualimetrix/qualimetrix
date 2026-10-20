@@ -33,6 +33,7 @@ foreach (
         'Interrupted',
         'Interruption',
         'Scratch',
+        'RemovalFailureDiagnostics',
         'Fs',
         'Tsv',
         'Process',

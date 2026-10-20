@@ -474,7 +474,7 @@ const RETIRED_PATH_ASSERTIONS = [
  */
 const NON_MANIFEST_TEST_OWNERS = [
     'TestSupport/WorkingDirectory' => [
-        'rows' => 4,
+        'rows' => 5,
         'reason' => 'The PHPUnit execution-window lifecycle and its repository-root opt-in share one support owner.',
     ],
     'TestSupport/Logging' => [
@@ -2054,6 +2054,7 @@ function systemSupportContents(string $root): string
 {
     $rows = [
         ['TestSupport/WorkingDirectory', 'tests/bootstrap.php', 'Parent-owned PHPUnit process-root bootstrap and cleanup.', 'support'],
+        ['TestSupport/WorkingDirectory', 'tests/TestSupport/WorkingDirectory/GitProcessEnvironment.php', 'Inherited Git configuration for repository fixtures in the PHPUnit process.', 'support'],
         ['TestSupport/WorkingDirectory', 'tests/TestSupport/WorkingDirectory/SuiteWorkingDirectoryExtension.php', 'PHPUnit execution window and cwd residue judgement.', 'support'],
         ['TestSupport/WorkingDirectory', 'tests/TestSupport/WorkingDirectory/RunsFromRepositoryRoot.php', 'Explicit repository-root opt-in for configuration-dependent tests.', 'support'],
         ['TestSupport/WorkingDirectory', 'tests/TestSupport/WorkingDirectory/declared-residue.tsv', 'Reasoned execution-window residue declarations.', 'support'],

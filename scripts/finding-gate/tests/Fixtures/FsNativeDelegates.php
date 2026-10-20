@@ -15,6 +15,11 @@ namespace QmxFindingGate {
         return \QmxFindingGate\Tests\FsNativeProbe::scanDirectory($path);
     }
 
+    function readlink(string $path): string|false
+    {
+        return \QmxFindingGate\Tests\FsNativeProbe::readLink($path);
+    }
+
     function unlink(string $path): bool
     {
         return \QmxFindingGate\Tests\FsNativeProbe::unlink($path);
@@ -37,6 +42,11 @@ namespace QmxFindingGateControls {
     function scandir(string $path): array|false
     {
         return \QmxFindingGate\Tests\FsNativeProbe::scanDirectory($path);
+    }
+
+    function readlink(string $path): string|false
+    {
+        return \QmxFindingGate\Tests\FsNativeProbe::readLink($path);
     }
 
     function unlink(string $path): bool

@@ -2,9 +2,12 @@
 
 declare(strict_types=1);
 
+use Qualimetrix\Tests\TestSupport\WorkingDirectory\GitProcessEnvironment;
 use Qualimetrix\Tests\TestSupport\WorkingDirectory\SuiteWorkingDirectoryExtension;
 
 require_once __DIR__ . '/../vendor/autoload.php';
+
+GitProcessEnvironment::disableAutomaticMaintenance();
 
 // Isolated PHPUnit children execute from stdin and share the parent's root.
 if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === 'phpunit') {

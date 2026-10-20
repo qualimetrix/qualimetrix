@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use QmxFindingGate\GateError;
 use QmxFindingGate\Process;
+use QmxFindingGate\ProcessHandle;
 
 final class ProcessTest extends TestCase
 {
@@ -75,6 +76,39 @@ final class ProcessTest extends TestCase
         self::assertSame(0, $measurement['wallReads']);
     }
 
+    #[Test]
+    public function itTransportsGitConfigurationVerbatimAndLeavesValidationToGit(): void
+    {
+        $names = ['GIT_CONFIG_COUNT', 'GIT_CONFIG_KEY_weird', 'GIT_CONFIG_VALUE_weird', 'GIT_CONFIG_PARAMETERS'];
+        $before = [];
+        foreach ($names as $name) {
+            $before[$name] = getenv($name);
+        }
+
+        try {
+            putenv('GIT_CONFIG_COUNT=not-a-number');
+            putenv('GIT_CONFIG_KEY_weird=maintenance.auto');
+            putenv('GIT_CONFIG_VALUE_weird=false');
+            putenv('GIT_CONFIG_PARAMETERS=must-not-be-inherited');
+
+            $probe = Process::run([
+                \PHP_BINARY,
+                '-r',
+                'echo json_encode([getenv("GIT_CONFIG_COUNT"), getenv("GIT_CONFIG_KEY_weird"), getenv("GIT_CONFIG_VALUE_weird"), getenv("GIT_CONFIG_PARAMETERS")]);',
+            ], __DIR__);
+            self::assertSame(0, $probe['exit'], $probe['stderr']);
+            self::assertSame('["not-a-number","maintenance.auto","false",false]', $probe['stdout']);
+
+            $git = Process::run(['git', 'config', '--get', 'maintenance.auto'], __DIR__);
+            self::assertNotSame(0, $git['exit']);
+            self::assertStringContainsString('GIT_CONFIG_COUNT', $git['stderr']);
+        } finally {
+            foreach ($before as $name => $value) {
+                putenv($value === false ? $name : $name . '=' . $value);
+            }
+        }
+    }
+
     /** @return iterable<string,array{string}> */
     public static function fixedKeys(): iterable
     {
@@ -90,5 +124,21 @@ final class ProcessTest extends TestCase
         $this->expectException(GateError::class);
         $this->expectExceptionMessage('fixed child environment');
         Process::run([\PHP_BINARY, '-r', 'exit(0);'], __DIR__, environmentAdditions: [$key => 'replacement']);
+    }
+
+    #[Test]
+    public function itRefusesReplacingEveryInheritedGitConfigurationKey(): void
+    {
+        $configuration = ProcessHandle::inheritedGitConfiguration();
+        self::assertNotEmpty($configuration);
+
+        foreach (array_keys($configuration) as $key) {
+            try {
+                Process::run([\PHP_BINARY, '-r', 'exit(0);'], __DIR__, environmentAdditions: [$key => 'replacement']);
+                self::fail('The inherited Git configuration key was replaceable: ' . $key);
+            } catch (GateError $error) {
+                self::assertStringContainsString('fixed child environment key ' . $key, $error->getMessage());
+            }
+        }
     }
 }
