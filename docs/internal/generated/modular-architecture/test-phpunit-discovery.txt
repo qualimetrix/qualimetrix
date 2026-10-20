@@ -11447,12 +11447,14 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itAnalyzesSimplePhpFile
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itAppliesSymbolHealthSuppressionWithoutHidingSiblingDimensions
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itDetectsComplexityFindings
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itDoesNotSuggestAFileWhenEveryDeclaringFileRemainsAmbiguous
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itExplainsWhenOneFileCannotDisambiguateAClassSelection
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itKeepsPopulationBoundariesAndUnconfiguredArchitectureOutOfTheIncompleteWarning
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itRefusesAnAmbiguousClassSelectionWithBothDeclarations
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itRefusesOnlyTheFileWithConflictingTraitComposition
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itRespectsExcludeOption
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itRunsHealthFormatWithComputedMetrics
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itSuggestsADeclaringFileWhenOneFileSelectsASingleDeclaration
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itSupportsBaselineGeneration
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itSupportsCheckstyleFormat
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itSupportsGithubActionsFormat
