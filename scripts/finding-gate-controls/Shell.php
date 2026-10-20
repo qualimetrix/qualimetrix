@@ -304,15 +304,41 @@ final class Shell
 
     public static function removeRecursively(string $path): void
     {
-        if (!is_dir($path) || is_link($path)) {
-            @unlink($path);
+        if (@is_link($path)) {
+            if (!@unlink($path) && !self::entryIsAbsent($path)) {
+                throw new RuntimeException(\sprintf('Cannot unlink %s while removing it.', $path));
+            }
+
+            if (!self::entryIsAbsent($path)) {
+                throw new RuntimeException(\sprintf('Cannot unlink %s while removing it.', $path));
+            }
 
             return;
         }
 
-        $entries = scandir($path);
+        if (!@is_dir($path)) {
+            if (self::entryIsAbsent($path)) {
+                return;
+            }
+
+            if (!@unlink($path) && !self::entryIsAbsent($path)) {
+                throw new RuntimeException(\sprintf('Cannot unlink %s while removing it.', $path));
+            }
+
+            if (!self::entryIsAbsent($path)) {
+                throw new RuntimeException(\sprintf('Cannot unlink %s while removing it.', $path));
+            }
+
+            return;
+        }
+
+        $entries = @scandir($path);
 
         if ($entries === false) {
+            if (self::entryIsAbsent($path)) {
+                return;
+            }
+
             throw new RuntimeException(\sprintf('Cannot list %s while removing it.', $path));
         }
 
@@ -324,7 +350,38 @@ final class Shell
             self::removeRecursively($path . '/' . $entry);
         }
 
-        @rmdir($path);
+        if (!@rmdir($path) && !self::entryIsAbsent($path)) {
+            throw new RuntimeException(\sprintf('Cannot remove directory %s.', $path));
+        }
+
+        if (!self::entryIsAbsent($path)) {
+            throw new RuntimeException(\sprintf('Cannot remove directory %s.', $path));
+        }
+    }
+
+    /**
+     * A failed stat is ambiguous when a parent denies traversal. A readable
+     * ancestor proves that the entry or one of its parents is absent.
+     *
+     * @phpstan-impure
+     */
+    private static function entryIsAbsent(string $path): bool
+    {
+        clearstatcache(true, $path);
+
+        if (@lstat($path) !== false) {
+            return false;
+        }
+
+        $entries = @scandir(\dirname($path));
+
+        if ($entries !== false) {
+            return !\in_array(basename($path), $entries, true);
+        }
+
+        $parent = \dirname($path);
+
+        return $parent !== $path && self::entryIsAbsent($parent);
     }
 
     public static function temporaryDirectory(string $prefix): string

@@ -717,6 +717,13 @@ stderr. Product commands have bounded deadlines, descendant cleanup and
 heartbeats. The runner requires its process-supervision extensions and tools.
 Temporary reference worktrees and scratch data are released on normal exits,
 failures and handled interruptions. SIGKILL cannot run cleanup.
+Recursive cleanup accepts an entry disappearing during traversal only when a
+readable parent proves that its name is absent. It still refuses inaccessible
+parents, failed removals that leave an entry and residual nonempty directories;
+symlinks observed during entry classification are unlinked without walking
+their targets. Cleanup assumes entries are not concurrently substituted or
+created: path-based classification, traversal and removal are not atomic and
+do not protect against those races.
 
 `composer gate:controls` runs each declared mutation on an independent clone
 with its own repository. It resolves the reference before cloning and leaves
