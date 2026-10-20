@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter;
 
 use InvalidArgumentException;
+use Qualimetrix\Reporting\Contract\Formatting\FormatOptionKeysInterface;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterInterface;
+
+use Qualimetrix\Reporting\Contract\Formatting\FormatterRegistryInterface;
 
 final class FormatterRegistry implements FormatterRegistryInterface
 {
-    /** @var list<string> Formatter names excluded from public listings (deprecated) */
-    private const array HIDDEN_FORMATTERS = ['text-verbose'];
-
     /**
      * @var array<string, FormatterInterface>
      */
@@ -70,10 +71,7 @@ final class FormatterRegistry implements FormatterRegistryInterface
      */
     public function getAvailableNames(): array
     {
-        $names = array_filter(
-            array_keys($this->formatters),
-            static fn(string $name): bool => !\in_array($name, self::HIDDEN_FORMATTERS, true),
-        );
+        $names = array_keys($this->formatters);
         sort($names);
 
         return $names;

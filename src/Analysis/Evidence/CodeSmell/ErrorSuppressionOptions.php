@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\CodeSmell;
 
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOptionValues;
+
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 
@@ -26,23 +27,11 @@ final readonly class ErrorSuppressionOptions implements RuleOptionsInterface, En
         public array $allowedFunctions = [],
     ) {}
 
-    /**
-     * @param array<string, mixed> $config
-     */
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
-        $raw = $config['allowedFunctions'] ?? $config['allowed_functions'] ?? [];
-
-        $functions = [];
-        if (\is_string($raw)) {
-            $functions = [strtolower($raw)];
-        } elseif (\is_array($raw)) {
-            $functions = array_map('strtolower', array_values(array_filter($raw, 'is_string')));
-        }
-
         return new self(
-            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
-            allowedFunctions: $functions,
+            enabled: $config->boolean('enabled', true),
+            allowedFunctions: array_map(strtolower(...), $config->strings('allowed-functions', [])),
         );
     }
 
@@ -71,7 +60,6 @@ final readonly class ErrorSuppressionOptions implements RuleOptionsInterface, En
     {
         return RuleOptionKeySet::of([
             'allowed-functions' => RuleOptionShape::either(RuleOptionShape::text(), RuleOptionShape::listOf(RuleOptionShape::text()))->orNull(),
-            'enabled' => RuleOptionShape::boolean()->orNull(),
         ]);
     }
 }

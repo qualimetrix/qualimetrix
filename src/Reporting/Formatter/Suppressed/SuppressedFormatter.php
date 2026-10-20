@@ -6,15 +6,17 @@ namespace Qualimetrix\Reporting\Formatter\Suppressed;
 
 use LogicException;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterInterface;
+use Qualimetrix\Reporting\Contract\Formatting\GroupBy;
+use Qualimetrix\Reporting\Contract\Report\Report;
 use Qualimetrix\Reporting\FindingProjection\InertSuppressor;
 use Qualimetrix\Reporting\FindingProjection\SuppressedFinding;
 use Qualimetrix\Reporting\FindingProjection\SuppressionMechanism;
-use Qualimetrix\Reporting\Formatter\FormatterInterface;
-use Qualimetrix\Reporting\Formatter\PublishedFinding;
-use Qualimetrix\Reporting\Formatter\PublishedUtf8;
-use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\GroupBy;
-use Qualimetrix\Reporting\Report;
+use Qualimetrix\Reporting\FindingPublication\PublishedFinding;
+use Qualimetrix\Reporting\Publication\FormattedReport;
+use Qualimetrix\Reporting\Publication\PublicationKind;
+use Qualimetrix\Reporting\Publication\PublishedUtf8;
 
 /**
  * The machine-readable composition of what a run suppressed — a separate
@@ -22,13 +24,13 @@ use Qualimetrix\Reporting\Report;
  * never moves for a feature it did not ask for (ADR 0037).
  *
  * Not registered as a `--show-suppressed`-only view: selecting this format
- * is itself the request, and {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator}
+ * is itself the request, and {@see \Qualimetrix\Infrastructure\Console\RunSetup\RuntimeConfigurator}
  * arms the same per-rule ledger capture for it that the flag arms, so the
  * two routes to capture never disagree (decision (д)).
  */
 final class SuppressedFormatter implements FormatterInterface
 {
-    public function format(Report $report, FormatterContext $context): string
+    public function format(Report $report, FormatterContext $context): FormattedReport
     {
         // Empty means nothing was suppressed; absent means the run never built
         // the composition, and answering "nothing" for that is the one answer
@@ -67,9 +69,18 @@ final class SuppressedFormatter implements FormatterInterface
             'byMechanism' => $byMechanism,
             'suppressed' => $suppressed,
             'neverMatched' => $neverMatched,
+            'notRun' => array_map(static fn(\Qualimetrix\Analysis\Finding\Contract\Selection\SelectionRecord $record): array => [
+                'producer' => $record->producer,
+                'reason' => $record->reason,
+                'statement' => $record->statement,
+                'layer' => $record->layer,
+            ], $composition->notRun),
         ];
 
-        return PublishedUtf8::encodeJsonObject($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES);
+        $repairs = 0;
+        $body = PublishedUtf8::encodeJsonObject($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES, $repairs);
+
+        return new FormattedReport($body, $repairs);
     }
 
     /**
@@ -94,6 +105,11 @@ final class SuppressedFormatter implements FormatterInterface
             'message' => $finding->message,
             'recommendation' => $finding->recommendation,
         ];
+    }
+
+    public function publicationKind(): PublicationKind
+    {
+        return PublicationKind::JsonDocument;
     }
 
     public function getName(): string

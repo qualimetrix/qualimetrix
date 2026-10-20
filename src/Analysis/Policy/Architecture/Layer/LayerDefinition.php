@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContext;
+
 /**
  * Immutable Value Object describing a single architectural layer: a
  * human-readable name plus the {@see MembershipSpec} that decides which
@@ -12,7 +14,7 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
  * Membership is evaluated by {@see matches()}, which returns a
  * {@see MembershipResult}. The Match variant carries one {@see MatchedCriterion}
  * per criterion kind that fired (in declaration order: patterns, suffix,
- * attributes, implements, extends). {@see LayerRegistry::resolveAll()} feeds
+ * attributes, member attributes, implements, extends). {@see LayerRegistry::resolveAll()} feeds
  * the descriptor list into {@see LayerMatch} so the finding message and the
  * {@code architecture.potential-shadow} diagnostic can report WHICH criterion
  * caught the class.
@@ -86,7 +88,7 @@ final readonly class LayerDefinition
         bool $expanded = false,
         private ?string $declaredAs = null,
     ) {
-        $this->validateName($name, $expanded);
+        self::validateName($name, $expanded);
     }
 
     /**
@@ -108,6 +110,18 @@ final readonly class LayerDefinition
     public static function expanded(string $name, MembershipSpec $membership, ?string $declaredAs = null): self
     {
         return new self($name, $membership, expanded: true, declaredAs: $declaredAs);
+    }
+
+    /**
+     * Validates the grammar of a name written as a static layer declaration.
+     * Configuration-layer validation calls this before a later authored layer
+     * can replace the whole list.
+     *
+     * @throws InvalidLayerDefinitionException If the name is invalid.
+     */
+    public static function assertValidDeclaredName(string $name): void
+    {
+        self::validateName($name, false);
     }
 
     /**
@@ -154,8 +168,8 @@ final readonly class LayerDefinition
     /**
      * Evaluates the membership criteria against the given class context.
      *
-     * Walks the five criterion kinds in declaration order: patterns, suffix,
-     * attributes, implements, extends. For each declared (non-empty) kind, the
+     * Walks the six criterion kinds in declaration order: patterns, suffix,
+     * attributes, member attributes, implements, extends. For each declared (non-empty) kind, the
      * first entry whose semantics matches the class produces a
      * {@see MatchedCriterion} descriptor.
      *
@@ -184,7 +198,7 @@ final readonly class LayerDefinition
      * {@see CriterionOutcome} for what produces the third state.
      *
      * An empty FQN is always a non-match. A {@see MembershipSpec} with all
-     * five positive criterion lists empty cannot exist (constructor invariant).
+     * six positive criterion lists empty cannot exist (constructor invariant).
      */
     public function matches(ClassContext $context): MembershipResult
     {
@@ -199,6 +213,7 @@ final readonly class LayerDefinition
                 $this->membership->patterns,
                 $this->membership->suffix,
                 $this->membership->attributes,
+                $this->membership->memberAttributes,
                 $this->membership->implements,
                 $this->membership->extends,
             ),
@@ -236,6 +251,7 @@ final readonly class LayerDefinition
             $membership->patterns,
             $membership->suffix,
             $membership->attributes,
+            $membership->memberAttributes,
             $membership->implements,
             $membership->extends,
         );
@@ -259,6 +275,7 @@ final readonly class LayerDefinition
             $patterns,
             $exclude->suffix,
             $exclude->attributes,
+            $exclude->memberAttributes,
             $exclude->implements,
             $exclude->extends,
         );
@@ -267,6 +284,7 @@ final readonly class LayerDefinition
             $exclude->patterns,
             $exclude->suffix,
             $exclude->attributes,
+            $exclude->memberAttributes,
             $exclude->implements,
             $exclude->extends,
         ));
@@ -281,7 +299,7 @@ final readonly class LayerDefinition
             : self::excludeOutcome($context, $exclude, $exclude->patterns);
     }
 
-    private function validateName(string $name, bool $expanded): void
+    private static function validateName(string $name, bool $expanded): void
     {
         if ($name === '') {
             throw new InvalidLayerDefinitionException('Layer name must not be empty.');

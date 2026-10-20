@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Design\GodClass;
 
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOptionValues;
+
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\WarningOnlyValidator;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -32,7 +33,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  * `tcc_threshold`, `class_loc_threshold` config keys to tune per-criterion
  * thresholds.
  *
- * @qmx-threshold coupling.instability warning=0.81 -- The eighth efferent edge is
+ * @qmx-threshold coupling.instability 0.800001 -- The eighth efferent edge is
  * `RuleOptionShape`, required so an options class can declare the value form of each key it
  * accepts. Ca=2, Ce=8 puts this at exactly 0.800 against an inclusive 0.800 ceiling, so
  * it is reported for reaching the limit rather than passing it. A rule options class is efferent
@@ -57,24 +58,17 @@ final readonly class GodClassOptions implements RuleOptionsInterface, ThresholdA
         public bool $excludeReadonly = true,
     ) {}
 
-    /**
-     * @param array<string, mixed> $config
-     */
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
-        if ($config === []) {
-            return new self(enabled: false);
-        }
-
         return new self(
-            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
-            wmcThreshold: (int) ($config['wmc_threshold'] ?? $config['wmcThreshold'] ?? 47),
-            lcomThreshold: (int) ($config['lcom_threshold'] ?? $config['lcomThreshold'] ?? 3),
-            tccThreshold: (float) ($config['tcc_threshold'] ?? $config['tccThreshold'] ?? 0.33),
-            classLocThreshold: (int) ($config['class_loc_threshold'] ?? $config['classLocThreshold'] ?? 300),
-            minCriteria: (int) ($config['min_criteria'] ?? $config['minCriteria'] ?? 3),
-            minMethods: (int) ($config['min_methods'] ?? $config['minMethods'] ?? 3),
-            excludeReadonly: (bool) ($config['exclude_readonly'] ?? $config['excludeReadonly'] ?? true),
+            enabled: $config->boolean('enabled', true),
+            wmcThreshold: $config->integer('wmc-threshold', 47),
+            lcomThreshold: $config->integer('lcom-threshold', 3),
+            tccThreshold: $config->number('tcc-threshold', 0.33),
+            classLocThreshold: $config->integer('class-loc-threshold', 300),
+            minCriteria: $config->integer('min-criteria', 3),
+            minMethods: $config->integer('min-methods', 3),
+            excludeReadonly: $config->boolean('exclude-readonly', true),
         );
     }
 
@@ -131,13 +125,12 @@ final readonly class GodClassOptions implements RuleOptionsInterface, ThresholdA
     {
         return RuleOptionKeySet::of([
             'class-loc-threshold' => RuleOptionShape::integer()->orNull(),
-            'enabled' => RuleOptionShape::boolean()->orNull(),
             'exclude-readonly' => RuleOptionShape::boolean()->orNull(),
             'lcom-threshold' => RuleOptionShape::integer()->orNull(),
             'min-criteria' => RuleOptionShape::integer()->orNull(),
             'min-methods' => RuleOptionShape::integer()->orNull(),
             'tcc-threshold' => RuleOptionShape::number()->orNull(),
             'wmc-threshold' => RuleOptionShape::integer()->orNull(),
-        ]);
+        ])->overriddenAs(['warning' => 'min-criteria']);
     }
 }

@@ -1,0 +1,153 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\RuleCatalog;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Complexity\Cyclomatic\ComplexityRule;
+use Qualimetrix\Analysis\Evidence\Size\ClassCount\ClassCountRule;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
+use Qualimetrix\Analysis\Finding\RuleMaterialization;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
+use Qualimetrix\Infrastructure\Console\RuleListing\RulesCommand;
+use Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\RuleCompilerPass;
+use ReflectionClass;
+use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
+use Symfony\Component\DependencyInjection\Reference;
+
+#[CoversClass(RuleCompilerPass::class)]
+final class RuleCompilerPassTest extends TestCase
+{
+    #[Test]
+    public function itOrdersMaterializedProducersByNameRegardlessOfRegistrationOrder(): void
+    {
+        foreach ([
+            [ClassCountRule::class, ComplexityRule::class, LayerViolationRule::class],
+            [LayerViolationRule::class, ClassCountRule::class, ComplexityRule::class],
+            [ComplexityRule::class, LayerViolationRule::class, ClassCountRule::class],
+        ] as $classes) {
+            $container = new ContainerBuilder();
+            $container->register(RuleMaterialization::class);
+            foreach ($classes as $class) {
+                $container->register($class, $class)->addTag(RuleCompilerPass::TAG);
+            }
+            (new RuleCompilerPass())->process($container);
+
+            self::assertEquals([
+                self::lookup(LayerViolationRule::class),
+                self::lookup(ComplexityRule::class),
+                self::lookup(ClassCountRule::class),
+            ], $container->getDefinition(RuleMaterialization::class)->getArgument(0));
+        }
+    }
+
+    #[Test]
+    public function itCollectsTaggedRulesIntoRuleExecution(): void
+    {
+        $container = new ContainerBuilder();
+        $container->register(RuleMaterialization::class);
+        $container->register(ComplexityRule::class, ComplexityRule::class)
+            ->addTag(RuleCompilerPass::TAG);
+        $container->register(ClassCountRule::class, ClassCountRule::class)
+            ->addTag(RuleCompilerPass::TAG);
+
+        $pass = new RuleCompilerPass();
+        $pass->process($container);
+
+        $definition = $container->getDefinition(RuleMaterialization::class);
+        self::assertFalse($container->getDefinition(ComplexityRule::class)->isShared());
+        self::assertFalse($container->getDefinition(ClassCountRule::class)->isShared());
+
+        self::assertEquals(
+            [self::lookup(ComplexityRule::class), self::lookup(ClassCountRule::class)],
+            $definition->getArgument(0),
+        );
+    }
+
+    #[Test]
+    public function itDoesNothingWhenNoConsumerIsRegistered(): void
+    {
+        $container = new ContainerBuilder();
+        $container->register(ComplexityRule::class, ComplexityRule::class)
+            ->addTag(RuleCompilerPass::TAG);
+
+        $pass = new RuleCompilerPass();
+        $pass->process($container);
+
+        self::assertFalse($container->hasDefinition(RuleMaterialization::class));
+        self::assertFalse($container->hasDefinition(RulesCommand::class));
+    }
+
+    /**
+     * The consumers are read off the pass's own declaration rather than named
+     * here: a consumer added to that list and not injected into is the defect
+     * a hand-written list in this file would be edited past.
+     */
+    #[Test]
+    public function itInjectsIntoEveryConsumerItDeclaresAndIntoNothingElse(): void
+    {
+        /** @var array<string, int> $consumers */
+        $consumers = (new ReflectionClass(RuleCompilerPass::class))->getConstant('CONSUMERS');
+
+        self::assertNotSame([], $consumers, 'The pass declares no consumers, so this case checked nothing.');
+
+        $container = new ContainerBuilder();
+
+        foreach (array_keys($consumers) as $consumerId) {
+            $container->register($consumerId);
+        }
+
+        // Registered, tagged by nobody and not a declared consumer: the pass
+        // must leave it exactly as it found it.
+        $container->register(RulesCommand::class);
+        $container->register(ComplexityRule::class, ComplexityRule::class)->addTag(RuleCompilerPass::TAG);
+
+        $pass = new RuleCompilerPass();
+        $pass->process($container);
+
+        foreach ($consumers as $consumerId => $argumentIndex) {
+            self::assertEquals(
+                [self::lookup(ComplexityRule::class)],
+                $container->getDefinition($consumerId)->getArgument($argumentIndex),
+                $consumerId,
+            );
+        }
+
+        self::assertSame([], $container->getDefinition(RulesCommand::class)->getArguments());
+    }
+
+    #[Test]
+    public function itSetsAnEmptyArrayWhenNoRulesAreTagged(): void
+    {
+        $container = new ContainerBuilder();
+        $container->register(RuleMaterialization::class);
+
+        $pass = new RuleCompilerPass();
+        $pass->process($container);
+
+        $definition = $container->getDefinition(RuleMaterialization::class);
+
+        self::assertSame([], $definition->getArgument(0));
+    }
+    /**
+     * @param class-string<\Qualimetrix\Analysis\Finding\Rule\RuleInterface> $class
+     *
+     * @return array{metadata: Definition, create: ServiceClosureArgument}
+     */
+    private static function lookup(string $class): array
+    {
+        return [
+            'metadata' => new Definition(RuleMetadata::class, [
+                $class::NAME, $class::getOptionsClass(), $class::getDescription(),
+                \Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader::read($class), false,
+            ]),
+            'create' => new ServiceClosureArgument(new Reference($class)),
+        ];
+    }
+
+}

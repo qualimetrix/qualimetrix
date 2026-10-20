@@ -19,4 +19,7 @@ interface DependencyTraversalParticipantInterface extends NodeVisitor
 
     /** @return list<Dependency> */
     public function dependencies(): array;
+
+    /** @return list<ClassLikeDeclaration> */
+    public function classLikeDeclarations(): array;
 }

@@ -6,7 +6,9 @@ namespace Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler;
 
 use PhpParser\Node;
 use PhpParser\Node\Name;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\AttributeSite;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\TypeShape;
 
 final class TypeDependencyHelper
 {
@@ -26,29 +28,35 @@ final class TypeDependencyHelper
 
     public static function processType(Node $type, DependencyType $dependencyType, DependencyContext $context): void
     {
+        self::processTypeWithShape($type, $dependencyType, self::shapeOf($type), $context);
+    }
+
+    private static function processTypeWithShape(
+        Node $type,
+        DependencyType $dependencyType,
+        TypeShape $shape,
+        DependencyContext $context,
+    ): void {
         if ($type instanceof Name) {
-            // self, static, parent are special class names that should not be resolved as dependencies
             if ($type->isSpecialClassName()) {
                 return;
             }
 
             $resolved = $context->getResolver()->resolve($type);
-            if (!self::isBuiltinType($resolved)) {
-                $context->addDependency($resolved, $dependencyType, $type->getStartLine());
-            }
+            $context->addTypeDependency($resolved, $dependencyType, $shape, $type->getStartLine());
 
             return;
         }
 
         if ($type instanceof Node\NullableType) {
-            self::processType($type->type, $dependencyType, $context);
+            self::processTypeWithShape($type->type, $dependencyType, $shape, $context);
 
             return;
         }
 
         if ($type instanceof Node\UnionType) {
             foreach ($type->types as $subType) {
-                self::processType($subType, DependencyType::UnionType, $context);
+                self::processTypeWithShape($subType, $dependencyType, $shape, $context);
             }
 
             return;
@@ -56,7 +64,7 @@ final class TypeDependencyHelper
 
         if ($type instanceof Node\IntersectionType) {
             foreach ($type->types as $subType) {
-                self::processType($subType, DependencyType::IntersectionType, $context);
+                self::processTypeWithShape($subType, $dependencyType, $shape, $context);
             }
         }
     }
@@ -64,13 +72,17 @@ final class TypeDependencyHelper
     /**
      * @param array<Node\AttributeGroup> $attrGroups
      */
-    public static function processAttributes(array $attrGroups, int $fallbackLine, DependencyContext $context): void
-    {
+    public static function processAttributes(
+        array $attrGroups,
+        int $fallbackLine,
+        AttributeSite $site,
+        DependencyContext $context,
+    ): void {
         foreach ($attrGroups as $attrGroup) {
             foreach ($attrGroup->attrs as $attr) {
-                $context->addDependency(
+                $context->addAttributeDependency(
                     $context->getResolver()->resolve($attr->name),
-                    DependencyType::Attribute,
+                    $site,
                     $attr->getStartLine() !== 0 ? $attr->getStartLine() : $fallbackLine,
                 );
             }
@@ -85,5 +97,48 @@ final class TypeDependencyHelper
     public static function isSelfOrParent(string $name): bool
     {
         return \in_array(strtolower($name), self::SELF_PARENT_NAMES, true);
+    }
+
+    private static function shapeOf(Node $type): TypeShape
+    {
+        if ($type instanceof Node\NullableType) {
+            return TypeShape::Nullable;
+        }
+
+        if ($type instanceof Node\UnionType) {
+            return self::unionShape($type);
+        }
+
+        if ($type instanceof Node\IntersectionType) {
+            return TypeShape::Intersection;
+        }
+
+        return TypeShape::Single;
+    }
+
+    private static function unionShape(Node\UnionType $type): TypeShape
+    {
+        foreach ($type->types as $member) {
+            if ($member instanceof Node\IntersectionType) {
+                return TypeShape::Dnf;
+            }
+        }
+
+        return self::isNullableUnion($type) ? TypeShape::Nullable : TypeShape::Union;
+    }
+
+    private static function isNullableUnion(Node\UnionType $type): bool
+    {
+        if (\count($type->types) !== 2) {
+            return false;
+        }
+
+        foreach ($type->types as $member) {
+            if ($member instanceof Node\Identifier && strtolower($member->toString()) === 'null') {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

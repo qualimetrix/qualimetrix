@@ -51,9 +51,23 @@ and the public `ChannelPresentationInterface` alias resolves to this decorator.
 Rule/
 ├── ChannelUniverse.php                       # the one channel-identity instance
 ├── ComputedMetricChannelPresentation.php     # layers the computed-metric description override
+├── ConflictingCliAliasException.php          # rejects duplicate CLI aliases
 ├── Contract/
 │   └── RuleChannelSnapshotFactoryInterface.php
-├── KnownRuleNamesAdapter.php
 ├── RuleRegistry.php
 └── RuleRegistryInterface.php
 ```
+
+## One invocation universe
+
+The metadata registry names producers, while the channel universe resolves their
+actual declared channels and levels. Dynamic computed/health names use the
+invocation's immutable definitions. `RuleChannelSnapshotFactoryInterface` creates
+that universe before publication, and the same instance feeds decide, build and
+conclude; consumers do not build a second catalogue.
+
+Unknown producer judgement belongs to Finding's `RuleNameJudge`, not the retired
+KnownRuleNamesAdapter. Level-qualified addressing uses declared channel codes
+through `ChannelLevelAddressing`; bare producers still address all their cells.
+Rule registry composition and lazy executable construction remain Infrastructure
+internals, and no executable instance crosses a public metadata contract.

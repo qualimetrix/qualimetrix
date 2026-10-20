@@ -158,9 +158,16 @@ final class MetricHintCatalog
         'coupling.ce.avg' => [
             'label' => 'Ce (avg)',
             'direction' => 'lower_is_better',
-            'goodValue' => 'below 3',
-            'badExplanation' => 'classes depend on too many others outgoing',
-            'goodExplanation' => 'low outgoing coupling',
+            'goodValue' => 'joint breadth at most 4 (3 * Ce pkg avg + 0.5 * sqrt(Ce avg))',
+            'badExplanation' => 'contributes to joint breadth with average package dependencies',
+            'goodExplanation' => 'contributes to joint breadth with average package dependencies',
+        ],
+        'coupling.ce.max' => [
+            'label' => 'Ce (max)',
+            'direction' => 'lower_is_better',
+            'goodValue' => 'below 30',
+            'badExplanation' => 'one class has many outgoing dependencies',
+            'goodExplanation' => 'no class exceeds the outgoing dependency ceiling',
         ],
         'coupling.ce-packages' => [
             'label' => 'Ce packages',
@@ -172,9 +179,9 @@ final class MetricHintCatalog
         'coupling.ce-packages.avg' => [
             'label' => 'Ce pkg (avg)',
             'direction' => 'lower_is_better',
-            'goodValue' => 'below 1',
-            'badExplanation' => 'classes touch many external packages',
-            'goodExplanation' => 'narrow package dependencies',
+            'goodValue' => 'joint breadth at most 4 (3 * Ce pkg avg + 0.5 * sqrt(Ce avg))',
+            'badExplanation' => 'contributes to joint breadth with average outgoing class dependencies',
+            'goodExplanation' => 'contributes to joint breadth with average outgoing class dependencies',
         ],
         MetricName::COUPLING_INSTABILITY => [
             'label' => 'Instability',
@@ -230,11 +237,18 @@ final class MetricHintCatalog
             'goodExplanation' => 'well-balanced design of its own classes',
         ],
         MetricName::COUPLING_CLASS_RANK => [
-            'label' => 'ClassRank',
+            'label' => 'ClassRank probability',
             'direction' => 'lower_is_better',
-            'goodValue' => 'below 0.02',
-            'badExplanation' => 'coupling hotspot, much of the dependency graph leads here',
-            'goodExplanation' => 'peripheral, low risk',
+            'goodValue' => 'PageRank probability mass',
+            'badExplanation' => 'a larger share of dependency graph probability',
+            'goodExplanation' => 'a smaller share of dependency graph probability',
+        ],
+        MetricName::COUPLING_CLASS_RANK_SHARE => [
+            'label' => 'ClassRank share',
+            'direction' => 'lower_is_better',
+            'goodValue' => 'below 5× uniform share',
+            'badExplanation' => 'coupling hotspot relative to the uniform graph population',
+            'goodExplanation' => 'below the coupling hotspot boundary',
         ],
         MetricName::DESIGN_DIT => [
             'label' => 'DIT',
@@ -254,8 +268,8 @@ final class MetricHintCatalog
             'label' => 'RFC',
             'direction' => 'lower_is_better',
             'goodValue' => 'below 50',
-            'badExplanation' => 'too many callable methods',
-            'goodExplanation' => 'reasonable method reach',
+            'badExplanation' => 'large response set',
+            'goodExplanation' => 'limited response set',
         ],
         MetricName::SIZE_METHOD_COUNT => [
             'label' => 'Methods',
@@ -403,6 +417,16 @@ final class MetricHintCatalog
             ['max' => 15, 'text' => 'The worst twentieth are demanding'],
             ['above' => true, 'text' => 'The worst twentieth are hard to follow'],
         ],
+        'coupling.ce.avg' => [
+            ['above' => true, 'text' => 'Joint breadth target: 3 * Ce pkg avg + 0.5 * sqrt(Ce avg) at most 4; neither component has an independent threshold'],
+        ],
+        'coupling.ce-packages.avg' => [
+            ['above' => true, 'text' => 'Joint breadth target: 3 * Ce pkg avg + 0.5 * sqrt(Ce avg) at most 4; neither component has an independent threshold'],
+        ],
+        'coupling.ce.max' => [
+            ['max' => 30, 'text' => 'No class exceeds the outgoing dependency ceiling'],
+            ['above' => true, 'text' => 'At least one class exceeds the outgoing dependency ceiling'],
+        ],
         'coupling.cbo.avg' => [
             ['max' => 8, 'text' => 'Reasonable coupling on average'],
             ['max' => 14, 'text' => 'Moderate coupling on average'],
@@ -527,9 +551,12 @@ final class MetricHintCatalog
             ['above' => true, 'text' => 'Off balance'],
         ],
         MetricName::COUPLING_CLASS_RANK => [
-            ['max' => 0.009, 'text' => 'Peripheral class'],
-            ['max' => 0.02, 'text' => 'Moderate importance'],
-            ['max' => 0.05, 'text' => 'Important hub'],
+            ['above' => true, 'text' => 'PageRank probability'],
+        ],
+        MetricName::COUPLING_CLASS_RANK_SHARE => [
+            ['max' => 1, 'text' => 'At most uniform share'],
+            ['max' => 5, 'text' => 'At most hotspot share'],
+            ['max' => 10, 'text' => 'Important hub'],
             ['above' => true, 'text' => 'Critical coupling point'],
         ],
         // Design
@@ -546,10 +573,10 @@ final class MetricHintCatalog
             ['above' => true, 'text' => 'Heavy base class'],
         ],
         'coupling.rfc' => [
-            ['max' => 20, 'text' => 'Simple interface'],
-            ['max' => 50, 'text' => 'Moderate interface'],
-            ['max' => 100, 'text' => 'Complex interface'],
-            ['above' => true, 'text' => 'Very complex interface'],
+            ['max' => 20, 'text' => 'Small response set'],
+            ['max' => 50, 'text' => 'Moderate response set'],
+            ['max' => 100, 'text' => 'Large response set'],
+            ['above' => true, 'text' => 'Very large response set'],
         ],
         // Size
         MetricName::SIZE_METHOD_COUNT => [

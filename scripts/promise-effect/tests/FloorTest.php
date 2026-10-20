@@ -10,6 +10,7 @@ use Qualimetrix\PromiseEffect\Cell;
 use Qualimetrix\PromiseEffect\Floor;
 use Qualimetrix\PromiseEffect\FloorRow;
 use Qualimetrix\PromiseEffect\LedgerError;
+use Qualimetrix\PromiseEffect\Verdict;
 
 /**
  * `Floor` checks each claimed defect against both the frozen and live result.
@@ -82,6 +83,22 @@ final class FloorTest extends TestCase
 
         self::assertCount(1, $misses);
         self::assertStringContainsString('snapshot postdates the cure', $misses[0]);
+    }
+
+    #[Test]
+    public function itRejectsAPendingFrozenRetakeThatLostTheOldDefect(): void
+    {
+        $floor = Floor::load($this->floorRoot("r1\tany-defect\tsrc\tpending: repaired later\t\n"));
+
+        [$repaired] = $floor->cureMisses([self::cell('r1', false)], frozenHalf: true);
+        [$unobservable] = $floor->cureMisses([self::cellVerdict('r1', Verdict::NOT_OBSERVABLE, false)], frozenHalf: true);
+        [$absent] = $floor->cureMisses([], frozenHalf: true);
+        [$oldDefect] = $floor->cureMisses([self::cell('r1', true)], frozenHalf: true);
+
+        self::assertCount(1, $repaired);
+        self::assertCount(1, $unobservable);
+        self::assertCount(1, $absent);
+        self::assertSame([], $oldDefect);
     }
 
     // --- absence from the grid is a miss under every disposition --------

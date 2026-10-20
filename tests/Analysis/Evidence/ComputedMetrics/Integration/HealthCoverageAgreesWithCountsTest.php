@@ -102,6 +102,15 @@ final class HealthCoverageAgreesWithCountsTest extends TestCase
             $coverage = $score['coverage'];
             self::assertArrayHasKey('state', $coverage, "$dimension publishes no coverage state");
 
+            if ($coverage['state'] === 'not-measured') {
+                self::assertSame(0, $coverage['measured'], "$dimension invents aggregate contributors");
+                self::assertGreaterThan(0, $coverage['eligible'], "$dimension omits its eligible population");
+                self::assertSame(0, $coverage['ratio'], "$dimension invents an aggregate coverage ratio");
+                self::assertIsString($coverage['basis'], "$dimension omits the unmeasured aggregate basis");
+                self::assertIsString($coverage['unit'], "$dimension omits the eligible population unit");
+                continue;
+            }
+
             if ($coverage['state'] !== 'measured') {
                 self::assertNull($coverage['measured'], "$dimension reports a number it calls inapplicable");
                 self::assertNotNull($coverage['reason'], "$dimension is silent about why it has no coverage");
@@ -111,13 +120,8 @@ final class HealthCoverageAgreesWithCountsTest extends TestCase
             $measuredDimensions++;
             $basis = $coverage['basis'];
 
-            // Unconditional, although an absent key is a legitimate measured
-            // zero elsewhere: every namespace of this fixture declares a class
-            // and every class carries every aggregate, so there is no
-            // contributor for the run to lack. Excusing a zero here excused a
-            // basis naming a key the product had renamed away, and the line
-            // reported "0 of 168 (0%)" with no sign that it was the reader who
-            // failed rather than the code.
+            // Measured coverage must name an actual carrier. Edge-free
+            // namespaces have no distance and are handled as not-measured.
             self::assertArrayHasKey($basis, $projectMetrics, "$dimension names a basis the run does not publish");
 
             self::assertSame(
@@ -149,6 +153,121 @@ final class HealthCoverageAgreesWithCountsTest extends TestCase
         self::assertLessThan(1.0, $cohesion['ratio']);
     }
 
+    #[Test]
+    public function itRanksMeasuredNamespacesDeclaringOnlyInterfacesTraitsOrEnums(): void
+    {
+        $written = file_put_contents($this->fixtureDirectory . '/Fixture.php', <<<'PHP'
+            <?php
+            namespace Types\Interfaces;
+            interface Contract { public function run(): int; }
+            namespace Types\Traits;
+            trait Reusable { public function run(): int { return 1; } }
+            namespace Types\Enums;
+            enum Choice: string { case One = 'one'; public function run(): int { return 1; } }
+            PHP);
+        self::assertIsInt($written);
+        $report = $this->analyze('json');
+        $names = array_column($report['worstNamespaces'] ?? [], 'symbolPath');
+        sort($names);
+        self::assertSame(['Types\\Enums', 'Types\\Interfaces', 'Types\\Traits'], $names);
+        foreach ($report['worstNamespaces'] as $offender) {
+            self::assertIsNumeric($offender['healthOverall']);
+            self::assertSame(0, $offender['size.class-count.sum']);
+        }
+    }
+
+    #[Test]
+    public function itRanksOwnTypeNamespacesAcrossMixedSpellings(): void
+    {
+        $written = file_put_contents($this->fixtureDirectory . '/Fixture.php', <<<'PHP'
+            <?php
+            namespace app;
+            class C { public function run(): int { return 1; } }
+            namespace App;
+            function helper(): int { return 1; }
+            namespace container\child;
+            class D { public function run(): int { return 1; } }
+            namespace Container\Child;
+            function anotherHelper(): int { return 1; }
+            PHP);
+        self::assertIsInt($written);
+
+        $report = $this->analyze('json');
+        $names = array_column($report['worstNamespaces'] ?? [], 'symbolPath');
+        sort($names);
+        self::assertSame(['App', 'Container\\Child'], $names);
+        foreach ($report['worstNamespaces'] as $offender) {
+            self::assertIsNumeric($offender['healthOverall']);
+            self::assertSame(1, $offender['size.class-count.sum']);
+        }
+        $classes = array_column($report['worstClasses'] ?? [], 'symbolPath');
+        sort($classes);
+        self::assertSame(['app\\C', 'container\\child\\D'], $classes);
+    }
+
+    #[Test]
+    public function itFoldsMixedSpellingFindingsIntoOwnAndAncestorNamespaces(): void
+    {
+        $written = file_put_contents($this->fixtureDirectory . '/Fixture.php', <<<'PHP'
+            <?php
+            namespace app;
+            class C { public function run(): int { eval('$value = 1;'); return 1; } }
+            namespace App;
+            function helper(): int { return 1; }
+            namespace app\child;
+            class D { public function run(): int { eval('$value = 1;'); return 1; } }
+            namespace App\Child;
+            function anotherHelper(): int { return 1; }
+            PHP);
+        self::assertIsInt($written);
+
+        $report = $this->analyze('json');
+        self::assertCount(2, $report['violations']);
+        foreach ($report['violations'] as $finding) {
+            self::assertSame('code-smell.eval', $finding['rule']);
+        }
+        $namespaces = array_column($report['worstNamespaces'], null, 'symbolPath');
+        self::assertSame(2, $namespaces['App']['violationCount']);
+        self::assertSame(1, $namespaces['App\\Child']['violationCount']);
+        self::assertGreaterThan(0, $namespaces['App']['violationDensity']);
+        self::assertGreaterThan(0, $namespaces['App\\Child']['violationDensity']);
+        $classes = array_column($report['worstClasses'], null, 'symbolPath');
+        self::assertSame(1, $classes['app\\C']['violationCount']);
+        self::assertSame(1, $classes['app\\child\\D']['violationCount']);
+    }
+
+    #[Test]
+    public function itCountsGlobalFindingsAsAnIsolatedNamespace(): void
+    {
+        $written = file_put_contents($this->fixtureDirectory . '/Fixture.php', <<<'PHP'
+            <?php
+            namespace {
+                class C { public function run(): int { eval('$value = 1;'); return 1; } }
+            }
+            namespace Named {
+                class D { public function run(): int { eval('$value = 1;'); return 1; } }
+            }
+            PHP);
+        self::assertIsInt($written);
+
+        $report = $this->analyze('json');
+        self::assertCount(2, $report['violations']);
+        foreach ($report['violations'] as $finding) {
+            self::assertSame('code-smell.eval', $finding['rule']);
+        }
+        $namespaces = array_column($report['worstNamespaces'], null, 'symbolPath');
+        self::assertCount(2, $namespaces);
+        foreach (['(global)', 'Named'] as $namespace) {
+            self::assertSame(1, $namespaces[$namespace]['violationCount']);
+            self::assertGreaterThan(0, $namespaces[$namespace]['violationDensity']);
+            self::assertSame(1, $namespaces[$namespace]['size.class-count.sum']);
+        }
+        $classes = array_column($report['worstClasses'], null, 'symbolPath');
+        self::assertCount(2, $classes);
+        self::assertSame(1, $classes['C']['violationCount']);
+        self::assertSame(1, $classes['Named\\D']['violationCount']);
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -157,6 +276,7 @@ final class HealthCoverageAgreesWithCountsTest extends TestCase
         $process = new Process([
             \PHP_BINARY,
             'bin/qmx',
+            '--working-dir=' . $this->fixtureDirectory,
             'check',
             $this->fixtureDirectory,
             '--workers=0',

@@ -10,9 +10,9 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CodeSmell\AbstractCodeSmellRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\GotoRule;
-use Qualimetrix\Analysis\Evidence\Security\AbstractSecurityPatternRule;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Evidence\Security\DirectSinks\AbstractSecurityPatternRule;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use RuntimeException;
@@ -36,9 +36,6 @@ final class ChannelDeclarationReaderTest extends TestCase
     #[Test]
     public function itReturnsAnEmptyArrayForARuleThatDeclaresNothing(): void
     {
-        // GotoRule's sibling code-smell rules (BooleanArgumentRule, EvalRule,
-        // ...) deliberately have no channelDeclarations() method at all —
-        // this is the "stays untouched" contract, exercised on a real rule.
         self::assertSame([], ChannelDeclarationReader::read(FixtureRuleWithNoDeclarations::class));
     }
 
@@ -49,7 +46,7 @@ final class ChannelDeclarationReaderTest extends TestCase
         $key = GotoRule::NAME;
 
         self::assertSame([$key], array_keys($declarations));
-        self::assertEquals(ChannelDeclaration::occurrence(SymbolLevel::Callable), $declarations[$key]);
+        self::assertEquals(ChannelDeclaration::occurrence(SymbolLevel::Callable, SymbolLevel::File), $declarations[$key]);
     }
 
     #[Test]

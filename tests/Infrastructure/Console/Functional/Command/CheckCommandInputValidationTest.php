@@ -4,21 +4,107 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional\Command;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\Application;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
-use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
+use Qualimetrix\Infrastructure\Console\Application\Application;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\Console\RuleListing\RulesCommand;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\TestSupport\WorkingDirectory\RunsFromRepositoryRoot;
 use Symfony\Component\Console\Input\StringInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Process\Process;
 
 final class CheckCommandInputValidationTest extends TestCase
 {
+    use RunsFromRepositoryRoot;
+
+    private static ?ContainerBuilder $container = null;
+
+    public static function tearDownAfterClass(): void
+    {
+        self::$container = null;
+    }
+
+    private static function container(): ContainerBuilder
+    {
+        $container = self::$container ??= (new ContainerFactory())->create();
+        $manifest = $container->get(ManifestSnapshotControlInterface::class);
+        if (!$manifest instanceof ManifestSnapshotControlInterface) {
+            throw new LogicException('The command fixture has no manifest snapshot lifetime owner.');
+        }
+        $manifest->beginInvocation();
+
+        return $container;
+    }
+    #[Test]
+    public function itNamesComposerJsonForAMissingInferredAutoloadTarget(): void
+    {
+        $root = sys_get_temp_dir() . '/qmx-inferred-path-' . bin2hex(random_bytes(6));
+        mkdir($root);
+        file_put_contents($root . '/composer.json', '{"autoload":{"psr-4":{"App\\\\":"missing-src/"}}}');
+        $before = getcwd();
+        self::assertNotFalse($before);
+        try {
+            chdir($root);
+            $tester = $this->tester();
+            $tester->execute(['--format' => 'json'], ['capture_stderr_separately' => true]);
+            self::assertSame(3, $tester->getStatusCode(), $tester->getErrorOutput());
+            $error = self::envelopeError($tester);
+            self::assertStringContainsString('composer.json', $error);
+            self::assertStringContainsString('missing-src', $error);
+            self::assertStringNotContainsString('Error: Error:', $error);
+        } finally {
+            chdir($before);
+            unlink($root . '/composer.json');
+            rmdir($root);
+        }
+    }
+
+    #[Test]
+    #[TestWith([\Qualimetrix\Infrastructure\Console\GraphExport\GraphExportCommand::class])]
+    #[TestWith([\Qualimetrix\Infrastructure\Console\Baseline\Generation\BaselineGenerateCommand::class])]
+    public function itNamesInferredComposerTargetsThroughPreflightAndBaseline(string $commandClass): void
+    {
+        $root = sys_get_temp_dir() . '/qmx-inferred-adjacent-' . bin2hex(random_bytes(6));
+        mkdir($root);
+        file_put_contents($root . '/composer.json', '{"autoload":{"psr-4":{"App\\\\":"missing-src/"}}}');
+        $before = getcwd();
+        self::assertNotFalse($before);
+        try {
+            chdir($root);
+            $container = self::container();
+            $command = $container->get($commandClass);
+            self::assertInstanceOf(\Symfony\Component\Console\Command\Command::class, $command);
+            $presenter = $container->get(RefusalPresenter::class);
+            self::assertInstanceOf(RefusalPresenter::class, $presenter);
+            (new Application(new ErrorStream(), $presenter, static fn() => new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()))->addCommand($command);
+            $tester = new CommandTester($command);
+            $input = $commandClass === \Qualimetrix\Infrastructure\Console\Baseline\Generation\BaselineGenerateCommand::class
+                ? ['baseline' => $root . '/baseline.json']
+                : ['--format' => 'json'];
+            $tester->execute($input, ['capture_stderr_separately' => true]);
+            self::assertSame(3, $tester->getStatusCode());
+            $refusal = $tester->getDisplay() . $tester->getErrorOutput();
+            self::assertStringContainsString('composer.json autoload target missing-src', $refusal);
+            self::assertStringNotContainsString('Error: Error:', $refusal);
+            self::assertFileDoesNotExist($root . '/baseline.json');
+        } finally {
+            chdir($before);
+            unlink($root . '/composer.json');
+            rmdir($root);
+        }
+    }
+
     #[Test]
     public function itFormatsIncompleteAnalysisAndGivesItExitCodePriority(): void
     {
@@ -41,6 +127,7 @@ final class CheckCommandInputValidationTest extends TestCase
         $payload = json_decode($tester->getDisplay(), true, 512, \JSON_THROW_ON_ERROR);
         self::assertFalse($payload['coverage']['complete']);
         self::assertSame(1, $payload['coverage']['failed']);
+        self::assertNull($payload['health']);
         self::assertStringNotContainsString($projectRoot . '/', $tester->getDisplay());
         self::assertStringContainsString('Parse error', $tester->getErrorOutput());
     }
@@ -66,7 +153,7 @@ final class CheckCommandInputValidationTest extends TestCase
 
             self::assertSame(3, $tester->getStatusCode());
             self::assertStringContainsString(
-                'Invalid value for "cache.enabled": expected boolean, got string',
+                \sprintf('"cache.enabled" in configuration file "%s" must be boolean, got string.', $config),
                 self::envelopeError($tester),
             );
         } finally {
@@ -154,7 +241,7 @@ final class CheckCommandInputValidationTest extends TestCase
 
     /**
      * The configuration and CLI seam of the one refusal point for an
-     * impossible `channel:level` pair, {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing}.
+     * impossible `channel:level` pair, {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevel\ChannelLevelAddressing}.
      * The other seam is the inline directive one, checked by
      * {@see \Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest}
      * — both ask the same object, so the two families of directive cannot
@@ -228,15 +315,27 @@ final class CheckCommandInputValidationTest extends TestCase
     #[Test]
     public function itClassifiesMissingGitReferenceAsInputErrorBeforePayload(): void
     {
-        $tester = $this->tester();
-        $tester->execute(
-            ['paths' => ['tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php'], '--format' => 'json', '--report' => 'git:qmx-ref-that-does-not-exist..HEAD'],
-            ['capture_stderr_separately' => true],
-        );
+        $root = sys_get_temp_dir() . '/qmx-git-input-' . bin2hex(random_bytes(8));
+        mkdir($root);
+        try {
+            (new Process(['git', 'init'], $root))->mustRun();
+            file_put_contents($root . '/fixture.php', '<?php');
+            (new Process(['git', 'add', 'fixture.php'], $root))->mustRun();
+            (new Process(['git', '-c', 'user.name=Test', '-c', 'user.email=test@example.invalid', 'commit', '-m', 'Initial fixture'], $root))->mustRun();
+            chdir($root);
+            $tester = $this->tester();
+            $tester->execute(
+                ['paths' => [$root . '/fixture.php'], '--format' => 'json', '--report' => 'git:qmx-ref-that-does-not-exist..HEAD'],
+                ['capture_stderr_separately' => true],
+            );
 
-        self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString('does not resolve to a commit', self::envelopeError($tester));
-        self::assertStringNotContainsString('Analyzed paths do not cover', $tester->getErrorOutput());
+            self::assertSame(3, $tester->getStatusCode());
+            self::assertStringContainsString('does not resolve to a commit', self::envelopeError($tester));
+            self::assertStringNotContainsString('Analyzed paths do not cover', $tester->getErrorOutput());
+        } finally {
+            chdir(\dirname(__DIR__, 5));
+            (new Filesystem())->remove($root);
+        }
     }
 
     #[Test]
@@ -409,10 +508,10 @@ final class CheckCommandInputValidationTest extends TestCase
      */
     private function runThroughApplication(StringInput $input): array
     {
-        $container = (new ContainerFactory())->create();
+        $container = self::container();
         /** @var RefusalPresenter $refusalPresenter */
         $refusalPresenter = $container->get(RefusalPresenter::class);
-        $app = new Application(new ErrorStream(), $refusalPresenter);
+        $app = new Application(new ErrorStream(), $refusalPresenter, static fn() => new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $app->setAutoExit(false);
         $app->setCatchExceptions(false);
 
@@ -469,12 +568,12 @@ final class CheckCommandInputValidationTest extends TestCase
 
     private function tester(): CommandTester
     {
-        $container = (new ContainerFactory())->create();
+        $container = self::container();
         /** @var CheckCommand $command */
         $command = $container->get(CheckCommand::class);
         /** @var RefusalPresenter $refusalPresenter */
         $refusalPresenter = $container->get(RefusalPresenter::class);
-        $application = new Application(new ErrorStream(), $refusalPresenter);
+        $application = new Application(new ErrorStream(), $refusalPresenter, static fn() => new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $application->addCommand($command);
 
         return new CommandTester($command);

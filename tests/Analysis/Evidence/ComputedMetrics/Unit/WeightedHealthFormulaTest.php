@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\WeightedHealthFormula;
 
 /**
@@ -24,21 +24,16 @@ final class WeightedHealthFormulaTest extends TestCase
         $this->expression = new ComputedMetricExpression();
     }
 
-    /**
-     * The weighted sum `--exclude-health` rebuilds, read off the tree: the
-     * pattern this replaced accepted neither a space nor a fractional fallback
-     * nor a reversed factor order, and reported a partial read as a whole one.
-     */
     #[Test]
-    public function itReadsAWeightedSumInEveryShapeTheLanguageAccepts(): void
+    public function itReadsTheCompleteOrderedMeanOnTheNativeAst(): void
     {
         $terms = WeightedHealthFormula::termsOf(
             $this->expression,
-            'clamp((m ["health.a"] ?? 75.5) * 0.4 + 0.6 * (m["health.b"] ?? 75), 0, 100)',
+            'clamp(weighted_mean(m ["health.a"], 0.4, m["health.b"], 0.6), 0, 100)',
         );
 
         self::assertSame(
-            ['health.a' => ['weight' => 0.4, 'fallback' => 75.5], 'health.b' => ['weight' => 0.6, 'fallback' => 75.0]],
+            ['health.a' => ['weight' => 0.4], 'health.b' => ['weight' => 0.6]],
             $terms,
         );
     }
@@ -52,7 +47,7 @@ final class WeightedHealthFormulaTest extends TestCase
     {
         self::assertNull(WeightedHealthFormula::termsOf(
             $this->expression,
-            'clamp((m["health.a"] ?? 75) * 0.4 + m["health.b"], 0, 100)',
+            'clamp(weighted_mean(m["health.a"], 0.4, max(m["health.b"], 0), 0.6), 0, 100)',
         ));
     }
 
@@ -61,4 +56,23 @@ final class WeightedHealthFormulaTest extends TestCase
     {
         self::assertNull(WeightedHealthFormula::termsOf($this->expression, 'min(m["health.a"], m["health.b"])'));
     }
+    #[Test]
+    public function itRefusesPartialDuplicateOrInvalidCanonicalTerms(): void
+    {
+        foreach ([
+            'weighted_mean(m["health.a"], 1, m["health.a"], 2)',
+            'weighted_mean(m["health.a"], 0)',
+            'weighted_mean(m["health.a"], null)',
+            'weighted_mean(m["health.a"], "1")',
+            'weighted_mean(m["health.a"], 1e999)',
+            'weighted_mean(m["health.a"], 1, m["health.b"])',
+            'weighted_mean(m["other.a"], 1)',
+            'clamp(weighted_mean(m["health.a"], 1), 1, 100)',
+            'clamp(weighted_mean(m["health.a"], 1), 0, 200)',
+            '(m["health.a"] ?? 75) * 1',
+        ] as $formula) {
+            self::assertNull(WeightedHealthFormula::termsOf($this->expression, $formula), $formula);
+        }
+    }
+
 }

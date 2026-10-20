@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Security\Unit;
 
 use InvalidArgumentException;
+use LogicException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -19,6 +21,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(HardcodedCredentialsRule::class)]
 #[CoversClass(HardcodedCredentialsOptions::class)]
@@ -30,7 +33,7 @@ final class HardcodedCredentialsRuleTest extends TestCase
         $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions());
 
         self::assertSame('security.hardcoded-credentials', $rule->getName());
-        self::assertSame('Detects hardcoded credentials in code', $rule->getDescription());
+        self::assertSame('Detects hardcoded credentials in code', $rule::getDescription());
     }
 
     #[Test]
@@ -201,12 +204,12 @@ final class HardcodedCredentialsRuleTest extends TestCase
             'variable',
             'array_key',
             'class_const',
+            'file_const',
             'define',
             'property',
             'property_assignment',
             'parameter',
             'enum_case',
-            'unknown',
         ];
         $metrics = new MetricBag();
         foreach ($patterns as $line => $pattern) {
@@ -224,12 +227,12 @@ final class HardcodedCredentialsRuleTest extends TestCase
             'Hardcoded credential in variable assignment — use environment variables or a secrets manager',
             'Hardcoded credential in array key — use environment variables or a secrets manager',
             'Hardcoded credential in class constant — use environment variables or a secrets manager',
+            'Hardcoded credential in file constant — use environment variables or a secrets manager',
             'Hardcoded credential in define() call — use environment variables or a secrets manager',
             'Hardcoded credential in property default — use environment variables or a secrets manager',
             'Hardcoded credential in property assignment — use environment variables or a secrets manager',
             'Hardcoded credential in parameter default — use environment variables or a secrets manager',
             'Hardcoded credential in enum case — use environment variables or a secrets manager',
-            'Hardcoded credential found — use environment variables or a secrets manager',
         ], array_map(
             static fn(Finding $finding): string => $finding->message,
             $findings,
@@ -237,12 +240,25 @@ final class HardcodedCredentialsRuleTest extends TestCase
     }
 
     #[Test]
+    public function itRejectsAnUnknownCredentialPattern(): void
+    {
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('Unknown credential pattern "unknown"');
+
+        (new HardcodedCredentialsRule(new HardcodedCredentialsOptions()))->analyze($this->createContext(
+            (new MetricBag())->withEntry('security.hardcoded-credentials', [
+                'subjectKind' => 'file', 'line' => 1, 'pattern' => 'unknown',
+            ]),
+        ));
+    }
+
+    #[Test]
     public function itLoadsOptionsFromArray(): void
     {
-        $options = HardcodedCredentialsOptions::fromArray(['enabled' => false]);
+        $options = HardcodedCredentialsOptions::fromResolved(ResolvedOptionsFixture::values(HardcodedCredentialsOptions::class, ['enabled' => false]));
         self::assertFalse($options->isEnabled());
 
-        $options = HardcodedCredentialsOptions::fromArray([]);
+        $options = HardcodedCredentialsOptions::fromResolved(ResolvedOptionsFixture::values(HardcodedCredentialsOptions::class, []));
         self::assertTrue($options->isEnabled());
     }
 

@@ -8,14 +8,82 @@ classification for `coupling.cbo-app` and `coupling.ce-framework`. It consumes t
 DependencyModel, Measurement, Finding, ConfigurationDocument, and neutral Core
 contracts; it publishes one configuration contract for the runtime adapter.
 
-`CouplingAnalysis` owns the framework-prefix state for one analysis run. Each
-configuration document replaces the previous list, including an empty
-`coupling.frameworkNamespaces` contribution, so sequential runs cannot leak
-classification state.
+`CouplingAnalysis` owns the framework-prefix state for one analysis run. Its
+owner-declared `coupling` map merges key by key, so an empty map keeps lower
+values. The `framework_namespaces` list replaces as one ordered value, including
+an empty list. `FrameworkNamespaceSelectorParser` judges every written list and
+the resolved list with the same namespace-selector grammar: exactly one kind,
+a nonempty pattern, valid PCRE and the 256-selector ceiling. A later list cannot
+hide an invalid lower list. Coupling reads the resolved selector list before replacing
+its run-local matcher. Sequential runs therefore cannot leak classification
+state.
+
+```text
+Coupling/
+├── Cbo/
+│   ├── CboFindingText.php
+│   ├── CboOptions.php
+│   ├── CboRule.php
+│   ├── ClassCboOptions.php
+│   └── NamespaceCboOptions.php
+├── ClassRank/
+│   ├── ClassRankCollector.php
+│   ├── ClassRankOptions.php
+│   └── ClassRankRule.php
+├── Configuration/
+│   ├── CouplingSection.php
+│   └── FrameworkNamespaceSelectorParser.php
+├── Contract/
+│   └── Configuration/
+│       └── CouplingConfiguratorInterface.php
+├── Distance/
+│   ├── DistanceCollector.php
+│   ├── DistanceOptions.php
+│   └── DistanceRule.php
+├── Instability/
+│   ├── ClassInstabilityOptions.php
+│   ├── InstabilityOptions.php
+│   ├── InstabilityRule.php
+│   └── NamespaceInstabilityOptions.php
+├── Rfc/
+│   ├── RfcBodyResponses.php
+│   ├── RfcClassFacts.php
+│   ├── RfcCollector.php
+│   ├── RfcDeclarationFacts.php
+│   ├── RfcDeclarationIndex.php
+│   ├── RfcEffectiveMembers.php
+│   ├── RfcGlobalCollector.php
+│   ├── RfcLocalFlow.php
+│   ├── RfcPropertyTypes.php
+│   ├── RfcReceiverTypes.php
+│   ├── RfcResponseResolver.php
+│   └── RfcVisitor.php
+├── UnmatchedFramework/
+│   ├── UnmatchedFrameworkFinding.php
+│   ├── UnmatchedFrameworkNamespaceOptions.php
+│   └── UnmatchedFrameworkNamespaceRule.php
+├── AbstractnessCollector.php
+├── CoupledNamespaces.php
+├── CouplingAnalysis.php
+├── CouplingCollector.php
+└── FrameworkClassificationSites.php
+```
+
+`CouplingCollector` remains the shared producer of Ca, Ce, CBO and instability;
+`Cbo/` owns interpretation, while `Distance/` and `ClassRank/` keep each derived
+collector with its options and rule. `Instability/` owns instability judgement
+and all its option bands; `UnmatchedFramework/` owns unmatched framework-selector
+judgement. Shared graph collection and run classification state remain at the
+capability root. These are internal subjects of one capability.
 
 ## Metrics
 
-Coupling metrics measure dependencies between components. All collectors in this category use `GlobalContextCollectorInterface` and work with the dependency graph.
+Coupling metrics measure dependencies between components. Graph collectors use
+`GlobalContextCollectorInterface`; RFC first collects raw facts from each named
+class declaration, then resolves responses globally. Same-name declarations retain independent RFC evidence, including
+when they occur in one file. Graph values remain logical-name measurements and
+appear in every exact declaration view. Class-derived aggregates sample those
+views once each; the logical graph record is not an extra sample.
 
 ---
 
@@ -82,7 +150,9 @@ Coupling metrics measure dependencies between components. All collectors in this
 > The subtree `coupling.cbo` is still published on every namespace.
 > `CboRule` decides whether there is a finding; `CboFindingText` words it —
 > the dominant direction, the message and the recommendation with a class's
-> top dependencies.
+> top dependencies. The five selected target identities keep their occurrence
+> ordering; colliding short names expand to the shortest distinguishing
+> namespace suffix, with full names as the final fallback.
 
 > **Note:** Robert C. Martin (1994) originally defined Instability only at the **package** (namespace) level. Qualimetrix extends it to the class level for finer-grained analysis. The namespace-level instability is the canonical metric per Martin's specification.
 
@@ -139,6 +209,9 @@ it, and before the channel existed the miss and a run with no prefix at all
 produced byte-identical reports — the classification is only observable through
 `coupling.cbo-app` / `coupling.ce-framework`, never through the finding set.
 
+`UnmatchedFrameworkFinding` owns the message and stable occurrence projection;
+the rule retains selector enumeration and eligibility.
+
 Two facts about the shape, both measured rather than chosen:
 
 - **It is its own rule, not a second channel on `CboRule`.** A magnitude
@@ -189,6 +262,85 @@ namespace CBO configuration remains under `namespace:`.
 
 ---
 
+## RFC — Response for a Class
+
+`RfcCollector` provides entry-only `coupling.rfc-facts` on exact declarations.
+Its file bag and numeric definitions are empty. `RfcVisitor` extracts each
+`RfcClassFacts`; `RfcBodyResponses` retains scalar response rows per method or
+property hook, with `RfcReceiverTypes` for declared/local type recognition and `RfcLocalFlow`
+for conservative invalidation across uncertain flow. Metric-bag entries
+survive worker serialization, repository merge and AST cache reuse.
+
+`RfcGlobalCollector` alone declares and publishes `coupling.rfc`,
+`coupling.rfc-own`, and `coupling.rfc-external`. It requires the raw entry key
+and consumes exact callable owners and declaration-level inheritance edges.
+`RfcDeclarationFacts` decodes the rows. `RfcDeclarationIndex` owns the exact
+roster, folded lookup candidates, callable joins and declaration parent edges.
+`RfcEffectiveMembers` owns trait composition and original body/property
+sources. `RfcPropertyTypes` resolves declared property types in their original
+class or consuming-trait context. `RfcResponseResolver` resolves direct targets
+and response membership. Namespace and project
+sum/average/max/p95/count aggregates sample the final declarations once.
+
+```text
+Coupling/
+└── Rfc/
+    ├── RfcCollector.php          # entry-only per-file facts
+    ├── RfcVisitor.php            # exact named declaration traversal
+    ├── RfcClassFacts.php         # scalar row extraction
+    ├── RfcBodyResponses.php      # invocation traversal
+    ├── RfcReceiverTypes.php      # declared/local receiver type evidence
+    ├── RfcLocalFlow.php          # local invalidation across uncertain control flow
+    ├── RfcDeclarationFacts.php   # global row decoding
+    ├── RfcDeclarationIndex.php   # exact declaration/name/parent index
+    ├── RfcEffectiveMembers.php   # trait members, hook and property sources
+    ├── RfcPropertyTypes.php      # declared property type context and ancestry
+    ├── RfcResponseResolver.php   # declared targets and response membership
+    └── RfcGlobalCollector.php    # sole final metric publisher
+```
+
+These internal subjects change for different reasons: type recognition when
+supported receiver evidence changes; local flow when invalidation changes;
+the index when exact collection joins change; composition when effective
+member selection changes; property types when declaring context or property
+lookup changes; response resolution when target membership changes.
+They share no generic run port, type engine or cross-capability state.
+
+RFC is `|M| + |Ri outside M|`. M contains all declared methods, including
+abstract methods, and effective imported trait methods. Aliases contribute
+separate exposed names; calls to their shared original body remain inside M.
+Class overrides and trait precedence exclude discarded bodies. Inherited
+methods enter Ri only when invoked; their own bodies are not scanned for the
+consumer. Effective imported trait bodies resolve `this/self/static/parent`
+in the consuming declaration's context. Hooks keep their property spelling:
+`p::get` and `P::get` are distinct members. Trait property hooks are imported
+separately from method adaptations; conflicting property sources are omitted,
+without attempting PHP property-compatibility validation.
+
+Class-name aliases, fully qualified names and letter-case variants collapse
+through Core name resolution and PHP class-name folding. A known receiver
+without a declared method retains its class and method identity when ancestry
+and trait composition are readable. Missing, ambiguous or cyclic ancestry
+or unread trait composition uses the method-name
+fallback; a directly named external class retains its resolved class name.
+Unknown receivers share a lowercased method response. Typed non-variadic parameters,
+properties, promoted properties, explicit construction, local assignment and
+a direct positive `instanceof` branch supply narrow evidence. Reassignment
+and compound write targets invalidate it. Alternative control-flow paths keep
+independent local evidence; uncertain regions invalidate their written variables.
+Return chains, array
+contents and PHPDoc do not supply receiver types.
+
+> **Note:** Global functions contribute separate response identities; property
+> hooks contribute members. These adapt the original C&K class metric to PHP.
+> First-class callables and dynamic method names are excluded, as are nested
+> anonymous-class bodies and expressions outside methods. Unread traits add
+> no invented methods; unresolved invocation targets retain their known
+> receiver or the documented fallback. This is static evidence, not complete
+> runtime dispatch resolution.
+
+---
+
 ## Abstractness
 
 **Collector:** `AbstractnessCollector`
@@ -221,10 +373,9 @@ unsuffixed count at all and gets **no key**, not a zero: how far a package sits
 from the main sequence is undefined where there is no package, and that silence
 is what keeps a pure container out of the project average.
 
-A namespace whose only declarations are bare enums therefore has `totalTypes = 0` and
-keeps the pre-existing no-type result `A = 0.0`. Downstream namespace rules already
-skip it through `minClassCount`, exactly as they skip a namespace with no declarations
-at all.
+A namespace whose only declarations are bare enums has `totalTypes = 0`,
+so its abstractness is absent. Distance is absent in that scope as well: a
+missing denominator is not a measured concrete value.
 
 The count inputs are exact discrete namespace sums. They are not fractionally distributed
 over source contributors, so a namespace with one abstract class or interface and five
@@ -245,7 +396,7 @@ concrete types still computes as `1 / 6` rather than losing the abstraction in a
 **Collector:** `DistanceCollector`
 **Type:** `GlobalContextCollectorInterface`
 **Requires:** `coupling.instability`, `coupling.abstractness`, `coupling.instability-own`, `coupling.abstractness-own`
-**Provides:** `coupling.distance`, `coupling.distance-own`
+**Provides:** `coupling.distance`, `coupling.distance-own`, project `coupling.distance-own.avg` and `.count`
 **Level:** Namespace
 
 ### Formula
@@ -259,20 +410,27 @@ distance computed from 0: a namespace declaring only functions is in the
 repository but not in the class graph, so it has no instability, and reading
 that as 0 used to publish D = 1.0 for it.
 
-`DistanceRule` does not judge a namespace with `Ca = Ce = 0`: its instability
-is 0 by convention, not by measurement, and a concrete namespace nothing
-touches would otherwise read as the worst zone of pain. The value itself is
-still published, and still enters `health.coupling` and the project average.
+`DistanceRule` reads only the own-scope `coupling.distance-own`,
+`coupling.abstractness-own`, `coupling.instability-own`, `coupling.ca-own` and
+`coupling.ce-own`. Its `min-type-count` option (default 3) counts own classes,
+traits, interfaces and explicitly implementing enums; bare enums do not count.
+The retired `min-class-count` spellings are refused. CBO and Instability keep
+their existing `min-class-count` options.
+
+When `Ca = Ce = 0`, distance is absent in that scope: instability is a
+convention rather than measured edge evidence. `DistanceRule` consequently has
+no distance to judge there. No project sample or health input is fabricated
+from that scope.
 
 `coupling.distance` stays the subtree value and carries **no project
-aggregation**. The project average is taken over `coupling.distance-own`, whose
-population is every namespace declaring at least one type. That population is a
-partition: a parent and its children each answer for their own declarations, so
-no declaration is weighed twice and none is left unrepresented. Averaging the
-published values instead would count the classes of a namespace that is both
-leaf and parent in two entries at once — which is why the earlier rule folded
-leaf namespaces only, and why the classes declared directly in a namespace that
-also has sub-namespaces reached no project number at all.
+aggregation**. The project publisher folds measured `coupling.distance-own`
+values, weighting each own namespace by its eligible declaration count:
+classes + traits + interfaces + explicitly implementing enums. Bare enums do
+not enter this denominator. Each declaration belongs to one own namespace, so
+parents with own types and their children are represented without double
+counting. A namespace without measured own distance contributes neither a
+zero nor a weight. `.count` reports measured namespace samples; if there are
+none, the project average and count are absent.
 
 The optional `rules.coupling.distance.include-namespaces` override uses the
 same explicit namespace selectors. YAML takes a list of one-entry mappings;
@@ -280,6 +438,10 @@ the CLI takes one typed scalar, for example
 `--rule-opt=coupling.distance:include-namespaces=subtree:App\\Domain`.
 Auto-detected Composer namespaces remain a separate exact inferred set when
 the override is absent.
+
+`DistanceRule` requires the composed project namespace resolver and diagnostic
+logger. Missing registrations refuse container construction, so namespace
+admission and warnings cannot silently disappear through constructor defaults.
 
 ### Main Sequence
 
@@ -312,16 +474,35 @@ Ideal packages lie on the line `A + I = 1`:
 
 ## ClassRank
 
-**Collector:** `ClassRankCollector` (PageRank, damping 0.85, over project classes)
-**Provides:** `coupling.class-rank`
+**Collector:** `ClassRankCollector` (PageRank, damping 0.85)
+**Provides:** `coupling.class-rank`, `coupling.class-rank-share`
 **Level:** Class
 
-A class without outgoing project edges spreads its rank evenly over every class,
-so each class holds a floor of `(1 - d) / N + d · S / N`, where `S` is the total
-rank of such classes. On a small or loosely coupled project that floor alone
-clears the size-scaled threshold, so `ClassRankRule` never reports a class
-nothing depends on (`coupling.ca` = 0), and its recommendation names the
-measured number of dependents.
+Raw PageRank `r` remains probability mass: ranks sum to 1 over the distinct
+measured logical graph vertices. The new share is `r / (1 / N) = r * N`, where
+`N` includes graph class-like vertices with a logical subject in the metric
+repository, including isolates; unmeasured external vertices stay outside this
+analysed PageRank population. Duplicate declarations do not increase `N`. An empty graph publishes
+neither metric; a singleton publishes raw 1 and share 1. Both values are
+projected to each exact declaration and have namespace/project max, average
+and p95 aggregates.
+
+`ClassRankRule` judges the share of exact PHP classes, including abstract
+classes, with positive `coupling.ca`. Interfaces, traits and enums retain graph
+rank evidence but are outside that rule population. The fixed share defaults
+are warning 5 and error 10, in multiples of the uniform rank; equality reaches
+the boundary. Overrides use the same units, with no project-size scaling.
+The recommendation labels Ca as the number of direct dependents. PageRank
+also reflects transitive dependency paths but the report does not count
+transitive dependents. A single direct dependent can itself be a hub.
+ClassRank, Distance and Instability messages use the shortest common precision from two through six decimal places
+that distinguishes unequal value and threshold; a remaining collision is marked
+as rounded. The underlying comparison always uses the unrounded share.
+
+The share is relative to the current measured graph. Comparing different graph
+populations requires keeping that scope in view. Prioritization reads only the
+share, including its native measured-median fallback; raw probability is never
+substituted for absent share. JSON top issues publish `coupling.class-rank-share`.
 
 ---
 
@@ -333,6 +514,8 @@ measured number of dependents.
 new MetricDefinition(
     name: 'coupling.instability',
     collectedAt: SymbolLevel::Class_,
+    classKeyScope: ClassKeyScope::LogicalName,
+    directPublicationLevels: [SymbolLevel::Namespace_],
     aggregations: [
         SymbolLevel::Namespace_->value => [Average],
     ],
@@ -361,9 +544,17 @@ new MetricDefinition(
 new MetricDefinition(
     name: 'coupling.distance-own',
     collectedAt: SymbolLevel::Namespace_,
-    aggregations: [
-        SymbolLevel::Project->value => [Average],
-    ],
+    aggregations: [],
+)
+
+new MetricDefinition(
+    name: 'coupling.distance-own.avg',
+    collectedAt: SymbolLevel::Project,
+)
+
+new MetricDefinition(
+    name: 'coupling.distance-own.count',
+    collectedAt: SymbolLevel::Project,
 )
 ```
 
@@ -396,6 +587,41 @@ class GodClass  // Ca = 20, Ce = 0 — everything depends on it
 ```
 
 
+## Declared options and effective bands
+
+CBO and instability declare their class/namespace forms and bands. A top-level
+band shorthand spreads to both levels in its own layer before winners are chosen;
+explicit writes to the same expanded leaves conflict in that layer. Independent
+level settings such as enabled are preserved. Different layers merge leaf
+writes. `fromResolved` constructs typed options and judges each effective
+band including default halves. Direction, formulas, default numbers and the
+framework-namespace evidence model are unchanged. DoD includes lower-layer
+malformed refusal, distinct-level writes and coherent effective bands.
+
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+CBO and instability reuse their full source declarations at each native
+class or namespace invocation. Missing publications, own class minima and
+afferent minima are eligibility gates before severity selection. CBO
+retains its scope-specific metric choice; instability keeps publication
+presence before its afferent check. Framework-selector accounting first
+judges whole-project scope, then graph availability, then the actual names
+classified by coupling. An unknown graph contributes one invocation; an
+empty configured selector roster contributes none. Known selector rosters
+retain their configured-selector unit.
+
+Coupling rules use Finding’s protected population declaration factories. Their
+source-owned lazy inputs retain namespace admission before metric reads and
+exact PHP-kind checks before class bag acquisition. The ClassRank finding
+builder receives the same full declaration used by its invocation.
+
+> **Note:** `coupling.class-rank` is computed on logical class names. Namespace
+> aggregates sample physical declarations, so a logical name's graph value
+> contributes once per declaration. Namespace sums/counts/averages are
+> declaration-weighted, rather than graph-node or inheritance-edge counts.
+
+Invalid trait method composition carries the exact declaration through
+`TraitCompositionFailure`; Run refuses that source file and publishes the rest
+of the analysis with incomplete coverage.

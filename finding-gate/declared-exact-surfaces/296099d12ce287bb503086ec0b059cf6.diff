@@ -1,0 +1,40 @@
+--- candidate
++++ reference (mapped)
+@@ -4,9 +4,9 @@
+-  Channel: complexity.ccn
+-    baseline:      (none)
+-    now:           18
+-    qmx.yaml:      4
+-    annotation:    (none)
+-
+-  Channel: complexity.cognitive
+-    baseline:      (none)
+-    now:           32
++  Channel: complexity.cognitive
++    baseline:      (none)
++    now:           32
++    qmx.yaml:      4
++    annotation:    (none)
++
++  Channel: complexity.ccn
++    baseline:      (none)
++    now:           18
+@@ -32,9 +32,9 @@
+-  Channel: complexity.ccn
+-    baseline:      (none)
+-    now:           18
+-    qmx.yaml:      4
+-    annotation:    (none)
+-
+-  Channel: complexity.cognitive
+-    baseline:      (none)
+-    now:           32
++  Channel: complexity.cognitive
++    baseline:      (none)
++    now:           32
++    qmx.yaml:      4
++    annotation:    (none)
++
++  Channel: complexity.ccn
++    baseline:      (none)
++    now:           18

@@ -32,10 +32,10 @@ use Symfony\Component\Console\Command\Command;
  * **The population is not "every command a running `qmx` process answers
  * to."** Symfony adds `help`, `list`, `completion` and `_complete` to a live
  * `Application`; none of them carries an `#[AsCommand]` attribute under
- * `src/Infrastructure/Console/Command/`, so the filesystem sweep already
+ * `src/Infrastructure/Console/`, so the filesystem sweep already
  * leaves all four out on its own — named here so that silence is read as a
  * deliberate scope, not an oversight. (`list`'s own `Help:` section does
- * carry the pointer, appended by {@see \Qualimetrix\Infrastructure\Console\Application::appendPointerToListCommandHelp()};
+ * carry the pointer, appended by {@see \Qualimetrix\Infrastructure\Console\Application\Application::appendPointerToListCommandHelp()};
  * that mechanism belongs to the application, not to a command this
  * repository declares, so it is out of this guard's population and untested
  * here.)
@@ -50,9 +50,9 @@ use Symfony\Component\Console\Command\Command;
  *
  * The assertion reads `getHelp()`'s final string, not how a command arrived
  * at it — it is agnostic to whether the pointer came from a command's own
- * inline `setHelp()` call (e.g. {@see \Qualimetrix\Infrastructure\Console\Command\RulesCommand}),
+ * inline `setHelp()` call (e.g. {@see \Qualimetrix\Infrastructure\Console\RuleListing\RulesCommand}),
  * an inherited `configure()` shared by the hook family (via
- * {@see \Qualimetrix\Infrastructure\Console\Command\AbstractHookCommand}), or
+ * {@see \Qualimetrix\Infrastructure\Console\Hook\AbstractHookCommand}), or
  * a shared helper the baseline family calls from each command's own
  * `configure()` (`withDocsPointer()`).
  *
@@ -64,9 +64,9 @@ use Symfony\Component\Console\Command\Command;
 #[Group('integration')]
 final class HelpDocumentationPointerTest extends TestCase
 {
-    private const string COMMAND_DIRECTORY = __DIR__ . '/../../src/Infrastructure/Console/Command';
+    private const string COMMAND_DIRECTORY = __DIR__ . '/../../src/Infrastructure/Console';
 
-    private const string BINARY_PATH = __DIR__ . '/../../bin/qmx';
+    private const string BINARY_PATH = __DIR__ . '/../../src/Infrastructure/Console/Application/CommandLoading/ProductCommandLoader.php';
 
     /** @param class-string<Command> $class */
     #[Test]

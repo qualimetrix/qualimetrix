@@ -14,6 +14,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
  *
  * @phpstan-type Entry array<string, scalar>
  * @phpstan-type Entries array<string, list<Entry>>
+ *
+ * @qmx-threshold coupling.class-rank 9.667631 -- One internal measurement bag owns subject-indexed metric storage; its transitive rank reflects the repository read path rather than an additional public API. The finite share still exposes increased concentration.
  */
 final class DataBag
 {

@@ -78,13 +78,12 @@ use PHPUnit\Framework\TestCase;
  *
  * An extension named under `suggest` is allowed: those are optional by design
  * and reached behind `extension_loaded()`, so requiring them would be wrong.
- * `ext-igbinary` is the live example. Removing that entry from `suggest`
- * without adding it to `require` reddens this control rather than passing
- * silently. A suggested extension this runtime does not load is not a
- * precondition failure -- `ext-parallel` is ZTS-only and loads almost nowhere
- * -- but if the tree reaches one of its names, that name is unattributable and
- * refused like any other, and the refusal names the declared extensions this
- * runtime is missing so the reader knows what to install.
+ * Removing a reached extension from `suggest` without adding it to `require`
+ * reddens this control rather than passing silently. A suggested extension
+ * this runtime does not load is not a precondition failure, but if the tree
+ * reaches one of its names, that name is unattributable and refused like any
+ * other. The refusal names the declared extensions this runtime is missing so
+ * the reader knows what to install.
  *
  * # What an `ext-` entry in `require` promises
  *

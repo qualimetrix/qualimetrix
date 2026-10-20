@@ -11,9 +11,10 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
-use Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor;
-use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
+use Qualimetrix\Analysis\Policy\Inline\Extraction\SuppressionExtractor;
+use Qualimetrix\Analysis\Policy\Inline\Threshold\ThresholdOverrideExtractor;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -58,13 +59,9 @@ use Symfony\Component\Console\Command\Command;
  * here would let this test drift from the schema's own definition of
  * "allowed root key".
  *
- * Output formats come from {@see MachineReadableFormats::knownFormats()}
- * rather than {@see \Qualimetrix\Reporting\Formatter\FormatterRegistryInterface::getAvailableNames()}:
- * the latter deliberately hides the deprecated-but-selectable `text-verbose`
- * formatter from listings, while `llms.txt` documents it. `knownFormats()` is
- * itself asserted equal to "available names plus `text-verbose`" by
- * `ConsoleComposition\MachineReadableFormatsRegistryTest`, so it is the
- * closed, complete set of registered formats.
+ * Output formats come from {@see MachineReadableFormats::knownFormats()},
+ * asserted equal to the registry's complete set by
+ * `ConsoleComposition\MachineReadableFormatsRegistryTest`.
  *
  * Inline directives have no array-returning registry to call — their names
  * live only inside the two extractors' regular expressions. So this test
@@ -104,9 +101,9 @@ use Symfony\Component\Console\Command\Command;
  */
 final class LlmsIndexRegisteredSurfaceTest extends TestCase
 {
-    private const string COMMAND_DIRECTORY = __DIR__ . '/../../src/Infrastructure/Console/Command';
+    private const string COMMAND_DIRECTORY = __DIR__ . '/../../src/Infrastructure/Console';
 
-    private const string BINARY_PATH = __DIR__ . '/../../bin/qmx';
+    private const string BINARY_PATH = __DIR__ . '/../../src/Infrastructure/Console/Application/CommandLoading/ProductCommandLoader.php';
 
     private const string LLMS_TXT_PATH = __DIR__ . '/../../website/docs/llms.txt';
 
@@ -323,7 +320,13 @@ final class LlmsIndexRegisteredSurfaceTest extends TestCase
 
         // `@qmx-threshold` is the other reader's family; answering that it carried
         // every such tag keeps this probe about the suppression tags alone.
-        foreach ($extractor->extract($node, $subject, ControlScope::Callable, static fn(): bool => true) as $suppression) {
+        foreach ($extractor->extract(
+            $node,
+            $subject,
+            ControlScope::Callable,
+            DeclarationReach::whole($node->getEndLine() > 0 ? $node->getEndLine() : null, 'test'),
+            static fn(): bool => true,
+        ) as $suppression) {
             if ($suppression->type === $expectedType) {
                 return true;
             }
@@ -341,7 +344,7 @@ final class LlmsIndexRegisteredSurfaceTest extends TestCase
 
     private static function classNodeWithDoc(string $tagLine): Class_
     {
-        $doc = new Doc(\sprintf("/**\n * %s\n */", $tagLine));
+        $doc = new Doc(\sprintf("/**\n * %s\n */", $tagLine), 1, 0);
         $node = new Class_('Probe');
         $node->setDocComment($doc);
 
@@ -391,7 +394,7 @@ final class LlmsIndexRegisteredSurfaceTest extends TestCase
      * (`` `token` ``), matching the file's own convention for presets, root
      * keys, output formats and directives. A generic word-boundary match is
      * not enough here: `` `text` `` would falsely match inside
-     * `` `text-verbose` `` 's neighbouring "(text table)" prose, and `` `ci` ``
+     * `` `context` ``, and `` `ci` ``
      * would falsely match inside the trailing `` `--preset=strict,ci` ``
      * example — both would let a real removal of the standalone token pass.
      */

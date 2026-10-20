@@ -9,8 +9,8 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Infrastructure\Git\ChangedFile;
-use Qualimetrix\Infrastructure\Git\ChangeStatus;
+use Qualimetrix\Infrastructure\Git\ChangeListing\ChangedFile;
+use Qualimetrix\Infrastructure\Git\ChangeListing\ChangeStatus;
 use Qualimetrix\Infrastructure\Git\GitClient;
 use RuntimeException;
 use Stringable;
@@ -90,6 +90,49 @@ final class GitSubdirScopeTest extends TestCase
         self::assertStringContainsString('Skipped 1 changed file(s)', $warnings[0]);
         self::assertStringContainsString('did not resolve inside the project root', $warnings[0]);
         self::assertStringContainsString('Outsider.php', $warnings[0]);
+    }
+
+    #[Test]
+    public function itIgnoresRepositoryRelativeDiffConfiguration(): void
+    {
+        file_put_contents($this->projectRoot . '/Inside.php', "<?php\n");
+        $this->exec('git add -A', $this->gitToplevel);
+        $this->exec('git config diff.relative true', $this->gitToplevel);
+
+        $client = new GitClient(AbsolutePath::fromString($this->projectRoot));
+        self::assertSame(['Inside.php'], array_map(
+            static fn(ChangedFile $file): string => $file->path->value(),
+            $client->getChangedFiles('staged'),
+        ));
+
+        $count = getenv('GIT_CONFIG_COUNT');
+        self::assertIsString($count);
+        self::assertMatchesRegularExpression('/^(?:0|[1-9][0-9]*)$/D', $count);
+        $index = (int) $count;
+        $keyName = 'GIT_CONFIG_KEY_' . $index;
+        $valueName = 'GIT_CONFIG_VALUE_' . $index;
+        $previous = [];
+        foreach (['GIT_CONFIG_COUNT', $keyName, $valueName] as $key) {
+            $previous[$key] = getenv($key);
+        }
+
+        try {
+            putenv($keyName . '=diff.relative');
+            putenv($valueName . '=true');
+            putenv('GIT_CONFIG_COUNT=' . ($index + 1));
+
+            self::assertSame("false\n", $this->commandOutput('git config --get maintenance.auto', $this->gitToplevel));
+            self::assertSame("0\n", $this->commandOutput('git config --get gc.auto', $this->gitToplevel));
+
+            self::assertSame(['Inside.php'], array_map(
+                static fn(ChangedFile $file): string => $file->path->value(),
+                $client->getChangedFiles('staged'),
+            ));
+        } finally {
+            foreach ($previous as $key => $value) {
+                putenv($value === false ? $key : $key . '=' . $value);
+            }
+        }
     }
 
     #[Test]
@@ -273,6 +316,14 @@ final class GitSubdirScopeTest extends TestCase
     {
         $process = Process::fromShellCommandline($command, $cwd);
         $process->mustRun();
+    }
+
+    private function commandOutput(string $command, string $cwd): string
+    {
+        $process = Process::fromShellCommandline($command, $cwd);
+        $process->mustRun();
+
+        return $process->getOutput();
     }
 
     private function removeRecursive(string $dir): void

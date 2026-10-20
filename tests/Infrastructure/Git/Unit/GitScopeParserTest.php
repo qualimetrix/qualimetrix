@@ -46,6 +46,8 @@ final class GitScopeParserTest extends TestCase
         yield 'branch name' => ['git:main', 'main'];
         yield 'two-dot syntax' => ['git:main..HEAD', 'main..HEAD'];
         yield 'three-dot syntax' => ['git:main...HEAD', 'main...HEAD'];
+        yield 'two-dot empty endpoints' => ['git:..', '..'];
+        yield 'three-dot empty endpoints' => ['git:...', '...'];
         yield 'commit ref' => ['git:HEAD~3', 'HEAD~3'];
         yield 'commit hash' => ['git:abc123', 'abc123'];
         yield 'complex ref' => ['git:origin/feature/test', 'origin/feature/test'];

@@ -17,8 +17,8 @@ declare(strict_types=1);
  *   3. is checked afterwards: the named directory is absent or was created by
  *      this run, and the run is single — the probe's run directory is fresh,
  *      so no file this probe wrote could have been read by it;
- *   4. FAILS, rather than reporting, when the default `.qmx-cache` appears
- *      anywhere under the run directory: that is the product ignoring the
+ *   4. FAILS, rather than reporting, when the default `qmx/` appears under
+ *      this run's XDG home: that is the product ignoring the
  *      directory it was given, and a measurement taken under it is not a
  *      measurement.
  *
@@ -50,15 +50,6 @@ final readonly class ProcessObservation
         public string $cacheNote,
     ) {}
 
-    /**
-     * The RAW reading of one run: what the process did, before anything is
-     * judged. Exit 2 lands in the unframed branch here and is turned into the
-     * accepted observation it actually is by
-     * {@see Observation::ofMeasured()} — the one place an exit code becomes a
-     * verdict input, so that the frozen half and a fresh run cannot be judged
-     * by two rules. Deciding it here instead would leave the frozen half,
-     * which stores this raw wording, on the old rule.
-     */
     public function outcome(): string
     {
         if ($this->exit === 3 && str_contains($this->stderrHead . $this->stdoutHead, 'Configuration error:')) {
@@ -69,19 +60,23 @@ final readonly class ProcessObservation
             return Observation::REFUSED_UNFRAMED;
         }
 
-        if ($this->exit !== 0 && $this->exit !== 1) {
-            return Observation::REFUSED_UNFRAMED;
-        }
-
-        if ($this->exit === 1) {
+        if ($this->exit === 5) {
             return Observation::CRASHED;
         }
 
-        return Observation::ACCEPTED;
+        return \in_array($this->exit, [0, 1, 2], true)
+            ? Observation::ACCEPTED
+            : Observation::REFUSED_UNFRAMED;
     }
 
     public function text(): string
     {
+        // The finding policy observes the code alone; report heads carry
+        // timestamps, and the frozen exit-2 observations use this same form.
+        if ($this->exit === 1 || $this->exit === 2) {
+            return 'exit=' . $this->exit;
+        }
+
         return $this->outcome() === Observation::ACCEPTED
             ? $this->digest
             : 'exit=' . $this->exit . ' ' . trim($this->stderrHead . ' ' . $this->stdoutHead);
@@ -90,8 +85,6 @@ final readonly class ProcessObservation
 
 final class ProcessProbe
 {
-    private const string DEFAULT_CACHE_DIRECTORY = '.qmx-cache';
-
     private int $runs = 0;
 
     /** @var array<string, ProcessObservation> */
@@ -161,8 +154,11 @@ final class ProcessProbe
         $runDirectory = $this->scratchRoot . '/run/' . $key;
         self::remove($runDirectory);
         self::copy($this->repositoryRoot . '/promise-effect/fixtures/probe', $runDirectory);
+        $fixtureDirectories = $cacheOwned ? self::topLevelDirectories($runDirectory) : [];
 
-        $cacheDirectory = $runDirectory . '/probe-cache';
+        $cacheDirectory = $this->scratchRoot . '/cache/' . $key;
+        $xdgHome = $this->scratchRoot . '/xdg/' . $key;
+        $defaultCacheDirectory = $xdgHome . '/qmx';
 
         if (!$cacheOwned) {
             // Step 1: explicit and unique. Written into the document rather
@@ -173,7 +169,10 @@ final class ProcessProbe
 
         // Step 2.
         self::remove($cacheDirectory);
-        self::remove($runDirectory . '/' . self::DEFAULT_CACHE_DIRECTORY);
+        self::remove($xdgHome);
+        if (!mkdir($xdgHome, 0o700, true)) {
+            throw new ProbeFailure('cannot create isolated cache home ' . $xdgHome);
+        }
 
         $document['paths'] ??= ['src'];
         file_put_contents($runDirectory . '/qmx.yaml', Yaml::dump($document, 8, 2));
@@ -217,7 +216,7 @@ final class ProcessProbe
         // for the same reason "cannot start" was: a read failure means the
         // product did run, and its output is what could not be read.
         try {
-            $result = ChildProcess::run($argv, $runDirectory);
+            $result = ChildProcess::run($argv, $runDirectory, environment: array_merge(getenv(), ['XDG_CACHE_HOME' => $xdgHome]));
         } catch (RuntimeException $failure) {
             throw new ProbeFailure('the product did not complete: ' . $failure->getMessage(), 0, $failure);
         }
@@ -230,10 +229,10 @@ final class ProcessProbe
         ++$this->runs;
 
         // Step 4, before anything is believed.
-        if (is_dir($runDirectory . '/' . self::DEFAULT_CACHE_DIRECTORY) && !$cacheOwned) {
+        if (is_dir($defaultCacheDirectory) && !$cacheOwned) {
             throw new ProbeFailure(\sprintf(
                 'the product created %s while it was told to cache in %s — the probe measures nothing',
-                self::DEFAULT_CACHE_DIRECTORY,
+                $defaultCacheDirectory,
                 $cacheDirectory,
             ));
         }
@@ -246,14 +245,14 @@ final class ProcessProbe
         }
 
         if ($cacheOwned) {
-            $cacheNote = is_dir($runDirectory . '/' . self::DEFAULT_CACHE_DIRECTORY)
+            $cacheNote = is_dir($defaultCacheDirectory)
                 ? 'cache-owned: default directory appeared'
                 : 'cache-owned: no default directory';
         }
 
         $observation = new ProcessObservation(
             $exit,
-            self::observable($observable, $stdout, $runDirectory, $cacheDirectory, $logFile),
+            self::observable($observable, $stdout, $runDirectory, $cacheDirectory, $defaultCacheDirectory, $logFile, $cacheOwned ? $fixtureDirectories : null),
             $this->tokenize(substr($stdout, 0, 400), $runDirectory),
             $this->tokenize(substr($stderr, 0, 400), $runDirectory),
             $cacheNote,
@@ -275,8 +274,10 @@ final class ProcessProbe
      * `parallel.workers` a number that only reaches the debug log — and a
      * stand that asked all of them for a finding digest would report the three
      * of them as NOT OBSERVABLE and call that a property of the product.
+     *
+     * @param list<string>|null $fixtureDirectories
      */
-    private static function observable(string $observable, string $stdout, string $runDirectory, string $cacheDirectory, string $logFile): string
+    private static function observable(string $observable, string $stdout, string $runDirectory, string $cacheDirectory, string $defaultCacheDirectory, string $logFile, ?array $fixtureDirectories = null): string
     {
         // A witness whose envelope enables a second rule beside the probed
         // one cannot read "the run said something" as "this producer spoke".
@@ -294,7 +295,8 @@ final class ProcessProbe
             'stdout' => 'shape=' . substr(md5(preg_replace('/\\d/', '#', $stdout) ?? $stdout), 0, 10),
             'exitcode' => 'exit-only',
             'cachedir' => 'named=' . (is_dir($cacheDirectory) ? self::countFiles($cacheDirectory) : 'absent')
-                . ' default=' . (is_dir($runDirectory . '/' . self::DEFAULT_CACHE_DIRECTORY) ? self::countFiles($runDirectory . '/' . self::DEFAULT_CACHE_DIRECTORY) : 'absent'),
+                . ' default=' . (is_dir($defaultCacheDirectory) ? self::countFiles($defaultCacheDirectory) : 'absent')
+                . ($fixtureDirectories === null ? '' : ' owned=' . self::newDirectoryCounts($runDirectory, $fixtureDirectories)),
             'logfile' => self::workerDecision($logFile),
             default => self::digest($stdout),
         };
@@ -328,6 +330,40 @@ final class ProcessProbe
         sort($tuples, \SORT_STRING);
 
         return substr(md5(implode("\n", $tuples)), 0, 10) . '/n=' . \count($tuples);
+    }
+
+    /** @return list<string> */
+    private static function topLevelDirectories(string $runDirectory): array
+    {
+        $entries = scandir($runDirectory);
+
+        if ($entries === false) {
+            throw new ProbeFailure('cannot list the owned probe directory');
+        }
+
+        $directories = [];
+
+        foreach ($entries as $entry) {
+            if ($entry !== '.' && $entry !== '..' && is_dir($runDirectory . '/' . $entry)) {
+                $directories[] = $entry;
+            }
+        }
+
+        sort($directories, \SORT_STRING);
+
+        return $directories;
+    }
+
+    /** @param list<string> $fixtureDirectories */
+    private static function newDirectoryCounts(string $runDirectory, array $fixtureDirectories): string
+    {
+        $counts = [];
+
+        foreach (array_diff(self::topLevelDirectories($runDirectory), $fixtureDirectories) as $name) {
+            $counts[] = $name . ':' . self::countFiles($runDirectory . '/' . $name);
+        }
+
+        return $counts === [] ? 'absent' : implode(',', $counts);
     }
 
     private static function countFiles(string $directory): string

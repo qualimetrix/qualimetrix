@@ -1,0 +1,68 @@
+--- candidate
++++ reference (mapped)
+@@ -4,3 +4,3 @@
+-  Channel: computed.branch-load
+-    baseline:      (none)
+-    now:           37.8
++  Channel: health.complexity
++    baseline:      (none)
++    now:           55.3
+@@ -16,9 +16,9 @@
+-  Channel: health.complexity
+-    baseline:      (none)
+-    now:           55.3
+-    qmx.yaml:      (not resolvable from configuration)
+-    annotation:    (none)
+-
+-  Channel: health.coupling
+-    baseline:      (none)
+-    now:           83.1
++  Channel: health.coupling
++    baseline:      (none)
++    now:           83.1
++    qmx.yaml:      (not resolvable from configuration)
++    annotation:    (none)
++
++  Channel: health.typing
++    baseline:      (none)
++    now:           55.6
+@@ -40,3 +40,3 @@
+-  Channel: health.typing
+-    baseline:      (none)
+-    now:           55.6
++  Channel: computed.branch-load
++    baseline:      (none)
++    now:           37.8
+@@ -50,3 +50,3 @@
+-  Channel: computed.branch-load
+-    baseline:      (none)
+-    now:           37.8
++  Channel: health.complexity
++    baseline:      (none)
++    now:           55.3
+@@ -62,9 +62,9 @@
+-  Channel: health.complexity
+-    baseline:      (none)
+-    now:           55.3
+-    qmx.yaml:      (not resolvable from configuration)
+-    annotation:    (none)
+-
+-  Channel: health.coupling
+-    baseline:      (none)
+-    now:           83.1
++  Channel: health.coupling
++    baseline:      (none)
++    now:           83.1
++    qmx.yaml:      (not resolvable from configuration)
++    annotation:    (none)
++
++  Channel: health.typing
++    baseline:      (none)
++    now:           55.6
+@@ -86,3 +86,3 @@
+-  Channel: health.typing
+-    baseline:      (none)
+-    now:           55.6
++  Channel: computed.branch-load
++    baseline:      (none)
++    now:           37.8

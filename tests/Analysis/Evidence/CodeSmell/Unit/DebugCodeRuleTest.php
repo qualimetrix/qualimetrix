@@ -29,7 +29,7 @@ final class DebugCodeRuleTest extends TestCase
         $rule = new DebugCodeRule(new CodeSmellOptions());
 
         self::assertSame('code-smell.debug-code', $rule->getName());
-        self::assertSame('Detects debug code (var_dump, print_r, dd, etc)', $rule->getDescription());
+        self::assertSame('Detects debug code (var_dump, print_r, dd, etc)', $rule::getDescription());
     }
 
     #[Test]

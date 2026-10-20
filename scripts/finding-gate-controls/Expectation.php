@@ -20,6 +20,7 @@ final class Expectation
     public function __construct(
         public readonly string $failureClass,
         public readonly ?string $scopeContains = null,
+        public readonly bool $exactScope = false,
     ) {
         if (!\in_array($failureClass, FailureClass::ALL, true)) {
             throw new RuntimeException(\sprintf(
@@ -28,12 +29,15 @@ final class Expectation
                 $failureClass,
             ));
         }
+        if ($exactScope && ($scopeContains === null || $scopeContains === '')) {
+            throw new RuntimeException('An exact failure expectation requires a nonempty scope.');
+        }
     }
 
     public function matches(string $failureClass, string $scope): bool
     {
         return $failureClass === $this->failureClass
-            && ($this->scopeContains === null || str_contains($scope, $this->scopeContains));
+            && ($this->scopeContains === null || ($this->exactScope ? $scope === $this->scopeContains : str_contains($scope, $this->scopeContains)));
     }
 
     public function label(): string

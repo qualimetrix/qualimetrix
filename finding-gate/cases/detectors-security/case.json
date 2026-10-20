@@ -1,0 +1,34 @@
+{
+    "id": "detectors-security",
+    "description": "The security family with independent file, callable and class credential and injection inputs.",
+    "coverage": "authoritative",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "args": [
+        "--rule-opt=coupling.class-rank:warning=2",
+        "--rule-opt=coupling.class-rank:error=2",
+        "--rule-opt=coupling.distance:max_distance_warning=2",
+        "--rule-opt=coupling.distance:max_distance_error=2"
+    ],
+    "channels": [
+        "code-smell.superglobals@callable",
+        "code-smell.superglobals@file",
+        "security.command-injection@callable",
+        "security.command-injection@file",
+        "security.hardcoded-credentials@callable",
+        "security.hardcoded-credentials@class",
+        "security.hardcoded-credentials@file",
+        "security.sensitive-parameter@callable",
+        "security.sensitive-parameter@file",
+        "security.sql-injection@callable",
+        "security.sql-injection@file",
+        "security.xss@callable",
+        "security.xss@file"
+    ],
+    "explainSubjects": [
+        "declaration:callable:Corpus\\Security\\Login::authenticate@src/Login.php",
+        "declaration:callable:Corpus\\Security\\Output::greet@src/Output.php"
+    ]
+}

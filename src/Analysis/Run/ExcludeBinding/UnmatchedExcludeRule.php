@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\ExcludeBinding;
 
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
+
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
+use Qualimetrix\Analysis\Finding\Contract\Population\ContextGuard;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Rule\AbstractRule;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
@@ -26,7 +30,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * {@see AnalysisContext} — nor may it become part of it, since ADR 0022
  * forbids a new port into rule execution for it. So the finding is assembled
  * by {@see UnmatchedExcludeAudit} on Run's own side of the pipeline and passed
- * through `RuleExecutionInterface::publishable()`, exactly as
+ * through `RulePublicationInterface::publishable()`, exactly as
  * `annotation.unused-directive` is. This class is what makes that assembled
  * finding a *channel*: without a registered rule there is no entry in
  * `qmx rules`, no `--disable-rule`, no severity and no baseline identity.
@@ -48,10 +52,14 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * both are compared surfaces, so widening it is a step of its own.
  *
  * **Statelessness:** trivially — `analyze()` does nothing at all.
+ *
+ * @qmx-threshold coupling.instability 0.818183 -- Discovery diagnostic metadata is composed through its owner and registered rule metadata consumers.
  */
 final class UnmatchedExcludeRule extends AbstractRule
 {
     public const string NAME = UnmatchedExcludeOptions::CHANNEL;
+
+    public const string DESCRIPTION = 'Reports exclude selectors matching no project entries or only entries another selector removes; unlistable entries and selectors hidden by another source cannot be judged';
 
     public const string DOCS_PAGE = 'rules/discovery.md';
 
@@ -62,16 +70,6 @@ final class UnmatchedExcludeRule extends AbstractRule
 
     /** There is no measured quantity here to retune. */
     public const bool SUPPORTS_THRESHOLD_OVERRIDE = false;
-
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public function getDescription(): string
-    {
-        return 'Reports an exclude pattern that removed no directory from the analysed set';
-    }
 
     /**
      * @return class-string<UnmatchedExcludeOptions>
@@ -92,7 +90,14 @@ final class UnmatchedExcludeRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Project),
+            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)->withGates(new PopulationGate(
+                'selector-verdict',
+                new FindingChannel(self::NAME),
+                SymbolLevel::Project,
+                'configured-discovery-selector',
+                new ContextGuard('excludeVerdictJudged'),
+                'The captured exclude selector verdict is unjudged.',
+            )),
         ];
     }
 

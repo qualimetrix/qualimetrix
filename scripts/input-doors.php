@@ -157,7 +157,7 @@ if (isset($arguments['freeze-before']) || isset($arguments['refreeze-before'])) 
     $probe = [];
     exec(escapeshellarg(\PHP_BINARY) . ' -r ' . escapeshellarg(
         'require ' . var_export($resolved . '/vendor/autoload.php', true) . ';'
-        . ' echo (new ReflectionClass(Qualimetrix\Infrastructure\Console\Command\CheckCommand::class))->getFileName();',
+        . ' echo (new ReflectionClass(Qualimetrix\Infrastructure\Console\Check\CheckCommand::class))->getFileName();',
     ), $probe);
     $resolvedFrom = $probe[0] ?? '';
 

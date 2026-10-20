@@ -27,7 +27,7 @@ use Symfony\Component\Process\Process;
  * not against the git top-level.
  *
  * Companion to {@see GitSubdirScopeTest} (which pins T10 at the git-output
- * translation boundary, {@see \Qualimetrix\Infrastructure\Git\NameStatusListing::changedFiles()}).
+ * translation boundary, {@see \Qualimetrix\Infrastructure\Git\ChangeListing\NameStatusListing::changedFiles()}).
  *
  * Differential setup: two distinct files share the same project-relative path,
  * one at `{gitToplevel}/src/Service.php` and one at

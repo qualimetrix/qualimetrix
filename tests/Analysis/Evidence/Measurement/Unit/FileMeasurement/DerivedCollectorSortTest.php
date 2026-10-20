@@ -21,7 +21,6 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
@@ -172,7 +171,7 @@ final class DerivedCollectorSortTest extends TestCase
         $callableMetrics = new MetricBag();
         foreach ($metrics->all() as $name => $value) {
             $callableMetrics = $callableMetrics->with(explode(':', $name, 2)[0], $value);
-        } return new CallableWithMetrics(DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'method'), RelativePath::fromString('DerivedCollectorSortTest.php'), DeclarationOrdinal::fromRank(0)), 100, CallableKind::Method, null, null, new LogicalClassPath(SymbolPath::forClass('App', 'Service')), $callableMetrics);
+        } return new CallableWithMetrics(DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'method'), RelativePath::fromString('DerivedCollectorSortTest.php'), DeclarationOrdinal::fromRank(0)), 100, CallableKind::Method, null, null, DeclarationPath::of(SymbolPath::forClass('App', 'Service'), DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'method'), RelativePath::fromString('DerivedCollectorSortTest.php'), DeclarationOrdinal::fromRank(0))->file, DeclarationOrdinal::fromRank(0)), $callableMetrics);
     }
     private function key(string $metric): string
     {

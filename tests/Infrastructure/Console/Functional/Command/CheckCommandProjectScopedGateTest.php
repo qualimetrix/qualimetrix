@@ -6,10 +6,10 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Functional\Command;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\Application;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Application\Application;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use RuntimeException;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -181,7 +181,7 @@ final class CheckCommandProjectScopedGateTest extends TestCase
         $command = $container->get(CheckCommand::class);
         /** @var RefusalPresenter $refusalPresenter */
         $refusalPresenter = $container->get(RefusalPresenter::class);
-        $application = new Application(new ErrorStream(), $refusalPresenter);
+        $application = new Application(new ErrorStream(), $refusalPresenter, static fn() => new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $application->addCommand($command);
 
         $tester = new CommandTester($command);

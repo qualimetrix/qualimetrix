@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Support;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationOptions;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationRule;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidenceCollector;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule;
+use Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidenceCollector;
+use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassOptions;
+use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassRule;
 
 /**
  * Every layer verdict over one shared walk, in the order the executor runs
@@ -37,16 +40,24 @@ final class LayerVerdicts
 
     private readonly LayerDeclarationValidator $validator;
 
+    private readonly LayerDeclarationRule $declarationRule;
+
+    private readonly LayerDeclarationOptions $declarationOptions;
+
     public function __construct(
         LayerViolationOptions $options,
         ArchitecturePolicy $processor,
         ?UnassignedClassOptions $unassignedClassOptions = null,
+        ?LayerDeclarationOptions $declarationOptions = null,
     ) {
+        $declarationOptions ??= new LayerDeclarationOptions();
+        $this->declarationOptions = $declarationOptions;
         $unassignedClassOptions ??= new UnassignedClassOptions();
-        $collector = new LayerEvidenceCollector($options, $unassignedClassOptions, $processor);
+        $collector = new LayerEvidenceCollector($options, $unassignedClassOptions, $declarationOptions, $processor);
         $this->rule = new LayerViolationRule($options, $collector);
         $this->unassignedClassRule = new UnassignedClassRule($unassignedClassOptions, $collector);
-        $this->validator = new LayerDeclarationValidator($collector, $options);
+        $this->declarationRule = new LayerDeclarationRule($declarationOptions, $collector);
+        $this->validator = new LayerDeclarationValidator($collector);
     }
 
     /**
@@ -56,8 +67,9 @@ final class LayerVerdicts
     {
         return [
             ...$this->rule->analyze($context),
+            ...($this->declarationOptions->isEnabled() ? $this->declarationRule->analyze($context) : []),
+            ...($this->declarationOptions->isEnabled() ? $this->validator->validate($context) : []),
             ...$this->unassignedClassRule->analyze($context),
-            ...$this->validator->validate($context),
         ];
     }
 }

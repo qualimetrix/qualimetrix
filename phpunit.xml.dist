@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
-         bootstrap="vendor/autoload.php"
+         bootstrap="tests/bootstrap.php"
          colors="true"
          cacheDirectory=".phpunit.cache"
          executionOrder="depends,defects"
@@ -13,11 +13,16 @@
          failOnDeprecation="true"
          failOnNotice="true"
          failOnPhpunitDeprecation="true"
+         failOnPhpunitWarning="true"
          beStrictAboutChangesToGlobalState="true"
          displayDetailsOnTestsThatTriggerDeprecations="true"
          displayDetailsOnTestsThatTriggerWarnings="true"
          displayDetailsOnTestsThatTriggerErrors="true"
          displayDetailsOnTestsThatTriggerNotices="true">
+
+    <extensions>
+        <bootstrap class="Qualimetrix\Tests\TestSupport\WorkingDirectory\SuiteWorkingDirectoryExtension"/>
+    </extensions>
 
     <php>
         <ini name="memory_limit" value="512M"/>
@@ -25,6 +30,7 @@
 
     <testsuites>
         <testsuite name="Unit">
+            <directory>tests/Core/FileTarget/Unit</directory>
             <directory>tests/Core/Path/Unit</directory>
             <directory>tests/Core/Symbol/Unit</directory>
             <directory>tests/Core/Unit</directory>
@@ -42,6 +48,7 @@
             <directory>tests/Analysis/Evidence/Security/Unit</directory>
             <directory>tests/Analysis/Evidence/Size/Unit</directory>
             <directory>tests/Analysis/Configuration/Unit</directory>
+            <directory>tests/Analysis/ProjectManifest/Unit</directory>
             <directory>tests/Analysis/Evidence/Duplication/Unit</directory>
             <directory>tests/Analysis/Evidence/DependencyModel/Unit</directory>
             <directory>tests/Analysis/Evidence/Measurement/Unit</directory>
@@ -113,6 +120,7 @@
             <directory>governance/MeasurementVocabulary</directory>
             <directory>governance/MeasurementIdentity</directory>
             <directory>governance/GeneratedArtifactFreshness</directory>
+            <directory>governance/PublishedText</directory>
             <directory>governance/FormatOptionKeys</directory>
             <directory>governance/DirectiveVocabulary</directory>
             <directory>governance/ControlRigLedger</directory>

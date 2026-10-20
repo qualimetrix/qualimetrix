@@ -30,11 +30,9 @@ use Qualimetrix\Core\Pattern\PathPattern;
  * `RuleConfigurationInterface`'s `is*Excluded()` predicates; that recomputation
  * could name the wrong producer wherever a rule instance publishes findings
  * under several producer names (the computed-metric family), silently
- * dropping the finding from the composition. Only the *inert*-pattern
- * enumeration below still reads `RuleConfigurationInterface::all()` — that is
- * not a decision predicate, it is the full universe of configured patterns a
- * "which pattern fired nothing" answer has to range over, and no attribution
- * exists for a pattern nothing ever tested.
+ * dropping the finding from the composition. The inert-pattern enumeration
+ * reads the current typed snapshot: no attribution exists for a pattern
+ * nothing ever tested.
  */
 final readonly class RuleExclusionLedgerAttributor
 {
@@ -117,16 +115,15 @@ final readonly class RuleExclusionLedgerAttributor
     {
         $inert = [];
 
-        foreach ($ruleConfiguration->all() as $ruleName => $ruleOptions) {
-            if (!\is_array($ruleOptions)) {
-                continue;
-            }
+        $snapshot = $ruleConfiguration->resolvedOptions();
+        foreach ($snapshot->all() as $ruleName => $ruleOptions) {
+            $suppression = $snapshot->suppressionFor($ruleName);
 
             $inert = [
                 ...$inert,
-                ...$this->inertFor(SuppressionMechanism::RulePathSuppression, $ruleName, $ruleConfiguration->pathExclusions($ruleName), $pathHitsByRule),
-                ...$this->inertFor(SuppressionMechanism::RuleNamespaceSuppression, $ruleName, $ruleConfiguration->namespaceExclusions($ruleName), $namespaceHitsByRule),
-                ...$this->inertForChannels($ruleName, $ruleConfiguration->namespaceChannelExclusions($ruleName), $channelHitsByRule),
+                ...$this->inertFor(SuppressionMechanism::RulePathSuppression, $ruleName, $suppression->paths, $pathHitsByRule),
+                ...$this->inertFor(SuppressionMechanism::RuleNamespaceSuppression, $ruleName, $suppression->namespaces, $namespaceHitsByRule),
+                ...$this->inertForChannels($ruleName, $suppression->namespaceChannels, $channelHitsByRule),
             ];
         }
 

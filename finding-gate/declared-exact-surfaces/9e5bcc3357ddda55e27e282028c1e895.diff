@@ -1,0 +1,71 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 3822
++visible 3153
+@@ -11,2 +11,7 @@
+-    <error line="5" severity="error" message="Property type coverage is 0.0% (minimum: 50.0%). Add type declarations to properties" source="qmx.design.type-coverage.property"/>
+-    <error line="5" severity="error" message="Return type coverage is 0.0% (minimum: 50.0%). Add return type declarations to methods" source="qmx.design.type-coverage.return"/>
++    <error line="5" severity="error" message="Return type coverage is 0.0% (minimum: 50.0%). Add return type declarations to methods" source="qmx.design.type-coverage.return"/>
++    <error line="5" severity="error" message="Property type coverage is 0.0% (minimum: 50.0%). Add type declarations to properties" source="qmx.design.type-coverage.property"/>
++    <error line="5" severity="warning" message="Property count is 3, exceeds threshold of 2. Consider splitting the class or using composition" source="qmx.size.property-count"/>
++  </file>
++  <file name="src/Model/Order.php">
++    <error line="5" severity="error" message="God Class detected (4/4 criteria): high WMC (4 &gt;= 4), high LCOM (2 &gt;= 1), low TCC (0.33 &lt; 0.90), large size (27 &gt;= 10 LOC)" source="qmx.design.god-class"/>
++    <error line="5" severity="warning" message="Method count is 4, reaches threshold of 4. Consider splitting into smaller focused classes" source="qmx.size.method-count"/>
+@@ -24,20 +29,6 @@
+-  <file name="src/Model/Order.php">
+-    <error line="5" severity="error" message="God Class detected (4/4 criteria): high WMC (4 &gt;= 4), high LCOM (2 &gt;= 1), low TCC (0.33 &lt; 0.90), large size (27 &gt;= 10 LOC)" source="qmx.design.god-class"/>
+-    <error line="5" severity="warning" message="Method count is 4, reaches threshold of 4. Consider splitting into smaller focused classes" source="qmx.size.method-count"/>
+-    <error line="5" severity="warning" message="Property count is 3, exceeds threshold of 2. Consider splitting the class or using composition" source="qmx.size.property-count"/>
+-  </file>
+-  <file name="src/Hierarchy/Base.php">
+-    <error line="5" severity="warning" message="NOC (Number of Children) is 3, exceeds threshold of 2. Consider using interfaces instead of inheritance" source="qmx.design.noc"/>
+-  </file>
+-  <file name="src/Anonymous">
+-    <error line="1" severity="error" message="Corpus\Design\Anonymous: Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
+-  </file>
+-  <file name="src/Hierarchy">
+-    <error line="1" severity="error" message="Corpus\Design\Hierarchy: Class count is 9, exceeds threshold of 6. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
+-  </file>
+-  <file name="src/Model">
+-    <error line="1" severity="warning" message="Corpus\Design\Model: Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
+-  </file>
+-</checkstyle>
+-
+-invocation-format:checkstyle 3822
++  <file name="src/Hierarchy/Base.php">
++    <error line="5" severity="warning" message="NOC (Number of Children) is 3, exceeds threshold of 2. Consider using interfaces instead of inheritance" source="qmx.design.noc"/>
++  </file>
++</checkstyle>
++
++invocation-format:checkstyle 3153
+@@ -53,2 +44,7 @@
+-    <error line="5" severity="error" message="Property type coverage is 0.0% (minimum: 50.0%). Add type declarations to properties" source="qmx.design.type-coverage.property"/>
+-    <error line="5" severity="error" message="Return type coverage is 0.0% (minimum: 50.0%). Add return type declarations to methods" source="qmx.design.type-coverage.return"/>
++    <error line="5" severity="error" message="Return type coverage is 0.0% (minimum: 50.0%). Add return type declarations to methods" source="qmx.design.type-coverage.return"/>
++    <error line="5" severity="error" message="Property type coverage is 0.0% (minimum: 50.0%). Add type declarations to properties" source="qmx.design.type-coverage.property"/>
++    <error line="5" severity="warning" message="Property count is 3, exceeds threshold of 2. Consider splitting the class or using composition" source="qmx.size.property-count"/>
++  </file>
++  <file name="src/Model/Order.php">
++    <error line="5" severity="error" message="God Class detected (4/4 criteria): high WMC (4 &gt;= 4), high LCOM (2 &gt;= 1), low TCC (0.33 &lt; 0.90), large size (27 &gt;= 10 LOC)" source="qmx.design.god-class"/>
++    <error line="5" severity="warning" message="Method count is 4, reaches threshold of 4. Consider splitting into smaller focused classes" source="qmx.size.method-count"/>
+@@ -66,16 +62,2 @@
+-  <file name="src/Model/Order.php">
+-    <error line="5" severity="error" message="God Class detected (4/4 criteria): high WMC (4 &gt;= 4), high LCOM (2 &gt;= 1), low TCC (0.33 &lt; 0.90), large size (27 &gt;= 10 LOC)" source="qmx.design.god-class"/>
+-    <error line="5" severity="warning" message="Method count is 4, reaches threshold of 4. Consider splitting into smaller focused classes" source="qmx.size.method-count"/>
+-    <error line="5" severity="warning" message="Property count is 3, exceeds threshold of 2. Consider splitting the class or using composition" source="qmx.size.property-count"/>
+-  </file>
+-  <file name="src/Hierarchy/Base.php">
+-    <error line="5" severity="warning" message="NOC (Number of Children) is 3, exceeds threshold of 2. Consider using interfaces instead of inheritance" source="qmx.design.noc"/>
+-  </file>
+-  <file name="src/Anonymous">
+-    <error line="1" severity="error" message="Corpus\Design\Anonymous: Class count is 7, exceeds threshold of 6. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
+-  </file>
+-  <file name="src/Hierarchy">
+-    <error line="1" severity="error" message="Corpus\Design\Hierarchy: Class count is 9, exceeds threshold of 6. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
+-  </file>
+-  <file name="src/Model">
+-    <error line="1" severity="warning" message="Corpus\Design\Model: Class count is 3, exceeds threshold of 2. Consider splitting into sub-namespaces" source="qmx.size.class-count"/>
++  <file name="src/Hierarchy/Base.php">
++    <error line="5" severity="warning" message="NOC (Number of Children) is 3, exceeds threshold of 2. Consider using interfaces instead of inheritance" source="qmx.design.noc"/>

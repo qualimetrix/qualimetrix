@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Configuration\Pipeline\Stage;
 
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
-use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface;
 
 /**
  * Auto-discovers paths from composer.json autoload (priority: 10).
@@ -27,7 +27,7 @@ final class ComposerDiscoveryStage implements ConfigurationStageInterface
     private const int PRIORITY = 10;
 
     public function __construct(
-        private readonly ComposerAutoloadPathReaderInterface $composerReader,
+        private readonly ComposerManifestReaderInterface $composerReader,
     ) {}
 
     public function priority(): int
@@ -42,10 +42,9 @@ final class ComposerDiscoveryStage implements ConfigurationStageInterface
 
     public function apply(ConfigurationResolutionRequest $request): ?ConfigurationLayer
     {
-        $composerPath = $request->workingDirectory->value() . '/composer.json';
-
-        $production = $this->composerReader->productionAutoloadTargets($composerPath) ?? [];
-        $development = $this->composerReader->developmentAutoloadTargets($composerPath) ?? [];
+        $facts = $this->composerReader->read($request->workingDirectory);
+        $production = $facts->productionTargets();
+        $development = $facts->developmentTargets();
 
         if ($production === [] && $development === []) {
             return null;

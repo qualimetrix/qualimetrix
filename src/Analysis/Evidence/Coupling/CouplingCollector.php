@@ -6,10 +6,12 @@ namespace Qualimetrix\Analysis\Evidence\Coupling;
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassKeyScope;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -43,6 +45,11 @@ final class CouplingCollector implements GlobalContextCollectorInterface
         return [];
     }
 
+    public function getMetricReach(): MetricReach
+    {
+        return MetricReach::Run;
+    }
+
     public function provides(): array
     {
         return [
@@ -66,6 +73,8 @@ final class CouplingCollector implements GlobalContextCollectorInterface
             new MetricDefinition(
                 name: MetricName::COUPLING_CA,
                 collectedAt: SymbolLevel::Class_,
+                classKeyScope: ClassKeyScope::LogicalName,
+                directPublicationLevels: [SymbolLevel::Namespace_],
                 aggregations: [
                     SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
                 ],
@@ -73,6 +82,8 @@ final class CouplingCollector implements GlobalContextCollectorInterface
             new MetricDefinition(
                 name: MetricName::COUPLING_CE,
                 collectedAt: SymbolLevel::Class_,
+                classKeyScope: ClassKeyScope::LogicalName,
+                directPublicationLevels: [SymbolLevel::Namespace_],
                 aggregations: [
                     SymbolLevel::Namespace_->value => [
                         AggregationStrategy::Sum,
@@ -91,6 +102,8 @@ final class CouplingCollector implements GlobalContextCollectorInterface
             new MetricDefinition(
                 name: MetricName::COUPLING_CBO,
                 collectedAt: SymbolLevel::Class_,
+                classKeyScope: ClassKeyScope::LogicalName,
+                directPublicationLevels: [SymbolLevel::Namespace_],
                 aggregations: [
                     SymbolLevel::Namespace_->value => [
                         AggregationStrategy::Sum,
@@ -109,6 +122,8 @@ final class CouplingCollector implements GlobalContextCollectorInterface
             new MetricDefinition(
                 name: MetricName::COUPLING_INSTABILITY,
                 collectedAt: SymbolLevel::Class_,
+                classKeyScope: ClassKeyScope::LogicalName,
+                directPublicationLevels: [SymbolLevel::Namespace_],
                 aggregations: [
                     SymbolLevel::Namespace_->value => [AggregationStrategy::Average],
                 ],
@@ -116,6 +131,7 @@ final class CouplingCollector implements GlobalContextCollectorInterface
             new MetricDefinition(
                 name: MetricName::COUPLING_CE_PACKAGES,
                 collectedAt: SymbolLevel::Class_,
+                classKeyScope: ClassKeyScope::LogicalName,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [
                         AggregationStrategy::Average,
@@ -132,6 +148,7 @@ final class CouplingCollector implements GlobalContextCollectorInterface
             new MetricDefinition(
                 name: MetricName::COUPLING_CBO_APP,
                 collectedAt: SymbolLevel::Class_,
+                classKeyScope: ClassKeyScope::LogicalName,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [
                         AggregationStrategy::Sum,
@@ -150,6 +167,7 @@ final class CouplingCollector implements GlobalContextCollectorInterface
             new MetricDefinition(
                 name: MetricName::COUPLING_CE_FRAMEWORK,
                 collectedAt: SymbolLevel::Class_,
+                classKeyScope: ClassKeyScope::LogicalName,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [
                         AggregationStrategy::Sum,
@@ -213,7 +231,7 @@ final class CouplingCollector implements GlobalContextCollectorInterface
     ): void {
         foreach ($graph->getAllClasses() as $symbolPath) {
             // Skip classes not in the repository (e.g. vendor/external classes)
-            if (!$repository->has($symbolPath)) {
+            if (!$repository->hasSubject(\Qualimetrix\Core\Symbol\MetricSubject::logicalClass(new \Qualimetrix\Core\Symbol\LogicalClassPath($symbolPath)))) {
                 continue;
             }
 
@@ -347,7 +365,7 @@ final class CouplingCollector implements GlobalContextCollectorInterface
         $declaring = [];
 
         foreach ($graph->getAllClasses() as $class) {
-            if ($class->namespace !== null && $repository->has($class)) {
+            if ($class->namespace !== null && $repository->hasSubject(\Qualimetrix\Core\Symbol\MetricSubject::logicalClass(new \Qualimetrix\Core\Symbol\LogicalClassPath($class)))) {
                 $declaring[$class->namespace] = true;
             }
         }

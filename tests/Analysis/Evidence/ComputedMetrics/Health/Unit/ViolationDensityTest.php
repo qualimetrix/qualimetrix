@@ -8,7 +8,6 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummary;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummaryBuilder;
@@ -25,7 +24,7 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Reporting\Report;
+use Qualimetrix\Reporting\Contract\Report\Report;
 
 /**
  * Tests finding density computation in worst offenders.
@@ -40,8 +39,8 @@ final class ViolationDensityTest extends TestCase
     protected function setUp(): void
     {
         $this->builder = new HealthSummaryBuilder(
-            new HealthMetricCatalog(),
-            self::createStub(ComputedMetricDefinitionCatalogInterface::class),
+            new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())),
+            $this->defaultDefinitionCatalog(),
         );
     }
 
@@ -50,6 +49,7 @@ final class ViolationDensityTest extends TestCase
     {
         // 200-line class with 10 findings => density = 10/200*100 = 5.0
         $classSymbol = SymbolPath::forClass('App\\Service', 'HeavyService');
+        $classSymbolSubject = self::exactClassSubject($classSymbol, 'src/HeavyService.php');
         $classMetrics = MetricBag::fromArray([
             'health.overall' => 30.0,
             'health.complexity' => 25.0,
@@ -58,19 +58,18 @@ final class ViolationDensityTest extends TestCase
 
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray(['health.overall' => 60.0]),
-            classes: [new SymbolInfo($classSymbol, RelativePath::fromString('src/Service/HeavyService.php'), 1)],
-            classMetrics: ['class:App\\Service\\HeavyService' => $classMetrics],
+            classes: [new SymbolInfo($classSymbolSubject, RelativePath::fromString('src/HeavyService.php'), 1)],
+            classMetrics: [$classSymbolSubject->toCanonical() => $classMetrics],
         );
 
         $findings = $this->createFindingsForClass('App\\Service', 'HeavyService', 10);
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 10,
-            warningCount: 0,
             metrics: $metrics,
         );
 
@@ -99,17 +98,17 @@ final class ViolationDensityTest extends TestCase
             projectMetrics: MetricBag::fromArray(['health.overall' => 60.0]),
             namespaces: [new SymbolInfo($nsSymbol, RelativePath::fromString('src/Payment'), null)],
             namespaceMetrics: ['ns:App\\Payment' => $nsMetrics],
+            classes: [new SymbolInfo(self::exactClassSubject(SymbolPath::forClass('App\\Payment', 'PaymentService'), 'src/PaymentService.php'), RelativePath::fromString('src/PaymentService.php'), 1)],
         );
 
         $findings = $this->createFindingsForClass('App\\Payment', 'PaymentService', 5);
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 5,
-            warningCount: 0,
             metrics: $metrics,
         );
 
@@ -123,6 +122,7 @@ final class ViolationDensityTest extends TestCase
     public function itDensityZeroWhenNoFindings(): void
     {
         $classSymbol = SymbolPath::forClass('App\\Service', 'CleanService');
+        $classSymbolSubject = self::exactClassSubject($classSymbol, 'src/Service/CleanService.php');
         $classMetrics = MetricBag::fromArray([
             'health.overall' => 80.0,
             'health.complexity' => 75.0,
@@ -131,17 +131,16 @@ final class ViolationDensityTest extends TestCase
 
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray(['health.overall' => 80.0]),
-            classes: [new SymbolInfo($classSymbol, RelativePath::fromString('src/Service/CleanService.php'), 1)],
-            classMetrics: ['class:App\\Service\\CleanService' => $classMetrics],
+            classes: [new SymbolInfo($classSymbolSubject, RelativePath::fromString('src/Service/CleanService.php'), 1)],
+            classMetrics: [$classSymbolSubject->toCanonical() => $classMetrics],
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
         );
 
@@ -155,6 +154,7 @@ final class ViolationDensityTest extends TestCase
     public function itDensityNullWhenLocZero(): void
     {
         $classSymbol = SymbolPath::forClass('App\\Service', 'EmptyClass');
+        $classSymbolSubject = self::exactClassSubject($classSymbol, 'src/EmptyClass.php');
         $classMetrics = MetricBag::fromArray([
             'health.overall' => 50.0,
             'health.complexity' => 45.0,
@@ -163,19 +163,18 @@ final class ViolationDensityTest extends TestCase
 
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray(['health.overall' => 60.0]),
-            classes: [new SymbolInfo($classSymbol, RelativePath::fromString('src/Service/EmptyClass.php'), 1)],
-            classMetrics: ['class:App\\Service\\EmptyClass' => $classMetrics],
+            classes: [new SymbolInfo($classSymbolSubject, RelativePath::fromString('src/EmptyClass.php'), 1)],
+            classMetrics: [$classSymbolSubject->toCanonical() => $classMetrics],
         );
 
         $findings = $this->createFindingsForClass('App\\Service', 'EmptyClass', 3);
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 3,
-            warningCount: 0,
             metrics: $metrics,
         );
 
@@ -189,6 +188,7 @@ final class ViolationDensityTest extends TestCase
     public function itDensityNullWhenLocMissing(): void
     {
         $classSymbol = SymbolPath::forClass('App\\Service', 'NoLocClass');
+        $classSymbolSubject = self::exactClassSubject($classSymbol, 'src/NoLocClass.php');
         $classMetrics = MetricBag::fromArray([
             'health.overall' => 50.0,
             'health.complexity' => 45.0,
@@ -197,19 +197,18 @@ final class ViolationDensityTest extends TestCase
 
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray(['health.overall' => 60.0]),
-            classes: [new SymbolInfo($classSymbol, RelativePath::fromString('src/Service/NoLocClass.php'), 1)],
-            classMetrics: ['class:App\\Service\\NoLocClass' => $classMetrics],
+            classes: [new SymbolInfo($classSymbolSubject, RelativePath::fromString('src/NoLocClass.php'), 1)],
+            classMetrics: [$classSymbolSubject->toCanonical() => $classMetrics],
         );
 
         $findings = $this->createFindingsForClass('App\\Service', 'NoLocClass', 2);
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 2,
-            warningCount: 0,
             metrics: $metrics,
         );
 
@@ -224,6 +223,7 @@ final class ViolationDensityTest extends TestCase
     {
         // 300-line class with 7 findings => density = 7/300*100 = 2.333... => 2.3
         $classSymbol = SymbolPath::forClass('App\\Service', 'OddClass');
+        $classSymbolSubject = self::exactClassSubject($classSymbol, 'src/OddClass.php');
         $classMetrics = MetricBag::fromArray([
             'health.overall' => 35.0,
             'health.complexity' => 30.0,
@@ -232,19 +232,18 @@ final class ViolationDensityTest extends TestCase
 
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray(['health.overall' => 60.0]),
-            classes: [new SymbolInfo($classSymbol, RelativePath::fromString('src/Service/OddClass.php'), 1)],
-            classMetrics: ['class:App\\Service\\OddClass' => $classMetrics],
+            classes: [new SymbolInfo($classSymbolSubject, RelativePath::fromString('src/OddClass.php'), 1)],
+            classMetrics: [$classSymbolSubject->toCanonical() => $classMetrics],
         );
 
         $findings = $this->createFindingsForClass('App\\Service', 'OddClass', 7);
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: $findings,
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 7,
-            warningCount: 0,
             metrics: $metrics,
         );
 
@@ -258,8 +257,6 @@ final class ViolationDensityTest extends TestCase
     public function itWorstOffenderDefaultDensityIsNull(): void
     {
         $offender = new WorstOffender(
-            symbolPath: SymbolPath::forClass('App', 'Test'),
-            file: null,
             healthOverall: 50.0,
             label: 'Test',
             reason: '',
@@ -267,6 +264,8 @@ final class ViolationDensityTest extends TestCase
                 violationCount: 5,
                 classCount: 0,
             ),
+            subject: self::exactClassSubject(SymbolPath::forClass('App', 'Test'), 'src/Test.php'),
+            overallThresholds: [50.0, 30.0],
         );
 
         self::assertNull($offender->violationDensity);

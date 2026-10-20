@@ -5,29 +5,31 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Finding\Integration;
 
 use LogicException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOptionValues;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
-use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass;
-use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationValidatorCompilerPass;
-use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\ChannelCatalog\ChannelDeclarationCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\ConfigurationValidatorCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\RuleRegistryCompilerPass;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
@@ -108,12 +110,16 @@ final class ConfigurationErrorClassificationTopologyTest extends TestCase
     #[Test]
     public function itEndsTheRunWhenAValidatorEmitsOnAChannelItDoesNotDeclare(): void
     {
-        $execution = new RuleExecution(
-            [new StampRule()],
+        $rule = new StampRule();
+        $lookup = ResolvedOptionsFixture::lookup($rule);
+        $registry = new RuleOptionsRegistry();
+        $configuration = \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::none();
+        $registry->replace(ResolvedOptionsFixture::ready($configuration, [$lookup['metadata']]));
+        $execution = ResolvedOptionsFixture::executionFromLookups(
+            [$lookup],
             self::createStub(ProfilerInterface::class),
-            new RuleOptionsRegistry(),
-            null,
-            [new TrespassingValidator()],
+            $registry,
+            [['producer' => TrespassingValidator::producerRuleName(), 'create' => static fn(): TrespassingValidator => new TrespassingValidator()]],
         );
 
         self::expectException(LogicException::class);
@@ -156,7 +162,7 @@ final class StampRule implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule.';
     }
@@ -164,17 +170,6 @@ final class StampRule implements RuleInterface
     public static function shape(): ChannelShape
     {
         return ChannelShape::Occurrence;
-    }
-
-    /**
-     * A double with no producers of its own: an empty activity declares
-     * nothing, and absence is not disablement.
-     *
-     * @return array<string, array<string, bool>>
-     */
-    public function levelActivity(): array
-    {
-        return [];
     }
 
     public function analyze(AnalysisContext $context): array
@@ -197,7 +192,7 @@ final class StampRule implements RuleInterface
 
 final readonly class StampOptions implements RuleOptionsInterface
 {
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
         return new self();
     }

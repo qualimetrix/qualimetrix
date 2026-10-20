@@ -25,7 +25,6 @@
     ],
     "require": {
         "php": "^8.4",
-        "composer-runtime-api": "^2.0",
         "ext-ctype": "*",
         "ext-filter": "*",
         "ext-hash": "*",
@@ -33,11 +32,15 @@
         "ext-mbstring": "*",
         "ext-tokenizer": "*",
         "ext-xmlwriter": "*",
+        "composer-runtime-api": "^2.0",
         "amphp/amp": "^3.0",
+        "amphp/byte-stream": "^2.1.2",
         "amphp/parallel": "^2.0",
+        "amphp/socket": "^2.4.0",
         "amphp/sync": "^2.0",
         "nikic/php-parser": "^5.0",
         "psr/log": "^3.0",
+        "revolt/event-loop": "^1.0",
         "symfony/config": "^7.4 || ^8.0",
         "symfony/console": "^7.4 || ^8.0",
         "symfony/dependency-injection": "^7.4 || ^8.0",
@@ -55,9 +58,8 @@
         "phpunit/phpunit": "^12.0"
     },
     "suggest": {
-        "ext-igbinary": "For faster serialization in parallel processing",
-        "ext-pcntl": "Required for parallel processing on Unix (alternative to ext-parallel)",
-        "ext-parallel": "For true parallel processing with threads (alternative to ext-pcntl)"
+        "ext-pcntl": "Enables optional interruption cleanup for staged output targets",
+        "ext-posix": "Required for process workers on Unix; also supports effective process ownership checks"
     },
     "autoload": {
         "psr-4": {
@@ -85,6 +87,9 @@
         },
         "classmap": [
             "tools/phpstan/tests/Fixtures/"
+        ],
+        "exclude-from-classmap": [
+            "tests/**/Fixtures/"
         ]
     },
     "bin": [
@@ -108,7 +113,8 @@
         "test:cross-tool": [
             "python3 --version",
             "python3 -m unittest discover -s scripts/cross-tool-comparison/tests -p 'test_*.py'",
-            "python3 -m unittest discover -s scripts/phpunit-aggregate/tests -p 'test_*.py'"
+            "python3 -m unittest discover -s scripts/phpunit-aggregate/tests -p 'test_*.py'",
+            "python3 -m unittest discover -s scripts/check-code-parallel/tests -p 'test_*.py'"
         ],
         "dangling-names": "python3 scripts/dangling-test-names.py",
         "build:js": "cd html-report && npm run build",
@@ -116,8 +122,14 @@
         "install:js": "cd html-report && ([ -d node_modules ] && echo 'node_modules present, skipping npm ci' || npm ci)",
         "cs-check": "php-cs-fixer fix --dry-run --diff",
         "cs-fix": "php-cs-fixer fix",
-        "benchmark:check": "php scripts/benchmark-regression.php",
-        "benchmark:update": "php scripts/benchmark-regression.php --update-baselines",
+        "benchmark:check": [
+            "Composer\\Config::disableProcessTimeout",
+            "php scripts/benchmark-regression.php"
+        ],
+        "benchmark:update": [
+            "Composer\\Config::disableProcessTimeout",
+            "php scripts/benchmark-regression.php --update-baselines"
+        ],
         "health:bench": "php scripts/health-calibration.php",
         "architecture:generate": "php scripts/generate-modular-architecture.php",
         "architecture:check": "php scripts/generate-modular-architecture.php --check",
@@ -133,6 +145,8 @@
         "html-bundle:check": "php scripts/check-html-bundle-freshness.php",
         "input-doors:grid": "php scripts/generate-input-door-table.php",
         "input-doors:grid:check": "php scripts/generate-input-door-table.php --check",
+        "configuration:merge-table": "php scripts/generate-configuration-merge-table.php",
+        "configuration:merge-table:check": "php scripts/generate-configuration-merge-table.php --check",
         "input-doors": [
             "Composer\\Config::disableProcessTimeout",
             "php scripts/input-doors.php"
@@ -179,10 +193,18 @@
         ],
         "selfcheck:analysis": "php bin/qmx check src/ --baseline=qmx-baseline.json --fail-on=warning --memory-limit=512M",
         "check-leaks": "bash scripts/check-private-leaks.sh",
-        "gate:self-test": "php scripts/finding-gate.php --self-test",
+        "gate:self-test": [
+            "Composer\\Config::disableProcessTimeout",
+            "php scripts/finding-gate.php --self-test",
+            "php scripts/finding-gate-controls.php --self-test"
+        ],
         "gate": [
             "Composer\\Config::disableProcessTimeout",
-            "php scripts/finding-gate.php"
+            "php -d memory_limit=1G scripts/finding-gate.php"
+        ],
+        "gate:phar": [
+            "Composer\\Config::disableProcessTimeout",
+            "python3 scripts/finding-gate-phar.py"
         ],
         "gate:controls": [
             "Composer\\Config::disableProcessTimeout",
@@ -210,18 +232,12 @@
         "docs:check": "bash scripts/check-docs.sh",
         "check": [
             "@check-leaks",
-            "@check:code",
-            "@check:docs",
-            "@check:artifacts",
-            "@check:self"
+            "@check:code:tests",
+            "@check:parallel"
         ],
         "check:code": [
-            "@cs-check",
-            "@phpstan",
-            "@test:aggregate",
-            "@dangling-names",
-            "@test:js",
-            "@test:cross-tool"
+            "@check:code:tests",
+            "@phpstan"
         ],
         "check:docs": [
             "@docs:check"
@@ -234,23 +250,45 @@
             "@suppression-snapshot:check",
             "@html-bundle:check",
             "@input-doors:grid:check",
+            "@configuration:merge-table:check",
             "@promise-effect:p1-set:check",
             "@promise-effect:grid:check"
         ],
         "check:self": [
-            "@gate:self-test",
             "@selfcheck:analysis",
             "@directives:audit"
+        ],
+        "check:gate": [
+            "Composer\\Config::disableProcessTimeout",
+            "phpunit --configuration=phpunit.xml.dist --no-coverage --group=finding-gate-e2e",
+            "@gate:self-test"
+        ],
+        "check:code:tests": [
+            "@cs-check",
+            "@test:aggregate",
+            "@dangling-names",
+            "@test:js",
+            "@test:cross-tool"
+        ],
+        "check:parallel": [
+            "Composer\\Config::disableProcessTimeout",
+            "python3 scripts/check-code-parallel/check-code-parallel.py"
+        ],
+        "check:remaining": [
+            "Composer\\Config::disableProcessTimeout",
+            "@check:docs",
+            "@check:artifacts",
+            "@check:self"
         ]
     },
     "scripts-descriptions": {
         "setup-hooks": "Configure git to use project hooks from .githooks/",
         "test": "Run PHPUnit tests",
-        "test:aggregate": "Run verified PHPUnit suite shards for composer check, excluding live freshness oracles that check:artifacts runs",
+        "test:aggregate": "Run verified PHPUnit suite shards for composer check, excluding live freshness oracles and gate end-to-end cases run by dedicated groups",
         "test:coverage": "Run PHPUnit tests with HTML and clover coverage reports (needs an active coverage driver)",
         "phpstan": "Run PHPStan static analysis (level 8)",
         "test:js": "Run JS tests for HTML report (vitest)",
-        "test:cross-tool": "Run deterministic cross-tool methodology tests (Python 3, no external analyzers)",
+        "test:cross-tool": "Run Python tests for cross-tool comparison and check coordinators",
         "dangling-names": "Report every Qualimetrix\\Tests name the tree spells and no file declares; 0 exactly the pinned census, 1 a name nobody pinned, 2 an unreadable input, 3 a pin that no longer dangles",
         "build:js": "Rebuild HTML report JS bundle (vite)",
         "phar": "Build build/qmx.phar with a pinned, checksum-verified box",
@@ -268,22 +306,28 @@
         "enumeration:directives": "Regenerate the authored @qmx-threshold enumeration from src",
         "enumeration:directives:check": "Fail when that enumeration and the tree disagree, so the count is never repeated in prose",
         "enumeration:renames:check": "Fail if enumeration-renames.tsv is stale against a fresh measurement, without writing",
-        "suppression-snapshot": "Regenerate docs/internal/generated/suppression/{composition,inert}.tsv from a self-analysis of src/",
-        "suppression-snapshot:check": "Fail if the suppression snapshot is stale against a fresh self-analysis, without writing",
+        "suppression-snapshot": "Regenerate the suppression composition snapshot; refuse inert suppressors in src/",
+        "suppression-snapshot:check": "Fail if the suppression composition snapshot is stale or src/ has inert suppressors, without writing",
         "html-bundle:check": "Fail if html-report/dist/report.min.js was not built from the current html-report/src/, without writing",
         "selfcheck": "Validate modular-architecture governance, then run Qualimetrix on its own source code",
         "selfcheck:analysis": "Run Qualimetrix on its own source code after governance freshness has already been checked",
-        "check": "Everything below, in the order a failure is cheapest to read",
+        "check": "Run code tests, then PHPStan beside documentation, artifact and self-analysis checks",
         "check:code": "What a code change invalidates: style, the dangling-name census, static analysis, tests",
         "check:docs": "What a website change invalidates: a strict mkdocs build",
+        "configuration:merge-table": "Regenerate the table of how each configuration key combines across layers in website/docs/getting-started/configuration.md (EN and RU) from the section declarations",
+        "configuration:merge-table:check": "Fail if that table differs from what the section declarations generate",
         "check:artifacts": "What a manifest, config or corpus change invalidates: every generated artifact against a fresh measurement",
-        "check:self": "What the product says about this repository: the gate self-test, the qmx ratchet and the directive audit",
+        "check:self": "What the product says about this repository: the qmx ratchet and the directive audit",
         "directives:controls": "Plant one breakage at a time in the threshold audit and prove the suite goes red for it, then run directives:controls:coverage",
         "directives:controls:coverage": "Prove the negative-controls stand's own coverage arithmetic: removing a case's declaration makes exactly that case read as guarded by nothing, and a declaration naming a case absent from the run is a distinct stale-declaration refusal",
         "tautology:controls": "Plant, one at a time, the production edit each repaired tautology is supposed to reject, and prove that repair's own case goes red and no undeclared case does; runs tautology:controls:coverage first",
         "tautology:controls:coverage": "Prove the tautology stand's own arithmetic: removing a repaired case's declaration leaves exactly that case guarded by nothing, and a declaration naming a case the run never carried is a distinct stale-declaration refusal",
         "directives:narrow-control": "Prove --sweep=narrow and --sweep=full agree verdict for verdict: the seeded fixture whole (every verdict and every refusal), its Silenced/ half (where a wrong-producer defect reaches the comparison), then src/. Cheapest signal first, because composer stops at the first run that fails",
-        "directives:audit": "Fail if any inline @qmx directive over src/ does nothing"
+        "directives:audit": "Fail if any inline @qmx directive over src/ does nothing",
+        "check:gate": "Gate end-to-end tests and observed witnesses; required for finding-gate changes",
+        "check:code:tests": "Run style, verified PHPUnit shards, the name census, JavaScript and cross-tool tests",
+        "check:parallel": "Run PHPStan and the remaining validation groups concurrently, collecting both results",
+        "check:remaining": "Run documentation, generated-artifact and self-analysis checks in order"
     },
     "config": {
         "sort-packages": true,

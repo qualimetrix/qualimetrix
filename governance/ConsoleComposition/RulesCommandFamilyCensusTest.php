@@ -10,9 +10,9 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
-use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
-use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass;
+use Qualimetrix\Infrastructure\Console\RuleListing\RulesCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\RuleCompilerPass;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -83,6 +83,7 @@ final class RulesCommandFamilyCensusTest extends TestCase
     private const array EXPECTED_FAMILIES = [
         'annotation',
         'architecture',
+        'baseline',
         'code-smell',
         'cohesion',
         'complexity',

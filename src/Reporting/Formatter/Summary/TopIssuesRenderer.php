@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Summary;
 
-use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtSummary;
+use Qualimetrix\Analysis\Evidence\Prioritization\Contract\Debt\DebtSummary;
 use Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Report\Report;
+use Qualimetrix\Reporting\FindingPublication\PublishedFinding;
 use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
-use Qualimetrix\Reporting\Formatter\PublishedFinding;
-use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\Report;
 
 /**
  * Renders the "Top issues by impact" section in the summary output.
@@ -70,7 +70,7 @@ final class TopIssuesRenderer
 
         $locationStr = $this->formatLocation($finding, $context);
 
-        $detail = \sprintf('%s: %s%s', $finding->code, PublishedFinding::advice($finding), $this->formatSymbol($finding));
+        $detail = \sprintf('%s: %s%s', $finding->code, $finding->message, $this->formatSymbol($finding));
 
         $indent = str_repeat(' ', \strlen((string) $rank) + 8);
 
@@ -87,12 +87,19 @@ final class TopIssuesRenderer
             $indent,
             $color->dim($detail),
         );
+        if ($finding->recommendation !== null) {
+            $lines[] = $indent . $color->dim('Recommendation: ' . $finding->recommendation);
+        }
+        $baseline = \Qualimetrix\Reporting\Formatter\Text\AcceptedLevelNarrator::describe($finding);
+        if ($baseline !== null) {
+            $lines[] = $indent . $color->dim($baseline);
+        }
     }
 
     private function formatLocation(Finding $finding, FormatterContext $context): string
     {
         if ($finding->location->file === null) {
-            return '[project]';
+            return PublishedFinding::place($finding)->name;
         }
 
         $file = $context->relativizePath($finding->location->file);

@@ -19,13 +19,15 @@ require_once __DIR__ . '/subprocess/ChildProcess.php';
 
 const OUTPUT_DIRECTORY = 'docs/internal/generated/modular-architecture';
 const TEST_LEVELS = ['Unit', 'Integration', 'Functional'];
-// 70 paths. Stage 05 moved four of them from Unit/ to Integration/ --
-// BaselineChannelRenamerTest, BaselineRoundTripVOTest, BaselineWriterTest and
-// ConfigurationErrorChannelRejectionTest -- because their bodies do real work,
-// not because the set changed: no file entered or left the tree, and the count
-// is the same on both sides of the move. Re-hash only against a diff of the
-// path list; a digest refreshed to make the generator run again asserts nothing.
-const P6_C_BASELINE_PATHS_SHA256 = 'd0bb0082d22f4bdcad0156a0941a8941975bbfa928bda7ed91f5a956b4880193';
+const CACHE_UNIT_LOCAL_FIXTURES = [
+    'tests/Infrastructure/Cache/Unit/ast-entry-classes.txt',
+    'tests/Infrastructure/Cache/Unit/ast-entry-producer.json',
+];
+// 82 paths: the accepted finite Baseline artifact set plus comparison,
+// group-measurement, subject-region, update-mode, unused-entry, file-lookup, layer-migration and environment-failure regressions.
+// Re-hash only against a diff of the path list; refreshing the digest without
+// checking that delta asserts nothing.
+const P6_C_BASELINE_PATHS_SHA256 = '5ce5409415c2e4c2487711e1ecd028d22fea166ea1198ca1929f0984956e9f94';
 
 $arguments = $_SERVER['argv'] ?? [];
 $check = in_array('--check', $arguments, true);
@@ -134,6 +136,7 @@ const TOOLING_TEST_ROOT_OWNERS = [
     'scripts/subprocess/tests/' => 'Tooling/Subprocess',
     'scripts/cross-tool-comparison/tests/' => 'Tooling/CrossToolComparison',
     'scripts/phpunit-aggregate/tests/' => 'Tooling/PhpunitAggregate',
+    'scripts/check-code-parallel/tests/' => 'Tooling/CheckCodeParallel',
     // A root-level, non-PSR-4 npm project outside both scripts/ and tools/, so
     // it is outside actualToolingTestRootsOnDisk()'s glob the same way
     // governance/ is — assertToolingTestRootRegistrationIsComplete() checks
@@ -230,11 +233,10 @@ const P3_TEST_PATHS = [
     'tests/Analysis/Configuration/Unit/AnalysisConfigurationTest.php',
     'tests/Analysis/Configuration/Unit/ConfigSchemaTest.php',
     'tests/Analysis/Configuration/Unit/ConfigurationHolderTest.php',
-    'tests/Analysis/Configuration/Unit/Discovery/ComposerReaderTest.php',
     'tests/Analysis/Configuration/Unit/Loader/YamlConfigLoaderTest.php',
-    'tests/Analysis/Configuration/Unit/Pipeline/ConfigDataNormalizerTest.php',
+    'tests/Analysis/Configuration/Unit/Document/ConfigDataNormalizerTest.php',
     'tests/Analysis/Configuration/Unit/Pipeline/ConfigurationPipelineTest.php',
-    'tests/Analysis/Configuration/Unit/Pipeline/RuleNameValidatorTest.php',
+    'tests/Analysis/Finding/Unit/Contract/Selection/RuleNameValidatorTest.php',
     'tests/Analysis/Configuration/Unit/Pipeline/Stage/CliStageTest.php',
     'tests/Analysis/Configuration/Unit/Pipeline/Stage/ComposerDiscoveryStageTest.php',
     'tests/Analysis/Configuration/Unit/Pipeline/Stage/ConfigFileStageTest.php',
@@ -302,11 +304,11 @@ const P6_A_FINDING_TEST_PATHS = [
     'tests/Analysis/Finding/Support/StubChannelDeclarationRegistry.php',
     'tests/Analysis/Policy/Baseline/Support/FindingFactory.php',
     'tests/Analysis/Finding/Unit/AbstractRuleThresholdSeamTest.php',
-    'tests/Analysis/Finding/Unit/AcceptedLevelTest.php',
+    'tests/Analysis/Finding/Unit/Contract/Channel/AcceptedLevelTest.php',
     'tests/Analysis/Finding/Unit/AnalysisContextTest.php',
-    'tests/Infrastructure/DependencyInjection/Unit/CompilerPass/ChannelDeclarationCompilerPassTest.php',
+    'tests/Infrastructure/DependencyInjection/Unit/ChannelCatalog/ChannelDeclarationCompilerPassTest.php',
     'tests/Analysis/Finding/Unit/ChannelDeclarationReaderTest.php',
-    'tests/Analysis/Finding/Unit/ChannelDeclarationTest.php',
+    'tests/Analysis/Finding/Unit/Contract/Channel/ChannelDeclarationTest.php',
     'tests/Analysis/Finding/Unit/LocationNullFileTest.php',
     'tests/Analysis/Finding/Unit/LocationTest.php',
     'tests/Analysis/Finding/Unit/NamespaceExclusionFilterTest.php',
@@ -322,9 +324,9 @@ const P6_A_FINDING_TEST_PATHS = [
     'tests/Analysis/Finding/Unit/RuleSelectorTest.php',
     'governance/ThresholdKeys/RuleThresholdKeyGroupRegistryDriftTest.php',
     'tests/Analysis/Finding/Unit/SeverityTest.php',
-    'tests/Analysis/Finding/Unit/ThresholdParserTest.php',
+    'tests/Analysis/Finding/Unit/Contract/Rule/OptionLanguage/ThresholdParserTest.php',
     'governance/ThresholdKeys/ThresholdValidatorAssignmentTest.php',
-    'tests/Analysis/Finding/Unit/FindingChannelTest.php',
+    'tests/Analysis/Finding/Unit/Contract/Channel/FindingChannelTest.php',
     'tests/Analysis/Finding/Unit/FindingFilterStageTest.php',
     'tests/Analysis/Finding/Unit/FindingTest.php',
 ];
@@ -351,10 +353,10 @@ const P6_B_INLINE_TEST_PATHS = [
     'tests/Analysis/Policy/Inline/Unit/InvertedOverrideValidatorTest.php',
     'tests/Analysis/Policy/Inline/Unit/Extraction/SourceControlExtractorTest.php',
     'tests/Analysis/Policy/Inline/Unit/StandardOverrideValidatorTest.php',
-    'tests/Analysis/Policy/Inline/Unit/SuppressionExtractorTest.php',
+    'tests/Analysis/Policy/Inline/Unit/Extraction/SuppressionExtractorTest.php',
     'tests/Analysis/Policy/Inline/Unit/SuppressionFilterTest.php',
     'tests/Analysis/Policy/Inline/Unit/SuppressionTest.php',
-    'tests/Analysis/Policy/Inline/Unit/ThresholdOverrideExtractorTest.php',
+    'tests/Analysis/Policy/Inline/Unit/Threshold/ThresholdOverrideExtractorTest.php',
     'tests/Analysis/Policy/Inline/Unit/WarningOnlyValidatorTest.php',
 ];
 
@@ -379,10 +381,9 @@ const P6_LIVE_ADDED_TEST_IDS = [
 
 /** @var array<string, string> Exact zero-net method-ID replacements. */
 const P6_RENAMED_TEST_IDS = [
-    'Qualimetrix\\Tests\\Unit\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleCompilerPassTest::itCollectsTaggedRulesIntoRuleExecutor' => 'Qualimetrix\\Tests\\Infrastructure\\DependencyInjection\\Unit\\CompilerPass\\RuleCompilerPassTest::itCollectsTaggedRulesIntoRuleExecution',
+    'Qualimetrix\\Tests\\Unit\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleCompilerPassTest::itCollectsTaggedRulesIntoRuleExecutor' => 'Qualimetrix\\Tests\\Infrastructure\\DependencyInjection\\Unit\\RuleCatalog\\RuleCompilerPassTest::itCollectsTaggedRulesIntoRuleExecution',
     'Qualimetrix\\Tests\\Integration\\DependencyInjection\\ContainerFactoryTest::itInjectsRulesIntoRuleExecutor' => 'Qualimetrix\\Tests\\Infrastructure\\DependencyInjection\\Integration\\ContainerFactoryTest::itInjectsRulesIntoRuleExecution',
     'Qualimetrix\\Tests\\Integration\\Infrastructure\\Console\\RuleExclusionStatsWiringTest::itSharesTheSameRuleExecutorInstanceBetweenThePipelineAndTheOrchestrator' => 'Qualimetrix\\Tests\\Infrastructure\\Integration\\RuleExclusionStatsWiringTest::itSharesTheSameRuleExecutionInstanceBetweenThePipelineAndTheOrchestrator',
-    'Qualimetrix\\Tests\\Infrastructure\\Console\\Functional\\Command\\CheckCommandBaselineTest::itDoesNotPromoteAnAnnotatedFindingTheBaselineNeverMeasured' => 'Qualimetrix\\Tests\\Infrastructure\\Console\\Functional\\Command\\CheckCommandBaselineTest::itCombinesConfiguredAndCliExclusionsWithoutLosingBaselineAnnotationOrGit',
 ];
 
 /** @var array<string, array{string, string, string}> Exact A03 orphan-probe dispositions. */
@@ -472,6 +473,10 @@ const RETIRED_PATH_ASSERTIONS = [
  * @var array<string, array{rows: int, reason: string}>
  */
 const NON_MANIFEST_TEST_OWNERS = [
+    'TestSupport/WorkingDirectory' => [
+        'rows' => 5,
+        'reason' => 'The PHPUnit execution-window lifecycle and its repository-root opt-in share one support owner.',
+    ],
     'TestSupport/Logging' => [
         'rows' => 1,
         'reason' => 'the shared PSR-3 recording helper, published as its own support owner in'
@@ -505,8 +510,8 @@ if ($classificationProbeArguments !== []) {
     //
     // The proxy is the basename and deliberately not isTestClassPath(), which is
     // `tests/`-scoped because it answers the owner parse — a different question.
-    // A test class outside that root (`governance/Other/ProbeTest.php`,
-    // `tools/phpstan/tests/Unit/FooTest.php`) would fall to classifyKind(), whose
+    // A test class outside that root (under `governance/Other/` or
+    // `tools/phpstan/tests/Unit/`, with a `*Test.php` basename) would fall to classifyKind(), whose
     // support branch excludes `*Test.php` by name, and be refused as an
     // unclassified kind. Those are the probes the unregistered-group claim in
     // AGENTS.md is checked with.
@@ -951,6 +956,9 @@ function classifyOwner(string $path): string
 
         return $declaredOwner;
     }
+    if ($path === 'tests/bootstrap.php' || str_starts_with($path, 'tests/TestSupport/WorkingDirectory/')) {
+        return 'TestSupport/WorkingDirectory';
+    }
     if (str_starts_with($path, 'tests/TestSupport/Logging/')) {
         return 'TestSupport/Logging';
     }
@@ -1119,7 +1127,7 @@ function classifyOwner(string $path): string
     // is not an owner either. An Infrastructure subject missing from this list
     // now reaches the unclassified refusal at the end of the ladder, which is an
     // ownership decision asked for rather than answered wrongly.
-    if (preg_match('#^tests/Infrastructure/(Ast|Cache|Console|DependencyInjection|Logging|Parallel|Profiler|Rule|Serializer)/#', $path, $matches) === 1) {
+    if (preg_match('#^tests/Infrastructure/(Ast|Cache|Console|DependencyInjection|Logging|Parallel|Profiler|Rule)/#', $path, $matches) === 1) {
         return 'Infrastructure/' . $matches[1];
     }
     if (str_starts_with($path, 'tests/Reporting/')) {
@@ -1146,8 +1154,17 @@ function classifyKind(string $path, array $discoveredClasses): string
     if (str_contains($path, '/Fixtures/') || str_contains($path, '/Fixture/') || str_contains($path, '/data/') || str_contains($path, '/fixtures/') || preg_match('/Fixture(s)?\.php$/', $path) === 1) {
         return 'fixture';
     }
+    if (in_array($path, CACHE_UNIT_LOCAL_FIXTURES, true)) {
+        return 'fixture';
+    }
+    if ($path === 'tests/TestSupport/WorkingDirectory/declared-residue.tsv') {
+        return 'support';
+    }
     if (str_contains($path, '/Support/') || (str_ends_with($path, '.php') && !str_ends_with($path, 'Test.php'))) {
         return 'support';
+    }
+    if ($path === 'governance/PublishedText/README.md') {
+        return 'documentation';
     }
     if (str_ends_with($path, 'package.json') || str_ends_with($path, 'vite.config.js')) {
         return 'non-php-test-config';
@@ -1207,10 +1224,12 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Analysis/Evidence/ComputedMetrics/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Evidence/Prioritization/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Configuration/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Analysis/ProjectManifest/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Finding/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Analysis/Run/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Reporting/GraphProjection/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Reporting/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Core/FileTarget/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Path/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Symbol/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Symbol/Integration/', 'suite' => 'Integration'],
@@ -1252,6 +1271,7 @@ function testSuitePrefixTable(): array
         ['prefix' => 'governance/MeasurementVocabulary/', 'suite' => 'Governance'],
         ['prefix' => 'governance/MeasurementIdentity/', 'suite' => 'Governance'],
         ['prefix' => 'governance/GeneratedArtifactFreshness/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/PublishedText/', 'suite' => 'Governance'],
         ['prefix' => 'governance/FormatOptionKeys/', 'suite' => 'Governance'],
         ['prefix' => 'governance/DirectiveVocabulary/', 'suite' => 'Governance'],
         ['prefix' => 'governance/ControlRigLedger/', 'suite' => 'Governance'],
@@ -1722,6 +1742,12 @@ function orphanCandidateReason(string $path): ?string
 
 function targetPath(string $path, string $kind, string $owner, string $targetSuite): string
 {
+    if ($path === 'tests/bootstrap.php'
+        || in_array($path, CACHE_UNIT_LOCAL_FIXTURES, true)
+        || str_starts_with($path, 'tests/TestSupport/WorkingDirectory/')
+    ) {
+        return $path;
+    }
     if (isRegisteredToolingRoot($path)) {
         return $path;
     }
@@ -2027,6 +2053,11 @@ function orphanDispositionContents(): string
 function systemSupportContents(string $root): string
 {
     $rows = [
+        ['TestSupport/WorkingDirectory', 'tests/bootstrap.php', 'Parent-owned PHPUnit process-root bootstrap and cleanup.', 'support'],
+        ['TestSupport/WorkingDirectory', 'tests/TestSupport/WorkingDirectory/GitProcessEnvironment.php', 'Inherited Git configuration for repository fixtures in the PHPUnit process.', 'support'],
+        ['TestSupport/WorkingDirectory', 'tests/TestSupport/WorkingDirectory/SuiteWorkingDirectoryExtension.php', 'PHPUnit execution window and cwd residue judgement.', 'support'],
+        ['TestSupport/WorkingDirectory', 'tests/TestSupport/WorkingDirectory/RunsFromRepositoryRoot.php', 'Explicit repository-root opt-in for configuration-dependent tests.', 'support'],
+        ['TestSupport/WorkingDirectory', 'tests/TestSupport/WorkingDirectory/declared-residue.tsv', 'Reasoned execution-window residue declarations.', 'support'],
         ['TestSupport/Logging', 'tests/TestSupport/Logging/Support/RecordingLogger.php', 'Shared PSR-3 recording helper for named Finding and Coupling tests.', 'support'],
     ];
     foreach ($rows as $row) {

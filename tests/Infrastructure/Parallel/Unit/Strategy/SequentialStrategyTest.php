@@ -7,6 +7,8 @@ namespace Qualimetrix\Tests\Infrastructure\Parallel\Unit\Strategy;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy;
 use SplFileInfo;
@@ -19,12 +21,6 @@ final class SequentialStrategyTest extends TestCase
     protected function setUp(): void
     {
         $this->strategy = new SequentialStrategy(self::createStub(ProfilerInterface::class));
-    }
-
-    #[Test]
-    public function itReportsParallelAsNotAvailable(): void
-    {
-        self::assertFalse($this->strategy->isParallelAvailable());
     }
 
     #[Test]
@@ -43,15 +39,15 @@ final class SequentialStrategyTest extends TestCase
         ];
 
         $processedFiles = [];
-        $processor = static function (SplFileInfo $file) use (&$processedFiles): string {
+        $processor = static function (SplFileInfo $file) use (&$processedFiles): FileProcessingResult {
             $processedFiles[] = $file->getPathname();
 
-            return $file->getFilename();
+            return FileProcessingResult::failure(RelativePath::fromString($file->getFilename()), $file->getPathname());
         };
 
         $results = $this->strategy->execute($files, $processor);
 
-        self::assertSame(['test1.php', 'test2.php', 'test3.php'], $results);
+        self::assertSame(['test1.php', 'test2.php', 'test3.php'], array_map(static fn(FileProcessingResult $result): string => $result->filePath->value(), $results));
         self::assertCount(3, $processedFiles);
         self::assertSame($files[0]->getPathname(), $processedFiles[0]);
         self::assertSame($files[1]->getPathname(), $processedFiles[1]);
@@ -61,7 +57,7 @@ final class SequentialStrategyTest extends TestCase
     #[Test]
     public function itReturnsEmptyArrayForNoFiles(): void
     {
-        $processor = static fn(SplFileInfo $file): string => $file->getFilename();
+        $processor = static fn(SplFileInfo $file): FileProcessingResult => FileProcessingResult::failure(RelativePath::fromString($file->getFilename()), $file->getPathname());
 
         $results = $this->strategy->execute([], $processor);
 
@@ -76,37 +72,16 @@ final class SequentialStrategyTest extends TestCase
             new SplFileInfo(__DIR__ . '/../../fixtures/test2.php'),
         ];
 
-        $counter = 0;
-        $processor = static function (SplFileInfo $file) use (&$counter): array {
-            $counter++;
-
-            return [
-                'index' => $counter,
-                'path' => $file->getPathname(),
-            ];
+        $expected = array_map(static fn(SplFileInfo $file): FileProcessingResult => FileProcessingResult::failure(RelativePath::fromString($file->getFilename()), $file->getPathname()), $files);
+        $index = 0;
+        $processor = static function (SplFileInfo $file) use (&$index, $expected): FileProcessingResult {
+            return $expected[$index++];
         };
 
         $results = $this->strategy->execute($files, $processor);
 
         self::assertCount(2, $results);
-        self::assertSame(1, $results[0]['index']);
-        self::assertSame(2, $results[1]['index']);
-        self::assertSame($files[0]->getPathname(), $results[0]['path']);
-        self::assertSame($files[1]->getPathname(), $results[1]['path']);
+        self::assertSame($expected, $results);
     }
 
-    #[Test]
-    public function itIgnoresCanParallelizeFlag(): void
-    {
-        $files = [new SplFileInfo(__DIR__ . '/../../fixtures/test1.php')];
-        $processor = static fn(SplFileInfo $file): string => 'result';
-
-        // canParallelize = false (should process anyway)
-        $results = $this->strategy->execute($files, $processor, false);
-        self::assertSame(['result'], $results);
-
-        // canParallelize = true (should process the same way)
-        $results = $this->strategy->execute($files, $processor, true);
-        self::assertSame(['result'], $results);
-    }
 }

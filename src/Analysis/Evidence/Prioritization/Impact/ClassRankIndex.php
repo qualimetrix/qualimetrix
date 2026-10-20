@@ -17,9 +17,9 @@ use Qualimetrix\Core\Path\RelativePath;
 final readonly class ClassRankIndex
 {
     /**
-     * @param array<string, float> $fileMaxRank file path → max classRank
-     * @param array<string, float> $nsMaxRank namespace → max classRank (includes parent namespaces)
-     * @param float|null $medianRank median classRank across all classes (fallback for unknown)
+     * @param array<string, float> $fileMaxRank file path → max ClassRank share
+     * @param array<string, float> $nsMaxRank namespace → max ClassRank share (includes parent namespaces)
+     * @param float|null $medianRank median ClassRank share across all classes (fallback for unknown)
      */
     public function __construct(
         private array $fileMaxRank,
@@ -38,7 +38,7 @@ final readonly class ClassRankIndex
     }
 
     /**
-     * Returns the median classRank across all classes, or null if no classes have classRank.
+     * Returns the median ClassRank share across all classes, or null if no classes have classRank.
      *
      * Used as fallback when a finding's classRank cannot be resolved.
      */

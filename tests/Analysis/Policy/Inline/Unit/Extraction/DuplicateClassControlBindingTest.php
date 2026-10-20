@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
 use Qualimetrix\Analysis\Policy\Inline\Extraction\DeclarationControlBindings;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
@@ -76,8 +77,8 @@ final class DuplicateClassControlBindingTest extends TestCase
             $ast,
             $file,
             [
-                new CallableWithMetrics($methodPaths[0], $methods[0]->getStartFilePos(), CallableKind::Method, null, $classPaths[0], $owner, new MetricBag()),
-                new CallableWithMetrics($methodPaths[1], $methods[1]->getStartFilePos(), CallableKind::Method, null, $classPaths[1], $owner, new MetricBag()),
+                new CallableWithMetrics($methodPaths[0], $methods[0]->getStartFilePos(), CallableKind::Method, null, $classPaths[0], $classPaths[0], new MetricBag()),
+                new CallableWithMetrics($methodPaths[1], $methods[1]->getStartFilePos(), CallableKind::Method, null, $classPaths[1], $classPaths[1], new MetricBag()),
             ],
             self::classMetrics(
                 [$classPaths[0], $classes[0]->getStartFilePos()],
@@ -91,13 +92,16 @@ final class DuplicateClassControlBindingTest extends TestCase
                 'declaration:callable:App\Greeter::greet@src/Dup.php#1',
             ],
             array_map(
-                static fn(array $binding): string => $binding['subject']->toCanonical(),
-                $bindings->bindingsFor($classes[1]),
+                static fn(DeclarationBinding $binding): string => $binding->subject->toCanonical(),
+                $bindings->suppressionBindingsFor($classes[1]),
             ),
         );
         self::assertSame(
             [ControlScope::Class_, ControlScope::Class_],
-            array_map(static fn(array $binding): ControlScope => $binding['scope'], $bindings->bindingsFor($classes[1])),
+            array_map(
+                static fn(DeclarationBinding $binding): ControlScope => $binding->controlScope,
+                $bindings->suppressionBindingsFor($classes[1]),
+            ),
         );
     }
 

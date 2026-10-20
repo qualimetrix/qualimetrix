@@ -1,0 +1,116 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Reporting\Formatter\GitLab;
+
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterInterface;
+use Qualimetrix\Reporting\Contract\Formatting\GroupBy;
+
+use Qualimetrix\Reporting\Contract\Report\Report;
+use Qualimetrix\Reporting\FindingPublication\PublishedFinding;
+use Qualimetrix\Reporting\Publication\FormattedReport;
+use Qualimetrix\Reporting\Publication\PublicationKind;
+use Qualimetrix\Reporting\Publication\PublishedUtf8;
+
+/**
+ * Formats report as GitLab Code Quality JSON.
+ *
+ * Spec: https://docs.gitlab.com/ee/ci/testing/code_quality.html#code-quality-report-format
+ * Compatible with GitLab Merge Request Code Quality widget.
+ */
+final class GitLabCodeQualityFormatter implements FormatterInterface
+{
+    public function format(Report $report, FormatterContext $context): FormattedReport
+    {
+        $issues = [];
+
+        foreach ($report->findings as $finding) {
+            $issues[] = [
+                // The Code Climate spec has no field for the accepted level, so
+                // a measured breach (ADR 0017) carries it in the free-text
+                // description — the fingerprint below still hashes the
+                // unmodified $finding->message, so it stays stable across
+                // the run where a breach first appears.
+                'description' => PublishedFinding::locatedMessage($finding),
+                'check_name' => $finding->code,
+                'fingerprint' => $this->generateFingerprint($finding),
+                'severity' => $this->mapSeverity($finding->severity),
+                'location' => [
+                    'path' => PublishedFinding::interchangePath($finding, $report->metrics),
+                    'lines' => [
+                        'begin' => $finding->location->line ?? 1,
+                    ],
+                ],
+            ];
+        }
+
+        foreach ($report->coverage === null ? [] : $report->coverage->failures as $failure) {
+            $issues[] = [
+                'description' => \sprintf('Analysis failed for %s: %s', $failure->path, $failure->message),
+                'check_name' => 'analysis.' . $failure->kind,
+                'fingerprint' => md5('analysis|' . $failure->kind . '|' . $failure->path),
+                'severity' => 'blocker',
+                'location' => ['path' => $failure->path, 'lines' => ['begin' => 1]],
+            ];
+        }
+
+        $repairs = 0;
+        $body = PublishedUtf8::encodeJson(
+            $issues,
+            \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES,
+            static function (array $issues, int $count) use (&$repairs): array {
+                $repairs = $count;
+
+                return $issues;
+            },
+        );
+
+        return new FormattedReport($body, $repairs);
+    }
+
+    public function publicationKind(): PublicationKind
+    {
+        return PublicationKind::JsonDocument;
+    }
+
+    public function getName(): string
+    {
+        return 'gitlab';
+    }
+
+    public function getDefaultGroupBy(): GroupBy
+    {
+        return GroupBy::None;
+    }
+
+    /**
+     * Generates stable fingerprint for GitLab to track issues across MRs.
+     *
+     * Format: md5(channel|subject|occurrence|edge)
+     *
+     * Locations and messages are presentation data. They must not participate
+     * in the identity GitLab uses to track a finding across revisions.
+     */
+    private function generateFingerprint(Finding $finding): string
+    {
+        return md5($finding->getFingerprint());
+    }
+
+    /**
+     * Maps internal severity to GitLab Code Quality severity.
+     *
+     * GitLab severities: blocker, critical, major, minor, info
+     */
+    private function mapSeverity(Severity $severity): string
+    {
+        return match ($severity) {
+            Severity::Error => 'critical',
+            Severity::Warning => 'major',
+            Severity::Info => 'info',
+        };
+    }
+}

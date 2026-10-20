@@ -1,0 +1,326 @@
+--- candidate
++++ reference (mapped)
+@@ -17,11 +17,11 @@
+-                            "id": "architecture.circular-dependency",
+-                            "name": "Architecture Circular Dependency",
+-                            "shortDescription": {
+-                                "text": "Detects circular dependencies between classes"
+-                            },
+-                            "fullDescription": {
+-                                "text": "Detects circular dependencies between classes"
+-                            },
+-                            "helpUri": "https://qualimetrix.dev/rules/architecture/",
+-                            "defaultConfiguration": {
+-                                "level": "error"
++                            "id": "complexity.ccn",
++                            "name": "Complexity Ccn",
++                            "shortDescription": {
++                                "text": "Checks cyclomatic complexity at method and class levels"
++                            },
++                            "fullDescription": {
++                                "text": "Checks cyclomatic complexity at method and class levels"
++                            },
++                            "helpUri": "https://qualimetrix.dev/rules/complexity/",
++                            "defaultConfiguration": {
++                                "level": "warning"
+@@ -45,11 +45,11 @@
+-                            "id": "complexity.ccn",
+-                            "name": "Complexity Ccn",
+-                            "shortDescription": {
+-                                "text": "Checks cyclomatic complexity at method and class levels"
+-                            },
+-                            "fullDescription": {
+-                                "text": "Checks cyclomatic complexity at method and class levels"
+-                            },
+-                            "helpUri": "https://qualimetrix.dev/rules/complexity/",
+-                            "defaultConfiguration": {
+-                                "level": "warning"
++                            "id": "architecture.circular-dependency",
++                            "name": "Architecture Circular Dependency",
++                            "shortDescription": {
++                                "text": "Detects circular dependencies between classes"
++                            },
++                            "fullDescription": {
++                                "text": "Detects circular dependencies between classes"
++                            },
++                            "helpUri": "https://qualimetrix.dev/rules/architecture/",
++                            "defaultConfiguration": {
++                                "level": "error"
+@@ -77,9 +77,48 @@
+-                    "ruleId": "architecture.circular-dependency",
+-                    "ruleIndex": 0,
+-                    "level": "error",
+-                    "message": {
+-                        "text": "Circular dependency (2 classes): K%FE \u2192 K%FF \u2192 K%FE"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "architecture.circular-dependency:project::449e174e1262085b"
+-                    }
++                    "ruleId": "complexity.ccn",
++                    "ruleIndex": 0,
++                    "level": "warning",
++                    "message": {
++                        "text": "Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "complexity.ccn:declaration:callable:Corpus\\Utf8\\Public\\K%FF::m%E9@src/First.php"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/First.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 7,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]
++                },
++                {
++                    "ruleId": "complexity.ccn",
++                    "ruleIndex": 0,
++                    "level": "warning",
++                    "message": {
++                        "text": "Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "complexity.ccn:declaration:callable:Corpus\\Utf8\\Public\\K%FE::m%E9@src/Second.php"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/Second.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 7,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]
+@@ -138,48 +177,9 @@
+-                    "ruleId": "complexity.ccn",
+-                    "ruleIndex": 2,
+-                    "level": "warning",
+-                    "message": {
+-                        "text": "Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "complexity.ccn:declaration:callable:Corpus\\Utf8\\Public\\K%FF::m%E9@src/First.php"
+-                    },
+-                    "locations": [
+-                        {
+-                            "physicalLocation": {
+-                                "artifactLocation": {
+-                                    "uri": "src/First.php",
+-                                    "uriBaseId": "%SRCROOT%"
+-                                },
+-                                "region": {
+-                                    "startLine": 7,
+-                                    "startColumn": 1
+-                                }
+-                            }
+-                        }
+-                    ]
+-                },
+-                {
+-                    "ruleId": "complexity.ccn",
+-                    "ruleIndex": 2,
+-                    "level": "warning",
+-                    "message": {
+-                        "text": "Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "complexity.ccn:declaration:callable:Corpus\\Utf8\\Public\\K%FE::m%E9@src/Second.php"
+-                    },
+-                    "locations": [
+-                        {
+-                            "physicalLocation": {
+-                                "artifactLocation": {
+-                                    "uri": "src/Second.php",
+-                                    "uriBaseId": "%SRCROOT%"
+-                                },
+-                                "region": {
+-                                    "startLine": 7,
+-                                    "startColumn": 1
+-                                }
+-                            }
+-                        }
+-                    ]
++                    "ruleId": "architecture.circular-dependency",
++                    "ruleIndex": 2,
++                    "level": "error",
++                    "message": {
++                        "text": "Circular dependency (2 classes): K%FE \u2192 K%FF \u2192 K%FE"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "architecture.circular-dependency:project::449e174e1262085b"
++                    }
+@@ -314,11 +314,11 @@
+-                            "id": "architecture.circular-dependency",
+-                            "name": "Architecture Circular Dependency",
+-                            "shortDescription": {
+-                                "text": "Detects circular dependencies between classes"
+-                            },
+-                            "fullDescription": {
+-                                "text": "Detects circular dependencies between classes"
+-                            },
+-                            "helpUri": "https://qualimetrix.dev/rules/architecture/",
+-                            "defaultConfiguration": {
+-                                "level": "error"
++                            "id": "complexity.ccn",
++                            "name": "Complexity Ccn",
++                            "shortDescription": {
++                                "text": "Checks cyclomatic complexity at method and class levels"
++                            },
++                            "fullDescription": {
++                                "text": "Checks cyclomatic complexity at method and class levels"
++                            },
++                            "helpUri": "https://qualimetrix.dev/rules/complexity/",
++                            "defaultConfiguration": {
++                                "level": "warning"
+@@ -342,11 +342,11 @@
+-                            "id": "complexity.ccn",
+-                            "name": "Complexity Ccn",
+-                            "shortDescription": {
+-                                "text": "Checks cyclomatic complexity at method and class levels"
+-                            },
+-                            "fullDescription": {
+-                                "text": "Checks cyclomatic complexity at method and class levels"
+-                            },
+-                            "helpUri": "https://qualimetrix.dev/rules/complexity/",
+-                            "defaultConfiguration": {
+-                                "level": "warning"
++                            "id": "architecture.circular-dependency",
++                            "name": "Architecture Circular Dependency",
++                            "shortDescription": {
++                                "text": "Detects circular dependencies between classes"
++                            },
++                            "fullDescription": {
++                                "text": "Detects circular dependencies between classes"
++                            },
++                            "helpUri": "https://qualimetrix.dev/rules/architecture/",
++                            "defaultConfiguration": {
++                                "level": "error"
+@@ -374,9 +374,48 @@
+-                    "ruleId": "architecture.circular-dependency",
+-                    "ruleIndex": 0,
+-                    "level": "error",
+-                    "message": {
+-                        "text": "Circular dependency (2 classes): K%FE \u2192 K%FF \u2192 K%FE"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "architecture.circular-dependency:project::449e174e1262085b"
+-                    }
++                    "ruleId": "complexity.ccn",
++                    "ruleIndex": 0,
++                    "level": "warning",
++                    "message": {
++                        "text": "Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "complexity.ccn:declaration:callable:Corpus\\Utf8\\Public\\K%FF::m%E9@src/First.php"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/First.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 7,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]
++                },
++                {
++                    "ruleId": "complexity.ccn",
++                    "ruleIndex": 0,
++                    "level": "warning",
++                    "message": {
++                        "text": "Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "complexity.ccn:declaration:callable:Corpus\\Utf8\\Public\\K%FE::m%E9@src/Second.php"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/Second.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 7,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]
+@@ -435,48 +474,9 @@
+-                    "ruleId": "complexity.ccn",
+-                    "ruleIndex": 2,
+-                    "level": "warning",
+-                    "message": {
+-                        "text": "Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "complexity.ccn:declaration:callable:Corpus\\Utf8\\Public\\K%FF::m%E9@src/First.php"
+-                    },
+-                    "locations": [
+-                        {
+-                            "physicalLocation": {
+-                                "artifactLocation": {
+-                                    "uri": "src/First.php",
+-                                    "uriBaseId": "%SRCROOT%"
+-                                },
+-                                "region": {
+-                                    "startLine": 7,
+-                                    "startColumn": 1
+-                                }
+-                            }
+-                        }
+-                    ]
+-                },
+-                {
+-                    "ruleId": "complexity.ccn",
+-                    "ruleIndex": 2,
+-                    "level": "warning",
+-                    "message": {
+-                        "text": "Cyclomatic complexity is 4, exceeds threshold of 2. Consider extracting methods or simplifying conditions"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "complexity.ccn:declaration:callable:Corpus\\Utf8\\Public\\K%FE::m%E9@src/Second.php"
+-                    },
+-                    "locations": [
+-                        {
+-                            "physicalLocation": {
+-                                "artifactLocation": {
+-                                    "uri": "src/Second.php",
+-                                    "uriBaseId": "%SRCROOT%"
+-                                },
+-                                "region": {
+-                                    "startLine": 7,
+-                                    "startColumn": 1
+-                                }
+-                            }
+-                        }
+-                    ]
++                    "ruleId": "architecture.circular-dependency",
++                    "ruleIndex": 2,
++                    "level": "error",
++                    "message": {
++                        "text": "Circular dependency (2 classes): K%FE \u2192 K%FF \u2192 K%FE"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "architecture.circular-dependency:project::449e174e1262085b"
++                    }

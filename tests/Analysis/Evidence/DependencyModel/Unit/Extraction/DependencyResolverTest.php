@@ -4,213 +4,96 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction;
 
-use PhpParser\Node\Identifier;
+use PhpParser\Node;
 use PhpParser\Node\Name;
-use PhpParser\Node\Name\FullyQualified;
-use PhpParser\Node\Name\Relative;
-use PhpParser\Node\Stmt\GroupUse;
-use PhpParser\Node\Stmt\Use_;
-use PhpParser\Node\Stmt\UseUse;
+use PhpParser\Node\Param;
+use PhpParser\NodeFinder;
+use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver;
+use Qualimetrix\Core\Ast\NameResolution;
 
 #[CoversClass(DependencyResolver::class)]
 final class DependencyResolverTest extends TestCase
 {
-    private DependencyResolver $resolver;
-
-    protected function setUp(): void
+    #[Test]
+    #[DataProvider('classNameCases')]
+    public function itReadsTheClassNameResolvedByTheSharedAstPass(string $code, string $expected): void
     {
-        $this->resolver = new DependencyResolver();
+        $name = self::parameterType($code);
+
+        self::assertSame($expected, (new DependencyResolver())->resolve($name));
+    }
+
+    /** @return iterable<string, array{string, string}> */
+    public static function classNameCases(): iterable
+    {
+        yield 'fully qualified' => [
+            '<?php namespace App; final class Subject { public function f(\\Vendor\\Package\\Type $v): void {} }',
+            'Vendor\\Package\\Type',
+        ];
+        yield 'relative' => [
+            '<?php namespace App; final class Subject { public function f(namespace\\Package\\Type $v): void {} }',
+            'App\\Package\\Type',
+        ];
+        yield 'unqualified import with another case' => [
+            '<?php namespace App; use Vendor\\Package\\SomeClass; final class Subject { public function f(SOMECLASS $v): void {} }',
+            'Vendor\\Package\\SomeClass',
+        ];
+        yield 'alias with another case' => [
+            '<?php namespace App; use Vendor\\Package\\SomeClass as Alias; final class Subject { public function f(alias $v): void {} }',
+            'Vendor\\Package\\SomeClass',
+        ];
+        yield 'qualified alias with another case' => [
+            '<?php namespace App; use Vendor\\Package as P; final class Subject { public function f(p\\SubClass $v): void {} }',
+            'Vendor\\Package\\SubClass',
+        ];
+        yield 'unimported name' => [
+            '<?php namespace App\\Domain; final class Subject { public function f(MyClass $v): void {} }',
+            'App\\Domain\\MyClass',
+        ];
+        yield 'global name' => [
+            '<?php final class Subject { public function f(GlobalClass $v): void {} }',
+            'GlobalClass',
+        ];
+        yield 'group import' => [
+            '<?php namespace App; use Vendor\\Package\\{ClassA, ClassB as B}; final class Subject { public function f(b $v): void {} }',
+            'Vendor\\Package\\ClassB',
+        ];
+        yield 'function import does not bind a class name' => [
+            '<?php namespace App; use function Vendor\\Thing; final class Subject { public function f(Thing $v): void {} }',
+            'App\\Thing',
+        ];
+        yield 'constant import does not bind a class name' => [
+            '<?php namespace App; use const Vendor\\Thing; final class Subject { public function f(Thing $v): void {} }',
+            'App\\Thing',
+        ];
     }
 
     #[Test]
-    public function itResolvesAFullyQualifiedNameUnchanged(): void
+    public function itKeepsTheFirstImportWhenPhpReportsAnAliasConflict(): void
     {
-        $name = new FullyQualified('Foo\\Bar\\Baz');
-
-        $result = $this->resolver->resolve($name);
-
-        self::assertSame('Foo\\Bar\\Baz', $result);
-    }
-
-    #[Test]
-    public function itPrependsTheCurrentNamespaceToARelativeName(): void
-    {
-        $this->resolver->setNamespace('App\\Service');
-        $name = new Relative(['Foo', 'Bar']);
-
-        $result = $this->resolver->resolve($name);
-
-        self::assertSame('App\\Service\\Foo\\Bar', $result);
-    }
-
-    #[Test]
-    public function itResolvesAnUnqualifiedNameToItsImportedFqcn(): void
-    {
-        $use = new Use_([
-            new UseUse(new Name('Vendor\\Package\\SomeClass')),
-        ]);
-        $this->resolver->addUseStatement($use);
-
-        $name = new Name('SomeClass');
-        $result = $this->resolver->resolve($name);
-
-        self::assertSame('Vendor\\Package\\SomeClass', $result);
-    }
-
-    #[Test]
-    public function itResolvesAnAliasedNameToTheOriginalImportedFqcn(): void
-    {
-        $use = new Use_([
-            new UseUse(
-                new Name('Vendor\\Package\\SomeClass'),
-                new Identifier('Alias'),
-            ),
-        ]);
-        $this->resolver->addUseStatement($use);
-
-        $name = new Name('Alias');
-        $result = $this->resolver->resolve($name);
-
-        self::assertSame('Vendor\\Package\\SomeClass', $result);
-    }
-
-    #[Test]
-    public function itResolvesAQualifiedNameWhoseFirstSegmentIsImported(): void
-    {
-        $use = new Use_([
-            new UseUse(new Name('Vendor\\Package')),
-        ]);
-        $this->resolver->addUseStatement($use);
-
-        $name = new Name(['Package', 'SubClass']);
-        $result = $this->resolver->resolve($name);
-
-        self::assertSame('Vendor\\Package\\SubClass', $result);
-    }
-
-    #[Test]
-    public function itPrependsTheCurrentNamespaceToAnUnimportedUnqualifiedName(): void
-    {
-        $this->resolver->setNamespace('App\\Domain');
-
-        $name = new Name('MyClass');
-        $result = $this->resolver->resolve($name);
-
-        self::assertSame('App\\Domain\\MyClass', $result);
-    }
-
-    #[Test]
-    public function itResolvesAnUnimportedUnqualifiedNameToItselfWhenThereIsNoNamespace(): void
-    {
-        $name = new Name('GlobalClass');
-        $result = $this->resolver->resolve($name);
-
-        self::assertSame('GlobalClass', $result);
-    }
-
-    #[Test]
-    public function itResolvesNamesImportedThroughAGroupUseStatement(): void
-    {
-        $groupUse = new GroupUse(
-            new Name('Vendor\\Package'),
-            [
-                new UseUse(new Name('ClassA')),
-                new UseUse(new Name('ClassB'), new Identifier('B')),
-            ],
+        $name = self::parameterType(
+            '<?php namespace App; use Vendor\\One as Alias; use Vendor\\Two as Alias; final class Subject { public function f(alias $v): void {} }',
         );
-        $this->resolver->addGroupUseStatement($groupUse);
 
-        $name1 = new Name('ClassA');
-        $name2 = new Name('B');
-
-        self::assertSame('Vendor\\Package\\ClassA', $this->resolver->resolve($name1));
-        self::assertSame('Vendor\\Package\\ClassB', $this->resolver->resolve($name2));
+        self::assertSame('Vendor\\One', (new DependencyResolver())->resolve($name));
     }
 
-    #[Test]
-    public function itClearsImportsAndTheNamespaceOnReset(): void
+    private static function parameterType(string $code): Name
     {
-        $this->resolver->setNamespace('App');
-        $use = new Use_([
-            new UseUse(new Name('Vendor\\Class')),
-        ]);
-        $this->resolver->addUseStatement($use);
-
-        $this->resolver->reset();
-
-        self::assertNull($this->resolver->getNamespace());
-        self::assertSame([], $this->resolver->getImports());
-    }
-
-    #[Test]
-    public function itStripsTheLeadingBackslashWhenResolvingAFullyQualifiedString(): void
-    {
-        $result = $this->resolver->resolveString('\\Foo\\Bar');
-
-        self::assertSame('Foo\\Bar', $result);
-    }
-
-    #[Test]
-    public function itResolvesAnImportedNameGivenAsAString(): void
-    {
-        $use = new Use_([
-            new UseUse(new Name('Vendor\\SomeClass')),
-        ]);
-        $this->resolver->addUseStatement($use);
-
-        $result = $this->resolver->resolveString('SomeClass');
-
-        self::assertSame('Vendor\\SomeClass', $result);
-    }
-
-    #[Test]
-    public function itResolvesAQualifiedStringWhoseFirstSegmentIsImported(): void
-    {
-        $use = new Use_([
-            new UseUse(new Name('Vendor\\Package')),
-        ]);
-        $this->resolver->addUseStatement($use);
-
-        $result = $this->resolver->resolveString('Package\\SubClass');
-
-        self::assertSame('Vendor\\Package\\SubClass', $result);
-    }
-
-    #[Test]
-    public function itPrependsTheCurrentNamespaceToAnUnimportedStringName(): void
-    {
-        $this->resolver->setNamespace('App\\Domain');
-
-        $result = $this->resolver->resolveString('MyClass');
-
-        self::assertSame('App\\Domain\\MyClass', $result);
-    }
-
-    #[Test]
-    public function itIgnoresFunctionImportsWhenRecordingUseStatements(): void
-    {
-        $use = new Use_(
-            [new UseUse(new Name('strlen'))],
-            Use_::TYPE_FUNCTION,
+        $ast = (new ParserFactory())->createForNewestSupportedVersion()->parse($code) ?? [];
+        NameResolution::resolve($ast);
+        $parameter = (new NodeFinder())->findFirst(
+            $ast,
+            static fn(Node $node): bool => $node instanceof Param && $node->type instanceof Name,
         );
-        $this->resolver->addUseStatement($use);
+        self::assertInstanceOf(Param::class, $parameter);
+        self::assertInstanceOf(Name::class, $parameter->type);
 
-        self::assertSame([], $this->resolver->getImports());
-    }
-
-    #[Test]
-    public function itIgnoresConstantImportsWhenRecordingUseStatements(): void
-    {
-        $use = new Use_(
-            [new UseUse(new Name('PHP_EOL'))],
-            Use_::TYPE_CONSTANT,
-        );
-        $this->resolver->addUseStatement($use);
-
-        self::assertSame([], $this->resolver->getImports());
+        return $parameter->type;
     }
 }

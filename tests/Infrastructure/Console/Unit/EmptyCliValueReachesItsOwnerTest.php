@@ -11,9 +11,11 @@ use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Core\Pattern\PathPattern;
-use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
+use Qualimetrix\Infrastructure\Console\Invocation\Configuration\ConfigurationInputAdapter;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputDefinition;
@@ -26,6 +28,32 @@ use Symfony\Component\Console\Input\InputOption;
  */
 final class EmptyCliValueReachesItsOwnerTest extends TestCase
 {
+    #[Test]
+    public function itRefusesAnEmptyBaselineChannelAtItsConsoleOwner(): void
+    {
+        $root = sys_get_temp_dir() . '/qmx-empty-channel-' . bin2hex(random_bytes(6));
+        mkdir($root, 0700);
+        file_put_contents($root . '/A.php', '<?php namespace App; final class A {}');
+        file_put_contents($root . '/qmx.yaml', '{}');
+        try {
+            $app = \Qualimetrix\Infrastructure\Console\Application\Application::forProduct(
+                static fn(\Qualimetrix\Infrastructure\Console\Application\ConsoleDiagnostics $diagnostics) => (new \Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory())->create($diagnostics),
+                \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register(),
+            );
+            $app->setAutoExit(false);
+            $tester = new \Symfony\Component\Console\Tester\ApplicationTester($app);
+            $code = $tester->run(['command' => 'baseline:explain', 'subject' => 'class:App\\A', 'paths' => ['A.php'], '--working-dir' => $root, '--channel' => '', '--no-cache' => true, '--workers' => '0'], ['capture_stderr_separately' => true]);
+            self::assertSame(3, $code, $tester->getErrorOutput());
+            self::assertSame('', $tester->getDisplay());
+            self::assertStringContainsString('--channel', $tester->getErrorOutput());
+            self::assertStringContainsString('must not be empty', $tester->getErrorOutput());
+        } finally {
+            unlink($root . '/A.php');
+            unlink($root . '/qmx.yaml');
+            rmdir($root);
+        }
+    }
+
     /** @return iterable<string, array{string, string}> */
     public static function provideScalarDoors(): iterable
     {
@@ -52,7 +80,7 @@ final class EmptyCliValueReachesItsOwnerTest extends TestCase
     #[Test]
     public function itStillWritesNothingForAnArrayOptionNobodyRepeated(): void
     {
-        self::assertArrayNotHasKey(ConfigSchema::EXCLUDES, self::overrides([]));
+        self::assertArrayNotHasKey(ConfigSchema::EXCLUDE, self::overrides([]));
     }
 
     #[Test]
@@ -61,16 +89,25 @@ final class EmptyCliValueReachesItsOwnerTest extends TestCase
         self::assertSame('json', self::overrides(['format' => 'json'])[ConfigSchema::FORMAT] ?? null);
     }
 
+    /**
+     * A selector is checked where the option still names it, and handed on in
+     * the mapping form a document writes it in, so both doors reach one node.
+     */
     #[Test]
     public function itDecodesExplicitExcludeSelectorsAtTheCliBoundary(): void
     {
-        $patterns = self::overrides(['exclude' => ['subtree:build', 'regex:(?:[^/]+/)*cache']])[ConfigSchema::EXCLUDES] ?? null;
-
-        self::assertIsArray($patterns);
-        self::assertContainsOnlyInstancesOf(PathPattern::class, $patterns);
         self::assertSame(
-            ['subtree:build', 'regex:(?:[^/]+/)*cache'],
-            array_map(static fn(PathPattern $pattern): string => $pattern->definition->display(), $patterns),
+            [['subtree' => 'build'], ['regex' => '(?:[^/]+/)*cache']],
+            self::overrides(['exclude' => ['subtree:build', 'regex:(?:[^/]+/)*cache']])[ConfigSchema::EXCLUDE] ?? null,
+        );
+    }
+
+    #[Test]
+    public function itNamesTheOptionThatWroteEachValue(): void
+    {
+        self::assertSame(
+            [ConfigSchema::EXCLUDE => '--exclude', ConfigSchema::FORMAT => '--format', ConfigSchema::DISABLED_RULES => '--disable-rule'],
+            self::request(['exclude' => ['subtree:build'], 'format' => 'json', 'disable-rule' => ['size.loc']])->cliOptionNames,
         );
     }
 
@@ -80,6 +117,12 @@ final class EmptyCliValueReachesItsOwnerTest extends TestCase
      * @return array<string, mixed>
      */
     private static function overrides(array $options): array
+    {
+        return self::request($options)->cliValues;
+    }
+
+    /** @param array<string, string|list<string>> $options */
+    private static function request(array $options): ConfigurationResolutionRequest
     {
         $definition = new InputDefinition([
             new InputArgument('paths', InputArgument::IS_ARRAY),
@@ -101,12 +144,10 @@ final class EmptyCliValueReachesItsOwnerTest extends TestCase
         $pipeline = new class implements ConfigurationPipelineInterface {
             public function resolve(ConfigurationResolutionRequest $request): ConfigurationDocument
             {
-                return new ConfigurationDocument([], AbsolutePath::fromString('/project'));
+                return LayeredDocument::of([], AbsolutePath::fromString('/project'));
             }
         };
 
-        $captured = (new ConfigurationInputAdapter($pipeline))->adapt($input, '/project')->cliValues;
-
-        return $captured;
+        return (new ConfigurationInputAdapter(new RuleOptionDocumentForms(), $pipeline, new ErrorStream(), self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)))->adapt($input, '/project');
     }
 }

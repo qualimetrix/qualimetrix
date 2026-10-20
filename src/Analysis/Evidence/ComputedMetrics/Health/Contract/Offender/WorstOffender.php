@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
@@ -13,7 +14,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  */
 final readonly class WorstOffender
 {
-    private WorstOffenderEvidence $evidence;
+    public SymbolPath $symbolPath;
+    public ?RelativePath $file;
     public int $violationCount;
     public int $classCount;
     /** @var array<string, int|float> */
@@ -22,15 +24,17 @@ final readonly class WorstOffender
     public array $healthScores;
     public ?float $violationDensity;
 
+    /** @param array{float, float} $overallThresholds */
     public function __construct(
-        public SymbolPath $symbolPath,
-        public ?RelativePath $file,
+        public MetricSubject $subject,
         public float $healthOverall,
         public string $label,
         public string $reason,
         WorstOffenderEvidence $evidence,
+        public array $overallThresholds,
     ) {
-        $this->evidence = $evidence;
+        $this->symbolPath = $subject->toSymbolPath();
+        $this->file = $subject->declarationPath()?->file;
         $this->violationCount = $evidence->violationCount;
         $this->classCount = $evidence->classCount;
         $this->metrics = $evidence->metrics;
@@ -38,21 +42,22 @@ final readonly class WorstOffender
         $this->violationDensity = $evidence->violationDensity;
     }
 
+    /** @param array{float, float} $overallThresholds */
     public static function fromEvidence(
-        SymbolPath $symbolPath,
-        ?RelativePath $file,
+        MetricSubject $subject,
         float $healthOverall,
         string $label,
         string $reason,
         WorstOffenderEvidence $evidence,
+        array $overallThresholds,
     ): self {
         return new self(
-            $symbolPath,
-            $file,
+            $subject,
             $healthOverall,
             $label,
             $reason,
             $evidence,
+            $overallThresholds,
         );
     }
 
@@ -65,26 +70,26 @@ final readonly class WorstOffender
     }
 
     /**
-     * Re-ranks offenders by finding density (descending) when requested.
-     *
-     * Falls back to canonical path for stable ordering among equal densities.
-     * Returns the original list unchanged when rank-by is not 'density'.
-     *
      * @param list<self> $offenders
      *
      * @return list<self>
      */
-    public static function rankByDensity(array $offenders, string $rankBy): array
+    public static function rank(array $offenders, RankBy $rankBy): array
     {
-        if ($rankBy !== 'density') {
-            return $offenders;
-        }
+        usort($offenders, static function (self $a, self $b) use ($rankBy): int {
+            $primary = $rankBy === RankBy::Density
+                ? (($b->violationDensity ?? -1.0) <=> ($a->violationDensity ?? -1.0))
+                : ($a->healthOverall <=> $b->healthOverall);
 
-        $sorted = $offenders;
-        usort($sorted, static fn(self $a, self $b): int => (($b->evidence->violationDensity ?? -1.0) <=> ($a->evidence->violationDensity ?? -1.0)) !== 0 ? (($b->evidence->violationDensity ?? -1.0) <=> ($a->evidence->violationDensity ?? -1.0))
-                : ($a->symbolPath->toCanonical() <=> $b->symbolPath->toCanonical()));
+            if ($primary !== 0) {
+                return $primary;
+            }
+            $canonical = $a->symbolPath->toCanonical() <=> $b->symbolPath->toCanonical();
 
-        return $sorted;
+            return $canonical !== 0 ? $canonical : ($a->subject->toCanonical() <=> $b->subject->toCanonical());
+        });
+
+        return $offenders;
     }
 
     /**

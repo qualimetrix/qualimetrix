@@ -8,6 +8,7 @@ use Amp\Cancellation;
 use Amp\Parallel\Worker\Task;
 use Amp\Sync\Channel;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -25,12 +26,9 @@ use SplFileInfo;
  * The collector classes are passed from the main process to ensure
  * workers use the same set of collectors as configured in DI container.
  *
- * @qmx-threshold coupling.instability warning=0.81 -- A task is efferent by construction:
- * it names the worker-side machinery it runs, and only its factory and the pool name it
- * back. Ca=2, Ce=8 is exactly 0.800 against an inclusive 0.800 ceiling; the eighth
- * efferent edge is `WorkerComposition`, which took four constructor parameters.
- *
  * @implements Task<FileProcessingResult, mixed, mixed>
+ *
+ * @qmx-threshold coupling.instability 0.833335 -- The worker task binds collection, configuration and transport with few coordinator consumers; extracting that protocol transfers its adapter dependencies.
  */
 final class FileProcessingTask implements Task
 {
@@ -47,6 +45,7 @@ final class FileProcessingTask implements Task
         private readonly AbsolutePath $filePath,
         private readonly AbsolutePath $projectRoot,
         private readonly WorkerComposition $composition,
+        private readonly RuleOptionDocumentFormsInterface $documentForms,
         private readonly string $memoryLimit,
         private readonly ?AbsolutePath $cacheDir = null,
         private readonly LcomCollectionConfiguration $lcomConfiguration = new LcomCollectionConfiguration(),
@@ -68,24 +67,28 @@ final class FileProcessingTask implements Task
         // Check for cancellation before starting work
         $cancellation->throwIfRequested();
 
-        $this->applyMemoryLimit();
+        WorkerBootstrap::initializeWorker();
+        WorkerFatalNotes::workingOnFile($this->filePath);
+        try {
+            $this->applyMemoryLimit();
 
-        // Get or create FileProcessor via WorkerBootstrap
-        // WorkerBootstrap caches the processor for reuse across tasks in the same worker
-        $processor = WorkerBootstrap::getFileProcessor(
-            projectRoot: $this->projectRoot,
-            collectorClasses: $this->composition->collectorClasses,
-            dependencyTraversalParticipantClass: $this->composition->dependencyTraversalParticipantClass,
-            derivedCollectorClasses: $this->composition->derivedCollectorClasses,
-            cacheDir: $this->cacheDir,
-            lcomConfiguration: $this->lcomConfiguration,
-            ruleClasses: $this->composition->ruleClasses,
-        );
+            // Get or create FileProcessor via WorkerBootstrap
+            // WorkerBootstrap caches the processor for reuse across tasks in the same worker
+            $processor = WorkerBootstrap::getFileProcessor(
+                projectRoot: $this->projectRoot,
+                composition: $this->composition,
+                cacheDir: $this->cacheDir,
+                lcomConfiguration: $this->lcomConfiguration,
+                documentForms: $this->documentForms,
+            );
 
-        // Process the file
-        $file = new SplFileInfo($this->filePath->value());
+            // Process the file
+            $file = new SplFileInfo($this->filePath->value());
 
-        return $processor->process($file);
+            return $processor->process($file);
+        } finally {
+            WorkerFatalNotes::workingOnFile(null);
+        }
     }
 
     private function applyMemoryLimit(): void

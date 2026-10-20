@@ -12,9 +12,9 @@ use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevel\ChannelLevelSelector;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use RecursiveDirectoryIterator;
@@ -149,7 +149,7 @@ final class ChannelLevelAssemblyTopologyTest extends TestCase
     }
 
     /**
-     * @return array<string, \Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration>
+     * @return array<string, \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration>
      */
     private static function staticDeclarations(): array
     {

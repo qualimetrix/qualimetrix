@@ -7,11 +7,13 @@ namespace Qualimetrix\Analysis\Evidence\Cohesion;
 use PhpParser\Node;
 use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Stmt\Class_;
+use PhpParser\Node\Stmt\ClassMethod;
+use PhpParser\Node\Stmt\Trait_;
 
 /**
  * Shared scaffolding for structure visitors that track namespace/class context.
  *
- * Provides namespace tracking, class stack management, FQN building,
+ * Provides namespace tracking, class stack management,
  * and property name extraction. Used by LcomVisitor and TccLccVisitor.
  *
  * Expects the using class to call resetClassVisitorStack() in its reset() method
@@ -28,6 +30,9 @@ trait ClassVisitorStackTrait
      */
     private array $classStack = [];
 
+    /** @var list<int|null> */
+    private array $classPositionStack = [];
+
     protected function handleNamespaceEnter(Node\Stmt\Namespace_ $node): void
     {
         $this->currentNamespace = $node->name?->toString() ?? '';
@@ -38,14 +43,29 @@ trait ClassVisitorStackTrait
         $this->currentNamespace = null;
     }
 
-    protected function pushClass(?string $className): void
+    protected function pushClass(?string $className, ?int $position): void
     {
         $this->classStack[] = $className;
+        $this->classPositionStack[] = $position;
     }
 
     protected function popClass(): void
     {
         array_pop($this->classStack);
+        array_pop($this->classPositionStack);
+    }
+
+    protected function leaveClassVisitorNode(Node $node): void
+    {
+        if ($node instanceof ClassMethod) {
+            array_pop($this->methodStack);
+        }
+        if ($this->isClassLikeNode($node)) {
+            $this->popClass();
+        }
+        if ($node instanceof Node\Stmt\Namespace_) {
+            $this->handleNamespaceLeave();
+        }
     }
 
     /**
@@ -60,13 +80,11 @@ trait ClassVisitorStackTrait
         return $this->classStack[array_key_last($this->classStack)];
     }
 
-    protected function buildClassFqn(string $className): string
+    protected function getCurrentClassPosition(): ?int
     {
-        if ($this->currentNamespace !== null && $this->currentNamespace !== '') {
-            return $this->currentNamespace . '\\' . $className;
-        }
-
-        return $className;
+        return $this->classPositionStack === []
+            ? null
+            : $this->classPositionStack[array_key_last($this->classPositionStack)];
     }
 
     /**
@@ -86,14 +104,13 @@ trait ClassVisitorStackTrait
      * Extracts class name from class-like nodes.
      * Returns null for anonymous classes or non-class-like nodes.
      *
-     * Note: Both LCOM and TCC/LCC call this only for Class_ nodes
-     * (interfaces and enums are filtered upstream), so the match
-     * against Class_ is the only effective branch.
+     * Cohesion also records named trait bodies for later composition.
      */
     protected function extractClassLikeName(Node $node): ?string
     {
         return match (true) {
             $node instanceof Class_ && $node->name !== null => $node->name->toString(),
+            $node instanceof Trait_ && $node->name instanceof Node\Identifier => $node->name->toString(),
             default => null,
         };
     }
@@ -102,5 +119,6 @@ trait ClassVisitorStackTrait
     {
         $this->currentNamespace = null;
         $this->classStack = [];
+        $this->classPositionStack = [];
     }
 }

@@ -6,7 +6,6 @@ namespace Qualimetrix\Governance\ProjectScopeCoverage;
 
 use FilesystemIterator;
 use PhpParser\Node\Arg;
-use PhpParser\Node\Expr\ConstFetch;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Name;
 use PhpParser\NodeFinder;
@@ -19,32 +18,19 @@ use RecursiveIteratorIterator;
 use SplFileInfo;
 
 /**
- * No production context may inherit "this run covers the project" by default.
+ * Production contexts must explicitly receive the run's measured project scope.
  *
- * {@see \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration}
- * states the rule and enforces it by refusing a default value, which it can
- * afford because every one of its construction sites is production.
- * {@see AnalysisContext} cannot: hundreds of hand-built test contexts would
- * have to name a field they have nothing to say about, and the field would
- * become noise at exactly the sites that do not matter. So the default stays
- * and the rule is enforced where its population is — here.
+ * Hand-built contexts keep the complete default. Production constructions may
+ * not omit the fifth argument or pass a literal empty ProjectScopeJudgement,
+ * because both claim complete answers without transporting the measurement.
  *
- * A production site that omits the argument gets `true`: it says "this run
- * looked at the whole project" without having measured it, which is the silent
- * acceptance the field exists to prevent, and the direction of that error is
- * a channel accusing an author of a correct configuration.
- *
- * Writing the literal out makes the same unmeasured claim, so the argument's
- * value is checked as well as its presence: a boolean literal is refused and
- * anything else — a property, a call, a variable — is taken as an answer some
- * measurement produced. `false` is refused with `true` rather than tolerated
- * as the safe direction, because the promise in the method name is a
- * *measured* answer, and a site that hardcodes "this is a slice" has measured
- * nothing either.
+ * The existing scan reads direct AnalysisContext constructions and named or
+ * positional arguments. It does not establish the provenance of a variable,
+ * property or call, nor resolve aliases or indirect construction forms.
  */
 final class AnalysisContextScopeArgumentGuardTest extends TestCase
 {
-    private const string ARGUMENT = 'coversProjectScope';
+    private const string ARGUMENT = 'projectScope';
 
     /** The fifth constructor parameter, when a site passes them positionally. */
     private const int POSITION = 5;
@@ -88,9 +74,11 @@ final class AnalysisContextScopeArgumentGuardTest extends TestCase
                     continue;
                 }
 
-                if ($answer instanceof ConstFetch
-                    && \in_array(strtolower($answer->name->toString()), ['true', 'false'], true)) {
-                    $offenders[] = $site . ' (' . strtolower($answer->name->toString()) . ' is written out, not measured)';
+                if ($answer instanceof New_
+                    && $answer->class instanceof Name
+                    && $answer->class->getLast() === 'ProjectScopeJudgement'
+                    && $answer->args === []) {
+                    $offenders[] = $site . ' (an empty judgement is written out, not measured)';
                 }
             }
         }

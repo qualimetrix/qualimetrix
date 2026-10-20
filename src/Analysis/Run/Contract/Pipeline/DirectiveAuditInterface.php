@@ -6,7 +6,6 @@ namespace Qualimetrix\Analysis\Run\Contract\Pipeline;
 
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 
 /**
  * The second question Run answers about one prepared run: what each inline
@@ -36,9 +35,6 @@ use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 interface DirectiveAuditInterface
 {
     /**
-     * @param ?FileDiscoveryInterface $discovery the discovery the caller resolved, so the audited
-     *                                           file set is the one an analysis of the same
-     *                                           configuration would have measured
      * @param DirectiveSweepScope $sweep how much of the rule layer each counterfactual runs. The
      *                                   default executes only the rule a directive addresses, which
      *                                   is what the answer is about; {@see DirectiveSweepScope::Full}
@@ -49,7 +45,6 @@ interface DirectiveAuditInterface
      */
     public function auditDirectives(
         RunConfiguration $configuration,
-        ?FileDiscoveryInterface $discovery = null,
         DirectiveSweepScope $sweep = DirectiveSweepScope::Narrow,
     ): DirectiveAuditReport;
 }

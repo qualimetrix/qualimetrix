@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace QmxFindingGateControls;
 
 use QmxFindingGate\FailureClass;
+use QmxFindingGate\GateReport;
 use RuntimeException;
 
 /** What one control's gate run produced, and whether that is what it declared. */
@@ -61,6 +62,8 @@ final class Outcome
      * @param list<string> $touched declared survivors the run changed after all
      * @param list<string> $unrestored declarations the run was supposed to write back and did not
      * @param int $declaredFieldMoves how many moves of a compared field this repository licenses
+     * @param array<string, int> $declarationCounts what this repository declares in every other form, by report key
+     * @param list<string> $declaredExactSurfaces
      */
     public static function of(
         Control $control,
@@ -71,6 +74,8 @@ final class Outcome
         array $touched = [],
         array $unrestored = [],
         int $declaredFieldMoves = 0,
+        array $declarationCounts = [],
+        array $declaredExactSurfaces = [],
     ): self {
         $failures = self::failures($reportPath, $run);
         $reasons = [];
@@ -84,7 +89,7 @@ final class Outcome
                 $matched[] = $label;
             } elseif (!$control->expectsGreen && $control->tolerates($failureClass, $scope)) {
                 $tolerated[] = $label;
-            } elseif (!$control->expectsGreen && self::isDeclarationNoise($failureClass, $scope, $declaredSurfaces, $declarationReplaced)) {
+            } elseif (!$control->expectsGreen && self::isDeclarationNoise($failureClass, $scope, $declaredSurfaces, $declaredExactSurfaces, $declarationReplaced)) {
                 // The step declares this surface, and this class is a statement
                 // about that declaration rather than about the mechanism under
                 // test. Bounded by class on purpose: see isDeclarationNoise().
@@ -119,7 +124,7 @@ final class Outcome
         // baseline, so there is nothing to hold it to.
         if ($control->expectsGreen && !$declarationReplaced) {
             $declared = self::countIn($reportPath, 'declaredDeltaCount');
-            $baseline = \count($declaredSurfaces);
+            $baseline = \count(array_diff($declaredSurfaces, $declaredExactSurfaces));
 
             if ($declared !== $baseline) {
                 $reasons[] = $declared === null
@@ -131,6 +136,21 @@ final class Outcome
                         $baseline,
                         $declared,
                     );
+            }
+        }
+
+        if ($control->expectsGreen) {
+            foreach (['declaredExactSurfaceCount', 'exactSurfaceUsedCount'] as $reportKey) {
+                $reported = self::countIn($reportPath, $reportKey);
+                $expected = \count($declaredExactSurfaces);
+                if ($reported !== $expected) {
+                    $reasons[] = \sprintf(
+                        'expected the %d exact surface intention(s) this repository states for %s; the gate reports %s',
+                        $expected,
+                        $reportKey,
+                        $reported === null ? 'nothing' : (string) $reported,
+                    );
+                }
             }
         }
 
@@ -151,6 +171,26 @@ final class Outcome
                         $declaredFieldMoves,
                         $licensed,
                     );
+            }
+        }
+
+        // And for every other declaration form: a green control is held to what
+        // the repository declares, or to the count it states for the
+        // declaration its own mutation plants — never to a declaration that
+        // appeared on the way.
+        if ($control->expectsGreen && !$declarationReplaced) {
+            foreach (array_keys(GateReport::DECLARATION_COUNTS) as $reportKey) {
+                $expected = $control->declarationCounts[$reportKey] ?? $declarationCounts[$reportKey] ?? 0;
+                $reported = self::countIn($reportPath, $reportKey);
+
+                if ($reported !== $expected) {
+                    $reasons[] = \sprintf(
+                        'expected the report to state %d for %s; it states %s',
+                        $expected,
+                        $reportKey,
+                        $reported === null ? 'nothing' : (string) $reported,
+                    );
+                }
             }
         }
 
@@ -213,6 +253,10 @@ final class Outcome
      * of that argument: scope-only toleration is the same hole facing the other
      * way, and both halves have to be named.
      *
+     * Exact surface declarations also yield delta classes when a red control
+     * moves their bytes. They join this narrow declaration-noise check, but not
+     * the ordinary-delta count that the positive control verifies.
+     *
      * `surface-mismatch` is the one class that needs the third condition. It
      * lands on a declared surface for two unrelated reasons: because the
      * control *replaced* the declaration index, leaving the surface undeclared
@@ -222,14 +266,17 @@ final class Outcome
      * control's own mutation rewrote the index.
      *
      * @param list<string> $declaredSurfaces
+     * @param list<string> $declaredExactSurfaces
      */
     private static function isDeclarationNoise(
         string $failureClass,
         string $scope,
         array $declaredSurfaces,
+        array $declaredExactSurfaces,
         bool $declarationReplaced,
     ): bool {
-        if (!\in_array($scope, $declaredSurfaces, true)) {
+        $ordinary = \in_array($scope, $declaredSurfaces, true);
+        if (!$ordinary && !\in_array($scope, $declaredExactSurfaces, true)) {
             return false;
         }
 
@@ -240,7 +287,7 @@ final class Outcome
         // `declared-field-moves.tsv` reads as stale through no fault of the
         // mechanism under test. With the index intact a stale licence is real.
         if ($failureClass === FailureClass::SURFACE_MISMATCH || $failureClass === FailureClass::FIELD_MOVE_STALE) {
-            return $declarationReplaced;
+            return $ordinary && $declarationReplaced;
         }
 
         return \in_array($failureClass, [

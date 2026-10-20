@@ -60,31 +60,85 @@ final class Fs
     }
 
     /**
-     * A link is unlinked, never walked.
+     * A link observed during entry classification is unlinked, not walked.
      *
      * `is_dir()` follows symlinks, so a link to a directory would be descended
      * into and its *target's* contents deleted. This function removes reference
      * worktrees and scratch directories, so following one link would delete
-     * outside the tree it was asked to remove.
+     * outside the tree it was asked to remove. Cleanup tolerates concurrent
+     * disappearance, but assumes entries are not concurrently substituted or
+     * created: path-based classification and removal are not atomic.
      */
     public static function removeRecursively(string $path): void
     {
-        if (is_link($path)) {
-            @unlink($path);
+        self::removeEntry($path, $path);
+    }
+
+    private static function removeEntry(string $path, string $root): void
+    {
+        if (@is_link($path)) {
+            [$removed, $nativeError] = RemovalFailureDiagnostics::capture(static fn(): bool => @unlink($path));
+            if (!$removed && !self::entryIsAbsent($path)) {
+                throw new GateError(RemovalFailureDiagnostics::message(
+                    \sprintf('Cannot unlink %s while removing it.', $path),
+                    $root,
+                    $nativeError,
+                    true,
+                ));
+            }
+
+            if (!self::entryIsAbsent($path)) {
+                throw new GateError(RemovalFailureDiagnostics::message(
+                    \sprintf('Cannot unlink %s while removing it.', $path),
+                    $root,
+                    $nativeError,
+                    !$removed,
+                ));
+            }
 
             return;
         }
 
-        if (!is_dir($path)) {
-            @unlink($path);
+        if (!@is_dir($path)) {
+            if (self::entryIsAbsent($path)) {
+                return;
+            }
+
+            [$removed, $nativeError] = RemovalFailureDiagnostics::capture(static fn(): bool => @unlink($path));
+            if (!$removed && !self::entryIsAbsent($path)) {
+                throw new GateError(RemovalFailureDiagnostics::message(
+                    \sprintf('Cannot unlink %s while removing it.', $path),
+                    $root,
+                    $nativeError,
+                    true,
+                ));
+            }
+
+            if (!self::entryIsAbsent($path)) {
+                throw new GateError(RemovalFailureDiagnostics::message(
+                    \sprintf('Cannot unlink %s while removing it.', $path),
+                    $root,
+                    $nativeError,
+                    !$removed,
+                ));
+            }
 
             return;
         }
 
-        $entries = scandir($path);
+        [$entries, $nativeError] = RemovalFailureDiagnostics::capture(static fn(): array|false => @scandir($path));
 
         if ($entries === false) {
-            throw new GateError(\sprintf('Cannot list %s while removing it.', $path));
+            if (self::entryIsAbsent($path)) {
+                return;
+            }
+
+            throw new GateError(RemovalFailureDiagnostics::message(
+                \sprintf('Cannot list %s while removing it.', $path),
+                $root,
+                $nativeError,
+                true,
+            ));
         }
 
         foreach ($entries as $entry) {
@@ -92,10 +146,52 @@ final class Fs
                 continue;
             }
 
-            self::removeRecursively($path . '/' . $entry);
+            self::removeEntry($path . '/' . $entry, $root);
         }
 
-        @rmdir($path);
+        [$removed, $nativeError] = RemovalFailureDiagnostics::capture(static fn(): bool => @rmdir($path));
+        if (!$removed && !self::entryIsAbsent($path)) {
+            throw new GateError(RemovalFailureDiagnostics::message(
+                \sprintf('Cannot remove directory %s.', $path),
+                $root,
+                $nativeError,
+                true,
+            ));
+        }
+
+        if (!self::entryIsAbsent($path)) {
+            throw new GateError(RemovalFailureDiagnostics::message(
+                \sprintf('Cannot remove directory %s.', $path),
+                $root,
+                $nativeError,
+                !$removed,
+            ));
+        }
+    }
+
+    /**
+     * A failed stat is ambiguous when a parent denies traversal. A readable
+     * ancestor proves that the entry or one of its parents is absent.
+     *
+     * @phpstan-impure
+     */
+    private static function entryIsAbsent(string $path): bool
+    {
+        clearstatcache(true, $path);
+
+        if (@lstat($path) !== false) {
+            return false;
+        }
+
+        $entries = @scandir(\dirname($path));
+
+        if ($entries !== false) {
+            return !\in_array(basename($path), $entries, true);
+        }
+
+        $parent = \dirname($path);
+
+        return $parent !== $path && self::entryIsAbsent($parent);
     }
 
     /**

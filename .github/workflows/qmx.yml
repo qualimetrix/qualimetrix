@@ -110,6 +110,13 @@ jobs:
   check:
     name: Full validation (composer check)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GIT_CONFIG_COUNT: '2'
+      GIT_CONFIG_KEY_0: maintenance.auto
+      GIT_CONFIG_VALUE_0: 'false'
+      GIT_CONFIG_KEY_1: gc.auto
+      GIT_CONFIG_VALUE_1: '0'
 
     strategy:
       fail-fast: false
@@ -157,8 +164,12 @@ jobs:
           key: ${{ runner.os }}-composer-${{ matrix.php-version }}-${{ hashFiles('composer.lock') }}
           restore-keys: ${{ runner.os }}-composer-${{ matrix.php-version }}-
 
-      - name: Install dependencies
-        run: composer install --no-progress --prefer-dist --optimize-autoloader
+      - name: Cache PHP CS Fixer file results
+        uses: actions/cache@v5
+        with:
+          path: .php-cs-fixer.cache
+          key: ${{ runner.os }}-php-cs-fixer-${{ matrix.php-version }}-${{ hashFiles('.php-cs-fixer.dist.php', 'composer.lock') }}-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-php-cs-fixer-${{ matrix.php-version }}-${{ hashFiles('.php-cs-fixer.dist.php', 'composer.lock') }}-
 
       # `composer check` builds the website with mkdocs --strict, so the docs
       # toolchain has to be present here too — otherwise that step fails on a
@@ -169,9 +180,6 @@ jobs:
           cache: 'pip'
           cache-dependency-path: 'website/requirements.txt'
 
-      - name: Install documentation dependencies
-        run: pip install -r website/requirements.txt
-
       # `composer check` runs the report template's JS tests (vitest) inside
       # check:code, so the JS toolchain has to be present here too — otherwise
       # that step fails on a missing runner instead of on JS problems.
@@ -181,8 +189,20 @@ jobs:
           cache: 'npm'
           cache-dependency-path: 'html-report/package-lock.json'
 
-      - name: Install report template dependencies
-        run: npm ci --prefix html-report
+      - name: Install validation dependencies
+        shell: python
+        run: |
+          import importlib
+          import sys
+
+          sys.path.insert(0, 'scripts/check-code-parallel')
+          runner = importlib.import_module('check-code-parallel')
+          commands = (
+              ('Composer dependencies', ('composer', 'install', '--no-progress', '--prefer-dist', '--optimize-autoloader')),
+              ('Documentation dependencies', ('pip', 'install', '-r', 'website/requirements.txt')),
+              ('Report template dependencies', ('npm', 'ci', '--prefix', 'html-report')),
+          )
+          raise SystemExit(runner.run_checks(commands))
 
       - name: Run full validation
         env:
@@ -245,7 +265,8 @@ jobs:
         run: |
           set -o pipefail
           docker run --rm -v "$PWD/src/Core:/code:ro" qmx \
-            check /code --workers=0 --no-progress --format=json --fail-on=none \
+            check /code --working-dir=/code --cache-dir=/tmp/qmx-cache \
+            --workers=0 --no-progress --format=json --fail-on=none \
             | tee /tmp/docker-qmx.json > /dev/null
           python3 - <<'PY'
           import json
@@ -256,9 +277,40 @@ jobs:
           print(f'analysed {files} files inside the image')
           PY
 
+      - name: Image runs process workers on a mounted tree
+        run: |
+          set -o pipefail
+          docker run --rm -v "$PWD/src:/code:ro" qmx \
+            check /code --working-dir=/code --workers=0 --no-cache \
+            --no-progress --format=json --fail-on=none --memory-limit=512M \
+            > /tmp/docker-qmx-sequential.json 2> /tmp/docker-qmx-sequential.log
+          docker run --rm -v "$PWD/src:/code:ro" qmx \
+            check /code --working-dir=/code --workers=4 --no-cache -v \
+            --no-progress --format=json --fail-on=none --memory-limit=512M \
+            > /tmp/docker-qmx-parallel.json 2> /tmp/docker-qmx-parallel.log
+          grep -q 'starting parallel processing' /tmp/docker-qmx-parallel.log
+          python3 - <<'PY'
+          import json
+          with open('/tmp/docker-qmx-sequential.json') as handle:
+              sequential = json.load(handle)
+          with open('/tmp/docker-qmx-parallel.json') as handle:
+              parallel = json.load(handle)
+          for report in (sequential, parallel):
+              report['meta'].pop('timestamp', None)
+              report['summary'].pop('duration', None)
+          assert sequential['summary']['filesAnalyzed'] >= 100
+          assert sequential == parallel, 'process workers changed the report'
+          PY
+
   phar:
     name: Phar (built, and equal to the tree it came from)
     runs-on: ubuntu-latest
+    env:
+      GIT_CONFIG_COUNT: '2'
+      GIT_CONFIG_KEY_0: maintenance.auto
+      GIT_CONFIG_VALUE_0: 'false'
+      GIT_CONFIG_KEY_1: gc.auto
+      GIT_CONFIG_VALUE_1: '0'
 
     steps:
       - name: Checkout code
@@ -283,6 +335,11 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: composer phar
 
+      - name: The finding gate compares the built archive with its committed tree
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: composer gate:phar -- --reference=HEAD
+
       - name: It runs and names itself
         run: php build/qmx.phar --version
 
@@ -294,7 +351,7 @@ jobs:
       # rebuilds, so this is a separate witness rather than a repeat.
       #
       # The report's shape is what is checked, because neither obvious signal
-      # separates the cases: the fatal prints valid JSON and exits 1, while a
+      # separates the cases: the fatal prints valid JSON and exits 5, while a
       # healthy run over a fixture repository exits 2 for want of a
       # composer.json.
       - name: It resolves a git scope
@@ -324,30 +381,12 @@ jobs:
               sys.exit(f'the git scope analysed {analysed} files, expected the one staged file')
           PY
 
-      # Run from a scratch directory with absolute paths. From the repository
-      # root the analysis discovers this repository's own qmx.yaml and applies
-      # its declared layers to a target that is not this repository, which
-      # raises a configuration-error channel that --fail-on cannot suppress:
-      # measured exit 2 from the root against exit 0 from elsewhere.
+      # Evidence is written outside the target, while the explicit project
+      # root is the target itself. This avoids loading this repository's
+      # qmx.yaml and keeps absolute paths inside the measured root.
       #
-      # The exit codes are compared rather than required to be zero. The
-      # subject here is "the phar agrees with the tree", and a run that exits
-      # non-zero for a reason both sides share is evidence of agreement, not a
-      # broken job. Inheriting bash -e's implicit zero would have made every
-      # run of this job red.
-      # Run from a scratch directory with absolute paths. From the repository
-      # root the analysis discovers this repository's own qmx.yaml and applies
-      # its declared layers to a target that is not this repository, which
-      # raises a configuration-error channel that --fail-on cannot suppress:
-      # measured exit 2 from the root against exit 0 from elsewhere. The
-      # scratch directory also has no composer.json, so namespace detection is
-      # degraded and coupling figures differ from a normal run -- equally on
-      # both sides, which is all this comparison needs.
-      #
-      # The exit codes are compared rather than required to be zero. The
-      # subject here is "the phar agrees with the tree", and a run that exits
-      # non-zero for a reason both sides share is evidence of agreement, not a
-      # broken job. Inheriting bash -e's implicit zero made every run red.
+      # Both sides must enter the parallel branch and publish the same report.
+      # Equal nonzero exits alone would also accept two configuration refusals.
       - name: It publishes what the tree publishes, with workers
         run: |
           target="$GITHUB_WORKSPACE/vendor/symfony/console"
@@ -357,10 +396,10 @@ jobs:
           cd "$GITHUB_WORKSPACE/build/evidence"
 
           set +e
-          php "$GITHUB_WORKSPACE/bin/qmx" check "$target" --workers=4 --no-cache \
+          php "$GITHUB_WORKSPACE/bin/qmx" check "$target" --working-dir="$target" --workers=4 --no-cache \
             --no-progress --format=json --fail-on=none -vv > tree.json 2> tree.log
           tree_exit=$?
-          php "$GITHUB_WORKSPACE/build/qmx.phar" check "$target" --workers=4 --no-cache \
+          php "$GITHUB_WORKSPACE/build/qmx.phar" check "$target" --working-dir="$target" --workers=4 --no-cache \
             --no-progress --format=json --fail-on=none -vv > phar.json 2> phar.log
           phar_exit=$?
           set -e
@@ -461,10 +500,10 @@ jobs:
           mkdir -p "$GITHUB_WORKSPACE/build/evidence"
           cd "$GITHUB_WORKSPACE/build/evidence"
           set +e
-          php "$GITHUB_WORKSPACE/bin/qmx" check "$GITHUB_WORKSPACE/src/Core" --workers=0 \
+          php "$GITHUB_WORKSPACE/bin/qmx" check "$GITHUB_WORKSPACE/src/Core" --working-dir="$GITHUB_WORKSPACE/src/Core" --workers=0 \
             --no-cache --no-progress --format=html --fail-on=none > tree.html
           tree_exit=$?
-          php "$GITHUB_WORKSPACE/build/qmx.phar" check "$GITHUB_WORKSPACE/src/Core" --workers=0 \
+          php "$GITHUB_WORKSPACE/build/qmx.phar" check "$GITHUB_WORKSPACE/src/Core" --working-dir="$GITHUB_WORKSPACE/src/Core" --workers=0 \
             --no-cache --no-progress --format=html --fail-on=none > phar.html
           phar_exit=$?
           set -e

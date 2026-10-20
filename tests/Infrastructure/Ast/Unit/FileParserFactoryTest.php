@@ -57,7 +57,7 @@ final class FileParserFactoryTest extends TestCase
         $parser = $this->createParser($store);
 
         $store->replace(new CacheConfiguration(AbsolutePath::fromString($this->cacheDir), true));
-        $parser->parse(new SplFileInfo($this->tempFile));
+        $this->parseFile($parser);
 
         self::assertDirectoryExists($this->cacheDir);
         self::assertNotSame([], $this->cacheEntries());
@@ -70,7 +70,7 @@ final class FileParserFactoryTest extends TestCase
         $parser = $this->createParser($store);
 
         $store->replace(new CacheConfiguration(AbsolutePath::fromString($this->cacheDir), false));
-        $parser->parse(new SplFileInfo($this->tempFile));
+        $this->parseFile($parser);
 
         self::assertDirectoryDoesNotExist($this->cacheDir);
     }
@@ -82,12 +82,12 @@ final class FileParserFactoryTest extends TestCase
         $parser = $this->createParser($store);
 
         $store->replace(new CacheConfiguration(AbsolutePath::fromString($this->cacheDir), true));
-        $parser->parse(new SplFileInfo($this->tempFile));
+        $this->parseFile($parser);
         $warm = $this->cacheEntries();
 
         file_put_contents($this->tempFile, '<?php class FactoryProbeSecond {}');
         $store->replace(new CacheConfiguration(AbsolutePath::fromString($this->cacheDir), false));
-        $parser->parse(new SplFileInfo($this->tempFile));
+        $this->parseFile($parser);
 
         self::assertSame($warm, $this->cacheEntries());
     }
@@ -99,9 +99,18 @@ final class FileParserFactoryTest extends TestCase
         $parser = $this->createParser($store);
 
         $store->replace(new CacheConfiguration(AbsolutePath::fromString($this->cacheDir), false));
-        $ast = $parser->parse(new SplFileInfo($this->tempFile));
+        $ast = $this->parseFile($parser);
 
         self::assertInstanceOf(Class_::class, $ast[0] ?? null);
+    }
+
+    /** @return array<\PhpParser\Node> */
+    private function parseFile(FileParserInterface $parser): array
+    {
+        $content = file_get_contents($this->tempFile);
+        self::assertIsString($content);
+
+        return $parser->parseContent(new SplFileInfo($this->tempFile), $content);
     }
 
     private function createParser(CacheConfigurationStore $store): FileParserInterface

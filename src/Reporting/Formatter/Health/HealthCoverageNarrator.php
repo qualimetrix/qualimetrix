@@ -10,7 +10,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthSc
 /**
  * One line saying what share of the subject a health score speaks for.
  *
- * Beside {@see \Qualimetrix\Reporting\Formatter\CoverageNarrator}, which narrates the other coverage in a
+ * Beside {@see \Qualimetrix\Reporting\Formatter\Text\CoverageNarrator}, which narrates the other coverage in a
  * report — the share of discovered files that parsed. The two are different
  * subjects with the same word, which is why neither line uses the word alone.
  */
@@ -20,6 +20,10 @@ final readonly class HealthCoverageNarrator
     {
         if (!$coverage->applicable) {
             return \sprintf('    Computed over: not applicable — %s', $coverage->reason);
+        }
+
+        if ($coverage->state === 'not-measured') {
+            return \sprintf('    Computed over: not measured %d/%d %s', $coverage->measured, $coverage->eligible, $coverage->unit?->value);
         }
 
         return \sprintf(
@@ -43,6 +47,10 @@ final readonly class HealthCoverageNarrator
     {
         if (!$coverage->applicable) {
             return \sprintf('coverage: not applicable — %s', $coverage->reason);
+        }
+
+        if ($coverage->state === 'not-measured') {
+            return \sprintf('not measured %d/%d %s', $coverage->measured, $coverage->eligible, $coverage->unit?->value);
         }
 
         return \sprintf(
@@ -87,7 +95,7 @@ final readonly class HealthCoverageNarrator
     public static function record(HealthCoverage $coverage): array
     {
         return [
-            'state' => $coverage->applicable ? 'measured' : 'not-applicable',
+            'state' => $coverage->state,
             'measured' => $coverage->measured,
             'eligible' => $coverage->eligible,
             'ratio' => $coverage->ratio,
@@ -103,6 +111,10 @@ final readonly class HealthCoverageNarrator
      */
     public static function share(HealthCoverage $coverage): string
     {
+        if ($coverage->state === 'not-measured') {
+            return \sprintf('not measured %d/%d', $coverage->measured, $coverage->eligible);
+        }
+
         return $coverage->applicable
             ? \sprintf('%.0f%%', ($coverage->ratio ?? 0.0) * 100)
             : 'n/a';

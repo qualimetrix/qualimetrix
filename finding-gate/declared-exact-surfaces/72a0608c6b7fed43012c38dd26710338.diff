@@ -1,0 +1,38 @@
+--- candidate
++++ reference (mapped)
+@@ -4,6 +4,6 @@
+-    Cyclomatic complexity is 8, exceeds threshold of 3. Consider extracting methods or simplifying conditions  [complexity.ccn]
+-    Recommendation: Cyclomatic complexity: 8 (threshold: 3) — high CCN with low cognitive complexity (7) suggests mechanical branching (switch/match). Lower refactoring priority.
+-
+-  ERROR  Complex::score
+-    Cognitive complexity is 7, exceeds threshold of 3. Top: if +1 L10, if +1 L11, if +1 L12. Reduce nesting and break into smaller methods  [complexity.cognitive]
+-    Recommendation: Cognitive complexity: 7 (threshold: 3). Top: if +1 L10, if +1 L11, if +1 L12 — deeply nested, hard to follow
++    Cognitive complexity is 7, exceeds threshold of 3. Top: if +1 L10, if +1 L11, if +1 L12. Reduce nesting and break into smaller methods  [complexity.cognitive]
++    Recommendation: Cognitive complexity: 7 (threshold: 3). Top: if +1 L10, if +1 L11, if +1 L12 — deeply nested, hard to follow
++
++  ERROR  Complex::score
++    Cyclomatic complexity is 8, exceeds threshold of 3. Consider extracting methods or simplifying conditions  [complexity.ccn]
++    Recommendation: Cyclomatic complexity: 8 (threshold: 3) — high CCN with low cognitive complexity (7) suggests mechanical branching (switch/match). Lower refactoring priority.
+@@ -16,2 +16,2 @@
+-  complexity.ccn                           ~30min    (1 violation)
+-  complexity.cognitive                     ~30min    (1 violation)
++  complexity.cognitive                     ~30min    (1 violation)
++  complexity.ccn                           ~30min    (1 violation)
+@@ -27,6 +27,6 @@
+-    Cyclomatic complexity is 8, exceeds threshold of 3. Consider extracting methods or simplifying conditions  [complexity.ccn]
+-    Recommendation: Cyclomatic complexity: 8 (threshold: 3) — high CCN with low cognitive complexity (7) suggests mechanical branching (switch/match). Lower refactoring priority.
+-
+-  ERROR  Complex::score
+-    Cognitive complexity is 7, exceeds threshold of 3. Top: if +1 L10, if +1 L11, if +1 L12. Reduce nesting and break into smaller methods  [complexity.cognitive]
+-    Recommendation: Cognitive complexity: 7 (threshold: 3). Top: if +1 L10, if +1 L11, if +1 L12 — deeply nested, hard to follow
++    Cognitive complexity is 7, exceeds threshold of 3. Top: if +1 L10, if +1 L11, if +1 L12. Reduce nesting and break into smaller methods  [complexity.cognitive]
++    Recommendation: Cognitive complexity: 7 (threshold: 3). Top: if +1 L10, if +1 L11, if +1 L12 — deeply nested, hard to follow
++
++  ERROR  Complex::score
++    Cyclomatic complexity is 8, exceeds threshold of 3. Consider extracting methods or simplifying conditions  [complexity.ccn]
++    Recommendation: Cyclomatic complexity: 8 (threshold: 3) — high CCN with low cognitive complexity (7) suggests mechanical branching (switch/match). Lower refactoring priority.
+@@ -39,2 +39,2 @@
+-  complexity.ccn                           ~30min    (1 violation)
+-  complexity.cognitive                     ~30min    (1 violation)
++  complexity.cognitive                     ~30min    (1 violation)
++  complexity.ccn                           ~30min    (1 violation)

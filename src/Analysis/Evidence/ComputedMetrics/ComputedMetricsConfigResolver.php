@@ -4,26 +4,34 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
+use LogicException;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedBareNameInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricEntryKeyRecognition;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricAuthorship;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricEntryKeys;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricRefusalWording;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricShapeRefusalWording;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricsSection;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ExcludeHealthSection;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\HealthDimensionExclusions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\HealthFormulaExclusionInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
- * Merges default computed metric definitions with user overrides from YAML
- * and validates the result (syntax, coverage, circular deps, references).
+ * Lays the resolved `computed_metrics` and `exclude_health` sections over the
+ * built-in definitions and validates the result (syntax, coverage, circular
+ * deps, references).
  *
- * The per-entry order below is part of the contract: an entry's name is
- * recognised before anything about its body is read, and its keys are walked
- * before the `enabled: false` branch — otherwise a disabled entry would
- * swallow a typo in a sibling key, which is exactly the silent acceptance
- * this stage exists to close.
+ * A metric's name is judged by the configuration document, in the layer
+ * that wrote it ({@see ComputedMetricsSection}). A name written without a
+ * body changes nothing about a metric that exists, and defines a new one with
+ * nothing — which the formula validator then refuses for its missing formula,
+ * naming the layer that wrote the name.
  */
 final class ComputedMetricsConfigResolver
 {
@@ -32,207 +40,110 @@ final class ComputedMetricsConfigResolver
         private readonly HealthFormulaExclusionInterface $healthFormulaExcluder,
     ) {}
 
-    /**
-     * @param array<string, mixed> $rawConfig The 'computed_metrics' section from YAML
-     * @param list<string> $excludeHealth Health dimensions excluded from scoring. Each entry
-     *                                    may be a bare name (`'typing'`) or fully-qualified
-     *                                    (`'health.typing'`); both are accepted and normalized
-     *                                    internally. Disabled `health.*` metrics (declared as
-     *                                    `enabled: false` in YAML) are folded into the same
-     *                                    exclusion pipeline so both disable paths produce the
-     *                                    same renormalized weights in `health.overall`.
-     *
-     * @throws ConfigurationRefusal
-     *
-     * @return list<ComputedMetricDefinition>
-     */
-    public function resolve(array $rawConfig, array $excludeHealth = []): array
+    /** @return list<ComputedMetricDefinition> */
+    public function resolve(ResolvedDocument $document): array
     {
-        // 1. Start with defaults
+        return $this->resolveWithSources($document)->all();
+    }
+
+    /**
+     * @throws ConfigurationRefusal
+     */
+    public function resolveWithSources(ResolvedDocument $document): ResolvedComputedMetricDefinitions
+    {
         $definitions = ComputedMetricDefaults::getDefaults();
+        $entries = self::entries($document->get(ComputedMetricsSection::KEY));
 
-        // Normalize excludeHealth shape up-front: both 'typing' and 'health.typing' are valid
-        // inputs; converting to the canonical 'health.*' form makes array_unique() below
-        // actually dedupe across the two sources.
-        $normalizedExcludeHealth = array_map(
-            static fn(string $dim): string => str_starts_with($dim, 'health.') ? $dim : 'health.' . $dim,
-            $excludeHealth,
+        // A dimension switched off by `enabled: false` goes through the same
+        // renormalization as `exclude_health`, so `health.overall` keeps a
+        // weighted sum over what remains instead of scoring it as a neutral 75.
+        $exclusions = [];
+        foreach ($entries as $name => $entry) {
+            $this->applyEntry($name, $entry, $definitions, $exclusions);
+        }
+
+        $authorship = new ComputedMetricAuthorship($entries);
+        $result = HealthDimensionExclusions::apply(
+            $definitions,
+            $document->get(ExcludeHealthSection::KEY),
+            $exclusions,
+            $authorship,
+            $this->healthFormulaExcluder,
         );
 
-        // 2. Apply user overrides, collecting disabled health.* metrics
-        $disabledHealth = [];
-        foreach ($rawConfig as $name => $overrides) {
-            $this->applyEntry((string) $name, $overrides, $definitions, $disabledHealth);
-        }
+        $this->formulaValidator->validate($result, $authorship);
 
-        $result = array_values($definitions);
-
-        // 3. Apply combined exclude-health (explicit + auto-collected from enabled:false)
-        //    BEFORE validation so that the formula validator sees the final state.
-        $combinedExclusions = array_values(array_unique([...$disabledHealth, ...$normalizedExcludeHealth]));
-        if ($combinedExclusions !== []) {
-            $result = $this->healthFormulaExcluder->applyExcludeHealth($result, $combinedExclusions);
-        }
-
-        // 4. Validate
-        $this->formulaValidator->validate($result);
-
-        return $result;
+        return new ResolvedComputedMetricDefinitions(
+            $result,
+            static fn(ComputedMetricDefinition $definition, SymbolLevel $level, string $summary): ConfigurationRefusal => $authorship->refuseFormula($definition, $level->value, $summary),
+        );
     }
 
     /**
-     * Applies one raw `computed_metrics:` entry to the working definition
-     * map, in the order the class docblock describes.
-     *
+     * @return array<string, ResolvedMapInterface|ResolvedBareNameInterface>
+     */
+    private static function entries(?ResolvedValueInterface $section): array
+    {
+        if ($section === null) {
+            return [];
+        }
+
+        if (!$section instanceof ResolvedMapInterface) {
+            throw self::undeclared(ComputedMetricsSection::class);
+        }
+
+        $entries = [];
+        foreach ($section->entries() as $name => $entry) {
+            $entries[$name] = $entry instanceof ResolvedMapInterface || $entry instanceof ResolvedBareNameInterface
+                ? $entry
+                : throw new LogicException('A computed_metrics entry resolves to a map or a bare name.');
+        }
+
+        return $entries;
+    }
+
+    /**
      * @param array<string, ComputedMetricDefinition> $definitions
-     * @param list<string> $disabledHealth
+     * @param list<array{dimension: string, writer: Provenance}> $exclusions
      *
      * @param-out array<string, ComputedMetricDefinition> $definitions
-     * @param-out list<string> $disabledHealth
+     * @param-out list<array{dimension: string, writer: Provenance}> $exclusions
+     *
+     * @throws ConfigurationRefusal
      */
-    private function applyEntry(string $name, mixed $overrides, array &$definitions, array &$disabledHealth): void
+    private function applyEntry(string $name, ResolvedMapInterface|ResolvedBareNameInterface $entry, array &$definitions, array &$exclusions): void
     {
-        // Step 1 — the name is recognised before anything about its body is
-        // read: a `health.*` name must name one of the six known dimensions,
-        // and any other name must follow the grammar, whatever the entry goes
-        // on to say — including nothing at all.
+        if ($entry instanceof ResolvedBareNameInterface) {
+            if (!isset($definitions[$name])) {
+                $definitions[$name] = ComputedMetricOverrideReader::create($name, $entry);
+            }
+
+            return;
+        }
+
         $isHealth = str_starts_with($name, 'health.');
-        if ($isHealth && !isset($definitions[$name])) {
-            $this->refuseUnknownHealthDimension($name);
-        }
-        if (!$isHealth) {
-            self::refuseInvalidNameGrammar($name);
-        }
+        $enabled = $entry->get(ComputedMetricEntryKeys::ENABLED);
+        if ($enabled !== null && $enabled->plain() === false) {
+            if ($isHealth && $name !== HealthDimension::Overall->value) {
+                $exclusions[] = ['dimension' => $name, 'writer' => $enabled->contributors()[0]];
 
-        // Step 2 — `name: ~` is the entry written without a body, read as
-        // `name: {}`: the defaults for a built-in dimension, and for a user
-        // metric whatever refusal an empty body earns. It is not an omitted
-        // entry — the name was written, so there is a metric to answer for.
-        $overrides ??= [];
-        self::assertEntryIsMap($name, $overrides);
+                return;
+            }
 
-        // Step 3 — every key of the entry, and the shape of `formulas:`, is
-        // walked before the `enabled: false` branch below, so a disabled
-        // entry cannot hide a typo in a sibling key.
-        ComputedMetricEntryKeyRecognition::refuseUnknownKeys($overrides, $name);
-        self::assertEnabledIsBoolean($name, $overrides);
-
-        // Step 4 — enabled: false.
-        if (isset($overrides[RuleOptionKey::ENABLED]) && $overrides[RuleOptionKey::ENABLED] === false) {
-            self::applyDisable($name, $isHealth, $definitions, $disabledHealth);
+            unset($definitions[$name]);
 
             return;
         }
 
-        // Step 5 — merge() / create(). A `health.*` name reaches here only
-        // known: an unknown one already refused in step 1.
         $definitions[$name] = isset($definitions[$name])
-            ? ComputedMetricOverrideReader::merge($definitions[$name], $overrides)
-            : ComputedMetricOverrideReader::create($name, $overrides);
+            ? ComputedMetricOverrideReader::merge($definitions[$name], $entry)
+            : ComputedMetricOverrideReader::create($name, $entry);
     }
 
-    /**
-     * Step 1's grammar check for a name outside `health.*`.
-     *
-     * @throws ConfigurationRefusal
-     */
-    private static function refuseInvalidNameGrammar(string $name): void
+    /** @param class-string $section */
+    private static function undeclared(string $section): LogicException
     {
-        if (ComputedMetricDefinition::isValidName($name)) {
-            return;
-        }
-
-        throw ConfigurationRefusal::atResolvedKey(
-            RefusedPosition::open(ComputedMetricEntryKeys::nameSegments($name), $name),
-            ComputedMetricRefusalWording::nameGrammar($name, ComputedMetricDefinition::NAME_TEMPLATE),
-        );
+        return new LogicException(\sprintf('%s must be registered with the configuration pipeline.', $section));
     }
 
-    /**
-     * Step 2's own check, split out of {@see self::applyEntry()} to keep
-     * that method's cyclomatic weight readable.
-     *
-     * @phpstan-assert array<string, mixed> $overrides
-     *
-     * @throws ConfigurationRefusal
-     */
-    private static function assertEntryIsMap(string $name, mixed $overrides): void
-    {
-        if (!\is_array($overrides)) {
-            throw ConfigurationRefusal::atResolvedKey(
-                RefusedPosition::open(ComputedMetricEntryKeys::nameSegments($name), $name),
-                ComputedMetricShapeRefusalWording::entryNotAMap($name, $overrides),
-            );
-        }
-    }
-
-    /**
-     * Step 3's `enabled:` shape check, split out of {@see self::applyEntry()}
-     * for the same reason {@see self::assertEntryIsMap()} is.
-     *
-     * @param array<string, mixed> $overrides
-     *
-     * @throws ConfigurationRefusal
-     */
-    private static function assertEnabledIsBoolean(string $name, array $overrides): void
-    {
-        if (\array_key_exists(RuleOptionKey::ENABLED, $overrides) && !\is_bool($overrides[RuleOptionKey::ENABLED])) {
-            throw ConfigurationRefusal::atResolvedKey(
-                RefusedPosition::open([...ComputedMetricEntryKeys::nameSegments($name), 'enabled'], 'enabled'),
-                ComputedMetricShapeRefusalWording::mustBeABoolean($name, 'enabled', $overrides[RuleOptionKey::ENABLED]),
-            );
-        }
-    }
-
-    /**
-     * Step 4's own branch, split out of {@see self::applyEntry()} to keep
-     * that method's cyclomatic weight readable.
-     *
-     * @param array<string, ComputedMetricDefinition> $definitions
-     * @param list<string> $disabledHealth
-     *
-     * @param-out array<string, ComputedMetricDefinition> $definitions
-     * @param-out list<string> $disabledHealth
-     */
-    private static function applyDisable(string $name, bool $isHealth, array &$definitions, array &$disabledHealth): void
-    {
-        if ($isHealth && $name !== HealthDimension::Overall->value) {
-            // Route disabled health dimensions through HealthFormulaExcluder so that
-            // dependent formulas (e.g. `health.overall` referencing the disabled dim
-            // via `??`) get their weights renormalized — same outcome as `exclude_health`.
-            // The excluder handles the actual removal, so we DO NOT unset here.
-            //
-            // `health.overall` itself has no current dependents and is routed to the
-            // simple unset branch below. If a future health.* metric starts depending
-            // on `health.overall`, route it through the excluder as well.
-            $disabledHealth[] = $name;
-
-            return;
-        }
-
-        unset($definitions[$name]);
-    }
-
-    /**
-     * The one refusal both of yesterday's two paths collapsed into
-     * (`02-computed-metric-keys.md` §2): `health.<unknown>` used to answer
-     * "reserved prefix" when the entry carried a formula and "unknown
-     * dimension" when it carried `enabled: false`. Both intents are the same
-     * mistake — a typo in one of the six known names — so both now raise the
-     * same refusal, at the point the name is recognised, before either branch
-     * is reached.
-     *
-     * @throws ConfigurationRefusal
-     */
-    private function refuseUnknownHealthDimension(string $name): never
-    {
-        throw ConfigurationRefusal::atResolvedKey(
-            RefusedPosition::closed(
-                ComputedMetricEntryKeys::nameSegments($name),
-                substr($name, \strlen('health.')),
-                ComputedMetricEntryKeys::acceptedHealthNames(),
-            ),
-            ComputedMetricRefusalWording::unknownHealthDimension($name, ComputedMetricEntryKeys::acceptedHealthNames()),
-        );
-    }
 }

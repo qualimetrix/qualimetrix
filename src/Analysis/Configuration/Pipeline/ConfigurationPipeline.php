@@ -4,45 +4,58 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration\Pipeline;
 
+use Qualimetrix\Analysis\Configuration\ConfigurationRoot;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
+use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
+use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
 
-/**
- * Configuration resolution pipeline.
- *
- * Collects configuration from multiple stages (defaults, composer, config file, cli)
- * and merges them according to priority order.
- *
- * Capability-specific configuration remains an ordered normalized document
- * until its owning capability explicitly consumes it.
- */
+/** Composes authored layers in stage order against explicit owner declarations. */
 final class ConfigurationPipeline implements ConfigurationPipelineInterface
 {
     /** @var list<ConfigurationStageInterface> */
     private array $stages = [];
 
-    public function __construct() {}
+    /** @var list<DocumentSectionSchemaInterface> */
+    private array $sections = [];
+
+    /** @param iterable<DocumentSectionSchemaInterface> $sections the sections owners declare */
+    public function __construct(iterable $sections = [])
+    {
+        foreach ($sections as $section) {
+            $this->addSection($section);
+        }
+    }
 
     public function resolve(ConfigurationResolutionRequest $request): ConfigurationDocument
     {
         $documents = [];
+        $authored = [];
+        $diagnostics = [];
         foreach ($this->stages() as $stage) {
             $layer = $stage->apply($request);
             if ($layer === null) {
                 continue;
             }
 
-            if ($layer->documents === []) {
+            $authored = [...$authored, ...$layer->authored];
+            $diagnostics = [...$diagnostics, ...$layer->diagnostics];
+
+            foreach ($layer->authored === [] ? [null] : $layer->authored as $_) {
                 $documents[] = ['source' => $layer->source, 'values' => $layer->values];
-                continue;
-            }
-            foreach ($layer->documents as $values) {
-                $documents[] = ['source' => $layer->source, 'values' => $values];
             }
         }
 
-        return new ConfigurationDocument($documents, $request->workingDirectory);
+        $resolved = DocumentComposer::compose(new DocumentSchema([...ConfigurationRoot::cases(), ...$this->sections]), $authored);
+
+        return new ConfigurationDocument($documents, $request->workingDirectory, $resolved, $diagnostics);
+    }
+
+    public function addSection(DocumentSectionSchemaInterface $section): void
+    {
+        $this->sections[] = $section;
     }
 
     public function addStage(ConfigurationStageInterface $stage): void

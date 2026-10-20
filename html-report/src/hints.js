@@ -120,6 +120,17 @@ export function getHealthHint(metricKey, node) {
   if (!node?.metrics) return null;
 
   const value = node.metrics[metricKey];
+  if (node.type === 'project' && Object.hasOwn(node.preparedDecomposition ?? {}, metricKey)) {
+    const details = node.preparedDecomposition[metricKey].map((item) => {
+      if (item.value == null) {
+        const share = item.coverage?.eligible == null ? 'n/a' : `${item.coverage.measured}/${item.coverage.eligible}`;
+        return `${item.humanName}: not measured ${share}`;
+      }
+      return `${item.humanName} = ${formatInputValue(item.value)}`;
+    });
+    const label = metricKey.replace('health.', '');
+    return { text: value == null ? `${capitalize(label)}: not measured` : `${capitalize(label)}: ${Math.round(value)} / 100`, details };
+  }
   if (value == null) return null;
 
   const decomp = HEALTH_DECOMPOSITION.get(metricKey);

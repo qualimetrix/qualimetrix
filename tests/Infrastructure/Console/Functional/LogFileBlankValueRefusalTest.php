@@ -8,13 +8,11 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\Application;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
-use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
-use Qualimetrix\Infrastructure\Console\RuntimeLoggerConfigurator;
+use Qualimetrix\Infrastructure\Console\Application\Application;
+use Qualimetrix\Infrastructure\Console\Application\ConsoleDiagnostics;
+use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
+use Qualimetrix\Infrastructure\Console\RuntimePolicy\RuntimeLoggerConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
-use Symfony\Component\Console\CommandLoader\ContainerCommandLoader;
 use Symfony\Component\Console\Tester\ApplicationTester;
 
 /**
@@ -95,14 +93,11 @@ final class LogFileBlankValueRefusalTest extends TestCase
     /** @param array<string, mixed> $options */
     private function check(array $options): ApplicationTester
     {
-        $container = (new ContainerFactory())->create();
-        /** @var ErrorStream $errorStream */
-        $errorStream = $container->get(ErrorStream::class);
-        /** @var RefusalPresenter $refusalPresenter */
-        $refusalPresenter = $container->get(RefusalPresenter::class);
-        $application = new Application($errorStream, $refusalPresenter);
+        $application = Application::forProduct(
+            static fn(ConsoleDiagnostics $diagnostics) => (new ContainerFactory())->create($diagnostics),
+            OutOfMemoryHint::register(),
+        );
         $application->setAutoExit(false);
-        $application->setCommandLoader(new ContainerCommandLoader($container, ['check' => CheckCommand::class]));
 
         $tester = new ApplicationTester($application);
         $tester->run(

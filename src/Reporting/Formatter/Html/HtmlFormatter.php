@@ -4,13 +4,20 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Html;
 
-use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
-use Qualimetrix\Reporting\Formatter\FormatterInterface;
-use Qualimetrix\Reporting\Formatter\PublishedUtf8;
-use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\GroupBy;
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
+
+use Qualimetrix\Reporting\Contract\Formatting\FormatOptionKeysInterface;
+
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterInterface;
+use Qualimetrix\Reporting\Contract\Formatting\GroupBy;
+use Qualimetrix\Reporting\Contract\Report\Report;
+use Qualimetrix\Reporting\Formatter\Prose\RuleAbstentionNarrator;
+use Qualimetrix\Reporting\Formatter\Text\CoverageNarrator;
 use Qualimetrix\Reporting\Health\HealthHintProjector;
-use Qualimetrix\Reporting\Report;
+use Qualimetrix\Reporting\Publication\FormattedReport;
+use Qualimetrix\Reporting\Publication\PublicationKind;
+use Qualimetrix\Reporting\Publication\PublishedUtf8;
 use RuntimeException;
 
 /**
@@ -25,16 +32,33 @@ final class HtmlFormatter implements FormatterInterface, FormatOptionKeysInterfa
         private readonly HealthHintProjector $hintProjector,
     ) {}
 
-    public function format(Report $report, FormatterContext $context): string
+    public function format(Report $report, FormatterContext $context): FormattedReport
     {
         $data = $this->treeBuilder->build($report, $context, $context->scopedReporting);
         $data['hints'] = $this->hintProjector->project();
         $data['coverage'] = $report->coverage?->toArray();
+        $data['inheritanceDepthOutcomes'] = $report->inheritanceDepth->outcomes;
+        $data['abstentions'] = array_map(static fn($absence): array => [
+            'producer' => $absence->producer, 'channel' => $absence->channel->code,
+            'level' => $absence->level->value, 'gate' => $absence->gate, 'reason' => $absence->reason,
+            'unit' => $absence->unit, 'count' => $absence->count, 'examples' => $absence->examples,
+        ], $report->population->abstentions());
 
         $repairs = 0;
-        $json = PublishedUtf8::encodeJsonObject(
+        $projectScope = $report->projectScope?->describe();
+        if ($projectScope !== null) {
+            $projectScope = PublishedUtf8::repair($projectScope, $repairs);
+        }
+        $populationBanner = $this->populationBanner($report->population, $repairs);
+        $inheritanceDepth = PublishedUtf8::repair(implode("; ", $report->inheritanceDepth->lines()), $repairs);
+        $json = PublishedUtf8::encodeJson(
             $data,
             \JSON_HEX_TAG | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES,
+            static function (array $repaired, int $count) use (&$repairs): array {
+                $repairs = $count;
+
+                return $repaired + [PublishedUtf8::REPAIR_KEY => $count];
+            },
             $repairs,
         );
 
@@ -55,23 +79,12 @@ final class HtmlFormatter implements FormatterInterface, FormatOptionKeysInterfa
             '__APP_JS__' => $appJs,
         ]);
 
-        if ($report->coverage !== null && !$report->coverage->isComplete()) {
-            $banner = \sprintf(
-                '<div role="alert" data-qmx-coverage="incomplete" style="padding:12px;background:#7f1d1d;color:#fff">Analysis incomplete: %d of %d discovered PHP file(s) failed. Policy results are not authoritative.</div>',
-                $report->coverage->failed,
-                $report->coverage->discovered,
-            );
-            $rendered = str_replace('<body>', '<body>' . $banner, $rendered);
+        $rendered = $this->withRunBanners($rendered, $report);
+        $rendered = str_replace('<body>', '<body>' . $populationBanner, $rendered);
+        if ($inheritanceDepth !== '') {
+            $rendered = str_replace('<body>', '<body>' . '<div role="status" data-qmx-inheritance-depth="incomplete" style="padding:12px;background:#78350f;color:#fff">' . htmlspecialchars($inheritanceDepth, \ENT_QUOTES) . '</div>', $rendered);
         }
 
-        if ($report->outOfScope !== null && $report->outOfScope->total() > 0) {
-            $rendered = str_replace('<body>', '<body>' . \sprintf(
-                '<div role="status" data-qmx-drill-down="out-of-scope" style="padding:12px;background:#78350f;color:#fff">%s</div>',
-                htmlspecialchars($report->outOfScope->describe(), \ENT_QUOTES),
-            ), $rendered);
-        }
-
-        $projectScope = $report->projectScope?->describe();
         if ($projectScope !== null) {
             $rendered = str_replace('<body>', '<body>' . \sprintf(
                 '<div role="status" data-qmx-project-scope="%s" style="padding:12px;background:#78350f;color:#fff">%s</div>',
@@ -87,7 +100,43 @@ final class HtmlFormatter implements FormatterInterface, FormatOptionKeysInterfa
             ), $rendered);
         }
 
+        return new FormattedReport($rendered, $repairs);
+    }
+
+    private function populationBanner(JudgedPopulation $population, int &$repairs): string
+    {
+        $gaps = RuleAbstentionNarrator::dataGaps($population);
+        if ($gaps === []) {
+            return '';
+        }
+        $description = 'Selected judgement incomplete: ' . implode('; ', array_map(static fn($absence): string => \sprintf('%s (%s): %d unjudged %s; %s', $absence->channel->code, $absence->level->value, $absence->count, $absence->unit, $absence->reason), $gaps));
+        $description = PublishedUtf8::repair($description, $repairs);
+        return '<div role="status" data-qmx-population="incomplete" style="padding:12px;background:#78350f;color:#fff">' . htmlspecialchars($description, \ENT_QUOTES) . '</div>';
+    }
+
+    private function withRunBanners(string $rendered, Report $report): string
+    {
+        if ($report->coverage !== null && !$report->coverage->isComplete()) {
+            $banner = \sprintf(
+                '<div role="alert" data-qmx-coverage="incomplete" style="padding:12px;background:#7f1d1d;color:#fff">%s</div>',
+                htmlspecialchars(CoverageNarrator::describe($report->coverage), \ENT_QUOTES),
+            );
+            $rendered = str_replace('<body>', '<body>' . $banner, $rendered);
+        }
+
+        if ($report->outOfScope !== null && $report->outOfScope->total() > 0) {
+            $rendered = str_replace('<body>', '<body>' . \sprintf(
+                '<div role="status" data-qmx-drill-down="out-of-scope" style="padding:12px;background:#78350f;color:#fff">%s</div>',
+                htmlspecialchars($report->outOfScope->describe(), \ENT_QUOTES),
+            ), $rendered);
+        }
+
         return $rendered;
+    }
+
+    public function publicationKind(): PublicationKind
+    {
+        return PublicationKind::HtmlDocument;
     }
 
     public function getName(): string

@@ -8,9 +8,11 @@ contracts and has no dependency on Reporting.
 
 ```text
 Prioritization/
+├── Contract/
+│   └── Debt/
+│       └── DebtSummary.php
 ├── Debt/
 │   ├── DebtCalculator.php
-│   ├── DebtSummary.php
 │   └── RemediationTimeRegistry.php
 └── Impact/
     ├── ClassRankIndex.php
@@ -19,10 +21,23 @@ Prioritization/
     └── RankedIssue.php
 ```
 
+`Contract/Debt/DebtSummary` is the immutable result consumed by Reporting
+formatters and report enrichment. Calculation and remediation lookup stay
+private under `Debt`.
+
 Debt derives remediation minutes from finding identity and severity. Impact
-combines that debt with measured class rank and returns deterministically
+combines that debt with measured ClassRank share and returns deterministically
 ranked issues. Reporting consumes the resulting values to assemble output; it
 does not own their calculation.
+
+`ClassRankResolver` reads only `coupling.class-rank-share` for exact
+declarations, namespace/file maxima and the project median. Missing share
+never falls back to raw PageRank probability. Impact multiplies share by severity
+weight and remediation minutes; an unranked finding uses the native measured
+median, or zero when no share was measured. `RankedIssue::classRankShare` and
+JSON top issues' `coupling.class-rank-share` carry these units. A common graph
+size multiplier preserves ordering within one graph while changing the numeric
+impact scale; it does not establish comparability across different graphs.
 
 ## Definition of Done
 

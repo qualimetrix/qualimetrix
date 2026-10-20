@@ -12,10 +12,10 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCo
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Report\Report;
 use Qualimetrix\Reporting\Formatter\Health\HealthCoverageNarrator;
-use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
-use Qualimetrix\Reporting\Report;
 
 final class JsonHealthSection
 {
@@ -100,7 +100,8 @@ final class JsonHealthSection
                     fn(DecompositionItem $item): array => [
                         'metric' => $item->metricKey,
                         'humanName' => $item->humanName,
-                        'value' => $this->sanitizer->sanitizeFloat($item->value),
+                        'value' => $item->value === null ? null : $this->sanitizer->sanitizeFloat($item->value),
+                        'coverage' => $this->formatCoverage($item->coverage),
                         'good' => $item->goodValue,
                         'direction' => $item->direction,
                     ],

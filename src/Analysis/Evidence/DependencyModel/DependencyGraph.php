@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\DependencyModel;
 
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
@@ -16,10 +16,17 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * The public API accepts/returns SymbolPath, but internally uses toCanonical()
  * as hash map keys for performance.
  *
- * @qmx-ignore health.cohesion -- Lookup methods expose independent indexes of one dependency graph.
+ * @qmx-threshold cohesion.lcom warning=6 error=6 -- Graph queries compose class coupling, namespace boundaries, logical inventory, ordered occurrences and declaration evidence; each independent view retains its own input.
+ * @qmx-threshold health.cohesion 31.154195 -- Independent immutable observations or stateless declaration operations intentionally have no shared instance-field graph; this finite class boundary keeps a further cohesion loss visible.
  */
 final class DependencyGraph implements DependencyGraphInterface
 {
+    private readonly ClassCouplings $classCouplings;
+
+    private readonly LogicalGraphInventory $inventory;
+
+    private readonly DeclarationEvidence $declarations;
+
     /**
      * @param array<Dependency> $dependencies All dependencies
      * @param array<string, array<Dependency>> $bySource Dependencies indexed by source canonical key
@@ -31,18 +38,27 @@ final class DependencyGraph implements DependencyGraphInterface
      * @param list<Dependency> $declarationDependencies The declaration edges, including those to PHP's own
      *                                                  classes. Not derived from `$dependencies`: those have
      *                                                  already lost every such edge but `extends`
+     * @param list<ClassLikeDeclaration> $classLikeDeclarations Named declaration facts in encounter order
+     *
+      * @qmx-threshold code-smell.long-parameter-list 11 -- Logical, declaration and namespace indexes are views of the same dependency graph; constructing them together prevents mismatched graph snapshots.
+      * @qmx-threshold code-smell.constructor-overinjection 11 -- The complete immutable graph facts travel together through one graph lifecycle; the finite boundary keeps further growth visible.
      */
     public function __construct(
         private readonly array $dependencies,
-        private readonly array $bySource,
-        private readonly array $byTarget,
-        private readonly array $classes,
-        private readonly array $namespaces,
+        array $bySource,
+        array $byTarget,
+        array $classes,
+        array $namespaces,
         private readonly NamespaceCouplings $namespaceCouplings,
-        private readonly array $classCe,
-        private readonly array $classCa,
-        private readonly array $declarationDependencies,
-    ) {}
+        array $classCe,
+        array $classCa,
+        array $declarationDependencies,
+        array $classLikeDeclarations,
+    ) {
+        $this->classCouplings = ClassCouplings::fromClassViews($bySource, $byTarget, $classCe, $classCa);
+        $this->inventory = new LogicalGraphInventory($classes, $namespaces);
+        $this->declarations = new DeclarationEvidence($declarationDependencies, $classLikeDeclarations);
+    }
 
     /**
      * @param array<Dependency> $dependencies
@@ -51,33 +67,27 @@ final class DependencyGraph implements DependencyGraphInterface
      */
     public static function declarationsAmong(array $dependencies): array
     {
-        return array_values(array_filter(
-            $dependencies,
-            static fn(Dependency $dependency): bool => match ($dependency->type) {
-                DependencyType::Extends, DependencyType::Implements, DependencyType::TraitUse, DependencyType::Attribute => true,
-                default => false,
-            },
-        ));
+        return DeclarationEvidence::declarationsAmong($dependencies);
     }
 
     public function getClassDependencies(SymbolPath $class): array
     {
-        return $this->bySource[$class->toCanonical()] ?? [];
+        return $this->classCouplings->dependencies($class);
     }
 
     public function getClassDependents(SymbolPath $class): array
     {
-        return $this->byTarget[$class->toCanonical()] ?? [];
+        return $this->classCouplings->dependents($class);
     }
 
     public function getClassCe(SymbolPath $class): int
     {
-        return $this->classCe[$class->toCanonical()] ?? 0;
+        return $this->classCouplings->ce($class);
     }
 
     public function getClassCa(SymbolPath $class): int
     {
-        return $this->classCa[$class->toCanonical()] ?? 0;
+        return $this->classCouplings->ca($class);
     }
 
     public function getNamespaceCe(SymbolPath $namespace): int
@@ -102,12 +112,12 @@ final class DependencyGraph implements DependencyGraphInterface
 
     public function getAllClasses(): array
     {
-        return $this->classes;
+        return $this->inventory->classes();
     }
 
     public function getAllNamespaces(): array
     {
-        return $this->namespaces;
+        return $this->inventory->namespaces();
     }
 
     public function getAllDependencies(): array
@@ -117,6 +127,11 @@ final class DependencyGraph implements DependencyGraphInterface
 
     public function getDeclarationDependencies(): array
     {
-        return $this->declarationDependencies;
+        return $this->declarations->dependencies();
+    }
+
+    public function getClassLikeDeclarations(): array
+    {
+        return $this->declarations->classLikeDeclarations();
     }
 }

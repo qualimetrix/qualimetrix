@@ -53,3 +53,28 @@ included. Arithmetic saturates at the documented cap.
   can increase; thresholds and baselines may need recalibration.
 - NPath rules still use the same external metric name and threshold surface; the
   breaking change is semantic rather than syntactic.
+
+## Amendment: null-coalescing value selection
+
+PHP's `??` and `??=` select a value like a ternary, rather than expressing a
+Boolean conjunction or disjunction. Their ordinary expression contribution
+is therefore 2, the same as the existing ternary recurrence, instead of 1
+(which statement `max(1, ordinary)` could absorb entirely). Boolean operators
+retain +1. Nullsafe `?->` contributions remain separate: a callable statement
+uses `max(1, ordinary) + nullsafe`, with one nullsafe path per hop.
+
+This is a PHP extension to Nejmeh (1988), which predates these operators.
+A chain `$x ?? $y ?? 5` reports 4, like the existing nested ternary recurrence,
+even though both have three distinguishable outcomes. A special chain rule
+would make equivalent value-selection forms disagree and is not introduced.
+
+The old `complexity.npath` contribution for `??` and `??=` was 0 or +1 at a
+statement boundary; the new ordinary contribution is +2 per operator.
+`return $x ?? 5` changes from 1 to 2, and two chained coalesces from 2 to 4.
+Consumers must re-run analysis and review NPath thresholds and accepted
+baseline magnitudes. No metric key, option or default threshold changes.
+
+The Maintainability documentation also names the existing variants explicitly:
+Halstead bugs use the later `B = V / 3000` estimate rather than the original
+`E^(2/3) / 3000`; MI uses the Visual Studio three-term normalized variant.
+These clarifications do not change either calculation.

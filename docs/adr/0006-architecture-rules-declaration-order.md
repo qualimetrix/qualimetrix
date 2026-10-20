@@ -58,7 +58,7 @@ We rejected a single-key-map shorthand (`- controller: 'App\Controller\**'`). Th
 
 ### 3. Configuration merge semantics: replace-whole-list
 
-`ConfigurationMerger` previously deep-merged the layers map. Under ordered-list semantics, deep merge would silently destroy ordering when a later config source defines more entries. Decision: when any configuration source (preset or project) defines `architecture.layers`, it **replaces the entire list**. Presets compose via the same rule; the last source to define `layers` wins outright. Documented in user-facing docs and ConfigurationMerger code.
+`ConfigurationMerger` previously deep-merged the layers map. Under ordered-list semantics, deep merge would silently destroy ordering when a later config source defines more entries. Decision: when any configuration source (preset or project) defines `architecture.layers`, it **replaces the entire list**. Presets compose via the same rule; the last source to define `layers` wins outright. The rule now lives in the declaration of the `architecture` section, and the published table of every key's merge policy is generated from it ([ADR 0086](0086-one-configuration-document-merged-by-declared-policy.md)).
 
 ### 4. Two replacement safety nets
 

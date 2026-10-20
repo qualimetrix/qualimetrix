@@ -1,0 +1,234 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog;
+
+use LogicException;
+use Psr\Log\LoggerInterface;
+
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConsumerBoundPassInterface;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConsumerRegistrationCompilerPass;
+use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
+use ReflectionClass;
+use ReflectionNamedType;
+use ReflectionParameter;
+use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
+use Symfony\Component\DependencyInjection\Reference;
+
+/**
+ * Automatically registers Options classes for Rules.
+ *
+ * For each tagged Rule, this pass:
+ * 1. Calls Rule::getOptionsClass() to get the Options class
+ * 2. Registers producer-specific Options with RuleOptionsRegistry::optionsFor() as factory
+ * 3. Binds the Options to the Rule via setArgument('$options', ...)
+ *
+ * This allows Rules to be auto-registered via registerClasses() without
+ * manual Options registration in ContainerFactory.
+ *
+ * Must run BEFORE RuleCompilerPass so Options are available when Rules are collected.
+ */
+final class RuleOptionsCompilerPass implements CompilerPassInterface, ConsumerBoundPassInterface
+{
+    private const string RULE_INTERFACE = 'Qualimetrix\\Analysis\\Finding\\Rule\\RuleInterface';
+
+    public static function consumerServiceIds(): array
+    {
+        return [RuleOptionsRegistry::class];
+    }
+
+    public function process(ContainerBuilder $container): void
+    {
+        // hasDefinition(), not has(): the check ConsumerRegistrationCompilerPass
+        // makes on the product container must be this very question.
+        if (!$container->hasDefinition(RuleOptionsRegistry::class)) {
+            return;
+        }
+
+        foreach ($container->findTaggedServiceIds(RuleCompilerPass::TAG) as $ruleId => $tags) {
+            $this->registerRuleOptions($container, $container->getDefinition($ruleId), $ruleId);
+        }
+    }
+
+    private function registerRuleOptions(ContainerBuilder $container, Definition $ruleDefinition, string $ruleId): void
+    {
+        $ruleClass = $ruleDefinition->getClass();
+        if ($ruleClass === null) {
+            throw new LogicException(\sprintf('Tagged rule service "%s" has no class.', $ruleId));
+        }
+
+        $optionsClass = self::optionsClassForRule($ruleClass);
+
+        $ruleName = RuleNameReader::read($ruleClass);
+        $optionsServiceId = self::optionsServiceId($ruleName, $optionsClass);
+        $this->registerOptionsService($container, $optionsServiceId, $ruleName, $optionsClass);
+        $ruleDefinition->setArgument('$options', new Reference($optionsServiceId));
+        $this->resolveExtraDependencies($container, $ruleDefinition, $ruleClass);
+    }
+
+    /** @param class-string<RuleOptionsInterface> $optionsClass */
+    private function registerOptionsService(
+        ContainerBuilder $container,
+        string $optionsServiceId,
+        string $ruleName,
+        string $optionsClass,
+    ): void {
+        if ($container->hasDefinition($optionsServiceId)) {
+            return;
+        }
+
+        // Producer identity keeps independently configured instances separate even
+        // when several rules intentionally reuse the same immutable Options class.
+        $container->register($optionsServiceId, $optionsClass)
+            ->setFactory([new Reference(RuleOptionsRegistry::class), 'optionsFor'])
+            ->setArguments([$ruleName, $optionsClass])
+            ->setShared(false);
+    }
+
+    /**
+     * The id of the Options service configured for one producer rule.
+     *
+     * Public because a configuration validator answers to its producer's
+     * options, and its registration therefore has to reference the very same
+     * service rather than build an equal copy — two copies would be two places
+     * for the configuration to be read differently.
+     *
+     * The Options class arrives as a plain string, not a `class-string`: the
+     * capability configurators name their internals by literal so they do not
+     * import them, which is the same convention that keeps the rule and the
+     * policy out of this container's `use` list.
+     */
+    public static function optionsServiceId(string $ruleName, string $optionsClass): string
+    {
+        return $ruleName . '.options.' . $optionsClass;
+    }
+
+    /**
+     * The same id, derived from the producer rule class the way this pass
+     * derives it when it registers the service.
+     *
+     * A configurator wiring a validator to its producer's Options needs the id
+     * before the pass has run. Spelling the Options class out there would be a
+     * second statement of a fact whose authority is `getOptionsClass()`: rename
+     * the Options class and the configurator would point at a service nobody
+     * registers. Asking the rule keeps one authority.
+     *
+     * The rule class arrives as a plain string for the same reason the Options
+     * class does above — capability configurators name their internals by
+     * literal rather than importing them.
+     */
+    public static function optionsServiceIdForRule(string $ruleClass): string
+    {
+        $optionsClass = self::optionsClassForRule($ruleClass);
+
+        return self::optionsServiceId(RuleNameReader::read($ruleClass), $optionsClass);
+    }
+
+    /**
+     * @phpstan-assert class-string $ruleClass
+     *
+     * @return class-string<RuleOptionsInterface>
+     */
+    private static function optionsClassForRule(string $ruleClass): string
+    {
+        if (!is_a($ruleClass, self::RULE_INTERFACE, true)) {
+            throw new LogicException(\sprintf(
+                'Cannot derive an Options service id from %s: it does not implement %s.',
+                $ruleClass,
+                self::RULE_INTERFACE,
+            ));
+        }
+
+        $optionsClass = (new ReflectionClass($ruleClass))->getMethod('getOptionsClass')->invoke(null);
+
+        if (!\is_string($optionsClass) || !is_a($optionsClass, RuleOptionsInterface::class, true)) {
+            throw new LogicException(\sprintf(
+                '%s::getOptionsClass() did not name a %s.',
+                $ruleClass,
+                RuleOptionsInterface::class,
+            ));
+        }
+
+        return $optionsClass;
+    }
+
+    /**
+     * Maps a type class to a concrete service ID in the container.
+     *
+     * Handles PSR interfaces that are registered via registerAliasForArgument()
+     * (parametric aliases) rather than plain setAlias(), which makes them
+     * invisible to $container->has().
+     */
+    private function resolveServiceId(string $typeClass, ContainerBuilder $container): ?string
+    {
+        if ($container->has($typeClass)) {
+            return $typeClass;
+        }
+
+        // Map well-known PSR interfaces to concrete implementations
+        if ($typeClass === LoggerInterface::class && $container->has(DelegatingLogger::class)) {
+            return DelegatingLogger::class;
+        }
+
+        return null;
+    }
+
+    /**
+     * Resolves additional typed constructor parameters for rules.
+     *
+     * Since rules have autowiring disabled (due to RuleOptionsInterface injection),
+     * any extra constructor dependencies must be explicitly bound.
+     *
+     * @param class-string $ruleClass
+     */
+    private function resolveExtraDependencies(
+        ContainerBuilder $container,
+        Definition $ruleDefinition,
+        string $ruleClass,
+    ): void {
+        $reflection = new ReflectionClass($ruleClass);
+        $constructor = $reflection->getConstructor();
+
+        if ($constructor === null) {
+            return;
+        }
+
+        foreach ($constructor->getParameters() as $param) {
+            $this->bindDependency($container, $ruleDefinition, $param);
+        }
+    }
+
+    private function bindDependency(
+        ContainerBuilder $container,
+        Definition $ruleDefinition,
+        ReflectionParameter $param,
+    ): void {
+        $paramName = '$' . $param->getName();
+        if ($paramName === '$options' || \array_key_exists($paramName, $ruleDefinition->getArguments())) {
+            return;
+        }
+
+        $type = $param->getType();
+        if (!$type instanceof ReflectionNamedType || $type->isBuiltin()) {
+            return;
+        }
+
+        $typeClass = $type->getName();
+        $serviceId = $this->resolveServiceId($typeClass, $container);
+        if ($serviceId === null) {
+            throw new LogicException(\sprintf(
+                'Cannot bind %s::%s: service "%s" is not registered.',
+                $param->getDeclaringClass()?->getName() ?? 'rule constructor',
+                $paramName,
+                $typeClass,
+            ));
+        }
+        $ruleDefinition->setArgument($paramName, new Reference($serviceId));
+    }
+}

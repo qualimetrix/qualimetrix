@@ -13,16 +13,21 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\LayersValidator;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\LongFormAllowEntryNormalizer;
+use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
 
 /**
- * Three ways a declaration used to be accepted and then do nothing, or do
- * something other than what it says.
+ * Two ways a declaration used to be accepted and then do nothing, or do
+ * something other than what it says, and one that only looked like it.
  *
- * They share a failure direction rather than a mechanism: each is a written
+ * The two share a failure direction rather than a mechanism: each is a written
  * policy that the run widens or drops on its own, so the config file and the
- * verdict disagree while both look healthy. A refusal is the cure in all three
+ * verdict disagree while both look healthy. A refusal is the cure in both
  * because there is no correct silent reading to fall back on — the author asked
  * for something the engine cannot express.
+ *
+ * The third, `relations:` with no value, is a key not written: it takes the
+ * documented default of a target without `relations`, like `~` anywhere else
+ * in the configuration document.
  */
 #[CoversClass(LayersValidator::class)]
 #[CoversClass(LongFormAllowEntryNormalizer::class)]
@@ -56,9 +61,9 @@ final class InertArchitectureDeclarationTest extends TestCase
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('cannot be combined with "match: any" on a template layer');
 
-        (new LayersValidator())->validate([
+        (new LayersValidator())->validate(ArchitectureDocument::layers([
             ['name' => 'domain-{module}', 'patterns' => ['App\\Module\\{module}\\**'], $kind => $values],
-        ]);
+        ]));
     }
 
     /** @param list<string> $values */
@@ -69,9 +74,9 @@ final class InertArchitectureDeclarationTest extends TestCase
         // The control, and the escape the message names: under `all` the
         // criterion narrows the instance inside the scope its own substituted
         // pattern fixes, which is bound after all.
-        $entries = (new LayersValidator())->validate([
+        $entries = (new LayersValidator())->validate(ArchitectureDocument::layers([
             ['name' => 'domain-{module}', 'patterns' => ['App\\Module\\{module}\\**'], $kind => $values, 'match' => 'all'],
-        ]);
+        ]));
 
         self::assertCount(1, $entries);
     }
@@ -83,9 +88,9 @@ final class InertArchitectureDeclarationTest extends TestCase
     {
         // The second control: a static layer has no instances, so nothing is
         // unbound and `match: any` keeps meaning what it documents.
-        $entries = (new LayersValidator())->validate([
+        $entries = (new LayersValidator())->validate(ArchitectureDocument::layers([
             ['name' => 'domain', 'patterns' => ['App\\Module\\**'], $kind => $values],
-        ]);
+        ]));
 
         self::assertCount(1, $entries);
     }
@@ -97,38 +102,41 @@ final class InertArchitectureDeclarationTest extends TestCase
         // it already substitutes bindings during observation, and it stays
         // accepted under the default mode. A refusal that swept it in would
         // break a documented shape for no defect.
-        $entries = (new LayersValidator())->validate([
+        $entries = (new LayersValidator())->validate(ArchitectureDocument::layers([
             [
                 'name' => 'domain-{module}',
                 'patterns' => ['App\\Module\\{module}\\**'],
                 'exclude' => ['suffix' => ['Proxy']],
             ],
-        ]);
+        ]));
 
         self::assertCount(1, $entries);
     }
 
     #[Test]
-    public function itRefusesARelationsKeyWrittenWithNoValue(): void
+    public function itReadsARelationsKeyWrittenWithNoValueAsAnyRelation(): void
     {
-        // `relations:` with an empty list, commented-out items or a lost indent
-        // is null in YAML, and null used to mean "no filter" — the widest
-        // possible reading of a key whose whole purpose is to narrow. Its
-        // neighbour `relations: []` was already refused for exactly that,
-        // so the two spellings of one slip disagreed, quietly, in the
-        // permissive direction.
-        $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage('must list at least one relation kind');
+        // `~` is "not written" at every depth of the configuration document,
+        // and a target with no `relations` is the documented "any relation
+        // allowed" — the bare-target form. `relations:` with no value is the
+        // same unwritten key, not a filter that lost its items.
+        [, , $relations] = LongFormAllowEntryNormalizer::normalize(
+            'domain',
+            0,
+            ArchitectureDocument::allowTarget(['target' => 'vendorlib', 'relations' => null], 'domain'),
+        );
 
-        LongFormAllowEntryNormalizer::normalize('domain', 0, ['target' => 'vendorlib', 'relations' => null]);
+        self::assertNull($relations);
     }
 
     #[Test]
     public function itKeepsAnAbsentRelationsKeyMeaningAnyRelation(): void
     {
-        // The control that keeps the refusal narrow: not writing the key at all
-        // is still "any relation allowed", which is what a bare target means.
-        [$target, , $relations] = LongFormAllowEntryNormalizer::normalize('domain', 0, ['target' => 'vendorlib']);
+        [$target, , $relations] = LongFormAllowEntryNormalizer::normalize(
+            'domain',
+            0,
+            ArchitectureDocument::allowTarget(['target' => 'vendorlib'], 'domain'),
+        );
 
         self::assertSame('vendorlib', $target);
         self::assertNull($relations);
@@ -137,10 +145,10 @@ final class InertArchitectureDeclarationTest extends TestCase
     #[Test]
     public function itKeepsADeclaredRelationsListWorking(): void
     {
-        [, , $relations] = LongFormAllowEntryNormalizer::normalize('domain', 0, [
+        [, , $relations] = LongFormAllowEntryNormalizer::normalize('domain', 0, ArchitectureDocument::allowTarget([
             'target' => 'vendorlib',
             'relations' => ['extends'],
-        ]);
+        ], 'domain'));
 
         self::assertSame([DependencyType::Extends], $relations);
     }
@@ -165,7 +173,7 @@ final class InertArchitectureDeclarationTest extends TestCase
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('requires at least one entry under "architecture.layers"');
 
-        (new ArchitectureConfigurationFactory())->fromArray($section);
+        (new ArchitectureConfigurationFactory())->fromResolved(ArchitectureDocument::file($section));
     }
 
     #[Test]
@@ -173,7 +181,7 @@ final class InertArchitectureDeclarationTest extends TestCase
     {
         // The control: `ignore` is the default and declares no policy, so an
         // empty `layers:` beside it is not a contradiction.
-        $result = (new ArchitectureConfigurationFactory())->fromArray(['layers' => [], 'coverage-gap' => 'ignore']);
+        $result = (new ArchitectureConfigurationFactory())->fromResolved(ArchitectureDocument::file(['layers' => [], 'coverage-gap' => 'ignore']));
 
         self::assertTrue($result->configuration->isEmpty());
     }

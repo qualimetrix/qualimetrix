@@ -4,138 +4,168 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Contract;
 
+use LogicException;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusalReason;
+
 /**
- * The parts of a comment that **quote** a directive instead of writing one.
+ * A directive starts its physical comment line; quoting only excuses a mention.
  *
- * A docblock that documents the annotation syntax has to be able to name the
- * tags without addressing them, and the project spells that escape with
- * backticks (AGENTS.md §8). Both extractors ask this class the same question,
- * which is why it exists: while each carried its own copy of the rule, the two
- * differed in what they put in a region's place, so one of them could join two
- * halves of unrelated prose into a tag the other never saw.
- *
- * **A region never spans a line, and that is the whole of the fix it carries.**
- * The rule used to be "pair the backticks of the comment from left to right",
- * which makes every region boundary a function of how many backticks stand
- * above it: one stray backtick in prose shifts the pairing of everything below,
- * so a correctly escaped example becomes a live directive and the live
- * directive under it disappears. Both outcomes are silent — the first silences
- * a channel nobody asked to silence, the second loses an annotation before any
- * part of the tool can report on it. An inline region therefore opens and
- * closes within one line.
- *
- * Within the line the same failure had one form left: backticks paired left
- * to right, so a stray one earlier on the line took the quote's opening
- * backtick as its partner and the quoted tag came out live. A backtick written
- * **directly before a tag** is therefore always an opening one, paired with
- * the next backtick on the line; the others pair left to right among
- * themselves, and one left without a partner is an ordinary character. The
- * rule errs towards quoting, and that direction is the loud one: a tag
- * wrongly taken as quoted leaves its finding reported, while a tag wrongly
- * taken as written silences one.
- *
- * The multi-line form of quoting is a fenced block, recognised as itself rather
- * than as three inline regions that happen to pair up.
- *
- * What is returned is the same text with every quoted region **blanked**, not
- * removed: every offset and every line number in the result still addresses the
- * character the author wrote, which is what lets a caller report the line a tag
- * was written on after the quoting has been taken out of its way.
+ * Masking preserves byte offsets. Extractors restore an admitted tag's authored
+ * arguments from the original comment so masking another tag cannot change them.
  */
 final readonly class DocumentationRegions
 {
-    private const string FENCE = '```';
+    // Comments may contain arbitrary PHP bytes; Unicode whitespace is matched by its UTF-8 bytes.
+    private const string UNICODE_SPACE = '(?:\xC2[\x85\xA0]|\xE1\x9A\x80|\xE2\x80[\x80-\x8A\xA8\xA9\xAF]|\xE2\x81\x9F|\xE3\x80\x80)';
 
-    private const string TAG_PREFIX = '@qmx-';
+    private const string CANDIDATE = '/@qmx-[a-zA-Z][\w-]*|@qmx(?:[-_ \t]|' . self::UNICODE_SPACE . ')*(?:ignore|threshold)[\w-]*|qmx[-_](?:ignore|threshold)[\w-]*/i';
 
-    /** Blanks every quoted region, preserving the length and the line structure of the text. */
     public static function mask(string $text): string
     {
-        $inFence = false;
+        return self::read($text)['mask'];
+    }
+
+    /** @return list<array{offset: int, tag: string, reason: DirectiveRefusalReason, fenceLine: ?int}> */
+    public static function mentions(string $text): array
+    {
+        return self::read($text)['mentions'];
+    }
+
+    /** @return array{mask: string, mentions: list<array{offset: int, tag: string, reason: DirectiveRefusalReason, fenceLine: ?int}>} */
+    private static function read(string $text): array
+    {
         $lines = explode("\n", $text);
-
-        foreach ($lines as $index => $line) {
-            if (self::opensOrClosesFence($line)) {
-                $inFence = !$inFence;
-                $lines[$index] = self::blank($line);
-
-                continue;
-            }
-
-            $lines[$index] = $inFence ? self::blank($line) : self::maskInlineRegions($line);
-        }
-
-        return implode("\n", $lines);
-    }
-
-    /**
-     * A fence delimiter is the first thing on its line, after the docblock's
-     * own leading asterisk. An info string ("```php") belongs to the opening
-     * delimiter and is blanked with it.
-     */
-    private static function opensOrClosesFence(string $line): bool
-    {
-        return preg_match('/^\s*\*?\s*' . preg_quote(self::FENCE, '/') . '/', $line) === 1;
-    }
-
-    /**
-     * Pairs the backticks of one line and blanks each pair with what it
-     * encloses: first every backtick standing directly before a tag with the
-     * backtick after it, then the rest left to right. An odd one out is left
-     * alone: it quotes nothing, because nothing on this line closes it.
-     */
-    private static function maskInlineRegions(string $line): string
-    {
-        foreach (self::pairs($line) as [$start, $end]) {
-            $length = $end - $start + 1;
-            $line = substr_replace($line, str_repeat(' ', $length), $start, $length);
-        }
-
-        return $line;
-    }
-
-    /** @return list<array{int, int}> */
-    private static function pairs(string $line): array
-    {
-        $positions = self::backtickPositions($line);
-        $pairs = [];
-        $rest = [];
-
-        for ($i = 0, $count = \count($positions); $i < $count; ++$i) {
-            if ($i + 1 < $count && substr_compare($line, self::TAG_PREFIX, $positions[$i] + 1, \strlen(self::TAG_PREFIX)) === 0) {
-                $pairs[] = [$positions[$i], $positions[$i + 1]];
-                ++$i;
-
-                continue;
-            }
-
-            $rest[] = $positions[$i];
-        }
-
-        for ($i = 0, $last = \count($rest) - 1; $i < $last; $i += 2) {
-            $pairs[] = [$rest[$i], $rest[$i + 1]];
-        }
-
-        return $pairs;
-    }
-
-    /** @return list<int> */
-    private static function backtickPositions(string $line): array
-    {
-        $positions = [];
+        $mentions = [];
+        $fencedTags = [];
+        $fence = null;
         $offset = 0;
 
-        while (($position = strpos($line, '`', $offset)) !== false) {
-            $positions[] = $position;
-            $offset = $position + 1;
+        foreach ($lines as $index => $line) {
+            if ($fence !== null) {
+                if (self::closesFence($line, $fence['character'], $fence['length'])) {
+                    $fence = null;
+                    $fencedTags = [];
+                } else {
+                    array_push($fencedTags, ...self::unclosedFenceTags($line, $offset, $fence['line']));
+                }
+                $lines[$index] = self::blank($line);
+            } elseif (($opening = self::openingFence($line)) !== null) {
+                $fence = [...$opening, 'line' => $index + 1];
+                $lines[$index] = self::blank($line);
+            } else {
+                $inline = self::readInline($line, $offset);
+                $lines[$index] = $inline['mask'];
+                array_push($mentions, ...$inline['mentions']);
+            }
+            $offset += \strlen($line) + 1;
         }
 
-        return $positions;
+        return ['mask' => implode("\n", $lines), 'mentions' => [...$mentions, ...$fencedTags]];
     }
 
-    /** Keeps a carriage return's width rather than its meaning: only offsets are promised. */
+    /** @return list<array{offset: int, tag: string, reason: DirectiveRefusalReason, fenceLine: ?int}> */
+    private static function unclosedFenceTags(string $line, int $offset, int $fenceLine): array
+    {
+        $mentions = [];
+        foreach (self::tags($line) as [$tag, $position]) {
+            if (self::isExact($tag) && self::atStart(substr($line, 0, $position))) {
+                $mentions[] = ['offset' => $offset + $position, 'tag' => $tag,
+                    'reason' => DirectiveRefusalReason::InsideUnclosedFence, 'fenceLine' => $fenceLine];
+            }
+        }
+
+        return $mentions;
+    }
+
+    /** @return array{mask: string, mentions: list<array{offset: int, tag: string, reason: DirectiveRefusalReason, fenceLine: ?int}>} */
+    private static function readInline(string $line, int $offset): array
+    {
+        $mask = $line;
+        $mentions = [];
+        foreach (self::tags($line) as [$tag, $position]) {
+            if (self::atStart(substr($line, 0, $position))) {
+                continue;
+            }
+            $mask = substr_replace($mask, str_repeat(' ', \strlen($tag)), $position, \strlen($tag));
+            if (self::isExact($tag) && !self::quoted($line, $position)) {
+                $mentions[] = ['offset' => $offset + $position, 'tag' => $tag,
+                    'reason' => DirectiveRefusalReason::NotAtLineStart, 'fenceLine' => null];
+            }
+        }
+
+        return ['mask' => $mask, 'mentions' => $mentions];
+    }
+
+    /** @return list<array{string, int}> */
+    private static function tags(string $line): array
+    {
+        self::regexResult(preg_match_all(self::CANDIDATE, $line, $matches, \PREG_OFFSET_CAPTURE));
+
+        return $matches[0];
+    }
+
+    private static function isExact(string $tag): bool
+    {
+        return self::regexResult(preg_match('/^@qmx-[a-zA-Z]/', $tag)) === 1;
+    }
+
+    private static function atStart(string $prefix): bool
+    {
+        return self::regexResult(preg_match('/^(?:[\s\/*#]|' . self::UNICODE_SPACE . ')*$/', $prefix)) === 1;
+    }
+
+    /** @return array{character: string, length: int}|null */
+    private static function openingFence(string $line): ?array
+    {
+        $result = preg_match('/^(?:[\s\/*#]|' . self::UNICODE_SPACE . ')*(`{3,}|~{3,})(.*)$/', $line, $match);
+        self::regexResult($result);
+        if ($result !== 1
+            || ($match[1][0] === '`' && str_contains($match[2], '`'))) {
+            return null;
+        }
+
+        return ['character' => $match[1][0], 'length' => \strlen($match[1])];
+    }
+
+    private static function closesFence(string $line, string $character, int $length): bool
+    {
+        return self::regexResult(preg_match('/^(?:[\s\/*#]|' . self::UNICODE_SPACE . ')*' . preg_quote($character, '/') . '{' . $length . ',}(?:\s|' . self::UNICODE_SPACE . ')*(?:\*\/)?(?:\s|' . self::UNICODE_SPACE . ')*$/', $line)) === 1;
+    }
+
+    private static function quoted(string $line, int $position): bool
+    {
+        self::regexResult(preg_match_all('/`+/', $line, $matches, \PREG_OFFSET_CAPTURE));
+        $runs = $matches[0];
+
+        for ($i = 0, $count = \count($runs); $i < $count; ++$i) {
+            for ($j = $i + 1; $j < $count; ++$j) {
+                if (\strlen($runs[$i][0]) !== \strlen($runs[$j][0])) {
+                    continue;
+                }
+                $start = $runs[$i][1] + \strlen($runs[$i][0]);
+                $end = $runs[$j][1];
+                if ($position >= $start && $position < $end) {
+                    return self::regexResult(preg_match('/^(?:[\s\/*#`]|' . self::UNICODE_SPACE . ')*$/', substr($line, $start, $position - $start))) === 1;
+                }
+                $i = $j;
+                break;
+            }
+        }
+
+        return false;
+    }
+
+    private static function regexResult(int|false $result): int
+    {
+        if ($result === false) {
+            throw new LogicException('Cannot read directive grammar: ' . preg_last_error_msg());
+        }
+
+        return $result;
+    }
+
     private static function blank(string $line): string
     {
-        return str_repeat(' ', \strlen($line));
+        return preg_replace('/[^\r]/', ' ', $line) ?? throw new LogicException('Cannot mask comment bytes: ' . preg_last_error_msg());
     }
 }

@@ -22,7 +22,7 @@ final class GotoRule extends AbstractCodeSmellRule
     public const string NAME = 'code-smell.goto';
     public const string DOCS_PAGE = 'rules/code-smell.md';
     public const int REMEDIATION_MINUTES = 15;
-    protected const string DESCRIPTION = 'Detects usage of goto statement';
+    public const string DESCRIPTION = 'Detects usage of goto statement';
     protected const string SMELL_TYPE = 'goto';
     protected const Severity SEVERITY = Severity::Error;
     protected const string MESSAGE_TEMPLATE = 'goto statement detected - avoid using goto';

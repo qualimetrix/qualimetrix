@@ -1,0 +1,15 @@
+suppress_paths: []
+only_rules: [size.class-count, complexity.ccn, architecture.layer-violation]
+rules:
+  size.class-count: { warning: 1, error: 20 }
+  complexity.ccn:
+    callable: { warning: 2, error: 4 }
+    class: { enabled: false }
+architecture:
+  coverage-gap: ignore
+  layers:
+    - { name: domain, patterns: ['App\Domain\**'] }
+    - { name: service, patterns: ['App\Cx\**'] }
+  allow:
+    domain: []
+    service: []

@@ -6,14 +6,15 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Duplication\DataDeclarationTagger;
-use Qualimetrix\Analysis\Evidence\Duplication\NormalizedToken;
 use Qualimetrix\Analysis\Evidence\Duplication\TokenNormalizer;
+use Qualimetrix\Analysis\Evidence\Duplication\TokenStream;
 
 #[CoversClass(DataDeclarationTagger::class)]
 #[CoversClass(TokenNormalizer::class)]
-#[CoversClass(NormalizedToken::class)]
+#[CoversClass(TokenStream::class)]
 final class DataDeclarationTaggerTest extends TestCase
 {
     private TokenNormalizer $normalizer;
@@ -40,11 +41,11 @@ PHP;
 
         $tokens = $this->normalizer->normalize($code);
 
-        $constIdx = $this->indexOfType($tokens, \T_CONST);
+        $constIdx = $this->indexOfValue($tokens, 'const');
         $semicolonIdx = $this->indexOfFirstValueAfter($tokens, $constIdx, ';');
 
         for ($i = $constIdx; $i <= $semicolonIdx; $i++) {
-            self::assertTrue($tokens[$i]->isData, "Token at {$i} ('{$tokens[$i]->value}') should be tagged as data");
+            self::assertSame('1', $tokens->dataMask[$i], "Token at {$i} ('{$tokens->values[$i]}') should be tagged as data");
         }
     }
 
@@ -65,11 +66,11 @@ PHP;
 
         $tokens = $this->normalizer->normalize($code);
 
-        $privateIdx = $this->indexOfType($tokens, \T_PRIVATE);
+        $privateIdx = $this->indexOfValue($tokens, 'private');
         $semicolonIdx = $this->indexOfFirstValueAfter($tokens, $privateIdx, ';');
 
         for ($i = $privateIdx; $i <= $semicolonIdx; $i++) {
-            self::assertTrue($tokens[$i]->isData, "Token at {$i} ('{$tokens[$i]->value}') should be tagged as data");
+            self::assertSame('1', $tokens->dataMask[$i], "Token at {$i} ('{$tokens->values[$i]}') should be tagged as data");
         }
     }
 
@@ -95,8 +96,8 @@ PHP;
 
         $tokens = $this->normalizer->normalize($code);
 
-        foreach ($tokens as $token) {
-            self::assertFalse($token->isData, "Token '{$token->value}' in a method body must not be tagged as data");
+        foreach ($tokens->values as $index => $value) {
+            self::assertSame('0', $tokens->dataMask[$index], "Token '{$value}' in a method body must not be tagged as data");
         }
     }
 
@@ -123,8 +124,8 @@ PHP;
 
         $tokens = $this->normalizer->normalize($code);
 
-        foreach ($tokens as $token) {
-            self::assertFalse($token->isData, "Token '{$token->value}' should not be tagged (bare static local var, no visibility keyword)");
+        foreach ($tokens->values as $index => $value) {
+            self::assertSame('0', $tokens->dataMask[$index], "Token '{$value}' should not be tagged (bare static local var, no visibility keyword)");
         }
     }
 
@@ -146,8 +147,8 @@ PHP;
 
         $tokens = $this->normalizer->normalize($code);
 
-        foreach ($tokens as $token) {
-            self::assertFalse($token->isData, "Token '{$token->value}' (promoted param default) must not be tagged as data");
+        foreach ($tokens->values as $index => $value) {
+            self::assertSame('0', $tokens->dataMask[$index], "Token '{$value}' (promoted param default) must not be tagged as data");
         }
     }
 
@@ -158,8 +159,8 @@ PHP;
 
         $tokens = $this->normalizer->normalize($code);
 
-        foreach ($tokens as $token) {
-            self::assertFalse($token->isData);
+        foreach ($tokens->values as $index => $value) {
+            self::assertSame('0', $tokens->dataMask[$index]);
         }
     }
 
@@ -185,15 +186,15 @@ PHP;
 
         $tokens = $this->normalizer->normalize($code);
 
-        $constIdx = $this->indexOfType($tokens, \T_CONST);
+        $constIdx = $this->indexOfValue($tokens, 'const');
         $computeIdx = $this->indexOfValue($tokens, 'compute');
 
-        self::assertTrue($tokens[$constIdx]->isData, 'The const declaration itself must still be tagged as data');
+        self::assertSame('1', $tokens->dataMask[$constIdx], 'The const declaration itself must still be tagged as data');
 
         $semicolonIdx = $this->indexOfFirstValueAfter($tokens, $computeIdx, ';');
 
         for ($i = $computeIdx; $i <= $semicolonIdx; $i++) {
-            self::assertFalse($tokens[$i]->isData, "Token at {$i} ('{$tokens[$i]->value}') is executable code and must not be tagged as data");
+            self::assertSame('0', $tokens->dataMask[$i], "Token at {$i} ('{$tokens->values[$i]}') is executable code and must not be tagged as data");
         }
     }
 
@@ -221,13 +222,13 @@ PHP;
 
         $tokens = $this->normalizer->normalize($code);
 
-        $constIdx = $this->indexOfType($tokens, \T_CONST);
+        $constIdx = $this->indexOfValue($tokens, 'const');
         $ifIdx = $this->indexOfValue($tokens, 'if');
 
-        self::assertTrue($tokens[$constIdx]->isData, 'The const declaration itself must still be tagged as data');
+        self::assertSame('1', $tokens->dataMask[$constIdx], 'The const declaration itself must still be tagged as data');
 
-        for ($i = $ifIdx; $i < \count($tokens); $i++) {
-            self::assertFalse($tokens[$i]->isData, "Token at {$i} ('{$tokens[$i]->value}') is executable code in the next PHP block and must not be tagged as data");
+        for ($i = $ifIdx; $i < $tokens->count(); $i++) {
+            self::assertSame('0', $tokens->dataMask[$i], "Token at {$i} ('{$tokens->values[$i]}') is executable code in the next PHP block and must not be tagged as data");
         }
     }
 
@@ -255,17 +256,17 @@ PHP;
 
         $tokens = $this->normalizer->normalize($code);
 
-        $privateIdx = $this->indexOfType($tokens, \T_PRIVATE);
+        $privateIdx = $this->indexOfValue($tokens, 'private');
         $xIdx = $this->indexOfValue($tokens, '$_');
         $closeBracketIdx = $this->indexOfFirstValueAfter($tokens, $xIdx, ']');
 
         for ($i = $privateIdx; $i <= $closeBracketIdx; $i++) {
-            self::assertTrue($tokens[$i]->isData, "Token at {$i} ('{$tokens[$i]->value}') should be tagged as data");
+            self::assertSame('1', $tokens->dataMask[$i], "Token at {$i} ('{$tokens->values[$i]}') should be tagged as data");
         }
 
         $zIdx = $this->indexOfValue($tokens, 'z');
-        for ($i = $zIdx; $i < \count($tokens); $i++) {
-            self::assertFalse($tokens[$i]->isData, "Token at {$i} ('{$tokens[$i]->value}') is executable code and must not be tagged as data");
+        for ($i = $zIdx; $i < $tokens->count(); $i++) {
+            self::assertSame('0', $tokens->dataMask[$i], "Token at {$i} ('{$tokens->values[$i]}') is executable code and must not be tagged as data");
         }
     }
 
@@ -292,11 +293,27 @@ PHP;
 
         $tokens = $this->normalizer->normalize($code);
 
-        $varIdx = $this->indexOfType($tokens, \T_VAR);
+        $varIdx = $this->indexOfValue($tokens, 'var');
         $semicolonIdx = $this->indexOfFirstValueAfter($tokens, $varIdx, ';');
 
         for ($i = $varIdx; $i <= $semicolonIdx; $i++) {
-            self::assertTrue($tokens[$i]->isData, "Token at {$i} ('{$tokens[$i]->value}') should be tagged as data");
+            self::assertSame('1', $tokens->dataMask[$i], "Token at {$i} ('{$tokens->values[$i]}') should be tagged as data");
+        }
+    }
+
+    #[Test]
+    #[TestWith(['static private'])]
+    #[TestWith(['private static'])]
+    public function itTagsBothModifierOrdersAroundAPropertyArrayInitializer(string $modifiers): void
+    {
+        $stream = $this->normalizer->normalize("<?php final class Config { {$modifiers} array \$values = [1, 2]; }");
+        $static = $this->indexOfValue($stream, 'static');
+        $private = $this->indexOfValue($stream, 'private');
+        $start = min($static, $private);
+        $end = $this->indexOfFirstValueAfter($stream, $start, ';');
+
+        for ($i = $start; $i <= $end; $i++) {
+            self::assertSame('1', $stream->dataMask[$i]);
         }
     }
 
@@ -320,11 +337,11 @@ PHP;
 
         $tokens = $this->normalizer->normalize($code);
 
-        $triggerIdx = $this->indexOfType($tokens, \T_PUBLIC_SET);
+        $triggerIdx = $this->indexOfValue($tokens, 'public(set)');
         $semicolonIdx = $this->indexOfFirstValueAfter($tokens, $triggerIdx, ';');
 
         for ($i = $triggerIdx; $i <= $semicolonIdx; $i++) {
-            self::assertTrue($tokens[$i]->isData, "Token at {$i} ('{$tokens[$i]->value}') should be tagged as data");
+            self::assertSame('1', $tokens->dataMask[$i], "Token at {$i} ('{$tokens->values[$i]}') should be tagged as data");
         }
     }
 
@@ -346,8 +363,8 @@ PHP;
 
         $tokens = $this->normalizer->normalize($code);
 
-        foreach ($tokens as $token) {
-            self::assertFalse($token->isData, "Token '{$token->value}' should not be tagged — multi-property declarations are not matched at all");
+        foreach ($tokens->values as $index => $value) {
+            self::assertSame('0', $tokens->dataMask[$index], "Token '{$value}' should not be tagged — multi-property declarations are not matched at all");
         }
     }
 
@@ -356,7 +373,7 @@ PHP;
     {
         $tokens = $this->normalizer->normalize('');
 
-        self::assertSame([], $tokens);
+        self::assertSame([], $tokens->values);
     }
 
     #[Test]
@@ -364,10 +381,8 @@ PHP;
     {
         $tokens = $this->normalizer->normalize('plain text, no PHP here');
 
-        // Pure T_INLINE_HTML is skipped entirely by TokenNormalizer, so no
-        // tokens survive to be scanned — this exercises the tagger against
-        // an empty token list rather than actually finding a match.
-        self::assertSame([], $tokens);
+        self::assertSame(['html:b94fb94c052888fd1f745280f09027e0'], $tokens->values);
+        self::assertSame('0', $tokens->dataMask);
     }
 
     #[Test]
@@ -375,16 +390,13 @@ PHP;
     {
         $tokens = $this->normalizer->normalize('<?php');
 
-        self::assertSame([], $tokens);
+        self::assertSame([], $tokens->values);
     }
 
-    /**
-     * @param list<NormalizedToken> $tokens
-     */
-    private function indexOfValue(array $tokens, string $value): int
+    private function indexOfValue(TokenStream $tokens, string $value): int
     {
-        foreach ($tokens as $i => $token) {
-            if ($token->value === $value) {
+        foreach ($tokens->values as $i => $token) {
+            if ($token === $value) {
                 return $i;
             }
         }
@@ -392,27 +404,10 @@ PHP;
         self::fail("No token with value '{$value}' found");
     }
 
-    /**
-     * @param list<NormalizedToken> $tokens
-     */
-    private function indexOfType(array $tokens, int $type): int
+    private function indexOfFirstValueAfter(TokenStream $tokens, int $startIdx, string $value): int
     {
-        foreach ($tokens as $i => $token) {
-            if ($token->type === $type) {
-                return $i;
-            }
-        }
-
-        self::fail("No token of type {$type} found");
-    }
-
-    /**
-     * @param list<NormalizedToken> $tokens
-     */
-    private function indexOfFirstValueAfter(array $tokens, int $startIdx, string $value): int
-    {
-        for ($i = $startIdx; $i < \count($tokens); $i++) {
-            if ($tokens[$i]->value === $value) {
+        for ($i = $startIdx; $i < $tokens->count(); $i++) {
+            if ($tokens->values[$i] === $value) {
                 return $i;
             }
         }

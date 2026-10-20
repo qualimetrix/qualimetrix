@@ -12,9 +12,9 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
 use Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter;
 use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
-use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\ReportBuilder;
 use Qualimetrix\Tests\Reporting\Support\StubChannelPresentation;
 
@@ -45,7 +45,7 @@ final class SarifFormatterPosixSeparatorTest extends TestCase
             ->addFindings([$finding])
             ->build();
 
-        $output = $formatter->format($report, new FormatterContext());
+        $output = $formatter->format($report, new FormatterContext())->body;
 
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
         $uri = $data['runs'][0]['results'][0]['locations'][0]['physicalLocation']['artifactLocation']['uri'];
@@ -74,7 +74,7 @@ final class SarifFormatterPosixSeparatorTest extends TestCase
             ->addFindings([$finding])
             ->build();
 
-        $output = $formatter->format($report, new FormatterContext());
+        $output = $formatter->format($report, new FormatterContext())->body;
 
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
         $mainUri = $data['runs'][0]['results'][0]['locations'][0]['physicalLocation']['artifactLocation']['uri'];
@@ -106,7 +106,7 @@ final class SarifFormatterPosixSeparatorTest extends TestCase
         int|float|null $threshold = null,
         ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null,
         ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null,
-        ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null,
+        ?\Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel $acceptedLevel = null,
         ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null,
         ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null,
     ): Finding {

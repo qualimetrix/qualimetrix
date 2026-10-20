@@ -8,12 +8,14 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
-use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Reporting\Contract\Formatting\FormatOptionKeysInterface;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterInterface;
+use Qualimetrix\Reporting\Contract\Formatting\GroupBy;
+use Qualimetrix\Reporting\Contract\Report\Report;
 use Qualimetrix\Reporting\Formatter\FormatterRegistry;
-use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\GroupBy;
-use Qualimetrix\Reporting\Report;
+use Qualimetrix\Reporting\Publication\FormattedReport;
+use Qualimetrix\Reporting\Publication\PublicationKind;
 
 #[CoversClass(FormatterRegistry::class)]
 final class FormatterRegistryTest extends TestCase
@@ -114,9 +116,15 @@ final class FormatterRegistryTest extends TestCase
         $registry->register($second);
 
         $formatter = $registry->get('text');
-        $report = new Report([], 0, 0, 0.0, 0, 0);
+        $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            findings: [],
+            filesAnalyzed: 0,
+            filesSkipped: 0,
+            duration: 0.0,
+        );
 
-        self::assertSame('second', $formatter->format($report, new FormatterContext()));
+        self::assertSame('second', $formatter->format($report, new FormatterContext())->body);
     }
 
     #[Test]
@@ -139,15 +147,6 @@ final class FormatterRegistryTest extends TestCase
         self::assertSame(['rank-by', 'top', 'violations'], $registry->declaredFormatOptionKeys());
     }
 
-    #[Test]
-    public function itDeclaresKeysOfFormattersHiddenFromListings(): void
-    {
-        $registry = new FormatterRegistry([$this->createKeyDeclaringFormatter('text-verbose', ['top'])]);
-
-        self::assertSame([], $registry->getAvailableNames());
-        self::assertSame(['top'], $registry->declaredFormatOptionKeys());
-    }
-
     /** @param list<string> $keys */
     private function createKeyDeclaringFormatter(string $name, array $keys): FormatterInterface
     {
@@ -158,9 +157,14 @@ final class FormatterRegistryTest extends TestCase
                 private readonly array $keys,
             ) {}
 
-            public function format(Report $report, FormatterContext $context): string
+            public function format(Report $report, FormatterContext $context): FormattedReport
             {
-                return '';
+                return new FormattedReport('');
+            }
+
+            public function publicationKind(): PublicationKind
+            {
+                return PublicationKind::Prose;
             }
 
             public function getName(): string
@@ -188,9 +192,14 @@ final class FormatterRegistryTest extends TestCase
                 private readonly string $output,
             ) {}
 
-            public function format(Report $report, FormatterContext $context): string
+            public function format(Report $report, FormatterContext $context): FormattedReport
             {
-                return $this->output;
+                return new FormattedReport($this->output);
+            }
+
+            public function publicationKind(): PublicationKind
+            {
+                return PublicationKind::Prose;
             }
 
             public function getName(): string

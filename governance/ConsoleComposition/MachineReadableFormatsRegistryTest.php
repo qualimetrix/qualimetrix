@@ -9,16 +9,17 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Refusal\MachineReadableFormats;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterRegistryInterface;
 use Qualimetrix\Reporting\FindingProjection\SuppressionComposition;
-use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
-use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\Publication\PublicationKind;
 use Qualimetrix\Reporting\ReportBuilder;
 
 /**
  * Ties `MachineReadableFormats`'s "closed and measured" claim to the actual
  * `FormatterRegistry`, instead of leaving the two lists free to drift:
  * formatters are registered automatically
- * by name (CLAUDE.md §7 "Adding a new formatter"), so a new one never
+ * by name (CLAUDE.md, section 7 "Adding a new formatter"), so a new one never
  * touches `MachineReadableFormats.php` or its unit test by construction —
  * only this test, which boots the real DI container, catches a format that
  * was registered but never classified.
@@ -66,16 +67,11 @@ final class MachineReadableFormatsRegistryTest extends TestCase
     #[Test]
     public function itAccountsForEveryVisibleFormatExactlyOnce(): void
     {
-        // `text-verbose` is the one registered formatter FormatterRegistry
-        // hides from `getAvailableNames()` (deprecated, still selectable);
-        // it is still classified in `knownFormats()`, so the closed set is
-        // "visible names" + that one named hidden exception, not a free
-        // superset.
         $visible = self::registry()->getAvailableNames();
         $known = MachineReadableFormats::knownFormats();
 
         /** @var list<string> $expectedKnown */
-        $expectedKnown = [...$visible, 'text-verbose'];
+        $expectedKnown = [...$visible];
         sort($expectedKnown);
         sort($known);
 
@@ -91,7 +87,15 @@ final class MachineReadableFormatsRegistryTest extends TestCase
         $report = ReportBuilder::create()->suppressionComposition(new SuppressionComposition([]))->build();
 
         foreach (MachineReadableFormats::knownFormats() as $format) {
-            $printed = $registry->get($format)->format($report, new FormatterContext(useColor: false));
+            $formatter = $registry->get($format);
+            $formatted = $formatter->format($report, new FormatterContext(useColor: false));
+            $printed = $formatted->body;
+            self::assertSame(0, $formatted->escapedStrings);
+
+            self::assertSame(
+                MachineReadableFormats::carriesJson($format),
+                $formatter->publicationKind() === PublicationKind::JsonDocument,
+            );
 
             self::assertSame(
                 MachineReadableFormats::carriesJson($format),

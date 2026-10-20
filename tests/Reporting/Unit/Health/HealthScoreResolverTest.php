@@ -15,9 +15,9 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Report\Report;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
-use Qualimetrix\Reporting\Report;
 use Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\MetricRepositoryTestHelper;
 
 #[CoversClass(HealthScoreResolver::class)]
@@ -30,7 +30,7 @@ final class HealthScoreResolverTest extends TestCase
     protected function setUp(): void
     {
         $this->resolver = new HealthScoreResolver(
-            new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class)),
+            new HealthScoreDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class), new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression())),
         );
     }
 
@@ -43,13 +43,12 @@ final class HealthScoreResolverTest extends TestCase
         ];
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 5,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            healthScores: $projectScores,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: $projectScores),
         );
 
         $context = new FormatterContext();
@@ -67,14 +66,13 @@ final class HealthScoreResolverTest extends TestCase
         ];
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 5,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: null,
-            healthScores: $projectScores,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: $projectScores),
         );
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App'));
@@ -103,14 +101,13 @@ final class HealthScoreResolverTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 5,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
-            healthScores: [],
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: []),
         );
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'));
@@ -128,14 +125,13 @@ final class HealthScoreResolverTest extends TestCase
         $metrics = $this->createMetricRepository(new MetricBag());
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 5,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
-            healthScores: [],
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: []),
         );
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('NonExistent'));
@@ -149,13 +145,14 @@ final class HealthScoreResolverTest extends TestCase
     public function itClassFilterReturnsClassHealthScores(): void
     {
         $classPath = SymbolPath::forClass('App', 'UserService');
-        $classSymbol = new SymbolInfo($classPath, RelativePath::fromString('src/UserService.php'), null);
+        $classPathSubject = self::exactClassSubject($classPath, 'src/UserService.php');
+        $classSymbol = new SymbolInfo($classPathSubject, RelativePath::fromString('src/UserService.php'), null);
 
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             classes: [$classSymbol],
             classMetrics: [
-                $classPath->toCanonical() => (new MetricBag())
+                $classPathSubject->toCanonical() => (new MetricBag())
                     ->with('health.complexity', 85.0)
                     ->with('health.cohesion', 70.0)
                     ->with('health.overall', 78.0),
@@ -163,14 +160,13 @@ final class HealthScoreResolverTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 5,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
-            healthScores: [],
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: []),
         );
 
         $context = new FormatterContext(class: 'App\\UserService');
@@ -182,7 +178,7 @@ final class HealthScoreResolverTest extends TestCase
     }
 
     #[Test]
-    public function itClassFilterFallsBackToProjectWhenClassNotFound(): void
+    public function itClassFilterDoesNotBorrowProjectWhenClassNotFound(): void
     {
         $projectScores = [
             'complexity' => new HealthScore('complexity', 80.0, 'Good', 50.0, 25.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
@@ -191,20 +187,43 @@ final class HealthScoreResolverTest extends TestCase
         $metrics = $this->createMetricRepository(new MetricBag());
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 5,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
-            healthScores: $projectScores,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: $projectScores),
         );
 
         $context = new FormatterContext(class: 'App\\NonExistent');
 
         $result = $this->resolver->resolve($report, $context);
 
-        self::assertSame($projectScores, $result);
+        self::assertSame([], $result);
     }
+
+    #[Test]
+    public function itKeepsAnExistingClassWithNoScoreLocal(): void
+    {
+        $subject = self::exactClassSubject(SymbolPath::forClass('App', 'Bare'), 'src/Bare.php');
+        $repository = $this->createMetricRepository(
+            new MetricBag(),
+            classes: [new SymbolInfo($subject, RelativePath::fromString('src/Bare.php'), 1)],
+            classMetrics: [$subject->toCanonical() => new MetricBag()],
+        );
+        $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($repository),
+            findings: [],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 0.0,
+            metrics: $repository,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: [
+                'overall' => new HealthScore('overall', 80.0, 'Good', 50.0, 25.0, HealthCoverage::notApplicable('project')),
+            ]),
+        );
+        self::assertSame([], $this->resolver->resolve($report, new FormatterContext(class: 'App\\Bare')));
+    }
+
 }

@@ -86,7 +86,9 @@ final class ProjectSentinelNamespaceRunTest extends TestCase
 
         foreach (self::$violations as $violation) {
             if (($violation['subject'] ?? null) === 'project:') {
-                $projectNamespaces[] = $violation['namespace'] ?? null;
+                self::assertArrayHasKey('namespace', $violation);
+                self::assertSame([], $violation['namespaces']);
+                $projectNamespaces[] = $violation['namespace'];
             } elseif (str_contains((string) ($violation['subject'] ?? ''), '__PROJECT__')) {
                 $declarationNamespaces[] = $violation['namespace'] ?? null;
             }
@@ -94,7 +96,7 @@ final class ProjectSentinelNamespaceRunTest extends TestCase
 
         self::assertNotSame([], $projectNamespaces, 'The fixture must produce a project-level finding');
         self::assertNotSame([], $declarationNamespaces, 'The fixture must produce a finding inside the namespace');
-        self::assertSame(['(project)'], array_values(array_unique($projectNamespaces)));
+        self::assertSame([null], array_values(array_unique($projectNamespaces)));
         self::assertSame(['__PROJECT__'], array_values(array_unique($declarationNamespaces)));
     }
 

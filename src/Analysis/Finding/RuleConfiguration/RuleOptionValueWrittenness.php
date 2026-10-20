@@ -13,7 +13,7 @@ namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
  * author left the slot to the default, exactly as the rest of the document
  * reads it, so it is indistinguishable from having written nothing at all.
  *
- * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser} already asks this question
+ * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ThresholdParser} already asks this question
  * through `isset($config[$key])`, which is the same predicate for a key known
  * to be present: `isset()` on an array key that exists is false exactly when
  * the value is `null`. Both configuration merge sites

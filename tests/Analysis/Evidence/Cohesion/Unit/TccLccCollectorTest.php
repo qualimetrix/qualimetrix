@@ -9,6 +9,8 @@ use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Cohesion\CohesionCompositionCollector;
+use Qualimetrix\Analysis\Evidence\Cohesion\CohesionFactWire;
 use Qualimetrix\Analysis\Evidence\Cohesion\TccLccClassData;
 use Qualimetrix\Analysis\Evidence\Cohesion\TccLccCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\TccLccVisitor;
@@ -41,10 +43,7 @@ final class TccLccCollectorTest extends TestCase
     {
         $provides = $this->collector->provides();
 
-        self::assertCount(3, $provides);
-        self::assertContains('cohesion.tcc', $provides);
-        self::assertContains('cohesion.lcc', $provides);
-        self::assertContains('cohesion.pure-method-count', $provides);
+        self::assertSame([TccLccCollector::FACTS], $provides);
     }
 
     #[Test]
@@ -479,12 +478,13 @@ PHP;
     #[Test]
     public function itReturnsCorrectMetricDefinitions(): void
     {
-        $definitions = $this->collector->getMetricDefinitions();
+        self::assertSame([], $this->collector->getMetricDefinitions());
+        $definitions = (new CohesionCompositionCollector())->getMetricDefinitions();
 
-        self::assertCount(3, $definitions);
+        self::assertCount(7, $definitions);
 
         // Check TCC definition
-        $tccDef = $definitions[0];
+        $tccDef = $definitions[1];
         self::assertSame('cohesion.tcc', $tccDef->name);
         self::assertSame(SymbolLevel::Class_, $tccDef->collectedAt);
 
@@ -493,15 +493,16 @@ PHP;
         self::assertContains(AggregationStrategy::Min, $namespaceStrategies);
 
         // Check LCC definition
-        $lccDef = $definitions[1];
+        $lccDef = $definitions[2];
         self::assertSame('cohesion.lcc', $lccDef->name);
         self::assertSame(SymbolLevel::Class_, $lccDef->collectedAt);
 
         // Check pureMethodCount definition
-        $pureDef = $definitions[2];
+        $pureDef = $definitions[3];
         self::assertSame('cohesion.pure-method-count', $pureDef->name);
         self::assertSame(SymbolLevel::Class_, $pureDef->collectedAt);
-        self::assertSame([], $pureDef->getStrategiesForLevel(SymbolLevel::Namespace_));
+        self::assertSame([AggregationStrategy::Average], $pureDef->getStrategiesForLevel(SymbolLevel::Namespace_));
+        self::assertSame([AggregationStrategy::Average], $pureDef->getStrategiesForLevel(SymbolLevel::Project));
     }
 
     #[Test]
@@ -647,10 +648,13 @@ PHP;
 
         self::assertSame('App', $class->declarationPath->logical->namespace);
         self::assertSame('TestClass', $class->declarationPath->logical->type);
-        self::assertSame(1.0, $class->metrics->get('cohesion.tcc'));
-        self::assertSame(1.0, $class->metrics->get('cohesion.lcc'));
+        $data = CohesionFactWire::tccFromRows($class->metrics->entries(TccLccCollector::FACTS));
+        self::assertSame(1.0, $data->calculateTcc());
+        self::assertSame(1.0, $data->calculateLcc());
         // Both methods access $prop → 0 pure methods
-        self::assertSame(0, $class->metrics->get('cohesion.pure-method-count'));
+        foreach ($data->getMethods() as $method) {
+            self::assertNotSame([], $data->getPropertiesAccessedBy($method));
+        }
     }
 
     #[Test]
@@ -1232,6 +1236,34 @@ PHP;
         self::assertNotContains(\Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface::class, class_implements($this->collector));
     }
 
+    #[Test]
+    public function itKeepsDistinctPropertySharingForSameFileDeclarations(): void
+    {
+        $this->collectMetrics(<<<'PHP'
+<?php
+namespace App;
+class Twin {
+    private int $a = 0;
+    public function one(): int { return $this->a; }
+    public function two(): int { return $this->a; }
+}
+if (false) {
+    class Twin {
+        private int $a = 0;
+        private int $b = 0;
+        public function one(): int { return $this->a; }
+        public function two(): int { return $this->b; }
+    }
+}
+PHP);
+
+        $visitor = $this->collector->getVisitor();
+        self::assertInstanceOf(TccLccVisitor::class, $visitor);
+        $classes = array_values($visitor->getClassData());
+        self::assertCount(2, $classes);
+        self::assertSame([1.0, 0.0], array_map(static fn(TccLccClassData $class): float => $class->calculateTcc(), $classes));
+    }
+
     private function collectMetrics(string $code): MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();
@@ -1241,6 +1273,34 @@ PHP;
         $traverser->addVisitor($this->collector->getVisitor());
         $traverser->traverse($ast);
 
-        return $this->collector->collect(new SplFileInfo(__FILE__), $ast);
+        self::assertSame([], $this->collector->collect(new SplFileInfo(__FILE__), $ast)->all());
+        $visitor = $this->collector->getVisitor();
+        self::assertInstanceOf(TccLccVisitor::class, $visitor);
+        $metrics = new MetricBag();
+        foreach ($visitor->getClassData() as $classData) {
+            $wire = new MetricBag();
+            foreach (CohesionFactWire::tccRows($classData) as $row) {
+                $wire = $wire->withEntry(TccLccCollector::FACTS, $row);
+            }
+            $wire = unserialize(serialize($wire));
+            self::assertInstanceOf(MetricBag::class, $wire);
+            $data = CohesionFactWire::tccFromRows($wire->entries(TccLccCollector::FACTS));
+            if (\count($data->getMethods()) < 2 || $data->getPropertyCount() === 0) {
+                continue;
+            }
+            $name = $data->namespace !== null && $data->namespace !== '' ? $data->namespace . '\\' . $data->className : $data->className;
+            $metrics = $metrics
+                ->with('cohesion.tcc:' . $name, round($data->calculateTcc(), 3))
+                ->with('cohesion.lcc:' . $name, round($data->calculateLcc(), 3));
+            $pure = 0;
+            foreach ($data->getMethods() as $method) {
+                if ($data->getPropertiesAccessedBy($method) === []) {
+                    ++$pure;
+                }
+            }
+            $metrics = $metrics->with('cohesion.pure-method-count:' . $name, $pure);
+        }
+
+        return $metrics;
     }
 }

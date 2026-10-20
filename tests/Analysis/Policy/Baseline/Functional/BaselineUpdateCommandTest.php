@@ -4,30 +4,35 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Functional;
 
+use Closure;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Policy\Baseline\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineEntryParser;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineWriter;
+use Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance\BaselineUpdater;
+use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
+use Qualimetrix\Infrastructure\Console\Baseline\Maintenance\BaselineUpdateCommand;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubBaselineRun;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -147,8 +152,8 @@ final class BaselineUpdateCommandTest extends TestCase
         $before = (string) file_get_contents($this->baselinePath);
         $tester = $this->execute([self::finding(self::LOWER_CHANNEL, 70.0)], [], ['src']);
 
-        self::assertSame(Command::FAILURE, $tester->getStatusCode());
-        self::assertStringContainsString('does not cover tests', $tester->getDisplay());
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertStringContainsString('does not cover tests', $tester->getErrorOutput());
         self::assertSame($before, file_get_contents($this->baselinePath));
     }
 
@@ -159,12 +164,15 @@ final class BaselineUpdateCommandTest extends TestCase
     #[Test]
     public function itAllowsARunWiderThanTheRecordedScope(): void
     {
-        $this->writeBaseline([self::entry(self::LOWER_CHANNEL, [60.0], 1)], ['src/Domain']);
+        $this->writeBaseline([self::entry(self::LOWER_CHANNEL, [60.0], 1, 'src/Domain/Legacy.php')], ['src/Domain']);
 
-        $tester = $this->execute([self::finding(self::LOWER_CHANNEL, 70.0)], [], ['src']);
+        $tester = $this->execute([self::finding(self::LOWER_CHANNEL, 70.0, 'src/Domain/Legacy.php')], [], ['src']);
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         self::assertSame([70.0], $this->storedMagnitudesOf(self::LOWER_CHANNEL));
+        /** @var array{scope: list<string>} $saved */
+        $saved = json_decode((string) file_get_contents($this->baselinePath), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(['src/Domain'], $saved['scope']);
     }
 
     #[Test]
@@ -196,24 +204,53 @@ final class BaselineUpdateCommandTest extends TestCase
         self::assertSame($before, file_get_contents($this->baselinePath));
     }
 
+    #[Test]
+    public function itHoldsAPrivateSiblingDuringMeasurementAndDiscardsItOnNoOp(): void
+    {
+        $this->writeBaseline([self::entry(self::LOWER_CHANNEL, [60.0], 1)], ['src']);
+        clearstatcache(true, $this->baselinePath);
+        $inode = fileinode($this->baselinePath);
+        $bytes = file_get_contents($this->baselinePath);
+        $observed = null;
+        $this->execute([self::finding(self::LOWER_CHANNEL, 60.0)], onMeasure: function () use (&$observed, $bytes): void {
+            $entries = scandir($this->tempDir);
+            self::assertIsArray($entries);
+            $observed = array_values(array_diff($entries, ['.', '..', 'baseline.json', 'baseline.json.lock']));
+            self::assertSame($bytes, file_get_contents($this->baselinePath));
+        });
+
+        self::assertIsArray($observed);
+        self::assertCount(1, $observed, 'A private replacement sibling must be held during measurement.');
+        clearstatcache(true, $this->baselinePath);
+        self::assertSame($inode, fileinode($this->baselinePath));
+        self::assertSame($bytes, file_get_contents($this->baselinePath));
+        $entries = scandir($this->tempDir);
+        self::assertIsArray($entries);
+        self::assertSame([], array_values(array_diff($entries, ['.', '..', 'baseline.json', 'baseline.json.lock'])));
+    }
+
     /**
      * @param list<Finding> $measured
      * @param array<string, mixed> $options
      * @param list<string> $runScope
      */
-    private function execute(array $measured, array $options = [], array $runScope = ['src']): CommandTester
+    private function execute(array $measured, array $options = [], array $runScope = ['src'], ?Closure $onMeasure = null): CommandTester
     {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $declarations->declare(self::HIGHER_CHANNEL, ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_));
 
         $command = new BaselineUpdateCommand(
-            new StubBaselineRun($measured, $runScope, AbsolutePath::fromString($this->tempDir)),
+            new StubBaselineRun($measured, $runScope, AbsolutePath::fromString($this->tempDir), onMeasure: $onMeasure),
             new BaselineLoader(new BaselineEntryParser($declarations)),
+            new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader(),
             new BaselineUpdater($declarations, new FixedClock('2026-09-01T00:00:00+00:00')),
             new BaselineWriter(),
+            StubRuleCoverage::everyRuleRan(),
         );
 
+        $command->setRefusalPresenter(new \Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter(new \Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream()));
         $tester = new CommandTester($command);
-        $tester->execute(['baseline' => $this->baselinePath, 'paths' => $runScope, ...$options]);
+        $tester->execute(['baseline' => $this->baselinePath, 'paths' => $runScope, ...$options], ['capture_stderr_separately' => true]);
 
         return $tester;
     }
@@ -229,8 +266,9 @@ final class BaselineUpdateCommandTest extends TestCase
                 generated: (new FixedClock())->now(),
                 scope: $scope,
                 entries: $entries,
+                exclusions: self::fixtureExclusions(),
             ),
-            $this->baselinePath,
+            \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($this->baselinePath),
             AbsolutePath::fromString($this->tempDir),
         );
     }
@@ -238,27 +276,27 @@ final class BaselineUpdateCommandTest extends TestCase
     /**
      * @param list<float> $magnitudes
      */
-    private static function entry(string $channelKey, array $magnitudes, int $count): BaselineEntry
+    private static function entry(string $channelKey, array $magnitudes, int $count, string $path = 'src/Legacy.php'): BaselineEntry
     {
-        return new BaselineEntry(self::identity($channelKey), $magnitudes, $count);
+        return new BaselineEntry(self::identity($channelKey, $path), $magnitudes, $count);
     }
 
-    private static function identity(string $channelKey): BaselineIdentity
+    private static function identity(string $channelKey, string $path = 'src/Legacy.php'): BaselineIdentity
     {
         $symbol = SymbolPath::forClass('App', 'Legacy');
 
         return new BaselineIdentity(
             MetricSubject::declaration(
-                DeclarationPath::of($symbol, RelativePath::fromString('src/Legacy.php'), DeclarationOrdinal::fromRank(0)),
+                DeclarationPath::of($symbol, RelativePath::fromString($path), DeclarationOrdinal::fromRank(0)),
             )->toCanonical(),
             new FindingChannel($channelKey),
         );
     }
 
-    private static function finding(string $channelKey, float $magnitude): Finding
+    private static function finding(string $channelKey, float $magnitude, string $sourcePath = 'src/Legacy.php'): Finding
     {
         $channel = new FindingChannel($channelKey);
-        $path = RelativePath::fromString('src/Legacy.php');
+        $path = RelativePath::fromString($sourcePath);
         $symbol = SymbolPath::forClass('App', 'Legacy');
 
         return new Finding(
@@ -317,5 +355,13 @@ final class BaselineUpdateCommandTest extends TestCase
         }
 
         self::fail(\sprintf('No entry for channel %s in %s', $channelKey, $path));
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
+        );
     }
 }

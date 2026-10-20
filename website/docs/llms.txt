@@ -42,15 +42,15 @@ vendor/bin/qmx check src/ --preset=strict              # built-in preset (also: 
 vendor/bin/qmx check src/ --fail-on=warning            # exit code threshold for CI (none|warning|error, default: error)
 ```
 
-Output formats: `summary` (default), `text`, `json`, `checkstyle`, `sarif`, `gitlab`, `github`, `metrics`, `health` (text table), `html` (interactive treemap), `suppressed` (machine-readable composition of what was suppressed and why), `text-verbose` (deprecated, use `text --detail`).
+Output formats: `summary` (default), `text`, `json`, `checkstyle`, `sarif`, `gitlab`, `github`, `metrics`, `health` (text table), `html` (interactive treemap), `suppressed` (machine-readable composition of what was suppressed and why).
 
 Presets: `strict` (greenfield, tight thresholds), `legacy` (relaxed thresholds), `ci`. Composable: `--preset=strict,ci`.
 
 Rule groups: `complexity`, `coupling`, `size`, `design`, `maintainability`, `cohesion`, `architecture`, `duplication`, `code-smell`, `security`. Full rule list with IDs, thresholds, and options: `qmx rules`.
 
-Configuration: `qmx.yaml` (auto-discovered) or `--config=path`. Root keys: `paths`, `exclude`, `format`, `rules`, `disabledRules`, `onlyRules`, `suppressPaths`, `suppressNamespaces`, `failOn`, `cache`, `parallel`, `coupling`, `includeGenerated`, `includeAutoloadDev`, `memoryLimit`, `architecture`, `computedMetrics`, `excludeHealth`.
+Configuration: `qmx.yaml` (auto-discovered) or `--config=path`. Root keys: `paths`, `exclude`, `format`, `rules`, `disabledRules`, `onlyRules`, `suppressPaths`, `suppressNamespaces`, `failOn`, `cache`, `parallel`, `coupling`, `includeGenerated`, `includeAutoloadDev`, `memoryLimit`, `architecture`, `computed_metrics`, `exclude_health`.
 
-Suppression: `@qmx-ignore` / `@qmx-ignore-next-line` in docblocks or comments (symbol/line scope), `@qmx-ignore-file` (whole file). Threshold override: `@qmx-threshold` on a class/method.
+Suppression: Tags start a physical comment line after decoration: `@qmx-ignore` has bounded declaration/member reach, `@qmx-ignore-next-line` targets the line after the comment, and `@qmx-ignore-file` covers the file. `@qmx-threshold` retains whole-declaration binding. See [Inline syntax](https://qualimetrix.dev/usage/baseline/#inline-suppression) and [Annotation rules](https://qualimetrix.dev/rules/annotation/).
 
 ## Docs
 
@@ -73,10 +73,20 @@ Suppression: `@qmx-ignore` / `@qmx-ignore-next-line` in docblocks or comments (s
 - [Design Rules](https://qualimetrix.dev/rules/design/): DIT, NOC, type coverage
 - [Maintainability Rules](https://qualimetrix.dev/rules/maintainability/): Maintainability Index
 - [Cohesion](https://qualimetrix.dev/rules/cohesion/): LCOM rule, TCC/LCC metrics
-- [Architecture Rules](https://qualimetrix.dev/rules/architecture/): Circular dependency detection
+- [Architecture Rules](https://qualimetrix.dev/rules/architecture/): Declared-layer policy, declaration diagnostics and circular dependency detection
 - [Code Smell Rules](https://qualimetrix.dev/rules/code-smell/): Boolean args, eval, goto, god class, data class, unused private, etc.
 - [Security Rules](https://qualimetrix.dev/rules/security/): SQL injection, XSS, command injection, hardcoded credentials
 - [Duplication Rules](https://qualimetrix.dev/rules/duplication/): Code duplication detection
 - [Remediation Time](https://qualimetrix.dev/reference/remediation-time/): Estimated fix time per rule
 - [Other CI Systems](https://qualimetrix.dev/ci-cd/other-ci/): GitLab CI, Jenkins, Bitbucket Pipelines
 - [Usage Scenarios](https://qualimetrix.dev/usage/usage-scenarios/): Common workflows and use cases
+
+Analysis exit codes: 0 clean, 1 warnings under fail-on=warning, 2 errors,
+3 input/environment refusal, 4 incomplete analysis, 5 internal error.
+Text details: use `--format=text --detail=all`; text-verbose is removed.
+Namespace drill-down selects physical-file findings if any declared namespace
+matches; class selection excludes file aggregates. Suppression documents stay
+whole-run and refuse drill-down selectors. Reinstall old generated hooks with
+`qmx hook:install --force` after upgrading the exit-code contract.
+Malformed source bytes display as `%XX`, with a repair count on stderr.
+Canonical subjects preserve exact bytes; display file names are not identities.

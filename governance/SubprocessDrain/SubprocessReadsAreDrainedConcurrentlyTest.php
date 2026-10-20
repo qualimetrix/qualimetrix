@@ -208,20 +208,58 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
      * @var array<string, string>
      */
     private const ENTRIES = [
+        'src/Infrastructure/Git/GitProcessAvailability.php:13' => 'Capability-name strings passed to function_exists and compared against disable_functions;'
+            . ' neither spelling executes a child.',
+        'src/Infrastructure/Git/GitUnavailable.php:14' => 'Diagnostic text naming the unavailable process capability; it is never evaluated as PHP'
+            . ' source.',
+        'src/Infrastructure/Parallel/WorkerPool.php:31' => 'Capability-name strings passed to function_exists and compared against disable_functions;'
+            . ' neither spelling executes a child.',
+        'src/Infrastructure/Parallel/WorkerPool.php:32' => 'The unavailable capability name returned for diagnostics, never evaluated as source.',
+        'tests/Infrastructure/Console/Unit/RunTarget/RunTargetSessionTest.php:119' => 'A function_exists capability probe used to skip the real-worker witness when process'
+            . ' execution is unavailable.',
+        'tests/Infrastructure/Git/Integration/GitProcessAvailabilityTest.php:25' => 'An ini setting disables the process capability in the child; the string is configuration,'
+            . ' not executable source.',
+        'tests/Infrastructure/Git/Integration/GitProcessAvailabilityTest.php:31' => 'The expected unavailable-capability diagnostic, never evaluated as source.',
+        'tests/Infrastructure/Parallel/Unit/Strategy/AmphpParallelStrategyTest.php:362' => 'The expected unavailable-capability diagnostic, never evaluated as source.',
+        'tests/Infrastructure/Parallel/Unit/Strategy/AmphpParallelStrategyTest.php:375' => 'The expected unavailable-capability diagnostic, never evaluated as source.',
+        'tests/Infrastructure/Parallel/Unit/Strategy/AmphpParallelStrategyTest.php:407' => 'An ini setting disables the process capability in the child; the string is configuration, not executable source.',
+
+        'src/Core/FileTarget/PrivateGroup/NativeNssEnumerator.php:19' => 'A function_exists probe, not a spawn; the actual'
+            . ' child invocation is declared separately below.',
+        'src/Core/FileTarget/PrivateGroup/NativeNssEnumerator.php:37' => 'Core cannot depend on the development-only'
+            . ' ChildProcess module. NSS enumeration opens only stdout as a pipe, sends stdin and stderr to'
+            . ' /dev/null, drains stdout non-blockingly, and enforces a deadline and output bound.',
+        'tests/Analysis/Policy/Baseline/Functional/BaselineGenerateCommandTest.php:162' => 'The signal'
+            . ' regression spawns controlled PHP code that creates a ready file then sleeps until terminated;'
+            . ' its normal path emits no stream output. Both pipes are closed after termination, but this is not'
+            . ' a general-purpose concurrent drain.',
+        'tests/Infrastructure/Console/Unit/RunTarget/RunTargetSessionTest.php:74' => 'The controlled signal'
+            . ' child writes one READY line to stdout and sleeps until termination; the test reads that line'
+            . ' before reaping. Stderr is not drained concurrently, so this entry is limited to that bounded'
+            . ' child script, not reusable subprocess capture.',
+        'tests/Infrastructure/Console/Unit/RunTarget/RunTargetSessionTest.php:166' => 'The controlled'
+            . ' worker-signal child uses files for readiness and waits until termination; the test reads stderr'
+            . ' only after exit for an assertion. This is a bounded interruption witness, not a concurrent'
+            . ' drain suitable for arbitrary child output.',
+        'tests/Core/FileTarget/Unit/Publication/HeldTargetTest.php:219' => 'The descriptor regression binds stdout directly to '
+            . 'the existing append-mode file under test, which ChildProcess does not accept as a descriptor map. '
+            . 'Only stderr is a pipe and it is drained before reaping; stdout writes to the file, so no second '
+            . 'read stream can be left unserviced.',
+
         'scripts/finding-gate-controls/Shell.php:89' => 'The finding-gate controls supervisor: a global '
             . '`stream_select` across every live child, plus process-group isolation, descendant termination and a '
             . 'bounded parallel scheduler. That is supervision layered on the read discipline, a different subject '
             . 'from flat capture, and its behaviour is what `composer gate:controls` measures.',
 
-        'scripts/finding-gate/ProcessHandle.php:61' => 'The finding-gate worker handle: non-blocking reads under a '
+        'scripts/finding-gate/ProcessHandle.php:87' => 'The finding-gate worker handle: non-blocking reads under a '
             . 'bounded scheduler, with process-group isolation and launcher-disappearance detection. Same '
             . 'supervision subject as the line above.',
 
-        'scripts/finding-gate/ProcessHandle.php:202' => '`groupedCommand()`: source text inside a nowdoc handed to '
+        'scripts/finding-gate/ProcessHandle.php:237' => '`groupedCommand()`: source text inside a nowdoc handed to '
             . '`php -r`, so this is a literal here and a real call in the child. The child opens no pipe at all — '
             . 'its descriptors are the STDIN/STDOUT/STDERR constants — so it carries none of this hazard.',
 
-        'scripts/finding-gate/SelfTest.php:2919' => 'The interrupt self-test needs the child back *alive*, with its '
+        'scripts/finding-gate/SelfTestResources.php:405' => 'The interrupt self-test needs the child back *alive*, with its '
             . 'stdout handle, after reading two announcement lines while the child runs `sleep 30`; the module '
             . 'waits for exit. Stderr goes to a file, leaving stdout the only blocking stream, and the bespoke loop '
             . 'keeps its deadline and SIGKILL backstop.',
@@ -238,46 +276,46 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . 'real function fail in the parent. The generated harness it goes into opens nothing of its own and '
             . 'reaches the module through its ordinary entry point, like any other caller.',
 
-        'src/Infrastructure/Git/GitRepositoryLocator.php:94' => 'Production code, which may not import a '
+        'src/Infrastructure/Git/GitRepositoryLocator.php:86' => 'Production code, which may not import a '
             . 'development namespace, and the module lives outside `src/` deliberately. The deadlock is removed by '
-            . 'construction instead: `git rev-parse` gets no stdin pipe and its stderr goes to a file, so stdout is '
+            . 'construction instead: `git rev-parse` gets no stdin pipe and its stderr goes to `/dev/null`, so stdout is '
             . 'the only blocking stream.',
 
-        'tests/Infrastructure/Console/Functional/Command/HookInstallCommandTest.php:286' => 'Arranging a git '
+        'tests/Infrastructure/Console/Functional/Hook/HookInstallCommandTest.php:286' => 'Arranging a git '
             . 'repository for the case under test: both streams go to `/dev/null` and no pipe is opened, so only '
             . 'the exit status is read.',
 
-        'src/Analysis/Evidence/Security/CommandInjectionDetector.php:27' => 'Rule data: the name of one of the '
+        'src/Analysis/Evidence/Security/DirectSinks/CommandInjectionDetector.php:27' => 'Rule data: the name of one of the '
             . 'functions the command-injection rule detects.',
 
-        'src/Analysis/Evidence/Security/CommandInjectionDetector.php:28' => 'Rule data, the single-stream spawner: '
+        'src/Analysis/Evidence/Security/DirectSinks/CommandInjectionDetector.php:28' => 'Rule data, the single-stream spawner: '
             . 'the next name in the same list.',
 
-        'tests/Analysis/Evidence/Security/Unit/CommandInjectionDetectorTest.php:59' => 'The data-provider case for '
+        'tests/Analysis/Evidence/Security/Unit/DirectSinks/CommandInjectionDetectorTest.php:59' => 'The data-provider case for '
             . 'that rule, naming the detected function twice on one line — as the case label and as the case value.',
 
-        'tests/Analysis/Evidence/Security/Unit/CommandInjectionDetectorTest.php:60' => 'The same shape for the '
+        'tests/Analysis/Evidence/Security/Unit/DirectSinks/CommandInjectionDetectorTest.php:60' => 'The same shape for the '
             . 'single-stream spawner: the case label and the case value on one line.',
 
-        'tests/Analysis/Evidence/Security/Unit/SecurityPatternVisitorTest.php:351' => 'The data-provider case label '
+        'tests/Analysis/Evidence/Security/Unit/DirectSinks/SecurityPatternVisitorTest.php:351' => 'The data-provider case label '
             . 'for the command-injection visitor.',
 
-        'tests/Analysis/Evidence/Security/Unit/SecurityPatternVisitorTest.php:352' => 'PHP source inside the '
+        'tests/Analysis/Evidence/Security/Unit/DirectSinks/SecurityPatternVisitorTest.php:352' => 'PHP source inside the '
             . 'fixture string that case hands to the parser — embedded source, never executed by this process.',
 
-        'tests/Analysis/Evidence/Security/Unit/SecurityPatternVisitorTest.php:356' => 'The case label for the same '
+        'tests/Analysis/Evidence/Security/Unit/DirectSinks/SecurityPatternVisitorTest.php:356' => 'The case label for the same '
             . 'visitor, naming the single-stream spawner.',
 
-        'tests/Analysis/Evidence/Security/Unit/SecurityPatternVisitorTest.php:357' => 'PHP source inside that '
+        'tests/Analysis/Evidence/Security/Unit/DirectSinks/SecurityPatternVisitorTest.php:357' => 'PHP source inside that '
             . 'case\'s fixture string — embedded source, never executed by this process.',
 
-        'tests/Analysis/Evidence/Duplication/Unit/DataDeclarationTaggerTest.php:363' => 'Not a spawn and not the '
+        'tests/Analysis/Evidence/Duplication/Unit/DataDeclarationTaggerTest.php:380' => 'Not a spawn and not the '
             . 'name: a test method whose camelCase seam spells the single-stream spawner once case is folded — the '
             . '`p` ends one word and `Open` begins the next. It is the only occurrence in the tree that the '
             . 'case-fold adds, and it is therefore also this control\'s witness that the fold is live: fold the '
             . 'match back to case-sensitive and this entry refuses as stale.',
 
-        'tests/Analysis/Policy/Baseline/Integration/BaselineChannelRenamerTest.php:636' => 'The parent holds the '
+        'tests/Analysis/Policy/Baseline/Integration/BaselineChannelRenamerTest.php:646' => 'The parent holds the '
             . 'lock the child blocks on, so the window opens before the parent is free to read anything and no read '
             . 'discipline closes it. Stderr goes to a file the failure message reads back, leaving stdout the only '
             . 'blocking stream.',
@@ -289,14 +327,10 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . 'can allocate a pseudo-terminal at all, so it must open one. Stdin and stdout go to `/dev/null` and '
             . 'the single pty is read to EOF rather than closed unread.',
 
-        'tests/Infrastructure/Console/Support/PseudoTerminalRun.php:85' => 'A pty master reports EIO where a pipe '
+        'tests/Infrastructure/Console/Support/PseudoTerminalRun.php:86' => 'A pty master reports EIO where a pipe '
             . 'reports EOF, which is a different read discipline rather than a caller of this one. Both streams are '
             . 'drained from one `stream_select` loop.',
 
-        'tests/Infrastructure/Console/Unit/ArtifactFileTest.php:548' => 'PHP source handed to `php -r`, so a '
-            . 'literal here and a real call in the parent it describes. That parent hands its own non-blocking '
-            . 'STDOUT to the child as a descriptor and opens no pipe, so it reads nothing; the test itself runs '
-            . 'the pipeline through the shared subprocess module.',
     ];
 
     /** @var list<array{path: string, line: int, name: string, spelled: string, kind: string}>|null */

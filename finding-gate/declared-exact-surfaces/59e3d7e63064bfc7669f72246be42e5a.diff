@@ -1,0 +1,8 @@
+--- candidate
++++ reference (mapped)
+@@ -8,1 +8,1 @@
+-    <error line="56" severity="error" message="Suppression &quot;design.type-coverage.propurn&quot; addresses no channel. Addressable names closest to it: design.type-coverage.property, design.type-coverage.return. Prose belongs after &quot;--&quot;." source="qmx.annotation.unresolved-directive"/>
++    <error line="56" severity="error" message="Suppression &quot;design.type-coverage.propurn&quot; addresses no channel. Addressable names closest to it: design.type-coverage.return, design.type-coverage.property. Prose belongs after &quot;--&quot;." source="qmx.annotation.unresolved-directive"/>
+@@ -22,1 +22,1 @@
+-    <error line="56" severity="error" message="Suppression &quot;design.type-coverage.propurn&quot; addresses no channel. Addressable names closest to it: design.type-coverage.property, design.type-coverage.return. Prose belongs after &quot;--&quot;." source="qmx.annotation.unresolved-directive"/>
++    <error line="56" severity="error" message="Suppression &quot;design.type-coverage.propurn&quot; addresses no channel. Addressable names closest to it: design.type-coverage.return, design.type-coverage.property. Prose belongs after &quot;--&quot;." source="qmx.annotation.unresolved-directive"/>

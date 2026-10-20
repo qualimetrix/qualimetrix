@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
 use LogicException;
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
+use Qualimetrix\Analysis\Finding\Rule\AbstractRule;
 use ReflectionClass;
 
 /**
@@ -27,7 +29,7 @@ use ReflectionClass;
  * constant declared on `$ruleClass` itself, which is correct for `DOCS_PAGE`
  * and `REMEDIATION_MINUTES` (every rule states its own, even when it shares
  * a base with siblings) but wrong here — {@see \Qualimetrix\Analysis\Evidence\CodeSmell\AbstractCodeSmellRule},
- * {@see \Qualimetrix\Analysis\Evidence\Security\AbstractSecurityPatternRule}
+ * {@see \Qualimetrix\Analysis\Evidence\Security\DirectSinks\AbstractSecurityPatternRule}
  * and {@see \Qualimetrix\Analysis\Evidence\Design\TypeCoverage\AbstractTypeCoverageRule}
  * each declare `SHAPE` once for every leaf that shares it, and none of those
  * leaves redeclares it. What must be refused is a class whose `SHAPE`

@@ -13,10 +13,10 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Report\Report;
 use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
 use Qualimetrix\Reporting\Formatter\Summary\TopIssuesRenderer;
-use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\Report;
 
 #[CoversClass(TopIssuesRenderer::class)]
 final class TopIssuesRendererTest extends TestCase
@@ -31,19 +31,40 @@ final class TopIssuesRendererTest extends TestCase
     }
 
     #[Test]
+    public function itKeepsTheNamespaceMessageAndRecommendationInTopIssues(): void
+    {
+        $finding = self::finding(Location::none(), SymbolPath::forNamespace('Shop'), 'computed', 'health.cohesion', 'Measured cohesion is low.', Severity::Warning, recommendation: 'Split the namespace.');
+        $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            findings: [$finding],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 0,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(topIssues: [new RankedIssue($finding, 10, null, 5, 1)]),
+        );
+        $lines = [];
+        $this->renderer->render($report, new FormatterContext(useColor: false), $this->color, $lines);
+        $output = implode("\n", $lines);
+
+        self::assertStringContainsString('Shop', $output);
+        self::assertStringContainsString('Measured cohesion is low.', $output);
+        self::assertStringContainsString('Split the namespace.', $output);
+        self::assertStringNotContainsString('[project]', $output);
+    }
+
+    #[Test]
     public function itRendersTopIssues(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 1,
-            warningCount: 1,
-            topIssues: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(topIssues: [
                 $this->createRankedIssue(150.0, Severity::Error, 'HighImpactService', '/project/src/HighImpactService.php', 42, 60),
                 $this->createRankedIssue(30.0, Severity::Warning, 'LowImpactService', '/project/src/LowImpactService.php', 10, 15),
-            ],
+            ]),
         );
 
         $context = new FormatterContext();
@@ -75,13 +96,12 @@ final class TopIssuesRendererTest extends TestCase
     public function itSkipsRenderingWhenNoTopIssues(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            topIssues: [],
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(topIssues: []),
         );
 
         $context = new FormatterContext();
@@ -96,15 +116,14 @@ final class TopIssuesRendererTest extends TestCase
     public function itSkipsRenderingWhenLimitIsZero(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 1,
-            warningCount: 0,
-            topIssues: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(topIssues: [
                 $this->createRankedIssue(100.0, Severity::Error, 'SomeService', '/project/src/SomeService.php', 5, 30),
-            ],
+            ]),
         );
 
         $context = new FormatterContext(topIssuesLimit: 0);
@@ -119,17 +138,16 @@ final class TopIssuesRendererTest extends TestCase
     public function itRespectsLimit(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 3,
-            warningCount: 0,
-            topIssues: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(topIssues: [
                 $this->createRankedIssue(200.0, Severity::Error, 'First', '/project/src/First.php', 1, 60),
                 $this->createRankedIssue(100.0, Severity::Error, 'Second', '/project/src/Second.php', 2, 30),
                 $this->createRankedIssue(50.0, Severity::Error, 'Third', '/project/src/Third.php', 3, 15),
-            ],
+            ]),
         );
 
         $context = new FormatterContext(topIssuesLimit: 1);
@@ -156,21 +174,20 @@ final class TopIssuesRendererTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 1,
-            warningCount: 0,
-            topIssues: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(topIssues: [
                 new RankedIssue(
                     finding: $finding,
                     impactScore: 10.0,
-                    classRank: 0.05,
+                    classRankShare: 0.05,
                     debtMinutes: 30,
                     severityWeight: 3,
                 ),
-            ],
+            ]),
         );
 
         $context = new FormatterContext(basePath: '/project');
@@ -181,6 +198,33 @@ final class TopIssuesRendererTest extends TestCase
         $output = implode("\n", $lines);
 
         self::assertStringContainsString('src/Service.php:42', $output);
+    }
+
+    #[Test]
+    public function itRendersScorePrecisionAtTenAndOneHundred(): void
+    {
+        foreach ([
+            [9.876, '9.88'],
+            [10.0, '10.0'],
+            [10.126, '10.1'],
+            [99.96, '100.0'],
+            [100.0, '100'],
+            [100.6, '101'],
+        ] as [$score, $formatted]) {
+            $report = new Report(
+                fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+                findings: [],
+                filesAnalyzed: 1,
+                filesSkipped: 0,
+                duration: 1.0,
+                health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(topIssues: [$this->createRankedIssue($score, Severity::Error, 'Service', '/project/src/Service.php', 42, 30)]),
+            );
+            $lines = [];
+
+            $this->renderer->render($report, new FormatterContext(), $this->color, $lines);
+
+            self::assertStringContainsString('1. [ERR] ' . $formatted . '  ', implode("\n", $lines));
+        }
     }
 
     #[Test]
@@ -196,21 +240,20 @@ final class TopIssuesRendererTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 1,
-            warningCount: 0,
-            topIssues: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(topIssues: [
                 new RankedIssue(
                     finding: $finding,
                     impactScore: 3.14,
-                    classRank: null,
+                    classRankShare: null,
                     debtMinutes: 45,
                     severityWeight: 3,
                 ),
-            ],
+            ]),
         );
 
         $context = new FormatterContext(basePath: '/project');
@@ -243,21 +286,20 @@ final class TopIssuesRendererTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 1,
-            topIssues: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(topIssues: [
                 new RankedIssue(
                     finding: $finding,
                     impactScore: 2.5,
-                    classRank: 0.03,
+                    classRankShare: 0.03,
                     debtMinutes: 30,
                     severityWeight: 1,
                 ),
-            ],
+            ]),
         );
 
         $context = new FormatterContext(basePath: '/project');
@@ -287,15 +329,14 @@ final class TopIssuesRendererTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 1,
-            warningCount: 0,
-            topIssues: [
-                new RankedIssue(finding: $finding, impactScore: 5.0, classRank: null, debtMinutes: 20, severityWeight: 3),
-            ],
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(topIssues: [
+                new RankedIssue(finding: $finding, impactScore: 5.0, classRankShare: null, debtMinutes: 20, severityWeight: 3),
+            ]),
         );
 
         $context = new FormatterContext(basePath: '/project');
@@ -321,15 +362,14 @@ final class TopIssuesRendererTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 1,
-            warningCount: 0,
-            topIssues: [
-                new RankedIssue(finding: $finding, impactScore: 8.0, classRank: null, debtMinutes: 15, severityWeight: 3),
-            ],
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(topIssues: [
+                new RankedIssue(finding: $finding, impactScore: 8.0, classRankShare: null, debtMinutes: 15, severityWeight: 3),
+            ]),
         );
 
         $context = new FormatterContext(basePath: '/project');
@@ -357,15 +397,14 @@ final class TopIssuesRendererTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 1,
-            warningCount: 0,
-            topIssues: [
-                new RankedIssue(finding: $finding, impactScore: 1.0, classRank: null, debtMinutes: 60, severityWeight: 3),
-            ],
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(topIssues: [
+                new RankedIssue(finding: $finding, impactScore: 1.0, classRankShare: null, debtMinutes: 60, severityWeight: 3),
+            ]),
         );
 
         $context = new FormatterContext();
@@ -380,7 +419,7 @@ final class TopIssuesRendererTest extends TestCase
     }
 
     #[Test]
-    public function itPrefersRecommendationOverMessage(): void
+    public function itPublishesBothMessageAndRecommendation(): void
     {
         $finding = self::finding(
             location: new Location(RelativePath::fromString('project/src/Service.php'), 5),
@@ -393,15 +432,14 @@ final class TopIssuesRendererTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 1,
-            topIssues: [
-                new RankedIssue(finding: $finding, impactScore: 2.0, classRank: 0.01, debtMinutes: 45, severityWeight: 1),
-            ],
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(topIssues: [
+                new RankedIssue(finding: $finding, impactScore: 2.0, classRankShare: 0.01, debtMinutes: 45, severityWeight: 1),
+            ]),
         );
 
         $context = new FormatterContext(basePath: '/project');
@@ -413,7 +451,7 @@ final class TopIssuesRendererTest extends TestCase
 
         // Should show recommendation, not technical message
         self::assertStringContainsString('Class could be split into 3 cohesive parts', $output);
-        self::assertStringNotContainsString('LCOM4 value 3 exceeds threshold', $output);
+        self::assertStringContainsString('LCOM4 value 3 exceeds threshold', $output);
     }
 
     /**
@@ -425,13 +463,12 @@ final class TopIssuesRendererTest extends TestCase
     public function itRendersTheRankingItIsGivenWithoutReapplyingTheDrillDown(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 10,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 1,
-            warningCount: 0,
-            topIssues: [$this->createRankedIssue(150.0, Severity::Error, 'Ranked', '/project/src/Ranked.php', 1, 60)],
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(topIssues: [$this->createRankedIssue(150.0, Severity::Error, 'Ranked', '/project/src/Ranked.php', 1, 60)]),
         );
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Elsewhere'));
 
@@ -461,14 +498,14 @@ final class TopIssuesRendererTest extends TestCase
         return new RankedIssue(
             finding: $finding,
             impactScore: $score,
-            classRank: 0.05,
+            classRankShare: 0.05,
             debtMinutes: $debt,
             severityWeight: $severity === Severity::Error ? 3 : 1,
         );
     }
 
     /** @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations */
-    private static function finding(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $code, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Finding
+    private static function finding(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $code, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Finding
     {
         $subject ??= match ($symbolPath->getType()) {
             \Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),

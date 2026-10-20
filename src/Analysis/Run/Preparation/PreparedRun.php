@@ -1,0 +1,70 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Analysis\Run\Preparation;
+
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
+
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication;
+
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
+use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
+
+/**
+ * One run of the pipeline, up to and including the first rule execution.
+ *
+ * The step both entry points of {@see AnalysisPipeline} share, held as a value
+ * so neither has to re-derive the other's half. It carries the context on
+ * purpose: an audit that re-executes rules must re-execute them against
+ * exactly the world this run measured, and rebuilding an equivalent context
+ * from the parts would be a second chance to build a different one.
+ *
+ * It carries no measurement repository of its own: `$context->metrics` is the
+ * one this run measured, and a second field naming the same object would be a
+ * second thing to keep in step — and, on this tree, one more class depending on
+ * `MetricRepositoryInterface`, whose coupling budget is spent.
+ *
+ * Internal to Run and deliberately so: it does not cross an owner boundary,
+ * and the report the audit hands out is a different shape with a different
+ * audience.
+ *
+ * @qmx-threshold coupling.instability 0.800001 -- This run-owned protocol coordinates independent outward participants while its exact readers remain local; another dependency must be reviewed.
+ */
+final readonly class PreparedRun
+{
+    /**
+     * @param array<string, list<Suppression>> $suppressions
+     * @param array<string, list<ThresholdOverride>> $thresholdOverrides
+     * @param list<Finding> $unmatchedExcludeFindings What the run's own exclude patterns failed to remove
+     *
+     * `$unmatchedExcludeFindings` is built beside file discovery, where the
+     * patterns are still being applied, and read after rule execution, where a
+     * finding can be published. Nothing between the two moments carries it:
+     * the rule execution result is about rules, and the analysis context does
+     * not describe the run.
+     *
+      * @qmx-threshold code-smell.long-parameter-list 12 -- Rule context, measured coverage and authored directives belong to the same prepared run; audit must re-execute rules against that identical observation.
+      * @qmx-threshold code-smell.constructor-overinjection 12 -- Rule context, measured coverage and authored directives belong to the same prepared run; audit must re-execute rules against that identical observation.
+     */
+    public function __construct(
+        public NamespaceTree $namespaceTree,
+        public array $suppressions,
+        public array $thresholdOverrides,
+        public AnalysisContext $context,
+        public RuleExecutionResult $ruleExecution,
+        public AnalysisCoverage $coverage,
+        public SubjectCoverageFacts $subjectCoverage,
+        public array $unmatchedExcludeFindings,
+        public JudgedPopulation $discoveryPopulation,
+        public ChannelPublication $populationPublication,
+        public ComputedMetricEvaluationSummary $computedMetricEvaluation = new ComputedMetricEvaluationSummary(),
+    ) {}
+}

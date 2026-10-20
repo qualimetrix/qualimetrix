@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowListEntry;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationWarning;
 
 /**
@@ -15,9 +14,9 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationW
  * collapsing the partition the template was created to enforce.
  *
  * **Scope.** Only entries whose source AND target are both
- * {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\SelectorKind::Glob} contribute.
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\SelectorKind::Glob} contribute.
  * Captured-on-both-sides entries enforce binding identity via
- * {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelector::matchesTarget()};
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerSelector::matchesTarget()};
  * glob-source paired with captured-target is rejected at config load by
  * {@see AllowValidator}.
  *

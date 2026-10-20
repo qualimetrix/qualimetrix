@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Core\Path;
+namespace Qualimetrix\Tests\Core\Path\Unit;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -29,9 +29,9 @@ final class RelativePathTest extends TestCase
     }
 
     #[Test]
-    public function itReplacesWindowsSeparators(): void
+    public function itPreservesLiteralBackslashes(): void
     {
-        self::assertSame('src/Foo.php', RelativePath::fromString('src\\Foo.php')->value());
+        self::assertSame('src\\Foo.php', RelativePath::fromString('src\\Foo.php')->value());
     }
 
     #[Test]

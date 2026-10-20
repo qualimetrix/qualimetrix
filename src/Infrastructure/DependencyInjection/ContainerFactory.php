@@ -9,42 +9,59 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface;
-use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass;
+use Qualimetrix\Infrastructure\Console\Application\ConsoleDiagnostics;
+use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
+use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
+use Qualimetrix\Infrastructure\DependencyInjection\Architecture\ArchitectureConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Baseline\BaselineCommandsConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Baseline\BaselineConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\ChannelCatalog\ChannelDeclarationCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\CircularDependency\CircularDependencyConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\CodeSmell\CodeSmellConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Cohesion\CohesionConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\CollectorCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationStageCompilerPass;
-use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationValidatorCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConsumerRegistrationCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\FileSetInspectionParticipantCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\FormatterCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\GlobalCollectorCompilerPass;
-use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ParallelCollectorClassesCompilerPass;
-use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass;
-use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
-use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass;
-use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ThresholdValidatorMapCompilerPass;
-use Qualimetrix\Infrastructure\DependencyInjection\Configurator\AnalysisConfigurator;
-use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ArchitectureConfigurator;
-use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CircularDependencyConfigurator;
-use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CodeSmellConfigurator;
-use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CohesionConfigurator;
-use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CollectorConfigurator;
-use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ComplexityConfigurator;
-use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ComputedMetricsConfigurator;
-use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ConfigurationConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\TagPopulationFloorCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\Complexity\ComplexityConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\ComputedMetrics\ComputedMetricsConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configuration\ConfigurationConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CoreServicesConfigurator;
-use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CouplingConfigurator;
-use Qualimetrix\Infrastructure\DependencyInjection\Configurator\DependencyModelConfigurator;
-use Qualimetrix\Infrastructure\DependencyInjection\Configurator\DesignConfigurator;
-use Qualimetrix\Infrastructure\DependencyInjection\Configurator\DuplicationConfigurator;
-use Qualimetrix\Infrastructure\DependencyInjection\Configurator\FindingConfigurator;
-use Qualimetrix\Infrastructure\DependencyInjection\Configurator\MaintainabilityConfigurator;
-use Qualimetrix\Infrastructure\DependencyInjection\Configurator\MeasurementConfigurator;
-use Qualimetrix\Infrastructure\DependencyInjection\Configurator\OutputConfigurator;
-use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ParserConfigurator;
-use Qualimetrix\Infrastructure\DependencyInjection\Configurator\RuleConfigurator;
-use Qualimetrix\Infrastructure\DependencyInjection\Configurator\SecurityConfigurator;
-use Qualimetrix\Infrastructure\DependencyInjection\Configurator\SizeConfigurator;
-use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Infrastructure\DependencyInjection\Console\Check\CheckConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Console\Directives\DirectivesConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Console\GraphExport\GraphExportConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Console\Hook\HookConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Console\RuleListing\RuleListingConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Console\RunSetup\RunSetupConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Console\RuntimePolicy\RuntimePolicyConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Coupling\CouplingConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\DependencyModel\DependencyModelConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Design\DesignConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Duplication\DuplicationConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Finding\FindingConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Inline\InlineConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Maintainability\MaintainabilityConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Measurement\MeasurementConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Parallel\CollectorConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Parallel\ParallelCollectorClassesCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\Parsing\ParserConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\ProjectManifest\ProjectManifestConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Reporting\OutputConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\ConfigurationValidatorCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\RuleCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\RuleConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\RuleOptionsCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\RuleRegistryCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\ThresholdValidatorMapCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\Run\AnalysisConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Run\DiscoveryConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Security\SecurityConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Size\SizeConfigurator;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterInterface;
 use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
@@ -63,18 +80,32 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * Service registration is delegated to dedicated configurators, each responsible
  * for a cohesive group of services. Configurators are bootstrapping-code and
  * are instantiated manually (not via DI).
+ *
+ * @qmx-threshold coupling.cbo 61 -- This factory explicitly enumerates its configurators and compiler passes; the finite bound keeps additional composition dependencies visible.
  */
 final class ContainerFactory
 {
+    /** @var array<string, positive-int> */
+    private const array REQUIRED_TAG_POPULATIONS = [
+        RuleCompilerPass::TAG => 1,
+        ConfigurationValidatorCompilerPass::TAG => 1,
+        CollectorCompilerPass::TAG => 1,
+        CollectorCompilerPass::TAG_DERIVED => 1,
+        GlobalCollectorCompilerPass::TAG => 1,
+        'qmx.cohesion.lcom_configurable_collector' => 1,
+        FileSetInspectionParticipantCompilerPass::TAG => 1,
+        FormatterCompilerPass::TAG => 1,
+        ConfigurationStageCompilerPass::TAG => 1,
+    ];
     /**
      * Create a fully configured container.
      *
      * The container starts with default owner-local state. RuntimeConfigurator
      * resolves each CLI/configuration run and applies it before pipeline execution.
      */
-    public function create(): ContainerBuilder
+    public function create(?ConsoleDiagnostics $diagnostics = null): ContainerBuilder
     {
-        $container = $this->configure();
+        $container = $this->configure($diagnostics);
         $container->compile();
 
         return $container;
@@ -85,7 +116,7 @@ final class ContainerFactory
      * not yet compiled — the container {@see create()} compiles, exposed so a
      * test can take one definition out of the real build and watch it refuse.
      */
-    public function configure(): ContainerBuilder
+    public function configure(?ConsoleDiagnostics $diagnostics = null): ContainerBuilder
     {
         $container = new ContainerBuilder();
 
@@ -98,6 +129,7 @@ final class ContainerFactory
         $configurators = [
             new CoreServicesConfigurator(),
             new ConfigurationConfigurator($srcDir),
+            new ProjectManifestConfigurator(),
             new ParserConfigurator(),
             new CollectorConfigurator(),
             new CodeSmellConfigurator($srcDir),
@@ -116,12 +148,40 @@ final class ContainerFactory
             new ArchitectureConfigurator($srcDir),
             new CircularDependencyConfigurator($srcDir),
             new DuplicationConfigurator($srcDir),
+            new BaselineConfigurator($srcDir),
+            new DiscoveryConfigurator(),
             new AnalysisConfigurator(),
+            new InlineConfigurator(),
+            new RuntimePolicyConfigurator(),
+            new RunSetupConfigurator(),
             new OutputConfigurator($srcDir),
+            new BaselineCommandsConfigurator(),
+            new CheckConfigurator(),
+            new HookConfigurator(),
+            new DirectivesConfigurator(),
+            new RuleListingConfigurator(),
+            new GraphExportConfigurator(),
         ];
 
         foreach ($configurators as $configurator) {
             $configurator->configure($container);
+        }
+
+        // One ErrorStream makes progress redraw around every diagnostic writer.
+        $container->register(ErrorStream::class)->setSynthetic(true)->setPublic(true);
+        $container->register(RefusalPresenter::class)->setSynthetic(true)->setPublic(true);
+        $container->register(OutOfMemoryHint::class)->setSynthetic(true)->setPublic(true);
+
+        $diagnostics ??= ConsoleDiagnostics::fresh();
+        foreach ([
+            ErrorStream::class => $diagnostics->errorStream,
+            RefusalPresenter::class => $diagnostics->refusalPresenter,
+            OutOfMemoryHint::class => $diagnostics->outOfMemoryHint,
+        ] as $id => $service) {
+            $definition = $container->getDefinition($id);
+            $container->set($id, $service);
+            // set() removes the definition that autowiring still needs.
+            $container->setDefinition($id, $definition);
         }
 
         // Add compiler passes
@@ -175,6 +235,11 @@ final class ContainerFactory
         $container->registerForAutoconfiguration('Qualimetrix\\Analysis\\Configuration\\Pipeline\\ConfigurationStageInterface')
             ->addTag(ConfigurationStageCompilerPass::TAG);
 
+        // An owner declares its configuration root by registering its section
+        // autoconfigured; the pipeline composes the document against it.
+        $container->registerForAutoconfiguration('Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\DocumentSectionSchemaInterface')
+            ->addTag(ConfigurationConfigurator::SECTION_TAG);
+
     }
 
     /**
@@ -182,6 +247,11 @@ final class ContainerFactory
      */
     private function registerCompilerPasses(ContainerBuilder $container): void
     {
+        $container->addCompilerPass(
+            new TagPopulationFloorCompilerPass(self::REQUIRED_TAG_POPULATIONS),
+            PassConfig::TYPE_BEFORE_OPTIMIZATION,
+            75,
+        );
         // Ahead of every pass it checks: those at the default priority run
         // after it in this phase, and RuleOptionsCompilerPass/RuleCompilerPass
         // run in a later phase that renames and removes no definition first.

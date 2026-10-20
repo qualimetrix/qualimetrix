@@ -36,6 +36,7 @@ export function buildIndex(node, acc = []) {
     acc.push({
       name: node.name,
       path: node.path,
+      id: node.id ?? node.path,
       type: node.type,
       node: node,
     });
@@ -90,12 +91,12 @@ function highlightResults(results) {
   const container = document.getElementById('treemap');
   if (!container) return;
 
-  const matchPaths = new Set(results.map(r => r.path));
+  const matchIds = new Set(results.map(r => r.id));
 
-  const nodes = container.querySelectorAll('.node[data-path]');
+  const nodes = container.querySelectorAll('.node[data-id]');
   for (const nodeEl of nodes) {
-    const path = nodeEl.getAttribute('data-path');
-    if (path && matchPaths.has(path)) {
+    const id = nodeEl.getAttribute('data-id');
+    if (id && matchIds.has(id)) {
       nodeEl.classList.add('search-highlight');
     }
   }

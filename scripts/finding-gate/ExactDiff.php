@@ -79,14 +79,14 @@ final class ExactDiff
      * could not run". A bound that a normal diff trips is not a bound on cost,
      * it is a bug.
      *
-     * Measured on this machine, worst case (no shared run anywhere, so the
-     * search never exits early): 4M pairs 0.08 s, 16M 0.35 s, 36M 0.76 s, 64M
-     * 1.41 s, 144M 3.08 s. 144M is the limit here — three seconds inside a run
-     * that already takes minutes, and room for a 12000-line span against a
-     * corpus whose largest artifact is 1812 lines. Past it the span is refused
-     * loudly rather than downgraded; see {@see BudgetExceeded}.
+     * A native metrics comparison reaches 214,956,019 pairs. Measured with
+     * PHP 8.5.9 on the development machine, a disjoint 16000×16000 span takes
+     * 4.9 s with 6 MiB peak PHP heap; a shared-run span takes about 5 s.
+     * 256M admits those artifacts with headroom. This is a per-span resource
+     * bound, not a whole-run time or memory guarantee. Past it the span is
+     * refused loudly rather than downgraded; see {@see BudgetExceeded}.
      */
-    private const SEARCH_BUDGET = 144_000_000;
+    private const SEARCH_BUDGET = 256_000_000;
 
     /** @var list<array{start: array{0: int, 1: int}, left: list<string>, right: list<string>}> */
     private readonly array $hunks;

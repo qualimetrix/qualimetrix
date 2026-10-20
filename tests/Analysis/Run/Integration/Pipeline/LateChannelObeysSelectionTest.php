@@ -8,11 +8,11 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -30,8 +30,8 @@ use Symfony\Component\Console\Tester\CommandTester;
  * Four of the seven name forms reached the channel before this file existed,
  * through three different routes, and every one of them must keep working:
  * the producer name and the group stop the producer outright, and the union of
- * its four channels stops it through
- * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector::silenceEveryChannelOf()},
+ * its four channels stops it through the final
+ * {@see \Qualimetrix\Analysis\Finding\Contract\RuleEnablement} decision,
  * which quantifies over the *set* of disable selectors rather than over each
  * one. The union case and the three-of-four case are therefore a pair: read
  * alone, either passes under a rewrite that asks the question per selector;
@@ -39,10 +39,9 @@ use Symfony\Component\Console\Tester\CommandTester;
  * the producer for three names as readily as for four.
  *
  * The five carriers of a selector — `--disable-rule`, `--only-rule`, the config
- * file's `disabled_rules` and `only_rules`, and a preset — merge into one
- * {@see \Qualimetrix\Analysis\Finding\Contract\RuleSelection} before anything
- * is validated or applied, so the grid is run against the merged selection and
- * the carriers are checked separately for landing in it. Covering one carrier
+ * file's `disabled_rules` and `only_rules`, and a preset — are resolved in one
+ * authored document before the decision is made. The grid is run against that
+ * final decision, with each carrier checked separately. Covering one carrier
  * is not covering five.
  *
  * The finding gate cannot see any of this: its corpus carries selector cases
@@ -377,16 +376,23 @@ final class LateChannelObeysSelectionTest extends TestCase
         $application->addCommand($command);
         $tester = new CommandTester($command);
 
-        $tester->execute([
-            'paths' => [$this->tempDir . '/src'],
-            '--config' => $config,
-            '--format' => 'json',
-            '--workers' => 0,
-            '--no-cache' => true,
-            '--no-progress' => true,
-            '--fail-on' => 'none',
-            ...$invocation,
-        ]);
+        $originalDirectory = getcwd();
+        self::assertIsString($originalDirectory);
+        self::assertTrue(chdir($this->tempDir));
+        try {
+            $tester->execute([
+                'paths' => [$this->tempDir . '/src'],
+                '--config' => $config,
+                '--format' => 'json',
+                '--workers' => 0,
+                '--no-cache' => true,
+                '--no-progress' => true,
+                '--fail-on' => 'none',
+                ...$invocation,
+            ]);
+        } finally {
+            chdir($originalDirectory);
+        }
 
         return $tester;
     }

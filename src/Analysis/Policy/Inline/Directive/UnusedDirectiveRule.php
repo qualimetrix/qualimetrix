@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
+
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Analysis\Finding\Rule\AbstractRule;
+use Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsagePopulation;
 
 /**
  * Reports inline `@qmx` directives that stopped doing anything.
@@ -33,6 +34,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 final class UnusedDirectiveRule extends AbstractRule
 {
     public const string NAME = InlineDirectivePolicy::PRODUCER_RULE_NAME;
+
+    public const string DESCRIPTION = 'Reports inline @qmx directives that address nothing, cannot apply, or no longer do anything.';
     public const string DOCS_PAGE = 'rules/annotation.md';
 
     public const int REMEDIATION_MINUTES = 15;
@@ -44,16 +47,6 @@ final class UnusedDirectiveRule extends AbstractRule
         private readonly InlineDirectivePolicy $policy,
     ) {
         parent::__construct($options);
-    }
-
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public function getDescription(): string
-    {
-        return 'Reports inline @qmx directives that address nothing, cannot apply, or no longer do anything.';
     }
 
     /**
@@ -83,8 +76,7 @@ final class UnusedDirectiveRule extends AbstractRule
         $name = InlineDirectivePolicy::UNUSED_DIRECTIVE_NAME;
 
         return [
-            $name => ChannelDeclaration::occurrence(SymbolLevel::File)
-                ->describedAs('Reports a valid inline directive that suppressed or overrode nothing in this run.'),
+            $name => DirectiveUsagePopulation::declaration(),
         ];
     }
 

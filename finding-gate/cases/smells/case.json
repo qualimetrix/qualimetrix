@@ -1,6 +1,7 @@
 {
     "id": "smells",
     "description": "The code-smell family: statement smells, dead code, over-injection, error suppression, plus one deliberately suppressed eval.",
+    "coverage": "auxiliary",
     "paths": [
         "src"
     ],
@@ -15,13 +16,21 @@
         "code-smell.boolean-argument@callable",
         "code-smell.constructor-overinjection@callable",
         "code-smell.count-in-loop@callable",
+        "code-smell.count-in-loop@file",
         "code-smell.debug-code@callable",
+        "code-smell.debug-code@file",
         "code-smell.empty-catch@callable",
+        "code-smell.empty-catch@file",
         "code-smell.error-suppression@callable",
+        "code-smell.error-suppression@file",
         "code-smell.eval@callable",
+        "code-smell.eval@file",
         "code-smell.exit@callable",
+        "code-smell.exit@file",
         "code-smell.goto@callable",
+        "code-smell.goto@file",
         "code-smell.identical-subexpression@callable",
+        "code-smell.identical-subexpression@file",
         "code-smell.long-parameter-list@callable",
         "code-smell.unreachable-code@callable",
         "code-smell.unused-private@class"

@@ -4,29 +4,29 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Functional;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
-use Qualimetrix\Analysis\Policy\Baseline\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineCleaner;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
-use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineEntryParser;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineWriter;
+use Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance\BaselineCleaner;
+use Qualimetrix\Analysis\Policy\Baseline\EntryMaintenance\BaselineUpdater;
+use Qualimetrix\Analysis\Policy\Baseline\Explanation\BoundaryExplanationService;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -34,11 +34,11 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds;
-use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
+use Qualimetrix\Infrastructure\Console\Baseline\BaselineCommand;
+use Qualimetrix\Infrastructure\Console\Baseline\Explanation\BaselineConfiguredThresholds;
+use Qualimetrix\Infrastructure\Console\Baseline\Explanation\BaselineExplainCommand;
+use Qualimetrix\Infrastructure\Console\Baseline\Maintenance\BaselineCleanupCommand;
+use Qualimetrix\Infrastructure\Console\Baseline\Maintenance\BaselineUpdateCommand;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
@@ -49,7 +49,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
- * Every command that reads a baseline file resolves the configuration first.
+ * Every measured baseline command resolves configuration before entry semantics.
  *
  * The order is not housekeeping. ADR 0017 leaves one channel family — `computed.*`
  * and `health.*` — undeclarable at compile time, because a user defines those
@@ -58,8 +58,8 @@ use Symfony\Component\Console\Tester\CommandTester;
  * registry answers such a lookup from
  * the configured definition catalog, which the run populates.
  *
- * So a file read *before* the run is read against an empty vocabulary:
- * {@see \Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser} finds no declaration for
+ * So a semantic load *before* the run is judged against an empty vocabulary:
+ * {@see \Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineEntryParser} finds no declaration for
  * the channel, and every entry on a computed metric loads inert. Nothing
  * fails; the entry simply stops meaning anything — while the `check` that
  * applies the very same file, on the very same project, applies it normally.
@@ -148,7 +148,8 @@ final class BaselineRunBeforeLoadTest extends TestCase
         $tester = $this->executeExplain();
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
-        self::assertStringContainsString('accepted 25; now 12', $tester->getDisplay());
+        self::assertStringContainsString('baseline:      accepted 25', $tester->getDisplay());
+        self::assertStringContainsString('now:           12', $tester->getDisplay());
     }
 
     /**
@@ -201,6 +202,7 @@ final class BaselineRunBeforeLoadTest extends TestCase
         $command = new BaselineCleanupCommand(
             $this->measuredRun($configured),
             new BaselineLoader(new BaselineEntryParser($declarations)),
+            new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader(),
             new BaselineCleaner(new FixedClock('2026-09-01T00:00:00+00:00')),
             new BaselineWriter(),
             $declarations,
@@ -217,8 +219,10 @@ final class BaselineRunBeforeLoadTest extends TestCase
         $command = new BaselineUpdateCommand(
             $this->measuredRun($configured),
             new BaselineLoader(new BaselineEntryParser($declarations)),
+            new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader(),
             new BaselineUpdater($declarations, new FixedClock('2026-09-01T00:00:00+00:00')),
             new BaselineWriter(),
+            StubRuleCoverage::everyRuleRan(),
         );
 
         return self::tester($command, ['baseline' => $this->baselinePath, 'paths' => ['src']]);
@@ -231,8 +235,9 @@ final class BaselineRunBeforeLoadTest extends TestCase
         $command = new BaselineExplainCommand(
             $this->measuredRun($configured),
             new BaselineLoader(new BaselineEntryParser($declarations)),
-            new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan()),
-            new BaselineConfiguredThresholds(self::emptyRuleRegistry(), new RuleOptionsFactory(new RuleOptionsRegistry())),
+            new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader(),
+            new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan(), $declarations),
+            new BaselineConfiguredThresholds(self::emptyRuleRegistry(), new RuleOptionsRegistry()),
             $declarations,
         );
 
@@ -256,7 +261,7 @@ final class BaselineRunBeforeLoadTest extends TestCase
 
     /**
      * A run that resolves a `computed.*` definition on its way to an answer,
-     * exactly as {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator}
+     * exactly as {@see \Qualimetrix\Infrastructure\Console\RunSetup\RuntimeConfigurator}
      * does for a real one.
      */
     private function measuredRun(bool $configured): StubBaselineRun
@@ -284,7 +289,7 @@ final class BaselineRunBeforeLoadTest extends TestCase
             return null;
         });
 
-        return new ChannelUniverse([], [], [], $catalog);
+        return new ChannelUniverse([], [], [], $catalog, ...self::reachPorts());
     }
 
     private static function definition(): ComputedMetricDefinition
@@ -310,8 +315,9 @@ final class BaselineRunBeforeLoadTest extends TestCase
                     [25.0],
                     1,
                 )],
+                exclusions: self::fixtureExclusions(),
             ),
-            $this->baselinePath,
+            \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($this->baselinePath),
             AbsolutePath::fromString($this->tempDir),
         );
     }
@@ -403,5 +409,39 @@ final class BaselineRunBeforeLoadTest extends TestCase
         });
 
         return $identity;
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
+        );
+    }
+
+    /** @return array{\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface} */
+    private static function reachPorts(): array
+    {
+        return [
+            new class implements \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface {
+                public function metricReach(string $metricKey): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach
+                {
+                    throw new LogicException('This fixture does not query measured-metric reach.');
+                }
+            },
+            new class implements \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface {
+                public function reachAt(
+                    string $metricName,
+                    \Qualimetrix\Core\Symbol\SymbolLevel $level,
+                    \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface $definitions,
+                ): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach {
+                    if ($metricName !== 'computed.debt-ratio' || $level !== \Qualimetrix\Core\Symbol\SymbolLevel::Class_) {
+                        throw new LogicException('Unexpected computed-metric reach query.');
+                    }
+
+                    return \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach::Members;
+                }
+            },
+        ];
     }
 }

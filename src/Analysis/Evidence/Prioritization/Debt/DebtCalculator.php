@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Prioritization\Debt;
 
+use Qualimetrix\Analysis\Evidence\Prioritization\Contract\Debt\DebtSummary;
+
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 
 /**

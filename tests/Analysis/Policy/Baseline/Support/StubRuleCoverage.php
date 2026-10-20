@@ -4,24 +4,37 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Support;
 
-use LogicException;
-use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
-use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
-use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
-use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
-use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
-use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
-use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
-use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
-use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
-use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\LevelActivity;
+use Qualimetrix\Analysis\Finding\Contract\Channel\OptionActivity;
+use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
+use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
+use Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch;
+use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RunScope;
+use Qualimetrix\Analysis\Policy\Baseline\RunCoverage\RunRuleCoverage;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeSnapshot;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 
 /**
- * A {@see RunRuleCoverage} with a known answer, where every channel is
- * produced by the rule of the same name.
+ * A {@see RunRuleCoverage} with known selection decisions and the current
+ * channel universe, including each channel's actual producer and levels.
  *
  * The baseline tests are about what a command says once it knows which rules
  * ran, not about how the run decided it; that decision belongs to rule
@@ -43,8 +56,8 @@ final class StubRuleCoverage
     public static function withSkipped(array $notSelected = [], array $disabledEverywhere = []): RunRuleCoverage
     {
         return new RunRuleCoverage(
-            self::execution($notSelected, $disabledEverywhere),
-            self::channelIsItsOwnProducer(),
+            self::publicationFor($notSelected, $disabledEverywhere),
+            self::universe(),
         );
     }
 
@@ -52,19 +65,31 @@ final class StubRuleCoverage
      * @param list<string> $notSelected
      * @param list<string> $disabledEverywhere
      */
-    private static function execution(array $notSelected, array $disabledEverywhere): RuleExecutionInterface
+    private static function publicationFor(array $notSelected, array $disabledEverywhere): RulePublicationInterface
     {
-        return new readonly class ($notSelected, $disabledEverywhere) implements RuleExecutionInterface {
-            /**
-             * @param list<string> $notSelected
-             * @param list<string> $disabledEverywhere
-             */
-            public function __construct(private array $notSelected, private array $disabledEverywhere) {}
-
-            public function execute(AnalysisContext $context, ?string $restrictToProducer = null): RuleExecutionResult
-            {
-                throw new LogicException('A coverage stub executes nothing.');
+        $decisions = [];
+        $universe = self::universe();
+        foreach ($universe->channels() as $channel) {
+            $producer = $universe->producerOf($channel->code);
+            if ($producer === null) {
+                continue;
             }
+            foreach (SymbolLevel::cases() as $level) {
+                $decisions[] = new EnablementDecision(
+                    new SelectionCellAddress($producer, $channel, $level, ChannelSelectionRole::Selectable),
+                    new AuthoredCellDecision(
+                        CellSwitch::On,
+                        \in_array($producer, $notSelected, true) ? CellAdmission::Filtered : CellAdmission::Direct,
+                    ),
+                    new OptionActivity(!\in_array($producer, $disabledEverywhere, true)),
+                );
+            }
+        }
+        $enablement = new RuleEnablement($decisions, null);
+
+        return new readonly class ($disabledEverywhere, $enablement) implements RulePublicationInterface {
+            /** @param list<string> $disabledEverywhere */
+            public function __construct(private array $disabledEverywhere, private RuleEnablement $enablement) {}
 
             public function publishable(array $findings): array
             {
@@ -73,19 +98,7 @@ final class StubRuleCoverage
 
             public function publication(): ChannelPublication
             {
-                return new ChannelPublication(
-                    new RuleSelector(new InMemoryRuleChannelRegistry()),
-                    new RuleSelection(disabled: $this->notSelected),
-                    $this->levelActivity(),
-                );
-            }
-
-            public function allRules(): array
-            {
-                return array_map(
-                    static fn(string $name): RuleMetadata => new RuleMetadata($name, ComplexityOptions::class, '', [], false),
-                    $this->notSelected,
-                );
+                return new ChannelPublication($this->enablement);
             }
 
             public function levelActivity(): LevelActivity
@@ -95,48 +108,85 @@ final class StubRuleCoverage
         };
     }
 
-    private static function channelIsItsOwnProducer(): ChannelIdentityInterface
+    private static function universe(): ChannelUniverseInterface
     {
-        return new class implements ChannelIdentityInterface {
-            public function ruleNames(): array
+        static $universe = null;
+        if ($universe === null) {
+            $factory = (new ContainerFactory())->create()->get(ChannelUniverseInterface::class);
+            \assert($factory instanceof RuleChannelSnapshotFactoryInterface);
+            $universe = $factory->snapshot(new ResolvedComputedMetricDefinitions([]));
+        }
+        return $universe;
+    }
+    /**
+     * @param list<string> $additionalFiles
+     */
+    public static function completeFor(Baseline $baseline, array $additionalFiles = [], ?RunScope $scope = null, ?AnalysisCoverage $analysis = null): RunCoverage
+    {
+        $files = [];
+        foreach (['src/Foo.php', ...$additionalFiles] as $path) {
+            $files[$path] = RelativePath::fromString($path);
+        }
+        foreach ($baseline->entries as $entry) {
+            $subject = $entry->identity->subjectKey;
+            if (str_starts_with($subject, 'file:')) {
+                $path = substr($subject, 5);
+                $files[$path] = RelativePath::fromString($path);
+            } elseif (str_starts_with($subject, 'declaration:') && str_contains($subject, '@')) {
+                $path = explode('#', explode('@', $subject, 2)[1], 2)[0];
+                $files[$path] = RelativePath::fromString($path);
+            }
+        }
+        $root = AbsolutePath::fromString('/tmp/qmx-ceiling-fixture');
+        $tree = new class (array_values($files)) implements ProjectTreeQueryInterface {
+            public function __construct(
+                /** @var list<RelativePath> */
+                private array $files,
+            ) {}
+
+            public function snapshot(ProjectScopeUniverse $universe): ProjectTreeSnapshot
             {
-                return [];
+                return new ProjectTreeSnapshot($this->files, [], true);
             }
 
-            public function hasRule(string $ruleName): bool
+            public function hasFile(AbsolutePath $root, RelativePath $file): ProjectEntryPresence
             {
-                return false;
+                foreach ($this->files as $present) {
+                    if ($present->equals($file)) {
+                        return ProjectEntryPresence::Present;
+                    }
+                }
+
+                return ProjectEntryPresence::Absent;
             }
 
-            public function channels(): array
+            public function hasDirectory(AbsolutePath $directory): ProjectEntryPresence
             {
-                return [];
-            }
-
-            public function hasChannel(string $code): bool
-            {
-                return false;
-            }
-
-            public function producerOf(string $code): string
-            {
-                return $code;
-            }
-
-            public function supportsThresholdOverride(string $ruleName): bool
-            {
-                return false;
-            }
-
-            public function expand(NameSelector $selector): array
-            {
-                return [];
-            }
-
-            public function levelsOf(string $code): array
-            {
-                return [];
+                return ProjectEntryPresence::Present;
             }
         };
+
+        return new RunCoverage(
+            $scope ?? RunScope::fromRecorded($baseline->scope),
+            $analysis ?? new AnalysisCoverage(array_values($files), [], []),
+            $baseline->exclusions,
+            new ProjectScopeUniverse(
+                $root,
+                false,
+                [['target' => 'src', 'path' => $root->joinRelative(RelativePath::fromString('src'))]],
+                [],
+                [],
+                true,
+                [],
+                (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root),
+            ),
+            ['App\\' => ['src/']],
+            $tree,
+            \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(
+                new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(),
+                ($analysis ?? new AnalysisCoverage(array_values($files), [], []))->analyzedFiles,
+                [],
+            ),
+        );
     }
 }

@@ -1,0 +1,579 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule\OptionLanguage;
+
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
+
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\Shorthand;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
+use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
+use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\BandDirection;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOptionValues;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionBand;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionRefusal;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ThresholdParser;
+
+final class ThresholdParserTest extends TestCase
+{
+    #[Test]
+    public function itFallsBackToDefaultsForAnEmptyConfig(): void
+    {
+        $result = self::parse([], 'warning', 'error', 10, 20);
+
+        self::assertSame(10, $result['warning']);
+        self::assertSame(20, $result['error']);
+    }
+
+    #[Test]
+    public function itUsesTheThresholdKeyForBothWarningAndError(): void
+    {
+        $result = self::parse(['threshold' => 15], 'warning', 'error', 10, 20);
+
+        self::assertSame(15, $result['warning']);
+        self::assertSame(15, $result['error']);
+    }
+
+    #[Test]
+    public function itKeepsAZeroThresholdInsteadOfFallingBackToDefaults(): void
+    {
+        $result = self::parse(['threshold' => 0], 'warning', 'error', 10, 20);
+
+        self::assertSame(0, $result['warning']);
+        self::assertSame(0, $result['error']);
+    }
+
+    #[Test]
+    public function itFallsBackToDefaultsWhenThresholdIsNull(): void
+    {
+        $result = self::parse(['threshold' => null], 'warning', 'error', 10, 20);
+
+        self::assertSame(10, $result['warning']);
+        self::assertSame(20, $result['error']);
+    }
+
+    #[Test]
+    public function itUsesExplicitWarningAndErrorValues(): void
+    {
+        $result = self::parse(['warning' => 5, 'error' => 15], 'warning', 'error', 10, 20);
+
+        self::assertSame(5, $result['warning']);
+        self::assertSame(15, $result['error']);
+    }
+
+    #[Test]
+    public function itUsesTheDefaultErrorWhenOnlyWarningIsConfigured(): void
+    {
+        $result = self::parse(['warning' => 5], 'warning', 'error', 10, 20);
+
+        self::assertSame(5, $result['warning']);
+        self::assertSame(20, $result['error']);
+    }
+
+    #[Test]
+    public function itRejectsThresholdMixedWithWarning(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('"rules.fixture" in configuration file "/project/qmx.yaml" writes both "threshold" and "warning" in one layer; "threshold" is shorthand for "warning" and "error" — write either the shorthand or the full keys in one layer.');
+
+        self::parse(['threshold' => 15, 'warning' => 10], 'warning', 'error', 10, 20);
+    }
+
+    #[Test]
+    public function itRejectsThresholdMixedWithError(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+
+        self::parse(['threshold' => 15, 'error' => 20], 'warning', 'error', 10, 20);
+    }
+
+    #[Test]
+    public function itRejectsThresholdMixedWithALegacyWarningKey(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+
+        self::parse(
+            ['threshold' => 15, 'warningThreshold' => 10],
+            'warning',
+            'error',
+            10,
+            20,
+            legacyKeys: ['warning' => ['warningThreshold']],
+        );
+    }
+
+    #[Test]
+    public function itRejectsThresholdMixedWithALegacyErrorKey(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+
+        self::parse(
+            ['threshold' => 15, 'errorThreshold' => 20],
+            'warning',
+            'error',
+            10,
+            20,
+            legacyKeys: ['error' => ['errorThreshold']],
+        );
+    }
+
+    #[Test]
+    public function itFallsBackToLegacyKeysWhenPrimaryKeysAreAbsent(): void
+    {
+        $result = self::parse(
+            ['warningThreshold' => 5, 'errorThreshold' => 15],
+            'warning',
+            'error',
+            10,
+            20,
+            legacyKeys: ['warning' => ['warningThreshold'], 'error' => ['errorThreshold']],
+        );
+
+        self::assertSame(5, $result['warning']);
+        self::assertSame(15, $result['error']);
+    }
+
+    #[Test]
+    public function itRefusesPrimaryKeysOverlappingDeclaredSyntheticShorthands(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('"rules.fixture" in configuration file "/project/qmx.yaml" writes both "warningThreshold" and "warning" in one layer; "warning-threshold" is shorthand for "warning" — write either the shorthand or the full keys in one layer.');
+        self::parse(['warning' => 7, 'error' => 17, 'warningThreshold' => 5, 'errorThreshold' => 15], 'warning', 'error', 10, 20, legacyKeys: ['warning' => ['warningThreshold'], 'error' => ['errorThreshold']]);
+    }
+
+    #[Test]
+    public function itParsesACustomThresholdKeyIntoBothWarningAndError(): void
+    {
+        $result = self::parse(
+            ['param_threshold' => 70],
+            'param_warning',
+            'param_error',
+            80.0,
+            50.0,
+            thresholdKey: 'param_threshold',
+        );
+
+        self::assertSame(70, $result['warning']);
+        self::assertSame(70, $result['error']);
+    }
+
+    #[Test]
+    public function itFallsBackToALegacyKeyForACustomPrimaryKey(): void
+    {
+        $result = self::parse(
+            ['maxWarning' => 25],
+            'max_warning',
+            'max_error',
+            30,
+            50,
+            legacyKeys: ['warning' => ['maxWarning'], 'error' => ['maxError']],
+        );
+
+        self::assertSame(25, $result['warning']);
+        self::assertSame(50, $result['error']);
+    }
+
+    #[Test]
+    public function itParsesAFloatThresholdIntoBothWarningAndError(): void
+    {
+        $result = self::parse(['threshold' => 0.5], 'warning', 'error', 0.3, 0.7);
+
+        self::assertSame(0.5, $result['warning']);
+        self::assertSame(0.5, $result['error']);
+    }
+
+    #[Test]
+    public function itAcceptsACamelCaseLegacyKeyForACustomThresholdKey(): void
+    {
+        $result = self::parse(
+            ['voThreshold' => 10],
+            'vo-warning',
+            'vo-error',
+            8,
+            12,
+            'vo-threshold',
+            legacyKeys: ['threshold' => ['voThreshold']],
+        );
+
+        self::assertSame(10, $result['warning']);
+        self::assertSame(10, $result['error']);
+    }
+
+    #[Test]
+    public function itRefusesTwoAuthoredSpellingsOfTheThresholdInOneLayer(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Keys "vo-threshold" and "voThreshold" in "rules.fixture" in configuration file "/project/qmx.yaml" are two spellings of one key, and a layer may set it only once. Keep one of them.');
+        self::parse(['vo-threshold' => 12, 'voThreshold' => 5], 'vo-warning', 'vo-error', 8, 12, 'vo-threshold', legacyKeys: ['threshold' => ['voThreshold']]);
+    }
+
+    #[Test]
+    public function itThrowsWhenTheLegacyThresholdKeyConflictsWithTheWarningKey(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+
+        self::parse(
+            ['voThreshold' => 10, 'vo-warning' => 8],
+            'vo-warning',
+            'vo-error',
+            8,
+            12,
+            'vo-threshold',
+            legacyKeys: ['threshold' => ['voThreshold']],
+        );
+    }
+
+    #[Test]
+    public function itReturnsTheResultKeyedByWarningThenError(): void
+    {
+        self::assertSame(
+            ['warning' => 10, 'error' => 20],
+            self::parse([], 'warning', 'error', 10, 20),
+        );
+    }
+
+    #[Test]
+    public function itSeesNoConflictWhenTheThresholdKeyBesideWarningIsWrittenNull(): void
+    {
+        // There is one value in this document, and it is `warning`'s. A
+        // refusal here would name a mix of a written value with nothing.
+        $result = self::parse(['threshold' => null, 'warning' => 5], 'warning', 'error', 10, 20);
+
+        self::assertSame(['warning' => 5, 'error' => 20], $result);
+    }
+
+    #[Test]
+    public function itSeesNoConflictWhenTheWarningKeyBesideThresholdIsWrittenNull(): void
+    {
+        $result = self::parse(['threshold' => 15, 'warning' => null], 'warning', 'error', 10, 20);
+
+        self::assertSame(['warning' => 15, 'error' => 15], $result);
+    }
+
+    #[Test]
+    public function itSeesNoConflictWhenALegacyErrorKeyBesideThresholdIsWrittenNull(): void
+    {
+        $result = self::parse(
+            ['threshold' => 15, 'errorThreshold' => null],
+            'warning',
+            'error',
+            10,
+            20,
+            legacyKeys: ['error' => ['errorThreshold']],
+        );
+
+        self::assertSame(['warning' => 15, 'error' => 15], $result);
+    }
+
+    #[Test]
+    public function itNamesThePrimaryKeysInTheConflictMessageEvenWhenALegacyKeyTriggeredIt(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage(
+            '"rules.fixture" in configuration file "/project/qmx.yaml" writes both "voThreshold" and "voWarning" in one layer; "vo-threshold" is shorthand for "vo-warning" and "vo-error" — write either the shorthand or the full keys in one layer.',
+        );
+
+        self::parse(
+            ['voThreshold' => 10, 'voWarning' => 8],
+            'vo-warning',
+            'vo-error',
+            8,
+            12,
+            'vo-threshold',
+            legacyKeys: ['threshold' => ['voThreshold'], 'warning' => ['voWarning']],
+        );
+    }
+
+    #[Test]
+    public function itFallsBackToDefaultsWhenTheOnlyLegacyThresholdKeyIsNull(): void
+    {
+        $result = self::parse(
+            ['voThreshold' => null],
+            'vo-warning',
+            'vo-error',
+            8,
+            12,
+            'vo-threshold',
+            legacyKeys: ['threshold' => ['voThreshold']],
+        );
+
+        self::assertSame(['warning' => 8, 'error' => 12], $result);
+    }
+
+    #[Test]
+    public function itSkipsANullFirstLegacyThresholdKeyAndUsesTheNextOneThatCarriesAValue(): void
+    {
+        $result = self::parse(
+            ['firstLegacy' => null, 'secondLegacy' => 7],
+            'warning',
+            'error',
+            10,
+            20,
+            'threshold',
+            legacyKeys: ['threshold' => ['firstLegacy', 'secondLegacy']],
+        );
+
+        self::assertSame(['warning' => 7, 'error' => 7], $result);
+    }
+
+    #[Test]
+    public function itFallsBackToTheLegacyThresholdKeyWhenThePrimaryThresholdIsWrittenNull(): void
+    {
+        $result = self::parse(
+            ['threshold' => null, 'legacyThreshold' => 7],
+            'warning',
+            'error',
+            10,
+            20,
+            'threshold',
+            legacyKeys: ['threshold' => ['legacyThreshold']],
+        );
+
+        self::assertSame(['warning' => 7, 'error' => 7], $result);
+    }
+
+    #[Test]
+    public function itFallsBackToTheLegacyWarningKeyWhenThePrimaryWarningIsExplicitlyNull(): void
+    {
+        $result = self::parse(
+            ['warning' => null, 'warningThreshold' => 5],
+            'warning',
+            'error',
+            10,
+            20,
+            legacyKeys: ['warning' => ['warningThreshold']],
+        );
+
+        self::assertSame(['warning' => 5, 'error' => 20], $result);
+    }
+
+    #[Test]
+    public function itSkipsNullLegacyWarningValuesAndUsesTheNextNonNullLegacyKey(): void
+    {
+        $result = self::parse(
+            ['firstLegacy' => null, 'secondLegacy' => 5],
+            'warning',
+            'error',
+            10,
+            20,
+            legacyKeys: ['warning' => ['firstLegacy', 'secondLegacy']],
+        );
+
+        self::assertSame(['warning' => 5, 'error' => 20], $result);
+    }
+
+    #[Test]
+    public function itFallsBackToDefaultsWhenEveryWarningAndErrorCandidateIsNull(): void
+    {
+        $result = self::parse(
+            ['warning' => null, 'error' => null, 'warningThreshold' => null, 'errorThreshold' => null],
+            'warning',
+            'error',
+            10,
+            20,
+            legacyKeys: ['warning' => ['warningThreshold'], 'error' => ['errorThreshold']],
+        );
+
+        self::assertSame(['warning' => 10, 'error' => 20], $result);
+    }
+
+    #[Test]
+    public function itKeepsAZeroWarningInsteadOfFallingBackToTheDefault(): void
+    {
+        $result = self::parse(['warning' => 0], 'warning', 'error', 10, 20);
+
+        self::assertSame(['warning' => 0, 'error' => 20], $result);
+    }
+
+    #[Test]
+    public function itKeepsAZeroLegacyWarningInsteadOfFallingBackToTheDefault(): void
+    {
+        $result = self::parse(
+            ['warningThreshold' => 0],
+            'warning',
+            'error',
+            10,
+            20,
+            legacyKeys: ['warning' => ['warningThreshold']],
+        );
+
+        self::assertSame(['warning' => 0, 'error' => 20], $result);
+    }
+
+    #[Test]
+    public function itUsesTheDefaultWarningWhenOnlyTheErrorKeyIsConfigured(): void
+    {
+        $result = self::parse(['error' => 15], 'warning', 'error', 10, 20);
+
+        self::assertSame(['warning' => 10, 'error' => 15], $result);
+    }
+
+    #[Test]
+    public function itRefusesUnknownKeysOutsideTheDeclaredFixture(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Unknown key "rules.fixture.warningThreshold" in configuration file "/project/qmx.yaml". Accepted keys: warning, error, threshold.');
+        self::parse(['warningThreshold' => 5, 'errorThreshold' => 15], 'warning', 'error', 10, 20);
+    }
+
+    #[Test]
+    public function itRefusesAnUnrelatedKeyBesideDeclaredSyntheticShorthands(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Unknown key "rules.fixture.unrelated" in configuration file "/project/qmx.yaml". Accepted keys: warning, error, warning-threshold, error-threshold, threshold, threshold-alias.');
+        self::parse(['unrelated' => 1], 'warning', 'error', 10, 20, legacyKeys: ['warning' => ['warningThreshold'], 'error' => ['errorThreshold'], 'threshold' => ['thresholdAlias']]);
+    }
+
+    #[Test]
+    public function itAppliesTheLegacyErrorFallbackIndependentlyOfTheWarningResolution(): void
+    {
+        $result = self::parse(
+            ['warning' => 5, 'errorThreshold' => 15],
+            'warning',
+            'error',
+            10,
+            20,
+            legacyKeys: ['warning' => ['warningThreshold'], 'error' => ['errorThreshold']],
+        );
+
+        self::assertSame(['warning' => 5, 'error' => 15], $result);
+    }
+
+    #[Test]
+    public function itDoesNotTreatALegacyWarningKeyAsAThresholdKey(): void
+    {
+        $result = self::parse(
+            ['warningThreshold' => 5],
+            'warning',
+            'error',
+            10,
+            20,
+            legacyKeys: ['warning' => ['warningThreshold'], 'threshold' => ['thresholdAlias']],
+        );
+
+        self::assertSame(['warning' => 5, 'error' => 20], $result);
+    }
+
+    #[Test]
+    public function itMixesIntegerAndFloatDefaultsWithoutCoercion(): void
+    {
+        $result = self::parse(['warning' => 5], 'warning', 'error', 10.5, 20.5);
+
+        self::assertSame(['warning' => 5, 'error' => 20.5], $result);
+    }
+
+    #[Test]
+    public function itPropagatesTheLegacyThresholdValueToBothWarningAndError(): void
+    {
+        $result = self::parse(
+            ['maxThreshold' => 0.25],
+            'max_warning',
+            'max_error',
+            0.8,
+            0.95,
+            'max_threshold',
+            legacyKeys: ['threshold' => ['maxThreshold'], 'warning' => ['maxWarning'], 'error' => ['maxError']],
+        );
+
+        self::assertSame(['warning' => 0.25, 'error' => 0.25], $result);
+    }
+
+    /** @return iterable<string, array{BandDirection, int, int, bool}> */
+    public static function bandDirections(): iterable
+    {
+        yield 'rising increasing' => [BandDirection::Rising, 10, 20, true];
+        yield 'rising equality' => [BandDirection::Rising, 20, 20, true];
+        yield 'rising inverted' => [BandDirection::Rising, 30, 12, false];
+        yield 'falling decreasing' => [BandDirection::Falling, 50, 40, true];
+        yield 'falling equality' => [BandDirection::Falling, 40, 40, true];
+        yield 'falling inverted' => [BandDirection::Falling, 10, 40, false];
+    }
+
+    #[Test]
+    #[DataProvider('bandDirections')]
+    public function itJudgesTheEffectivePairByItsDeclaredDirection(BandDirection $direction, int $warning, int $error, bool $valid): void
+    {
+        $section = new class implements DocumentSectionSchemaInterface {
+            public function declaration(): SectionDeclaration
+            {
+                $number = NodeSchema::scalar(ScalarForm::Number);
+                return new SectionDeclaration('rules', NodeSchema::namedMap(NodeSchema::map(['warning' => $number, 'error' => $number])));
+            }
+        };
+        $document = DocumentComposer::compose(new DocumentSchema([$section]), [new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/pair.yaml'), AuthoredNode::fromPlain(['rules' => ['fixture' => ['warning' => $warning, 'error' => $error]]]))]);
+        $values = new ResolvedRuleOptionValues($document, 'fixture');
+        $band = new RuleOptionBand('threshold', 'warning', 'error', $direction);
+        if ($valid) {
+            self::assertSame(['warning' => $warning, 'error' => $error], ThresholdParser::parse($values, $band, 10, 20));
+            return;
+        }
+        try {
+            ThresholdParser::parse($values, $band, 10, 20);
+            self::fail('An inverted declared band was accepted.');
+        } catch (RuleOptionRefusal $refusal) {
+            self::assertSame($direction === BandDirection::Rising ? 'Warning threshold 30 must be less than or equal to error threshold 12.' : 'Warning threshold 10 must be greater than or equal to error threshold 40.', $refusal->getMessage());
+            self::assertSame(['warning'], $refusal->optionPath);
+            self::assertSame(['warning' => ['path' => ['warning'], 'value' => $warning], 'error' => ['path' => ['error'], 'value' => $error]], $refusal->bandValues);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     * @param array<string, list<string>> $legacyKeys
+     *
+     * @return array{warning: int|float, error: int|float}
+     */
+    private static function parse(array $config, string $warningKey, string $errorKey, int|float $defaultWarning, int|float $defaultError, string $thresholdKey = 'threshold', array $legacyKeys = []): array
+    {
+        $number = NodeSchema::scalar(ScalarForm::Number);
+        $primary = ['warning' => $warningKey, 'error' => $errorKey, 'threshold' => $thresholdKey];
+        $shorthands = [];
+        $last = ['warning' => $warningKey, 'error' => $errorKey];
+        foreach (['warning', 'error'] as $role) {
+            foreach ($legacyKeys[$role] ?? [] as $key) {
+                if (ConfigKeySpelling::normalize($key) === ConfigKeySpelling::normalize($primary[$role])) {
+                    continue;
+                }
+                $canonical = strtolower(preg_replace('/[A-Z]/', '-$0', $key) ?? $key);
+                $shorthands[] = Shorthand::spreading($canonical, [$last[$role]]);
+                $last[$role] = $canonical;
+            }
+        }
+        $shorthands[] = Shorthand::spreading($thresholdKey, [$last['warning'], $last['error']]);
+        $lastThreshold = $thresholdKey;
+        foreach ($legacyKeys['threshold'] ?? [] as $key) {
+            if (ConfigKeySpelling::normalize($key) === ConfigKeySpelling::normalize($thresholdKey)) {
+                continue;
+            }
+            $canonical = strtolower(preg_replace('/[A-Z]/', '-$0', $key) ?? $key);
+            $shorthands[] = Shorthand::spreading($canonical, [$lastThreshold]);
+            $lastThreshold = $canonical;
+        }
+        $entry = NodeSchema::map([$warningKey => $number, $errorKey => $number], ...$shorthands);
+        $section = new class ($entry) implements DocumentSectionSchemaInterface {
+            public function __construct(private readonly NodeSchema $entry) {}
+            public function declaration(): SectionDeclaration
+            {
+                return new SectionDeclaration('rules', NodeSchema::namedMap($this->entry));
+            }
+        };
+        $document = DocumentComposer::compose(new DocumentSchema([$section]), [new AuthoredLayer(
+            ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/project/qmx.yaml'),
+            AuthoredNode::fromPlain(['rules' => ['fixture' => $config]]),
+        )]);
+        return ThresholdParser::parse(new ResolvedRuleOptionValues($document, 'fixture'), new RuleOptionBand($thresholdKey, $warningKey, $errorKey, BandDirection::Rising), $defaultWarning, $defaultError);
+    }
+}

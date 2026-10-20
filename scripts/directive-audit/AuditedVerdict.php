@@ -7,7 +7,7 @@ namespace QmxDirectiveAudit;
 /**
  * One entry of the audit's `directives[]`, read strictly.
  *
- * Every field is required. The audit publishes all six on every entry, so an
+ * Every field is required. The audit publishes all fields on every entry, so an
  * entry missing one is a report of a shape this library does not know how to
  * judge — and the defaults that used to stand in for the missing ones
  * (`form ?? 'threshold'`) were how one parameter came to accept two different
@@ -21,6 +21,7 @@ namespace QmxDirectiveAudit;
  */
 final readonly class AuditedVerdict
 {
+    /** @param list<array{channel: string, message: string}> $refusals */
     private function __construct(
         public string $file,
         public int $line,
@@ -28,6 +29,7 @@ final readonly class AuditedVerdict
         public string $target,
         public string $effect,
         public ?string $reason,
+        public array $refusals,
     ) {}
 
     /**
@@ -39,14 +41,47 @@ final readonly class AuditedVerdict
     {
         $where = \sprintf('directives[%s]', $index);
 
+        $effect = self::requireString($row, 'effect', $where);
+        $refusals = self::requireRefusals($row, $where);
+        if (($effect === 'refused') !== ($refusals !== [])) {
+            throw new AuditReportError($where . ': "refusals" must be non-empty exactly for a refused verdict.');
+        }
+
         return new self(
             self::requireString($row, 'file', $where),
             self::requireInt($row, 'line', $where),
             self::requireString($row, 'form', $where),
             self::requireString($row, 'target', $where),
-            self::requireString($row, 'effect', $where),
+            $effect,
             self::requireNullableString($row, 'reason', $where),
+            $refusals,
         );
+    }
+
+    /**
+     * @param array<mixed, mixed> $row
+     *
+     * @return list<array{channel: string, message: string}>
+     */
+    private static function requireRefusals(array $row, string $where): array
+    {
+        $values = $row['refusals'] ?? null;
+        if (!\is_array($values) || !array_is_list($values)) {
+            throw new AuditReportError($where . ': "refusals" must be a list.');
+        }
+        $refusals = [];
+        foreach ($values as $index => $value) {
+            $at = $where . '.refusals[' . $index . ']';
+            if (!\is_array($value)) {
+                throw new AuditReportError($at . ' must be an object.');
+            }
+            $refusals[] = [
+                'channel' => self::requireString($value, 'channel', $at),
+                'message' => self::requireString($value, 'message', $at),
+            ];
+        }
+
+        return $refusals;
     }
 
     /** What the population comparison is about: the authored site, without the tag. */

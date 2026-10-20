@@ -1,0 +1,528 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\BooleanArgument;
+
+use LogicException;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\CodeSmell\BooleanArgument\BooleanArgumentOptions;
+use Qualimetrix\Analysis\Evidence\CodeSmell\BooleanArgument\BooleanArgumentRule;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolPath;
+
+#[CoversClass(BooleanArgumentRule::class)]
+final class BooleanArgumentRuleTest extends TestCase
+{
+    #[Test]
+    public function itAccountsAllowedNamesAndStrictPromotedFlagsBeforeBuildingFindings(): void
+    {
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
+        $file = RelativePath::fromString('src/Population.php');
+        $bag = new MetricBag();
+        foreach ([['extra' => 'isActive'], ['extra' => ''], ['extra' => 42], ['promoted' => true], ['promoted' => 1]] as $ordinal => $entry) {
+            $bag = $bag->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => $ordinal + 1, ...$entry]);
+        }
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')->willReturn([new SymbolInfo(SymbolPath::forFile($file), $file, 1)]);
+        $repository->method('get')->willReturn($bag);
+        $decisions = [];
+        foreach (BooleanArgumentRule::channelDeclarations() as $channel => $declaration) {
+            foreach ($declaration->levels as $level) {
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(BooleanArgumentRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
+            }
+        }
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
+        $context = (new AnalysisContext($repository))->withPopulationTrace($session);
+        self::assertCount(3, $rule->analyze($context));
+        self::assertSame(3, $session->freeze()->judgedCount());
+        self::assertSame(2, $session->freeze()->unjudgedCount());
+        self::assertSame(['allowed-extra', 'flag-promoted-properties'], array_column($session->freeze()->abstentions(), 'gate'));
+        self::assertCount(1, $session->freeze()->abstentions()[0]->examples);
+    }
+
+    #[Test]
+    public function itRejectsExcludedEntriesBeforeProjectingTheirLocations(): void
+    {
+        $file = RelativePath::fromString('src/LazyLocations.php');
+        $bag = (new MetricBag())
+            ->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => 0, 'extra' => 'isActive'])
+            ->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => 0, 'extra' => 'overwrite', 'promoted' => true])
+            ->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => 10, 'extra' => 'overwrite']);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')->willReturn([new SymbolInfo(SymbolPath::forFile($file), $file, 1)]);
+        $repository->method('get')->willReturn($bag);
+
+        $findings = (new BooleanArgumentRule(new BooleanArgumentOptions()))->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $findings);
+        self::assertSame(10, $findings[0]->location->line);
+    }
+
+    #[Test]
+    public function itReportsItsNameAndDescription(): void
+    {
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
+
+        self::assertSame('code-smell.boolean-argument', $rule->getName());
+        self::assertSame('Detects boolean arguments in method/function signatures', $rule::getDescription());
+    }
+
+    #[Test]
+    public function itDeclaresBooleanArgumentOptionsAsItsOptionsClass(): void
+    {
+        self::assertSame(BooleanArgumentOptions::class, BooleanArgumentRule::getOptionsClass());
+    }
+
+    #[Test]
+    public function itProducesNoFindingsWhenDisabled(): void
+    {
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions(enabled: false));
+
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->expects(self::never())->method('all');
+
+        $context = new AnalysisContext($repository);
+
+        self::assertSame([], $rule->analyze($context));
+    }
+
+    #[Test]
+    public function itProducesNoFindingsWhenNoSmellsArePresent(): void
+    {
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
+
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Clean.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Clean.php'), null);
+
+        $metricBag = new MetricBag();
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+
+        self::assertSame([], $rule->analyze($context));
+    }
+
+    #[Test]
+    public function itFailsBeforeEntryProjectionWhenAFileSymbolHasNoContainerPath(): void
+    {
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Missing.php'));
+        $fileInfo = new SymbolInfo($symbolPath, null, null);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')->willReturn([$fileInfo]);
+        $repository->method('get')->willReturn(
+            (new MetricBag())->withEntry('codeSmell.boolean_argument', ['line' => 10]),
+        );
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('File symbol must carry a relative path');
+
+        (new BooleanArgumentRule(new BooleanArgumentOptions()))->analyze(new AnalysisContext($repository));
+    }
+
+    /**
+     * @param array<string, bool|float|int|string> $entry
+     */
+    #[Test]
+    #[DataProvider('subjectEntries')]
+    public function itPreservesEveryCollectorSubjectKind(array $entry, string $expectedSubject): void
+    {
+        $file = RelativePath::fromString('src/Subjects.php');
+        $fileSymbol = SymbolPath::forFile($file);
+        $fileInfo = new SymbolInfo($fileSymbol, $file, null);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')->willReturn([$fileInfo]);
+        $repository->method('get')->willReturn(
+            (new MetricBag())->withEntry('codeSmell.boolean_argument', $entry),
+        );
+
+        if (($entry['logicalKind'] ?? null) === 'class') {
+            self::expectException(LogicException::class);
+            self::expectExceptionMessage('Population coordinate has an undeclared level.');
+        }
+
+        $findings = (new BooleanArgumentRule(new BooleanArgumentOptions(allowedPrefixes: [])))
+            ->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $findings);
+        self::assertSame($expectedSubject, $findings[0]->subject->toCanonical());
+    }
+
+    /**
+     * @return iterable<string, array{array<string, bool|float|int|string>, string}>
+     */
+    public static function subjectEntries(): iterable
+    {
+        yield 'file' => [
+            ['subjectKind' => 'file', 'line' => 5],
+            'file:src/Subjects.php',
+        ];
+        yield 'class' => [
+            ['subjectKind' => 'declaration', 'logicalKind' => 'class', 'namespace' => 'App', 'class' => 'Subject', 'line' => 5],
+            'declaration:class:App\\Subject@src/Subjects.php',
+        ];
+        yield 'method' => [
+            [
+                'subjectKind' => 'declaration',
+                'logicalKind' => 'method',
+                'namespace' => 'App',
+                'class' => 'Subject',
+                'member' => 'run',
+                'line' => 5,
+            ],
+            'declaration:callable:App\\Subject::run@src/Subjects.php',
+        ];
+        yield 'function' => [
+            ['subjectKind' => 'declaration', 'logicalKind' => 'function', 'namespace' => 'App', 'member' => 'run', 'line' => 5],
+            'declaration:func:App::run@src/Subjects.php',
+        ];
+    }
+
+    #[Test]
+    public function itReportsAFindingForEachDetectedBooleanArgument(): void
+    {
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
+
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Smelly.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Smelly.php'), null);
+
+        $metricBag = (new MetricBag())
+            ->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => 10])
+            ->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => 25]);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $findings = $rule->analyze($context);
+
+        self::assertCount(2, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame(10, $findings[0]->location->line);
+        self::assertSame(25, $findings[1]->location->line);
+        self::assertSame('Boolean argument detected - consider splitting methods or using enums', $findings[0]->message);
+        self::assertSame('code-smell.boolean-argument', $findings[0]->ruleName);
+        self::assertSame('code-smell.boolean-argument', $findings[0]->code);
+        self::assertSame(1.0, $findings[0]->metricValue);
+        self::assertSame('file:src/Smelly.php', $findings[0]->subject->toCanonical());
+        self::assertTrue($findings[0]->location->precise);
+        self::assertSame('Replace boolean parameter with two explicit methods or use an enum.', $findings[0]->recommendation);
+        self::assertSame(
+            OccurrenceKey::semantic('boolean_argument', [
+                'type' => 'boolean_argument',
+                'extra' => '',
+                'hasExtra' => false,
+                'promoted' => false,
+                'hasPromoted' => false,
+            ])->value,
+            $findings[0]->occurrenceKey?->value,
+        );
+    }
+
+    #[Test]
+    public function itIncludesTheParameterNameInTheMessage(): void
+    {
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
+
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Smelly.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Smelly.php'), null);
+
+        $metricBag = (new MetricBag())
+            ->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => 10, 'extra' => 'overwrite'])
+            ->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => 25, 'extra' => 'silent']);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $findings = $rule->analyze($context);
+
+        self::assertCount(2, $findings);
+        self::assertSame('Boolean argument $overwrite detected - consider splitting methods or using enums', $findings[0]->message);
+        self::assertSame('Boolean argument $silent detected - consider splitting methods or using enums', $findings[1]->message);
+    }
+
+    #[Test]
+    public function itFallsBackToAGenericMessageWithoutAParameterName(): void
+    {
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
+
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Smelly.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Smelly.php'), null);
+
+        $metricBag = (new MetricBag())
+            ->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => 10]);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $findings = $rule->analyze($context);
+
+        self::assertCount(1, $findings);
+        self::assertSame('Boolean argument detected - consider splitting methods or using enums', $findings[0]->message);
+    }
+
+    #[Test]
+    public function itFiltersOutEntriesMatchingAnAllowedPrefix(): void
+    {
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
+
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Service.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service.php'), null);
+
+        $metricBag = (new MetricBag())
+            ->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => 10, 'extra' => 'isActive'])    // allowed
+            ->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => 20, 'extra' => 'hasPermission']) // allowed
+            ->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => 30, 'extra' => 'overwrite'])     // NOT allowed
+            ->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => 40, 'extra' => 'island']);       // NOT allowed (no boundary)
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $findings = $rule->analyze($context);
+
+        self::assertCount(2, $findings);
+        self::assertSame(30, $findings[0]->location->line);
+        self::assertSame(40, $findings[1]->location->line);
+    }
+
+    #[Test]
+    public function itReportsEveryEntryWhenTheAllowedPrefixListIsEmpty(): void
+    {
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions(allowedPrefixes: []));
+
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Service.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service.php'), null);
+
+        $metricBag = (new MetricBag())
+            ->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => 10, 'extra' => 'isActive'])
+            ->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => 20, 'extra' => 'overwrite']);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $findings = $rule->analyze($context);
+
+        self::assertCount(2, $findings);
+    }
+
+    #[Test]
+    public function itFallsBackToTheBaseMessageTemplateWhenExtraIsEmpty(): void
+    {
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
+
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Service.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service.php'), null);
+
+        $metricBag = (new MetricBag())
+            ->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => 10, 'extra' => '']);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $findings = $rule->analyze($context);
+
+        self::assertCount(1, $findings);
+        self::assertSame(
+            'Boolean argument detected - consider splitting methods or using enums',
+            $findings[0]->message,
+        );
+    }
+
+    #[Test]
+    public function itReportsAnEntryThatHasNoExtraField(): void
+    {
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
+
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Service.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service.php'), null);
+
+        $metricBag = (new MetricBag())
+            ->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => 10]); // no extra
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $findings = $rule->analyze($context);
+
+        self::assertCount(1, $findings);
+    }
+
+    #[Test]
+    public function itExcludesPromotedConstructorPropertyByDefault(): void
+    {
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
+
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Service.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service.php'), null);
+
+        $metricBag = (new MetricBag())
+            ->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => 10, 'extra' => 'shortLabels', 'promoted' => true]);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $findings = $rule->analyze($context);
+
+        self::assertSame([], $findings);
+    }
+
+    #[Test]
+    public function itIncludesNonPromotedConstructorParameterByDefault(): void
+    {
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
+
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Service.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service.php'), null);
+
+        $metricBag = (new MetricBag())
+            ->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => 10, 'extra' => 'expanded', 'promoted' => false]);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $findings = $rule->analyze($context);
+
+        self::assertCount(1, $findings);
+    }
+
+    #[Test]
+    public function itFlagsPromotedConstructorPropertyWhenOptionEnabled(): void
+    {
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions(flagPromotedProperties: true));
+
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Service.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service.php'), null);
+
+        $metricBag = (new MetricBag())
+            ->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => 10, 'extra' => 'shortLabels', 'promoted' => true]);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $findings = $rule->analyze($context);
+
+        self::assertCount(1, $findings);
+    }
+
+    #[Test]
+    public function itExcludesPromotedPropertyEvenWhenAllowedPrefixMatches(): void
+    {
+        // A promoted `$isActive`-style property should still be excluded via the
+        // promoted check, independent of the allowed-prefix filtering path.
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
+
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Service.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service.php'), null);
+
+        $metricBag = (new MetricBag())
+            ->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => 10, 'extra' => 'overwrite', 'promoted' => true]);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $findings = $rule->analyze($context);
+
+        self::assertSame([], $findings);
+    }
+
+    /**
+     * Pins `occurrence` to `SMELL_TYPE` read off a finding produced by
+     * {@see BooleanArgumentRule::analyze()} itself, so a future edit to
+     * `SMELL_TYPE` reddens this test even though it looks like a same-shaped
+     * refactor of the `codeSmell.{$type}` bag key
+     * `AbstractCodeSmellRule::analyze()` shares with every other code-smell
+     * rule. The expected leaf is written as a literal on purpose:
+     * substituting `BooleanArgumentRule::SMELL_TYPE` would make the
+     * comparison tautological and it would stop catching the move.
+     */
+    #[Test]
+    public function itKeysOccurrenceToItsOwnSmellType(): void
+    {
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
+
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Service.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service.php'), null);
+
+        $metricBag = (new MetricBag())
+            ->withEntry('codeSmell.boolean_argument', ['subjectKind' => 'file', 'line' => 10, 'extra' => 'overwrite', 'promoted' => false]);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolLevel $level) => $level === SymbolLevel::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $findings = $rule->analyze($context);
+
+        self::assertCount(1, $findings);
+        self::assertSame(
+            OccurrenceKey::semantic('boolean_argument', [
+                'type' => 'boolean_argument',
+                'extra' => 'overwrite',
+                'hasExtra' => true,
+                'promoted' => false,
+                'hasPromoted' => true,
+            ])->value,
+            $findings[0]->occurrenceKey?->value,
+        );
+    }
+}

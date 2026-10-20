@@ -18,7 +18,6 @@ final class RuleOptionsParserTest extends TestCase
 
     protected function setUp(): void
     {
-        // Create parser with short aliases like rules would provide
         $this->parser = new RuleOptionsParser([
             'cyclomatic-warning' => ['rule' => 'cyclomatic-complexity', 'option' => 'warningThreshold'],
             'cyclomatic-error' => ['rule' => 'cyclomatic-complexity', 'option' => 'errorThreshold'],
@@ -28,267 +27,145 @@ final class RuleOptionsParserTest extends TestCase
     }
 
     #[Test]
-    public function itParsesRuleOptionsBasic(): void
+    public function itKeepsAuthoredRuleOptionTextAndSpellingForTheDocumentDoor(): void
     {
-        $result = $this->parser->parseRuleOptions([
-            'cyclomatic-complexity:warningThreshold=15',
-            'namespace-size:errorThreshold=20',
-        ]);
-
         self::assertSame([
-            'cyclomatic-complexity' => ['warningThreshold' => 15],
-            'namespace-size' => ['errorThreshold' => 20],
-        ], $result);
+            'rule' => 'complexity.ccn',
+            'option' => 'callable.warning',
+            'text' => '["a,b"]',
+        ], $this->parser->parseAuthoredRuleOption('complexity.ccn:callable.warning=["a,b"]'));
+        self::assertSame([
+            'rule' => 'COMPLEXITY.CCN',
+            'option' => 'callable.max_warning',
+            'text' => '1e0',
+        ], $this->parser->parseAuthoredRuleOption('COMPLEXITY.CCN:callable.max_warning=1e0'));
     }
 
     #[Test]
-    public function itParsesRuleOptionsMultipleForSameRule(): void
+    public function itKeepsBasicRuleOptionOwnersSeparate(): void
     {
-        $result = $this->parser->parseRuleOptions([
-            'cyclomatic-complexity:warningThreshold=10',
-            'cyclomatic-complexity:errorThreshold=20',
-        ]);
-
         self::assertSame([
-            'cyclomatic-complexity' => [
-                'warningThreshold' => 10,
-                'errorThreshold' => 20,
-            ],
-        ], $result);
+            'rule' => 'cyclomatic-complexity', 'option' => 'warningThreshold', 'text' => '15',
+        ], $this->parser->parseAuthoredRuleOption('cyclomatic-complexity:warningThreshold=15'));
+        self::assertSame([
+            'rule' => 'namespace-size', 'option' => 'errorThreshold', 'text' => '20',
+        ], $this->parser->parseAuthoredRuleOption('namespace-size:errorThreshold=20'));
     }
 
     #[Test]
-    public function itNormalizesKebabCaseInRuleOptions(): void
+    public function itKeepsMultipleWritesForTheSameRuleDistinct(): void
     {
-        $result = $this->parser->parseRuleOptions([
-            'cyclomatic-complexity:warning-threshold=15',
-            'namespace-size:count-interfaces=true',
-        ]);
-
         self::assertSame([
-            'cyclomatic-complexity' => ['warningThreshold' => 15],
-            'namespace-size' => ['countInterfaces' => true],
-        ], $result);
+            'rule' => 'cyclomatic-complexity', 'option' => 'warningThreshold', 'text' => '10',
+        ], $this->parser->parseAuthoredRuleOption('cyclomatic-complexity:warningThreshold=10'));
+        self::assertSame([
+            'rule' => 'cyclomatic-complexity', 'option' => 'errorThreshold', 'text' => '20',
+        ], $this->parser->parseAuthoredRuleOption('cyclomatic-complexity:errorThreshold=20'));
     }
 
     #[Test]
-    public function itNormalizesSnakeCaseInRuleOptions(): void
+    public function itKeepsKebabCaseInTheAuthoredIngress(): void
     {
-        $result = $this->parser->parseRuleOptions([
-            'cyclomatic-complexity:warning_threshold=15',
-            'namespace-size:count_interfaces=true',
-        ]);
-
-        self::assertSame([
-            'cyclomatic-complexity' => ['warningThreshold' => 15],
-            'namespace-size' => ['countInterfaces' => true],
-        ], $result);
+        self::assertSame('warning-threshold', $this->parser->parseAuthoredRuleOption('cyclomatic-complexity:warning-threshold=15')['option']);
+        self::assertSame('count-interfaces', $this->parser->parseAuthoredRuleOption('namespace-size:count-interfaces=true')['option']);
     }
 
     #[Test]
-    public function itNormalizesMixedKebabAndSnakeCaseInRuleOptions(): void
+    public function itKeepsSnakeCaseInTheAuthoredIngress(): void
     {
-        $result = $this->parser->parseRuleOptions([
-            'test-rule:my_option-name=value',
-        ]);
-
-        self::assertSame([
-            'test-rule' => ['myOptionName' => 'value'],
-        ], $result);
+        self::assertSame('warning_threshold', $this->parser->parseAuthoredRuleOption('cyclomatic-complexity:warning_threshold=15')['option']);
+        self::assertSame('count_interfaces', $this->parser->parseAuthoredRuleOption('namespace-size:count_interfaces=true')['option']);
     }
 
     #[Test]
-    public function itParsesBooleanValuesInRuleOptions(): void
+    public function itKeepsMixedKebabAndSnakeCaseInTheAuthoredIngress(): void
     {
-        $result = $this->parser->parseRuleOptions([
-            'test-rule:enabled=true',
-            'test-rule:disabled=false',
-        ]);
-
-        self::assertSame([
-            'test-rule' => [
-                'enabled' => true,
-                'disabled' => false,
-            ],
-        ], $result);
+        self::assertSame('my_option-name', $this->parser->parseAuthoredRuleOption('test-rule:my_option-name=value')['option']);
     }
 
     #[Test]
-    public function itParsesFloatValuesInRuleOptions(): void
+    public function itKeepsBooleanTextsForTheDeclaredForm(): void
     {
-        $result = $this->parser->parseRuleOptions([
-            'test-rule:threshold=3.14',
-        ]);
-
-        self::assertSame([
-            'test-rule' => ['threshold' => 3.14],
-        ], $result);
+        self::assertSame('true', $this->parser->parseAuthoredRuleOption('test-rule:enabled=true')['text']);
+        self::assertSame('false', $this->parser->parseAuthoredRuleOption('test-rule:disabled=false')['text']);
     }
 
     #[Test]
-    public function itParsesNegativeIntInRuleOptions(): void
+    public function itKeepsFloatTextForTheDeclaredForm(): void
     {
-        $result = $this->parser->parseRuleOptions([
-            'test-rule:threshold=-10',
-        ]);
-
-        self::assertSame([
-            'test-rule' => ['threshold' => -10],
-        ], $result);
+        self::assertSame('3.14', $this->parser->parseAuthoredRuleOption('test-rule:threshold=3.14')['text']);
     }
 
     #[Test]
-    public function itParsesStringValuesInRuleOptions(): void
+    public function itKeepsNegativeIntegerTextForTheDeclaredForm(): void
     {
-        $result = $this->parser->parseRuleOptions([
-            'test-rule:format=json',
-        ]);
-
-        self::assertSame([
-            'test-rule' => ['format' => 'json'],
-        ], $result);
+        self::assertSame('-10', $this->parser->parseAuthoredRuleOption('test-rule:threshold=-10')['text']);
     }
 
     #[Test]
-    public function itIgnoresInvalidFormatInRuleOptions(): void
+    public function itKeepsStringTextForTheDeclaredForm(): void
     {
-        $result = $this->parser->parseRuleOptions([
-            'invalid-no-colon',
-            'no-equals:option',
-            'valid-rule:option=value',
-        ]);
-
-        self::assertSame([
-            'valid-rule' => ['option' => 'value'],
-        ], $result);
+        self::assertSame('json', $this->parser->parseAuthoredRuleOption('test-rule:format=json')['text']);
     }
 
     #[Test]
-    public function itParsesShortAlias(): void
+    public function itRefusesMalformedRuleOptionsAndStillAcceptsAValidSpelling(): void
     {
-        $result = $this->parser->parseShortAlias('cyclomatic-warning', 10);
+        foreach (['invalid-no-colon', 'no-equals:option'] as $text) {
+            try {
+                $this->parser->parseAuthoredRuleOption($text);
+                self::fail('Malformed rule option input must be refused.');
+            } catch (ConfigurationRefusal $refusal) {
+                self::assertSame('Invalid --rule-opt=' . $text . '. Expected RULE:OPTION=VALUE.', $refusal->summary());
+            }
+        }
 
+        self::assertSame([
+            'rule' => 'valid-rule',
+            'option' => 'option',
+            'text' => 'value',
+        ], $this->parser->parseAuthoredRuleOption('valid-rule:option=value'));
+    }
+
+    #[Test]
+    public function itResolvesShortAliasTarget(): void
+    {
         self::assertSame([
             'rule' => 'cyclomatic-complexity',
             'option' => 'warningThreshold',
-            'value' => 10,
-        ], $result);
+        ], $this->parser->aliasTarget('cyclomatic-warning'));
     }
 
     #[Test]
     public function itReturnsNullForUnknownShortAlias(): void
     {
-        $result = $this->parser->parseShortAlias('unknown-alias', 10);
-
-        self::assertNull($result);
-    }
-
-    #[Test]
-    public function itParsesDisabledRules(): void
-    {
-        $result = $this->parser->parseDisabledRules([
-            'cyclomatic-complexity',
-            'NAMESPACE-SIZE',
-            '  some-rule  ',
-        ]);
-
-        self::assertSame([
-            'cyclomatic-complexity',
-            'namespace-size',
-            'some-rule',
-        ], $result);
-    }
-
-    #[Test]
-    public function itParsesOnlyRules(): void
-    {
-        $result = $this->parser->parseOnlyRules([
-            'cyclomatic-complexity',
-        ]);
-
-        self::assertSame(['cyclomatic-complexity'], $result);
+        self::assertNull($this->parser->aliasTarget('unknown-alias'));
     }
 
     #[Test]
     public function itHandlesParserWithoutAliases(): void
     {
-        $parser = new RuleOptionsParser();
-
-        $result = $parser->parseShortAlias('cyclomatic-warning', 10);
-
-        self::assertNull($result);
+        self::assertNull((new RuleOptionsParser())->aliasTarget('cyclomatic-warning'));
     }
 
     #[Test]
     public function itReturnsAllRegisteredAliasNames(): void
     {
-        $aliases = $this->parser->getAliasNames();
-
         self::assertSame([
             'cyclomatic-warning',
             'cyclomatic-error',
             'class-count-warning',
             'class-count-error',
-        ], $aliases);
+        ], $this->parser->getAliasNames());
     }
 
     #[Test]
     public function itReturnsEmptyAliasNamesForParserWithoutAliases(): void
     {
-        $parser = new RuleOptionsParser();
-
-        self::assertSame([], $parser->getAliasNames());
+        self::assertSame([], (new RuleOptionsParser())->getAliasNames());
     }
 
-    #[Test]
-    public function itParsesDisabledRulesWithDotNotation(): void
-    {
-        $result = $this->parser->parseDisabledRules([
-            'complexity',
-            'complexity.class',
-            'complexity.method',
-            'size.namespace',
-        ]);
-
-        self::assertSame([
-            'complexity',
-            'complexity.class',
-            'complexity.method',
-            'size.namespace',
-        ], $result);
-    }
-
-    #[Test]
-    public function itParsesOnlyRulesWithDotNotation(): void
-    {
-        $result = $this->parser->parseOnlyRules([
-            'complexity.method',
-            'size.namespace',
-        ]);
-
-        self::assertSame([
-            'complexity.method',
-            'size.namespace',
-        ], $result);
-    }
-
-    /**
-     * Regression for the empty-value-on-the-CLI-door defect: an empty value
-     * after `=` used to survive as the literal string `''`, which every
-     * affected Options::fromArray() then wrapped into a genuine one-element
-     * list `['']` instead of falling back to its default. `--rule-opt` is the
-     * door where the defect was reproduced — this pins it at the door, not at
-     * the Options class, because a test on `Options::fromArray()` never sees
-     * what the door itself hands over.
-     *
-     * The door's own promise (`promise-effect/promise-ledger.tsv`, `rule-opt`
-     * rows) is `refuse`, not "fold to the default": the fix therefore raises
-     * a `ConfigurationRefusal` instead of a silent `null`, so the defective
-     * `['']` still never reaches the four affected `Options::fromArray()`
-     * calls, and the door keeps its promise besides.
-     *
-     * @return iterable<string, array{0: string}>
-     */
+    /** @return iterable<string, array{0: string}> */
     public static function provideEmptyValueGridRows(): iterable
     {
         yield 'boolean-argument allowed-prefixes' => ['code-smell.boolean-argument:allowed-prefixes='];
@@ -304,27 +181,13 @@ final class RuleOptionsParserTest extends TestCase
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('was written with an empty value');
 
-        $this->parser->parseRuleOptions([$ruleOpt]);
+        $this->parser->parseAuthoredRuleOption($ruleOpt);
     }
 
-    /**
-     * The boundary case: a single, non-empty value on the same keys must
-     * keep working exactly as before — the cure must not turn "one written
-     * value" into a refusal too. There is no legitimate empty-string case to
-     * protect on this door for these keys: `--rule-opt` cannot type a real
-     * empty PHP list at all (no bracket parsing — see
-     * `promise-effect/door-normalization.tsv`, `rule-opt|list` row), so
-     * before this fix an empty value here was never anything but the defect,
-     * on every one of the four rows.
-     */
     #[Test]
     public function itStillParsesANonEmptyValueOnTheSameKeyAsASingleElement(): void
     {
-        $result = $this->parser->parseRuleOptions([
-            'code-smell.boolean-argument:allowed-prefixes=is',
-        ]);
-
-        self::assertSame('is', $result['code-smell.boolean-argument']['allowedPrefixes']);
+        self::assertSame('is', $this->parser->parseAuthoredRuleOption('code-smell.boolean-argument:allowed-prefixes=is')['text']);
     }
 
     #[Test]
@@ -333,9 +196,7 @@ final class RuleOptionsParserTest extends TestCase
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('Option "someOption" of rule "test-rule" was written with an empty value');
 
-        $this->parser->parseRuleOptions([
-            'test-rule:some-option=',
-        ]);
+        $this->parser->parseAuthoredRuleOption('test-rule:some-option=');
     }
 
     #[Test]
@@ -344,9 +205,9 @@ final class RuleOptionsParserTest extends TestCase
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage(
             'Option "allowedPrefixes" of rule "code-smell.boolean-argument" was written with an empty value'
-            . ' ("--rule-opt code-smell.boolean-argument:allowed-prefixes=").',
+            . ' ("--rule-opt=code-smell.boolean-argument:allowed-prefixes=").',
         );
 
-        $this->parser->parseRuleOptions(['code-smell.boolean-argument:allowed-prefixes=']);
+        $this->parser->parseAuthoredRuleOption('code-smell.boolean-argument:allowed-prefixes=');
     }
 }

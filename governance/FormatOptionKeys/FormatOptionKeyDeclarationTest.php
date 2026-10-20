@@ -8,7 +8,7 @@ use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
+use Qualimetrix\Reporting\Contract\Formatting\FormatOptionKeysInterface;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
@@ -39,7 +39,7 @@ use SplFileInfo;
 final class FormatOptionKeyDeclarationTest extends TestCase
 {
     /** Its `getOption()`/`$options[]` sites take the key as a parameter; it reads no key of its own. */
-    private const string ACCESSOR = 'src/Reporting/FormatterContext.php';
+    private const string ACCESSOR = 'src/Reporting/Contract/Formatting/FormatterContext.php';
 
     #[Test]
     public function itDeclaresEveryFormatOptionKeyItsOwnFormatterTreeReads(): void

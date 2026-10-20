@@ -5,14 +5,18 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter\Summary;
 
 use Qualimetrix\Core\Version;
+use Qualimetrix\Reporting\Contract\Formatting\FormatOptionKeysInterface;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterInterface;
+use Qualimetrix\Reporting\Contract\Formatting\GroupBy;
+use Qualimetrix\Reporting\Contract\Report\Report;
 use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
-use Qualimetrix\Reporting\Formatter\CoverageNarrator;
 use Qualimetrix\Reporting\Formatter\Detail\DetailedFindingRenderer;
-use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
-use Qualimetrix\Reporting\Formatter\FormatterInterface;
-use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\GroupBy;
-use Qualimetrix\Reporting\Report;
+use Qualimetrix\Reporting\Formatter\Prose\ComputedMetricAbsenceNarrator;
+use Qualimetrix\Reporting\Formatter\Prose\RuleAbstentionNarrator;
+use Qualimetrix\Reporting\Formatter\Text\CoverageNarrator;
+use Qualimetrix\Reporting\Publication\FormattedReport;
+use Qualimetrix\Reporting\Publication\PublicationKind;
 
 /**
  * Summary formatter -- default CLI output.
@@ -33,11 +37,10 @@ final class SummaryFormatter implements FormatterInterface, FormatOptionKeysInte
         private readonly HintRenderer $hintRenderer,
     ) {}
 
-    public function format(Report $report, FormatterContext $context): string
+    public function format(Report $report, FormatterContext $context): FormattedReport
     {
         $color = new AnsiColor($context->useColor);
         $terminalWidth = $context->terminalWidth > 0 ? $context->terminalWidth : self::DEFAULT_TERMINAL_WIDTH;
-        $ascii = (bool) getenv('QMX_ASCII');
         $lines = [];
 
         $this->renderHeader($report, $context, $color, $lines);
@@ -47,7 +50,11 @@ final class SummaryFormatter implements FormatterInterface, FormatOptionKeysInte
             $lines[] = '';
         }
 
-        $this->healthBarRenderer->render($report, $context, $color, $terminalWidth, $ascii, $lines);
+        array_push($lines, ...($context->verbose ? RuleAbstentionNarrator::verboseLines($report) : RuleAbstentionNarrator::lines($report)));
+        array_push($lines, ...ComputedMetricAbsenceNarrator::lines($report));
+        array_push($lines, ...$report->inheritanceDepth->lines());
+
+        $this->healthBarRenderer->render($report, $context, $color, $terminalWidth, $lines);
         $this->offenderListRenderer->renderWorstNamespaces($report, $color, $context, $lines);
         $this->offenderListRenderer->renderWorstClasses($report, $color, $context, $lines);
         $this->topIssuesRenderer->render($report, $context, $color, $lines);
@@ -59,10 +66,15 @@ final class SummaryFormatter implements FormatterInterface, FormatOptionKeysInte
         if ($context->isDetailEnabled() && !$report->isEmpty()) {
             $lines[] = '';
             $lines[] = $color->bold('Violations');
-            $lines[] = $this->detailedRenderer->renderCapped($report->findings, $context);
+            $lines[] = $this->detailedRenderer->renderCapped($report, $context);
         }
 
-        return implode("\n", $lines) . "\n";
+        return new FormattedReport(implode("\n", $lines) . "\n");
+    }
+
+    public function publicationKind(): PublicationKind
+    {
+        return PublicationKind::Prose;
     }
 
     public function getName(): string

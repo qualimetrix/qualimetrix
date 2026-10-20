@@ -6,15 +6,16 @@ namespace Qualimetrix\Analysis\Evidence\Design\TypeCoverage;
 
 use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Core\Observation\WorseDirection;
+use Qualimetrix\Analysis\Finding\Rule\AbstractRule;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -39,14 +40,11 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * from {@see channelName()} by late static binding, which is how
  * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader}
  * already reads an inherited declaration.
+ *
+  * @qmx-threshold coupling.instability 0.833335 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
  */
 abstract class AbstractTypeCoverageRule extends AbstractRule
 {
-    public function getName(): string
-    {
-        return static::channelName();
-    }
-
     /**
      * Coverage is a percentage, and less of it is worse debt — hence a
      * magnitude channel whose worse direction is `Lower`. It reports at class
@@ -63,10 +61,12 @@ abstract class AbstractTypeCoverageRule extends AbstractRule
         $name = static::channelName();
 
         return [
-            $name => ChannelDeclaration::judging(
-                WorseDirection::Lower,
-                JudgedMetrics::of(static::coverageMetric()),
+            $name => self::judgingLower(
+                [static::coverageMetric()],
                 SymbolLevel::Class_,
+            )->withGates(
+                self::populationGate('logical-class-kind', $name, SymbolLevel::Class_, 'declaration', self::kindIn('logicalKind', [SymbolType::Class_]), 'Only class declarations are judged.'),
+                self::populationGate('typeable-total', $name, SymbolLevel::Class_, 'declaration', self::keyThreshold(static::coverageMetric() . '.total', [static::coverageMetric() . '.total'], '>', 0), 'This type-coverage dimension requires a positive declaration total.'),
             ),
         ];
     }
@@ -83,16 +83,23 @@ abstract class AbstractTypeCoverageRule extends AbstractRule
             return [];
         }
 
+        $name = static::channelName();
+        $declaration = static::channelDeclarations()[$name];
         $findings = [];
 
-        foreach ($context->metrics->allDeclarations() as $classInfo) {
+        foreach ($context->metrics->allClassDeclarations() as $classInfo) {
             $subject = $classInfo->subject ?? throw new LogicException('Type coverage findings require an exact class declaration subject');
 
-            if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+            $metrics = null;
+            $inputs = (function () use ($subject, $context, &$metrics): iterable {
+                yield GateInput::kind('logicalKind', $subject->toSymbolPath()->getType());
+                $metrics = $context->metrics->getSubject($subject);
+                yield GateInput::metrics($this->totalMetric(), $metrics);
+            })();
+            if (!$context->admit($name, new FindingChannel($name), SymbolLevel::Class_, PopulationIdentity::subject($subject), $declaration, $inputs)) {
                 continue;
             }
-
-            $finding = $this->judge($context, $subject, $classInfo, $context->metrics->get($subject->toSymbolPath()));
+            $finding = $this->judge($context, $subject, $classInfo, $metrics);
 
             if ($finding !== null) {
                 $findings[] = $finding;
@@ -115,12 +122,6 @@ abstract class AbstractTypeCoverageRule extends AbstractRule
         SymbolInfo $classInfo,
         MetricBag $metrics,
     ): ?Finding {
-        $total = $metrics->get($this->totalMetric());
-
-        if ($total === null || (int) $total <= 0) {
-            return null;
-        }
-
         $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $subject);
         \assert($effectiveOptions instanceof TypeCoverageOptions);
 

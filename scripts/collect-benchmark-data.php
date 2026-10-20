@@ -149,7 +149,7 @@ foreach ($projects as $project) {
     }
 
     fprintf(STDERR, "Analyzing: %s ... ", $id);
-    $start = microtime(true);
+    $start = (hrtime(true) / 1_000_000_000);
 
     // An argument-vector command needs no shell and therefore no
     // escapeshellarg(): each element reaches the child exactly as written.
@@ -178,7 +178,7 @@ foreach ($projects as $project) {
     }
     $json = $result['stdout'];
     $exitCode = $result['exitCode'];
-    $elapsed = round(microtime(true) - $start, 1);
+    $elapsed = round((hrtime(true) / 1_000_000_000) - $start, 1);
 
     if ($exitCode > 2) {
         fprintf(STDERR, "FAILED (analysis exit code %d)\n", $exitCode);
@@ -222,6 +222,9 @@ foreach ($projects as $project) {
             $captureSymbols[] = [
                 'name' => $symbol['name'],
                 'type' => $symbol['type'],
+                'subject' => $symbol['subject'] ?? null,
+                'file' => $symbol['file'] ?? null,
+                'line' => $symbol['line'] ?? null,
                 'metrics' => $symbol['metrics'] ?? [],
                 'size.loc' => $symbol['metrics']['size.loc'] ?? null,
             ];
@@ -231,7 +234,7 @@ foreach ($projects as $project) {
         // a multi-megabyte payload roughly doubles its peak memory for no benefit.
         $captureFile = $captureDir . '/' . $id . '.json';
         $encodedCapture = json_encode(
-            ['id' => $id, 'symbols' => $captureSymbols],
+            ['id' => $id, 'coverage' => $data['coverage'], 'symbols' => $captureSymbols],
             JSON_UNESCAPED_UNICODE,
         );
         if ($encodedCapture === false || file_put_contents($captureFile, $encodedCapture) === false) {
@@ -274,7 +277,7 @@ foreach ($projects as $project) {
                 'name' => $symbol['name'],
                 'coupling.cbo' => $symbol['metrics']['coupling.cbo'] ?? null,
                 'health.coupling' => $symbol['metrics']['health.coupling'] ?? null,
-                'size.loc' => $symbol['metrics']['size.loc'] ?? null,
+                'size.class-loc' => $symbol['metrics']['size.class-loc'] ?? null,
             ];
         }
     }

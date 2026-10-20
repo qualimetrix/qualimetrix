@@ -53,6 +53,8 @@ use InvalidArgumentException;
  * Variables are sorted in alphabetic order at construction so the
  * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage} can produce
  * stable tuple ordering regardless of declaration order in the YAML.
+ *
+ * @qmx-threshold health.cohesion 30.0 -- Independent immutable observations or stateless declaration operations intentionally have no shared instance-field graph; this finite class boundary keeps a further cohesion loss visible.
  */
 final readonly class TemplateLayerDefinition
 {

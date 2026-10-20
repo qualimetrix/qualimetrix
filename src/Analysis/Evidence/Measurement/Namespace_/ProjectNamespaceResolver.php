@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Measurement\Namespace_;
 
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceResolverInterface;
-use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Core\Path\RelativePath;
-use RuntimeException;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceSourceControlInterface;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts;
 
 /**
  * Resolves project namespaces from composer.json autoload configuration.
@@ -18,40 +17,20 @@ use RuntimeException;
  * When composer.json is missing or has no PSR-4 configuration, all namespaces
  * are treated as project namespaces (empty prefix list = match everything).
  */
-final class ProjectNamespaceResolver implements ProjectNamespaceResolverInterface
+final class ProjectNamespaceResolver implements ProjectNamespaceResolverInterface, ProjectNamespaceSourceControlInterface
 {
-    /**
-     * @var list<string>
-     */
-    private readonly array $projectPrefixes;
+    /** @var list<string> */
+    private array $projectPrefixes;
 
-    /**
-     * @param AbsolutePath|null $composerJsonPath Absolute path to composer.json (null = `getcwd()/composer.json`)
-     * @param list<string>|null $overridePrefixes Override detected prefixes
-     */
-    public function __construct(
-        ?AbsolutePath $composerJsonPath = null,
-        ?array $overridePrefixes = null,
-    ) {
-        if ($overridePrefixes !== null) {
-            $this->projectPrefixes = $this->normalizeAndSort($overridePrefixes);
-            return;
-        }
-
-        $path = $composerJsonPath ?? self::cwdComposerJson();
-        $this->projectPrefixes = $this->extractPrefixesFromComposer($path->value());
+    /** @param list<string> $prefixes Explicit namespace attribution for callers with no manifest source. */
+    public function __construct(array $prefixes = [])
+    {
+        $this->projectPrefixes = $this->normalizeAndSort($prefixes);
     }
 
-    private static function cwdComposerJson(): AbsolutePath
+    public function bind(ComposerManifestFacts $facts): void
     {
-        $cwd = getcwd();
-
-        if ($cwd === false) {
-            throw new RuntimeException('Cannot determine current working directory');
-        }
-
-        return AbsolutePath::fromString($cwd)
-            ->joinRelative(RelativePath::fromString('composer.json'));
+        $this->projectPrefixes = $this->normalizeAndSort(array_keys($facts->psr4Roots()));
     }
 
     /**
@@ -95,44 +74,6 @@ final class ProjectNamespaceResolver implements ProjectNamespaceResolverInterfac
     public function getProjectPrefixes(): array
     {
         return $this->projectPrefixes;
-    }
-
-    /**
-     * Extract namespace prefixes from composer.json.
-     *
-     * Returns empty list if composer.json is missing, unreadable, or has no PSR-4 config.
-     *
-     * @return list<string> Normalized and sorted prefixes
-     */
-    private function extractPrefixesFromComposer(string $path): array
-    {
-        if (!file_exists($path)) {
-            return [];
-        }
-
-        $content = file_get_contents($path);
-        if ($content === false) {
-            return [];
-        }
-
-        $data = json_decode($content, true);
-        if (!\is_array($data)) {
-            return [];
-        }
-
-        $prefixes = [];
-
-        // Extract from autoload.psr-4
-        if (isset($data['autoload']['psr-4']) && \is_array($data['autoload']['psr-4'])) {
-            $prefixes = array_merge($prefixes, array_keys($data['autoload']['psr-4']));
-        }
-
-        // Extract from autoload-dev.psr-4
-        if (isset($data['autoload-dev']['psr-4']) && \is_array($data['autoload-dev']['psr-4'])) {
-            $prefixes = array_merge($prefixes, array_keys($data['autoload-dev']['psr-4']));
-        }
-
-        return $this->normalizeAndSort($prefixes);
     }
 
     /**

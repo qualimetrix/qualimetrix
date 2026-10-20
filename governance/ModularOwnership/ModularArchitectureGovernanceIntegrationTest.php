@@ -56,14 +56,50 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
             'php bin/qmx check src/ --baseline=qmx-baseline.json --fail-on=warning --memory-limit=512M',
             $scripts['selfcheck:analysis'],
         );
-        self::assertSame('@test:aggregate', $this->scriptSteps($scripts, 'check:code')[2]);
+        self::assertSame(
+            ['Composer\\Config::disableProcessTimeout', 'python3 scripts/check-code-parallel/check-code-parallel.py'],
+            $scripts['check:parallel'],
+        );
+        self::assertSame(
+            ['@check:code:tests', '@phpstan'],
+            $this->scriptSteps($scripts, 'check:code'),
+        );
+        self::assertSame(
+            ['@cs-check', '@test:aggregate', '@dangling-names', '@test:js', '@test:cross-tool'],
+            $this->scriptSteps($scripts, 'check:code:tests'),
+        );
+        self::assertSame(
+            ['@check-leaks', '@check:code:tests', '@check:parallel'],
+            $this->scriptSteps($scripts, 'check'),
+        );
+        self::assertSame(
+            [
+                'Composer\\Config::disableProcessTimeout',
+                '@check:docs',
+                '@check:artifacts',
+                '@check:self',
+            ],
+            $this->scriptSteps($scripts, 'check:remaining'),
+        );
         self::assertContains('@architecture:check', $this->scriptSteps($scripts, 'check:artifacts'));
         self::assertContains('@suppression-snapshot:check', $this->scriptSteps($scripts, 'check:artifacts'));
         self::assertContains(
             "python3 -m unittest discover -s scripts/phpunit-aggregate/tests -p 'test_*.py'",
             $this->scriptSteps($scripts, 'test:cross-tool'),
         );
-        self::assertSame(['@gate:self-test', '@selfcheck:analysis', '@directives:audit'], $scripts['check:self']);
+        self::assertContains(
+            "python3 -m unittest discover -s scripts/check-code-parallel/tests -p 'test_*.py'",
+            $this->scriptSteps($scripts, 'test:cross-tool'),
+        );
+        self::assertSame(['@selfcheck:analysis', '@directives:audit'], $scripts['check:self']);
+        self::assertSame(
+            [
+                'Composer\\Config::disableProcessTimeout',
+                'phpunit --configuration=phpunit.xml.dist --no-coverage --group=finding-gate-e2e',
+                '@gate:self-test',
+            ],
+            $scripts['check:gate'],
+        );
     }
 
     #[Test]
@@ -106,7 +142,7 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
     public function itPublishesTheReviewedTopologyEvidenceAndRejectsProductionToTestImports(): void
     {
         self::assertCount(28, $this->tsv('test-orphan-dispositions.tsv'));
-        self::assertCount(1, $this->tsv('test-system-support-owners.tsv'));
+        self::assertCount(6, $this->tsv('test-system-support-owners.tsv'));
         self::assertSame([], $this->tsv('production-to-test-imports.tsv'));
         self::assertNotEmpty($this->tsv('production-public-imports.tsv'));
         self::assertNotEmpty($this->tsv('production-module-fan-in.tsv'));

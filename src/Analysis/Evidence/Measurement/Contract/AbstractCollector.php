@@ -14,8 +14,6 @@ use SplFileInfo;
  * Provides common functionality for stateful-per-file collectors:
  * - Holds visitor instance
  * - Implements reset() by delegating to visitor
- *
- * @qmx-threshold coupling.cbo 27 -- Measurement collector base is a stable provider-owned extension hub; current raw CBO 26 gets one-edge headroom.
  */
 abstract class AbstractCollector implements MetricCollectorInterface, ParallelSafeCollectorInterface
 {

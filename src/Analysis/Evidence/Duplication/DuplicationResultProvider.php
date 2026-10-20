@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Duplication;
 
+use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlock;
+
 /**
  * Owns the duplication result for one analysis run.
  */

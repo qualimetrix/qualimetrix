@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding;
 
 use LogicException;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelPresentation;
-use Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPresentation;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPresentationInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 
@@ -17,12 +17,12 @@ use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
  * Composes {@see ChannelPresentation} from the facts this capability owns —
  * the producing rule ({@see ChannelIdentityInterface::producerOf()}), the
  * channel's own declared description
- * ({@see \Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration::$description}),
+ * ({@see \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration::$description}),
  * and the producing rule's own {@see RuleMetadata} (its description, used for
  * the one channel named after it, and, via `$docsPageByRule`, its declared
  * documentation page) — see
  * {@see ChannelPresentationInterface} for why the join lives here rather than
- * on {@see \Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface} or on the
+ * on {@see \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface} or on the
  * Reporting-side consumer.
  *
  * The third fact the full join needs — a configured `computed.*` /
@@ -39,7 +39,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
  * `$docsPageByRule` is handed in rather than read by this class: a rule's
  * `DOCS_PAGE` constant is only safe to read by reflection on the class-string,
  * never by instantiating (mirrors {@see \Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader}'s
- * reasoning), so {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass}
+ * reasoning), so {@see \Qualimetrix\Infrastructure\DependencyInjection\ChannelCatalog\ChannelDeclarationCompilerPass}
  * builds the map at the same pass that already walks every tagged rule
  * service for its name, and injects it here as a constructor argument.
  */

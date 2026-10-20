@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Cohesion;
 
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\BandDirection;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOptionValues;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ThresholdPair;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
-use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOptionQueries;
 
 /**
  * Options for LcomRule.
@@ -25,9 +27,12 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  */
 final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
+    use ThresholdOptionQueries;
+
     use StandardOverrideValidatorTrait;
 
     /**
+     * @param int $minMethods Minimum number of LCOM graph vertices after exclusions and stateless merging
      * @param list<string>|null $excludeMethods Method names to exclude from LCOM graph (e.g., lifecycle hooks)
      */
     public function __construct(
@@ -39,60 +44,17 @@ final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAware
         public ?array $excludeMethods = null,
     ) {}
 
-    /**
-     * @param array<string, mixed> $config
-     */
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
-        if ($config === []) {
-            return new self(enabled: false);
-        }
-
-        $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 3, 5);
-
-        $excludeMethods = null;
-        $excludeKey = $config['exclude_methods'] ?? $config['excludeMethods'] ?? null;
-
-        if (\is_string($excludeKey)) {
-            // Support comma-separated values from CLI (e.g., --rule-opt='cohesion.lcom:exclude_methods=getName,getDescription')
-            $excludeMethods = str_contains($excludeKey, ',')
-                ? array_map('trim', explode(',', $excludeKey))
-                : [$excludeKey];
-        } elseif (\is_array($excludeKey)) {
-            $excludeMethods = array_values($excludeKey);
-        }
-
+        $thresholds = ThresholdPair::fromResolved($config, RuleOptionSurface::bandFor(self::class, 'threshold'), 3, 5);
         return new self(
-            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
-            warning: (int) $thresholds['warning'],
-            error: (int) $thresholds['error'],
-            excludeReadonly: (bool) ($config['exclude_readonly'] ?? $config['excludeReadonly'] ?? true),
-            minMethods: (int) ($config['min_methods'] ?? $config['minMethods'] ?? 3),
-            excludeMethods: $excludeMethods,
+            enabled: $config->boolean('enabled', true),
+            warning: $thresholds->integerWarning(),
+            error: $thresholds->integerError(),
+            excludeReadonly: $config->boolean('exclude-readonly', true),
+            minMethods: $config->integer('min-methods', 3),
+            excludeMethods: $config->list('exclude-methods') === null ? null : $config->strings('exclude-methods', []),
         );
-    }
-
-    public function isEnabled(): bool
-    {
-        return $this->enabled;
-    }
-
-    /**
-     * Get severity for a given LCOM value.
-     *
-     * Higher LCOM = worse cohesion.
-     */
-    public function getSeverity(int|float $value): ?Severity
-    {
-        if ($value >= $this->error) {
-            return Severity::Error;
-        }
-
-        if ($value >= $this->warning) {
-            return Severity::Warning;
-        }
-
-        return null;
     }
 
     public function withOverride(int|float|null $warning, int|float|null $error): static
@@ -107,21 +69,20 @@ final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAware
         );
     }
 
-    public function warningBoundary(): int
-    {
-        return $this->warning;
-    }
-
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
         return RuleOptionKeySet::of([
-            'enabled' => RuleOptionShape::boolean()->orNull(),
             'error' => RuleOptionShape::integer()->orNull(),
-            'exclude-methods' => RuleOptionShape::either(RuleOptionShape::text(), RuleOptionShape::listOf(RuleOptionShape::text()))->orNull(),
+            'exclude-methods' => RuleOptionShape::listOf(RuleOptionShape::text())->orNull(),
             'exclude-readonly' => RuleOptionShape::boolean()->orNull(),
             'min-methods' => RuleOptionShape::integer()->orNull(),
             'threshold' => RuleOptionShape::integer()->orNull(),
             'warning' => RuleOptionShape::integer()->orNull(),
-        ]);
+        ])->band('threshold', 'warning', 'error', BandDirection::Rising);
     }
+    protected function thresholdPair(): ThresholdPair
+    {
+        return new ThresholdPair($this->warning, $this->error);
+    }
+
 }

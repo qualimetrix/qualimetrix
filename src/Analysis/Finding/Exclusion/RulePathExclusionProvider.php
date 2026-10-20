@@ -10,8 +10,6 @@ use Qualimetrix\Core\Pattern\PathPattern;
 
 /**
  * Stores per-rule path suppressions as already-bound path selectors.
- *
- * @qmx-threshold design.data-class warning=24 error=10 -- This stateful provider deliberately exposes configuration, inspection, matching, and reset operations. Its two read operations are behavior over compiled matchers and authored selectors, not an anemic domain model. Current WOC 25% is accepted; the next drop is reported.
  */
 final class RulePathExclusionProvider
 {

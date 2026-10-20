@@ -71,9 +71,10 @@ live in `docs/internal/generated/modular-architecture/`, never in prose.
 
 ```
 src/
-├── Core/              # Cross-cutting primitives (no project imports; PHP, PhpParser\Node, Composer\InstalledVersions)
+├── Core/              # Cross-cutting primitives (no project imports; php-parser types only in Core/Ast/, Composer\InstalledVersions in Version.php)
 ├── Analysis/          # Orchestration plus taxonomy-only capability grouping
 │   ├── Configuration/       # ordered configuration document resolution
+│   ├── ProjectManifest/     # analysed Composer source facts and invocation snapshot contracts
 │   ├── Finding/             # rule language, execution, findings and filtering
 │   ├── Evidence/
 │   │   ├── DependencyModel/     # graph model plus extraction/traversal contract
@@ -219,7 +220,7 @@ Adapters (CLI commands, HTTP endpoints, message handlers, shell hooks) live
 in `src/Infrastructure/` regardless of which feature they touch. They
 depend on the slice through its public service contracts. Example:
 `LayerAssignmentCommand` stays at
-`src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php` and
+`src/Infrastructure/Console/LayerAssignment/LayerAssignmentCommand.php` and
 injects `LayerAssignmentInspectorInterface` plus Collection services — pulling
 the command into the Architecture slice would force the slice to depend on
 `symfony/console`, which is an infrastructure concern.
@@ -238,12 +239,12 @@ the command into the Architecture slice would force the slice to depend on
 - **Architecture**: Layer Policy Enforcement (multi-criterion membership, template layers, `exclude:`, `relations:` whitelist — deptrac replacement), Circular Dependency Detection, Dependency Graph Export (DOT)
 - **Code Smell**: Boolean Argument, Debug Code, Empty Catch, eval, exit/die, goto, Superglobals, Error Suppression, Count in Loop, Long Parameter List, Unreachable Code, Identical Sub-expression
 - **Security**: Hardcoded Credentials, SQL Injection, XSS, Command Injection, Sensitive Parameter Detection
-- **Computed Metrics**: 6 built-in health scores (complexity, cohesion, coupling, design, maintainability, overall), user-definable metrics via Symfony Expression Language formulas, per-level formulas, threshold-based findings
+- **Computed Metrics**: 6 built-in health scores (complexity, cohesion, coupling, typing, maintainability, overall), user-definable metrics via Symfony Expression Language formulas, per-level formulas, threshold-based findings
 
 ### Infrastructure
 - **Parallel Processing**: Multi-worker file processing via amphp/parallel
 - **Profiler**: Internal span-based profiler for performance diagnostics
-- **Serialization**: Automatic selection of the best serializer (igbinary/PHP serialize)
+- **AST cache codec**: Current-format allowlisted AST records; legacy and igbinary entries are cache misses
 - **Git Integration**: Analysis of changed files only, staged files
 - **Baseline Support**: Ignoring known issues, @qmx-ignore tags
 - **Multiple Formats**: Text, JSON, Metrics, Checkstyle, SARIF, GitLab Code Quality, Health
@@ -310,9 +311,10 @@ When documenting deviations: use `!!! info "Deviation from original spec"` block
 - **Leaf capabilities** depend only on declared public contracts; sibling
   internals and taxonomy parents are not approved targets for new imports.
 - **Core** contains neutral primitives only and imports nothing from the
-  project outside `Core`; its only external types are `PhpParser\Node` and
-  `Composer\InstalledVersions`. No control enforces that list — a new external
-  import in Core is a review decision (see `src/Core/README.md`).
+  project outside `Core`; PHP-parser types are confined to `Core/Ast/`, and
+  `Version.php` uses `Composer\InstalledVersions`. No control enforces that
+  external-type boundary — a new external import in Core is a review decision
+  (see `src/Core/README.md`).
 - **Analysis\Run phase ports** are limited to the FileSet inspection
   participant. Graph preparation and metric derivation remain unapproved ports.
 - **Infrastructure** may depend on capabilities for delivery/composition;
@@ -372,17 +374,27 @@ SymbolPath::forFile('src/Service/UserService.php');
 $repository->forMethod('App\Service\UserService::calculate'); // OLD API
 ```
 
-### 5. Atomic Cache Writes
+### 5. Judged File Writes
+
+Use Core's file-target lifecycle for current report, profile, log, cache-entry,
+baseline and hook-content destinations. Judge without opening the target;
+claim only after input refusals; keep full writes and identity checks with Core.
 
 ```php
-// Correct: atomic rename
-$tmp = $path . '.tmp.' . getmypid();
-file_put_contents($tmp, serialize($data));
-rename($tmp, $path);
-
-// Wrong: direct write (race condition)
-file_put_contents($path, serialize($data));
+$target = TargetPath::resolve($path);
+FileReplacement::replace($target, serialize($data), null, NewName::LastWriterWins);
 ```
+
+`FileReplacement` uses `TemporarySibling`, writes and flushes the full payload,
+then publishes atomically. It preserves an existing mode when `mode` is null
+and cleans its temporary name on failure. Report streams instead use
+`HeldTarget`; appending log records uses its `append()` operation.
+
+Hook removal and backup restoration retain their subject-owned native operations
+with identity checks. AST cache entries use the Cache-owned codec and ordinary
+Core file-target lifecycle; there is no serializer-marker exception.
+This is a boundary for the named current destinations, not a lexical guarantee
+about every future filesystem call. See ADR 0096 for races and platform limits.
 
 ### 6. Anonymous Classes — Ignore
 
@@ -477,21 +489,28 @@ capability.
 - `FormatterCompilerPass` -> `FormatterRegistry`
 - `ConfigurationStageCompilerPass` -> `ConfigurationPipeline`
 
-### 8. Escape `@qmx-*` Tags in Docblocks
+### 8. Quote `@qmx-*` Tags in Documentation
 
-When referencing `@qmx-ignore` or `@qmx-threshold` in docblocks as documentation (format descriptions, examples), wrap them in backticks. The parser strips backtick-delimited regions before matching, so unescaped tags in docblocks are interpreted as real suppressions/overrides.
+A directive starts its physical comment line after whitespace and comment
+decoration. An exact tag embedded in prose is refused as not at line start,
+unless it is quoted. On one line, use matching runs of backticks around the
+example; only whitespace, comment decoration and backticks may precede the
+tag inside that span. A lone tick or unequal delimiter lengths quote nothing.
+
+For a multiline example, use a fence of at least three backticks or tildes
+after decoration. A backtick opener's suffix may contain no backtick. Close it
+with the same character, at least the opener's length, and only whitespace or
+the comment closer afterwards. A fence left open refuses directive-shaped
+lines inside it rather than silently hiding them.
 
 ```php
-// Wrong: will be parsed as a real suppression tag
 /**
- * Use @qmx-ignore complexity to suppress this rule.
- */
-
-// Correct: backtick-escaped, ignored by the parser
-/**
- * Use `@qmx-ignore complexity` to suppress this rule.
+ * Write `@qmx-ignore complexity.ccn` for an intentional exception.
  */
 ```
+
+See [the canonical syntax reference](website/docs/usage/baseline.md#comment-line-grammar)
+for placement, quoting and declaration reach.
 
 ### 9. Test Method Naming: `itXxx` + `#[Test]`
 
@@ -579,11 +598,12 @@ itself contain the private name, so echoing it would leak it into the build log.
 
 ```bash
 # Project validation
-composer check          # everything below, in the order a failure is cheapest to read
+composer check          # all groups: code tests first, then PHPStan beside docs/artifacts/self
 composer check:code     # what a code change invalidates: cs-check, phpstan, PHPUnit, JS tests, cross-tool
 composer check:docs     # what a website change invalidates: a strict mkdocs build
 composer check:artifacts # what a manifest, config or corpus change invalidates: every generated artifact
-composer check:self     # what the product says about this repo: gate self-test + qmx ratchet + directive audit
+composer check:self     # what the product says about this repo: qmx ratchet + directive audit
+composer check:gate     # gate end-to-end captures and both self-test witnesses
 composer architecture:check # exact manifest policy + generated-artifact freshness
 composer docs:check     # mkdocs --strict build of website/ (broken links, nav gaps)
 composer test           # PHPUnit
@@ -594,7 +614,7 @@ composer gate -- --reference=<git-ref>           # compare findings; GREEN 0, PA
 composer gate:controls -- --reference=<git-ref>  # prove the gate is red under each planted breakage
 
 # What each inline @qmx directive in a tree still does (--sweep=narrow re-executes only the addressed rule; default)
-bin/qmx directives src/                          # 0 clean, 2 an inert directive, 3 bad config, 4 run incomplete
+bin/qmx directives src/                          # 0 clean, 2 observable inert/publishable refused, 3 bad config, 4 incomplete
 bin/qmx directives src/ --sweep=full             # same verdicts, every enabled rule re-executed instead of one
 composer directives:audit                        # bin/qmx directives over src/, part of check:self after selfcheck
 
@@ -640,7 +660,7 @@ bin/qmx check src/ --baseline=baseline.json
 bin/qmx baseline:generate baseline.json src/
 
 # Benchmarks (metric calibration against real projects)
-cd benchmarks && composer install
+composer install --working-dir=benchmarks --no-scripts
 php scripts/collect-benchmark-data.php [output-file.json]
 composer benchmark:check       # Regression check: health scores vs expected ranges
 composer benchmark:update      # Recalibrate baseline ranges after formula changes
@@ -661,7 +681,43 @@ bin/qmx check --help
 
 **Project-specific steps** (in addition to the global workflow):
 - **Validation**: `composer check` (cs-check + strict docs build + tests + phpstan + exact manifest/freshness check + coarse qmx selfcheck). A direct `bin/qmx check` is product analysis only and does not run the repository's exact manifest policy. When modifying `html-report/`, also run `composer build:js` (`test:js` is part of `check:code` since X9)
+- **Gate captures and witnesses**: `composer check:gate` is required when changing `scripts/finding-gate*`, `scripts/finding-gate-controls/` or `finding-gate/`. It runs separately from `composer check`, on every pull request and on pushes to `main`.
+- **Gate mutation controls**: `composer gate:controls -- --reference=HEAD --jobs=8` is locally required only when changing those same paths. Its separate CI workflow runs daily on `main` and supports manual dispatch. Scheduled controls are evidence about their measured revision, not a required pull-request context.
 - **Documentation**: Update `README.md` in the affected `src/` directory (add new files, fix outdated info). Update website documentation (see [Website Documentation](#website-documentation) section below)
+
+### Test working directories
+
+`tests/bootstrap.php` loads the autoloader and creates one
+`QMX_TEST_PROCESS_ROOT` per PHPUnit parent. It does not change cwd: PHPUnit
+resolves relative test arguments and data providers before execution starts.
+The extension enters `<root>/cwd` on execution start and restores the launch
+directory on execution finish, before relative JUnit and coverage reports are
+written. A focused `vendor/bin/phpunit tests/Core/Unit/SourceText/SourceBytesTest.php` and its
+`--list-tests` form keep resolving from the launch directory.
+
+A test requiring the repository's configuration uses
+`RunsFromRepositoryRoot`; PHPUnit restores its cwd after the test. A test
+about relative paths selects a known fixture directory itself. Class hooks
+must restore cwd: the extension refuses a leaked class directory by class name.
+An undeclared entry left in the execution window refuses the run, including
+with `--do-not-fail-on-phpunit-warning`. The parent-only shutdown guard also
+refuses `--no-extensions` and a configuration-free run using this bootstrap.
+Isolated children share the parent root and never remove it.
+
+`declared-residue.tsv` temporarily permits the product's default
+`.qmx-cache` in the execution window. The aggregate judges its freshness
+against the union of all six successful suites: remove a declaration when no
+suite leaves it. Each shard launches from a separate empty directory, where
+even declared window residue is refused; providers must not write there.
+Runs without this bootstrap have neither the window nor its shutdown guard
+and are not aggregate validation evidence. Product Git tests create their own
+repositories; governance still refuses a checkout whose Git population cannot
+be read.
+
+The bootstrap owns cleanup of the whole process root. Future process concerns
+add separate subdirectories; an XDG cache block must use `<root>/xdg-cache`
+with mode `0700`, publish `XDG_CACHE_HOME` through `putenv()`, `$_ENV`
+and `$_SERVER`, and use the same cleanup. The window judges only `<root>/cwd`.
 
 ### Efficient validation order
 
@@ -684,10 +740,15 @@ For multi-package changes, fail fast before paying for the full test suite:
 what invalidates it, so a change that touched one thing pays for one group:
 `check:code` (style, static analysis, PHP and JS tests), `check:docs` (strict mkdocs),
 `check:artifacts` (manifest and every generated artifact against a fresh
-measurement) and `check:self` (the gate's self-test, the qmx ratchet, and the
-inline-directive audit). Sizes
-measured on this tree: the tests dominate at ~150s, the suppression snapshot
-costs ~20s, and everything else together is under 15s. `architecture:check`
+measurement) and `check:self` (the qmx ratchet and the inline-directive audit).
+Gate end-to-end captures and both self-tests have their own `check:gate`
+group and pull-request CI job. Mutation controls have the separate
+`gate:controls` group and scheduled/manual workflow. The routine check
+previously took 220s locally and 419s on Linux CI. On Linux the gate captures
+and witnesses took about 1088s, while its 31 controls took about 8320s.
+Those costs are reported separately from the routine check budget; the CI
+job deadlines are 30 minutes for captures and 160 minutes for controls.
+`architecture:check`
 deliberately runs in both `check:artifacts` and — as its first half —
 `selfcheck`: the ratchet may not judge a tree whose generated artifacts are
 stale. Only the aggregate is evidence for review; a green group is evidence
@@ -698,40 +759,70 @@ gates. For every long-running or redirected command, persist its output under
 `/tmp`, wait for completion, and inspect the explicit exit code. Empty or
 redirected stdout is never evidence of success.
 
+### Adding checks
+
+Every confirmed defect gets a regression test, at the cheapest level that
+reproduces it: a unit or stage-level test, and a test that spawns processes or
+builds a repository only when the defect lives in that wiring.
+
+Anything beyond a regression test — a governance test, a gate form or control,
+a stand, a generated artifact with a freshness check, a CI job — is added only
+when it catches a harm no regression test can. Name that harm, its runtime
+cost and its false-red modes in the change's ADR or review material; if you
+cannot name the harm, do not add the check.
+
+Do not add a permanent check whose subject is another check. Prove that a new
+check bites once, with a planted defect in the change itself.
+
+`composer check` must stay under 8 minutes on the development machine. A change
+that pushes it over reclaims the time in the same change: move the cost to a
+narrower group, lower the level of the expensive tests, or delete a redundant
+check. Raising a timeout to absorb growth is not a fix.
+
+When review finds a second input form that slips past a check, narrow the
+check's promise to what it reliably covers and name the rest as a limitation
+in its README. Do not add another form.
+
 **Architecture Decision Records:** After implementing a feature with non-obvious design decisions, create an ADR in `docs/adr/` (see [docs/adr/README.md](docs/adr/README.md) for format). If a spec existed during design (`docs/internal/SPEC_*.md`), it can be archived or deleted after the ADR captures key decisions. ADRs preserve the "why" — implementation details live in code and component READMEs.
 
 **Commit granularity:** Split large changes into logical commits when it improves changelog readability. Each commit should represent one coherent change (e.g., separate "rename command" from "update documentation"). Avoid monolithic commits that bundle unrelated changes — they make changelogs harder to generate and git history harder to navigate.
 
 ### Proving a rename changed nothing else
 
-Run the gate for any change that renames a channel, a rule, a metric key or a
-published finding field, and for any change to how a finding is published.
-`composer gate -- --reference=<the commit the change starts from>` checks out that
-commit, runs both binaries over the current corpus and compares findings, the
-twelve formats, exit codes, `qmx rules`, `baseline:explain`, the generated
-baseline and the suppressed report. Corpus, maps, normalization list and
-equivalence tuple live in `finding-gate/`; its README holds the case schema and
-the surface list.
+Run `composer gate -- --reference=<the commit before the change>` when changing
+a channel, rule, metric key, finding field or publication. The gate compares
+an external corpus, complete physical finding authority and ranking values,
+all captured formats, exits, stderr, file outputs, baseline lifecycle and
+named debug invocations. [The gate README](finding-gate/README.md) owns the
+case schema, declaration forms, invocation provenance and limits.
 
-- Declare every intended rename as a row in `finding-gate/maps/`. An undeclared
-  rename is red, and a declared rename that translated nothing is red too.
-- Add a channel and its corpus fixture together, in the case that owns its
-  family, and name it in that case's `channels`.
-- Never point a corpus case at project code. The corpus is external because the
-  project analyses itself: a case reading `src/` moves the gate's input with the
-  same step it is measuring.
-- A GREEN run whose reference has the same product code proves the normalization
-  list is complete, not that a step is safe. Proof of a step needs the previous
-  step's commit as the reference.
-- `PARTIAL` is not evidence of anything: it means `--cases` or
-  `--incomplete-corpus` narrowed the run. Do not cite it as green.
-- Re-run `composer gate:controls` after changing the comparator itself. A gate
-  that proved itself before the rewrite says nothing about the rewritten one.
-- `--derive-normalization` and `--derive-tuple` regenerate their tracked files.
-  Do not hand-edit either: a row that no measurement produced is a claim about
-  nondeterminism that nothing checks. Every `--derive-*` mode is a write, not a
-  check: it exits 4 when it wrote and 5 when the measurement it would have
-  written from failed, and never 0.
+- Declare exact vocabulary moves in `finding-gate/maps/`. An unexplained
+  rename and a row translating nothing both fail.
+- Declare record introductions/withdrawals, value changes, report schema,
+  case outcomes and surface changes through their authored intentions and
+  exact derived tables. Use `--derive-declarations` once for all measured
+  forms, inspect the data and supply reasons, then run the ordinary comparison.
+  Derivation is not acceptance: exit 4 means written, exit 5 means refused.
+- JSON declarations include virtual ranking values. Baseline-check records
+  have their own view. Ranking permutations use `order/ranking/*`, while
+  changed slice limits use `field/topIssues.limit`.
+- Add a channel and its independent corpus fixture together. Claim exact
+  `channel@level` pairs; keep one authoritative owner per channel. Auxiliary
+  cases exercise extra inputs and are compared fully.
+- Keep every fixture and translated input inside its own case. Product source
+  must never serve as the common corpus input.
+- `PARTIAL` is not GREEN. A comparison against identical product code proves
+  capture and corpus consistency; a product-change claim needs the preceding
+  commit and independent tests of any newly declared values.
+- Re-run `composer gate:controls -- --reference=<commit>` after comparator
+  changes. Every failure class must have observed self-test witnesses;
+  temporary witness exemptions are refused.
+- Measure tuple and normalization changes with `--derive-tuple` and
+  `--derive-normalization`. Never use an exclusion to hide a semantic change.
+  A stale map, normalization row or change declaration fails.
+- Use the independent checks named in the README for cache, Git scope, hooks,
+  file-system races, worker environments, unsupported input grammars and
+  packaging behaviour outside captured surfaces.
 
 ### Self-Analysis: Interpreting Results
 
@@ -750,39 +841,54 @@ Run `bin/qmx check src/` after modifying metric collection or aggregation logic 
 
 ### Dogfooding: Finding Management Strategy
 
-We analyze ourselves with `bin/qmx check src/` using `qmx.yaml` and the
-versioned root `qmx-baseline.json`. That file is a v11 ratchet snapshot for
-residual, currently accepted warnings only; it is not a suppress-mode or legacy
-baseline. The generated qmx projection enforces coarse owner/seam topology.
-`composer selfcheck` first runs `composer architecture:check`, which validates
-the exact manifest policy and generated freshness, and then applies the qmx
-ratchet with `--fail-on=warning`. A direct `bin/qmx check` omits that first
-repository-governance step.
+We analyze `src/` with `qmx.yaml` and the versioned root
+`qmx-baseline.json`. The ratchet snapshot holds residual, currently accepted warnings only.
+The only temporary exception is the exact namespace-CBO list in ADR 0126.
+Class and method model limitations use finite `@qmx-threshold` ceilings;
+intentional contract popularity uses exact signal exceptions, never ratchet entries. `composer selfcheck` first checks the exact manifest and generated
+architecture projection, then runs the ratchet with `--fail-on=warning`. A direct
+`bin/qmx check` omits repository governance.
 
-**Decision framework** (in priority order):
+Resolve each new finding in this order:
 
-| Situation                                  | Action                                                  |
-| ------------------------------------------ | ------------------------------------------------------- |
-| Real issue                                 | Fix the code                                            |
-| Structural (project nature)                | `suppress_paths` or `suppress_namespaces` in `qmx.yaml` |
-| Threshold mismatch                         | Tune threshold in `qmx.yaml`                            |
-| Legitimate exception for a specific symbol | `@qmx-threshold` on the class/method with reason        |
-| Genuinely inapplicable                     | `@qmx-ignore` with reason                               |
-| Generated or non-analyzable file           | `@qmx-ignore-file` with reason                          |
+1. Refactor a real quality problem, including high outgoing CBO, complexity,
+   poor cohesion, duplication or excessive size. Shared code in two rules or
+   commands deserves a shared subject-owned helper.
+2. Use an exact exception for intentional inbound contract popularity or a
+   structurally inapplicable metric. Every currently hidden finding must fit
+   the stated reason, and a category selector must also fit every member it
+   would enroll by construction. An exception that hides no finding is inert.
+3. Where the metric mis-models a specific design but still measures a quality
+   signal, keep a finite ceiling: `@qmx-threshold` for a class or method, or a
+   precise warning-only ratchet entry for a namespace or project finding.
+   Error-level quality findings require refactoring. Accepted quality debt needs
+   a named owner and a measurable closure condition.
+4. If an intended change increases an accepted magnitude, recalibrate only its
+   specific ratchet entry with a reviewed reason.
 
-**Key principles:**
-- **Refactoring is the default response, not threshold tweaking.** When a check signal flags real architectural debt (high WMC, low cohesion, complexity, coupling), prefer extracting a class, splitting responsibilities, or otherwise improving the architecture — that's why we measure. Refactoring cost is low for an AI agent; the metric is the signal. Threshold tweaking is reserved for cases where the metric mis-models the design (e.g., stateless utility classes have low cohesion *by construction*, not as a defect).
-- All `@qmx-*` inline tags are available for use — pick the right one for the situation
-- Every inline tag must include a reason explaining **why** the exception is acceptable
-- Prefer `qmx.yaml` configuration over inline tags when the exclusion applies to a category (e.g., all visitors, all DI configurators)
-- Prefer `@qmx-threshold` over `@qmx-ignore` — keeping the rule active with adjusted limits is better than silencing it
-- Prefer direct thresholds, scoped configuration exclusions, and justified
-  point suppressions over adding findings to the ratchet. Baseline lifecycle
-  and recalibration must be explicit and reviewed: regenerate
-  `qmx-baseline.json` only after an intentional change to accepted residual
-  debt, and review the resulting v11 snapshot diff
-- Never use suppress-mode or legacy baselines for dogfooding
+The following structural exception is narrower than an Options class category:
 
+| Signal              | Exact population                                    | Why it is inapplicable                                                                                                                                                                                                                                 | What remains judged                                                                                                                                                       |
+| ------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `duplication.clone` | The fifteen exact Options paths named in `qmx.yaml` | Their remaining clone ranges contain interface/trait declarations, empty promoted constructors and attribute or literal option-key metadata. Executable threshold parsing, overrides, enablement and severity queries use shared Finding-owned traits. | Every other Options path; existing controls and the directive audit still judge semantic behavior. Any executable clone requires refactoring and invalidates this reason. |
+
+A quality signal must remain bounded. Never move it into an indefinite
+`suppress_paths`, `suppress_namespaces`, or `suppress_namespace_channels`
+exception. Before adding any suppression, evaluate a refactor and record why
+the exception is warranted. Inline tags need a reason. Prefer a category
+selector only when its reason holds for the entire category and it currently
+suppresses at least one finding; otherwise use an exact selector or a finite
+ceiling. A selector whose activity changes only because unrelated subjects
+change needs a different model or a precise ceiling.
+
+`composer suppression-snapshot:check` refuses every `neverMatched` suppressor
+in the current self-analysis and checks the suppression composition snapshot.
+An inert suppression or directive is removed in the same change that makes it
+inert; judge any returned finding afresh by the order above. Run
+`bin/qmx directives` for inline-directive usage. Never regenerate the full
+baseline as a routine response to self-analysis drift; review a targeted
+snapshot diff when an accepted residual magnitude intentionally changes.
+Never use suppress-mode or legacy baselines for dogfooding.
 ---
 
 ## Changelog
@@ -875,3 +981,7 @@ Key rules:
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — overall architecture
 - [website/docs/getting-started/quick-start.md](website/docs/getting-started/quick-start.md) — quick start
 - [website/docs/ci-cd/github-actions.md](website/docs/ci-cd/github-actions.md) — GitHub Action integration
+
+Baseline hook and Git reports apply the full ceiling before Git projection.
+Narrow run-dependent channels may be not-compared; project baseline audit
+findings remain visible beside the selected file findings.

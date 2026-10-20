@@ -41,6 +41,7 @@ final readonly class StaleDirectiveFinding
         Severity $severity,
     ): Finding {
         $subject = MetricSubject::aggregate(SymbolPath::forFile($path));
+        $placement = $suppression->binding?->reach->describe();
 
         return new Finding(
             location: new Location($path, $suppression->line, precise: true),
@@ -48,10 +49,16 @@ final readonly class StaleDirectiveFinding
             symbolPath: $subject->toSymbolPath(),
             ruleName: InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME,
             code: InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME,
-            message: \sprintf(
-                'Suppression "%s" matched nothing in this run — the finding it silences is gone.',
-                $suppression->target(),
-            ),
+            message: $placement === null
+                ? \sprintf(
+                    'Suppression "%s" matched nothing in this run — the finding it silences is gone.',
+                    $suppression->target(),
+                )
+                : \sprintf(
+                    'Suppression "%s" on %s matched nothing in this run — the finding it silences is gone.',
+                    $suppression->target(),
+                    $placement,
+                ),
             severity: $severity,
             recommendation: 'Remove the annotation, or keep it and note why the finding is expected to return.',
         );

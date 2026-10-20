@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 
 use IteratorAggregate;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContext;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContextFactory;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Traversable;
 

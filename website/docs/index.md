@@ -34,16 +34,16 @@ vendor/bin/qmx check src/ --report=git:main..HEAD
 
 ## Available Metrics
 
-| Category            | Metrics                                                           |
-| ------------------- | ----------------------------------------------------------------- |
-| **Complexity**      | Cyclomatic (CCN), Cognitive Complexity, NPATH Complexity          |
-| **Maintainability** | Halstead metrics, Maintainability Index                           |
-| **Coupling**        | CBO (RFC), Instability, Abstractness, Distance from Main Sequence |
-| **Cohesion**        | TCC/LCC, LCOM4, WMC                                               |
-| **Size**            | LOC, Method Count, Class Count, Property Count                    |
-| **Structure**       | DIT (Depth of Inheritance), NOC (Number of Children)              |
-| **Architecture**    | Circular Dependency Detection                                     |
-| **Code Smells**     | Boolean arguments, eval, goto, debug code, empty catch, and more  |
+| Category            | Metrics                                                          |
+| ------------------- | ---------------------------------------------------------------- |
+| **Complexity**      | Cyclomatic (CCN), Cognitive Complexity, NPATH Complexity         |
+| **Maintainability** | Halstead metrics, Maintainability Index                          |
+| **Coupling**        | CBO, RFC, Instability, Abstractness, Distance from Main Sequence |
+| **Cohesion**        | TCC/LCC, LCOM4, WMC                                              |
+| **Size**            | LOC, Method Count, Class Count, Property Count                   |
+| **Structure**       | DIT (Depth of Inheritance), NOC (Number of Children)             |
+| **Architecture**    | Circular Dependency Detection                                    |
+| **Code Smells**     | Boolean arguments, eval, goto, debug code, empty catch, and more |
 
 ## Getting Started
 

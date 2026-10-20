@@ -85,16 +85,10 @@ enum DependencyType: string
     case PropertyType = 'property_type';
 
     /**
-     * Intersection type (PHP 8.1+).
-     * Example: function foo(Foo&Bar $x) {}
+     * Typed class constant declaration.
+     * Example: public const Foo VALUE = ...;
      */
-    case IntersectionType = 'intersection_type';
-
-    /**
-     * Union type (PHP 8.0+).
-     * Example: function foo(Foo|Bar $x) {}
-     */
-    case UnionType = 'union_type';
+    case ConstantType = 'constant_type';
 
     /**
      * Returns human-readable description of the dependency type.
@@ -114,8 +108,7 @@ enum DependencyType: string
             self::Instanceof_ => 'checks instanceof',
             self::Attribute => 'uses attribute',
             self::PropertyType => 'uses as property type',
-            self::IntersectionType => 'uses in intersection type',
-            self::UnionType => 'uses in union type',
+            self::ConstantType => 'uses as class constant type',
         };
     }
 

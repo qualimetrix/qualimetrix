@@ -78,4 +78,9 @@ final class DepthRecordingGraph implements DependencyGraphInterface
     {
         return $this->inner->getDeclarationDependencies();
     }
+
+    public function getClassLikeDeclarations(): array
+    {
+        return $this->inner->getClassLikeDeclarations();
+    }
 }

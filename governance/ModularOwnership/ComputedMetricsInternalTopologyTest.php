@@ -59,7 +59,7 @@ final class ComputedMetricsInternalTopologyTest extends TestCase
     public function itAcceptsTheMaterializedInternalDag(): void
     {
         $declarations = $this->productionDeclarations();
-        self::assertCount(54, $declarations);
+        self::assertCount(75, $declarations);
 
         foreach ($declarations as $source => $path) {
             $sourceZone = $this->zone($source);
@@ -87,11 +87,11 @@ final class ComputedMetricsInternalTopologyTest extends TestCase
         $projectDeclarations = $this->projectDeclarations();
         self::assertNotContains(
             'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricRule',
-            $this->imports($projectDeclarations['Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ChannelDeclarationCompilerPass']),
+            $this->imports($projectDeclarations['Qualimetrix\\Infrastructure\\DependencyInjection\\ChannelCatalog\\ChannelDeclarationCompilerPass']),
         );
         self::assertNotContains(
             'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricFormulaValidator',
-            $this->imports($projectDeclarations['Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator']),
+            $this->imports($projectDeclarations['Qualimetrix\\Infrastructure\\DependencyInjection\\Reporting\\OutputConfigurator']),
         );
     }
 
@@ -251,13 +251,10 @@ final class ComputedMetricsInternalTopologyTest extends TestCase
             return 'HealthInternal';
         }
         if (str_starts_with($fqcn, self::ROOT_PREFIX . 'Contract\\')) {
-            if ($fqcn === self::ROOT_PREFIX . 'Contract\\Evaluation\\ComputedMetricEvaluator') {
-                return 'RootInternal';
-            }
-
             return 'RootContract';
         }
         if (str_starts_with($fqcn, self::ROOT_PREFIX . 'Configuration\\')
+            || str_starts_with($fqcn, self::ROOT_PREFIX . 'Evaluation\\')
             || str_starts_with($fqcn, self::ROOT_PREFIX . 'Finding\\')) {
             $relative = substr($fqcn, \strlen(self::ROOT_PREFIX));
             if (substr_count($relative, '\\') !== 1) {

@@ -10,8 +10,8 @@ describe('collectNamespacesWithMetrics', () => {
   it('collects namespace children with both instability and abstractness', () => {
     const node = {
       children: [
-        { type: 'namespace', name: 'A', metrics: { instability: 0.5, abstractness: 0.3, distance: 0.2, 'size.loc.sum': 100 } },
-        { type: 'namespace', name: 'B', metrics: { instability: 0.8, abstractness: 0.1, distance: 0.1, 'size.loc.sum': 200 } },
+        { type: 'namespace', name: 'A', metrics: { 'coupling.instability': 0.5, 'coupling.abstractness': 0.3, 'coupling.distance': 0.2, 'size.loc.sum': 100 } },
+        { type: 'namespace', name: 'B', metrics: { 'coupling.instability': 0.8, 'coupling.abstractness': 0.1, 'coupling.distance': 0.1, 'size.loc.sum': 200 } },
       ],
     };
 
@@ -27,8 +27,8 @@ describe('collectNamespacesWithMetrics', () => {
   it('excludes class children', () => {
     const node = {
       children: [
-        { type: 'class', name: 'Foo', metrics: { instability: 0.5, abstractness: 0.3 } },
-        { type: 'namespace', name: 'A', metrics: { instability: 0.5, abstractness: 0.3 } },
+        { type: 'class', name: 'Foo', metrics: { 'coupling.instability': 0.5, 'coupling.abstractness': 0.3 } },
+        { type: 'namespace', name: 'A', metrics: { 'coupling.instability': 0.5, 'coupling.abstractness': 0.3 } },
       ],
     };
 
@@ -40,7 +40,7 @@ describe('collectNamespacesWithMetrics', () => {
   it('excludes namespaces without instability', () => {
     const node = {
       children: [
-        { type: 'namespace', name: 'A', metrics: { abstractness: 0.3, 'size.loc.sum': 100 } },
+        { type: 'namespace', name: 'A', metrics: { 'coupling.abstractness': 0.3, 'size.loc.sum': 100 } },
       ],
     };
 
@@ -50,7 +50,7 @@ describe('collectNamespacesWithMetrics', () => {
   it('excludes namespaces without abstractness', () => {
     const node = {
       children: [
-        { type: 'namespace', name: 'A', metrics: { instability: 0.5, 'size.loc.sum': 100 } },
+        { type: 'namespace', name: 'A', metrics: { 'coupling.instability': 0.5, 'size.loc.sum': 100 } },
       ],
     };
 
@@ -60,7 +60,7 @@ describe('collectNamespacesWithMetrics', () => {
   it('computes distance when not provided', () => {
     const node = {
       children: [
-        { type: 'namespace', name: 'A', metrics: { instability: 0.3, abstractness: 0.5 } },
+        { type: 'namespace', name: 'A', metrics: { 'coupling.instability': 0.3, 'coupling.abstractness': 0.5 } },
       ],
     };
 
@@ -76,7 +76,7 @@ describe('collectNamespacesWithMetrics', () => {
   it('excludes namespaces with NaN instability', () => {
     const node = {
       children: [
-        { type: 'namespace', name: 'A', metrics: { instability: NaN, abstractness: 0.3 } },
+        { type: 'namespace', name: 'A', metrics: { 'coupling.instability': NaN, 'coupling.abstractness': 0.3 } },
       ],
     };
     expect(collectNamespacesWithMetrics(node)).toHaveLength(0);
@@ -85,7 +85,7 @@ describe('collectNamespacesWithMetrics', () => {
   it('excludes namespaces with Infinity abstractness', () => {
     const node = {
       children: [
-        { type: 'namespace', name: 'A', metrics: { instability: 0.5, abstractness: Infinity } },
+        { type: 'namespace', name: 'A', metrics: { 'coupling.instability': 0.5, 'coupling.abstractness': Infinity } },
       ],
     };
     expect(collectNamespacesWithMetrics(node)).toHaveLength(0);
@@ -94,7 +94,7 @@ describe('collectNamespacesWithMetrics', () => {
   it('defaults LOC to 0 when not present', () => {
     const node = {
       children: [
-        { type: 'namespace', name: 'A', metrics: { instability: 0.5, abstractness: 0.3 } },
+        { type: 'namespace', name: 'A', metrics: { 'coupling.instability': 0.5, 'coupling.abstractness': 0.3 } },
       ],
     };
 
@@ -109,9 +109,9 @@ describe('canDrillDown', () => {
       children: [
         {
           type: 'namespace', name: 'Sub',
-          metrics: { instability: 0.5, abstractness: 0.3 },
+          metrics: { 'coupling.instability': 0.5, 'coupling.abstractness': 0.3 },
           children: [
-            { type: 'namespace', name: 'SubSub', metrics: { instability: 0.2, abstractness: 0.8 } },
+            { type: 'namespace', name: 'SubSub', metrics: { 'coupling.instability': 0.2, 'coupling.abstractness': 0.8 } },
           ],
         },
       ],
@@ -124,7 +124,7 @@ describe('canDrillDown', () => {
   it('returns false for leaf namespace (only class children)', () => {
     const node = {
       type: 'namespace', name: 'Leaf',
-      metrics: { instability: 0.5, abstractness: 0.3 },
+      metrics: { 'coupling.instability': 0.5, 'coupling.abstractness': 0.3 },
       children: [
         { type: 'class', name: 'Foo', metrics: {} },
       ],

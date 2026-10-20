@@ -1,0 +1,10 @@
+{
+    "name": "finding-gate-corpus/computed-cross-level",
+    "description": "Corpus case: computed-cross-level",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Corpus\\ComputedCrossLevel\\": "src/"
+        }
+    }
+}

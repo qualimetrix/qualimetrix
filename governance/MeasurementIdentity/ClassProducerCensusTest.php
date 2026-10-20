@@ -7,15 +7,15 @@ namespace Qualimetrix\Governance\MeasurementIdentity;
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateCollector;
+use Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\UnusedPrivateCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\TccLccCollector;
-use Qualimetrix\Analysis\Evidence\Coupling\RfcCollector;
-use Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthCollector;
+use Qualimetrix\Analysis\Evidence\Complexity\Cyclomatic\CyclomaticComplexityCollector;
+use Qualimetrix\Analysis\Evidence\Coupling\Rfc\RfcCollector;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
-use Qualimetrix\Analysis\Evidence\Size\MethodCountCollector;
+use Qualimetrix\Analysis\Evidence\Size\MethodCount\MethodCountCollector;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
@@ -47,18 +47,18 @@ final class ClassProducerCensusTest extends TestCase
      * @var array<class-string<ClassMetricsProviderInterface>, string>
      */
     private const array PRODUCERS = [
-        UnusedPrivateCollector::class => 'src/Analysis/Evidence/CodeSmell/UnusedPrivateCollector.php',
-        LcomCollector::class => 'src/Analysis/Evidence/Cohesion/LcomCollector.php',
-        TccLccCollector::class => 'src/Analysis/Evidence/Cohesion/TccLccCollector.php',
-        RfcCollector::class => 'src/Analysis/Evidence/Coupling/RfcCollector.php',
-        InheritanceDepthCollector::class => 'src/Analysis/Evidence/Design/Inheritance/InheritanceDepthCollector.php',
+        UnusedPrivateCollector::class => 'src/Analysis/Evidence/CodeSmell/UnusedPrivate/UnusedPrivateCollector.php',
+        LcomCollector::class => 'src/Analysis/Evidence/Cohesion/CohesionFactProjectionTrait.php',
+        TccLccCollector::class => 'src/Analysis/Evidence/Cohesion/CohesionFactProjectionTrait.php',
+        CyclomaticComplexityCollector::class => 'src/Analysis/Evidence/Complexity/Cyclomatic/CyclomaticComplexityCollector.php',
+        RfcCollector::class => 'src/Analysis/Evidence/Coupling/Rfc/RfcCollector.php',
         TypeCoverageCollector::class => 'src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageVisitor.php',
         LocCollector::class => 'src/Analysis/Evidence/Size/LocCollector.php',
-        MethodCountCollector::class => 'src/Analysis/Evidence/Size/MethodCountCollector.php',
+        MethodCountCollector::class => 'src/Analysis/Evidence/Size/MethodCount/MethodCountCollector.php',
     ];
 
     /**
-     * A ninth class-metric producer is one no fixture above covers.
+     * A tenth class-metric producer is one no fixture above covers.
      *
      * The producers are enumerated by what makes them producers — the contract
      * they implement, resolved through the autoloader — and not by the text of
@@ -112,7 +112,7 @@ final class ClassProducerCensusTest extends TestCase
             }
         }
         sort($callSites);
-        $covered = array_values(self::PRODUCERS);
+        $covered = array_values(array_unique(self::PRODUCERS));
         sort($covered);
 
         self::assertSame($covered, $callSites);

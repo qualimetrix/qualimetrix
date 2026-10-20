@@ -8,11 +8,11 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterionKind;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\ShadowedClass;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\PotentialShadowDiagnostic;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\PotentialShadowDiagnostic;
+use Qualimetrix\Analysis\Policy\Architecture\Observation\ShadowedClass;
 
 #[CoversClass(PotentialShadowDiagnostic::class)]
 final class PotentialShadowDiagnosticTest extends TestCase
@@ -39,7 +39,7 @@ final class PotentialShadowDiagnosticTest extends TestCase
         self::assertStringStartsWith('Layer "app" (pattern "App\**") shadows layer "repos"', $findings[0]->message);
         self::assertStringContainsString('for 2 class(es) including App\Alpha, App\Zeta.', $findings[1]->message);
         self::assertSame('If layer "legacy" should own these classes, declare it BEFORE "repos" (declaration order, first match wins). Otherwise tighten the patterns so the layers no longer overlap.', $findings[1]->recommendation);
-        self::assertSame(LayerPolicyPreparationInterface::POTENTIAL_SHADOW_DIAGNOSTIC_NAME, $findings[0]->ruleName);
+        self::assertSame(ArchitectureChannels::POTENTIAL_SHADOW_DIAGNOSTIC_NAME, $findings[0]->ruleName);
         self::assertSame(Severity::Error, $findings[0]->severity);
     }
 

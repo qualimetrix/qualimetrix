@@ -1,0 +1,377 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Analysis\Finding\Contract\Channel;
+
+use InvalidArgumentException;
+
+use LogicException;
+use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
+use Qualimetrix\Core\Observation\WorseDirection;
+use Qualimetrix\Core\Symbol\SymbolLevel;
+
+/**
+ * What a channel declares: — for a producer whose shape is `magnitude` —
+ * the direction that makes its reported number comparable, whether its
+ * findings may be accepted as debt at all, and the levels of the aggregation
+ * tree it reports at.
+ *
+ * **Shape itself is not here.** It is a property of the producer, declared
+ * once via {@see \Qualimetrix\Analysis\Finding\Rule\RuleInterface::shape()} or
+ * {@see ConfigurationValidatorInterface::shape()}, not repeated per channel —
+ * see {@see ChannelShape}'s own docblock for why (the computed-metric family: one
+ * producer, one shape, six per-channel directions). What this class carries
+ * instead is `$direction` alone: non-null for every channel of a `magnitude`
+ * producer, null for every channel of an `occurrence` one. Registry assembly
+ * is what checks the two agree — see
+ * {@see \Qualimetrix\Infrastructure\DependencyInjection\ChannelCatalog\ChannelDeclarationCompilerPass}.
+ *
+ * **One more thing does belong here, and it was added against that list:**
+ * {@see $judges}, the catalog metric keys a `magnitude` channel's reported
+ * number may be read from, declared through {@see judging()}. It is here
+ * rather than beside the shape because it is a per-channel fact, not a
+ * per-producer one, and because nothing else in the tree said which metric a
+ * channel judged — the relation was spelled three ways and checked none. The
+ * exception is argued in ADR 0046, which also names the six channels the
+ * resulting check does not cover.
+ *
+ * **The channel's own description belongs here too (ADR 0081)**, through
+ * {@see describedAs()}. A producer's `getDescription()` describes the
+ * producer, which is the right text for the one channel named after it and
+ * the wrong text for every other: `architecture.doubted-assignment` is not a
+ * forbidden dependency between layers. So a channel whose name is not its
+ * producer's name states what it reports, and registry assembly refuses one
+ * that does not — and refuses the channel named after its producer that
+ * states a second description beside the producer's own.
+ *
+ * A secondary diagnostic may decline the producer options' warning boundary
+ * through {@see withoutConfiguredWarningBoundary()}: sharing a producer does
+ * not mean sharing its numerical decision. This declares eligibility only;
+ * the options still own the number or reason no boundary exists. No axis
+ * name or epsilon belongs here. A channel declaring no declaration at all is
+ * not an error state — it is simply not baselineable (see
+ * {@see ChannelDeclarationRegistryInterface}).
+ *
+ * **Levels are declared in full, never inferred.** The list is what the
+ * registry *accepts* for this channel; emission still derives a finding's
+ * level from its subject, so the two can disagree and a drift test compares
+ * them against an observed run. A channel that reports at one level says so
+ * with one entry — there is no empty list meaning "whatever the subject
+ * turns out to be", because the registry is built before any finding exists
+ * and could not resolve it.
+ *
+ * The one invariant this class still owns is {@see $configurationError}, and
+ * it is **not authored**. A producer cannot claim it: the constructor is
+ * private, the two public factories both yield `false`, and
+ * {@see asConfigurationError()} is the only expression in the language that
+ * yields `true`. Registry assembly calls it for the channels of a
+ * {@see ConfigurationValidatorInterface} and for no others, so "these
+ * findings are about the configuration" is a consequence of the producer's
+ * type rather than a flag a rule can set on itself.
+ */
+final readonly class ChannelDeclaration
+{
+    /** @var non-empty-list<SymbolLevel> the levels this channel reports at, in {@see SymbolLevel} case order */
+    public array $levels;
+
+    /** @var array<string, list<PopulationGate>> */
+    private array $gatesByLevel;
+
+    /**
+     * The constructor is private, so the only callers are the three factories
+     * below. That makes the refusal in {@see canonicalLevels()} — an empty
+     * level list — unreachable from outside the file: it is already excluded
+     * by all three factory signatures, which take a mandatory first level. It
+     * is kept as a backstop against an edit to those factories, and
+     * {@see \Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Channel\ChannelDeclarationTest}
+     * pins the signatures that make it unreachable rather than the
+     * unreachable branch itself.
+     *
+     * @param array<SymbolLevel> $levels non-empty, in any order; both factories
+     *                                   guarantee non-emptiness by arity
+     *
+      * @qmx-threshold code-smell.long-parameter-list 10 -- Population gates, admitted levels and judgement direction declare one channel contract and are validated as one rule-language statement.
+      * @qmx-threshold code-smell.constructor-overinjection 10 -- Population gates, admitted levels and judgement direction declare one channel contract and are validated as one rule-language statement.
+     */
+    private function __construct(
+        public ?WorseDirection $direction,
+        public bool $configurationError,
+        public ?JudgedMetrics $judges,
+        array $levels,
+        public ?string $description = null,
+        public bool $usesProducerWarningBoundary = true,
+        public ChannelSelectionRole $selectionRole = ChannelSelectionRole::Selectable,
+        public bool $readsRunEvidence = false,
+        /** @var list<PopulationGate> */
+        public array $populationGates = [],
+    ) {
+        $this->levels = self::canonicalLevels($levels);
+        $indexed = [];
+        foreach ($populationGates as $gate) {
+            $indexed[$gate->level->value][] = $gate;
+        }
+        $this->gatesByLevel = $indexed;
+    }
+
+    /**
+     * A declaration in the given direction, reporting at the given levels —
+     * for a producer whose declared {@see ChannelShape} is `magnitude`.
+     *
+     * The levels are variadic with a mandatory first one, so a caller cannot
+     * express the empty list at all, and the direction is non-nullable, so it
+     * cannot express a channel with no direction through this factory. With
+     * the constructor private, this signature is the whole enforcement of
+     * "a channel built here always carries a direction".
+     */
+    public static function magnitude(WorseDirection $direction, SymbolLevel $level, SymbolLevel ...$moreLevels): self
+    {
+        return new self($direction, false, null, array_merge([$level], $moreLevels));
+    }
+
+    /**
+     * The same `magnitude` declaration, naming the catalog metrics its
+     * reported number may be read from.
+     *
+     * The shape is unchanged: a channel declared here is `magnitude` exactly
+     * as one declared by {@see magnitude()} is, and no new
+     * {@see ChannelShape} case exists — ADR 0031 keeps the shape a property of
+     * the producer, and this factory adds a per-channel fact, not a third kind
+     * of channel. The difference between the two factories is whether the
+     * producer's magnitude comes out of the metric catalog at all:
+     * `architecture.circular-dependency` reports a cycle's member count and
+     * `design.god-class` a count of matched criteria, and neither is a
+     * {@see \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName}
+     * key, so both keep declaring {@see magnitude()}.
+     *
+     * Keys are declared in their **exact published spelling**, aggregate
+     * strategy included: `size.class-count` is judged as its own count, while
+     * channels reading aggregate keys must name the aggregate spelling. A
+     * channel whose body chooses between keys names all of them — see
+     * {@see JudgedMetrics} for why order is preserved and what the type does
+     * not promise.
+     *
+     * That the named keys exist, and that only a `magnitude` producer names
+     * any, is checked at container build by
+     * {@see \Qualimetrix\Infrastructure\DependencyInjection\ChannelCatalog\ChannelDeclarationCompilerPass}
+     * — not here, because `MetricName` belongs to
+     * `Analysis\Evidence\Measurement` and a check in this class would give
+     * `Analysis\Finding` an edge onto it for the sake of a build-time
+     * assertion.
+     */
+    public static function judging(
+        WorseDirection $direction,
+        JudgedMetrics $metrics,
+        SymbolLevel $level,
+        SymbolLevel ...$moreLevels,
+    ): self {
+        return new self($direction, false, $metrics, array_merge([$level], $moreLevels));
+    }
+
+    /**
+     * A declaration with no direction, reporting at the given levels — for a
+     * producer whose declared {@see ChannelShape} is `occurrence`.
+     *
+     * There is no direction parameter, which is what makes "an occurrence
+     * channel carries no direction" unstatable rather than merely refused.
+     */
+    public static function occurrence(SymbolLevel $level, SymbolLevel ...$moreLevels): self
+    {
+        return new self(null, false, null, array_merge([$level], $moreLevels));
+    }
+
+    /**
+     * The same declaration, reclassified as reporting a mistake in the
+     * *configuration* rather than debt in the code.
+     *
+     * The only expression that yields {@see $configurationError} `true`. A
+     * topology test pins two things about it: production code contains exactly
+     * one literal call, and no production file outside the assembly point and
+     * its own documentation so much as names the method — so a call spelled
+     * indirectly (a variable method name, a callable pair) is refused too. The
+     * one call is the point where the channel registry is assembled and the
+     * declaring producer's type is still known. A rule cannot reach that point,
+     * which is the whole content of the classification: it follows from who
+     * declared the channel, not from what the declaration says about itself.
+     *
+     * @internal registry assembly only
+     */
+    public function asConfigurationError(): self
+    {
+        return new self($this->direction, true, $this->judges, $this->levels, $this->description, $this->usesProducerWarningBoundary, $this->selectionRole, $this->readsRunEvidence, $this->populationGates);
+    }
+
+    /**
+     * The same declaration, stating what this channel reports in one sentence
+     * of display text — published, for example, as a SARIF rule's
+     * `shortDescription`.
+     *
+     * Required of every channel whose name differs from its producer's and
+     * refused on the channel named after its producer, which is described by
+     * the producer itself; both halves are checked where the registry is
+     * assembled, because only there are the channel and its producer's name
+     * known together.
+     */
+    public function describedAs(string $description): self
+    {
+        if (trim($description) === '') {
+            throw new InvalidArgumentException('A channel description must not be blank.');
+        }
+
+        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $description, $this->usesProducerWarningBoundary, $this->selectionRole, $this->readsRunEvidence, $this->populationGates);
+    }
+
+    public function withoutConfiguredWarningBoundary(): self
+    {
+        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $this->description, false, $this->selectionRole, $this->readsRunEvidence, $this->populationGates);
+    }
+
+    public function selectedAs(ChannelSelectionRole $role): self
+    {
+        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $this->description, $this->usesProducerWarningBoundary, $role, $this->readsRunEvidence, $this->populationGates);
+    }
+
+    /** A channel without catalog judges may state that its evidence depends on the run. */
+    public function readingRunEvidence(): self
+    {
+        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $this->description, $this->usesProducerWarningBoundary, $this->selectionRole, true, $this->populationGates);
+    }
+
+    public function withGates(PopulationGate ...$gates): self
+    {
+        $seen = [];
+        $units = [];
+        foreach ($gates as $gate) {
+            $key = $gate->channel->code . ':' . $gate->level->value . ':' . $gate->id;
+            if (!\in_array($gate->level, $this->levels, true) || isset($seen[$key])) {
+                throw new LogicException('A population gate repeats or addresses an undeclared level.');
+            }
+            $coordinate = $gate->channel->code . ':' . $gate->level->value;
+            if (isset($units[$coordinate]) && $units[$coordinate] !== $gate->unit) {
+                throw new LogicException('Population gates in one coordinate require one ordinary member unit.');
+            }
+            $units[$coordinate] = $gate->unit;
+            $seen[$key] = true;
+        }
+        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $this->description, $this->usesProducerWarningBoundary, $this->selectionRole, $this->readsRunEvidence, array_values($gates));
+    }
+
+    /** @return list<PopulationGate> */
+    public function gatesFor(FindingChannel $channel, SymbolLevel $level): array
+    {
+        if (!\in_array($level, $this->levels, true)) {
+            throw new LogicException('Population coordinate has an undeclared level.');
+        }
+        foreach ($this->populationGates as $gate) {
+            if (!$gate->channel->equals($channel)) {
+                throw new LogicException('Population declaration belongs to a different channel.');
+            }
+        }
+        return $this->gatesByLevel[$level->value] ?? [];
+    }
+
+    /**
+     * @param iterable<GateInput> $inputs
+     *
+     * @return array{gate: string, reason: string, dataGap: bool}|null
+     */
+    public function populationFailure(FindingChannel $channel, SymbolLevel $level, PopulationIdentity $identity, iterable $inputs): ?array
+    {
+        $gates = $this->gatesFor($channel, $level);
+        $index = 0;
+        foreach ($inputs as $input) {
+            $gate = $gates[$index] ?? throw new LogicException('Population inputs exceed the declared ordered gates.');
+            if (!$input instanceof GateInput) {
+                throw new LogicException('A reached population input must be a GateInput.');
+            }
+            $reason = $gate->evaluate($input);
+            if ($reason !== null) {
+                if ($identity->unit !== ($gate->failureUnit ?? $gate->unit)) {
+                    throw new LogicException('Population failure identity has the wrong declared unit.');
+                }
+                return ['gate' => $gate->id, 'reason' => $reason, 'dataGap' => $gate->isDataGap($input)];
+            }
+            ++$index;
+        }
+        $this->assertCompletedPopulation($index, $gates, $identity);
+        return null;
+    }
+
+    /** @param list<PopulationGate> $gates */
+    private function assertCompletedPopulation(int $index, array $gates, PopulationIdentity $identity): void
+    {
+        if ($index !== \count($gates)) {
+            throw new LogicException('Population inputs ended before the declared ordered gates.');
+        }
+        if ($gates !== [] && $identity->unit !== $gates[0]->unit) {
+            throw new LogicException('Healthy population identity has the wrong declared member unit.');
+        }
+    }
+
+    /**
+     * The declared levels in {@see SymbolLevel} case order, so that two
+     * declarations of the same channel compare equal whatever order their
+     * authors wrote them in. A repeated level is refused rather than
+     * collapsed: it says the author believes the channel reports twice at one
+     * level, and that belief is wrong somewhere.
+     *
+     * @param array<SymbolLevel> $levels
+     *
+     * @return non-empty-list<SymbolLevel>
+     */
+    private static function canonicalLevels(array $levels): array
+    {
+        $canonical = [];
+
+        foreach (SymbolLevel::cases() as $case) {
+            $occurrences = \count(array_filter($levels, static fn(SymbolLevel $level): bool => $level === $case));
+
+            if ($occurrences > 1) {
+                throw new InvalidArgumentException(\sprintf(
+                    'A channel declares the level "%s" more than once.',
+                    $case->value,
+                ));
+            }
+
+            if ($occurrences === 1) {
+                $canonical[] = $case;
+            }
+        }
+
+        // Unreachable through either factory — both take a mandatory first
+        // level — but not removable: it is what makes the `non-empty-list`
+        // return type above provable, since the list is built by a loop.
+        if ($canonical === []) {
+            throw new InvalidArgumentException('A channel must declare at least one level it reports at.');
+        }
+
+        return $canonical;
+    }
+
+    /**
+     * Whether findings on this channel report a configuration mistake rather
+     * than code debt — the single question every baseline path asks before
+     * it compares anything.
+     */
+    public function isConfigurationError(): bool
+    {
+        return $this->configurationError;
+    }
+
+    /**
+     * Whether a smaller reported number is worse for this channel — `null`
+     * for an `occurrence` shape, which carries no direction to ask about.
+     *
+     * Exists so a consumer that only ever needs to flip a ratio (e.g.
+     * {@see \Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry})
+     * does not have to import {@see WorseDirection} itself just to compare
+     * against one of its two cases.
+     */
+    public function isLowerWorse(): ?bool
+    {
+        return $this->direction === null ? null : $this->direction === WorseDirection::Lower;
+    }
+}

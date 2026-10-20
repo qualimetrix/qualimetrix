@@ -1,0 +1,15 @@
+{
+    "id": "computed-cross-level",
+    "description": "An unguarded project formula reads a computed metric published only at class level and must be refused before analysis.",
+    "coverage": "auxiliary",
+    "outcome": {
+        "kind": "refusal",
+        "exit": 3
+    },
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "args": [],
+    "channels": []
+}

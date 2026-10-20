@@ -27,17 +27,17 @@ final readonly class Suite
         'governance/Channel/ProjectScopedChannelRollCallTest.php',
         'tests/Analysis/Evidence/ComputedMetrics/Health/Unit/DecompositionItemTest.php',
         'tests/Analysis/Evidence/ComputedMetrics/Health/Unit/HealthScoreTest.php',
-        'tests/Analysis/Evidence/Coupling/Unit/NamespaceInstabilityOptionsTest.php',
+        'tests/Analysis/Evidence/Coupling/Unit/Instability/NamespaceInstabilityOptionsTest.php',
         'tests/Analysis/Evidence/DependencyModel/Unit/DependencyTest.php',
         'tests/Analysis/Finding/Unit/LocationTest.php',
         'tests/Analysis/Policy/Baseline/Unit/ChannelRenameMapTest.php',
         'tests/Core/Symbol/Unit/CallableKindTest.php',
         'tests/Core/Symbol/Unit/SymbolInfoTest.php',
         'tests/Infrastructure/DependencyInjection/Integration/ContainerFactoryTest.php',
-        'tests/Infrastructure/DependencyInjection/Unit/CompilerPass/RuleCompilerPassTest.php',
+        'tests/Infrastructure/DependencyInjection/Unit/RuleCatalog/RuleCompilerPassTest.php',
         'tests/Infrastructure/Parallel/Unit/Strategy/AmphpParallelStrategyTest.php',
         'tests/Infrastructure/Rule/Unit/RuleRegistryTest.php',
-        'tests/Reporting/Unit/FindingProjection/DeclaredChannelFileScopeTest.php',
+        'tests/Infrastructure/DependencyInjection/Unit/ChannelCatalog/DeclaredChannelFileScopeTest.php',
     ];
 
     /**

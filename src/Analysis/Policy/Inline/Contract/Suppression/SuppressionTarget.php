@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Contract\Suppression;
 
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevel\ChannelLevelSelector;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Stringable;
 
@@ -40,7 +40,7 @@ final readonly class SuppressionTarget implements Stringable
      * The authored spelling of "no rule filter" for the symbol and next-line
      * forms; the file form spells it by omitting the argument entirely and is
      * desugared to this by
-     * {@see \Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor}.
+     * {@see \Qualimetrix\Analysis\Policy\Inline\Extraction\SuppressionExtractor}.
      */
     public const string NO_RULE_FILTER = '*';
 

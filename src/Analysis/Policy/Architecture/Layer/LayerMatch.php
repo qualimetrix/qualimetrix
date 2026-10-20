@@ -25,7 +25,7 @@ use InvalidArgumentException;
  * Used by:
  * - {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule} for the
  *   {@code architecture.potential-shadow} evidence-based diagnostic.
- * - {@see \Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand}
+ * - {@see \Qualimetrix\Infrastructure\Console\LayerAssignment\LayerAssignmentCommand}
  *   for per-class introspection.
  */
 final readonly class LayerMatch

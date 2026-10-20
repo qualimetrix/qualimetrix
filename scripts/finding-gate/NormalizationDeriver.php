@@ -16,12 +16,14 @@ use stdClass;
  */
 final class NormalizationDeriver
 {
+    private const OUTPUT_DESTINATION_PATTERN = '~^(Report written to )/[^\r\n]+(\r?)$~m';
+
     /**
      * A clock field or two is nondeterminism. A dozen is a structural
-     * difference wearing its costume, and blanketing it would hollow out the
+     * difference within one publication wearing its costume, and blanketing it would hollow out the
      * gate.
      */
-    private const MAX_ROWS = 10;
+    private const MAX_FIELDS_PER_SURFACE = 10;
 
     /** How much of the line before the varying field is kept as its label. */
     private const LABEL_LENGTH = 30;
@@ -66,15 +68,20 @@ final class NormalizationDeriver
             }
         }
 
-        if (\count($rules) > self::MAX_ROWS) {
+        $bySurface = [];
+        foreach ($rules as $rule) {
+            $bySurface[$rule->surface][] = $rule;
+        }
+        foreach ($bySurface as $surface => $surfaceRules) {
+            if (\count($surfaceRules) <= self::MAX_FIELDS_PER_SURFACE) {
+                continue;
+            }
             throw new GateError(\sprintf(
-                'Repeated runs of one unchanged tree diverged in %d fields: %s. That is not a clock; look for a real'
-                . ' nondeterminism before declaring any of it normalizable.',
-                \count($rules),
-                implode(', ', array_map(
-                    static fn(NormalizationRule $rule): string => $rule->surface . ':' . $rule->locator,
-                    array_values($rules),
-                )),
+                'Repeated runs of one unchanged tree diverged in %d fields of %s: %s. That is not a clock; look'
+                . ' for a real nondeterminism before declaring any of it normalizable.',
+                \count($surfaceRules),
+                $surface,
+                implode(', ', array_map(static fn(NormalizationRule $rule): string => $rule->locator, $surfaceRules)),
             ));
         }
 
@@ -87,6 +94,32 @@ final class NormalizationDeriver
     /** @return list<NormalizationRule> */
     private static function rulesFor(string $surface, string $left, string $right): array
     {
+        if ($surface === 'stderr' || $surface === 'stderr:check:output') {
+            preg_match_all(Normalization::WARNING_TIME_PATTERN, $left, $leftWarnings);
+            preg_match_all(Normalization::WARNING_TIME_PATTERN, $right, $rightWarnings);
+            $locators = $leftWarnings[0] === $rightWarnings[0] ? [] : [Normalization::WARNING_TIME_PATTERN];
+            $leftNormalized = preg_replace(Normalization::WARNING_TIME_PATTERN, '$1<clock>$2', $left);
+            $rightNormalized = preg_replace(Normalization::WARNING_TIME_PATTERN, '$1<clock>$2', $right);
+
+            if ($surface === 'stderr:check:output') {
+                $leftHits = preg_match_all(self::OUTPUT_DESTINATION_PATTERN, $left, $leftDestinations);
+                $rightHits = preg_match_all(self::OUTPUT_DESTINATION_PATTERN, $right, $rightDestinations);
+                if ($leftHits !== 1 || $rightHits !== 1) {
+                    throw new GateError('The output diagnostic must carry exactly one guarded destination field.');
+                }
+                if ($leftDestinations[0] !== $rightDestinations[0]) {
+                    $locators[] = self::OUTPUT_DESTINATION_PATTERN;
+                }
+                $leftNormalized = preg_replace(self::OUTPUT_DESTINATION_PATTERN, '$1<destination>$2', (string) $leftNormalized);
+                $rightNormalized = preg_replace(self::OUTPUT_DESTINATION_PATTERN, '$1<destination>$2', (string) $rightNormalized);
+            }
+
+            if ($leftNormalized !== $rightNormalized) {
+                throw new GateError('The stderr diagnostic changed outside its guarded clock and output destination fields.');
+            }
+
+            return self::rules($surface, NormalizationRule::KIND_LINE_REGEX, $locators);
+        }
         $leftJson = json_decode($left, false);
         $rightJson = json_decode($right, false);
 

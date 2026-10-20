@@ -7,8 +7,8 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\Coupling\CboRule;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Analysis\Evidence\Coupling\Cbo\CboRule;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Tester\CommandTester;
 

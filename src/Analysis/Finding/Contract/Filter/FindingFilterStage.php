@@ -45,7 +45,7 @@ enum FindingFilterStage: string
     /** `suppress_paths` from configuration and from `check`'s own flags. */
     case PathExclusion = 'path-exclusion';
 
-    /** `suppress_namespaces`; `architecture.*` findings are exempt by design. */
+    /** `suppress_namespaces`; declared project-scoped channels are exempt. */
     case NamespaceExclusion = 'namespace-exclusion';
 
     /** The accepted-level ceiling: it suppresses, promotes, or does neither. */

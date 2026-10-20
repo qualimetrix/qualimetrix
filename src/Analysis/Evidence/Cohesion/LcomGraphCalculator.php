@@ -105,7 +105,7 @@ final class LcomGraphCalculator
     }
 
     /**
-     * Add an edge between two vertices whenever one calls the other via `$this->`.
+     * Add an edge between two vertices whenever one calls the other as an instance method.
      *
      * @param array<string, int> $vertexSet
      * @param callable(string): string $resolve

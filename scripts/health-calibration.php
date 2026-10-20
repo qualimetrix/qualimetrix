@@ -29,9 +29,10 @@ declare(strict_types=1);
  *    by
  *    {@see \Qualimetrix\Analysis\Evidence\Measurement\Aggregation\NamespaceToProjectAggregator}
  *    before any expression runs, so it sits in the capture as a finished
- *    number. A bench that read it could not evaluate the two aggregation
- *    candidates this work exists to judge — including `(global)`, and weighting
- *    by size — and its self-test would agree with itself under any aggregation
+ *    number. The project publisher weights eligible namespace distances by
+ *    their own eligible type counts. Reading that finished value would hide
+ *    alternative membership and weighting schemes, and make the self-test
+ *    agree with itself under any aggregation
  *    rule whatsoever. The bench therefore recomputes the aggregate from the
  *    captured namespace values under a selectable scheme, and the self-test
  *    requires the `current` scheme to reproduce the PUBLISHED aggregate. That
@@ -40,8 +41,8 @@ declare(strict_types=1);
  *    The set that is re-derived is {@see PROJECT_DERIVED}, and it is small on
  *    purpose: `coupling.distance-own` is the only base the product pools from
  *    namespaces to the project. Every other project input — `complexity.ccn.p95`,
- *    `maintainability.mi.min`, `size.symbol-method-count` and the rest — is an
- *    aggregate of *callables and classes*, with no namespace-pooling step to vary;
+ *    `maintainability.mi.min`, `size.symbol-method-count` and the rest — comes
+ *    from captured callable/class measurements, with no namespace-pooling step to vary;
  *    re-deriving one under a namespace weighting would put a number into the
  *    bench that no run of `bin/qmx` produces. Those inputs are therefore read from
  *    the capture verbatim and are identical under every scheme, which is why C4
@@ -59,23 +60,18 @@ declare(strict_types=1);
  *   --projects=a,b          restrict the run to these capture ids
  *   --levels=project,namespace,class    default: project,namespace
  *   --aggregation=SCHEME    members[:weight]; see AggregationScheme. Default
- *                           `declaring:none`, aliased `current`.
+ *                           `declaring:types`, aliased `current`.
  *   --self-test             reproduce the published aggregates and health.*
  *   --tolerance=0.1         self-test tolerance on a score (default 0.1)
  *   --candidates=FILE       a YAML document with a `computed_metrics:` section
- *   --criteria              print the C1..C6 verdicts
- *   --c2-max=N              declared ceiling of subjects at exactly 100, per
- *                           dimension and level (C2 has no verdict without it)
- *   --c3-min-coverage=F     the declared applicability fraction (C3 has no
- *                           verdict without it — "negligible" is not a threshold)
- *   --coverage=symbols|loc  which denominator the C3 verdict uses
- *   --c4-tolerance=T        declared tolerance for C4, in score points
+ *   --criteria              judge C2-C5; print descriptive C1 and C6 distributions
+ *   --c2-max=N              optional diagnostic ceiling for subjects at 100
+ *   --c4-tolerance=T        numeric identity precision for C4 (default 1e-6)
  *   --top=N                 rows per movers/violators table (default 10)
  *
  * Exit codes:
- *   0 — ran, and every criterion carrying a declared threshold agreed
- *   1 — a declared criterion failed (this is the product's verdict, not the
- *       bench's health: C1 is expected to fail today)
+ *   0 — ran, binding C2-C5 passed
+ *   1 — a binding criterion failed or lacked its required witness
  *   2 — usage or infrastructure error (no captures, unreadable document, a
  *       candidate file the product's resolver refuses)
  *   3 — the self-test disagrees with the capture: the INSTRUMENT is not
@@ -86,18 +82,30 @@ namespace Qualimetrix\HealthCalibration;
 
 use InvalidArgumentException;
 use JsonException;
+use LogicException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
+use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
+use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDependencyGraphCalculator;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricsSection;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ExcludeHealthSection;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\MetricLookup;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricOutcome;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricSubjectEvaluation;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\CoverageUnit;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Score\CoverageReader;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use RuntimeException;
 use Symfony\Component\Yaml\Yaml;
-use Throwable;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -113,19 +121,17 @@ const USAGE = <<<'TEXT'
       --projects=a,b          restrict the run to these capture ids
       --levels=…              project,namespace,class (default: project,namespace)
       --aggregation=SCHEME    members[:weight]; members is declaring, leaves
-                              or leaves-no-global, weight is none, classes or
-                              loc. Default `current` = declaring:none
+                              or leaves-no-global, weight is none, classes, loc or
+                              types. Default `current` = declaring:types
       --self-test             reproduce the published aggregates and health.*
       --tolerance=0.1         self-test tolerance on a score
       --candidates=FILE       a YAML document with a `computed_metrics:` section
-      --criteria              print the C1..C6 verdicts
-      --c2-max=N              declared ceiling of subjects at exactly 100
-      --c3-min-coverage=F     declared applicability fraction
-      --coverage=symbols|loc  denominator the C3 verdict uses
-      --c4-tolerance=T        declared tolerance for C4, in score points
+      --criteria              judge C2-C5; print descriptive C1 and C6 distributions
+      --c2-max=N              optional diagnostic ceiling for subjects at 100
+      --c4-tolerance=T        numeric identity precision for C4 (default 1e-6)
       --top=N                 rows per violators/mismatch table (default 10)
 
-    Exit: 0 agreed, 1 a declared criterion failed, 2 usage or input error,
+    Exit: 0 C2-C5 passed, 1 a binding criterion failed or is unjudged, 2 input error,
     3 the self-test disagrees with the capture.
     TEXT;
 
@@ -136,7 +142,7 @@ const USAGE = <<<'TEXT'
  * no class carries them; it is an aggregate over namespaces, which is exactly
  * the aggregation this bench has to be able to vary. The list is the set of
  * `collectedAt: SymbolLevel::Namespace_` definitions —
- * {@see \Qualimetrix\Analysis\Evidence\Coupling\DistanceCollector},
+ * {@see \Qualimetrix\Analysis\Evidence\Coupling\Distance\DistanceCollector},
  * {@see \Qualimetrix\Analysis\Evidence\Coupling\AbstractnessCollector} and the
  * namespace instability the latter's sibling writes.
  *
@@ -152,15 +158,14 @@ const NAMESPACE_COLLECTED = [
 ];
 
 /**
- * The namespace-collected bases the product actually aggregates to project
- * level: `DistanceCollector` declares `Project => [Average]` on its own-scope
- * key and nothing else declares any project aggregation. Deriving a key the
- * product never publishes would put a number into the bench's input map that no
- * run of `bin/qmx` ever produces.
+ * The only namespace-collected base pooled at project level is own-scope
+ * distance. The project publisher weights eligible namespace distances by
+ * their own classes, traits, interfaces and implementing enums; unmeasured
+ * and zero-edge namespaces do not contribute.
  *
- * The own-scope key, not the subtree rollup published beside it: a parent
- * publishes both, and pooling the rollup would count a parent's declarations
- * once for the parent and once inside every ancestor above it.
+ * Pooling the subtree rollup instead would count a parent's declarations
+ * again inside its ancestors. Deriving other namespace-collected keys would
+ * invent project inputs the product does not publish.
  *
  * @var list<string>
  */
@@ -192,6 +197,7 @@ final readonly class Subject
         public array $inputs,
         public array $published,
         public ?int $loc,
+        public ?string $identity = null,
     ) {}
 
     /** The namespace a class symbol sits in, `(global)` when it has none. */
@@ -207,8 +213,7 @@ final readonly class Subject
  * One project's capture, indexed by level.
  *
  * Containment, not the product's namespace tree, answers "what are the
- * children of this subject". The tree is what drops `(global)`, and a
- * monotonicity criterion that inherits the defect it tests for is no criterion.
+ * children of this subject", keeping `(global)` in the diagnostic population.
  */
 final readonly class Capture
 {
@@ -218,6 +223,7 @@ final readonly class Capture
     public function __construct(
         public string $id,
         public array $symbols,
+        public ?bool $complete = null,
     ) {}
 
     public function project(): ?Subject
@@ -243,8 +249,8 @@ final readonly class Capture
     /**
      * The namespaces a scheme pools a namespace-collected key over.
      *
-     * `declaring` admits every captured namespace and lets the absence of the
-     * key decide, which is what the product does: it walks all namespaces and
+     * `declaring` admits every captured namespace; measurement, edge
+     * eligibility and own-type weight decide which distances contribute. It
      * skips the ones carrying no value. The leaf schemes are the superseded
      * rules, kept as candidates to measure against.
      *
@@ -311,7 +317,7 @@ final readonly class Capture
     }
 
     /**
-     * The children of a subject for the monotonicity criterion.
+     * The children of a subject for the score distribution diagnostic.
      *
      * Containment of symbols, never the product's namespace tree: the tree is
      * what drops `(global)`, and its leaves do not partition the classes
@@ -386,6 +392,7 @@ final readonly class AggregationScheme
     public const string WEIGHT_NONE = 'none';
     public const string WEIGHT_CLASSES = 'classes';
     public const string WEIGHT_LOC = 'loc';
+    public const string WEIGHT_TYPES = 'types';
 
     public function __construct(
         public string $members,
@@ -394,7 +401,7 @@ final readonly class AggregationScheme
 
     public static function parse(string $spec): self
     {
-        $normalized = $spec === 'current' ? self::MEMBERS_DECLARING . ':' . self::WEIGHT_NONE : $spec;
+        $normalized = $spec === 'current' ? self::MEMBERS_DECLARING . ':' . self::WEIGHT_TYPES : $spec;
         $parts = explode(':', $normalized);
         $members = $parts[0];
         $weight = $parts[1] ?? self::WEIGHT_NONE;
@@ -403,7 +410,7 @@ final readonly class AggregationScheme
             throw new InvalidArgumentException(\sprintf('Unknown aggregation members "%s"', $members));
         }
 
-        if (!\in_array($weight, [self::WEIGHT_NONE, self::WEIGHT_CLASSES, self::WEIGHT_LOC], true)) {
+        if (!\in_array($weight, [self::WEIGHT_NONE, self::WEIGHT_CLASSES, self::WEIGHT_LOC, self::WEIGHT_TYPES], true)) {
             throw new InvalidArgumentException(\sprintf('Unknown aggregation weight "%s"', $weight));
         }
 
@@ -411,21 +418,21 @@ final readonly class AggregationScheme
     }
 
     /**
-     * The rule the product applies today: every namespace that carries the
-     * pooled key contributes once, parent as well as leaf, because the key is
-     * an own-scope value and the parent's own declarations are in no other
-     * member. A bench that models a superseded rule — the global namespace
+     * The product pools measured, edge-eligible own-scope distances with
+     * own-type weights, admitting parents and leaves as well as `(global)`.
+     * Own declarations belong to one namespace, so this does not duplicate
+     * subtree rollups. A bench that models a superseded rule — the global namespace
      * excluded, or only leaves admitted — reports disagreements that are its
      * own and calls the product wrong.
      */
     public static function current(): self
     {
-        return new self(self::MEMBERS_DECLARING, self::WEIGHT_NONE);
+        return new self(self::MEMBERS_DECLARING, self::WEIGHT_TYPES);
     }
 
     public function isCurrent(): bool
     {
-        return $this->members === self::MEMBERS_DECLARING && $this->weight === self::WEIGHT_NONE;
+        return $this->members === self::MEMBERS_DECLARING && $this->weight === self::WEIGHT_TYPES;
     }
 
     public function toString(): string
@@ -438,9 +445,19 @@ final readonly class AggregationScheme
     {
         return match ($this->weight) {
             self::WEIGHT_CLASSES => max(0.0, (float) ($namespace->inputs['size.class-count.sum'] ?? 0.0)),
+            self::WEIGHT_TYPES => self::ownTypeCount($namespace),
             self::WEIGHT_LOC => max(0.0, (float) ($namespace->loc ?? 0)),
             default => 1.0,
         };
+    }
+
+    /** The own type population in AbstractnessCollector's denominator. */
+    private static function ownTypeCount(Subject $namespace): float
+    {
+        return max(0.0, ($namespace->inputs['size.class-count'] ?? 0.0)
+            + ($namespace->inputs['size.trait-count'] ?? 0.0)
+            + ($namespace->inputs['size.interface-count'] ?? 0.0)
+            + ($namespace->inputs['size.implementing-enum-count'] ?? 0.0));
     }
 }
 
@@ -449,7 +466,7 @@ final readonly class DerivedAggregate
 {
     /**
      * @param array<string, float> $values The derived `base.strategy` keys
-     * @param list<string> $contributors Namespaces that carried the base metric
+     * @param list<string> $contributors Namespaces admitted as measured, edge-eligible contributors
      * @param list<string> $members Namespaces the scheme admitted at all
      * @param array<string, float> $publishedBefore The keys the capture carried
      * @param list<string> $dropped Published keys of this base the bench does not re-derive
@@ -478,6 +495,8 @@ final readonly class DimensionOutcome
         public array $referencedKeys,
         public array $absentKeys,
         public array $counts,
+        public string $kind = ComputedMetricOutcome::NO_VALUE,
+        public ?string $reason = null,
     ) {}
 }
 
@@ -508,7 +527,7 @@ final readonly class Evaluation
 
     public static function key(Subject $subject): string
     {
-        return $subject->level->value . "\0" . $subject->name;
+        return $subject->level->value . "\0" . ($subject->identity ?? $subject->name);
     }
 }
 
@@ -556,10 +575,18 @@ final class CaptureReader
         }
 
         $subjects = [];
+        $seen = [];
         foreach ($symbols as $symbol) {
             $subject = self::readSymbol($symbol);
 
             if ($subject !== null) {
+                // A legacy capture without exact identity may still be read if
+                // names are unique; refuse collisions instead of losing a row.
+                $key = Evaluation::key($subject);
+                if (isset($seen[$key])) {
+                    throw new RuntimeException(\sprintf('Capture "%s" repeats exact subject "%s"', $path, $key));
+                }
+                $seen[$key] = true;
                 $subjects[] = $subject;
             }
         }
@@ -568,7 +595,7 @@ final class CaptureReader
             throw new RuntimeException(\sprintf('Capture "%s" carries no project, namespace or class symbol', $path));
         }
 
-        return new Capture($id, $subjects);
+        return new Capture($id, $subjects, \is_bool($document['coverage']['complete'] ?? null) ? $document['coverage']['complete'] : null);
     }
 
     private static function readSymbol(mixed $symbol): ?Subject
@@ -608,7 +635,14 @@ final class CaptureReader
             $inputs[$key] = (float) $value;
         }
 
-        return new Subject($name, $level, $inputs, $published, self::readLoc($symbol, $inputs));
+        return new Subject(
+            $name,
+            $level,
+            $inputs,
+            $published,
+            self::readLoc($symbol, $inputs),
+            \is_string($symbol['subject'] ?? null) ? $symbol['subject'] : null,
+        );
     }
 
     /**
@@ -643,11 +677,13 @@ final class CaptureReader
 final class Bench
 {
     private readonly ComputedMetricExpression $expression;
+    private readonly ComputedMetricSubjectEvaluation $subjectEvaluation;
     private readonly ComputedMetricDependencyGraphCalculator $graph;
 
     public function __construct()
     {
         $this->expression = new ComputedMetricExpression();
+        $this->subjectEvaluation = new ComputedMetricSubjectEvaluation($this->expression);
         $this->graph = new ComputedMetricDependencyGraphCalculator($this->expression);
     }
 
@@ -655,15 +691,20 @@ final class Bench
      * @param list<ComputedMetricDefinition> $definitions
      * @param list<SymbolLevel> $levels
      */
-    public function run(Capture $capture, array $definitions, array $levels, AggregationScheme $scheme): Evaluation
-    {
+    public function run(
+        Capture $capture,
+        array $definitions,
+        array $levels,
+        AggregationScheme $scheme,
+        bool $keepPublishedProjectInputs = false,
+    ): Evaluation {
         $sorted = $this->graph->sort($definitions);
 
         if ($sorted === null) {
             throw new RuntimeException('The candidate definitions contain a circular dependency');
         }
 
-        $derived = $this->deriveProjectAggregates($capture, $scheme);
+        $derived = $keepPublishedProjectInputs ? [] : $this->deriveProjectAggregates($capture, $scheme);
         $project = $capture->project();
         $projectInputs = $project === null ? [] : self::projectInputs($project, $derived);
         $outcomes = [];
@@ -747,7 +788,10 @@ final class Bench
             foreach ($members as $member) {
                 $value = $member->inputs[$base] ?? null;
 
-                if ($value === null) {
+                if ($value === null || (
+                    ($member->inputs['coupling.ca-own'] ?? null) === 0.0
+                    && ($member->inputs['coupling.ce-own'] ?? null) === 0.0
+                )) {
                     continue;
                 }
 
@@ -794,12 +838,11 @@ final class Bench
             }
 
             $formula = $definition->getFormulaForLevel($subject->level);
-
             if ($formula === null) {
                 continue;
             }
 
-            $outcome = $this->evaluateFormula($definition->name, $formula, $values);
+            $outcome = $this->evaluateFormula($definition, $subject->level, $values);
             $outcomes[$definition->name] = $outcome;
 
             if ($outcome->score !== null) {
@@ -810,11 +853,11 @@ final class Bench
         return $outcomes;
     }
 
-    /**
-     * @param array<string, float> $values
-     */
-    private function evaluateFormula(string $name, string $formula, array $values): DimensionOutcome
+    /** @param array<string, float> $values */
+    private function evaluateFormula(ComputedMetricDefinition $definition, SymbolLevel $level, array $values): DimensionOutcome
     {
+        $formula = $definition->getFormulaForLevel($level)
+            ?? throw new RuntimeException('A reporting level must have an effective formula');
         $referenced = $this->expression->keysOf($formula);
         $absent = [];
         $counts = [];
@@ -825,207 +868,456 @@ final class Bench
             }
 
             $countKey = MetricName::base($key) . '.count';
-
             if ($key !== $countKey && isset($values[$countKey])) {
                 $counts[$key] = $values[$countKey];
             }
         }
 
-        try {
-            /** @var mixed $result */
-            $result = $this->expression->evaluate($formula, ['m' => new MetricLookup($values)]);
-        } catch (Throwable) {
-            return new DimensionOutcome($name, null, $referenced, $absent, $counts);
-        }
+        $result = $this->subjectEvaluation->evaluate($definition, $level, $values);
 
-        if (!is_numeric($result) || \is_string($result)) {
-            return new DimensionOutcome($name, null, $referenced, $absent, $counts);
-        }
-
-        $score = (float) $result;
-
-        if (is_nan($score) || is_infinite($score)) {
-            return new DimensionOutcome($name, null, $referenced, $absent, $counts);
-        }
-
-        return new DimensionOutcome($name, $score, $referenced, $absent, $counts);
-    }
-}
-
-/**
- * How much of a subject a dimension's inputs actually covered.
- *
- * Two denominators, because the plan needs both: the share of symbols and the
- * share of lines. WordPress's structural aggregate covers 20 of 32 namespaces
- * and a much smaller share of its lines, and which of the two C3 is judged on
- * is a calibration decision, not this instrument's.
- */
-final readonly class Coverage
-{
-    /**
-     * @param string $note What the figure hides when the key is measured on
-     *                     namespaces rather than on classes: the classes are still the
-     *                     denominator, but the unit that contributed is a namespace
-     */
-    public function __construct(
-        public string $population,
-        public int $carriers,
-        public int $total,
-        public int $carrierLoc,
-        public int $totalLoc,
-        public string $note = '',
-    ) {}
-
-    public function bySymbols(): ?float
-    {
-        return $this->total === 0 ? null : $this->carriers / $this->total;
-    }
-
-    public function byLoc(): ?float
-    {
-        return $this->totalLoc === 0 ? null : $this->carrierLoc / $this->totalLoc;
-    }
-
-    public function share(string $denominator): ?float
-    {
-        return $denominator === 'loc' ? $this->byLoc() : $this->bySymbols();
-    }
-}
-
-/** Coverage arithmetic, kept separate from the evaluation that needs it. */
-final class CoverageCalculator
-{
-    /**
-     * The coverage of one referenced key on one subject.
-     *
-     * The denominator is always the subject's classes, whatever the key is
-     * measured on. A namespace-collected base is contributed by whole
-     * namespaces, so a class is covered exactly when its namespace contributed
-     * — and a class in a namespace the aggregation rule excluded counts as
-     * uncovered, which is the CodeIgniter case stated as a number rather than
-     * as an absence. Everything else is covered when the class itself carries
-     * the base, which also cross-checks the published `.count`: the bench
-     * counts carriers instead of believing the aggregate.
-     */
-    public static function forKey(
-        Capture $capture,
-        Subject $subject,
-        string $key,
-        AggregationScheme $scheme,
-    ): Coverage {
-        $base = MetricName::base($key);
-        $classes = $capture->classesUnder($subject);
-
-        if (!\in_array($base, NAMESPACE_COLLECTED, true) || $subject->level === SymbolLevel::Class_) {
-            return self::over($classes, static fn(Subject $class): bool => self::carries($class, $base), 'classes');
-        }
-
-        $contributors = [];
-
-        foreach ($capture->pooledNamespaces($scheme) as $namespace) {
-            if (self::carries($namespace, $base)) {
-                $contributors[$namespace->name] = true;
-            }
-        }
-
-        $withClasses = [];
-        foreach ($classes as $class) {
-            $withClasses[$class->containingNamespace()] = true;
-        }
-
-        $contributing = \count(array_intersect_key($contributors, $withClasses));
-
-        return self::over(
-            $classes,
-            static fn(Subject $class): bool => isset($contributors[$class->containingNamespace()]),
-            'classes',
-            // A pure parent namespace holds no symbols of its own, so the
-            // denominator is the namespaces that directly contain classes.
-            \sprintf('ns=%d/%d', $contributing, \count($withClasses)),
+        return new DimensionOutcome(
+            $definition->name,
+            $result->kind === ComputedMetricOutcome::VALUE ? (float) $result->value : null,
+            $referenced,
+            $absent,
+            $counts,
+            $result->kind,
+            $result->reason,
         );
     }
+}
 
+/** Predeclared probes: candidate formulas never decide which sources are tested. */
+final class EarnedTop
+{
     /**
-     * The dimension's coverage: the scarcest of the keys its formula names.
+     * Neutral/adverse values fixed before fitting, from the shipped metric
+     * domains and formula knees. A new catalog source without a profile refuses
+     * adjudication instead of shrinking the tested set.
      *
-     * A score is only as applicable as its least-covered input, and taking a
-     * mean over keys would let four fully-covered inputs hide one that covers
-     * nothing.
-     *
-     * @param list<string> $keys
+     * @return array{float, float}
      */
-    public static function forDimension(
-        Capture $capture,
-        Subject $subject,
-        array $keys,
-        string $denominator,
-        AggregationScheme $scheme,
-    ): ?Coverage {
-        $scarcest = null;
-        $scarcestShare = null;
+    public static function values(string $key, SymbolLevel $level): array
+    {
+        if (str_starts_with($key, 'health.')) {
+            return [100.0, 0.0];
+        }
+        if (str_starts_with($key, 'design.type-coverage.')) {
+            return str_contains($key, '.typed.') || $key === 'design.type-coverage.all'
+                ? [$key === 'design.type-coverage.all' ? 100.0 : 10.0, 0.0]
+                : [10.0, 10.0];
+        }
+        return match ($key) {
+            'size.symbol-method-count', 'size.method-count', 'cohesion.tcc-method-count', 'cohesion.tcc-method-count.avg' => [10.0, 10.0],
+            'cohesion.pure-method-count', 'cohesion.pure-method-count.avg' => [0.0, 0.0],
+            'complexity.ccn.avg' => [1.0, 3.0],
+            'complexity.cognitive.avg' => [0.0, 2.0],
+            'complexity.ccn.sum' => [10.0, 30.0],
+            'complexity.cognitive.sum' => [0.0, 20.0],
+            'complexity.ccn.max' => [1.0, $level === SymbolLevel::Class_ ? 11.0 : 21.0],
+            'complexity.cognitive.max' => [0.0, 16.0],
+            'complexity.ccn.p95' => [1.0, 6.0],
+            'complexity.cognitive.p95' => [0.0, 7.0],
+            'cohesion.tcc', 'cohesion.tcc.avg' => [1.0, 0.0],
+            'cohesion.lcom', 'cohesion.lcom.avg' => [1.0, 6.0],
+            'coupling.distance', 'coupling.distance-own.avg' => [0.0, 1.0],
+            'coupling.ce-packages', 'coupling.ce-packages.avg' => [0.0, 3.0],
+            'coupling.ce.avg', 'coupling.ce.max' => [0.0, 31.0],
+            'coupling.ce' => [0.0, $level === SymbolLevel::Class_ ? 31.0 : 51.0],
+            'coupling.cbo.avg' => [0.0, 9.0],
+            'coupling.cbo.p95' => [0.0, 16.0],
+            'coupling.cbo.max' => [0.0, 31.0],
+            'maintainability.mi.avg' => [85.0, 84.0],
+            'maintainability.mi.min' => [$level === SymbolLevel::Class_ ? 65.0 : 5.0, $level === SymbolLevel::Class_ ? 64.0 : 0.0],
+            'maintainability.mi.p5' => [65.0, 64.0],
+            default => throw new RuntimeException('C2 has no frozen profile for ' . $key),
+        };
+    }
 
+    /** @return list<list<string>> */
+    public static function groups(string $dimension, SymbolLevel $level): array
+    {
+        static $cache = [];
+        $cacheKey = $dimension . ' ' . $level->value;
+        if (isset($cache[$cacheKey])) {
+            return $cache[$cacheKey];
+        }
+        $expression = new ComputedMetricExpression();
+        $catalog = new HealthDecompositionCatalog($expression);
+        $groups = [];
+        foreach ($catalog->inputsFor($dimension, $level) as $input) {
+            $groups[implode("\0", $input['sources'])] = $input['sources'];
+        }
+        if ($groups === []) {
+            $default = self::indexed(definitionsFor(null))[$dimension];
+            $keys = $expression->keysOf($default->getFormulaForLevel($level) ?? '');
+            if ($dimension === 'health.typing') {
+                foreach (['param', 'return', 'property'] as $part) {
+                    $groups[$part] = array_values(array_filter($keys, static fn(string $key): bool => str_contains($key, '.' . $part . '.')));
+                }
+            } else {
+                foreach ($keys as $key) {
+                    $groups[$key] = [$key];
+                }
+            }
+        }
+        $default = self::indexed(definitionsFor(null))[$dimension];
+        $covered = $groups === [] ? [] : array_merge(...array_values($groups));
+        foreach ($expression->keysOf($default->getFormulaForLevel($level) ?? '') as $key) {
+            if (!\in_array($key, $covered, true)) {
+                $groups[$key] = [$key];
+            }
+        }
+        return $cache[$cacheKey] = array_values($groups);
+    }
+
+    /** @param list<ComputedMetricDefinition> $definitions
+     * @return array<string, ComputedMetricDefinition>
+     */
+    private static function indexed(array $definitions): array
+    {
+        $indexed = [];
+        foreach ($definitions as $definition) {
+            $indexed[$definition->name] = $definition;
+        }
+        return $indexed;
+    }
+
+    /** @param list<ComputedMetricDefinition> $definitions
+     * @return list<array{dimension: string, level: string, sources: list<string>, neutral: ?float, adverse: ?float, kind: string, verdict: string}>
+     */
+    public static function judge(array $definitions): array
+    {
+        $indexed = self::indexed($definitions);
+        $engine = new ComputedMetricSubjectEvaluation(new ComputedMetricExpression());
+        $rows = [];
+        foreach ([SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Project] as $level) {
+            foreach (DIMENSIONS as $dimension) {
+                $groups = self::groups($dimension, $level);
+                $neutral = [];
+                foreach ($groups as $group) {
+                    foreach ($group as $key) {
+                        $neutral[$key] = self::values($key, $level)[0];
+                    }
+                }
+                $definition = $indexed[$dimension] ?? null;
+                $candidateKeys = (new ComputedMetricExpression())->keysOf($definition?->getFormulaForLevel($level) ?? '');
+                $unprofiled = array_values(array_diff($candidateKeys, array_keys($neutral)));
+                if ($unprofiled !== []) {
+                    $rows[] = ['dimension' => $dimension, 'level' => $level->value, 'sources' => $unprofiled, 'neutral' => null, 'adverse' => null, 'kind' => 'unprofiled-input', 'verdict' => 'unjudged'];
+                }
+                foreach ($groups as $group) {
+                    $adverse = $neutral;
+                    foreach ($group as $key) {
+                        $adverse[$key] = self::values($key, $level)[1];
+                    }
+                    $good = $definition === null ? null : $engine->evaluate($definition, $level, $neutral);
+                    $bad = $definition === null ? null : $engine->evaluate($definition, $level, $adverse);
+                    $goodScore = $good?->kind === ComputedMetricOutcome::VALUE ? (float) $good->value : null;
+                    $badScore = $bad?->kind === ComputedMetricOutcome::VALUE ? (float) $bad->value : null;
+                    $rows[] = [
+                        'dimension' => $dimension, 'level' => $level->value, 'sources' => $group,
+                        'neutral' => $goodScore, 'adverse' => $badScore, 'kind' => $bad === null ? 'missing-definition' : $bad->kind,
+                        'verdict' => $goodScore === null || $badScore === null ? 'unjudged'
+                            : ($badScore < 100.0 - 1.0e-9 && $badScore < $goodScore - 1.0e-9 ? 'pass' : 'fail'),
+                    ];
+                }
+            }
+        }
+        return $rows;
+    }
+    /** Perfect scores matching a predeclared adverse profile are unearned.
+     * Other perfect counts are descriptive: this does not claim an exhaustive
+     * proof of the multidimensional domain between the fixed probes.
+     *
+     * @param list<Evaluation> $evaluations
+     *
+     * @return list<string>
+     */
+    public static function unearned(array $evaluations): array
+    {
+        $violations = [];
+        $defaults = self::indexed(definitionsFor(null));
+        $engine = new ComputedMetricSubjectEvaluation(new ComputedMetricExpression());
+        foreach ($evaluations as $evaluation) {
+            foreach ($evaluation->capture->symbols as $subject) {
+                $values = $subject->inputs;
+                if ($subject->level === SymbolLevel::Project) {
+                    foreach ($evaluation->derived as $aggregate) {
+                        foreach ($aggregate->publishedBefore as $key => $_) {
+                            unset($values[$key]);
+                        }
+                        $values += $aggregate->values;
+                    }
+                }
+                foreach (DIMENSIONS as $dimension) {
+                    $score = $evaluation->scoreOf($subject, $dimension);
+                    if ($score !== null) {
+                        $values[$dimension] = $score;
+                    }
+                }
+                foreach (DIMENSIONS as $dimension) {
+                    if (abs(($values[$dimension] ?? -1.0) - 100.0) > 1.0e-9) {
+                        continue;
+                    }
+                    $groups = self::groups($dimension, $subject->level);
+                    $baseline = [];
+                    foreach ($groups as $sources) {
+                        foreach ($sources as $key) {
+                            $baseline[$key] = self::values($key, $subject->level)[0];
+                        }
+                    }
+                    foreach ($groups as $group) {
+                        $matches = true;
+                        foreach ($group as $key) {
+                            [$neutral, $adverse] = self::values($key, $subject->level);
+                            if ($neutral === $adverse) {
+                                continue;
+                            }
+                            $actual = $values[$key] ?? null;
+                            // Normalize the two means to the predeclared ten
+                            // callable profile; never compare raw sums across
+                            // projects of different size.
+                            if ($key === 'complexity.ccn.sum' || $key === 'complexity.cognitive.sum') {
+                                $population = $values['size.symbol-method-count'] ?? 0.0;
+                                $actual = $population > 0.0 && $actual !== null ? $actual / $population * 10.0 : null;
+                            }
+                            $matches = $matches && $actual !== null && ($adverse > $neutral ? $actual >= $adverse : $actual <= $adverse);
+                        }
+                        if ($matches) {
+                            $profile = $baseline;
+                            foreach ($group as $key) {
+                                if (isset($values[$key])) {
+                                    $profile[$key] = $values[$key];
+                                } else {
+                                    unset($profile[$key]);
+                                }
+                            }
+                            // A large pure-method correction can remove the
+                            // LCOM/TCC penalty. The shipped engine adjudicates
+                            // actual grouped sources and adjusters, so crossing
+                            // one raw bound alone is not an accusation.
+                            $reference = $engine->evaluate($defaults[$dimension], $subject->level, $profile);
+                            if ($reference->kind !== ComputedMetricOutcome::VALUE || (float) $reference->value >= 100.0 - 1.0e-9) {
+                                continue;
+                            }
+                            $violations[] = $evaluation->capture->id . ' ' . $subject->level->value . ' ' . ($subject->identity ?? $subject->name) . ' ' . $dimension . ' [' . implode(' ', $group) . ']';
+                        }
+                    }
+                }
+            }
+        }
+        return $violations;
+    }
+
+}
+
+/** Coverage stated with the population owned by each input, without a cutoff. */
+final class StatedCoverage
+{
+    /** @return list<array{basis: string, state: string, symbols: string, loc: string, reason: string}> */
+    public static function rows(Evaluation $evaluation, Subject $subject, string $dimension): array
+    {
+        $outcome = $evaluation->outcome($subject, $dimension);
+        if ($outcome === null) {
+            return [['basis' => $dimension, 'state' => 'absent', 'symbols' => '--', 'loc' => '--', 'reason' => 'score absent']];
+        }
+        $catalog = new HealthDecompositionCatalog(new ComputedMetricExpression());
+        $inputs = $catalog->inputsFor($dimension, $subject->level);
+        if ($dimension === 'health.typing' && $subject->level !== SymbolLevel::Class_) {
+            return self::typingRows($evaluation->capture, $subject, $outcome->referencedKeys);
+        }
+        $values = $subject->inputs;
+        if ($subject->level === SymbolLevel::Project) {
+            foreach ($evaluation->derived as $aggregate) {
+                foreach ($aggregate->publishedBefore as $key => $_) {
+                    unset($values[$key]);
+                }
+                $values += $aggregate->values;
+            }
+        }
+        $read = static fn(string $key): ?float => $values[$key] ?? null;
+        $rows = [];
+        $covered = [];
+        foreach ($inputs as $input) {
+            if (array_intersect($input['sources'], $outcome->referencedKeys) === []) {
+                continue;
+            }
+            $covered = array_merge($covered, $input['sources']);
+            $spec = $input['coverage'];
+            if ($spec === null) {
+                $present = isset($values[$input['key']]) ? [$input['key']] : [];
+                $rows[] = [
+                    'basis' => $input['key'], 'state' => $present === [] ? 'absent' : 'measured',
+                    'symbols' => $present === [] ? '0/1 exact subject' : '1/1 exact subject',
+                    'loc' => $subject->loc === null ? 'unavailable: subject has no line metric' : ($present === [] ? '0/' : $subject->loc . '/') . $subject->loc,
+                    'reason' => 'own subject input; no aggregate population',
+                ];
+                continue;
+            }
+            try {
+                $coverage = (new CoverageReader($catalog))->read($dimension, $read, [$input]);
+                $aggregateSources = array_values(array_filter($input['sources'], static fn(string $key): bool => MetricName::base($key) === MetricName::base($input['key'])));
+                if (\count($aggregateSources) !== 1) {
+                    throw new LogicException(\sprintf('Aggregate "%s" has no unique own source in its coverage metadata.', $input['key']));
+                }
+                if (($read($aggregateSources[0]) !== null) !== (($read($spec['count']) ?? 0) > 0)) {
+                    throw new LogicException(\sprintf('Aggregate source "%s" and contributor count "%s" disagree on measured input presence.', $aggregateSources[0], $spec['count']));
+                }
+                $lines = self::lines($evaluation, $subject, $input, $coverage->measured, $coverage->eligible);
+                $rows[] = [
+                    'basis' => $spec['count'], 'state' => $lines['reason'] === null ? $coverage->state : 'unjudged',
+                    'symbols' => $coverage->applicable ? $coverage->measured . '/' . $coverage->eligible . ' ' . $coverage->unit?->value : '--',
+                    'loc' => $lines['loc'],
+                    'reason' => $lines['reason'] ?? $coverage->reason ?? '',
+                ];
+            } catch (LogicException $error) {
+                $rows[] = ['basis' => $spec['count'], 'state' => 'unjudged', 'symbols' => '--', 'loc' => 'unjudged', 'reason' => $error->getMessage()];
+            }
+        }
+        foreach (array_diff($outcome->referencedKeys, $covered) as $key) {
+            if (!str_starts_with($key, 'health.')) {
+                $rows[] = ['basis' => $key, 'state' => 'unjudged', 'symbols' => '--', 'loc' => 'unjudged', 'reason' => 'input has no declared coverage population'];
+            }
+        }
+        if ($rows !== []) {
+            return $rows;
+        }
+        foreach ($outcome->referencedKeys as $key) {
+            if (str_starts_with($key, 'health.')) {
+                foreach (self::rows($evaluation, $subject, $key) as $row) {
+                    $row['basis'] = $key . ':' . $row['basis'];
+                    $rows[] = $row;
+                }
+            }
+        }
+        if ($rows !== []) {
+            return $rows;
+        }
+        return [['basis' => $dimension, 'state' => 'unjudged', 'symbols' => '--', 'loc' => 'unjudged', 'reason' => 'effective formula has no declared aggregate coverage; exact input participation needs adjudication']];
+    }
+
+    /** @param list<string> $keys
+     * @return list<array{basis: string, state: string, symbols: string, loc: string, reason: string}>
+     */
+    private static function typingRows(Capture $capture, Subject $subject, array $keys): array
+    {
+        $members = $capture->classesUnder($subject);
+        $eligible = $subject->inputs[CoverageUnit::Classes->populationMetric()] ?? null;
+        $rows = [];
         foreach ($keys as $key) {
-            if (str_starts_with($key, 'health.') || str_starts_with($key, 'computed.')) {
+            if (!str_ends_with($key, '.sum')) {
+                $rows[] = ['basis' => $key, 'state' => 'unjudged', 'symbols' => '--', 'loc' => 'unjudged', 'reason' => 'typing input is not a captured class-owned sum'];
                 continue;
             }
-
-            $coverage = self::forKey($capture, $subject, $key, $scheme);
-            $share = $coverage->share($denominator);
-
-            if ($share === null) {
+            $base = substr($key, 0, -4);
+            if ($eligible === null || $capture->complete !== true || $eligible !== (float) \count($members)
+                || array_filter($members, static fn(Subject $member): bool => $member->identity === null) !== []) {
+                $rows[] = ['basis' => $key, 'state' => 'unjudged', 'symbols' => '--', 'loc' => 'unjudged', 'reason' => 'exact class population is not complete'];
                 continue;
             }
-
-            if ($scarcestShare === null || $share < $scarcestShare) {
-                $scarcest = $coverage;
-                $scarcestShare = $share;
+            $carriers = 0;
+            $sum = 0.0;
+            $totalLoc = 0;
+            $carrierLoc = 0;
+            $hasLoc = true;
+            foreach ($members as $member) {
+                $hasLoc = $hasLoc && $member->loc !== null;
+                $totalLoc += $member->loc ?? 0;
+                if (isset($member->inputs[$base])) {
+                    $carriers++;
+                    $sum += $member->inputs[$base];
+                    $carrierLoc += $member->loc ?? 0;
+                }
             }
+            $published = $subject->inputs[$key] ?? null;
+            $consistent = $published === null ? $carriers === 0 : abs($sum - $published) < 1.0e-6;
+            $rows[] = [
+                'basis' => $key, 'state' => !$consistent || !$hasLoc ? 'unjudged' : ($eligible === 0.0 ? 'not-applicable' : ($carriers === 0 ? 'not-measured' : 'measured')),
+                'symbols' => $consistent ? $carriers . '/' . (int) $eligible . ' classes' : '--',
+                'loc' => !$consistent ? 'unjudged: captured sum differs' : ($hasLoc ? $carrierLoc . '/' . $totalLoc . ' lines' : 'unjudged: class LOC unavailable'),
+                'reason' => !$consistent ? 'captured sum differs from subject aggregate' : (!$hasLoc ? 'class LOC unavailable' : 'captured class-owned input participation; zero is measured'),
+            ];
         }
-
-        return $scarcest;
+        return $rows === [] ? [['basis' => 'health.typing', 'state' => 'unjudged', 'symbols' => '--', 'loc' => 'unjudged', 'reason' => 'candidate exposes no typing inputs']] : $rows;
     }
 
     /**
-     * @param list<Subject> $population
-     * @param callable(Subject): bool $isCovered
+     * @param array{key: string, sources: list<string>, coverage: array{count: string, unit: CoverageUnit}|null} $input
+     *
+     * @return array{loc: string, reason: ?string}
      */
-    private static function over(array $population, callable $isCovered, string $label, string $note = ''): Coverage
+    private static function lines(Evaluation $evaluation, Subject $subject, array $input, ?int $measured, ?int $eligible): array
     {
+        $capture = $evaluation->capture;
+        $unit = $input['coverage']['unit'] ?? null;
+        if ($unit === CoverageUnit::Callables) {
+            return ['loc' => 'not-applicable: callable LOC is not measured', 'reason' => null];
+        }
+        if ($eligible === null || $measured === null) {
+            return ['loc' => 'not-applicable: empty population', 'reason' => null];
+        }
+        $members = $unit === CoverageUnit::Classes ? $capture->classesUnder($subject) : $capture->namespacesHoldingClasses();
+        if (\count($members) !== $eligible || $capture->complete !== true) {
+            return ['loc' => 'unjudged: exact population is not complete', 'reason' => 'exact population is not complete'];
+        }
+        $base = MetricName::base($input['key']);
+        $pooledContributors = null;
+        if ($unit === CoverageUnit::DeclaringNamespaces && $subject->level === SymbolLevel::Project) {
+            foreach ($evaluation->derived as $aggregate) {
+                if ($aggregate->base === $base) {
+                    $pooledContributors = array_fill_keys($aggregate->contributors, true);
+                }
+            }
+        }
+        $total = 0;
+        $covered = 0;
         $carriers = 0;
-        $carrierLoc = 0;
-        $totalLoc = 0;
-
-        foreach ($population as $member) {
-            $totalLoc += $member->loc ?? 0;
-
-            if ($isCovered($member)) {
+        foreach ($members as $member) {
+            if ($member->identity === null || $member->loc === null) {
+                return ['loc' => 'unjudged: exact identity or LOC is unavailable', 'reason' => 'exact identity or LOC is unavailable'];
+            }
+            $total += $member->loc;
+            if ($pooledContributors === null ? isset($member->inputs[$base]) : isset($pooledContributors[$member->name])) {
                 $carriers++;
-                $carrierLoc += $member->loc ?? 0;
+                $covered += $member->loc;
             }
         }
-
-        return new Coverage($label, $carriers, \count($population), $carrierLoc, $totalLoc, $note);
+        if ($carriers !== $measured) {
+            return ['loc' => 'unjudged: captured carriers disagree with aggregate count', 'reason' => 'captured carriers disagree with aggregate count'];
+        }
+        return ['loc' => $covered . '/' . $total . ' lines', 'reason' => null];
     }
+}
 
-    private static function carries(Subject $member, string $base): bool
+/** The frozen formal ranking pairs; unrelated anchors remain diagnostic. */
+final class FormalRanking
+{
+    public const array LOWER = ['codeigniter', 'wordpress'];
+    public const array HIGHER = ['flysystem', 'phpunit', 'symfony-http-foundation', 'symfony-http-kernel', 'symfony-console', 'symfony-routing', 'monolog', 'doctrine-orm', 'doctrine-dbal', 'php-parser', 'guzzle', 'symfony-di'];
+
+    /** @param list<Evaluation> $evaluations
+     * @return list<array{lower: string, higher: string, low: ?float, high: ?float, verdict: string}>
+     */
+    public static function judge(array $evaluations): array
     {
-        if (isset($member->inputs[$base])) {
-            return true;
-        }
-
-        $count = $member->inputs[$base . '.count'] ?? null;
-
-        if ($count !== null) {
-            return $count > 0.0;
-        }
-
-        foreach ($member->inputs as $key => $_value) {
-            if (MetricName::base($key) === $base) {
-                return true;
+        $scores = [];
+        foreach ($evaluations as $evaluation) {
+            $project = $evaluation->capture->project();
+            if ($project !== null) {
+                $scores[$evaluation->capture->id] = $evaluation->scoreOf($project, 'health.overall');
             }
         }
-
-        return false;
+        $rows = [];
+        foreach (self::LOWER as $lower) {
+            foreach (self::HIGHER as $higher) {
+                $low = $scores[$lower] ?? null;
+                $high = $scores[$higher] ?? null;
+                $rows[] = ['lower' => $lower, 'higher' => $higher, 'low' => $low, 'high' => $high,
+                    'verdict' => $low === null || $high === null ? 'unjudged' : ($low <= $high ? 'pass' : 'fail')];
+            }
+        }
+        return $rows;
     }
 }
 
@@ -1136,23 +1428,21 @@ final class SelfTest
         $mismatches = [];
 
         foreach ($evaluation->capture->symbols as $subject) {
-            foreach ($subject->published as $key => $published) {
-                $outcome = $evaluation->outcome($subject, $key);
-
-                if ($outcome === null) {
-                    continue; // The level was not evaluated in this run.
-                }
-
+            foreach ($evaluation->outcomes[Evaluation::key($subject)] ?? [] as $key => $outcome) {
+                $published = $subject->published[$key] ?? null;
                 $recomputed = $outcome->score;
 
-                if ($recomputed !== null && abs($published - $recomputed) <= $tolerance) {
+                if ($published === null && $recomputed === null) {
+                    continue;
+                }
+                if ($published !== null && $recomputed !== null && abs($published - $recomputed) <= $tolerance) {
                     continue;
                 }
 
                 $mismatches[] = new SelfTestMismatch(
                     $evaluation->capture->id,
                     $subject->level->value,
-                    $subject->name,
+                    ($subject->identity ?? $subject->name),
                     $key,
                     $published,
                     $recomputed,
@@ -1198,18 +1488,10 @@ final readonly class MonotonicityViolation
 final class Criteria
 {
     /**
-     * C1, one-sided: no parent scores ABOVE the maximum of its children, for
-     * any dimension and any parent/child level pair.
-     *
-     * The other direction is not a defect and is not reported here. A parent
-     * formula carries terms the child formula has no equivalent for — a
-     * namespace is scored on its distance from the main sequence and on its own
-     * efferent breadth, neither of which exists for a class — so a parent below
-     * all of its children is usually that, not a lost penalty.
-     * `measurement/07-monotonicity-direction.md` counted the split: coupling
-     * alone shows 604 below and exactly zero above, and the two-sided form
-     * reddens five times out of six for the explainable reason. It is kept as a
-     * printed reference figure ({@see parentsBelowChildren()}), not as a verdict.
+     * C1 diagnostic: parents scoring above every measured child, for every
+     * dimension and containment pair. A nonlinear formula can legitimately
+     * improve on complementary child inputs even with identical populations
+     * and scales; neither direction alone proves lost inputs or poor quality.
      *
      * @param list<Evaluation> $evaluations
      *
@@ -1221,8 +1503,7 @@ final class Criteria
     }
 
     /**
-     * The other direction, counted but never judged: parents scoring below the
-     * minimum of their children.
+     * The lower direction of the same diagnostic distribution.
      *
      * @param list<Evaluation> $evaluations
      *
@@ -1320,12 +1601,9 @@ final class Criteria
     }
 
     /**
-     * C2: how many subjects scored exactly 100, split by whether every input
-     * the formula names was actually present.
-     *
-     * A perfect score with an absent input is vacuous — the term that would
-     * have penalised it had nothing to read — and that is a different fact
-     * about the model than a subject that cleared every threshold.
+     * Descriptive perfect counts, with input absence reported separately.
+     * Absence alone does not prove a score unearned: optional metrics and
+     * measured neutral values have different product applicability semantics.
      *
      * @param list<Evaluation> $evaluations
      *
@@ -1340,12 +1618,14 @@ final class Criteria
                 foreach (DIMENSIONS as $dimension) {
                     $outcome = $evaluation->outcome($subject, $dimension);
 
-                    if ($outcome?->score === null || abs($outcome->score - 100.0) > 1.0e-9) {
+                    if ($outcome === null) {
                         continue;
                     }
-
                     $key = $subject->level->value . ' ' . $dimension;
                     $counts[$key] ??= ['total' => 0, 'vacuous' => 0];
+                    if ($outcome->score === null || abs($outcome->score - 100.0) > 1.0e-9) {
+                        continue;
+                    }
                     $counts[$key]['total']++;
 
                     if ($outcome->absentKeys !== []) {
@@ -1361,34 +1641,33 @@ final class Criteria
     }
 
     /**
-     * C4: the same project number under the current rule and under a
-     * size-weighted pooling of the level's members.
+     * C4: the project score using its published input against an independent
+     * declaring/type-weighted derivation from the captured namespaces.
      *
      * A dimension whose project formula reaches none of the re-derived
      * aggregates ({@see PROJECT_DERIVED}) is reported as null, not as 0.0. Its
-     * project inputs are read from the capture verbatim under both schemes, so a
-     * zero there is arithmetic, not evidence of insensitivity — and a criterion
-     * that cannot tell the two apart passes vacuously.
+     * The report judges a zero drift only when a measured project score reaches
+     * a derived input and a discriminating type-weighted pool is present.
      *
-     * @return array<string, float|null> dimension => |current - weighted|, or null
+     * @return array<string, float|null> dimension => |published - weighted|, or null
      *                                   when no derived aggregate reaches it
      */
-    public static function aggregateDrift(Evaluation $current, Evaluation $weighted): array
+    public static function aggregateDrift(Evaluation $published, Evaluation $weighted): array
     {
-        $project = $current->capture->project();
+        $project = $published->capture->project();
         $weightedProject = $weighted->capture->project();
 
         if ($project === null || $weightedProject === null) {
             return [];
         }
 
-        $pooled = self::pooledKeys($current);
-        $sensitive = self::sensitiveDimensions($current, $project, $pooled);
+        $pooled = self::pooledKeys($weighted);
+        $sensitive = self::sensitiveDimensions($weighted, $weightedProject, $pooled);
 
         $drift = [];
 
         foreach (DIMENSIONS as $dimension) {
-            $a = $current->scoreOf($project, $dimension);
+            $a = $published->scoreOf($project, $dimension);
             $b = $weighted->scoreOf($weightedProject, $dimension);
 
             if ($a === null || $b === null) {
@@ -1399,6 +1678,47 @@ final class Criteria
         }
 
         return $drift;
+    }
+
+    /** A pool that would expose an accidental return to the unweighted mean. */
+    public static function hasDiscriminatingPool(Capture $capture): bool
+    {
+        $scheme = new AggregationScheme(AggregationScheme::MEMBERS_DECLARING, AggregationScheme::WEIGHT_TYPES);
+        $values = [];
+        $weightedSum = 0.0;
+        $weightSum = 0.0;
+
+        foreach ($capture->pooledNamespaces($scheme) as $namespace) {
+            $distance = $namespace->inputs['coupling.distance-own'] ?? null;
+            if ($distance === null || (
+                ($namespace->inputs['coupling.ca-own'] ?? null) === 0.0
+                && ($namespace->inputs['coupling.ce-own'] ?? null) === 0.0
+            )) {
+                continue;
+            }
+            $weight = $scheme->weightOf($namespace);
+            if ($weight <= 0.0) {
+                continue;
+            }
+            $values[] = [$distance, $weight];
+            $weightedSum += $distance * $weight;
+            $weightSum += $weight;
+        }
+
+        if (\count($values) < 2) {
+            return false;
+        }
+
+        $firstWeight = $values[0][1];
+        $differentWeights = false;
+        $unweightedSum = 0.0;
+        foreach ($values as [$distance, $weight]) {
+            $differentWeights = $differentWeights || $weight !== $firstWeight;
+            $unweightedSum += $distance;
+        }
+
+        return $differentWeights
+            && abs($weightedSum / $weightSum - $unweightedSum / \count($values)) > 1.0e-9;
     }
 
     /**
@@ -1533,30 +1853,6 @@ final class Criteria
         return $sorted[$lower] + ($rank - $lower) * ($sorted[$upper] - $sorted[$lower]);
     }
 
-    /**
-     * C3's verdict for one coverage figure: a dimension covering less than the
-     * declared fraction of its subject does not apply, and saying so is the
-     * point of the criterion — a number computed over 1 of 500 symbols is not
-     * a better or worse score, it is not a score.
-     */
-    public static function applicability(?Coverage $coverage, string $denominator, ?float $minimum): string
-    {
-        if ($coverage === null) {
-            return 'unknown';
-        }
-
-        $share = $coverage->share($denominator);
-
-        if ($share === null) {
-            return 'unknown';
-        }
-
-        if ($minimum === null) {
-            return 'no-declared-fraction';
-        }
-
-        return $share < $minimum ? 'not-applicable' : 'applicable';
-    }
 }
 
 /** The command line, read once. */
@@ -1576,9 +1872,7 @@ final readonly class Options
         public ?string $candidates,
         public bool $criteria,
         public ?int $c2Max,
-        public ?float $c3MinCoverage,
-        public string $coverageDenominator,
-        public ?float $c4Tolerance,
+        public float $c4Tolerance,
         public int $top,
     ) {}
 
@@ -1602,13 +1896,17 @@ final readonly class Options
 
         $known = [
             'capture-dir', 'projects', 'levels', 'aggregation', 'self-test', 'tolerance', 'candidates',
-            'criteria', 'c2-max', 'c3-min-coverage', 'coverage', 'c4-tolerance', 'top', 'help',
+            'criteria', 'c2-max', 'c4-tolerance', 'top', 'help',
         ];
 
         foreach (array_keys($values) as $name) {
             if (!\in_array($name, $known, true)) {
                 throw new InvalidArgumentException(\sprintf('Unknown option "--%s"', $name));
             }
+        }
+
+        if (($values['criteria'] ?? '') !== '') {
+            throw new InvalidArgumentException('--criteria is a boolean flag and takes no value');
         }
 
         $captureDir = $values['capture-dir'] ?? '';
@@ -1627,9 +1925,7 @@ final readonly class Options
             ($values['candidates'] ?? '') === '' ? null : $values['candidates'],
             \array_key_exists('criteria', $values),
             ($values['c2-max'] ?? '') === '' ? null : (int) $values['c2-max'],
-            ($values['c3-min-coverage'] ?? '') === '' ? null : (float) $values['c3-min-coverage'],
-            ($values['coverage'] ?? 'symbols') === 'loc' ? 'loc' : 'symbols',
-            ($values['c4-tolerance'] ?? '') === '' ? null : (float) $values['c4-tolerance'],
+            (float) ($values['c4-tolerance'] ?? '0.000001'),
             (int) ($values['top'] ?? '10'),
         );
     }
@@ -1678,11 +1974,13 @@ function definitionsFor(?string $candidatesPath): array
 {
     $resolver = new ComputedMetricsConfigResolver(
         new ComputedMetricFormulaValidator(),
-        new HealthFormulaExcluder(),
+        new HealthFormulaExcluder(new ComputedMetricExpression()),
     );
 
+    $schema = new DocumentSchema([new ComputedMetricsSection(), new ExcludeHealthSection()]);
+
     if ($candidatesPath === null) {
-        return $resolver->resolve([]);
+        return $resolver->resolve(DocumentComposer::compose($schema, []));
     }
 
     $raw = @file_get_contents($candidatesPath);
@@ -1705,8 +2003,13 @@ function definitionsFor(?string $candidatesPath): array
         throw new RuntimeException(\sprintf('Candidate file "%s" has no computed_metrics mapping', $candidatesPath));
     }
 
-    /** @var array<string, mixed> $section */
-    return $resolver->resolve($section);
+    return $resolver->resolve(DocumentComposer::compose(
+        $schema,
+        [new AuthoredLayer(
+            ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $candidatesPath),
+            AuthoredNode::fromPlain([ComputedMetricsSection::KEY => $section]),
+        )],
+    ));
 }
 
 /**
@@ -1825,7 +2128,16 @@ function printDistribution(array $evaluations, array $levels): void
 {
     echo "\n== C6 material: median and interquartile range per level ==\n";
 
-    foreach (Criteria::distribution($evaluations, $levels) as $key => $row) {
+    $distribution = Criteria::distribution($evaluations, $levels);
+    foreach ($levels as $level) {
+        foreach (DIMENSIONS as $dimension) {
+            $key = $level->value . ' ' . $dimension;
+            if (!isset($distribution[$key])) {
+                echo \sprintf("%-34s n=0 median=unavailable IQR=unavailable\n", $key);
+            }
+        }
+    }
+    foreach ($distribution as $key => $row) {
         echo \sprintf(
             "%-34s n=%-6d median=%6.2f  IQR=[%6.2f, %6.2f]\n",
             $key,
@@ -1840,52 +2152,56 @@ function printDistribution(array $evaluations, array $levels): void
 /**
  * @param list<Evaluation> $evaluations
  */
-function printMonotonicity(array $evaluations, int $top): bool
+function printMonotonicity(array $evaluations, int $top): void
 {
     $violations = Criteria::monotonicity($evaluations);
     $below = Criteria::parentsBelowChildren($evaluations);
 
-    echo "\n== C1 monotonicity, one-sided (no parent above max(children)) ==\n";
+    echo "\n== C1 diagnostic: parent/child score distributions (no binding verdict) ==\n";
+
+    foreach (['project->namespace', 'namespace->class'] as $pair) {
+        foreach (DIMENSIONS as $dimension) {
+            $matches = static fn(MonotonicityViolation $row): bool => $row->pair === $pair && $row->dimension === $dimension;
+            echo \sprintf("%s %s above=%d below=%d\n", $pair, $dimension, \count(array_filter($violations, $matches)), \count(array_filter($below, $matches)));
+        }
+    }
 
     if ($violations === []) {
-        echo "no violators\n";
+        echo "no parents above max(children)\n";
     } else {
-        echo \sprintf("%d violators; showing up to %d\n", \count($violations), $top);
+        echo \sprintf("%d parents above max(children); showing up to %d\n", \count($violations), $top);
 
         foreach (\array_slice($violations, 0, $top) as $violation) {
             echo $violation->toString() . "\n";
         }
     }
 
-    // Printed, never judged: the below-min direction is mostly the parent
-    // formula carrying terms the child formula has none of, which is why C1 is
-    // one-sided (measurement/07-monotonicity-direction.md).
     echo \sprintf(
-        "reference, not a verdict: %d parents below min(children)\n",
+        "%d parents below min(children); showing up to %d\n",
         \count($below),
+        $top,
     );
-
-    return $violations === [];
+    foreach (\array_slice($below, 0, $top) as $row) {
+        echo $row->toString() . "\n";
+    }
 }
 
 /**
  * @param list<Evaluation> $evaluations
  */
-function printPerfectScores(array $evaluations, ?int $ceiling): bool
+function printPerfectScores(array $evaluations, ?int $ceiling): void
 {
-    echo "\n== C2 subjects scoring exactly 100 ==\n";
-    $agreed = true;
+    echo "\n== C2 diagnostic: subjects scoring exactly 100 ==\n";
 
     foreach (Criteria::perfectScores($evaluations) as $key => $counts) {
         $verdict = '';
 
         if ($ceiling !== null && $counts['total'] > $ceiling) {
-            $verdict = \sprintf('  ABOVE DECLARED %d', $ceiling);
-            $agreed = false;
+            $verdict = \sprintf('  above diagnostic bound %d', $ceiling);
         }
 
         echo \sprintf(
-            "%-34s total=%-6d of which vacuous (an input absent)=%-6d%s\n",
+            "%-34s total=%-6d of which an input absent=%-6d%s\n",
             $key,
             $counts['total'],
             $counts['vacuous'],
@@ -1894,10 +2210,9 @@ function printPerfectScores(array $evaluations, ?int $ceiling): bool
     }
 
     if ($ceiling === null) {
-        echo "no --c2-max declared: counts printed, no verdict\n";
+        echo "no --c2-max supplied; counts only\n";
     }
 
-    return $agreed;
 }
 
 /**
@@ -1905,87 +2220,39 @@ function printPerfectScores(array $evaluations, ?int $ceiling): bool
  */
 function printCoverage(array $evaluations, Options $options): bool
 {
-    echo \sprintf("\n== C3 coverage (denominator: %s) ==\n", $options->coverageDenominator);
+    echo "\n== C3: stated symbol and line coverage; no applicability cutoff ==\n";
     $agreed = true;
-    $shown = 0;
-
     foreach ($evaluations as $evaluation) {
+        if ($evaluation->capture->complete !== true) {
+            echo $evaluation->capture->id . ": unjudged: capture has no coverage.complete=true receipt\n";
+            $agreed = false;
+        }
         foreach ($evaluation->capture->symbols as $subject) {
-            if ($subject->level !== SymbolLevel::Project) {
-                continue; // The per-subject detail is printed for the project row; --levels drives the rest.
+            if (!\in_array($subject->level, $options->levels, true)) {
+                continue;
             }
-
             foreach (DIMENSIONS as $dimension) {
-                $outcome = $evaluation->outcome($subject, $dimension);
-
-                if ($outcome === null) {
-                    continue;
+                foreach (StatedCoverage::rows($evaluation, $subject, $dimension) as $row) {
+                    echo \sprintf(
+                        "%s %s %s %s score=%s subject-lines=%s %s state=%s symbols=%s loc=%s %s\n",
+                        $evaluation->capture->id,
+                        $subject->level->value,
+                        $subject->identity ?? $subject->name,
+                        $dimension,
+                        $evaluation->scoreOf($subject, $dimension) ?? '--',
+                        $subject->loc ?? 'unavailable',
+                        $row['basis'],
+                        $row['state'],
+                        $row['symbols'],
+                        $row['loc'],
+                        $row['reason'],
+                    );
+                    $agreed = $row['state'] !== 'unjudged' && $agreed;
                 }
-
-                $coverage = CoverageCalculator::forDimension(
-                    $evaluation->capture,
-                    $subject,
-                    $outcome->referencedKeys,
-                    $options->coverageDenominator,
-                    $evaluation->scheme,
-                );
-                $verdict = isComposedOfDimensions($outcome->referencedKeys)
-                    ? 'composed-of-dimensions'
-                    : Criteria::applicability($coverage, $options->coverageDenominator, $options->c3MinCoverage);
-
-                if ($verdict === 'not-applicable') {
-                    $agreed = false;
-                }
-
-                echo \sprintf(
-                    "%-22s %-24s %-20s symbols=%-16s loc=%-6s %s absent=[%s] counts=[%s]\n",
-                    $evaluation->capture->id,
-                    $dimension,
-                    $verdict,
-                    $coverage === null
-                        ? '--'
-                        : \sprintf('%d/%d %s', $coverage->carriers, $coverage->total, $coverage->population),
-                    $coverage?->byLoc() === null ? '--' : \sprintf('%.3f', $coverage->byLoc()),
-                    $coverage === null ? '' : $coverage->note,
-                    implode(' ', $outcome->absentKeys),
-                    formatCounts($outcome->counts),
-                );
-                $shown++;
             }
         }
     }
-
-    if ($options->c3MinCoverage === null) {
-        echo "no --c3-min-coverage declared: coverage printed, no verdict\n";
-    }
-
-    if ($shown === 0) {
-        echo "no project-level outcome in this run\n";
-    }
-
-    return $agreed || $options->c3MinCoverage === null;
-}
-
-/**
- * `health.overall` names no raw metric: its coverage is whatever its
- * dimensions' coverage was, and printing "unknown" for it would read as a
- * defect rather than as composition.
- *
- * @param list<string> $keys
- */
-function isComposedOfDimensions(array $keys): bool
-{
-    if ($keys === []) {
-        return false;
-    }
-
-    foreach ($keys as $key) {
-        if (!str_starts_with($key, 'health.') && !str_starts_with($key, 'computed.')) {
-            return false;
-        }
-    }
-
-    return true;
+    return $agreed;
 }
 
 /**
@@ -2003,20 +2270,26 @@ function formatCounts(array $counts): string
 }
 
 /**
- * @param list<Evaluation> $current
+ * @param list<Evaluation> $published
  * @param list<Evaluation> $weighted
  */
-function printAggregateDrift(array $current, array $weighted, ?float $tolerance): bool
+function printAggregateDrift(array $published, array $weighted, float $tolerance): bool
 {
-    echo "\n== C4 aggregate drift: current rule vs size-weighted pooling ==\n";
+    echo "\n== C4 aggregate drift: published project input vs independent declaring:types pooling ==\n";
     echo \sprintf(
-        "judged only where a re-derived aggregate reaches the formula (%s); n/p = not pooled, read from the capture under both schemes\n",
+        "judged only where a re-derived aggregate reaches the formula (%s); n/p = not pooled\n",
         implode(', ', PROJECT_DERIVED),
     );
     $agreed = true;
+    $witnesses = 0;
+    $judged = 0;
 
-    foreach ($current as $index => $evaluation) {
+    foreach ($published as $index => $evaluation) {
         $drift = Criteria::aggregateDrift($evaluation, $weighted[$index]);
+        if (Criteria::hasDiscriminatingPool($evaluation->capture)
+            && ($drift['health.coupling'] ?? null) !== null) {
+            $witnesses++;
+        }
         $parts = [];
 
         foreach ($drift as $dimension => $delta) {
@@ -2028,9 +2301,10 @@ function printAggregateDrift(array $current, array $weighted, ?float $tolerance)
                 continue;
             }
 
-            $parts[] = \sprintf('%s=%.2f', $short, $delta);
+            $judged++;
+            $parts[] = \sprintf('%s=%.8f', $short, $delta);
 
-            if ($tolerance !== null && $delta > $tolerance) {
+            if ($delta > $tolerance) {
                 $agreed = false;
             }
         }
@@ -2038,11 +2312,12 @@ function printAggregateDrift(array $current, array $weighted, ?float $tolerance)
         echo \sprintf("%-22s %s\n", $evaluation->capture->id, implode(' ', $parts));
     }
 
-    if ($tolerance === null) {
-        echo "no --c4-tolerance declared: drift printed, no verdict\n";
+    echo \sprintf("measured discriminating coupling pools=%d; judged scores=%d; numeric precision=%.8f\n", $witnesses, $judged, $tolerance);
+    if ($witnesses === 0 || $judged === 0) {
+        echo "C4 unjudged: no measured, discriminating type-weighted project comparison\n";
     }
 
-    return $agreed;
+    return $agreed && $witnesses > 0 && $judged > 0;
 }
 
 /**
@@ -2156,7 +2431,7 @@ function reportSelfTest(Options $options, array $evaluations): int
 
     if ($mismatches === []) {
         echo \sprintf(
-            "reproduced every published aggregate (1e-6) and every published score (%.3f) in %d project(s)\n",
+            "reproduced every published aggregate (1e-6), score and score absence (%.3f) in %d project(s)\n",
             $options->tolerance,
             \count($evaluations),
         );
@@ -2180,24 +2455,62 @@ function reportSelfTest(Options $options, array $evaluations): int
  */
 function reportCriteria(Options $options, array $evaluations, array $definitions, array $captures): int
 {
-    $agreed = printMonotonicity($evaluations, $options->top);
-    $agreed = printPerfectScores($evaluations, $options->c2Max) && $agreed;
+    printMonotonicity($evaluations, $options->top);
+    $agreed = true;
+    printPerfectScores($evaluations, $options->c2Max);
+    echo "\n== C2: predeclared neutral/adverse source profiles ==\n";
+    foreach (EarnedTop::judge($definitions) as $row) {
+        echo \sprintf("%s %s [%s] neutral=%s adverse=%s %s (%s)\n", $row['level'], $row['dimension'], implode(' ', $row['sources']), $row['neutral'] ?? '--', $row['adverse'] ?? '--', $row['verdict'], $row['kind']);
+        $agreed = $row['verdict'] === 'pass' && $agreed;
+    }
+    $unearned = EarnedTop::unearned($evaluations);
+    echo \sprintf("C2 corpus: %d perfect scores matched a frozen adverse profile; other perfect counts remain descriptive.\n", \count($unearned));
+    foreach ($unearned as $violation) {
+        echo 'unearned: ' . $violation . "\n";
+    }
+    $agreed = $unearned === [] && $agreed;
     $agreed = printCoverage($evaluations, $options) && $agreed;
 
-    // C4 is a statement about the project number, so the second evaluation
-    // stays at project level: repeating 5000 class evaluations to compare two
-    // project aggregates would cost more memory than the whole rest of the run.
+    // Both C4 sides stay at project level; only the comparator re-derives D.
+    $published = array_map(
+        static fn(Capture $capture): Evaluation => (new Bench())->run(
+            $capture,
+            $definitions,
+            [SymbolLevel::Project],
+            AggregationScheme::current(),
+            keepPublishedProjectInputs: true,
+        ),
+        $captures,
+    );
     $weighted = evaluateAll(
         $captures,
         $definitions,
         [SymbolLevel::Project],
-        // The same members as `current`, so the drift is the weighting alone.
-        new AggregationScheme(AggregationScheme::MEMBERS_DECLARING, AggregationScheme::WEIGHT_LOC),
+        AggregationScheme::current(),
     );
-    $agreed = printAggregateDrift($evaluations, $weighted, $options->c4Tolerance) && $agreed;
+    $agreed = printAggregateDrift($published, $weighted, $options->c4Tolerance) && $agreed;
 
-    echo "\nC5 (ordering against the frozen a-priori ranking) is not answered here:"
-        . " the ranking is P2's artefact and does not exist yet.\n";
+    echo "\n== C5: 24 frozen formal pairs (equality allowed) ==\n";
+    foreach (FormalRanking::judge($evaluations) as $row) {
+        echo \sprintf("%s (%s) <= %s (%s): %s\n", $row['lower'], $row['low'] ?? '--', $row['higher'], $row['high'] ?? '--', $row['verdict']);
+        $agreed = $row['verdict'] === 'pass' && $agreed;
+    }
+    foreach (['codeigniter', 'wordpress'] as $lower) {
+        foreach (['composer', 'laravel-framework'] as $higher) {
+            $scores = [];
+            foreach ($evaluations as $evaluation) {
+                $project = $evaluation->capture->project();
+                if ($project !== null) {
+                    $scores[$evaluation->capture->id] = $evaluation->scoreOf($project, 'health.overall');
+                }
+            }
+            $low = $scores[$lower] ?? null;
+            $high = $scores[$higher] ?? null;
+            echo \sprintf("C5 diagnostic: %s (%s) <= %s (%s): %s\n", $lower, $low ?? '--', $higher, $high ?? '--', $low === null || $high === null ? 'unjudged' : ($low <= $high ? 'holds' : 'reversed'));
+        }
+    }
+    echo "qmx has no formal C5 pair.\n";
+    echo "C6: the dimension-by-level distributions above are descriptive; no independently declared numeric bands.\n";
 
     return $agreed ? 0 : 1;
 }

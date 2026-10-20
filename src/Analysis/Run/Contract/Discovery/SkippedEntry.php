@@ -24,47 +24,19 @@ final readonly class SkippedEntry
         public string $detail,
     ) {}
 
-    /**
-     * The name the reader was pointed at, not the name it resolves to.
-     *
-     * Canonicalizing a symbolic link reports its target — a path that may sit
-     * outside the project and that nothing in the tree is called — while this
-     * value is the key baselines and suppressions are indexed by. So the last
-     * segment is never handed to a conversion that resolves what it is given:
-     * only the containing directory is resolved, and the entry's own name is
-     * appended to the answer afterwards. Both branches obey that, which is the
-     * part that used to hold for the in-root branch alone: the out-of-root
-     * fallback canonicalizes its whole argument, so it is given the parent.
-     */
+    public static function nonRegular(AbsolutePath $path, string $detail): self
+    {
+        return new self($path, AnalysisFailureKind::NotRegularFile, $detail);
+    }
+
+    public static function directorySymlink(AbsolutePath $path, string $detail): self
+    {
+        return new self($path, AnalysisFailureKind::DirectorySymlink, $detail);
+    }
+
+    /** The entry's written name is retained even when it is a symlink. */
     public function relativeTo(AbsolutePath $projectRoot): RelativePath
     {
-        $value = $this->path->value();
-        $name = basename($value);
-        $parentValue = \dirname($value);
-        $parentReal = realpath($parentValue);
-        $parent = $parentReal === false ? $parentValue : $parentReal;
-
-        $canonicalRoot = realpath($projectRoot->value());
-        $base = $canonicalRoot === false ? $projectRoot : AbsolutePath::fromString($canonicalRoot);
-
-        if ($name === '') {
-            // `basename('/')`: a path that is its own parent has no name to
-            // protect. AbsolutePath normalizes a trailing slash away, so this
-            // is the only spelling that reaches here.
-            return PathFactory::bestEffortRelative($value, $base);
-        }
-
-        $inRoot = PathFactory::tryProjectRelative($parent . '/' . $name, $base);
-        if ($inRoot !== null) {
-            return $inRoot;
-        }
-
-        $entryName = RelativePath::fromString($name);
-
-        // The filesystem root relativizes to nothing structural, so appending
-        // to it would invent a segment the fallback made up.
-        return $parent === '/'
-            ? $entryName
-            : PathFactory::bestEffortRelative($parent, $base)->join($entryName);
+        return PathFactory::published($this->path, $projectRoot);
     }
 }

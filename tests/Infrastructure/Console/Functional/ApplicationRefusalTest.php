@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\Application;
+use Qualimetrix\Infrastructure\Console\Application\Application;
 use Qualimetrix\Subprocess\ChildProcess;
 
 require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
@@ -28,7 +28,7 @@ final class ApplicationRefusalTest extends TestCase
 {
     private const int REFUSAL = 3;
 
-    private const int INTERNAL_ERROR = 1;
+    private const int INTERNAL_ERROR = 5;
 
     private string $fixture = '';
 
@@ -116,27 +116,14 @@ final class ApplicationRefusalTest extends TestCase
         self::assertSame(self::REFUSAL, $run['exitCode']);
     }
 
-    /**
-     * Route 4: the interactive alternative to the case directly above.
-     * Symfony's own `Application::doRunCommand()` asks "Do you want to run
-     * X instead?" whenever exactly one alternative exists and the input is
-     * interactive — a property `ArgvInput` defaults to `true` for and only
-     * `--no-interaction`/`-n` (or `NO_INTERACTION`) turns off, regardless of
-     * whether stdin is an actual TTY. So this reaches the question with a
-     * plain piped, non-TTY stdin: no pty is required. An empty stream is a
-     * valid answer to the question (it defaults to "no", same as declining),
-     * and the run then exits the way declining the alternative always has —
-     * outside the refusal ladder entirely, since the question is answered
-     * and the command genuinely never ran; that exit code is not the subject
-     * here; the reproduction of the question on stdout is.
-     */
     #[Test]
-    public function itAsksToRunTheAlternativeInteractivelyInsteadOfRefusingOutright(): void
+    public function itRefusesTheAlternativeWithoutInteractiveConfirmation(): void
     {
         $run = $this->runBin(['chek'], stdin: '');
 
-        self::assertStringContainsString('Command "chek" is not defined.', $run['stdout']);
-        self::assertStringContainsString('Do you want to run "check" instead?', $run['stdout']);
+        self::assertSame(3, $run['exitCode']);
+        self::assertSame('', $run['stdout']);
+        self::assertStringContainsString('check', $run['stderr']);
     }
 
     /**
@@ -269,15 +256,15 @@ final class ApplicationRefusalTest extends TestCase
             declare(strict_types=1);
             require '{$repoRoot}/vendor/autoload.php';
 
-            use Qualimetrix\\Infrastructure\\Console\\Application;
-            use Qualimetrix\\Infrastructure\\Console\\ErrorStream;
+            use Qualimetrix\\Infrastructure\\Console\\Application\\Application;
+            use Qualimetrix\\Infrastructure\\Console\\Terminal\\Diagnostics\\ErrorStream;
             use Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter;
             use Symfony\\Component\\Console\\Command\\Command;
             use Symfony\\Component\\Console\\Input\\InputInterface;
             use Symfony\\Component\\Console\\Output\\OutputInterface;
 
             \$errorStream = new ErrorStream();
-            \$app = new Application(\$errorStream, new RefusalPresenter(\$errorStream));
+            \$app = new Application(\$errorStream, new RefusalPresenter(\$errorStream), static fn() => new \\Qualimetrix\\Infrastructure\\Composer\\ComposerManifestReader());
             \$app->setCatchErrors({$catch});
             \$app->addCommand(new class extends Command {
                 protected function configure(): void
@@ -328,9 +315,63 @@ final class ApplicationRefusalTest extends TestCase
         return ChildProcess::run($command, $this->fixture, $stdin);
     }
 
+    /** @return iterable<string, array{list<string>}> */
+    public static function glyphRefusalCommands(): iterable
+    {
+        yield 'check' => [['check', 'src']];
+        yield 'JSON' => [['check', 'src', '--format=json']];
+        yield 'rules' => [['rules']];
+        yield 'baseline' => [['baseline:generate', 'src']];
+        yield 'graph' => [['graph:export', 'src']];
+    }
+
+    /** @param list<string> $arguments */
+    #[Test]
+    #[DataProvider('glyphRefusalCommands')]
+    public function itFramesAnUnknownGlyphModeBeforeEveryCommand(array $arguments): void
+    {
+        $old = getenv('QMX_ASCII');
+        putenv('QMX_ASCII=maybe');
+        try {
+            $run = $this->runBin($arguments);
+            self::assertSame(3, $run['exitCode']);
+            $message = $run['stdout'] . $run['stderr'];
+            self::assertStringContainsString('QMX_ASCII', $message);
+            self::assertStringNotContainsString('PHP Fatal', $message);
+            self::assertStringNotContainsString('Uncaught', $message);
+            if (\in_array('--format=json', $arguments, true)) {
+                $envelope = json_decode($run['stdout'], true, flags: \JSON_THROW_ON_ERROR);
+                self::assertSame(3, $envelope['exit_code']);
+                self::assertSame('environment', $envelope['source'][0]['kind']);
+                self::assertSame('QMX_ASCII', $envelope['source'][0]['name']);
+            } else {
+                self::assertSame('', $run['stdout']);
+            }
+        } finally {
+            putenv($old === false ? 'QMX_ASCII' : 'QMX_ASCII=' . $old);
+        }
+    }
+
     private static function binPath(): string
     {
         return \dirname(__DIR__, 4) . '/bin/qmx';
+    }
+
+    #[Test]
+    public function itRefusesTheGlobalDisplayLabelButSelectsTheEmptyNamespace(): void
+    {
+        file_put_contents($this->fixture . '/src/Global.php', '<?php class First {} class Second {}');
+        file_put_contents($this->fixture . '/qmx.yaml', "rules:\n  size.class-count:\n    warning: 1\n");
+        $refused = $this->runBin(['check', 'src', '--only-rule=size.class-count', '--format=json', '--namespace=subtree:(global)', '--workers=0', '--no-cache']);
+        self::assertSame(3, $refused['exitCode']);
+        self::assertSame(3, json_decode($refused['stdout'], true, flags: \JSON_THROW_ON_ERROR)['exit_code']);
+        $selected = $this->runBin(['check', 'src', '--only-rule=size.class-count', '--format=json', '--namespace=regex:^$', '--fail-on=warning', '--workers=0', '--no-cache']);
+        self::assertSame(1, $selected['exitCode']);
+        $report = json_decode($selected['stdout'], true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(1, $report['summary']['violationCount']);
+        self::assertSame('', $report['violations'][0]['namespace']);
+        self::assertSame([''], $report['violations'][0]['namespaces']);
+        self::assertSame(0, $report['outOfScope']['violationCount']);
     }
 
     private static function removeDirectory(string $directory): void

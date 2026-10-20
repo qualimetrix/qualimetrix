@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Governance\RuleOptionKeys;
 
 use PhpParser\Node\Stmt\Class_;
-use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\NodeFinder;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor\NameResolver;
@@ -17,13 +16,14 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use ReflectionClass;
 use SplFileInfo;
 
 /**
@@ -157,7 +157,7 @@ final class RuleOptionKeyDeclarationCoverageTest extends TestCase
     {
         foreach (self::hierarchicalOptionsClasses() as $optionsClass) {
             $declared = array_keys($optionsClass::levelOptionsClasses());
-            $options = $optionsClass::fromArray([]);
+            $options = $optionsClass::fromResolved(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::values($optionsClass, []));
             self::assertInstanceOf(HierarchicalRuleOptionsInterface::class, $options);
 
             $supported = array_map(
@@ -190,7 +190,7 @@ final class RuleOptionKeyDeclarationCoverageTest extends TestCase
         $slots = 0;
 
         foreach (self::hierarchicalOptionsClasses() as $optionsClass) {
-            $options = $optionsClass::fromArray([]);
+            $options = $optionsClass::fromResolved(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::values($optionsClass, []));
             self::assertInstanceOf(HierarchicalRuleOptionsInterface::class, $options);
 
             foreach ($optionsClass::levelOptionsClasses() as $slot => $levelClass) {
@@ -356,7 +356,7 @@ final class RuleOptionKeyDeclarationCoverageTest extends TestCase
                 }
 
                 $declares = false;
-                foreach ($finder->findInstanceOf($node, ClassMethod::class) as $method) {
+                foreach ($node->getMethods() as $method) {
                     if ($method->name->toString() === 'acceptedOptionKeys' && $method->isStatic()) {
                         $declares = true;
                     }
@@ -366,6 +366,12 @@ final class RuleOptionKeyDeclarationCoverageTest extends TestCase
                 $identity = $anonymous
                     ? \sprintf('%s:%d', $file, $node->getStartLine())
                     : ($node->namespacedName?->toString() ?? $node->name->toString());
+
+                if (!$declares && !$anonymous && class_exists($identity)) {
+                    $resolved = (new ReflectionClass($identity))->getMethod('acceptedOptionKeys');
+                    // A composed trait method belongs to this concrete class; an inherited parent answer does not.
+                    $declares = $resolved->isStatic() && $resolved->getDeclaringClass()->getName() === $identity;
+                }
 
                 $population[$identity] = ['declares' => $declares, 'anonymous' => $anonymous];
             }

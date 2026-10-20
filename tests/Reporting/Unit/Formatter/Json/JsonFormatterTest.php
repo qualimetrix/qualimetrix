@@ -27,6 +27,9 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\Contract\Formatting\GroupBy;
+use Qualimetrix\Reporting\Contract\Report\Report;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
 use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\Formatter\Json\JsonFindingSection;
@@ -34,10 +37,7 @@ use Qualimetrix\Reporting\Formatter\Json\JsonFormatter;
 use Qualimetrix\Reporting\Formatter\Json\JsonHealthSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonOffenderSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonSanitizer;
-use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
-use Qualimetrix\Reporting\Report;
 use Qualimetrix\Reporting\ReportBuilder;
 use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
@@ -49,10 +49,10 @@ final class JsonFormatterTest extends TestCase
 
     protected function setUp(): void
     {
-        $hintProvider = new HealthMetricCatalog();
+        $hintProvider = new HealthMetricCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
         $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-        $namespaceDrillDown = new HealthScoreDrillDown($definitionCatalog);
-        $worstClassDrillDown = new WorstClassDrillDown($definitionCatalog);
+        $namespaceDrillDown = new HealthScoreDrillDown($definitionCatalog, new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDecompositionCatalog(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpression()));
+        $worstClassDrillDown = new WorstClassDrillDown();
         $sanitizer = new JsonSanitizer();
         $findingFilter = new FindingFilter();
         $remediationTimeRegistry = new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues());
@@ -62,6 +62,181 @@ final class JsonFormatterTest extends TestCase
             new JsonOffenderSection($worstClassDrillDown, $findingFilter, $sanitizer),
             new JsonFindingSection($remediationTimeRegistry, $sanitizer),
         );
+    }
+
+    #[Test]
+    public function itCarriesFileNamespacesIntoViolationsGroupsAndRankedRecords(): void
+    {
+        $repository = new \Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository();
+        $file = RelativePath::fromString('src/Multi.php');
+        foreach (['Shop', 'Other'] as $namespace) {
+            $repository->addSubject(\Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(
+                SymbolPath::forClass($namespace, 'Marker'),
+                $file,
+                \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0),
+            )), new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag(), $file, 1);
+        }
+        $finding = self::finding(new Location($file, 7), SymbolPath::forFile($file), 'duplication.clone', 'duplication.clone', 'Physical copy', Severity::Warning);
+        $index = \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($repository);
+        $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::exact('Shop'), groupBy: GroupBy::NamespaceName);
+        $selected = (new \Qualimetrix\Reporting\DrillDown\FindingFilter())->filterFindings([$finding], $context, $index);
+        $ranked = new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($finding, 10, null, 5, 3);
+        $report = new Report(
+            fileNamespaces: $index,
+            findings: $selected,
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 0,
+            metrics: $repository,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(topIssues: [$ranked]),
+        );
+        $data = json_decode($this->formatter->format($report, $context)->body, true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(1, $data['summary']['violationCount']);
+        self::assertSame(['Other, Shop'], array_keys($data['violationGroups']));
+        foreach ([$data['violations'][0], $data['topIssues'][0], $data['violationGroups']['Other, Shop']['violations'][0]] as $record) {
+            self::assertNull($record['namespace']);
+            self::assertSame(['Other', 'Shop'], $record['namespaces']);
+            self::assertSame($finding->subject->toCanonical(), $record['subject']);
+        }
+    }
+
+    #[Test]
+    public function itRepairsBinaryPopulationExamplesOnlyAtPublication(): void
+    {
+        $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
+        $channel = new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel('complexity.ccn');
+        for ($ordinal = 0; $ordinal < 6; ++$ordinal) {
+            $trace->record(
+                'complexity.ccn',
+                $channel,
+                \Qualimetrix\Core\Symbol\SymbolLevel::Callable,
+                \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::selector("member:$ordinal:\xFF", 'callable'),
+                'callable-value',
+                'Missing publication.',
+            );
+        }
+        $population = $trace->freeze();
+        self::assertSame("member:0:\xFF", $population->abstentions()[0]->examples[0]);
+        $report = ReportBuilder::create()->population($population)->build();
+        $data = json_decode($this->formatter->format($report, new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
+        self::assertSame(6, $data['abstentions'][0]['count']);
+        self::assertSame(['member:0:%FF', 'member:1:%FF', 'member:2:%FF', 'member:3:%FF', 'member:4:%FF'], $data['abstentions'][0]['examples']);
+        self::assertSame(5, $data['invalidUtf8Replaced']);
+        self::assertSame("member:0:\xFF", $population->abstentions()[0]->examples[0]);
+    }
+
+    #[Test]
+    public function itPublishesUnjudgedPopulationOnAnEmptyFindingReportWithoutAFailure(): void
+    {
+        $trace = new \Qualimetrix\Analysis\Finding\Population\PopulationTrace();
+        $channel = new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel('complexity.ccn');
+        $trace->record(
+            'complexity.ccn',
+            $channel,
+            \Qualimetrix\Core\Symbol\SymbolLevel::Callable,
+            \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::occurrence('missing<&>', 0, 'callable'),
+            'callable-value',
+            'Missing <value> & publication.',
+        );
+        $report = ReportBuilder::create()->population($trace->freeze())->build();
+        $data = json_decode($this->formatter->format($report, new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
+        self::assertSame([['producer' => 'complexity.ccn', 'channel' => 'complexity.ccn', 'level' => 'callable',
+            'gate' => 'callable-value', 'reason' => 'Missing <value> & publication.', 'unit' => 'callable',
+            'count' => 1, 'examples' => ['["missing<&>",0]'], 'dataGap' => true]], $data['abstentions']);
+        self::assertSame([], $data['violations']);
+        self::assertSame(0, $data['summary']['errorCount']);
+        self::assertSame([], $data['computedMetricOutcomes']);
+    }
+
+    #[Test]
+    public function itCapsBySeverityThenImpactBeforePublishingInIdentityOrder(): void
+    {
+        $info = self::finding(Location::none(), SymbolPath::forNamespace('A'), 'code-smell.goto', 'code-smell.goto', 'Info', Severity::Info);
+        $low = self::finding(new Location(RelativePath::fromString('src/A.php'), 1), SymbolPath::forClass('Shop', 'A'), 'complexity.ccn', 'complexity.ccn', 'Low error', Severity::Error);
+        $high = self::finding(new Location(RelativePath::fromString('src/Z.php'), 1), SymbolPath::forClass('Shop', 'Z'), 'complexity.ccn', 'complexity.ccn', 'High error', Severity::Error);
+        $ranked = [new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($high, 50, null, 5, 3), new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($low, 10, null, 5, 3)];
+        $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            findings: [$info, $low, $high],
+            filesAnalyzed: 2,
+            filesSkipped: 0,
+            duration: 0,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(topIssues: $ranked),
+        );
+        $data = json_decode($this->formatter->format($report, new FormatterContext(options: ['violations' => '1']))->body, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertSame(['High error'], array_column($data['violations'], 'message'));
+        self::assertSame(3, $data['violationsMeta']['total']);
+    }
+
+    #[Test]
+    public function itCapsUnrankedFindingsBySeverityAndPlace(): void
+    {
+        $info = self::finding(Location::none(), SymbolPath::forNamespace('A'), 'code-smell.goto', 'code-smell.goto', 'Info', Severity::Info);
+        $error = self::finding(new Location(RelativePath::fromString('src/Z.php'), 1), SymbolPath::forClass('Shop', 'Z'), 'complexity.ccn', 'complexity.ccn', 'Error', Severity::Error);
+        $data = json_decode($this->formatter->format(new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            findings: [$info, $error],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 0,
+        ), new FormatterContext(options: ['violations' => '1']))->body, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertSame(['Error'], array_column($data['violations'], 'message'));
+    }
+
+    #[Test]
+    public function itCarriesTheFindingRecordAndAcceptedLevelIntoTopIssues(): void
+    {
+        $finding = self::finding(Location::none(), SymbolPath::forNamespace('Shop'), 'computed', 'health.cohesion', 'Low cohesion', Severity::Warning, 20, recommendation: 'Split the namespace.', threshold: 30)->reportedAsBreach(new \Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel([25], 1));
+        $issue = new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($finding, 10, null, 5, 3);
+        $data = json_decode($this->formatter->format(new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            findings: [$finding],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 0,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(topIssues: [$issue]),
+        ), new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertArrayHasKey('acceptedLevel', $data['topIssues'][0]);
+        foreach ($data['violations'][0] as $key => $value) {
+            self::assertSame($value, $data['topIssues'][0][$key]);
+        }
+    }
+
+    #[Test]
+    public function itKeepsLiteralPercentAndMalformedByteFileGroupsDistinct(): void
+    {
+        $findings = [];
+        foreach (['src/%FF.php', "src/\xFF.php"] as $path) {
+            $file = RelativePath::fromString($path);
+            $findings[] = self::finding(
+                new Location($file, 1),
+                SymbolPath::forFile($file),
+                'duplication.clone',
+                'duplication.clone',
+                'Physical copy',
+                Severity::Warning,
+            );
+        }
+        $report = ReportBuilder::create()->addFindings($findings)->filesAnalyzed(2)->build();
+        $data = json_decode($this->formatter->format($report, new FormatterContext(groupBy: GroupBy::File))->body, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertCount(2, $data['violationGroups']);
+        self::assertSame(['src/%25FF.php', 'src/%FF.php'], array_keys($data['violationGroups']));
+        self::assertSame([1, 1], array_column(array_values($data['violationGroups']), 'count'));
+        $groupSubjects = [];
+        foreach ($data['violationGroups'] as $group) {
+            foreach ($group['violations'] as $finding) {
+                $groupSubjects[] = $finding['subject'];
+            }
+        }
+        $subjects = array_column($data['violations'], 'subject');
+        sort($subjects);
+        sort($groupSubjects);
+        self::assertSame($subjects, $groupSubjects);
+        self::assertCount(2, array_unique($groupSubjects));
     }
 
     #[Test]
@@ -85,7 +260,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.5)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         self::assertJson($output);
     }
@@ -99,7 +274,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.15)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Meta section
@@ -128,11 +303,41 @@ final class JsonFormatterTest extends TestCase
         self::assertSame([], $data['violations']);
     }
 
+    /**
+     * The section is always present, so the document's shape does not depend
+     * on whether the configuration drew a warning.
+     */
+    #[Test]
+    public function itPublishesTheConfigurationDiagnosticsSectionEvenWhenEmpty(): void
+    {
+        $empty = json_decode($this->formatter->format(ReportBuilder::create()->build(), new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
+        self::assertArrayHasKey('configurationDiagnostics', $empty);
+        self::assertSame([], $empty['configurationDiagnostics']);
+
+        $diagnostic = [
+            'message' => '"only_rules" is written empty in configuration file "qmx.yaml" and replaces the list preset "focused" wrote.',
+            'source' => [
+                ['kind' => 'preset', 'name' => 'focused', 'imported_by' => null],
+                ['kind' => 'file', 'name' => 'qmx.yaml', 'imported_by' => null],
+            ],
+        ];
+        $report = ReportBuilder::create()->configurationDiagnostics([$diagnostic])->build();
+        $data = json_decode($this->formatter->format($report, new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertSame([$diagnostic], $data['configurationDiagnostics']);
+    }
+
     #[Test]
     public function itProducesIso8601Timestamp(): void
     {
-        $report = new Report([], 0, 0, 0.0, 0, 0);
-        $output = $this->formatter->format($report, new FormatterContext());
+        $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            findings: [],
+            filesAnalyzed: 0,
+            filesSkipped: 0,
+            duration: 0.0,
+        );
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $timestamp = $data['meta']['timestamp'];
@@ -171,7 +376,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.23)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Findings are flat list, sorted by severity (error first)
@@ -218,7 +423,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // message field always uses the raw finding message
@@ -242,16 +447,15 @@ final class JsonFormatterTest extends TestCase
             recommendation: 'Cyclomatic complexity: 79 (threshold: 20) - too many code paths',
         );
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [$finding],
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 0.1,
-            errorCount: 1,
-            warningCount: 0,
-            topIssues: [new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($finding, 10.0, null, 30, 3)],
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(topIssues: [new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($finding, 10.0, null, 30, 3)]),
         );
 
-        $data = json_decode($this->formatter->format($report, new FormatterContext()), true, 512, \JSON_THROW_ON_ERROR);
+        $data = json_decode($this->formatter->format($report, new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame($data['violations'][0]['message'], $data['topIssues'][0]['message']);
         self::assertSame('Cyclomatic complexity is 79, exceeds threshold of 20.', $data['topIssues'][0]['message']);
@@ -262,13 +466,12 @@ final class JsonFormatterTest extends TestCase
     public function itIncludesHealthScores(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 100,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            healthScores: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: [
                 'complexity' => new HealthScore(
                     name: 'complexity',
                     score: 65.0,
@@ -295,10 +498,10 @@ final class JsonFormatterTest extends TestCase
                     errorThreshold: 25.0,
                     coverage: HealthCoverage::notApplicable('fixture: this test is not about coverage'),
                 ),
-            ],
+            ]),
         );
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertNotNull($data['health']);
@@ -328,19 +531,18 @@ final class JsonFormatterTest extends TestCase
     public function itShowsHealthInScopedReporting(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 8,
             filesSkipped: 0,
             duration: 0.4,
-            errorCount: 0,
-            warningCount: 0,
-            healthScores: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: [
                 'complexity' => new HealthScore('complexity', 65.0, 'Fair', 50.0, 25.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
-            ],
+            ]),
         );
 
         $context = new FormatterContext(scopedReporting: true);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Health is always shown now — full graph is always available
@@ -352,16 +554,14 @@ final class JsonFormatterTest extends TestCase
     public function itIncludesWorstNamespaces(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 100,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            worstNamespaces: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(worstNamespaces: [
                 new WorstOffender(
-                    symbolPath: SymbolPath::forNamespace('App\Payment'),
-                    file: null,
+                    subject: \Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\Payment')),
                     healthOverall: 31.0,
                     label: 'Critical',
                     reason: 'low cohesion, high complexity',
@@ -371,11 +571,12 @@ final class JsonFormatterTest extends TestCase
                         metrics: ['coupling.cbo.avg' => 8.5],
                         healthScores: ['complexity' => 28.0, 'cohesion' => 25.0],
                     ),
+                    overallThresholds: [50.0, 30.0],
                 ),
-            ],
+            ]),
         );
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(1, $data['worstNamespaces']);
@@ -385,7 +586,8 @@ final class JsonFormatterTest extends TestCase
         self::assertSame('Critical', $ns['label']);
         self::assertSame('low cohesion, high complexity', $ns['reason']);
         self::assertSame(12, $ns['violationCount']);
-        self::assertSame(4, $ns['size.class-count']);
+        self::assertSame(4, $ns['size.class-count.sum']);
+        self::assertArrayNotHasKey('size.class-count', $ns);
         self::assertArrayNotHasKey('file', $ns);
         self::assertArrayNotHasKey('metrics', $ns);
         self::assertEquals(['complexity' => 28.0, 'cohesion' => 25.0], $ns['healthScores']);
@@ -395,16 +597,14 @@ final class JsonFormatterTest extends TestCase
     public function itIncludesWorstClasses(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 100,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            worstClasses: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(worstClasses: [
                 new WorstOffender(
-                    symbolPath: SymbolPath::forClass('App\Payment', 'PaymentService'),
-                    file: RelativePath::fromString('src/Payment/PaymentService.php'),
+                    subject: \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass('App\Payment', 'PaymentService'), RelativePath::fromString('src/Payment/PaymentService.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
                     healthOverall: 28.0,
                     label: 'Critical',
                     reason: '32 methods, high coupling',
@@ -414,11 +614,12 @@ final class JsonFormatterTest extends TestCase
                         metrics: ['size.method-count' => 32, 'coupling.cbo' => 18],
                         healthScores: ['complexity' => 12.0, 'cohesion' => 8.0],
                     ),
+                    overallThresholds: [50.0, 30.0],
                 ),
-            ],
+            ]),
         );
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(1, $data['worstClasses']);
@@ -453,7 +654,7 @@ final class JsonFormatterTest extends TestCase
         }
 
         $report = $builder->build();
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(55, $data['violations']);
@@ -482,7 +683,7 @@ final class JsonFormatterTest extends TestCase
 
         $report = $builder->build();
         $context = new FormatterContext(detailLimit: 0);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(55, $data['violations']);
@@ -511,7 +712,7 @@ final class JsonFormatterTest extends TestCase
 
         // --detail + --format-opt violations=5 → explicit opt wins
         $context = new FormatterContext(detailLimit: 0, options: ['violations' => '5']);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(5, $data['violations']);
@@ -535,7 +736,7 @@ final class JsonFormatterTest extends TestCase
             ->build();
 
         $context = new FormatterContext(options: ['violations' => '0']);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame([], $data['violations']);
@@ -563,7 +764,7 @@ final class JsonFormatterTest extends TestCase
 
         $report = $builder->build();
         $context = new FormatterContext(options: ['violations' => 'all']);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(55, $data['violations']);
@@ -599,7 +800,7 @@ final class JsonFormatterTest extends TestCase
             ->build();
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Payment'));
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Only Payment findings (boundary-aware: App\Payment and App\Payment\Gateway)
@@ -630,27 +831,25 @@ final class JsonFormatterTest extends TestCase
     public function itKeepsTheSummaryShapeUnderADrillDown(): void
     {
         $plain = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 3,
             filesSkipped: 0,
             duration: 0.1,
-            errorCount: 0,
-            warningCount: 0,
-            debtPer1kLoc: 5.4,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(debtPer1kLoc: 5.4),
         );
         $selected = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 3,
             filesSkipped: 0,
             duration: 0.1,
-            errorCount: 0,
-            warningCount: 0,
-            debtPer1kLoc: 5.4,
             outOfScope: new OutOfScopeFindings(1, 0, 0),
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(debtPer1kLoc: 5.4),
         );
 
-        $plainData = json_decode($this->formatter->format($plain, new FormatterContext()), true, 512, \JSON_THROW_ON_ERROR);
-        $scopedData = json_decode($this->formatter->format($selected, new FormatterContext()), true, 512, \JSON_THROW_ON_ERROR);
+        $plainData = json_decode($this->formatter->format($plain, new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
+        $scopedData = json_decode($this->formatter->format($selected, new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame(array_keys($plainData['summary']), array_keys($scopedData['summary']));
         self::assertSame(5.4, $plainData['summary']['debtPer1kLoc']);
@@ -660,7 +859,7 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itCutsTheViolationListAfterItsIdentityOrder(): void
+    public function itSelectsSeverityBeforeTheIdentityPrintOrder(): void
     {
         $report = ReportBuilder::create()
             ->addFinding(self::finding(
@@ -685,14 +884,14 @@ final class JsonFormatterTest extends TestCase
             ->build();
 
         $data = json_decode(
-            $this->formatter->format($report, new FormatterContext(options: ['violations' => '1'])),
+            $this->formatter->format($report, new FormatterContext(options: ['violations' => '1']))->body,
             true,
             512,
             \JSON_THROW_ON_ERROR,
         );
 
         self::assertCount(1, $data['violations']);
-        self::assertSame('produced last, ordered first', $data['violations'][0]['message']);
+        self::assertSame('produced first, ordered last', $data['violations'][0]['message']);
         self::assertTrue($data['violationsMeta']['truncated']);
     }
 
@@ -708,7 +907,7 @@ final class JsonFormatterTest extends TestCase
             ->build();
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Payment'));
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame([], $data['violations']);
@@ -733,7 +932,7 @@ final class JsonFormatterTest extends TestCase
             ->build();
 
         $context = new FormatterContext(class: 'App\Payment\PayService');
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(1, $data['violations']);
@@ -770,7 +969,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         // Should produce valid JSON (NaN/INF would break json_encode)
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
@@ -828,7 +1027,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame('test.a', $data['violations'][0]['code']);
@@ -874,7 +1073,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // JSON severity uses the enum value ('info', 'warning', 'error')
@@ -920,7 +1119,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame('code-smell.eval', $data['violations'][0]['code']);
@@ -945,7 +1144,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $v = $data['violations'][0];
@@ -971,7 +1170,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $v = $data['violations'][0];
@@ -983,21 +1182,20 @@ final class JsonFormatterTest extends TestCase
     public function itLimitsWorstNamespacesWithTopNOption(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 100,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            worstNamespaces: [
-                new WorstOffender(SymbolPath::forNamespace('App\A'), null, 20.0, 'Critical', 'bad', new WorstOffenderEvidence(5, 3)),
-                new WorstOffender(SymbolPath::forNamespace('App\B'), null, 25.0, 'Critical', 'bad', new WorstOffenderEvidence(3, 2)),
-                new WorstOffender(SymbolPath::forNamespace('App\C'), null, 30.0, 'Critical', 'bad', new WorstOffenderEvidence(2, 1)),
-            ],
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(worstNamespaces: [
+                new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\A')), 20.0, 'Critical', 'bad', new WorstOffenderEvidence(5, 3), [50.0, 30.0]),
+                new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\B')), 25.0, 'Critical', 'bad', new WorstOffenderEvidence(3, 2), [50.0, 30.0]),
+                new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\C')), 30.0, 'Critical', 'bad', new WorstOffenderEvidence(2, 1), [50.0, 30.0]),
+            ]),
         );
 
         $context = new FormatterContext(options: ['top' => '2']);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(2, $data['worstNamespaces']);
@@ -1007,13 +1205,12 @@ final class JsonFormatterTest extends TestCase
     public function itSanitizesNanInHealthScores(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 0.1,
-            errorCount: 0,
-            warningCount: 0,
-            healthScores: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: [
                 'test' => new HealthScore(
                     name: 'test',
                     score: \NAN,
@@ -1025,11 +1222,11 @@ final class JsonFormatterTest extends TestCase
                         new DecompositionItem('metric', 'Test', \INF, 'below 10', 'lower_is_better', 'bad'),
                     ],
                 ),
-            ],
+            ]),
         );
 
         // Should not throw — NaN/INF are sanitized to null
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertNull($data['health']['test']['score']);
@@ -1039,9 +1236,15 @@ final class JsonFormatterTest extends TestCase
     #[Test]
     public function itProducesNullForEmptyHealthScores(): void
     {
-        $report = new Report([], 10, 0, 0.5, 0, 0);
+        $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            findings: [],
+            filesAnalyzed: 10,
+            filesSkipped: 0,
+            duration: 0.5,
+        );
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertNull($data['health']);
@@ -1051,26 +1254,25 @@ final class JsonFormatterTest extends TestCase
     public function itFiltersWorstOffendersByNamespace(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 100,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
-            worstNamespaces: [
-                new WorstOffender(SymbolPath::forNamespace('App\Payment'), null, 30.0, 'Critical', 'bad', new WorstOffenderEvidence(5, 3)),
-                new WorstOffender(SymbolPath::forNamespace('App\Payment\Gateway'), null, 25.0, 'Critical', 'bad', new WorstOffenderEvidence(3, 2)),
-                new WorstOffender(SymbolPath::forNamespace('App\User'), null, 35.0, 'Critical', 'bad', new WorstOffenderEvidence(2, 1)),
-            ],
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(worstNamespaces: [
+                new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\Payment')), 30.0, 'Critical', 'bad', new WorstOffenderEvidence(5, 3), [50.0, 30.0]),
+                new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\Payment\Gateway')), 25.0, 'Critical', 'bad', new WorstOffenderEvidence(3, 2), [50.0, 30.0]),
+                new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App\User')), 35.0, 'Critical', 'bad', new WorstOffenderEvidence(2, 1), [50.0, 30.0]),
+            ]),
         );
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Payment'));
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(2, $data['worstNamespaces']);
-        self::assertSame('App\Payment', $data['worstNamespaces'][0]['symbolPath']);
-        self::assertSame('App\Payment\Gateway', $data['worstNamespaces'][1]['symbolPath']);
+        self::assertSame('App\Payment\Gateway', $data['worstNamespaces'][0]['symbolPath']);
+        self::assertSame('App\Payment', $data['worstNamespaces'][1]['symbolPath']);
     }
 
     #[Test]
@@ -1100,29 +1302,27 @@ final class JsonFormatterTest extends TestCase
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('--format-opt violations=invalid reached a formatter unparsed');
 
-        $this->formatter->format($report, $context);
+        $this->formatter->format($report, $context)->body;
     }
 
     #[Test]
     public function itShowsOffendersInScopedReporting(): void
     {
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
             findings: [],
             filesAnalyzed: 8,
             filesSkipped: 0,
             duration: 0.4,
-            errorCount: 0,
-            warningCount: 0,
-            worstNamespaces: [
-                new WorstOffender(SymbolPath::forNamespace('App'), null, 30.0, 'Critical', 'bad', new WorstOffenderEvidence(5, 3)),
-            ],
-            worstClasses: [
-                new WorstOffender(SymbolPath::forClass('App', 'Foo'), RelativePath::fromString('src/Foo.php'), 20.0, 'Critical', 'bad', new WorstOffenderEvidence(1, 0)),
-            ],
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(worstNamespaces: [
+                new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::aggregate(SymbolPath::forNamespace('App')), 30.0, 'Critical', 'bad', new WorstOffenderEvidence(5, 3), [50.0, 30.0]),
+            ], worstClasses: [
+                new WorstOffender(\Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass('App', 'Foo'), RelativePath::fromString('src/Foo.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))), 20.0, 'Critical', 'bad', new WorstOffenderEvidence(1, 0), [50.0, 30.0]),
+            ]),
         );
 
         $context = new FormatterContext(scopedReporting: true);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Scoped reporting: offenders and health are always shown (full graph available)
@@ -1159,7 +1359,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(2, $data['violations']);
@@ -1194,20 +1394,19 @@ final class JsonFormatterTest extends TestCase
         );
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 50,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
-            healthScores: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: [
                 'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
-            ],
+            ]),
         );
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'));
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Should use namespace-level scores, not project-level
@@ -1221,7 +1420,7 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itBuildsWorstClassesFromMetricsWithNamespaceFilter(): void
+    public function itSelectsReportWorstClassesWithoutRebuildingFromMetrics(): void
     {
         $classPath = SymbolPath::forClass('App\Service', 'UserService');
         $classMetrics = \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag::fromArray([
@@ -1248,34 +1447,38 @@ final class JsonFormatterTest extends TestCase
                 default => new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag(),
             },
         );
-        $metrics->method('all')->willReturnCallback(
-            static fn(\Qualimetrix\Core\Symbol\SymbolLevel $level): array => $level === \Qualimetrix\Core\Symbol\SymbolLevel::Class_
-                ? [new \Qualimetrix\Core\Symbol\SymbolInfo($classPath, \Qualimetrix\Core\Path\RelativePath::fromString('src/Service/UserService.php'), 1)]
-                : [],
-        );
+        $subject = \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($classPath, \Qualimetrix\Core\Path\RelativePath::fromString('src/Service/UserService.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0)));
+        $metrics->method('allClassDeclarations')->willReturn([new \Qualimetrix\Core\Symbol\SymbolInfo($subject, \Qualimetrix\Core\Path\RelativePath::fromString('src/Service/UserService.php'), 1)]);
+        $metrics->method('getSubject')->willReturn($classMetrics);
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 50,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
-            healthScores: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: [
                 'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
-            ],
-            worstClasses: [],
+            ], worstClasses: [new WorstOffender(
+                $subject,
+                42.0,
+                'Poor',
+                'carried reason',
+                new WorstOffenderEvidence(2, 0, ['size.method-count' => 32], ['complexity' => 20.0, 'cohesion' => 15.0]),
+                [50.0, 30.0],
+            )]),
         );
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'));
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
-        // Should build worst classes from namespace classes
+        // The report snapshot wins over the repository value (25).
         self::assertCount(1, $data['worstClasses']);
         self::assertSame('App\Service\UserService', $data['worstClasses'][0]['symbolPath']);
-        self::assertEquals(25.0, $data['worstClasses'][0]['healthOverall']);
+        self::assertEquals(42.0, $data['worstClasses'][0]['healthOverall']);
+        self::assertSame('carried reason', $data['worstClasses'][0]['reason']);
         self::assertSame('src/Service/UserService.php', $data['worstClasses'][0]['file']);
         self::assertSame(32, $data['worstClasses'][0]['metrics']['size.method-count']);
     }
@@ -1289,20 +1492,19 @@ final class JsonFormatterTest extends TestCase
         $metrics->method('all')->willReturn([]);
 
         $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository($metrics),
             findings: [],
             filesAnalyzed: 50,
             filesSkipped: 0,
             duration: 1.0,
-            errorCount: 0,
-            warningCount: 0,
             metrics: $metrics,
-            healthScores: [
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(healthScores: [
                 'overall' => new HealthScore('overall', 72.0, 'Fair', 50.0, 30.0, HealthCoverage::notApplicable('fixture: this test is not about coverage')),
-            ],
+            ]),
         );
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\NonExistent'));
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Returns null when namespace has no health data (no misleading fallback)
@@ -1329,7 +1531,7 @@ final class JsonFormatterTest extends TestCase
         }
 
         $report = $builder->build();
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame(55, $data['violationsMeta']['total']);
@@ -1358,7 +1560,7 @@ final class JsonFormatterTest extends TestCase
         }
 
         $report = $builder->build();
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame(10, $data['violationsMeta']['total']);
@@ -1387,7 +1589,7 @@ final class JsonFormatterTest extends TestCase
 
         $report = $builder->build();
         $context = new FormatterContext(options: ['limit' => '5']);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(5, $data['violations']);
@@ -1417,7 +1619,7 @@ final class JsonFormatterTest extends TestCase
 
         $report = $builder->build();
         $context = new FormatterContext(options: ['limit' => '0']);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(55, $data['violations']);
@@ -1444,7 +1646,7 @@ final class JsonFormatterTest extends TestCase
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('violations and limit reached the formatter together');
 
-        $this->formatter->format($report, new FormatterContext(options: ['violations' => '3', 'limit' => '10']));
+        $this->formatter->format($report, new FormatterContext(options: ['violations' => '3', 'limit' => '10']))->body;
     }
 
     #[Test]
@@ -1465,7 +1667,7 @@ final class JsonFormatterTest extends TestCase
             ->build();
 
         $context = new FormatterContext(groupBy: GroupBy::None);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertArrayNotHasKey('violationGroups', $data);
@@ -1510,7 +1712,7 @@ final class JsonFormatterTest extends TestCase
             isGroupByExplicit: true,
             options: ['violations' => 'all'],
         );
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Flat findings are always present
@@ -1569,7 +1771,7 @@ final class JsonFormatterTest extends TestCase
             isGroupByExplicit: true,
             options: ['violations' => 'all'],
         );
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertArrayHasKey('violationGroups', $data);
@@ -1617,7 +1819,7 @@ final class JsonFormatterTest extends TestCase
             isGroupByExplicit: true,
             options: ['violations' => 'all'],
         );
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertArrayHasKey('violationGroups', $data);
@@ -1663,7 +1865,7 @@ final class JsonFormatterTest extends TestCase
             isGroupByExplicit: true,
             options: ['violations' => '4'],
         );
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(4, $data['violations']);
@@ -1691,7 +1893,7 @@ final class JsonFormatterTest extends TestCase
             groupBy: GroupBy::ClassName,
             isGroupByExplicit: true,
         );
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertArrayHasKey('violationGroups', $data);
@@ -1746,7 +1948,7 @@ final class JsonFormatterTest extends TestCase
             isGroupByExplicit: true,
             options: ['violations' => 'all'],
         );
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $keys = array_keys($data['violationGroups']);
@@ -1776,7 +1978,7 @@ final class JsonFormatterTest extends TestCase
         int|float|null $threshold = null,
         ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null,
         ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null,
-        ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null,
+        ?\Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel $acceptedLevel = null,
         ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null,
         ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null,
     ): Finding {
@@ -1804,6 +2006,29 @@ final class JsonFormatterTest extends TestCase
             acceptedLevel: $acceptedLevel,
             occurrenceKey: $occurrenceKey,
         );
+    }
+
+    #[Test]
+    public function itPublishesAStableEmptyAndNonfailureComputedOutcomeField(): void
+    {
+        $empty = json_decode($this->formatter->format(ReportBuilder::create()->build(), new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
+        self::assertSame([], $empty['computedMetricOutcomes']);
+        $report = ReportBuilder::create()->computedMetricEvaluation(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluationSummary([
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricValueAbsence(
+                'computed.custom',
+                \Qualimetrix\Core\Symbol\SymbolLevel::Project,
+                2,
+                1,
+                ['missing.input'],
+                [\Qualimetrix\Core\Symbol\MetricSubject::aggregate(\Qualimetrix\Core\Symbol\SymbolPath::forProject())],
+            ),
+        ]))->build();
+        $data = json_decode($this->formatter->format($report, new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
+        self::assertSame([[
+            'metric' => 'computed.custom', 'level' => 'project', 'missingKeysCount' => 2,
+            'noValueCount' => 1, 'missingKeys' => ['missing.input'], 'subjects' => ['project:'],
+        ]], $data['computedMetricOutcomes']);
+        self::assertSame(0, $data['summary']['errorCount']);
     }
 
 }

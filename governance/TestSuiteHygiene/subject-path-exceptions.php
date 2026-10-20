@@ -19,13 +19,12 @@ declare(strict_types=1);
 
 return [
     'declares_no_coverage' => [
-        'ceiling' => 77,
+        'ceiling' => 76,
         'rows' => [
             'tests/Analysis/Configuration/Integration/PresetIntegrationTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Evidence/Cohesion/Unit/LcomCollectionConfigurationTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Evidence/Complexity/Integration/WmcIntegrationTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Evidence/ComputedMetrics/Integration/HealthCoverageAgreesWithCountsTest.php' => 'declares no coverage attribute',
-            'tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricContributionReaderTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Evidence/Coupling/Unit/CouplingConfigurationRefusalTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Evidence/Duplication/Functional/DuplicationMemoryLimitProcessTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Evidence/Measurement/Integration/Aggregation/GlobalNamespaceProjectAggregateTest.php' => 'declares no coverage attribute',
@@ -39,7 +38,7 @@ return [
             'tests/Analysis/Finding/Unit/FindingConfigurationResolverTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Finding/Unit/RuleConfiguration/LevelActivityReadsBothDisablingSpellingsTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Finding/Unit/RuleConfigurationIsolationTest.php' => 'declares no coverage attribute',
-            'tests/Analysis/Finding/Unit/ThresholdParserTest.php' => 'declares no coverage attribute',
+            'tests/Analysis/Finding/Unit/Contract/Rule/OptionLanguage/ThresholdParserTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Policy/Architecture/Integration/CaptureBindingIntegrationTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Policy/Architecture/Integration/FailClosedModularTopologyIntegrationTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Policy/Architecture/Integration/LayerCriteriaIntegrationTest.php' => 'declares no coverage attribute',
@@ -48,7 +47,7 @@ return [
             'tests/Analysis/Policy/Architecture/Integration/LayerViolationIntegrationTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Policy/Architecture/Integration/Phase1ConfigCompatibilityTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Policy/Architecture/Integration/RelationsFilterIntegrationTest.php' => 'declares no coverage attribute',
-            'tests/Analysis/Policy/Architecture/Unit/LayersValidatorEmptyMembershipRefusalTest.php' => 'declares no coverage attribute',
+            'tests/Analysis/Policy/Architecture/Unit/Configuration/Reading/LayersValidatorEmptyMembershipRefusalTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Policy/Baseline/Functional/BaselineIncompleteAnalysisTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Policy/Baseline/Functional/BaselineLifecycleTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Policy/Baseline/Functional/BaselineMigrateCommandTest.php' => 'declares no coverage attribute',
@@ -114,7 +113,7 @@ return [
             'tests/Analysis/Policy/Baseline/Functional/BaselineRenameChannelsCommandTest.php' => 'is filed under Analysis.Policy.Baseline and covers only Infrastructure.Console',
             'tests/Analysis/Policy/Baseline/Functional/BaselineRunBeforeLoadTest.php' => 'is filed under Analysis.Policy.Baseline and covers only Infrastructure.Console',
             'tests/Analysis/Policy/Baseline/Functional/BaselineUpdateCommandTest.php' => 'is filed under Analysis.Policy.Baseline and covers only Infrastructure.Console',
-            'tests/Analysis/Policy/Inline/Integration/ThresholdOverrideIntegrationTest.php' => 'is filed under Analysis.Policy.Inline and covers only Analysis.Evidence.CodeSmell + Analysis.Evidence.Cohesion + Analysis.Evidence.Complexity + Analysis.Evidence.Coupling + Analysis.Evidence.Design + Analysis.Evidence.Duplication + Analysis.Evidence.Maintainability + Analysis.Evidence.Size',
+            'tests/Analysis/Policy/Inline/Integration/ThresholdOverrideIntegrationTest.php' => 'is filed under Analysis.Policy.Inline and covers only Analysis.Evidence.CodeSmell + Analysis.Evidence.Cohesion + Analysis.Evidence.Complexity + Analysis.Evidence.Coupling + Analysis.Evidence.Design + Analysis.Evidence.Maintainability + Analysis.Evidence.Size',
             'tests/Analysis/Policy/Inline/Unit/IndependentAxisValidatorTest.php' => 'is filed under Analysis.Policy.Inline and covers only Analysis.Finding',
             'tests/Analysis/Policy/Inline/Unit/InvertedOverrideValidatorTest.php' => 'is filed under Analysis.Policy.Inline and covers only Analysis.Finding',
             'tests/Analysis/Policy/Inline/Unit/StandardOverrideValidatorTest.php' => 'is filed under Analysis.Policy.Inline and covers only Analysis.Finding',

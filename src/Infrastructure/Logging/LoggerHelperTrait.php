@@ -6,6 +6,8 @@ namespace Qualimetrix\Infrastructure\Logging;
 
 use Psr\Log\InvalidArgumentException;
 use Psr\Log\LogLevel;
+use Qualimetrix\Core\SourceText\SourceBytes;
+use stdClass;
 use Stringable;
 
 /**
@@ -88,15 +90,73 @@ trait LoggerHelperTrait
     }
 
     /**
-     * `JSON_INVALID_UTF8_SUBSTITUTE`: a file path on a Linux file system can
-     * carry bytes that are not UTF-8, and substituting them keeps the value
-     * readable. What substitution cannot save — `INF`, `NAN` — returns null,
+     * A Linux path may contain invalid UTF-8; percent-encoding preserves its
+     * bytes. What byte encoding cannot save — `INF`, `NAN` — returns null,
      * and the caller says the context was lost instead of writing nothing.
+     * Repair accepts arrays and stdClass containers with UTF-8 keys, and
+     * escapes string values only. Other objects or malformed keys lose the
+     * context with its native error. The native guard may execute a custom
+     * JSON callback a second time; repair never executes it again.
      */
-    private static function encodeJson(mixed $value): ?string
+    private static function encodeJson(mixed $value, ?string &$error = null): ?string
     {
-        $json = json_encode($value, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE | \JSON_INVALID_UTF8_SUBSTITUTE);
+        $error = null;
+        $flags = \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE;
+        $json = json_encode($value, $flags);
+        if ($json === false) {
+            $error = json_last_error_msg();
+        }
+        if ($json === false && json_last_error() === \JSON_ERROR_UTF8) {
+            // A malformed string can mask recursion in the same context.
+            // Let the native encoder refuse that before recursively escaping.
+            if (json_encode($value, $flags | \JSON_INVALID_UTF8_SUBSTITUTE) === false) {
+                $error = json_last_error_msg();
+
+                return null;
+            }
+            $hasUnsupportedValue = false;
+            $escaped = self::escapeStrings($value, $hasUnsupportedValue);
+            if ($hasUnsupportedValue) {
+                return null;
+            }
+            $json = json_encode($escaped, $flags);
+            $error = $json === false ? json_last_error_msg() : null;
+        }
 
         return $json === false ? null : $json;
+    }
+
+    private static function escapeStrings(mixed $value, bool &$hasUnsupportedValue): mixed
+    {
+        if (\is_string($value)) {
+            return SourceBytes::escapeInvalid($value);
+        }
+        if (\is_object($value)) {
+            if ($value::class !== stdClass::class) {
+                $hasUnsupportedValue = true;
+
+                return null;
+            }
+
+            return (object) self::escapeStrings((array) $value, $hasUnsupportedValue);
+        }
+        if (!\is_array($value)) {
+            return $value;
+        }
+
+        $escaped = [];
+        foreach ($value as $key => $item) {
+            if (\is_string($key) && !SourceBytes::isUtf8($key)) {
+                $hasUnsupportedValue = true;
+
+                break;
+            }
+            $escaped[$key] = self::escapeStrings($item, $hasUnsupportedValue);
+            if ($hasUnsupportedValue) {
+                break;
+            }
+        }
+
+        return $escaped;
     }
 }

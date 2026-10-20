@@ -83,7 +83,7 @@ final class Shell
      * @param list<string> $command
      * @param array<string, string> $environment merged over that set, replacing
      */
-    public static function start(array $command, string $workingDirectory, array $environment = []): Child
+    public static function start(array $command, string $workingDirectory, array $environment = [], ?Closure $onOutput = null): Child
     {
         $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
         $handle = proc_open($command, $descriptors, $pipes, $workingDirectory, [
@@ -93,6 +93,7 @@ final class Shell
             'TZ' => 'UTC',
             'COLUMNS' => '120',
             'NO_COLOR' => '1',
+            ...self::inheritedGitConfiguration(),
             ...$environment,
         ]);
 
@@ -101,7 +102,7 @@ final class Shell
         }
 
         $pid = proc_get_status($handle)['pid'];
-        $child = new Child($handle, $pid, $pipes);
+        $child = new Child($handle, $pid, $pipes, $onOutput);
         self::$children[$pid] = $child;
 
         return $child;
@@ -168,6 +169,13 @@ final class Shell
         }
 
         exit(130);
+    }
+
+    /** The shutdown guard runs only after every supervised child has been stopped. */
+    public static function allowShutdownGuard(): void
+    {
+        self::$stopReason = null;
+        self::$launcher = null;
     }
 
     private static function launcherGone(): bool
@@ -297,16 +305,74 @@ final class Shell
 
     public static function removeRecursively(string $path): void
     {
-        if (!is_dir($path) || is_link($path)) {
-            @unlink($path);
+        self::removeEntry($path, $path);
+    }
+
+    private static function removeEntry(string $path, string $root): void
+    {
+        if (@is_link($path)) {
+            [$removed, $nativeError] = self::captureRemoval(static fn(): bool => @unlink($path));
+            if (!$removed && !self::entryIsAbsent($path)) {
+                throw new RuntimeException(self::removalFailure(
+                    \sprintf('Cannot unlink %s while removing it.', $path),
+                    $root,
+                    $nativeError,
+                    true,
+                ));
+            }
+
+            if (!self::entryIsAbsent($path)) {
+                throw new RuntimeException(self::removalFailure(
+                    \sprintf('Cannot unlink %s while removing it.', $path),
+                    $root,
+                    $nativeError,
+                    !$removed,
+                ));
+            }
 
             return;
         }
 
-        $entries = scandir($path);
+        if (!@is_dir($path)) {
+            if (self::entryIsAbsent($path)) {
+                return;
+            }
+
+            [$removed, $nativeError] = self::captureRemoval(static fn(): bool => @unlink($path));
+            if (!$removed && !self::entryIsAbsent($path)) {
+                throw new RuntimeException(self::removalFailure(
+                    \sprintf('Cannot unlink %s while removing it.', $path),
+                    $root,
+                    $nativeError,
+                    true,
+                ));
+            }
+
+            if (!self::entryIsAbsent($path)) {
+                throw new RuntimeException(self::removalFailure(
+                    \sprintf('Cannot unlink %s while removing it.', $path),
+                    $root,
+                    $nativeError,
+                    !$removed,
+                ));
+            }
+
+            return;
+        }
+
+        [$entries, $nativeError] = self::captureRemoval(static fn(): array|false => @scandir($path));
 
         if ($entries === false) {
-            throw new RuntimeException(\sprintf('Cannot list %s while removing it.', $path));
+            if (self::entryIsAbsent($path)) {
+                return;
+            }
+
+            throw new RuntimeException(self::removalFailure(
+                \sprintf('Cannot list %s while removing it.', $path),
+                $root,
+                $nativeError,
+                true,
+            ));
         }
 
         foreach ($entries as $entry) {
@@ -314,10 +380,137 @@ final class Shell
                 continue;
             }
 
-            self::removeRecursively($path . '/' . $entry);
+            self::removeEntry($path . '/' . $entry, $root);
         }
 
-        @rmdir($path);
+        [$removed, $nativeError] = self::captureRemoval(static fn(): bool => @rmdir($path));
+        if (!$removed && !self::entryIsAbsent($path)) {
+            throw new RuntimeException(self::removalFailure(
+                \sprintf('Cannot remove directory %s.', $path),
+                $root,
+                $nativeError,
+                true,
+            ));
+        }
+
+        if (!self::entryIsAbsent($path)) {
+            throw new RuntimeException(self::removalFailure(
+                \sprintf('Cannot remove directory %s.', $path),
+                $root,
+                $nativeError,
+                !$removed,
+            ));
+        }
+    }
+
+    /** @return array<string, string> */
+    private static function inheritedGitConfiguration(): array
+    {
+        $environment = getenv();
+        if ($environment === false) {
+            throw new RuntimeException('Cannot read the process environment for the controls child.');
+        }
+
+        $configuration = [];
+        foreach ($environment as $name => $value) {
+            if ($name === 'GIT_CONFIG_COUNT'
+                || str_starts_with($name, 'GIT_CONFIG_KEY_')
+                || str_starts_with($name, 'GIT_CONFIG_VALUE_')) {
+                $configuration[$name] = $value;
+            }
+        }
+
+        return $configuration;
+    }
+
+    private static function removalFailure(
+        string $base,
+        string $root,
+        ?string $nativeError,
+        bool $operationFailed,
+    ): string {
+        require_once __DIR__ . '/../finding-gate/RemovalFailureDiagnostics.php';
+
+        return \QmxFindingGate\RemovalFailureDiagnostics::message(
+            $base,
+            $root,
+            $nativeError,
+            $operationFailed,
+            self::runDiagnostic(...),
+        );
+    }
+
+    /**
+     * @template T
+     *
+     * @param Closure(): T $operation
+     *
+     * @return array{T, ?string}
+     */
+    private static function captureRemoval(Closure $operation): array
+    {
+        require_once __DIR__ . '/../finding-gate/RemovalFailureDiagnostics.php';
+
+        return \QmxFindingGate\RemovalFailureDiagnostics::capture($operation);
+    }
+
+    /**
+     * @param list<string> $command
+     *
+     * @return array{stdout: string, stderr: string, exit: int}
+     */
+    private static function runDiagnostic(array $command, string $workingDirectory, float $deadlineSeconds): array
+    {
+        $child = self::start($command, $workingDirectory);
+        $deadline = (hrtime(true) / 1_000_000_000) + $deadlineSeconds;
+
+        while (!$child->settled()) {
+            if ((hrtime(true) / 1_000_000_000) >= $deadline) {
+                if (!\function_exists('posix_kill')) {
+                    throw new RuntimeException('The diagnostic process deadline requires the PHP POSIX extension.');
+                }
+                @posix_kill($child->pid, \defined('SIGKILL') ? \SIGKILL : 9);
+                $killDeadline = (hrtime(true) / 1_000_000_000) + 0.3;
+                do {
+                    self::poll(10_000);
+                } while ((hrtime(true) / 1_000_000_000) < $killDeadline);
+
+                throw new RuntimeException(\sprintf(
+                    'Timed out after %.1f seconds while running %s.',
+                    $deadlineSeconds,
+                    implode(' ', $command),
+                ));
+            }
+
+            self::poll(50_000);
+        }
+
+        return $child->result();
+    }
+
+    /**
+     * A failed stat is ambiguous when a parent denies traversal. A readable
+     * ancestor proves that the entry or one of its parents is absent.
+     *
+     * @phpstan-impure
+     */
+    private static function entryIsAbsent(string $path): bool
+    {
+        clearstatcache(true, $path);
+
+        if (@lstat($path) !== false) {
+            return false;
+        }
+
+        $entries = @scandir(\dirname($path));
+
+        if ($entries !== false) {
+            return !\in_array(basename($path), $entries, true);
+        }
+
+        $parent = \dirname($path);
+
+        return $parent !== $path && self::entryIsAbsent($parent);
     }
 
     public static function temporaryDirectory(string $prefix): string
@@ -339,7 +532,7 @@ final class Shell
  * It exists so several controls can be in flight at once: a supervision loop
  * that owns one child cannot read another's pipes, and an unread pipe stops the
  * child that fills it. Liveness is therefore recorded per child — `outputAge()`
- * on the child that has gone quiet, not on a stream where fourteen gates'
+ * on the child that has gone quiet, not on a stream where multiple gates'
  * output would be indistinguishable.
  */
 final class Child
@@ -366,9 +559,10 @@ final class Child
         private $handle,
         public readonly int $pid,
         array $pipes,
+        private readonly ?Closure $onOutput = null,
     ) {
         $this->open = [1 => $pipes[1], 2 => $pipes[2]];
-        $this->startedAt = microtime(true);
+        $this->startedAt = (hrtime(true) / 1_000_000_000);
         $this->lastOutputAt = $this->startedAt;
 
         foreach ($this->open as $stream) {
@@ -391,7 +585,10 @@ final class Child
             if (\is_string($chunk) && $chunk !== '') {
                 $this->buffers[$key] .= $chunk;
                 $this->bytes += \strlen($chunk);
-                $this->lastOutputAt = microtime(true);
+                $this->lastOutputAt = (hrtime(true) / 1_000_000_000);
+                if ($this->onOutput !== null) {
+                    ($this->onOutput)($key, $chunk);
+                }
             }
 
             if (feof($stream)) {
@@ -439,12 +636,12 @@ final class Child
 
     public function age(): float
     {
-        return microtime(true) - $this->startedAt;
+        return (hrtime(true) / 1_000_000_000) - $this->startedAt;
     }
 
     public function outputAge(): float
     {
-        return microtime(true) - $this->lastOutputAt;
+        return (hrtime(true) / 1_000_000_000) - $this->lastOutputAt;
     }
 
     public function bytes(): int

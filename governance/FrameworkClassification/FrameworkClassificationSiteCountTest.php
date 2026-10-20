@@ -14,7 +14,7 @@ use PHPUnit\Framework\TestCase;
  * restates the two positions where `computeClassMetrics()` calls the
  * framework predicate, and nothing in the language keeps the two in step. A
  * third call site would classify names
- * {@see \Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceRule}'s
+ * {@see \Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFramework\UnmatchedFrameworkNamespaceRule}'s
  * universe does not hold, and the rule would go back to reporting a prefix
  * that moved a metric. So the call sites are counted: adding one reddens
  * here, which is where the mirror is named.

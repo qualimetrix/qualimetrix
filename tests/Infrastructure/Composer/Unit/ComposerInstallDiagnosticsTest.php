@@ -56,7 +56,7 @@ final class ComposerInstallDiagnosticsTest extends TestCase
         $this->writeValidProject();
 
         $logger = new CollectingLogger();
-        $map = new ComposerAutoloadMap(logger: $logger);
+        $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(), logger: $logger);
         $map->pointAt($this->root, [$this->root . '/src']);
 
         self::assertNotNull($map->fileFor('App\\Thing'));
@@ -74,7 +74,7 @@ final class ComposerInstallDiagnosticsTest extends TestCase
         file_put_contents($manifest, substr((string) file_get_contents($manifest), 0, -2));
 
         $logger = new CollectingLogger();
-        $map = new ComposerAutoloadMap(logger: $logger);
+        $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(), logger: $logger);
         $map->pointAt($this->root, [$this->root . '/src']);
 
         self::assertNull($map->fileFor('App\\Thing'), 'a damaged manifest must not place classes');
@@ -95,7 +95,7 @@ final class ComposerInstallDiagnosticsTest extends TestCase
         file_put_contents($this->root . '/composer.json', '"just a string"');
 
         $logger = new CollectingLogger();
-        $map = new ComposerAutoloadMap(logger: $logger);
+        $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(), logger: $logger);
         $map->pointAt($this->root, [$this->root . '/src']);
         $map->fileFor('App\\Thing');
 
@@ -111,7 +111,7 @@ final class ComposerInstallDiagnosticsTest extends TestCase
     public function itStaysSilentAboutAnInstallThatIsSimplyNotThere(): void
     {
         $logger = new CollectingLogger();
-        $map = new ComposerAutoloadMap(logger: $logger);
+        $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(), logger: $logger);
         $map->pointAt($this->root . '/nowhere', [$this->root . '/nowhere']);
 
         self::assertFalse($map->isConfigured());
@@ -132,7 +132,7 @@ final class ComposerInstallDiagnosticsTest extends TestCase
         }
 
         $logger = new CollectingLogger();
-        $map = new ComposerAutoloadMap(logger: $logger);
+        $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(), logger: $logger);
         $map->pointAt($this->root, [$this->root . '/src']);
         $map->fileFor('App\\Thing');
 
@@ -155,7 +155,7 @@ final class ComposerInstallDiagnosticsTest extends TestCase
         $this->write('vendor/composer/installed.json', '{"packages": [');
 
         $logger = new CollectingLogger();
-        $map = new ComposerAutoloadMap(logger: $logger);
+        $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(), logger: $logger);
         $map->pointAt($this->root, [$this->root . '/src']);
         $map->fileFor('App\\Thing');
 
@@ -170,7 +170,7 @@ final class ComposerInstallDiagnosticsTest extends TestCase
         $this->write('vendor/composer/autoload_classmap.php', "<?php\n\nreturn array(\n    'Broken' =>\n");
 
         $logger = new CollectingLogger();
-        $map = new ComposerAutoloadMap(logger: $logger);
+        $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(), logger: $logger);
         $map->pointAt($this->root, [$this->root . '/src']);
         $map->fileFor('App\\Thing');
 
@@ -193,7 +193,7 @@ final class ComposerInstallDiagnosticsTest extends TestCase
         );
 
         $logger = new CollectingLogger();
-        $map = new ComposerAutoloadMap(logger: $logger);
+        $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(), logger: $logger);
         $map->pointAt($this->root, [$this->root . '/src']);
         $map->fileFor('App\\Thing');
 

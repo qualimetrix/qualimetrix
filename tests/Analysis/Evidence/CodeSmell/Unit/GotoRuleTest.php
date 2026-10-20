@@ -28,7 +28,7 @@ final class GotoRuleTest extends TestCase
         $rule = new GotoRule(new CodeSmellOptions());
 
         self::assertSame('code-smell.goto', $rule->getName());
-        self::assertSame('Detects usage of goto statement', $rule->getDescription());
+        self::assertSame('Detects usage of goto statement', $rule::getDescription());
     }
 
     #[Test]

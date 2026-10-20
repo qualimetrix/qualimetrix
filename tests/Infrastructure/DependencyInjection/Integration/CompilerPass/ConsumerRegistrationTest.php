@@ -60,25 +60,18 @@ final class ConsumerRegistrationTest extends TestCase
     }
 
     /**
-     * Second witness to the population: every pass in the compiler-pass
-     * directory that asks whether a service is registered implements the
+     * Second witness to the population: every pass in the known compiler-pass
+     * roots that asks whether a service is registered implements the
      * interface the check reads, so no pass can skip silently outside it.
      */
     #[Test]
     public function itBindsEveryPassThatAsksForARegisteredServiceToTheCheck(): void
     {
-        $directory = \dirname(__DIR__, 5) . '/src/Infrastructure/DependencyInjection/CompilerPass';
-        $files = glob($directory . '/*CompilerPass.php');
-        self::assertNotFalse($files);
-        self::assertNotSame([], $files);
-
         $unbound = [];
 
-        foreach ($files as $file) {
+        foreach (self::compilerPassFiles() as $class => $file) {
             $contents = file_get_contents($file);
             self::assertIsString($contents);
-
-            $class = 'Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\' . basename($file, '.php');
 
             if ($class === ConsumerRegistrationCompilerPass::class
                 || preg_match('/->has(Definition)?\(/', $contents) !== 1
@@ -102,12 +95,7 @@ final class ConsumerRegistrationTest extends TestCase
             (new ContainerFactory())->configure()->getCompilerPassConfig()->getPasses(),
         );
 
-        $directory = \dirname(__DIR__, 5) . '/src/Infrastructure/DependencyInjection/CompilerPass';
-        $files = glob($directory . '/*.php');
-        self::assertNotFalse($files);
-
-        foreach ($files as $file) {
-            $class = 'Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\' . basename($file, '.php');
+        foreach (self::compilerPassFiles() as $class => $_file) {
 
             if (!class_exists($class) || new ReflectionClass($class)->isAbstract()) {
                 continue;
@@ -117,6 +105,27 @@ final class ConsumerRegistrationTest extends TestCase
                 self::assertContains($class, $registered);
             }
         }
+    }
+
+    /** @return array<class-string, string> */
+    private static function compilerPassFiles(): array
+    {
+        $filesByClass = [];
+        foreach (['CompilerPass', 'RuleCatalog', 'Parallel'] as $root) {
+            $directory = \dirname(__DIR__, 5) . '/src/Infrastructure/DependencyInjection/' . $root;
+            $files = glob($directory . '/*CompilerPass.php');
+            self::assertNotFalse($files);
+            self::assertNotSame([], $files);
+            foreach ($files as $file) {
+                $class = 'Qualimetrix\\Infrastructure\\DependencyInjection\\' . $root . '\\' . basename($file, '.php');
+                if (!class_exists($class)) {
+                    throw new LogicException(\sprintf('Compiler-pass file "%s" does not declare "%s".', $file, $class));
+                }
+                $filesByClass[(new ReflectionClass($class))->getName()] = $file;
+            }
+        }
+
+        return $filesByClass;
     }
 
     /** @return iterable<string, array{string, string}> */

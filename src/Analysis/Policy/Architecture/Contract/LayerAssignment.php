@@ -47,20 +47,26 @@ final readonly class LayerAssignment
      *                                      unanswered `exclude:` stands in front
      *                                      of it, and null when no match was
      *                                      established.
-     * @param list<string> $reportedShadows The matches after
-     *                                      {@see $firstEstablished} that
-     *                                      `architecture.potential-shadow`
-     *                                      reports: neither a layer broader
-     *                                      than it nor one whose own `exclude:`
-     *                                      went unanswered.
+     * @param list<LayerAssignmentShadowVerdict> $shadowVerdicts The established
+     *                                                           matches after
+     *                                                           {@see $firstEstablished},
+     *                                                           together with the
+     *                                                           exact first-match
+     *                                                           exemption, if any.
+     *
+      * @qmx-threshold code-smell.long-parameter-list 11 -- Membership matches, undecidable candidates and precedence verdicts describe the same evaluated declaration and must reach its diagnostic readers together.
+      * @qmx-threshold code-smell.constructor-overinjection 11 -- Membership matches, undecidable candidates and precedence verdicts describe the same evaluated declaration and must reach its diagnostic readers together.
      */
     public function __construct(
         public array $matches,
         public bool $hasLayers,
-        public array $undecidedLayers = [],
-        public array $chainStopsAt = [],
-        public array $contenders = [],
-        public ?string $firstEstablished = null,
-        public array $reportedShadows = [],
+        public array $undecidedLayers,
+        public array $chainStopsAt,
+        public array $contenders,
+        public ?string $firstEstablished,
+        public array $shadowVerdicts,
+        public ?string $declaredSpelling,
+        public bool $policyDisabled,
+        public bool $edgeEndOnly,
     ) {}
 }

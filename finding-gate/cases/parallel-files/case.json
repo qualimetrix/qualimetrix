@@ -1,0 +1,13 @@
+{
+  "id": "parallel-files",
+  "description": "One hundred and one distinct PHP files cross the parallel threshold and publish one callable finding per file in both sequential and worker collection.",
+  "coverage": "auxiliary",
+  "paths": [
+    "src"
+  ],
+  "config": "qmx.yaml",
+  "args": [],
+  "channels": [
+    "complexity.ccn@callable"
+  ]
+}

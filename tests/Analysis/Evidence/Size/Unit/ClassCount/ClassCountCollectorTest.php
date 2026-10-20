@@ -1,0 +1,757 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCount;
+
+use PhpParser\NodeTraverser;
+use PhpParser\ParserFactory;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Size\ClassCount\ClassCountCollector;
+use Qualimetrix\Analysis\Evidence\Size\ClassCount\ClassCountVisitor;
+use Qualimetrix\Core\Symbol\SymbolLevel;
+use SplFileInfo;
+
+#[CoversClass(ClassCountCollector::class)]
+#[CoversClass(ClassCountVisitor::class)]
+final class ClassCountCollectorTest extends TestCase
+{
+    private ClassCountCollector $collector;
+    private string $testFilePath;
+
+    protected function setUp(): void
+    {
+        $this->collector = new ClassCountCollector();
+        $this->testFilePath = '/test/file.php';
+    }
+
+    #[Test]
+    public function itGetsName(): void
+    {
+        self::assertSame('class-count', $this->collector->getName());
+    }
+
+    #[Test]
+    public function itProvides(): void
+    {
+        self::assertSame(
+            ['size.class-count', 'size.abstract-class-count', 'size.interface-count', 'size.trait-count', 'size.enum-count', 'size.implementing-enum-count', 'size.function-count'],
+            $this->collector->provides(),
+        );
+    }
+
+    #[Test]
+    public function itHandlesEmptyFile(): void
+    {
+        $code = '<?php';
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(0, $metrics->get('size.class-count'));
+        self::assertSame(0, $metrics->get('size.interface-count'));
+        self::assertSame(0, $metrics->get('size.trait-count'));
+        self::assertSame(0, $metrics->get('size.enum-count'));
+        self::assertSame(0, $metrics->get('size.function-count'));
+    }
+
+    #[Test]
+    public function itProvidesZeroStructuralMetricsForAStatementOnlyGlobalFile(): void
+    {
+        $code = <<<'PHP'
+<?php
+declare(strict_types=1);
+
+require __DIR__ . '/functions.php';
+PHP;
+
+        $this->collectMetrics($code);
+        $namespaces = $this->collector->getNamespacesWithMetrics();
+
+        self::assertCount(1, $namespaces);
+        self::assertSame('', $namespaces[0]->namespace);
+        self::assertSame(2, $namespaces[0]->line);
+        self::assertSame(
+            [
+                'size.class-count' => 0,
+                'size.abstract-class-count' => 0,
+                'size.interface-count' => 0,
+                'size.trait-count' => 0,
+                'size.enum-count' => 0,
+                'size.implementing-enum-count' => 0,
+                'size.function-count' => 0,
+            ],
+            $namespaces[0]->metrics->all(),
+        );
+    }
+
+    #[Test]
+    public function itCountsSingleClass(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class UserService
+{
+    public function getUser(): void {}
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(1, $metrics->get('size.class-count'));
+        self::assertSame(0, $metrics->get('size.interface-count'));
+        self::assertSame(0, $metrics->get('size.trait-count'));
+        self::assertSame(0, $metrics->get('size.enum-count'));
+    }
+
+    #[Test]
+    public function itCountsMultipleClasses(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class FirstClass {}
+class SecondClass {}
+class ThirdClass {}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(3, $metrics->get('size.class-count'));
+    }
+
+    #[Test]
+    public function itCountsInterface(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App\Contracts;
+
+interface UserRepositoryInterface
+{
+    public function find(int $id): ?object;
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(0, $metrics->get('size.class-count'));
+        self::assertSame(1, $metrics->get('size.interface-count'));
+    }
+
+    #[Test]
+    public function itCountsMultipleInterfaces(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+interface Readable {}
+interface Writable {}
+interface Closable {}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(3, $metrics->get('size.interface-count'));
+    }
+
+    #[Test]
+    public function itCountsTrait(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App\Traits;
+
+trait LoggableTrait
+{
+    public function log(string $message): void
+    {
+        echo $message;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(0, $metrics->get('size.class-count'));
+        self::assertSame(1, $metrics->get('size.trait-count'));
+    }
+
+    #[Test]
+    public function itCountsMultipleTraits(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+trait FirstTrait {}
+trait SecondTrait {}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(2, $metrics->get('size.trait-count'));
+    }
+
+    #[Test]
+    public function itCountsEnum(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App\Enums;
+
+enum Status: string
+{
+    case Active = 'active';
+    case Inactive = 'inactive';
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(0, $metrics->get('size.class-count'));
+        self::assertSame(1, $metrics->get('size.enum-count'));
+    }
+
+    #[Test]
+    public function itCountsMultipleEnums(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+enum Color { case Red; case Green; }
+enum Size { case Small; case Large; }
+enum Status { case Active; }
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(3, $metrics->get('size.enum-count'));
+    }
+
+    #[Test]
+    public function itCountsMixedTypes(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Service {}
+interface Contract {}
+trait Helper {}
+enum Status { case Active; }
+
+class AnotherService {}
+interface AnotherContract {}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(2, $metrics->get('size.class-count'));
+        self::assertSame(2, $metrics->get('size.interface-count'));
+        self::assertSame(1, $metrics->get('size.trait-count'));
+        self::assertSame(1, $metrics->get('size.enum-count'));
+        self::assertSame(0, $metrics->get('size.implementing-enum-count'));
+        self::assertSame(0, $metrics->get('size.function-count'));
+    }
+
+    #[Test]
+    public function itIgnoresAnonymousClass(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Factory
+{
+    public function create(): object
+    {
+        return new class {
+            public function doSomething(): void {}
+        };
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Only the named class is counted, anonymous class is ignored
+        self::assertSame(1, $metrics->get('size.class-count'));
+    }
+
+    #[Test]
+    public function itIgnoresMultipleAnonymousClasses(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Container
+{
+    public function getServices(): array
+    {
+        return [
+            new class implements \Stringable {
+                public function __toString(): string { return 'a'; }
+            },
+            new class implements \Stringable {
+                public function __toString(): string { return 'b'; }
+            },
+            new class implements \Stringable {
+                public function __toString(): string { return 'c'; }
+            },
+        ];
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Only the named class Container is counted
+        self::assertSame(1, $metrics->get('size.class-count'));
+    }
+
+    #[Test]
+    public function itHandlesNestedNamedClassInAnonymousClass(): void
+    {
+        // This is a rare edge case in PHP
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Outer
+{
+    public function create(): object
+    {
+        return new class {
+            // Anonymous classes cannot contain nested named classes in PHP
+        };
+    }
+}
+
+class AnotherOuter {}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(2, $metrics->get('size.class-count'));
+    }
+
+    #[Test]
+    public function itCountsStandaloneFunction(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App\Helpers;
+
+function calculateSum(int $a, int $b): int
+{
+    return $a + $b;
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(0, $metrics->get('size.class-count'));
+        self::assertSame(1, $metrics->get('size.function-count'));
+    }
+
+    #[Test]
+    public function itCountsMultipleStandaloneFunctions(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App\Helpers;
+
+function add(int $a, int $b): int { return $a + $b; }
+function subtract(int $a, int $b): int { return $a - $b; }
+function multiply(int $a, int $b): int { return $a * $b; }
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(3, $metrics->get('size.function-count'));
+    }
+
+    #[Test]
+    public function itDoesNotCountClassMethodsAsFunctions(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Calculator
+{
+    public function add(int $a, int $b): int
+    {
+        return $a + $b;
+    }
+
+    public function subtract(int $a, int $b): int
+    {
+        return $a - $b;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(1, $metrics->get('size.class-count'));
+        self::assertSame(0, $metrics->get('size.function-count'));
+    }
+
+    #[Test]
+    public function itCountsMixedFunctionsAndClasses(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+function helperFunction(): void {}
+
+class Service
+{
+    public function method(): void {}
+}
+
+function anotherHelper(): void {}
+
+interface Contract {}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(1, $metrics->get('size.class-count'));
+        self::assertSame(1, $metrics->get('size.interface-count'));
+        self::assertSame(2, $metrics->get('size.function-count'));
+    }
+
+    #[Test]
+    public function itProvidesCountsForEveryNamespaceBlockIncludingEmptyOnes(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace One {
+    class Concrete {}
+    abstract class Base {}
+    function helper(): void {}
+}
+namespace Two {
+    interface Contract {}
+    trait Behavior {}
+    enum State { case Ready; }
+}
+namespace Empty {}
+PHP;
+
+        $this->collectMetrics($code);
+        $byNamespace = [];
+        foreach ($this->collector->getNamespacesWithMetrics() as $namespaceMetrics) {
+            $byNamespace[$namespaceMetrics->namespace] = $namespaceMetrics->metrics;
+        }
+
+        self::assertSame(2, $byNamespace['One']->get('size.class-count'));
+        self::assertSame(1, $byNamespace['One']->get('size.abstract-class-count'));
+        self::assertSame(1, $byNamespace['One']->get('size.function-count'));
+        self::assertSame(1, $byNamespace['Two']->get('size.interface-count'));
+        self::assertSame(1, $byNamespace['Two']->get('size.trait-count'));
+        self::assertSame(1, $byNamespace['Two']->get('size.enum-count'));
+        self::assertSame(0, $byNamespace['Empty']->get('size.class-count'));
+    }
+
+    #[Test]
+    public function itResetsState(): void
+    {
+        $code1 = <<<'PHP'
+<?php
+
+class A {}
+class B {}
+PHP;
+
+        $code2 = <<<'PHP'
+<?php
+
+class C {}
+PHP;
+
+        // Collect first file
+        $this->collectMetrics($code1);
+
+        // Reset collector
+        $this->collector->reset();
+
+        // Collect second file
+        $metrics = $this->collectMetrics($code2);
+
+        // Should only reflect second file
+        self::assertSame(1, $metrics->get('size.class-count'));
+    }
+
+    #[Test]
+    public function itCountsAbstractClass(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+abstract class AbstractService
+{
+    abstract public function execute(): void;
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(1, $metrics->get('size.class-count'));
+        self::assertSame(1, $metrics->get('size.abstract-class-count'));
+    }
+
+    #[Test]
+    public function itCountsMultipleAbstractClasses(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+abstract class AbstractBase {}
+abstract class AbstractService extends AbstractBase {}
+class ConcreteService extends AbstractService {}
+class AnotherConcrete {}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(4, $metrics->get('size.class-count'));
+        self::assertSame(2, $metrics->get('size.abstract-class-count'));
+    }
+
+    #[Test]
+    public function itCountsFinalClass(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+final class FinalService
+{
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(1, $metrics->get('size.class-count'));
+    }
+
+    #[Test]
+    public function itCountsReadonlyClass(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+readonly class ValueObject
+{
+    public function __construct(
+        public string $value,
+    ) {}
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(1, $metrics->get('size.class-count'));
+    }
+
+    #[Test]
+    public function itCountsBackedEnum(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+enum Priority: int
+{
+    case Low = 1;
+    case Medium = 2;
+    case High = 3;
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(1, $metrics->get('size.enum-count'));
+    }
+
+    #[Test]
+    public function itCountsUnitEnum(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+enum Direction
+{
+    case North;
+    case South;
+    case East;
+    case West;
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(1, $metrics->get('size.enum-count'));
+    }
+
+    #[Test]
+    public function itCountsAnEnumImplementingAnInterfaceSeparately(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+interface HasLabel {}
+
+enum Status: string implements HasLabel
+{
+    case Active = 'active';
+}
+
+enum Direction
+{
+    case North;
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(2, $metrics->get('size.enum-count'));
+        self::assertSame(1, $metrics->get('size.implementing-enum-count'));
+    }
+
+    #[Test]
+    public function itReportsImplementingEnumsPerNamespace(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace Contracts {
+    interface HasLabel {}
+}
+namespace Bare {
+    enum Direction { case North; }
+}
+namespace Implementing {
+    enum Status implements \Contracts\HasLabel { case Active; }
+}
+PHP;
+
+        $this->collectMetrics($code);
+        $byNamespace = [];
+
+        foreach ($this->collector->getNamespacesWithMetrics() as $namespaceMetrics) {
+            $byNamespace[$namespaceMetrics->namespace] = $namespaceMetrics->metrics;
+        }
+
+        self::assertSame(0, $byNamespace['Bare']->get('size.implementing-enum-count'));
+        self::assertSame(1, $byNamespace['Bare']->get('size.enum-count'));
+        self::assertSame(1, $byNamespace['Implementing']->get('size.implementing-enum-count'));
+        self::assertSame(1, $byNamespace['Implementing']->get('size.enum-count'));
+    }
+
+    #[Test]
+    public function itGetsMetricDefinitions(): void
+    {
+        $definitions = $this->collector->getMetricDefinitions();
+
+        self::assertCount(7, $definitions);
+
+        $metricNames = array_map(fn($d) => $d->name, $definitions);
+        self::assertContains('size.class-count', $metricNames);
+        self::assertContains('size.abstract-class-count', $metricNames);
+        self::assertContains('size.interface-count', $metricNames);
+        self::assertContains('size.trait-count', $metricNames);
+        self::assertContains('size.enum-count', $metricNames);
+        self::assertContains('size.implementing-enum-count', $metricNames);
+        self::assertContains('size.function-count', $metricNames);
+
+        foreach ($definitions as $definition) {
+            self::assertSame(SymbolLevel::File, $definition->collectedAt);
+
+            // Check Namespace_ level aggregations - only Sum
+            $namespaceStrategies = $definition->getStrategiesForLevel(SymbolLevel::Namespace_);
+            self::assertCount(1, $namespaceStrategies);
+            self::assertContains(AggregationStrategy::Sum, $namespaceStrategies);
+
+            // Check Project level aggregations - only Sum
+            $projectStrategies = $definition->getStrategiesForLevel(SymbolLevel::Project);
+            self::assertCount(1, $projectStrategies);
+            self::assertContains(AggregationStrategy::Sum, $projectStrategies);
+
+            // Should not have Class_ level aggregations
+            self::assertEmpty($definition->getStrategiesForLevel(SymbolLevel::Class_));
+        }
+    }
+
+    #[Test]
+    public function itDeliberatelyDoesNotProvideCallableMetrics(): void
+    {
+        self::assertNotContains(\Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface::class, class_implements($this->collector));
+    }
+
+    private function collectMetrics(string $code): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag
+    {
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($this->collector->getVisitor());
+        $traverser->traverse($ast);
+
+        // Create a mock file info with our test path
+        $file = new class ($this->testFilePath) extends SplFileInfo {
+            public function __construct(private readonly string $path)
+            {
+                parent::__construct($path);
+            }
+
+            public function getPathname(): string
+            {
+                return $this->path;
+            }
+        };
+
+        return $this->collector->collect($file, $ast);
+    }
+}

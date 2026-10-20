@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { formatHealthCoverage, coverageRecordFor } from '../src/detail.js';
+import { parseHTML } from 'linkedom';
+import { renderDetail, formatHealthCoverage, coverageRecordFor, findingMessage, acceptedLevelMessage, escapeHtml } from '../src/detail.js';
 
 // The payload shape asserted here is HealthCoverageNarrator::record() in PHP,
 // carried to the viewer as summary.healthCoverage keyed by the same health.*
@@ -94,5 +95,102 @@ describe('coverageRecordFor', () => {
   it('gives nothing when the report carries no coverage at all', () => {
     expect(coverageRecordFor({ type: 'project' }, {}, 'health.coupling')).toBeNull();
     expect(coverageRecordFor({ type: 'project' }, summary, 'health.typing')).toBeNull();
+  });
+});
+
+describe('acceptedLevelMessage', () => {
+  const base = { message: 'Debt', recommendation: 'Repair it', metricValue: 31, acceptedLevel: { shape: 'magnitude', describe: '25', count: 1 } };
+
+  it('states a breach only when the payload explicitly states one', () => {
+    expect(acceptedLevelMessage({ ...base, baselineVerdict: 'breached' })).toBe('accepted at 25, now 31');
+    expect(acceptedLevelMessage({ ...base, metricValue: 31.5, baselineVerdict: 'breached' })).toBe('accepted at 25, now 31.5');
+    expect(acceptedLevelMessage(base)).toBe('');
+    expect(acceptedLevelMessage({ ...base, acceptedLevel: null })).toBe('');
+  });
+
+  it('carries the not-compared reason through the actual escaped message', () => {
+    const rendered = escapeHtml(acceptedLevelMessage({ ...base, baselineVerdict: 'not-compared', baselineReason: '<unknown & scope>' }));
+    expect(rendered).toBe('accepted at 25; not compared: &lt;unknown &amp; scope&gt;');
+    expect(rendered).not.toContain(', now ');
+  });
+
+  it.each([
+    [1e30, '1e+30'],
+    [1e100, '1e+100'],
+    [-1.25e30, '-1.25e+30'],
+    [30, '30'],
+    [31.1234567, '31.123457'],
+  ])('preserves the magnitude of %s while trimming fractional zeros', (metricValue, displayed) => {
+    expect(acceptedLevelMessage({ ...base, metricValue, baselineVerdict: 'breached' })).toBe(`accepted at 25, now ${displayed}`);
+  });
+
+  it('never invents a current count on an occurrence or nonfinite breach', () => {
+    expect(acceptedLevelMessage({ ...base, baselineVerdict: 'breached', acceptedLevel: { shape: 'occurrence', describe: '3 occurrences' } })).toBe('accepted at 3 occurrences');
+    expect(acceptedLevelMessage({ ...base, baselineVerdict: 'breached', metricValue: null })).toBe('accepted at 25');
+  });
+});
+
+
+describe('findingMessage', () => {
+  it('keeps the diagnostic independent of advice and baseline state', () => {
+    expect(findingMessage({ message: 'Debt', recommendation: 'Repair it', acceptedLevel: { describe: '25' }, baselineVerdict: 'breached' })).toBe('Debt');
+  });
+});
+
+
+describe('not measured health coverage', () => {
+  it('publishes zero of N as an absent measurement rather than a measured score of zero', () => {
+    const formatted = formatHealthCoverage({ state: 'not-measured', measured: 0, eligible: 2, unit: 'classes', ratio: 0, basis: 'cohesion.tcc.count' });
+    expect(formatted.short).toBe('not measured 0/2');
+    expect(formatted.full).toContain('not measured 0/2 classes');
+  });
+});
+
+
+describe('prepared health rows in the mounted detail panel', () => {
+  it('mounts an absent project score beside measured numeric zero without a numeric target', () => {
+    const originalDocument = globalThis.document;
+    const { document } = parseHTML('<html><body><div id="health-bars"></div></body></html>');
+    globalThis.document = document;
+    try {
+      renderDetail({ type: 'project', metrics: {}, children: [] }, {
+        healthScores: { 'health.cohesion': null, 'health.coupling': 0 },
+        healthCoverage: {
+          'health.cohesion': { state: 'not-measured', measured: 0, eligible: 2, unit: 'classes' },
+          'health.coupling': { state: 'measured', measured: 2, eligible: 2, ratio: 1, unit: 'classes' },
+        },
+        healthDecomposition: { 'health.cohesion': [], 'health.coupling': [] },
+      }, 'health.overall');
+      const rows = [...document.querySelectorAll('.health-bar-row')];
+      expect(rows).toHaveLength(2);
+      expect(rows[0].querySelector('.health-bar-value').textContent).toBe('not measured');
+      expect(rows[0].querySelector('.health-bar-inner').hasAttribute('data-score')).toBe(false);
+      expect(rows[0].textContent).toContain('not measured 0/2');
+      expect(rows[1].querySelector('.health-bar-value').textContent).toBe('0');
+      expect(rows[1].querySelector('.health-bar-inner').getAttribute('data-score')).toBe('0');
+    } finally {
+      globalThis.document = originalDocument;
+    }
+  });
+});
+
+
+describe('local offender count in the mounted detail panel', () => {
+  it('shows ten of fifteen scored classes in the selected subtree', () => {
+    const originalDocument = globalThis.document;
+    const { document } = parseHTML('<html><body><div id="worst-offenders"></div></body></html>');
+    globalThis.document = document;
+    try {
+      renderDetail({ type: 'namespace', name: 'App', path: 'App', metrics: {}, children:
+        Array.from({ length: 15 }, (_, index) => ({
+          type: 'class', name: `C${index}`, path: `App\\C${index}`, id: `exact:${index}`,
+          metrics: { 'health.overall': index }, violationCountTotal: 0,
+        })),
+      }, {});
+      expect(document.querySelector('#worst-offenders summary').textContent).toBe('Worst Classes (10 of 15 in subtree)');
+      expect(document.querySelectorAll('#worst-offenders tbody tr')).toHaveLength(10);
+    } finally {
+      globalThis.document = originalDocument;
+    }
   });
 });

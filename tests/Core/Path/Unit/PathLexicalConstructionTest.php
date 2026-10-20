@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Core\Path;
+namespace Qualimetrix\Tests\Core\Path\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -14,7 +14,7 @@ use Qualimetrix\Core\Path\RelativePath;
  * Pins the invariant {@see AbsolutePath} documents as "construction is lexical:
  * `..` segments are resolved without touching the filesystem" — the reason
  * `canonicalize()` exists as a separate, explicitly I/O-bound operation, and the
- * reason ADR 0015 §R3's per-construction budget is reachable at all.
+ * reason ADR 0015, section R3's per-construction budget is reachable at all.
  *
  * This counts an operation rather than timing one: PHP's realpath cache gains
  * an entry per resolved segment the moment anything resolves a path through the
@@ -55,8 +55,8 @@ final class PathLexicalConstructionTest extends TestCase
     #[Test]
     public function itConstructsARelativePathWithoutResolvingItThroughTheFilesystem(): void
     {
-        // Relative to the working directory PHPUnit runs in, i.e. the project root.
-        $existing = 'tests/Core/Path/Unit/./' . basename(__FILE__);
+        chdir(__DIR__);
+        $existing = './' . basename(__FILE__);
 
         self::assertFileExists($existing);
 

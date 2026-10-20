@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Duplication;
 
+use Qualimetrix\Analysis\Evidence\Duplication\Index\HashIndexBuildResult;
+
 /**
- * Output of pass 2 (re-tokenization): the token streams and raw source of
- * only the files that {@see HashIndexBuildResult::neededFileIndices()}
- * flagged as participating in a hash match.
+ * Output of re-tokenization: the token streams and raw source of only the
+ * files that {@see HashIndexBuildResult::neededFileIndices()} flagged as
+ * participating in a hash match. A failed re-read aborts this output.
  *
  * Bundles what used to be two separate local variables inside
  * {@see DuplicationDetector::inspect()} — no additional data is retained
@@ -16,11 +18,11 @@ namespace Qualimetrix\Analysis\Evidence\Duplication;
 final readonly class RetokenizedFiles
 {
     /**
-     * @param array<int, list<NormalizedToken>> $tokens fileIdx → tokens
+     * @param array<int, TokenStream> $streams fileIdx → token stream
      * @param array<int, string> $sources fileIdx → source content (for hint extraction)
      */
     public function __construct(
-        public array $tokens,
+        public array $streams,
         public array $sources,
     ) {}
 }

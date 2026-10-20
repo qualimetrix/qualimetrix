@@ -5,19 +5,21 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
-use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOptionValues;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Finding\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Rule\Override\StandardOverrideValidator;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -51,19 +53,13 @@ final class AbstractRuleThresholdSeamTest extends TestCase
 
 final class SubjectControlHarness extends AbstractRule
 {
+    public const string NAME = 'test.subject-control';
+
+    public const string DESCRIPTION = 'Test harness';
+
     public static function getOptionsClass(): string
     {
         return SubjectControlOptions::class;
-    }
-
-    public function getName(): string
-    {
-        return 'test.subject-control';
-    }
-
-    public function getDescription(): string
-    {
-        return 'Test harness';
     }
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
@@ -83,7 +79,7 @@ final readonly class SubjectControlOptions implements RuleOptionsInterface, Thre
 {
     public function __construct(private int $warning, private int $error) {}
 
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
         return new self(10, 20);
     }

@@ -157,6 +157,20 @@ final class VisitorMethodContextTest extends TestCase
         self::assertSame(CallableKind::PropertyHook, $scope->kind);
         self::assertSame($scope, $context->leave($hook));
         self::assertNull($context->leave($property));
+
+        $get = new Node\PropertyHook('get', [], [], ['startFilePos' => 18, 'startLine' => 6]);
+        $set = new Node\PropertyHook('set', [], [], ['startFilePos' => 28, 'startLine' => 7]);
+        $promoted = new Node\Param(new Node\Expr\Variable('promoted'), flags: \PhpParser\Modifiers::PUBLIC, hooks: [$get, $set]);
+
+        self::assertNull($context->enter($promoted));
+        foreach ([$get, $set] as $promotedHook) {
+            $promotedScope = $context->enter($promotedHook);
+            self::assertNotNull($promotedScope);
+            self::assertSame('promoted::' . $promotedHook->name->toString(), $promotedScope->member);
+            self::assertSame('App\\Thing::promoted::' . $promotedHook->name->toString(), $promotedScope->logicalFqn);
+            self::assertSame($promotedScope, $context->leave($promotedHook));
+        }
+        self::assertNull($context->leave($promoted));
     }
 
     #[Test]

@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\SuppressionBinding;
 
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
+use Qualimetrix\Analysis\Finding\Contract\Rule\EnablementOptionsTrait;
+
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 
@@ -24,6 +23,8 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  */
 final readonly class UnboundSuppressionOptions implements RuleOptionsInterface
 {
+    use EnablementOptionsTrait;
+
     /**
      * The channel names live here rather than on the rule because both the
      * rule and the audit need them, and constants on the rule would make the
@@ -41,30 +42,9 @@ final readonly class UnboundSuppressionOptions implements RuleOptionsInterface
         public bool $enabled = true,
     ) {}
 
-    /**
-     * @param array<string, mixed> $config
-     */
-    public static function fromArray(array $config): self
-    {
-        return new self(
-            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
-        );
-    }
-
-    public function isEnabled(): bool
-    {
-        return $this->enabled;
-    }
-
     public function getSeverity(int|float $value): ?Severity
     {
         return $value > 0 ? Severity::Warning : null;
     }
 
-    public static function acceptedOptionKeys(): RuleOptionKeySet
-    {
-        return RuleOptionKeySet::of([
-            'enabled' => RuleOptionShape::boolean()->orNull(),
-        ]);
-    }
 }

@@ -6,17 +6,17 @@ namespace Qualimetrix\Tests\Reporting\Unit\FindingProjection\Configuration;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Reporting\FindingProjection\Configuration\ConfiguredFindingExclusionsResolver;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 final class ConfiguredFindingExclusionsResolverTest extends TestCase
 {
     #[Test]
     public function itAccumulatesAndDeduplicatesConfiguredExclusions(): void
     {
-        $resolved = (new ConfiguredFindingExclusionsResolver())->resolve(new ConfigurationDocument([
+        $resolved = (new ConfiguredFindingExclusionsResolver())->resolve(LayeredDocument::of([
             ['source' => 'preset', 'values' => ['suppress_paths' => [['subtree' => 'vendor']], 'suppress_namespaces' => [['subtree' => 'Legacy']]]],
             ['source' => 'config', 'values' => ['suppress_paths' => [['subtree' => 'vendor'], ['subtree' => 'build']], 'suppress_namespaces' => [['subtree' => 'Generated']]]],
         ], AbsolutePath::fromString('/project')));
@@ -34,7 +34,7 @@ final class ConfiguredFindingExclusionsResolverTest extends TestCase
     public function itRefusesABareNumberWhereASelectorBelongs(): void
     {
         self::expectException(ConfigurationRefusal::class);
-        (new ConfiguredFindingExclusionsResolver())->resolve(new ConfigurationDocument([
+        (new ConfiguredFindingExclusionsResolver())->resolve(LayeredDocument::of([
             ['source' => 'config', 'values' => ['suppress_paths' => [2024]]],
         ], AbsolutePath::fromString('/project')));
     }
@@ -47,9 +47,9 @@ final class ConfiguredFindingExclusionsResolverTest extends TestCase
     public function itStillRefusesABareNumberWhereANamespaceBelongs(): void
     {
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Selector entries must be one-entry mappings');
+        self::expectExceptionMessage('"suppress_namespaces[0]" in configuration file "config" must be a map, got int.');
 
-        (new ConfiguredFindingExclusionsResolver())->resolve(new ConfigurationDocument([
+        (new ConfiguredFindingExclusionsResolver())->resolve(LayeredDocument::of([
             ['source' => 'config', 'values' => ['suppress_namespaces' => [2024]]],
         ], AbsolutePath::fromString('/project')));
     }
@@ -58,9 +58,9 @@ final class ConfiguredFindingExclusionsResolverTest extends TestCase
     public function itRefusesAMapWhereAListOfEntriesBelongs(): void
     {
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Invalid value for "suppress_paths": expected a list of entries, got a map.');
+        self::expectExceptionMessage('"suppress_paths" in configuration file "config" must be a list, got a map.');
 
-        (new ConfiguredFindingExclusionsResolver())->resolve(new ConfigurationDocument([
+        (new ConfiguredFindingExclusionsResolver())->resolve(LayeredDocument::of([
             ['source' => 'config', 'values' => ['suppress_paths' => ['a' => 'vendor']]],
         ], AbsolutePath::fromString('/project')));
     }

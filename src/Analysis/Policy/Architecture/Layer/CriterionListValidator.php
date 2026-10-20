@@ -10,7 +10,7 @@ use InvalidArgumentException;
  * Internal helper shared by {@see MembershipSpec} and {@see ExcludeSpec} for
  * per-kind validation of a criterion list. Stateless; package-internal.
  *
- * The two specs carry identical criterion lists (five {@code list<string>}
+ * The two specs carry identical criterion lists (six {@code list<string>}
  * fields) with identical invariants (every entry must be a non-empty
  * string). Centralising the check here avoids the structural duplication
  * detector flagging the two near-identical {@code validateList} methods
@@ -25,6 +25,18 @@ use InvalidArgumentException;
  */
 final class CriterionListValidator
 {
+    /**
+     * @param array<string, list<mixed>> $criteria
+     * @param list<mixed> $namedTypes
+     */
+    public static function validateCriteria(string $specLabel, array $criteria, array $namedTypes): void
+    {
+        foreach ($criteria as $kind => $values) {
+            self::validate($specLabel, $kind, $values);
+        }
+        self::validateNamedTypes($specLabel, $namedTypes);
+    }
+
     /**
      * @param list<mixed> $values
      *
@@ -52,6 +64,23 @@ final class CriterionListValidator
                     $index,
                 ));
             }
+        }
+    }
+
+    /** @param list<mixed> $values */
+    public static function validateNamedTypes(string $specLabel, array $values): void
+    {
+        foreach ($values as $index => $value) {
+            if ($value instanceof NamedType) {
+                continue;
+            }
+
+            throw new InvalidArgumentException(\sprintf(
+                '%s namedTypes[%d] must be a NamedType, %s given.',
+                $specLabel,
+                $index,
+                get_debug_type($value),
+            ));
         }
     }
 }

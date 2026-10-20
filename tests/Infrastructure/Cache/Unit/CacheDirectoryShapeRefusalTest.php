@@ -7,10 +7,11 @@ namespace Qualimetrix\Tests\Infrastructure\Cache\Unit;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\CacheConfigurationResolver;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 /**
  * A `cache.dir` of the wrong shape was dropped by an `is_string` guard, and the
@@ -34,9 +35,14 @@ final class CacheDirectoryShapeRefusalTest extends TestCase
     #[DataProvider('provideUnexecutableValues')]
     public function itRefusesADirectoryTheRunCannotUse(mixed $value): void
     {
-        $this->expectException(ConfigurationRefusal::class);
-
-        self::resolve($value);
+        try {
+            self::resolve($value);
+            self::fail('An unusable cache directory must be refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertCount(1, $refusal->sources());
+            self::assertSame(ConfigurationSource::CommandLine, $refusal->sources()[0]->source());
+            self::assertNull($refusal->position());
+        }
     }
 
     #[Test]
@@ -54,21 +60,24 @@ final class CacheDirectoryShapeRefusalTest extends TestCase
     #[Test]
     public function itStillDefaultsWhenNobodyNamedADirectory(): void
     {
-        $document = new ConfigurationDocument([], AbsolutePath::fromString(sys_get_temp_dir()));
-        $resolved = (new CacheConfigurationResolver())->resolve($document, AbsolutePath::fromString(sys_get_temp_dir()));
+        $document = LayeredDocument::of([], AbsolutePath::fromString(__DIR__));
+        $resolved = (new CacheConfigurationResolver())->resolve($document, AbsolutePath::fromString(__DIR__));
 
-        self::assertStringEndsWith('.qmx-cache', $resolved->directory->value());
-        @rmdir($resolved->directory->value());
+        self::assertNotNull($resolved->directory);
+        self::assertStringEndsWith('/qmx', $resolved->directory->value());
     }
 
     private static function resolve(mixed $value): string
     {
-        $root = AbsolutePath::fromString(sys_get_temp_dir());
-        $document = new ConfigurationDocument(
+        $root = AbsolutePath::fromString(__DIR__);
+        $document = LayeredDocument::of(
             [['source' => 'cli', 'values' => ['cache.dir' => $value]]],
             $root,
         );
 
-        return (new CacheConfigurationResolver())->resolve($document, $root)->directory->value();
+        $directory = (new CacheConfigurationResolver())->resolve($document, $root)->directory;
+        self::assertNotNull($directory);
+
+        return $directory->value();
     }
 }

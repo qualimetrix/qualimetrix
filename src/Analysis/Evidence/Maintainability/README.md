@@ -16,9 +16,10 @@ bounded DI registration for this internal leaf.
 
 ```text
 Maintainability/
-├── HalsteadCollector.php
-├── HalsteadMetrics.php
-├── HalsteadVisitor.php
+├── Halstead/
+│   ├── HalsteadCollector.php
+│   ├── HalsteadMetrics.php
+│   └── HalsteadVisitor.php
 ├── MaintainabilityIndexCalculator.php
 ├── MaintainabilityIndexCollector.php
 ├── MaintainabilityOptions.php
@@ -57,6 +58,10 @@ Maintainability metrics assess the difficulty of understanding, modifying, and t
 | Effort     | Volume x Difficulty       | Effort to understand         |
 | Bugs       | Volume / 3000             | Estimated number of bugs     |
 | Time       | Effort / 18               | Time to understand (seconds) |
+
+> **Note:** Estimated bugs use the later volume-based variant `B = V / 3000`,
+> documented in NIST SP 500-209, rather than Halstead's original
+> effort-based `B = E^(2/3) / 3000`. This is an estimate, not a measured bug count.
 
 ### Qualimetrix Methodology
 
@@ -146,7 +151,12 @@ A symbol without Halstead volume or statement count (for example, a class
 entry) gets no MI. A callable that has both but no CCN is a wiring defect and
 stops the run with a `LogicException` instead of scoring it as CCN 1.
 
-**Normalization:** The result is clamped to the 0-100 range.
+**Normalization:** `max(0, min(100, raw MI x 100 / 171))`.
+
+> **Note:** MI uses the Visual Studio variant of the Oman-Hagemeister index:
+> the three-term formula without the comment-density term, normalized from
+> the raw 0-171 scale to 0-100. Its size input is semantic statement count,
+> not physical lines. Raw-scale thresholds are not normalized-scale thresholds.
 
 ### Interpretation
 
@@ -260,7 +270,7 @@ Read this README with:
 - `tests/Analysis/Evidence/Maintainability/Unit/` for the Halstead algorithm,
   MI calculation and derived-collector ordering, and rule/default behavior.
 
-Changes are complete when the seven flat leaf declarations retain collector
+Changes are complete when the seven leaf declarations retain collector
 name `halstead`, all five `maintainability.halstead.*` metrics, derived requirements exactly
 `halstead`, `cyclomatic-complexity`, and `method-statement-count`, and the
 `maintainability.mi` ID, aliases, channels, option defaults and thresholds,
@@ -271,3 +281,5 @@ external consumer.
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+Maintainability populations retain the effective test-file exclusion, statement-count minimum and MI publication in their native order. The statement-count minimum uses method statement count, not formatting-dependent LOC. Excluded names do not acquire a metric bag. A published MI value is counted before severity selection.

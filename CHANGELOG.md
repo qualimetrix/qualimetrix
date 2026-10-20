@@ -9,1154 +9,288 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
-**The project distance aggregate is renamed and now covers every namespace that
-declares a type.** `coupling.distance.avg` and `coupling.distance.count` at
-project level become `coupling.distance-own.avg` and
-`coupling.distance-own.count`, and they fold each namespace's own-scope
-distance — a new `coupling.distance-own`, published beside the unchanged
-subtree `coupling.distance` — instead of the distance of leaf namespaces only.
-Namespaces that both declare types and have sub-namespaces were in no member of
-the old average; on this repository the population goes from 127 to 166, so
-`health.coupling` and `health.overall` move. Namespace-level `coupling.distance`
-is unchanged, and so is every finding on it. Update any baseline, dashboard or
-`--format=metrics` consumer that reads the project keys by name.
-`coupling.ce-own`, `coupling.ca-own`, `coupling.instability-own` and
-`coupling.abstractness-own` are published on namespaces alongside them, and
-`size.symbol-declaring-namespace-count` is published on the project as the
-denominator coupling's coverage now reports against. See
-[ADR 0080](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0080-a-project-fold-reads-a-partition-not-the-leaves.md).
+- Path and PHP-name selectors no longer accept bare strings or implicit globs. Use `{exact: value}`, `{subtree: value}` or `{regex: fragment}` in YAML and `exact:value`, `subtree:value` or `regex:fragment` in CLI options; regex fragments match the whole canonical path/name. This covers exclusions, suppressions, framework namespaces, Distance namespace inclusion, report namespaces and graph filters. Translate old globs by intent; rule/channel `X.*` selectors and Architecture patterns have separate grammars. See [ADR 0077](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0077-open-universe-selectors-are-explicit.md).
 
-**Path and PHP-name selectors no longer accept bare strings or implicit glob
-syntax.** YAML selector lists now use one-entry mappings: `- exact: value`,
-`- subtree: value`, or `- regex: fragment`. CLI options use `exact:value`,
-`subtree:value`, or `regex:fragment`. This applies to `suppress_paths`,
-`suppress_namespaces`, per-rule suppressions, `suppress_namespace_channels`
-values, `exclude`, `coupling.framework_namespaces`,
-`coupling.distance.include_namespaces`, `--suppress-path`,
-`--suppress-namespace`, `--exclude`, report `--namespace`, and both graph
-namespace filters. Regex fragments are delimiterless and automatically match
-the whole canonical path or PHP name. For example, migrate
-`suppress_paths: [src/Generated]` to
-`suppress_paths: [{subtree: src/Generated}]`, and
-`--namespace='App\Service'` to `--namespace='subtree:App\Service'`. Translate
-old globs according to intent rather than punctuation, then review suppression,
-discovery, and baseline results. Rule/channel `X.*` selectors and Architecture
-layer/binding patterns keep their separate closed grammars. See
-[ADR 0077](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0077-open-universe-selectors-are-explicit.md).
+- Configuration accepts declared snake_case, kebab-case and camelCase spellings only, at every documented depth. Previously folded variants such as `Fail_On` now refuse, as do two spellings of one key in one map. Use the documented spelling and keep one write per canonical key.
 
-**`design.dit` and `design.noc` change value when one class name is declared
-in more than one file.** A depth is now resolved and published per class
-declaration, so the two declarations a `class_exists()`-guarded polyfill
-produces can report different depths and different severities; previously both
-reported the depth of whichever file was read last, which meant renaming a file
-moved the number. A parent named by `extends` is still a name: when its
-declarations disagree, the deepest is used, and that is also the single value
-the class keeps in `--format=metrics`, in the HTML tree and in the namespace and
-project aggregates. `design.noc` counts distinct child names instead of
-`extends` edges, so a subclass declared twice now counts once. Trees that
-declare each name once are unaffected, and so are the ones that declare a name
-twice in a **single** file: only the last body is measured there, which
-predates this change and is unchanged by it. See
-[ADR 0073](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0073-a-depth-belongs-to-a-declaration-a-child-count-to-a-name.md).
-- `design.dit` no longer measures inheritance depth by loading the analysed
-  project's classes. A parent outside the analysed path is now placed from that
-  project's own composer install and its `extends` is read by parsing, so
-  **DIT deepens wherever a chain leaves the analysed path and the install can be
-  read** — per-class values, the `.avg`/`.max`/`.p95` aggregates, and the
-  magnitude a `design.dit` finding reports all move. Old surface: the depth this
-  tool's autoloader could reach, which on a standalone install was usually none
-  and on a shared install was whatever version the tool itself had. New surface:
-  the depth the analysed project's own sources declare. A chain the run cannot
-  follow still reports the depth it did reach; it no longer reports the tool's
-  answer to a different question. See ADR 0074.
+- Every authored layer is validated before discovery, including invalid values later overridden or belonging to disabled rules. Previously ignored unknown keys, malformed shapes, negative rule counts, invalid selectors, invalid formulas and conflicting same-layer writes now exit 3. Correct the named source rather than relying on an overlay to hide it.
 
-**`hook:install` writes a file where it used to write a symlink.** Every hook
-installed by an earlier release points at `scripts/pre-commit-hook.sh`, which
-is deleted; the link is now dangling and git runs nothing. Run
-`qmx hook:install --force` to replace it. `hook:status` reports the dangling
-state instead of calling the hook absent, and `hook:uninstall` refuses to
-remove a link it cannot identify rather than deleting someone else's hook.
+- Configuration maps now merge by declared leaves, while replacement lists replace whole lists. Empty maps and null bodies preserve lower values instead of resetting defaults; a rule written `true` changes only `enabled`. `computed_metrics` merges metric by metric and field by field, and an inherited `enabled: false` survives formula/threshold overrides. Write desired defaults explicitly, or `enabled: true` to restore a disabled metric. See [ADR 0086](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0086-one-configuration-document-merged-by-declared-policy.md).
 
-- `Qualimetrix\Core\Util` is gone; it was a directory name that answered
-  nothing while holding two unrelated subjects. `GlobSyntax`,
-  `NamespaceMatcher`, `PathMatcher` and `PatternMatch` moved to
-  `Qualimetrix\Core\Pattern`, and `StringSet` moved to
-  `Qualimetrix\Analysis\Evidence\DependencyModel`, its only consumer, where
-  it is now internal. **Nothing you write or read changes**: no channel name,
-  rule name, metric key, configuration key, CLI flag, output field, exit code
-  or baseline entry is affected. Only PHP code importing the five class names
-  has to change, and the change is the namespace alone.
+- Threshold shorthand expands within each layer before merging. Flat CBO/Instability bands no longer discard nested class/namespace settings: overlapping shorthand and explicit leaves in one layer refuse, while later layers replace only their written leaves. Use separate layers or explicit bands; unrelated level settings survive.
 
-- `Qualimetrix\Reporting\Filter` is gone; `FindingFilter` moved to
-  `Qualimetrix\Reporting\DrillDown`, the name the rest of the code already
-  uses for what `--namespace` and `--class` select. The class name, its two
-  methods and their behaviour are unchanged. **Nothing you write or read
-  changes**: no channel name, rule name, metric key, configuration key, CLI
-  flag, output field or exit code is affected. A `qmx.yaml` `suppress_namespaces`
-  entry or a baseline key naming the old namespace has to be respelled — this
-  repository's own ratchet carried one, and renaming it was the whole edit.
+- Top-level complexity shorthand now changes the callable band while retaining the class band; writing an NPath class band activates it. Write `class.enabled: false` to keep class reporting off. Effective warning/error ordering is validated across defaults and all layers; provide a coherent final band.
 
-- `DrillDownBinding` moved from `Qualimetrix\Infrastructure\Console` to
-  `Qualimetrix\Reporting\DrillDown`, beside the `FindingFilter` its own
-  docblock says it must agree with. It was never an adapter — it imports
-  nothing from Symfony and takes the run as an argument — so the rule that
-  keeps adapters in `Infrastructure` never applied to it. The class name, its
-  four methods and their behaviour are unchanged, and no channel name, rule
-  name, metric key, configuration key, CLI flag, output field or exit code is
-  affected. A baseline key naming the old class or its old path has to be
-  respelled; this repository's own ratchet carried two, and a third entry
-  stopped being produced at all because the namespace it named got healthier
-  when the class landed in it.
+- An exact enable in a later layer can reverse an earlier disable, and a same-layer exact enable takes precedence over a group disable. Contradictory exact enable/disable writes refuse even if overridden later. Remove the decisive enable when the producer must remain off.
 
-- `Qualimetrix\Reporting\Formatter\Support` is gone; it was a name that
-  answered nothing over classes with nothing in common. `AnsiColor` moved to
-  `...\Formatter\Ansi`, `FindingSorter` to `...\Formatter\Ordering`, and
-  `DetailedFindingRenderer`, `FindingDetailRenderer` and
-  `DebtBreakdownRenderer` — the `--detail` block — to `...\Formatter\Detail`.
-  The three narrators went to their consumers instead of to a directory of
-  their own: `AcceptedLevelNarrator` and `CoverageNarrator` up into
-  `...\Formatter`, `HealthCoverageNarrator` into `...\Formatter\Health`
-  beside the only formatter that asks it. Class
-  names and behaviour are unchanged, and no channel name, rule name, metric
-  key, CLI flag, output field or exit code is affected. Two things a consumer
-  does have to respell, both for the same reason — the namespace they name no
-  longer exists: a `qmx.yaml` `suppress_namespaces` or `suppress_paths` entry
-  under the old namespace or `Formatter/Support/` path goes inert without
-  saying so, and a baseline entry keyed on one of the eight classes stops
-  matching and is reported as an entry that did not appear.
-- SARIF `runs[].tool.driver.informationUri` is now the documentation site,
-  `https://qualimetrix.dev`, instead of the repository,
-  `https://github.com/qualimetrix/qualimetrix`. A consumer that reads the tool
-  link from it now lands on the documentation. Rule-level `helpUri` values are
-  unchanged, including the repository URL a code with no documentation page
-  falls back to.
+- An effective `only_rules` filter admitting no live rule/level, a dead exact selector, or an explicit enable outside its effective only filter now refuses instead of silently selecting nothing. Widen the filter, remove the dead selector, or move intentional narrowing to a later layer. The former both-disable-and-only warning is replaced by these decisions.
 
-- `Qualimetrix\Infrastructure\Git\Exception` is gone; it named a role rather
-  than a subject. `NotAGitRepositoryException` and
-  `UnresolvedGitReferenceException` moved up to
-  `Qualimetrix\Infrastructure\Git`, beside the client that throws them. Class
-  names, messages and behaviour are unchanged, and no channel name, rule name,
-  metric key, configuration key, CLI flag, output field or exit code is
-  affected. A `qmx.yaml` `suppress_namespaces` or `suppress_paths` entry naming
-  the old namespace or the `Git/Exception/` path goes inert without saying so,
-  and a baseline entry keyed on either class stops matching.
+- A bare rule-group prefix such as `complexity` no longer selects a group. Write `complexity.*`; unknown producers/channels and unsupported level selectors refuse with a replacement hint. Namespace-channel suppressions must name a channel its own producer publishes at namespace level.
 
-**A run that skipped an entry is now incomplete, and answers exit 4 where it
-used to answer 0 or 2.** A symbolic link to a directory, a `*.php` entry that is
-not a regular file, and a directory the process may not list were dropped from
-the file set without a word; each is now reported as a part of the tree that was
-not read, and a run holding one is not entitled to call the tree clean. The
-`kind` vocabulary published with each incomplete run grows from two values to
-five accordingly: `directory-symlink`, `not-regular-file` and
-`unreadable-directory` join `parse` and `processing` in `coverage.failures[]`
-of `json` and `metrics`, in `qmx.analysis.<kind>` of `checkstyle` and in
-`check_name: analysis.<kind>` of `gitlab`. A tree of ordinary files and
-directories is unaffected.
+- `architecture.unassigned-class` uses ordinary `enabled` plus its `mode`. An explicit enable with `mode: ignore` refuses; choose `warn`/`error` or remove that enable. Disabling any producer also skips its preparation and inspection.
 
-To migrate: a CI job that read only 0/1/2/3 now sees 4 on a tree it used to
-pass, and the report it collected names no new violation — exit 4 says part of
-the tree was not read, never that a rule fired, and it takes precedence over
-the policy codes. A reader that switches on `kind` exhaustively has to learn
-the three new values, and is better off treating an unknown one as an entry the
-run did not read than refusing the document. If exit 4 is unwanted for an entry
-you already know about, `exclude:` prunes a directory before the walk records
-anything about it, so `exclude: [{subtree: path/to/links}]` covers a directory
-symlink and an unlistable directory; `exclude:` prunes directories only, so a
-non-regular `*.php` entry has to be removed, renamed, or left outside the
-scanned paths. A path named on the command line is still followed, including a
-symbolic link to a directory: naming it is a request to analyze what is behind
-it. See
-[ADR 0078](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0078-an-entry-the-run-did-not-read-makes-it-incomplete.md).
+- CLI aliases and `--rule-opt` now use the same declared YAML scalar/list grammar and reject duplicate writes to one option. Null is no longer converted to string text. Put channel-keyed suppression maps in YAML; dotted CLI addresses traverse declared levels only.
 
-**`--report=git:HEAD` in a repository with no commits, and a malformed range
-such as `a..b..c`, are refused with exit 3 instead of exit 1.** They are bad
-input like any other, not an internal failure of the tool.
+- LCOM method exclusions no longer split CSV strings. Use a YAML sequence or `--lcom-exclude-methods='[getName, getDescription]'`; matching is case-insensitive and covered runs report unmatched names through `cohesion.unmatched-exclude-method`. Correct or remove unused names.
 
-**A layer criterion the run could not answer no longer reads as a non-match.**
-`attributes:`, `implements:` and `extends:` are answered from the declarations
-the run analysed, so an inheritance chain that leaves `paths:` — through a
-vendor parent or interface, or a subject with no analysed declaration of its
-own — used to come back as a confident "this class does not match". Membership
-is three-valued now. PHP's own classes and interfaces end a chain on known
-ground: their supertypes come from a table shipped with Qualimetrix, so the
-answer does not depend on the PHP version or extensions of the machine running
-the analysis. The interfaces PHP adds unwritten count (`UnitEnum` and
-`BackedEnum` on enums, `Stringable` on a declared `__toString()`), and a chain
-cut only among the interfaces leaves `extends:` decidable. What stays
-undecided is a chain that reaches unanalysed vendor or project code. Four
-things move on an unchanged tree:
+- `fail_on: false` is replaced by `fail_on: none`. Rule threshold/count options reject negative values, integer options reject fractions, and duplication admission counts must be positive. Correct the indicated value; computed-metric thresholds still accept either sign.
 
-- a class whose only layer is undecided is in no layer, and
-  `architecture.coverage-gap` counts it separately from a class every criterion
-  answered "no" about — a later layer, a catch-all included, still assigns it,
-  as a guess;
-- an unanswerable layer never withdraws a match: a class matched by one layer
-  keeps it when an earlier layer or its own `exclude:` clause cannot be
-  answered, and its edges are judged by the allow-list. Such an assignment is
-  in doubt, not a coverage gap: it is counted on the new `info` channel
-  `architecture.doubted-assignment` in every `coverage-gap` mode, together
-  with the symbols left in no layer only because a layer could not answer
-  about them, split into analysed classes and symbols outside the paths, with
-  each unanswered layer named and counted, and each layer that would own a
-  symbol if an unanswered `exclude:` in front of it removed it named in a list
-  of its own; it never fails the run;
-- `architecture.unreachable-layer` no longer calls a layer "matches no class"
-  while an analysed class could still belong to it: because an earlier layer's
-  `exclude:` that could not be answered holds a class the layer matched, or
-  because the run could not answer the layer about the class while some type
-  its `attributes:`/`implements:`/`extends:` criteria name is one the run met —
-  declared in the analysed paths, declared by PHP, or at an end of a dependency
-  edge. A layer naming only types the run never met is still reported, even
-  when an analysed class extends vendor code, and the finding names those types
-  and both readings: a typo, or a type reachable only through code the run did
-  not analyse (widen `paths:`). A criterion naming a type only a vendor chain
-  reaches — `implements: [Doctrine\Persistence\ObjectRepository]` over
-  repositories extending `ServiceEntityRepository` — is therefore reported, as it
-  was before doubt was tracked. A symbol outside the analysed paths keeps no
-  layer out; when a layer's criteria matched such symbols while an earlier
-  unanswered `exclude:` holds them, the finding says so instead of claiming the
-  criteria match nothing. `architecture.potential-shadow` no longer builds a
-  shadow from a match whose `exclude:` could not be answered, but still reports
-  the misordering between the matches behind it;
-- `architecture.unmatched-exclude` no longer reports an `exclude:` clause that
-  could not be answered as having removed no class.
+- Automatic configuration discovery now accepts exactly `qmx.yaml` or `qmx.yml` and refuses when both exist. Rename case variants, remove the duplicate, or pass `--config`; an unlistable search directory also refuses instead of implying no configuration.
 
-`debug:layer-assignment` names where an undecided class's chain stops (the
-`The chain stops at:` line; `chainStopsAt` in `--format=json`) and lists an
-unanswered layer only where it can change the assignment. It names the layers
-that could own a class in doubt (`Could be owned by:`), and its shadow hint
-follows the rule `architecture.potential-shadow` reports by. See
-[ADR 0079](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0079-a-criterion-the-run-cannot-answer-is-undecidable.md).
+- Omitted analysis paths now use production `autoload` PSR-4, PSR-0, classmap and files targets, rather than PSR-4 production/development roots. Add `--include-autoload-dev`/`include_autoload_dev: true` to include development code, or name paths. Targets inside `vendor`, `node_modules` or `.git` are omitted with a reason; name an inner file/directory explicitly to analyse vendored code.
 
-**A layer template that declares `suffix:`, `attributes:`, `implements:` or
-`extends:` under `match: any` is refused.** Only `patterns:` carries capture
-variables, so the other kinds are copied into every expanded layer verbatim and
-OR-ed with that layer's pattern: every instance ends up claiming every class the
-loose criterion matches, and the first instance in expansion order — which is
-binding-value alphabetical — wins it. Write `match: all` for the narrowing this
-almost certainly meant, or a static layer for the global net.
+- Missing input paths, explicitly named regular non-PHP files, paths outside the project root, and paths naming a `vendor`, `node_modules` or `.git` directory now refuse with exit 3. Choose the intended `--working-dir`, a PHP file, or a directory inside the excluded dependency root.
 
-**`relations:` written with no value is refused.** `relations:` followed by
-nothing — an empty list, commented-out items, a lost indent — parsed as "no
-filter declared", so a policy meant to be narrowed was silently widened to every
-relation kind. `relations: []` was already refused for exactly that reason; both
-spellings of the same slip now refuse alike. Drop the key entirely to keep "any
-relation allowed".
+- Explicitly excluded input paths now produce a successful intentionally empty run instead of a refusal or silent inconsistency. `check`/`directives` exit 0, graph export writes an empty graph, and baseline generation writes an empty baseline with an explanation. Inspect coverage before interpreting exit 0 as measured code; remove the exclusion to analyse it.
 
-**`architecture.coverage-gap: warn` or `error` with no `architecture.layers`
-is refused** with exit 3. With no layers every class is outside every layer,
-and the run reported none of them — so the strictest setting of the option was also the
-silent one. The state is reachable without a typo, because `layers:` is replaced
-rather than merged across configuration contributions. Declare the layers the
-mode is meant to enforce, or leave `coverage-gap: ignore`.
+- Skipped unreadable directories/files, non-regular entries and discovered symlinks now make analysis incomplete (exit 4) instead of a clean result. Failure kinds include `directory-symlink`, `file-symlink`, `not-regular-file`, `unreadable-directory` and `unreadable-entry`; unreadable source uses `unreadable-file`, not `parse`. Handle unknown failure kinds as incomplete, fix access or explicitly exclude the entry; name a file symlink directly to analyse its target.
 
-**`debug:layer-assignment --format=json` reports shadowing by the rule
-`architecture.potential-shadow` uses.** `shadowed` lists the matches after
-`shadowedBy` — the first match the run established, which is not `assigned`
-when an unanswered `exclude:` stands in front of it — and each entry carries
-`reported`. The other matches after `assigned`, which used to be listed under
-`shadowed`, move to the new key `contendingMatches` in the same
-`{layer, criteria, reported}` form, with `reported` always `false`: each match
-whose `exclude:` went unanswered and, when one stands in front of it,
-`shadowedBy` itself. The new key `contenders` names every layer that could own
-the class once the unanswered layers are answered, matching or not.
+- Project scope now distinguishes `covered`, `narrowed`, `unknown` and `unmeasured`. A manifest-less subset or surviving fragments of a damaged manifest no longer judge whole-project absence; name the whole root or repair Composer metadata. Accept `projectScope.reasons`, optional project-relative omitted-root paths and `unjudgedValues[].channel`; `unjudgedChannels` means no value of that channel was judged. `uncoveredAutoloadTargets` lists declared targets, not individual files. Directive audit adds `scope.project_scope`; exclusions/generated removal can withhold namespace absence even when paths otherwise cover the project. Scope warnings now follow analysis on stderr; do not use their former ordering as a progress signal.
 
-**A computed-metric formula naming a metric no symbol at its level carries is
-refused with exit 3.** It used to surface as `Internal error` with exit 1 — the
-code that means "warnings were found" — so a misspelled or mis-levelled key in
-`computed_metrics:` reached CI as an ordinary result. It is the same class of
-mistake as a key missing from the catalog and is now refused the same way, with
-the definition, the level, the keys and the formula named. The refusal also
-covers another computed metric read without `??` at a level missing from its own
-`levels:`, raised before analysis; a `project` level inheriting the `namespace`
-formula is checked at `project`. It does not cover the right side of a `??`
-whose left side the level carries: `m["a"] ?? m["b"]` is refused only when
-neither key is carried there. Nor does it cover a key only one ternary branch,
-or the right side of `and`/`or`, reads — which branch runs is known only per
-symbol, and a symbol that reaches such a key gets no value and is counted in
-the warning. A key read in the condition, or by both branches, is refused. A chain none of whose links the level carries is
-refused naming every link.
+- Graph export now follows configured paths, presets, exclusions, generated-file policy, cache, workers and memory limits. Review results formerly produced outside that policy. Use `--direction` for graph direction: global `-d` selects the working directory; graph `--format` remains `dot|json`. With no PHP files it now publishes an empty graph and exits 0 instead of exiting 1; status text moves to stderr so stdout contains graph data only.
 
-**Inline-directive forms that used to be silent now fail the run.** Each is
-reported on `annotation.unresolved-directive` at the line it was written on.
-That channel is a configuration error, so the run exits 2 whatever `--fail-on`
-says — `--fail-on=none` included — and no baseline accepts it:
+- Graph namespace filters, including `--exclude-namespace`, now refuse unbound selectors with exit 3 against the original graph. Correct the selector or use the exact observed spelling; a case-only suggestion is not acceptance.
 
-- a declaration-form `@qmx-ignore` written where nothing is measured (above a
-  statement, on a property without hooks);
-- a docblock `@qmx-threshold` written where nothing it can retune is measured
-  (above a statement, on a property without hooks, a class constant or a
-  parameter);
-- `@qmx-threshold` in a `//` or `/* */` comment — a threshold is read only from
-  a docblock, and over a measured method this form used to retune nothing;
-- a `@qmx-` tag name this tool does not read (`@qmx-ignore-lines`);
-- `@qmx-ignore` or `@qmx-ignore-next-line` with no channel on the tag's line,
-  and `@qmx-threshold` with no rule — answered "names no channel" / "names no
-  rule". `/** @qmx-threshold */` used to be reported as an invalid threshold on
-  the rule `*`, which nobody wrote.
+- `qmx rules` now validates the configuration document and selection instead of succeeding beside malformed input. Repair the named layer; the listing shows accepted option forms and configured computed metrics, but does not validate effective rule bands by executing them.
 
-The first was worse than silent: it threw out of extraction, so the whole file
-was dropped from the analysis — its metrics and findings simply absent — while
-the run still called itself complete. No new channel and no new option: correct
-the directive or remove it. Prose that mentions a tag in a `//` comment is read
-as the tag: quote it in backticks.
+- Unknown, partial, namespace-only and differently cased command names now refuse with exit 3. Use exact command names. Empty/blank destination and configuration options, empty preset names, invalid detail/top/group/profile-format values, unknown format options and contradictory formatting caps also refuse instead of falling back; omit an option for defaults or supply its documented value.
 
-**`bin/qmx directives --format=json` reports the form of a refused directive
-from its vocabulary.** A `@qmx-ignore` / `@qmx-ignore-next-line` refused for
-naming no channel appears under the form `symbol` / `next-line`, as every other
-directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
-`@qmx-threshold` appears under the form `threshold`.
+- `graph:export --workers` no longer coerces invalid values. Supply a non-negative decimal integer within PHP's integer range; `0` means sequential and omission retains configured automatic selection. Memory limits exceeding `PHP_INT_MAX`, invalid Windows `NUMBER_OF_PROCESSORS`, empty `--working-dir` and empty `baseline:explain --channel` also exit 3; correct or omit them.
 
-- **An option value that does not parse is refused instead of falling back to a
-  default.** `--detail`, `--top`, `--group-by`, every `--format-opt` value
-  (`violations`, `limit`, `top`, `contributors`, `rank-by`, `project-name`),
-  `--profile-format` outside `json`/`chrome-tracing`, and an empty `--config`,
-  `--baseline`, `--output` (whitespace-only included), `--report`, `--preset`
-  or `--profile` (or an empty name in `--preset=a,`) now exit `3` before the
-  analysis. They used to run on a default: `--config=` under the auto-discovered
-  `qmx.yaml`, `--output=` to stdout, `violations=xyz` with no limit,
-  `rank-by=typo` as `count`; `--format-opt=top=0` and `project-name=` are
-  refused as well. `--format-opt` pairs that contradict each other are refused
-  instead of one silently winning, each pair judged as written before `--all`
-  or a later pair could replace it: one key written twice
-  (`--format-opt=violations=bad --format-opt=violations=1`), `violations`
-  beside `limit`, `limit` or an empty `violations=` beside `--all`, and `--all`
-  beside `--detail` or `--detail=N` (was: `--all` silently lifted the cap;
-  `--detail=all` and `--detail=0` beside `--all` stay accepted). A
-  malformed `--suppress-path`, `--suppress-namespace` or `--baseline` is
-  refused before the analysis instead of after it.
-- **A run with no paths analyses every production autoload target of
-  `composer.json`, and only those**: `psr-4` and `psr-0` roots, `classmap`
-  entries (a `*` wildcard expanded) and `files` entries of `autoload` (was the
-  PSR-4 roots of `autoload` and `autoload-dev`). Whole-project coverage is
-  judged against the same list, so a run no longer warns "Analyzed paths do not
-  cover all autoload entries" about its own defaults, nor silences
-  whole-project channels on a project that declares code through `classmap`,
-  `psr-0` or `files`. Such projects analyse more files than before, and a
-  declared target missing on disk stops the run with exit `3`, as a missing
-  PSR-4 root already did. Set `include_autoload_dev: true` or pass
-  `--include-autoload-dev` to count `autoload-dev` code as part of the project
-  again, or name paths explicitly (`qmx check src/ tests/`);
-  `baseline:generate`, `baseline:update`, `baseline:cleanup` and
-  `baseline:explain` now accept `--include-autoload-dev` and
-  `--include-generated`, so a baseline covers the same project `check`
-  measures with them. An autoload entry that is, or lies inside, a `vendor`,
-  `node_modules` or `.git` directory (`files: ["vendor/acme/helpers.php"]`,
-  `classmap: ["lib/vendor"]`) is neither analysed by default nor counted as
-  project scope, and `check` names it in a warning on stderr; it used to be
-  analysed as project code or, for a directory itself named `vendor`, counted
-  as covered while never analysed. A manifest whose every entry is such is
-  treated like one with no autoload: the run analyses the working directory.
-  To analyse vendored code, name a file or a directory inside it explicitly
-  (`bin/qmx check vendor/acme/helpers.php`).
-- **A path you name that is itself a `vendor`, `node_modules` or `.git`
-  directory exits `3` at discovery, before any file is read** — on the command line
-  (`bin/qmx check lib/vendor`) or in `paths:` in `qmx.yaml`, for `check`,
-  `baseline:generate`, `graph:export` and `directives`. Discovery never walks
-  into such a directory, so the run used to analyse nothing and report it as a
-  clean result: `check` exited `0` over zero files, `baseline:generate` wrote
-  an empty baseline, `graph:export` exited `1` with "No files found to
-  analyze", `directives` refused without saying why. Name a file or a directory
-  inside it instead (`bin/qmx check vendor/acme/`); a `vendor` directory inside
-  a path you name is still skipped, without a refusal.
-- **The JSON refusal envelope is `{error, exit_code, position}`** (was
-  `{error, exit_code}`): `position` is `{path, written, accepted, closed}` when
-  the refusal was raised at a place in a configuration document, and `null`
-  otherwise — including a merged value such as `memory_limit: 010M` whose
-  message names the key. A consumer comparing the key set exactly must accept
-  the new key.
-- **`--format=json` `topIssues[].message` and every `--format=suppressed`
-  entry's `message` are now the finding's message**, as in
-  `violations[].message`; the recommendation they carried moved to a new
-  `recommendation` key (`null` when the rule gives none).
-- **`hook:install`, `hook:uninstall` and `hook:status` refuse with exit code
-  `3` and the reason on stderr** (was exit `1` with the reason on stdout): not a
-  git repository, an existing hook without `--force`, a hook that is not
-  Qualimetrix's, a dangling symlink, an unnameable binary, a failed write.
-- **An output file that cannot be written is a refusal.** `--profile`,
-  `check --output` and `graph:export --output` check what they can before the
-  analysis: a directory or a name ending in `/`, an existing file that is not
-  writable, a new name in a directory that does not exist or does not allow
-  creating a file, a descriptor the process does not hold, and on Linux one it
-  holds only for reading, exit `3` before the analysis instead of failing after
-  it. The write itself is the final judge: a symbolic link that leads to no file
-  that can be created, or any write that still fails, exits `3` after the run,
-  with the reason on stderr so stdout keeps the report as its only document (a
-  profile write used to keep the analysis exit code). An existing target is
-  written in place, as `>` in a shell does: a regular file keeps its inode,
-  owner, permissions and hard links, a file mounted into a container on its own
-  is written instead of refused after the run, and a writable file in a
-  directory that cannot be written is accepted. `check --output` and
-  `--profile` used to replace an existing file with a renamed temporary file;
-  now a write that fails midway leaves that file partly written, a new file
-  the write created is removed, and `check --help` no longer calls `--output`
-  an atomic write. The kernel decides which symbolic links are
-  followed, so on Linux with `fs.protected_symlinks` a link another user left
-  in `/tmp` is refused, as `>` refuses it, instead of having the file it names
-  overwritten. `/dev/stdout`, `/dev/stderr`, `/dev/fd/N` and `/proc/self/fd/N`,
-  spelled exactly so, are written through the stream itself, in blocking mode,
-  so on Linux a piped `--output=/dev/stdout` and a process substitution work
-  (they exited `3`), a stdout redirected to a file is no longer truncated, and a
-  parent that hands over a non-blocking stdout gets the whole artifact. Another
-  spelling of a stream, including a symbolic link to `/dev/stdout`, is opened
-  by its path and on Linux exits `3` for a pipe, naming the four spellings.
-- **`--namespace`/`--class` with `--format=gitlab` or `--format=checkstyle`
-  exits `3` before the analysis**, whether the format comes from the command
-  line or from `qmx.yaml`. Every entry of those formats is a finding to its
-  consumer, so an entry saying what the selection left out would count as one
-  more issue (gitlab) or error (checkstyle). Drop the selector, or use `json`,
-  `sarif` or `github`, which say what the selection left out. Without a
-  selection both formats are unchanged.
-- **Configuration values that used to be tolerated are refused with exit `3`:**
-  two spellings of one key in one mapping (`suppress_paths` beside
-  `suppressPaths`) instead of the later silently winning; `memory_limit: 0`, a
-  leading zero (`010M`, read by PHP as octal) and a limit the runtime rejects,
-  each with the value quoted; and a `computed_metrics` entry written as
-  `name: ~`, now read as `name: {}`, so an invalid or unknown name or a user
-  metric without a formula is refused instead of silently dropped.
+- Internal errors now exit 5, incomplete analysis exits 4, and configuration/environment refusals exit 3 instead of being confused with finding exits 1/2. Baseline lock/read/conflict failures, unresolvable Git revisions, hook refusals and unavailable Git process support follow exit 3 with stderr reasons. Update CI routing; reinstall generated hooks with `qmx hook:install --force`.
 
-- **`complexity.cognitive` follows the SonarSource whitepaper (v1.7) where it
-  did not.** A ternary gets the nesting increment and nests its branches; a
-  closure or arrow function no longer adds +1 (plus nesting) to the enclosing
-  callable, and its own value continues the nesting level it is written at; a
-  method that calls itself adds +1 once rather than once per call; conditions
-  no longer count as nested inside the structure they control; `??` adds
-  nothing (the whitepaper ignores null-coalescing as shorthand); sequences of
-  logical operators are read in source order, so `$a && ($b || $c) && $d` is
-  three sequences and `$a && !($b && $c)` two, and a group inside a call
-  argument or `!` starts its own; `else if` in two words scores +1 without a
-  nesting increment, like `elseif` (an `if/else if/else if/else` chain is 4,
-  not 9); a direct self-call is recognised in any letter case, through
-  `$this?->`, the own class name or a fully qualified function name. Values
-  move in both directions: re-check `complexity.cognitive` thresholds and
-  regenerate baselines. The breakdown no longer lists `closure` or `??`
-  increments, labels `nested ternary`, and shows an `else if` as one `elseif`
-  increment. `complexity.ccn` still counts `??`.
-- **`duplication.clone` reports one finding on each copy of a duplicated
-  block**, each copy under an identity of its own and valued by the lines that
-  copy spans, instead of one finding per pair valued by the longest copy. Each
-  names up to ten other copies (message and SARIF `relatedLocations`) and
-  counts the rest, and there is no upper limit on copies any more. A copy is
-  keyed by the block's content, its file and its place among the block's
-  copies in that file — never by a line number — so GitLab Code Quality and
-  SARIF show one entry per copy. A new copy that agrees with the whole of an
-  accepted block is a new finding on that copy alone, `--report=git:*`
-  reports it in the file it was pasted into, a deleted copy leaves a stale
-  baseline entry, and a copy moved to another file (or a renamed file) is a
-  new finding. A copy agreeing with only part of an accepted block, an edit
-  inside one copy, or code inserted between a copy and the code around it
-  that the copies share changes the block: its other copies get new findings
-  too, in files the change never touched. `min_lines` admits a block by its
-  longest copy, and every copy of an admitted block is reported, a shorter one
-  at its own value below `min_lines` (as a warning below `warning`). A comment
-  or blank line inside one copy changes that copy's value only — unless it
-  moves the longest copy across `min_lines`, which adds or removes the block
-  and every copy's finding with it. Check what you rely on: a block of N
-  copies is N findings (v0.27.0 reported N − 1), so the violation count and
-  the technical debt grow by one finding per block; `suppress_paths` (global
-  or per rule) now silences only the copies inside its paths — list every
-  file a block has a copy in to silence it. A baseline captured before this
-  change matches none of the new findings — regenerate it with
-  `baseline:generate`. Inline directives on the channel stay refused, and the
-  refusal now says why: a file or next-line directive would silence one copy
-  while the others still report the block.
-- **`size.loc` no longer counts a file's final line break as a line of its
-  own**, so `size.loc` (and `size.loc.sum`/`.avg`) is one lower per file that
-  ends with a newline; a last line without a line break still counts, which
-  `wc -l` would not.
-- **The whole-project channels read the run's scope in three states.**
-  `architecture.unreachable-layer` and `architecture.empty-template` are no
-  longer judged on a run whose paths leave out part of the `composer.json`
-  autoload (`qmx check src/Web` used to fail on every layer or template whose
-  code lies elsewhere), like `architecture.unmatched-exclude` already was. A
-  project whose `composer.json` is missing, does not parse or declares no
-  readable production autoload is now judged by all of them —
-  `architecture.unreachable-layer`, `architecture.empty-template`,
-  `architecture.unmatched-exclude`, `coupling.unmatched-framework-namespace`,
-  `discovery.unmatched-exclude` and the three `suppression.unmatched-*`
-  channels — with the analysed paths taken as the whole project; the six that
-  follow the two above were never judged on such a project. Namespace values
-  of `suppress_namespaces` and of per-rule `suppress_namespaces` /
-  `suppress_namespace_channels` stay unjudged there, because without a
-  declared autoload a namespace has no location; path values are judged. Run
-  such a project over all of its code, or give it a `composer.json` with
-  `autoload`. See
-  [ADR 0084](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0084-a-project-scope-has-three-states-and-the-report-names-it.md).
-- **A negative threshold or count under `rules:` is refused with exit `3`**
-  instead of silently inverting the rule (`warning: -1`, `threshold: -1`,
-  `--rule-opt=size.method-count:threshold=-1`, `--max-cycle-size=-1`,
-  `min_methods: -3`, …); the refusal names the value (`got -1`) and the option
-  by its canonical name (`minMethods` for `min_methods`, `maxCycleSize` for
-  `--max-cycle-size`), and numeric refusals read "a non-negative whole number" / "a
-  non-negative number". Computed-metric `warning`/`error`/`threshold` still
-  accept either sign. See
-  [ADR 0083](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0083-a-number-option-declares-its-range-in-its-form.md).
-- **A directory you name as a path and your own `exclude:` removes stops the
-  run with exit `3`** instead of a successful run over zero files. This holds
-  for a path on the command line of `check`, `directives` and the
-  `baseline:*` commands, and under `paths:`; `graph:export` reads no
-  `exclude:` from `qmx.yaml`. A composer-detected path you exclude is still
-  skipped silently, and a file you name inside an excluded directory is still
-  analysed.
-- **A project-level finding's `namespace` field, and its
-  `--group-by=namespace` key, is `(project)` instead of `__PROJECT__`.**
-  `(project)` cannot be a PHP namespace, so the key no longer collides with a
-  real namespace named `__PROJECT__`; in text output grouped by namespace the
-  project group now sorts first. See
-  [ADR 0082](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0082-the-project-aggregate-is-typed-not-spelled.md).
-- **The `--profile=<file>` JSON export is always `{"spans": [...]}`** (was
-  `[]`, a bare span object or a list, depending on the number of root spans);
-  each span gains `stopped` and loses `peak_memory_delta_bytes`, which was not
-  a peak (memory is sampled only at span boundaries).
+- `bin/qmx` now exits 3 on PHP older than 8.4 or without its autoloader instead of reaching a parse/bootstrap failure. Upgrade PHP and install dependencies before running it.
+
+- JSON refusals now carry `{error, exit_code, position, source}` instead of only error/code, including refusals before command execution. Accept nullable document positions and source-layer lists; CLI positions remain null and sources retain the authored option. Storage failures identify an environment source.
+
+- `-q`, `--silent` and `SHELL_VERBOSITY=-1|-2` no longer hide a command answer or terminal error. Redirect stdout when only the exit status is needed; quiet still controls incidental status output.
+
+- `QMX_ASCII` accepts case-insensitive `1/true/yes/on` and `0/false/no/off/empty/absent`; other values refuse before commands with environment exit 3. Its closed glyph substitutions also affect matching sequences in source names. Select Unicode mode to preserve those glyph sequences.
+
+- The default AST cache moves from checkout `.qmx-cache` to the user's shared `qmx` cache directory; old entries are not read. Docker defaults to `/cache`. Update cache mounts/CI configuration and let the cache warm; use a separate volume per uid.
+
+- Explicit `--cache-dir`/`cache.dir` roots inside the checkout, owned by another user, or writable by group/others now refuse with exit 3 when caching or clearing uses them; an unusable implicit default disables caching with a warning. Move the root outside the checkout and correct its permissions. `--no-cache` without clearing does not judge an unused root.
+
+- AST entries use a new allowlisted codec instead of igbinary; old formats become cache misses and `ext-igbinary` is no longer suggested. `--clear-cache` removes only qmx-owned entries, across every project/worktree sharing that root, after all invocation checks pass. Rerun a valid invocation to clear the cache and retain foreign files separately.
+
+- Parallel collection uses worker processes only; `ext-parallel` transport is removed. For an eligible explicit worker request, failed startup/first probe now exits 3 instead of silently running sequentially; automatic selection falls back with a warning. A startup refusal may take up to ten seconds. Configure `--workers=0` for sequential execution.
+
+- Worker output is captured instead of passing raw stdout/stderr through machine-report streams. Missing or invalid registered collector/traversal types now produce one coordinator internal error before startup; custom collectors need the parallel-safe marker or sequential execution. Consume coordinator diagnostics rather than parsing raw worker output.
+
+- Coordinator/duplication memory exhaustion now exits 4 with memory-limit guidance instead of raw fatal exit 255. JSON formats retain an error envelope. Treat the run as incomplete and adjust the limit; shutdown does not publish a new profile or leave newly claimed final output names empty.
+
+- Regular report, profile, graph and baseline outputs now publish atomically after analysis instead of exposing a new empty final file or partial replacement. Successful writes replace the inode and preserve existing mode; reopen the final pathname. Parents must already exist and permit a sibling; absent-name publication requires hard-link support, so precreate a destination where unavailable. See [ADR 0096](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0096-file-target-claims.md).
+
+- Output symlinks require a parent controlled by the invoking user/root or a proven private primary group. Replaceable FIFO/device targets, `/dev/stdin`, unsupported URI schemes, and distinct report/profile/log names resolving to one recipient now refuse. Use separate destinations and ordinary paths, `file://` or supported stdout/stderr/fd descriptors; shell `2>&1` and descriptor append remain supported.
+
+- Profile publication occurs after the run and before the report; write failures exit 3 through the error envelope. A later failure does not roll back an already published profile. JSON profiles are always `{"spans": [...]}`, spans add `stopped` and remove misleading `peak_memory_delta_bytes`; update readers and ignore unfinished spans in totals.
+
+- `hook:install` generates a regular hook instead of a symlink to the removed `scripts/pre-commit-hook.sh`. Run `qmx hook:install --force` to replace old hooks; `hook:status` reports outdated templates. Backup restoration consumes the backup path by moving its inode; retain a separate copy if needed.
+
+- Baselines move from v13 to v14; older versions refuse. Retain v13 entries, scope and generated time, change `version` to 14 and add `exclusions: {patterns, generated}` matching the original acceptance population. Follow the [baseline migration guide](https://qualimetrix.dev/usage/baseline/); older identity formats need reviewed remapping, not wholesale regeneration to erase history.
+
+- Baseline documents now reject unknown envelope/entry/edge/exclusion keys before analysis, including misspelled magnitude keys. Fully recognized canonical input also rejects repeated envelope/subject keys; entry objects and noncanonical input retain native last-member behavior. Repair named keys/duplicates before loading or channel renaming.
+
+- Baseline ceilings now compare complete compatible groups, rather than treating every present accepted level as a breach. JSON/HTML add `baselineVerdict` and `baselineReason`; read them alongside `acceptedLevel`. Narrow runs retain unmeasured/outside/not-compared entries; present source-owned layer occurrences can compare in a source-only hook. Run over the required population before tightening absent entries; `--show-resolved` counts comparable absence only, while stderr summaries distinguish unmeasured/outside/not-compared/unselected entries.
+
+- Stale/inert baseline entries now produce `baseline.unused-entry` warnings, including Git reports and runs with ordinary suppressions; undeclared levels are inert `level-not-declared`. A missing file below a positively present recorded root can be stale even in a narrow run. Review moves and repair/remove selected entries rather than assuming every unmeasured entry is resolved.
+
+- `baseline:update` preserves recorded scope and leaves unchanged entries unwritten. `--accept-new` requires ordinary recorded-scope coverage unless forced; `--force` cannot supply missing comparison evidence. Scope refusals now exit 3 on stderr. Analyse at least the recorded scope, then explicitly name channels for new acceptance.
+
+- `baseline:cleanup` lists candidates read-only and removes only explicit `--remove=<selector>` selections. A selector shared by inert duplicates removes every contender of that identity; other collisions refuse. `baseline:explain` now prints separate baseline/`now:` states and inert/unreadable reasons; update prose parsers rather than treating not-measured as stale.
+
+- Unknown baseline entry fields no longer disappear during rewrites. A malformed object-shaped subject bucket keeps its container; mixing a valid entry at that portable subject refuses. Remove that bucket explicitly before accepting the entry. Exclusion changes require `--record-exclusions`, exact recorded paths and complete proof; inspect all named outcomes, including `exclusions-removed-population` when a present PHP source is newly excluded, before publishing.
+
+- Canonical subjects now escape path `%` as `%25` and declaration-file `#` as `%23`. Fingerprints/selectors and affected baseline identities change. Review unmatched entries, migrate only selected identities and refresh GitLab/SARIF fingerprint consumers; raw non-UTF-8 scope/selectors refuse, so analyse a containing UTF-8 directory.
+
+- Class/callable metrics and HTML links now identify exact declarations instead of collapsing same-name bodies, including duplicates within one file. Key consumers by canonical `subject`, permit repeated display names and regenerate saved HTML links. Namespace/project records carry `file: null` and `line: null`; class-derived samples count declarations, while graph algorithms still use logical names.
+
+- JSON findings/top issues and HTML now share `rule`, `code`, `symbol`, exact identity, baseline judgement and other finding fields; accept `channel`, `edge`, `threshold`, `techDebtMinutes` and `acceptedLevel`, and replace HTML `ruleName/violationCode/symbolPath`. `message` is the diagnostic and `recommendation` is separate, including suppressed output. Circular-dependency recommendations drop their embedded JSON debug dump; consume structured evidence. Accept `namespaces`; singular `namespace` is `""` for global, a sole namespace, or null for multiple/project membership.
+
+- Project findings no longer use the `__PROJECT__` namespace sentinel: singular namespace metadata is null, grouping labels use `(project)`, and fileless prose uses `[project]`/`(global)`. Treat these as aggregate labels; a real namespace named `__PROJECT__` remains a namespace and namespace suppression cannot hide project findings.
+
+- JSON `violationGroups` keys are fully percent-encoded instead of display spelling. Decode dictionary keys with `rawurldecode`; use canonical subjects or SARIF URIs for byte identity. Invalid source bytes display as `%XX`, not U+FFFD, and every format reports repairs on stderr; GitLab/Checkstyle no longer invent repair findings.
+
+- Namespace findings no longer borrow a synthetic source file; move intended namespace exceptions from `suppress_paths` to `suppress_namespaces`. GitLab/Checkstyle now retain fileless findings through real namespace declaration/directory, baseline-file or project locations. Accept those location-bearing records and use JSON/SARIF for their full structured evidence.
+
+- `--format=text-verbose` and `format: text-verbose` are removed. Use `--format=text --detail=all`. Finding caps now select severity then impact before grouping, so recheck snapshots depending on original rule order; unprocessed-file prose is limited to ten names plus a remainder count.
+
+- `--namespace`/`--class` drill-down retains the whole-run exit verdict and exposes outside-selection counts. GitLab, Checkstyle and suppressed formats refuse these selectors; drop the selector or use JSON/SARIF/GitHub/HTML. Namespace drill-down includes file aggregates through measured file membership; class selection does not include file aggregates. JSON/metrics always include `outOfScope` (null without a selection), with exact outside-finding identities; HTML/SARIF/GitHub expose a corresponding notice.
+
+- Suppressed output adds exact `subject`, `occurrence`, `edge`, coverage and whole-run selection composition. Findings removed by selection use mechanism `selection`; producers never executed appear separately in `notRun`, not in finding counts. Parse those states separately; `--show-suppressed` remains whole-run beside drill-down.
+
+- HTML uses published metric bags rather than synthetic health defaults, replaces `summary.healthScores` with published subtree scores and project `summary.healthDecomposition`, and uses `size.class-loc` for class-like area. Handle missing health as unknown; do not substitute project health for absent selected-class/namespace values.
+
+- Worst-offender `rank-by=count` is replaced by `score|density`, default `score`, over the full captured population before limiting. Replace `worstNamespaces[].size.class-count` with `size.class-count.sum`, `healthScores.overall` with `healthOverall`, and ranking `coupling.class-rank` with `coupling.class-rank-share`. Namespace eligibility uses own classes/interfaces/traits/enums; review ranking snapshots.
+
+- Successful check JSON adds `configurationDiagnostics`, `computedMetricOutcomes`, `abstentions` and `inheritanceDepthOutcomes`, including empty arrays. These are distinct from findings; consume missing-input, unjudged-population and incomplete-inheritance metadata without changing the finding verdict. Prose, HTML and SARIF expose bounded equivalents; strict schemas must admit them.
+
+- `size.loc` no longer counts a final newline as an extra line, and punctuation beside comments counts as code. Recheck LOC-derived aggregates and limits. Namespace `size.{class,abstract-class,interface,trait,enum,implementing-enum,function}-count.count` contribution counters are removed; read each declared count directly.
+
+- `size.class-count` judges a namespace's own classes instead of its subtree total. `size.class-loc` now includes interfaces/traits/enums in exports and aggregates, and method-less named class-like declarations publish `complexity.wmc: 0`. Review class-count/area/WMC expectations and accepted findings.
+
+- Accessor counts and `design.woc` require both a get/is/has/set name and a simple property-read/write body. Computed/forwarding methods now count as behavior; `size.method-count.total` still counts every method. Recheck method limits and WOC expectations.
+
+- Cognitive complexity now follows SonarSource v1.7 for nested ternaries, lambda nesting, recursion, boolean sequences and `else if`; coalescing contributes nothing. Resolved aliases/case variants count own recursion, foreign calls do not. Reanalyse and review thresholds/accepted magnitudes instead of carrying old scores forward.
+
+- NPath now gives `??`/`??=` value-selection paths (for example `return $x ?? 5` is 2 instead of 1), counts branches inside bare/declare blocks and expressions in unset/static/global statements, and saturates at 1,000,000,000 as a lower bound. Reanalyse accepted magnitudes; do not interpret saturation or `> 1M (extreme)` display as an exact count.
+
+- Cohesion uses effective methods, resolvable traits/adaptations, PHP-insensitive call names and instance-helper property access. Lifecycle names are excluded after composition; uncalled stateless constant methods merge, called ones retain vertices. An empty eligible LCOM graph has no value instead of 0. Recheck cohesion findings, treat missing values separately and inspect `cohesion.unread-trait-count` for incomplete composition; full-run evidence is needed for whole-project comparison.
+
+- LCOM `min_methods` now counts eligible graph vertices instead of all methods. Health cohesion uses its tracked TCC population for purity and preserves that correction in namespace/project formulas, whose LCOM span changes from two to five; aggregate formulas use average inputs, not average class scores. Review custom minimums, health thresholds and accepted findings after recalculation.
+
+- RFC now uses resolved response targets on exact declarations, including inheritance/parent calls, effective trait aliases, abstract methods and property hooks, with PHP case folding. Review saved `coupling.rfc`, `coupling.rfc-own` and `coupling.rfc-external` expectations and accepted findings.
+
+- DIT resolves external ancestry by parsing the analysed project's Composer sources rather than loading classes through the tool's autoloader; registered PHP ancestry is followed transitively. Exact declaration depths feed aggregates; NOC counts distinct logical child names. Recheck depth/child limits, especially polyfills and builtin descendants. Interfaces/traits/enums no longer publish class DIT/NOC.
+
+- Incomplete ancestry publishes `design.dit-unresolved`; cycles and descendants omit numeric DIT instead of inventing a loop depth, and floors say “at least N”. `design.is-exception` follows `Throwable`, omits unknowns and no longer publishes 0 on interfaces. Treat absence as unavailable; DataClass with `exclude_exceptions: true` skips unknown ancestry, or set it false to judge other criteria.
+
+- Dependency collection now includes class/enum-case attributes, typed constants, property-hook bodies, nested named functions and user types named Integer/Double/Boolean. Promoted property edges use `property_type`, constants use `constant_type`; `union_type`/`intersection_type` relation kinds are removed and `type_reference` groups the three position kinds. Graph edges add an always-object `shape` map from positions to shape lists. Update relation filters and shape readers, then review new graph findings.
+
+- Coupling excludes all registered PHP builtins regardless of case and merges logical class/namespace case variants deterministically while retaining exact declarations. Values can fall for newly recognized builtin names; review coupling, layer assignments and accepted findings. Authored layer criteria remain case-sensitive for project/vendor names.
+
+- Namespace CBO publishes subtree `coupling.cbo` and own-scope `coupling.cbo-own`; its rule and minimum class count now judge own scope. Replace project `coupling.distance.avg/count` with `coupling.distance-own.avg/count`, weighted by eligible own type counts across all type-declaring namespaces. Review aggregate/health expectations and consumers of the old keys.
+
+- Distance judges own namespace D/A/I/Ca/Ce and replaces `min_class_count`/`min-class-count`/`minClassCount` with `min_type_count`. Abstractness is absent without eligible types, and distance is absent without both applicable inputs and any Ca/Ce; do not substitute zero or the former disconnected D=1.
+
+- ClassRank retains raw PageRank as `coupling.class-rank` but judges classes by `coupling.class-rank-share` (probability × graph vertices), with fixed 5/10 defaults. Review limits/baselines in share units; interfaces, traits and enums still affect the graph denominator, and ranking no longer falls back to raw probability.
+
+- Project health coupling uses outgoing Form B inputs (`coupling.ce-packages.avg`, scaled `coupling.ce.avg`, `coupling.ce.max`, `coupling.distance-own.avg`) instead of bidirectional CBO terms. Incoming popularity alone no longer incurs an outgoing penalty. Recompute saved scores and accepted findings; the breadth term contributes zero below its floor of four.
+
+- Health dimensions/type percentages omit inapplicable values instead of publishing synthetic 75/100/0 scores. Raw typed/total counters retain measured zero; a percentage of zero still requires a positive denominator. Overall combines available dimensions. Coverage distinguishes measured/not-measured/not-applicable and custom constants cannot borrow builtin evidence. Handle null/absence before comparing scores.
+
+- Health exclusion removes whole ordered `weighted_mean` terms without rounding or pre-normalization. Migrate custom overall sum/product formulas to the supported canonical weighted-mean shape when using dimension exclusions, or handle available inputs explicitly. Invalid reached formula inputs/results now refuse with exit 3; impossible metric references at a declared level refuse before analysis instead of failing internally. Correct the metric/level or write a genuine fallback; authored missing/null results remain successful absence.
+
+- Layer violations now belong to the exact source declaration and physical dependency site, with occurrence identity based on source, logical target and dependency kind. Move outgoing-edge directives to the source; excluding/changing only the target does not remove the source violation. Review cleanup selectors, accept new source groups and explicitly remove selected old entries, preserving other ceilings.
+
+- Layer declaration diagnostics now come from `architecture.layer-declaration`, whose configuration validators remain active under unrelated selections. Disable that producer or `architecture.*` to stop them. Active unassigned/coverage-gap modes reject an empty layer list; declare layers or choose ignore.
+
+- Layer `attributes` now matches the class-like declaration; use `member_attributes` for own members. Unresolved ancestry is undecidable rather than a non-match, with `architecture.doubted-assignment` metadata and more cautious unreachable/exclude/shadow diagnostics. Review assignments and widen paths where needed; implicit enum/Stringable interfaces and parsed vendor ancestry participate.
+
+- Templates using `match: any` with non-pattern/captureless criteria now refuse instead of globally claiming every instance. Use `match: all` or a static layer. `debug:layer-assignment` rejects unknown names, canonicalizes observed identities and adds `policyDisabled`, `edgeEndOnly`, `chainStopsAt`, `contendingMatches` and `contenders`; adapt JSON consumers.
+
+- Inline tags must start their own physical comment line after decoration; quote literal examples with paired equal backtick runs or a closed fence. Mid-line/misspelled/channelless tags now diagnose instead of silently suppressing; write a channel or explicit `*`. Unclosed quoting fences also refuse directive-shaped content.
+
+- Member ignore directives affect that member's lines, while methods/hooked properties/promoted parameters retain their documented reach. Unreachable explicit levels and fractional integer thresholds now diagnose; repeat intended member exceptions and use whole-number limits. Direct closure argument/array/return/assignment forms bind; nested wrapped closures retain `closure-not-direct-value` refusals.
+
+- Annotation locations now use the tag's physical byte-positioned line, not the docblock opening; update line-based consumers. Blanket unused controls can report unused, whose default severity rises from Info to Warning; remove inert controls or set `rules.annotation.directive.unused-directive-severity: info` to retain the former warning exit policy.
+
+- Directive audit replaces old unmeasured/already-refused/every-channel states with `refused` plus `refusals[]`. Exit 2 is a publishable refusal, exit 4 takes priority for incomplete analysis; otherwise it exits 0. Read decisive disabling statements only, and disable `annotation.directive` explicitly when needed; unsupported/invalid thresholds follow their addressed rule.
+
+- Duplication now publishes each copy as `file:<path>` with covered-code-line magnitude instead of a project finding. Use `duplication.clone:file`, `baseline:explain file:<path>` and path suppressions; remove selected old project entries and accept current copies. Balanced segmentation/token normalization can change occurrences and fingerprints, so review them once.
+
+- Duplication removes `warning`, `threshold` and local threshold overrides; use positive `min_lines`, `min_tokens` and `error` (defaults 5/70/50), or disable the rule. Each admitted copy is Warning below its own error boundary and Error at/above it. Recheck limits against token-covered lines rather than enclosing spans.
+
+- Named code-smell/security findings now carry their exact declaration symbol and namespace instead of a file symbol. Namespace grouping and impact attribution follow that declaration; recheck grouped/ranked reports. File/anonymous evidence retains file identity.
+
+- Credential detection now judges uppercase dotted values and broader credential names/assignments; debug calls are no longer exempt because their containing method is named dump/debug. Review new findings and add a reasoned exact ignore only for intentional cases.
+
+- Git reports filter physical findings by changed source file; non-strict mode also retains relevant aggregates, while declared project-scoped diagnostics survive both modes. Empty range endpoints mean HEAD, POSIX backslashes remain literal, and Git ≥2.28 is required. Update Git installations and path/exit consumers.
+
+- PHP integrations move to subject-owned contracts and exact declaration identities; retired facades/concrete construction surfaces have no aliases. Update imports, service composition and copied result metadata using the migration sections in [ADR 0022](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0022-capability-oriented-modular-monolith.md), [ADR 0092](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0092-typed-document-declarations-and-option-judgement.md), [ADR 0093](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0093-measured-run-scope-and-project-tree-queries.md), [ADR 0094](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0094-analysis-results-publish-subject-owned-values.md), [ADR 0099](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0099-rule-option-shape-is-a-declaration.md), [ADR 0106](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0106-declaration-metric-records-and-declared-publication.md), [ADR 0108](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0108-health-score-applicability-and-evaluation.md), [ADR 0124](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0124-finding-publication-and-rule-execution-contracts.md), [ADR 0125](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0125-subject-boundaries-and-explicit-composition.md), [ADR 0128](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0128-subject-boundaries-with-one-way-operations.md) and [ADR 0129](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0129-public-report-and-baseline-values-with-subject-owned-delivery.md), rather than retaining intermediate APIs.
 
 ### Changed
 
-- Namespace-level `coupling.cbo` is now counted over the namespace's whole
-  subtree, the region its `coupling.ca`/`coupling.ce` cover, so a namespace
-  holding only sub-namespaces no longer publishes 0. What `coupling.cbo` used
-  to be, the count over the classes a namespace declares itself, is published
-  as the new `coupling.cbo-own`, and namespaces are judged on it: which
-  namespaces are judged no longer depends on whether their sub-namespaces are
-  in the run's paths, and one with no classes of its own gets no
-  `coupling.cbo-own` and is not judged. The value, like every coupling
-  measure, counts only dependencies the run analysed: a run narrowed to part
-  of the project (`projectScope.state: narrowed`) can judge a namespace on a
-  lower value than a whole run. The namespace `min_class_count` now counts
-  the classes the namespace declares itself rather than its whole subtree,
-  and the finding's inbound/outbound counts are read from the same classes
-  (`coupling.ca-own`/`coupling.ce-own`).
-- Health coverage is shown where the scores are. `--format=health` gains a
-  `Coverage` column, the summary block prints each dimension's share beside
-  its bar, and the HTML report carries it as `summary.healthCoverage`. The
-  numbers themselves were already published in `--format=json`; only the
-  human-facing surfaces were missing them. Coupling's unit now reads
-  `namespaces declaring a type` instead of `leaf namespaces`, and reports a
-  share below 100% where it always read 100%.
-- The `architecture.coverage-gap` message says when a class is outside every
-  layer because the run could not decide one, rather than because no layer
-  claims it. Its advice is split by kind and given only for the kinds present:
-  declare a layer for classes every criterion answered "no" about, widen
-  `paths:` for analysed classes whose chain leaves them, and declare a
-  `patterns` layer first for symbols outside the paths.
-- Every JSON report that has an envelope object now names the documentation
-  site (`docs`) and the index written for AI agents (`llmsTxt`) — `gitlab`'s
-  bare array has no object to hold them, so it is unaffected: in `meta` for
-  `--format=json` and `--format=suppressed`, at the top level of
-  `--format=metrics` beside its existing fields, and in
-  `runs[].tool.driver.properties.llmsTxt` for `--format=sarif`. The JSON output
-  of `directives`, `baseline:rename-channels` and `debug:layer-assignment` now
-  opens with the same `meta` object as `--format=json` (`version`, `package`,
-  `timestamp`, `docs`, `llmsTxt`), and `graph:export --format=json` extends the
-  `meta` block its envelope already had with the same two addresses. Existing
-  keys keep their values.
-- Every human-readable output channel now points to the documentation: the
-  `summary`, `text`, and `health` tails, the free-text refusal on stderr, the
-  header of bare `qmx`/`qmx list`, the `Help:` section of every command, the
-  `rules` listing, the baseline lifecycle commands' tails, the `directives`
-  and `debug:layer-assignment` text reports, and the `hook:*` commands. An
-  agent or reader who lands on any one of these now has a way to reach the
-  full documentation and the agent-facing index without already knowing the
-  project.
-- The HTML report's footer now links to the documentation site and the
-  agent-facing index, alongside the existing generated-date and version line.
-- `design.dit` says when it did not follow an inheritance chain to a root. A
-  run writes one warning naming how many chains leaving the analysed path
-  stopped early and where the walk stopped, so a depth that stopped short is no
-  longer indistinguishable from a class that genuinely has no parent. It goes
-  to the error stream, leaving `--format=json` and the other machine formats
-  parseable, and `-q` silences it.
-- A Composer manifest or generated classmap the run cannot read, cannot parse,
-  or is too large to read is reported by name, saying that the classes it would
-  have placed are treated as unplaced. Previously such a file left external
-  ancestry silently thinner, which reads as a shallower `design.dit` rather than
-  as a file that was not read.
-- `discovery.unmatched-exclude` now also reports an exclude selector this run
-  could not check, naming the directory that stopped the walk. A directory the
-  process may not list hides whatever it holds, so a selector that might have
-  matched inside it is not called stale — and until now it was not reported
-  either, which made "your exclusion is fine" and "nobody could check your
-  exclusion" the same output. It is a `warning` like the stale-selector finding,
-  so `--fail-on=warning` turns it into a non-zero exit on a tree holding a
-  directory the run cannot read; that is the intent, because such a run measured
-  less than it was pointed at. The two shapes carry different baseline
-  identities, so a project that accepted the stale-selector finding still hears
-  about this one.
-- A run says so when the Composer runtime cannot name the installed
-  `nikic/php-parser` and AST caching switches itself off. Giving caching up is
-  correct — a key that does not carry the parser version would serve an AST
-  built by different node classes — but what the user saw was only a run several
-  times slower and a cache directory that stayed empty. A parallel worker stays
-  silent about it on purpose: every process of one install reaches the same
-  verdict, so the parent's single warning already carries it.
-- Qualimetrix ships as a standalone `qmx.phar`, attached to every release and
-  buildable with `composer phar`. Keep the `.phar` suffix: run from a file
-  named otherwise, parallel analysis copies the whole archive into the
-  temporary directory on every run.
-- `hook:install` refuses when run from the phar, naming what to do instead. The
-  hook is a symlink to a shell script and cannot point inside an archive;
-  previously the command failed on an internal path invariant.
-- Running on PHP older than 8.4 says so, instead of failing on a parse error
-  inside `src/`. The check is in `bin/qmx`, so it covers every way the tool is
-  installed.
-- The automatic worker count is capped by the CPU quota of the control group
-  the process runs in, so a run in a CI container no longer starts a worker per
-  host processor. Where the host count was the higher number, `--workers`
-  defaults lower than before and the run uses less memory; a host with no quota
-  is unaffected. Pass `--workers=N` to override.
-- A parallel run refuses a registered collector that does not implement
-  `ParallelSafeCollectorInterface`, naming the class, instead of skipping it.
-  Skipping made `--workers=N` measure less than `--workers=0` with nothing said
-  where a caller looks: the metrics were absent, the rules reading them reported
-  nothing, coverage stayed complete and the exit code stayed normal. Implement
-  the interface, or run with `--workers=0`.
-- `-vv` now reports when parallel analysis actually starts. The line saying a
-  parallel strategy was selected is written before the worker-count and
-  file-count fallbacks, so a run that went sequential looked parallel in the
-  log; the strategy's own start line was suppressed by a null logger.
-- The HTML report's four shipped assets move inside the composer package, from
-  `src/Reporting/Template/` to `html-report/`: `report.html`, `report.css`,
-  `dist/report.min.js` and `dist/d3.min.js`. `--format=html` is unaffected;
-  update any path that resolves these files directly.
-- A file whose name contains a backslash is skipped with a warning at the git
-  boundary instead of being reported under a different name. The rewritten name
-  belongs to another file and is the key a baseline and a suppression are
-  written against, so naming the wrong file was worse than naming none.
-- Diagnostics that were composed and then heard by nobody now reach the error
-  stream. The container's logger was published under an argument name no
-  constructor declares, so every service that asked for one silently kept its
-  own do-nothing default. Three of them had something to say: `--report=git:*`
-  now names every row it drops — one whose path does not resolve inside the
-  project root, one left unmerged in the index by an unfinished conflict, one
-  carrying a status this build does not know; `design.dit` names a Composer
-  manifest it could not read; and the AST cache says when it turns itself off.
-- Refusals caught before a command runs (an unknown option or command, a bad
-  `--working-dir`) are printed as the JSON refusal envelope under a JSON
-  `--format`, like every other refusal, and every exit-3 message now starts
-  with `Configuration error:`.
-- A bare rule-group prefix (`--only-rule=complexity`) is refused with the
-  working spelling named (`write "complexity.*"`); `--help` for
-  `--only-rule`/`--disable-rule` no longer offers bare prefixes as examples.
-- A configuration key refused as unknown is answered with a suggestion in the
-  author's own spelling (`excludeHealh` → `excludeHealth`).
-- `--format=suppressed` entries gain `subject`, `occurrence` and `edge`, and the
-  document gains `coverage`.
-- `hook:install --force` refuses to overwrite a `pre-commit.backup` that holds
-  a different hook, instead of losing it.
-- `baseline:rename-channels` says when the map declares no rename at all,
-  reports `declared_rows` in JSON, and always publishes `rows` and `unreadable`
-  as JSON objects (an empty one was `[]`).
+- Standalone `qmx.phar` ships with releases. Keep the `.phar` suffix to avoid copying the archive for parallel startup; generated hooks work with Composer installs, source checkouts and the phar.
 
-- Every report says how the run's paths stood against the project's
-  `composer.json` autoload: `json`, `metrics` and `suppressed` carry a
-  top-level `projectScope` object in every document (`state`: `covered`,
-  `narrowed` or `unknown`; `uncoveredAutoloadTargets`; `unjudgedChannels`;
-  `unjudgedValues`), `sarif` a `QMX-RUN-PROJECT-SCOPE` notification, `github`
-  a `run.project-scope` notice, `html` a banner and the text formats a
-  `Project scope …` line, so a run no longer passes off the channels it did
-  not judge as having nothing to report; `gitlab` and `checkstyle` are
-  unchanged. `unjudgedValues` lists, as `{"option", "pattern"}`, each
-  configured suppression value a `covered` or `unknown` run skipped because it
-  names a place the run did not analyse or cannot locate (`suppress_paths:
-  [tests/Legacy]` on `qmx check src/`), and `unjudgedChannels` names the
-  channels of those values — on a `narrowed` run, every channel that run
-  cannot judge. A `covered` run that skipped a value says so in every format
-  above.
-- `architecture.unreachable-layer` no longer calls a layer empty when a type
-  its `implements:`/`extends:`/`attributes:` criteria name is declared by the
-  analysed project's composer install (read from
-  `vendor/composer/installed.json` and the files it maps, never loaded); a
-  layer over a vendor-only chain is named by `architecture.doubted-assignment`
-  instead, and a mistyped name the install does not place is still an error
-  whose text says the install was asked.
-- `code-smell.unreachable-code` checks every nested statement list (if/else,
-  loops, try/catch/finally, switch cases, blocks), not only the top level of
-  a callable; a `break` after `return` in a switch case is now reported.
-- `code-smell.empty-catch` exempts only the foreach chain-of-attempts shape (a
-  direct `try` of the loop body whose success path ends the iteration); a
-  `continue` that skips nothing, or a `try` nested deeper or inside a closure,
-  is now reported, and the recommendation no longer suggests a comment, which
-  never cleared the finding.
-- `code-smell.identical-subexpression` follows an if chain through
-  `else if` / `else { if }`.
-- `security.xss`, `security.sql-injection` and `security.command-injection`
-  find a superglobal behind `??`, `?:`, `(string)`, `@`, `match` arms and
-  assignment, and `security.command-injection` also checks backtick commands;
-  one SQL expression is one violation however its query is nested (a query
-  function, `sprintf()` or concatenation around it reports the read once), and
-  a subquery behind another call inside one of them is reported for its own
-  superglobal read.
-- `security.hardcoded-credentials` checks property, static-property and
-  string-keyed array-element assignments (also `??=`) and recognises fused and
-  digit-suffixed names (`$apikey`, `DBPASSWORD`, `$apiKey1`), as
-  `security.sensitive-parameter` does; hyphen-, slash-, plus- or
-  dot-separated values (UUID, AWS-style, base64, JWT) are no longer taken for
-  messages or identifiers, and a dotted key whose segments join lowercase
-  letter-only words with a hyphen (`auth.password-reset`) is not taken for a
-  credential, while dotted passwords and keys with hyphens
-  (`Summer-2024.Pass`, `sk-live.abc123-def456`) still are.
-- Namespace-level `coupling.cbo` messages name their unit (`CBO: 12
-  namespaces`), since namespace CBO counts namespaces while Ca/Ce count
-  classes; the health breakdown explains a high `coupling.class-rank` as "much
-  of the dependency graph leads here" instead of "many depend on this".
-- `--log-level` sets the log file's level and, with `-v` or more, the
-  console's; without `-v` it can only make the console quieter than warnings,
-  so `--log-level=debug --log-file=…` keeps the terminal at warnings. Not
-  given, the console follows verbosity (warnings, `-v` info, `-vv` debug) and
-  `--log-file` records info.
-- The `--profile` summary marks spans that never stopped themselves (`| N
-  never stopped, not timed`) and keeps their borrowed time out of the totals;
-  Chrome tracing marks such spans' end events with `args.stopped: false`.
-- `baseline:explain` prints the occurrence of a boundary that carries one, and
-  the `file:line` its findings are reported at now, so the section of each
-  copy of a duplicate block can be told apart.
+- Shipped HTML assets move from `src/Reporting/Template/` to `html-report/`; update direct asset paths. Ordinary HTML generation needs no configuration change.
+
+- The Docker image includes pcntl for coordinator interruption cleanup, and running it without arguments prints usage. Mount `/cache` to preserve AST entries between runs.
+
+- AST entries unused for 30 days are swept incrementally, with a 2 GiB target per format plus intervening writes and one oversized newest entry per shard. Fresh publication temporaries are retained; their bytes are outside a hard quota guarantee. Parser version/commit and `short_open_tag` participate in keys, and short-tag configuration reaches workers.
+
+- Automatic worker counts respect container CPU quotas, reducing host-sized worker pools; `--workers=N` overrides the detected count. `-vv` identifies actual parallel startup and profiles include `collection.workers`.
+
+- `baseline:update --accept-new=<channel>` accepts only comparable new identities for named channels while preserving existing payloads. `--record-exclusions` records reviewed exclusion changes and recaptures eligible affected groups; these modes cannot combine.
+
+- `baseline:rename-channels` reports `declared_rows`, distinguishes a map declaring no renames, keeps JSON `rows`/`unreadable` as objects and preserves unusable entries. No actual rename means no write.
+
+- Namespace/project exports add `cohesion.pure-method-count.avg/count` and `cohesion.tcc-method-count.avg/count`; namespace coupling also exposes `coupling.ca-own`, `coupling.ce-own`, `coupling.instability-own`, `coupling.abstractness-own` and `coupling.distance-own`, with project `size.symbol-declaring-namespace-count` as coverage population.
+
+- Health reports now display evidence coverage beside scores; coverage uses the selected formula inputs and type-declaring namespaces. Finding/outside-scope counts remain visible even when no health score applies.
+
+- `architecture.layer-overlap` reports partial non-pattern precedence losses at Info; named shadow exemptions preserve intentional ordering. `architecture.unmatched-type` reports each unmet authored type at Warning only with complete declaration/install evidence; withheld judgement is explained.
+
+- Configuration diagnostics name original keys, paths, positions and contributing layers in precedence order, including effective-band defaults and inherited formulas. A standing `only_rules: []` overlay warns that it lifts a lower filter.
+
+- `qmx rules` lists root/level option forms separately from dedicated CLI aliases and shows actual selection writers. Unknown keys and selectors receive vocabulary-aware suggestions.
+
+- JSON envelopes, SARIF metadata, HTML and prose reports now link to the documentation site and agent index; SARIF `informationUri` points to documentation. Graph timestamps use UTC consistently with other reports.
+
+- Log level configures file output and the verbose console; without verbosity, selecting debug logging leaves ordinary console output at warnings. Console markup in messages is shown literally.
+
+- Higher-is-worse messages distinguish reaching a boundary from exceeding it and increase precision when rounded values would look equal; raw comparisons and inclusive boundaries are unchanged. ClassRank advice labels direct dependents separately from transitive PageRank influence.
+
+- Inline-directive channel suggestions now sort equal edit-distance matches lexically, giving consistent advice across registrations.
 
 ### Fixed
 
-- **`@qmx-ignore` and `@qmx-ignore-next-line` written with no channel no longer
-  silence everything.** In a block comment and in a docblock, the comment's own
-  closing delimiter was read as the channel argument `*` — the spelling that
-  means "no rule filter at all" — so `/** @qmx-ignore */` suppressed every
-  finding on the declaration below it while reporting nothing, neither a
-  configuration error nor `annotation.unused-directive`. All three comment
-  carriers now refuse the channelless form as
-  `annotation.unresolved-directive`, which only the line comment did before, so
-  **a file carrying such a tag goes from analysing clean to failing as a
-  configuration error, and the findings it hid reappear.** Name the channel, or
-  write `@qmx-ignore *`: the authored star still means "every channel here",
-  and a selector written hard against the delimiter is still that selector.
-- The health worst-offender list no longer ranks a namespace that declares no
-  classes of its own. The guard meant to skip such containers read
-  `size.class-count.sum` — the subtree total, which is positive for exactly the
-  containers it was written for — so it never fired, and a container was ranked
-  beside its own children while carrying their weight. It now reads the
-  namespace's own class count. Expect pure container namespaces to drop out of
-  the list in `--format=summary`, `--format=json` and the HTML report, and the
-  entries below them to move up.
-- A computed metric is no longer scored for a symbol that lacks a metric its
-  formula reads without a `??` fallback. An absent metric reached the arithmetic
-  as `null`, which PHP coerces to `0`, so the symbol got a fabricated
-  measurement that could raise a finding of its own. Such a symbol now gets no
-  value, and the run logs one warning per metric and level with the number of
-  skipped symbols, some of their names and the missing keys. The right side of
-  `??` counts only where its left side is absent: `m["a"] ?? m["b"]` is computed
-  wherever either key is present. A ternary branch, and the right side of
-  `and`/`or`, count only on a symbol whose evaluation enters them:
-  `m["x"] > 0 ? 7 : m["y"]` is `7` on every symbol with a positive `x`, whether
-  or not it carries `y`; a bare read in the condition counts on every symbol.
-  Expect a computed metric — including a health
-  dimension — to be absent where it used to carry a value derived from nothing,
-  and the findings that value produced to be gone with it. End the formula with
-  a literal (`?? 0`) where a default is genuinely intended.
-- Layer criteria written with a leading backslash (`\Throwable`,
-  `\App\Foo`) now match; they were accepted and never matched, which left no
-  way to name a class in the global namespace. A lone `\` is refused.
-- Layer criterion `implements:` counts, for an interface, the interfaces it
-  extends itself, as `getInterfaceNames()` does, not only the ones above them:
-  `interface Bag extends \IteratorAggregate` matches
-  `implements: ['\IteratorAggregate']`. A class still does not match
-  `implements:` naming its parent class.
-- Layer criteria `implements:` and `attributes:` naming a PHP interface or
-  attribute (`\JsonSerializable`, `\AllowDynamicProperties`, or `\Traversable`
-  through `implements \IteratorAggregate`) now match a class that declares it;
-  they used to answer "no", and a template layer built on them was reported as
-  unreachable. Coupling metrics are unchanged.
-- `@qmx-threshold` in the docblock of a closure or arrow function passed as an
-  argument, written as an array element or as a statement of its own now
-  retunes that function, as `@qmx-ignore` in the same place already silenced
-  it; it used to be refused as written where nothing is measured.
-- An inline directive written between a declaration's attributes and the
-  declaration (`#[Attr]`, then `/** @qmx-ignore ... */`, then `public function`)
-  now applies exactly as it does above the attributes; it used to be ignored
-  without a word, and a misspelled tag there passed silently.
-- A `@qmx-` comment standing where no statement or declaration begins (after
-  the last argument of a call, after the last element of an array) is now read:
-  `@qmx-ignore-next-line` and `@qmx-ignore-file` work there, and a declaration
-  form is refused instead of being dropped.
-- A backtick written directly before a tag always opens a quote, so a stray
-  backtick earlier on the same docblock line no longer turns a quoted example
-  such as `` `@qmx-ignore complexity.ccn` `` into a live suppression.
-- Two different refused tags naming one channel on one line are reported as two
-  `annotation.unresolved-directive` findings and two audit verdicts; one used to
-  replace the other.
-- `--no-cache` and `cache.enabled: false` now switch the AST cache off. Both
-  were read, and the cache was consulted and written anyway, so a run asked to
-  ignore the cache could still be answered from it.
-- Upgrading `nikic/php-parser` now invalidates the AST cache. Installed the
-  documented way — as a dependency rather than as the root package — the key
-  fell back to the major version alone, so every 5.x release shared one key and
-  a warm cache built by the previous parser was served to the new one. The key
-  now carries the exact installed version, and the commit as well when the
-  install names a branch. Expect one cold rebuild on the first run after this
-  release, and one after each parser upgrade from now on.
-- An entry the run skipped is reported under its own name rather than under the
-  name it resolves to. Canonicalization reached the last segment when the
-  analysed tree lay outside the project root, so a skipped symbolic link was
-  published as its target — a directory the same run had walked and analysed —
-  in `coverage.failures[].path` and in every format derived from it. That value
-  is the key a baseline and a suppression are written against, so naming the
-  wrong entry was worse than naming none.
-- `rules.<name>.enabled: false` in a configuration file now cancels the
-  preparation the rule needs, instead of only hiding its findings. The
-  memory-hungry phases are the ones this cost, and switching the rule off is
-  what the documentation offers as the cure for running out of memory.
-- File names from git that contain non-ASCII characters no longer fall out of
-  the report. `--report=git:*` reads git's own machine-readable output, so a
-  name is taken as git stored it rather than as a quoted rendering of it.
-- A file git reports with status `T` — a regular file replaced by a symbolic
-  link, or the reverse — is analysed by `--report=git:*` instead of being
-  dropped. It names a path that exists and whose content changed, which is
-  exactly what a git-scoped run is asked to measure.
-- A non-string entry in `paths:` is refused with exit 3, naming the entry,
-  instead of being dropped without a word.
-- `graph:export --format=json`'s `meta.timestamp` is now `gmdate('c')` (UTC),
-  matching every other JSON channel's `meta` block; it previously used
-  `date('c')`, the PHP process's local zone, so a consumer comparing
-  timestamps across documents could see different offsets on a machine whose
-  default zone was not UTC.
-- Generated pre-commit hooks now fail closed when staged-file enumeration fails
-  and preserve the actual `qmx` exit status.
-- `design.dit` now resolves `$baseDir` entries in Composer classmaps when the
-  project's configured vendor directory is nested.
-- Malformed or unresolvable external PHP ancestry now emits the unread-chain
-  warning instead of terminating analysis with `Internal error`.
+- Rule execution and metadata use lexical rule-name order instead of source-file registration order, with built-in health rules retaining their separate append sequence; `baseline:explain` sorts channels by code and preserves occurrence order within each channel. Producer names are unchanged; refresh order-sensitive snapshots.
 
-- A `--report=git:*` revision that git cannot resolve is now refused by name
-  and quotes git's own explanation, instead of failing as an internal error
-  with an empty one. `git:HEAD@{999}..HEAD` reported `Git command failed while
-  resolving "HEAD@{999}":` — a dangling colon, and exit 1 — and now reports
-  `Git reference "HEAD@{999}" does not resolve to a commit. git: fatal: log for
-  'HEAD' only has 1 entries`, with exit 3 like any other bad input. Every
-  unresolvable revision now carries git's reason, including one the repository
-  is too damaged to read, which is refused with git's diagnosis rather than
-  surfacing as an internal error.
+- Built-in health rules accept an exact class-level `@qmx-threshold` boundary, so an intentional class design can keep a finite limit without a baseline entry. Use a single numeric boundary (or equal warning/error values); namespace and project thresholds stay configured in `computed_metrics`. User-defined `computed` channels still do not accept inline threshold overrides.
+- Narrow runs publish declared uncovered autoload targets instead of every missing PHP file, keeping scope explanations bounded by configured targets.
 
-- A refusal whose message quotes something the user or git wrote no longer
-  destroys itself when that text happens to look like console markup. A scope
-  such as `--report='git:<fg=bogus>x..HEAD'` printed the console formatter's
-  complaint instead of the refusal, and under `--format=json` printed nothing
-  at all — no `{error, exit_code}` envelope — while still exiting 3.
+- GitLab Code Quality and Checkstyle no longer drop namespace/project/unused-baseline findings counted by the exit status; their published locations identify real declarations, directories or an in-project baseline. Directory anchors, including external-baseline/project fallbacks, do not provide source-line links in the GitLab UI.
 
-**59 classes PHP provides were measured as the analysed project's own, and one
-class the list named does not exist.** The builtin-class registry was missing
-every ext-session type — so `NativeFileSessionHandler extends \SessionHandler`
-reported an unresolvable external parent at depth 0 instead of a builtin at
-depth 1 — along with all of `Phar`, `SQLite3*`, `Soap*`, `FFI*`, `Uri\*`,
-`finfo`, `PhpToken`, `HashContext`, `OpenSSL*`, `Socket`, the System V IPC
-handles, `tidy`, `XSLTProcessor`, `GMP` and `EnchantBroker`; it also listed
-`Pcntl\QueuedSignalInfo`, which exists in no branch of php-src. Two metric
-families move. `design.dit` **rises** where a chain now reaches a builtin
-instead of breaking. Coupling numbers — `coupling.cbo`, efferent coupling,
-ClassRank — **fall** for code typed on any of the newly recognised names,
-because a non-inheritance edge reaching a builtin is dropped as PHP's rather
-than counted as the project's. The list stays hand-written so that results do
-not depend on which extensions the analysing machine has; it is now compared
-against the running PHP by a governance control that refuses in both
-directions. See
-[ADR 0075](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0075-the-builtin-class-list-is-compared-never-generated.md).
+- Rule-population warnings now identify actual missing evidence; deliberately ineligible subjects and architecture rules without configured layers do not create artificial incomplete-population warnings; JSON `abstentions[].dataGap` identifies real missing evidence.
 
+- Conflicting trait methods without a resolving adaptation now fail that file with incomplete-analysis exit 4, name its class and preserve the remaining report. Ambiguous `--class` selection now refuses with exit 3 and both declarations instead of an internal error.
 
-- Analysing a project no longer runs that project's code. Resolving an external
-  parent called `class_exists($fqcn, true)`, which includes the file and
-  executes its top-level statements; a `exit` or a fatal there ended the run
-  with no report and nothing caught it. Measured across ten benchmark projects,
-  the mechanism did this 326 times to change seven answers, and 170 of its 172
-  resolved answers came from the tool's own dependencies rather than the
-  project's.
+- Interrupted parallel runs remove worker startup files for stdout-only runs and coordinator memory exhaustion. Killed workers no longer incur a second ten-second wait for an absent shutdown note.
 
-- A template layer's `attributes:`, `implements:` and `extends:` criteria now
-  filter candidates while the template is expanded. The dependency graph was
-  bound to the class-context factory only after expansion had run, so during
-  expansion every class looked as if it had no attributes, no interfaces and
-  no parents: under `match: all` the template produced zero concrete layers
-  and reported `architecture.empty-template`, and a graph-backed `exclude:`
-  on a template removed nothing under either mode. `patterns:` and `suffix:`
-  were unaffected, as were non-template layers.
+- Cache sweeping/clearing recognizes publication temporaries and retries retained detached directories; incomplete clearing no longer prints successful `Cache cleared`. Corrupt/foreign AST entries reparse, and `--no-cache`/`cache.enabled: false` actually prevent reads/writes.
 
-- `composer.json` now declares the PHP extensions the tool uses (`ctype`,
-  `filter`, `hash`, `json`, `mbstring`, `tokenizer`, `xmlwriter`). Installing
-  on a PHP built without one now fails at install time naming the missing
-  extension, instead of at run time inside whichever feature needed it --
-  duplication detection and LOC counting need `tokenizer`,
-  `--format=checkstyle` needs `xmlwriter`, and `mbstring` is not built by
-  default.
-- Analysing a project no longer loads its classes twice over. The per-file DIT
-  pass asked this tool's autoloader to load a parent it could not see in the
-  current file — which includes that file and runs its top-level code — and then
-  the global pass overwrote every depth it produced. Measured at 195 such loads
-  on one package against the global pass's 40, all inside the parallel workers.
-  No reported value changes; the tool simply stops running code it was never
-  going to use the result of.
-- A parent that belongs to the analysed project is no longer looked up as though
-  it were somebody else's. A class with no parent of its own has no entry in a
-  map keyed by child, and absence from that map was read as foreignness: 25 of
-  40 such lookups on one package, and every one of them across the finding-gate
-  corpus.
+- Integer refusals suggest the actual whole-number spelling, and baseline cleanup reports every removed physical entry, including duplicate identities.
 
-- `hook:install` works for an installed package. `/scripts/` is excluded from
-  the composer distribution, so the command looked for `scripts/pre-commit-hook.sh`
-  in two places a consumer never has and exited 1 with `Hook script not found`.
-  It now generates the hook, which also makes it work outside a composer
-  layout. The two manual methods `quick-start` documented named the same
-  missing directory and are gone.
-- The hook commands install into, and read from, the directory git actually
-  runs hooks out of. They built `<git-dir>/hooks`, which is the wrong place
-  under `core.hooksPath` — every hook manager sets it — and inside a linked
-  worktree, which has no `hooks/` of its own. The first reported success and
-  installed a hook git never read; the second refused outright.
-- The hook quotes the binary path so that a path carrying `"`, `$` or a
-  backtick reaches the shell as itself. A double quote made the whole hook
-  invalid shell while `hook:install` reported success, and `$HOME` or
-  `$(…)` in a directory name was expanded — the second executing on every
-  commit.
-- The hook reads staged paths NUL-delimited, so a filename with a space is one
-  path and not two, and it tells "the binary could not be run" (126, 127) from
-  "the analysis found something", which it used to report as findings with
-  advice to write a baseline.
-- `hook:install --force` no longer spends the single `.backup` slot on a hook
-  it generated itself, which used to overwrite the third-party hook the first
-  `--force` had preserved. `hook:status` tells a symlink whose target is
-  missing from one that cannot be read; they have different remedies.
-- `hook:install` works from the phar too, and its refusal there is gone. It
-  refused because the hook was a symlink and because building the script's path
-  reached a value object that rejects `phar://`; neither happens now. The
-  installed hook calls the archive.
-- The hook names the binary that installed it, falling back to `vendor/bin/qmx`
-  and `bin/qmx` if that binary moves. Hook commands print that path in their
-  hints too, instead of `bin/qmx`, which is wrong for everyone who installed
-  the package.
-- Namespace and project `design.dit` aggregates (`.avg`, `.max`, `.p95`) now
-  reflect inheritance chains that cross files. They were computed before the
-  pass that resolves such chains and kept summarising the uncorrected per-file
-  depths, so a project whose classes extend each other across files reported a
-  maximum depth of 1 while publishing the correct per-class values. Aggregate
-  DIT rises on any codebase with cross-file inheritance; per-class values are
-  unchanged.
-- `design.dit` is no longer reported for interfaces, traits and enums. They were
-  given a class-level depth of 0 while being excluded from the aggregate's
-  population, so the metric and its own denominator disagreed about what counts
-  as a class. DIT is now denominated in the named classes the per-file pass
-  measures, which is what `size.class-count` counts wherever each class name is
-  declared once.
-- Analysing a project that shares a class name with one of the tool's own
-  packages no longer breaks the run. A standalone install (the Docker image, a
-  global `composer global require`) ships packages without the dependencies only
-  the development graph supplies, and DIT resolution asked the tool's own
-  autoloader to load the analysed class — so a file it could reach but not
-  finish loading was recorded as a processing failure. Analysing
-  `vendor/symfony/console` from such an install reported five failed files and
-  an incomplete, non-authoritative run; it now analyses all 132 and reports, for
-  that path, the same DIT values a full install reports. A parent that still
-  cannot be loaded counts as a root class, which is what the tool already did
-  for any external class it could not find — so depth that reaches outside the
-  analysed path still depends on what the installation can load, as
-  `website/docs/rules/design.md` now records.
-- Installing without development dependencies no longer breaks git-scoped runs.
-  `--report=git:...` reached `symfony/process`, which arrived only through a
-  development tool, so `composer install --no-dev` left it out and the first
-  such run answered `Internal error: Class "Symfony\Component\Process\Process"
-  not found`. That package is now declared, along with `composer-runtime-api`,
-  `amphp/amp` and `amphp/sync`, which the product also used without asking for.
-- Locating the git repository can no longer hang instead of answering. Both
-  `--report=git:...` and the `hook:*` commands reach git through the one
-  locator, and it handed the subprocess pipes nothing ever read: a `git`
-  writing more to its error stream than the pipe buffer holds blocks on the
-  write, never closes its output, and the caller waits for an end-of-output
-  that cannot arrive — producing neither output nor an exit code. Stock
-  `git rev-parse` stays far under that threshold, so this was reachable
-  through a wrapper or replacement `git` on PATH rather than through ordinary
-  use.
-- `docker run qmx` with no arguments prints usage instead of failing. The image
-  declared a default command named `analyze`, which has never existed, so the
-  invocation exited 3 with `Command "analyze" is not defined.` There is now no
-  default command: an image handed no command says so, rather than analysing
-  whatever happens to be at `/app`.
-- An anonymous class's own `extends`, `implements`, header attribute, or
-  `use` no longer counts against the named class that encloses it.
-  `design.dit`, `design.noc` and their namespace/project aggregates stop
-  including a nested anonymous class's declaration, and layer membership
-  under `extends:`, `implements:` and `attributes:` (including transitive
-  ancestry) stops matching the enclosing class on that basis. Coupling,
-  ClassRank, cycle detection and `relations:` filtering are unaffected — the
-  dependency itself is still recorded and read exactly as before.
-- `--detail=N` cuts the violation list after sorting it, in `text` and
-  `summary` and under every `--group-by`: the N shown are the first N
-  `--detail=all` prints, not the first N the rules produced. The hint reads
-  `--detail to list violations (up to 200; --detail=all for every one)` instead
-  of promising a "top 200".
-- `--namespace`/`--class` no longer prints `No violations found.` or a green
-  summary line while findings outside the selection make the run exit
-  non-zero: `summary` and `text` say the counts are for the selection and name
-  the findings outside it that decide the exit code, and `--format=json` keeps
-  `summary.debtPer1kLoc` (as `null`) instead of dropping the key. Every
-  structured format says the same: `json` and `metrics` carry a top-level
-  `outOfScope` object (always present, `null` without a selection), and
-  `sarif`, `github` and `html` add one `drill-down.out-of-scope` entry when
-  findings lie outside the selection (`gitlab` and `checkstyle` refuse a
-  selection, see Breaking); the JSON `summary` judges whether a selection ran
-  by the same fact.
-- `--format=html` lists every finding the report counts: project-level and
-  file-level findings and findings on global functions no longer disappear
-  from the tree while `summary.totalViolations` counted them, and a fileless
-  finding's `file` is `null` as in `json`.
-- `--format=html` names the report after the analysed project (the
-  `project-name` format option, else `composer.json` `name`, else its
-  directory) instead of the package qmx itself was loaded from.
-- `--format=html` no longer corrupts its embedded data when a symbol is named
-  like a template placeholder (`__APP_JS__`).
-- `--format=sarif` percent-encodes `artifactLocation.uri` like its `%SRCROOT%`
-  base (spaces, `#`, `%` in paths), and a related location without a file no
-  longer publishes `"uri": ""`.
-- SARIF `rules[].shortDescription` / `fullDescription` of a channel not named
-  after its rule now describe that channel: the seven `architecture.*` layer
-  diagnostics, the four `annotation.*` channels and the three
-  `suppression.unmatched-*` channels no longer repeat their producing rule's
-  description.
-- An identifier with invalid UTF-8 in the analysed source no longer breaks a
-  structured output: `json`, `metrics`, `suppressed`, `sarif`, `gitlab`,
-  `checkstyle`, `html` and `graph:export` (`json` and `dot`) publish each
-  invalid byte as U+FFFD and report the repair (an `invalidUtf8Replaced` count,
-  a SARIF notification, a GitLab issue, a checkstyle `[publication]` entry, an
-  HTML banner, a DOT comment). `json`, `sarif`, `gitlab`, `metrics`, `html` and
-  `graph:export --format=json` used to fail the run, and `checkstyle` and
-  `graph:export --format=dot` wrote documents no parser accepts. A file path
-  that is not valid UTF-8 is repaired the same way before SARIF percent-encodes
-  it, instead of publishing a bare `%FF`.
-- A command run through an embedding `ArrayInput` reads an integer option or
-  argument value as its digits and refuses any other non-string value
-  (`true`, a float, a nested array) with exit `3` naming the option and the
-  type, instead of an internal error (exit `1`) or a silently dropped value:
-  `--detail`, `--top` and `--group-by` given as integers ended the run as an
-  internal error; `--output`, `--config`, `--baseline`, `--log-file`,
-  `--log-level`, `--preset`, `--exclude`, `--report`, `--memory-limit`,
-  `--disable-rule` and `--only-rule` were ignored or coerced; `--workers` read
-  `true` as `1`; and a lone `--format-opt` string was dropped unread instead of
-  read as one pair. `--profile` passed as `true` is the flag alone, not an
-  export to a file named `1`.
-- `--memory-limit` / `memory_limit` now applies in the parallel worker
-  processes, not only in the coordinator; a file a worker could not finish is
-  reported as failed with the workers' limit named, instead of a bare "context
-  stopped responding".
-- A worker that died on one file no longer ends the whole run as
-  `Internal error: The worker crashed` when the next task reaches it.
-- `hook:install --working-dir <repo>` works when the binary was started by a
-  relative path.
-- `??=` counts as a decision point in `complexity.ccn` (+1), like `??`;
-  `complexity.wmc` and `maintainability.mi` follow.
-- `maintainability.mi` no longer scores a callable as CCN 1 when its
-  cyclomatic complexity is missing; the run stops with an internal error
-  instead of publishing a flattering index.
-- The Cognitive Complexity page lists its deviations from the whitepaper
-  (lambdas and nested named functions measured as separate units, the exact
-  reach of recursion detection) and no longer claims to follow it where it did
-  not; the `complexity.ccn` page marks `??`, `??=`, `?->` and `xor` as a
-  deviation from McCabe's original.
-- `extends` of a PHP built-in class no longer counts toward `coupling.ce`,
-  `coupling.ca`, `coupling.cbo`, `coupling.cbo-app` or
-  `coupling.ce-packages`, matching `implements` and type hints of built-ins;
-  a built-in written in another letter case (`\countable`,
-  `extends \exception`) is recognised as one, for coupling, for the DIT
-  "inheritance chain(s) … not followed to a root" warning and for layer
-  criteria on either side: `extends: ['\exception']` now takes a class
-  extending `\Exception`, and `implements: ['\IteratorAggregate']` a class
-  that writes `implements \iteratoraggregate`. Such classes used to fall out
-  of the layer, into a later one or none, and a lower-case criterion kept
-  `architecture.unreachable-layer` quiet about the layer it emptied; expect
-  them to change layer and `architecture.layer-violation`,
-  `architecture.potential-shadow` and `architecture.unreachable-layer`
-  findings to move with them. Your own and vendor class names are still
-  compared as written.
-- `design.noc` is published on classes only, as `design.dit` is, and
-  `interface B extends A` no longer counts `B` as a child of `A`.
-- `coupling.distance` no longer reports a namespace with no dependencies in
-  either direction as a zone of pain, and a namespace declaring only functions
-  gets no distance instead of `1.0`.
-- `coupling.class-rank` no longer reports a class nothing depends on as a hub,
-  and its recommendation names the measured number of dependents.
-- Circular-dependency detection no longer recurses per chain link, so deep
-  chains no longer abort the run under Xdebug's nesting limit, and the cycle
-  path search is linear on long cycles.
-- `duplication.clone` no longer exhausts a 128M memory limit on a block copied
-  around a hundred times, reports the lines a duplicate occupies (a block
-  starting or ending with a brace on its own line was shifted one line up),
-  and reports two identical blocks in one file that touch without sharing a
-  line.
-- `duplication.clone` no longer runs out of memory on long runs of one
-  repeated statement across many files: 30 files of such runs needed 202 MB
-  and exhausted the default 128M limit, and now peak at 75 MB with the same
-  findings.
-- A first-class callable of a command or SQL function (`exec(...)`) no longer
-  makes its file fail analysis.
-- `code-smell.unused-private`: a public or protected `__call`/`__callStatic`/
-  `__get`/`__set`, or a magic method in another letter case, switches the
-  magic-access protection on; method names match case-insensitively; an
-  anonymous class no longer breaks `new self()` receiver tracking; a private
-  method only called by itself is reported; a literal callable array
-  (`[$this, 'method']`, `[self::class, 'method']`, `[static::class, 'method']`,
-  `[__CLASS__, 'method']`) counts as a use of the method.
-- `code-smell.debug-code` flags `var_dump($x, true)`, `dd($x, true)` and
-  `dump($x, true)`: positional return mode applies only to `print_r()` and
-  `var_export()`.
-- `code-smell.exit` and `code-smell.unreachable-code` recognize the PHP 8.4
-  fully qualified `\exit()` / `\die()`; `code-smell.constructor-overinjection`
-  and `code-smell.long-parameter-list` recognize a constructor spelled
-  `__Construct`.
-- A namespace literally named `__PROJECT__` is analysed as a namespace: it was
-  merged into the project aggregate, its declarations lost their namespace in
-  `symbol` and `subject`, and its namespace findings were reported as project
-  findings.
-- A `suppress_namespaces` value, global or under `rules.<name>`, no longer
-  removes a project-level finding: `(project)` is what a report shows where
-  such a finding's namespace would be, not a namespace, so
-  `suppress_namespaces: [{exact: '(project)'}]` (or a regex broad enough to
-  match it) now removes nothing and is reported as matching nothing. It used
-  to remove every project-level finding silently — the report about that
-  pattern included — while `suppression.unmatched-rule-ledger` said the
-  per-rule pattern suppressed nothing.
-- A carve-out written as two layers with one pattern — the first with an
-  `exclude:`, the second receiving what it removes — loads and runs clean
-  instead of being refused as unreachable, and a pattern repeated behind a
-  `match: all` layer that narrows it with another criterion is no longer
-  reported by `architecture.potential-shadow` on every run; a narrower pattern
-  behind either layer is still reported, and the load refusal that remains
-  names the carve-out.
-- `baseline:cleanup` lists an entry whose channel the run left out at the
-  entry's level — by `--only-rule`, `--disable-rule` (also narrowed to a level,
-  `X:namespace`), `enabled: false`, or a level switched off in the rule's
-  options (`class: { enabled: false }`) — as `not measured: this invocation
-  did not run the rule for this channel at this level` instead of `nothing
-  reported for this identity`, and `baseline:explain` prints `now not measured
-  (…)` for it.
-- A baseline entry under a subject key no subject is written as (such as
-  `App\Foo::bar` without its `callable:` prefix) is reported as an unreadable
-  entry (`malformed entry`) instead of being kept and listed as stale forever.
-- `baseline:explain` shows an entry the file holds but cannot apply as
-  `present but not applied (<reason> — <detail>)` instead of
-  `baseline: (none)`, lists an unreadable line as `Unreadable baseline entry`,
-  shows `mode: suppress`, and says when a member without a finite value makes
-  `check` report the group.
-- A missing or unreadable baseline file, or a directory given as one
-  (`check --baseline`, `baseline:explain --baseline`, `baseline:update`,
-  `baseline:cleanup`), is refused with exit 3 before the analysis runs, not
-  after it or with an internal error.
-- A baseline file the `baseline:*` commands cannot write — or, for
-  `baseline:generate --force`, a destination they cannot read: a file without
-  read permission, a directory, a symbolic link — is refused with exit 3 and
-  the system's reason (was a PHP warning on stdout and exit 1), and
-  `hook:install`/`hook:uninstall` name the system's reason when they cannot
-  write, back up, restore or remove the hook, without a PHP warning on stdout.
-- An unwritable `--log-file` is refused as input with exit 3 instead of a PHP
-  warning in stdout and an internal error, and so is an empty or blank one
-  (`--log-file=$LOG` with `LOG` unset), which ran without a log file or
-  created a file named by the blank; a log record whose context holds
-  bytes that are not UTF-8 is no longer written as an empty line; a message
-  containing console markup such as `<info>` is printed as written;
-  `--log-level=debug -v` prints debug lines (they waited for `-vv`).
-- A refusal under `--format=health` is written to stderr as a sentence instead
-  of a JSON envelope on stdout, where the health table is expected; the five
-  JSON formats keep the envelope.
-- `baseline:explain` no longer takes time quadratic in the number of findings
-  under the explained subject — every copy of a duplicate block is one on the
-  project — with or without `--baseline`.
+- Source-only hooks compare present accepted layer occurrences without requiring target-file coverage, while absent run-wide entries remain unmeasured.
+
+- Cohesion health aggregation preserves the class purity correction for namespaces/projects, including a namespace containing one class. Namespace LOC preserves integer sums and folds each file contribution once.
+
+- Cognitive recursion resolves aliases and namespace-relative names; NPath retains branching inside bare/declare blocks and static/unset expressions. `??=` contributes a CCN decision, and Maintainability Index no longer fabricates missing CCN.
+
+- Formula evaluation no longer lets an independent missing key hide a reached invalid value. Unselected branches stay unjudged; missing inputs no longer become arithmetic zero.
+
+- DIT aggregates use resolved cross-file depths; Composer classmaps with nested vendor roots resolve correctly. Malformed/unavailable external ancestry is diagnosed without executing analysed code or ending the entire run.
+
+- Nested anonymous classes no longer supply inheritance, children or membership attributes to their enclosing named class. External enums retain implicit interfaces and layer member attributes exclude nested anonymous declarations.
+
+- Namespace case variants share a complete metric bag; global namespace offender counts/density include their own findings without borrowing named namespaces.
+
+- Hooks respect `core.hooksPath` and linked worktrees, quote binary paths safely, read staged names NUL-delimited, fail closed on enumeration failure and preserve the real qmx exit status. Failed execution no longer produces baseline advice.
+
+- Forced hook installation preserves third-party backups, refuses to overwrite a different backup and reports missing/unreadable links distinctly. Installed binary hints and relative-path installation now work.
+
+- Git scope handles non-ASCII names, type changes and unresolvable revisions correctly; subprocess stream draining avoids a locator deadlock. Refusal text containing console markup remains intact, including JSON envelopes.
+
+- HTML retains every counted finding, including project/file/global-function findings, names the analysed project and safely embeds names resembling template placeholders.
+
+- SARIF percent-encodes raw path bytes, omits empty related locations and uses channel-specific descriptions. Structured reports and directive/debug output survive malformed identifier bytes without losing canonical identity.
+
+- Detailed text/summary caps follow the complete sorted list, and drill-down no longer claims a clean whole run while outside findings decide a failing exit. Baseline comparisons decode canonical `%`/`#` subject paths correctly.
+
+- Unused-private detection respects case-insensitive magic/own calls, imported names, literal callable arrays and anonymous-class receiver boundaries; a private method called only by itself remains unused.
+
+- Debug return-mode exemption applies only to `print_r`/`var_export`; fully qualified `\exit()`/`\die()` and mixed-case constructors are recognized. Unreachable-code checks nested statement lists and identical-subexpression follows both `elseif` spellings.
+
+- Empty-catch exemption requires successful work in the direct foreach attempt chain; deeper/nested catches or a continue skipping no work are reported.
+
+- Security detectors follow direct superglobals through coalescing, casts, suppression, match and assignment, including literal variable-variable/`$GLOBALS` reads and backtick commands. First-class callables no longer fail analysis; nested SQL reads are not duplicated.
+
+- Credential detection includes namespace/global constants, properties, static properties, array entries and `??=` assignments, with fused/digit-suffixed names and punctuated secrets. Lowercase configuration keys, whole placeholders and parsed native type syntax remain exempt.
+
+- Duplication handles repeated blocks with lower memory use, balanced connected segments, touching same-file copies and CR/LF/CRLF locations; coverage reduction retains new copy relations. Each copy's bounded character-safe hint comes from its own source.
+
+- Layer matching recognizes leading backslashes, builtin case variants, interface extends and implicit builtin interfaces; templates apply graph-backed criteria/exclusions during expansion. Legitimate carve-outs and narrowed repeated patterns no longer produce false unreachable/shadow refusals; an empty `exclude: {}` excludes nothing instead of refusing.
+
+- Suppression audits distinguish stale selectors from unjudged hidden population; namespace suppression never removes a project finding or a file duplication/unused-directive finding merely by matching an empty namespace.
+
+- Inline directives bind around attributes and supported closure placements, read trailing comment sites, retain distinct same-line tags and reject malformed quoting. Promoted property-hook subjects preserve property names.
+
+- Baseline preflight catches missing/unreadable/malformed documents before analysis, preserves inert entries through rewrites and explains not-measured/undeclared-level/nonfinite states accurately. Explanation no longer scales quadratically with repeated findings.
+
+- Report/profile temporary contents stay owner-only before publication, log/lock modes follow umask, and private primary groups no longer cause false exposure refusals. Failed writes preserve the original final artifact.
+
+- Monotonic clocks prevent wall-clock adjustments from invalidating durations or lock deadlines. Missing runtime dependencies/extensions now fail installation by name instead of breaking packaged Git, parallel or Checkstyle execution.
 
 ## [0.27.0] - 2026-09-18
 

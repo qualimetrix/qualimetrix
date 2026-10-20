@@ -10,60 +10,34 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestDox;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
-use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
+use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 use ReflectionClass;
 use ReflectionMethod;
 
-/**
- * Static guard for YAML key reachability through {@see YamlConfigLoader::load()}.
- *
- * This test exists because of three recurring bugs caused by the loader's
- * default snake_case → camelCase normalization model:
- *
- *  1. `architecture.allow.*` subtree (user-defined layer names mangled).
- *  2. `allow_cross_instance` deep-descendant long-form key mangled.
- *  3. `max_expanded_layers` scalar-leaf MIXED-root sub-key mangled — fixed
- *     in Phase 3.5 by migrating `architecture` to PRESERVE_SUBTREE (ADR
- *     0009); the row in {@see provideArchitectureSubKeyCases()} flipped
- *     from inverse pin to positive assertion.
- *
- * For every documented YAML key in every consumer (factory or schema
- * entry), this test:
- *
- *  - Writes a minimal YAML containing the key at its documented path.
- *  - Loads it through {@see YamlConfigLoader::load()} (the same entry point
- *    used by {@see \Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage}).
- *  - Asserts the key reaches the expected post-normalization path with the
- *    expected value.
- *
- * The test does NOT exercise factories or full validation — minimal YAML
- * typically lacks the other fields a factory needs. The single concern is
- * "does the YAML key survive the loader so that *something* downstream can
- * see it under the documented name?"
- *
- * Complementary to:
- *  - Plan Phase 3.3 ({@code ConfigSchema::sectionPolicies()} exhaustive
- *    coverage) — eliminates the bug class structurally.
- *  - Coverage-invariant guard test (Phase 3.3 DoD) — asserts every root
- *    key has an explicit policy entry.
- *
- * When Phase 3.5 lands and `architecture` migrates to `PRESERVE_SUBTREE`,
- * the currently-broken `max_expanded_layers` row in
- * {@see provideArchitectureSubKeyCases()} flips from documenting the bug
- * to asserting the fix.
- */
+/** Verifies canonical paths through the compiled document and preserves each illegal original as a refusal. */
 #[CoversClass(YamlConfigLoader::class)]
 final class YamlKeyReachabilityTest extends TestCase
 {
-    private YamlConfigLoader $loader;
+    private ConfigurationPipelineInterface $pipeline;
 
     private string $tempDir;
 
     protected function setUp(): void
     {
-        $this->loader = new YamlConfigLoader();
+        $pipeline = new ConfigurationPipeline(LayeredDocument::standaloneSections());
+        $pipeline->addStage(new ConfigFileStage(new YamlConfigLoader()));
+        $this->pipeline = $pipeline;
         $this->tempDir = sys_get_temp_dir() . '/qmx_yaml_key_reachability_' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0o755, true);
     }
@@ -85,121 +59,86 @@ final class YamlKeyReachabilityTest extends TestCase
     }
 
     /**
-     * Top-level keys (paths, format, fail_on, …) — driven by
-     * {@see ConfigSchema::ENTRIES}. Snake_case inputs must reach the
-     * documented camelCase form so downstream consumers
-     * ({@see \Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage},
-     * owner-specific configuration resolvers find them.
-     *
      * @param non-empty-string $yaml
      * @param non-empty-list<string|int> $path Dot-separated path through the
-     *                                         post-normalization array.
+     * @param array{string, list<string>, string}|null $refusal
      */
     #[Test]
     #[DataProvider('provideTopLevelKeyCases')]
     #[TestDox('top-level key $description survives loader normalization')]
-    public function itLetsATopLevelKeySurviveNormalization(string $description, string $yaml, array $path, mixed $expectedValue): void
+    public function itLetsATopLevelKeySurviveNormalization(string $description, string $yaml, array $path, mixed $expectedValue, ?array $refusal = null, ?string $companion = null): void
     {
-        $config = $this->loadYaml($yaml);
+        $config = $this->acceptedYaml($yaml, $refusal, $companion);
         $this->assertPathReachesValue($config, $path, $expectedValue, $description);
     }
 
     /**
-     * Section sub-keys: keys living under a section root
-     * ({@code cache.*}, {@code parallel.*}, {@code coupling.*}). The loader normalizes their
-     * snake_case form to camelCase per {@see ConfigSchema::ENTRIES}.
-     *
      * @param non-empty-list<string|int> $path
+     * @param array{string, list<string>, string}|null $refusal
      */
     #[Test]
     #[DataProvider('provideSectionSubKeyCases')]
     #[TestDox('section sub-key $description survives loader normalization')]
-    public function itLetsASectionSubKeySurviveNormalization(string $description, string $yaml, array $path, mixed $expectedValue): void
+    public function itLetsASectionSubKeySurviveNormalization(string $description, string $yaml, array $path, mixed $expectedValue, ?array $refusal = null, ?string $companion = null): void
     {
-        $config = $this->loadYaml($yaml);
+        $config = $this->acceptedYaml($yaml, $refusal, $companion);
         $this->assertPathReachesValue($config, $path, $expectedValue, $description);
     }
 
     /**
-     * Identifier sections ({@code rules}, {@code computedMetrics}):
-     * immediate children (rule names, computed-metric names) preserve
-     * snake_case / kebab-case verbatim; their nested option keys ARE
-     * normalized to camelCase. Both halves must hold or downstream factories
-     * never see the rule the user configured.
-     *
      * @param non-empty-list<string|int> $path
+     * @param array{string, list<string>, string}|null $refusal
      */
     #[Test]
     #[DataProvider('provideIdentifierSectionCases')]
     #[TestDox('identifier section $description preserves the identifier and normalizes options')]
-    public function itPreservesTheIdentifierAndNormalizesOptionsInAnIdentifierSection(string $description, string $yaml, array $path, mixed $expectedValue): void
+    public function itPreservesTheIdentifierAndNormalizesOptionsInAnIdentifierSection(string $description, string $yaml, array $path, mixed $expectedValue, ?array $refusal = null, ?string $companion = null): void
     {
-        $config = $this->loadYaml($yaml);
+        $config = $this->acceptedYaml($yaml, $refusal, $companion);
         $this->assertPathReachesValue($config, $path, $expectedValue, $description);
     }
 
     /**
-     * {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory}
-     * sub-keys: {@code layers}, {@code allow}, {@code coverage},
-     * {@code max_expanded_layers}. Sub-keys of a MIXED root are
-     * validated by the factory, not the schema. Since Phase 3.5 the
-     * {@code architecture} root has policy {@code PRESERVE_SUBTREE}, so
-     * every snake_case sub-key (including the {@code max_expanded_layers}
-     * scalar leaf) survives normalization verbatim.
-     *
      * @param non-empty-list<string|int> $path
+     * @param array{string, list<string>, string}|null $refusal
      */
     #[Test]
     #[DataProvider('provideArchitectureSubKeyCases')]
     #[TestDox('architecture sub-key $description follows current loader behavior')]
-    public function itFollowsTheCurrentLoaderBehaviorForAnArchitectureSubKey(string $description, string $yaml, array $path, mixed $expectedValue): void
+    public function itFollowsTheCurrentLoaderBehaviorForAnArchitectureSubKey(string $description, string $yaml, array $path, mixed $expectedValue, ?array $refusal = null, ?string $companion = null): void
     {
-        $config = $this->loadYaml($yaml);
+        $config = $this->acceptedYaml($yaml, $refusal, $companion);
         $this->assertPathReachesValue($config, $path, $expectedValue, $description);
     }
 
     /**
-     * Architecture layer entry keys — every documented key on a single
-     * {@code architecture.layers[*]} entry plus its nested {@code exclude:}
-     * block ({@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\LayersValidator::ALLOWED_ENTRY_KEYS},
-     * {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\ExcludeBlockValidator::ALLOWED_EXCLUDE_KEYS}).
-     *
-     * Layer entries are sequential list items — their inner keys are
-     * leaf-level config and must survive untouched (and they do: every
-     * documented entry key is already lowercase or a single word).
-     *
      * @param non-empty-list<string|int> $path
+     * @param array{string, list<string>, string}|null $refusal
      */
     #[Test]
     #[DataProvider('provideArchitectureLayerEntryCases')]
     #[TestDox('architecture.layers entry key $description survives loader normalization')]
-    public function itLetsAnArchitectureLayerEntryKeySurviveNormalization(string $description, string $yaml, array $path, mixed $expectedValue): void
+    public function itLetsAnArchitectureLayerEntryKeySurviveNormalization(string $description, string $yaml, array $path, mixed $expectedValue, ?array $refusal = null, ?string $companion = null): void
     {
-        $config = $this->loadYaml($yaml);
+        $config = $this->acceptedYaml($yaml, $refusal, $companion);
         $this->assertPathReachesValue($config, $path, $expectedValue, $description);
     }
 
     /**
-     * Architecture allow subtree — verified verbatim under the
-     * {@code architecture} section's {@code PRESERVE_SUBTREE} policy
-     * ({@see ConfigSchema::sectionPolicies()}). Covers:
-     *  - source layer name keys (the immediate child level, user identifiers)
-     *  - long-form target keys ({@code target}, {@code relations},
-     *    {@code allow_cross_instance}) deep below.
-     *
      * @param non-empty-list<string|int> $path
+     * @param array{string, list<string>, string}|null $refusal
      */
     #[Test]
     #[DataProvider('provideArchitectureAllowCases')]
     #[TestDox('architecture.allow $description preserves snake_case verbatim')]
-    public function itPreservesSnakeCaseInTheArchitectureAllowSubtree(string $description, string $yaml, array $path, mixed $expectedValue): void
+    public function itPreservesSnakeCaseInTheArchitectureAllowSubtree(string $description, string $yaml, array $path, mixed $expectedValue, ?array $refusal = null, ?string $companion = null): void
     {
-        $config = $this->loadYaml($yaml);
+        $config = $this->acceptedYaml($yaml, $refusal, $companion);
         $this->assertPathReachesValue($config, $path, $expectedValue, $description);
     }
 
     /**
-     * @return iterable<string, array{string, string, non-empty-list<string|int>, mixed}>
+     * @return iterable<string, array{string, string, non-empty-list<string|int>, mixed, 4?: array{string, list<string>, string}, 5?: string}>
      */
     public static function provideTopLevelKeyCases(): iterable
     {
@@ -210,15 +149,13 @@ final class YamlKeyReachabilityTest extends TestCase
             ['src', 'tests'],
         ];
 
-        // ConfigSchema entry: sourcePath='exclude' resultKey='excludes' — but the
-        // loader returns RAW post-normalization, so the user-written `exclude`
-        // key stays as is (it is already a single word; no snake_case to mangle).
-        // The 'exclude' → 'excludes' rename happens in ConfigDataNormalizer, not here.
         yield 'exclude (list)' => [
             'exclude',
             "exclude:\n  - vendor\n",
             ['exclude'],
-            ['vendor'],
+            [['subtree' => 'vendor']],
+            ['"exclude[0]" in configuration file "{actual_config_path}" must be a map, got string. A selector names its kind: {exact: value}, {subtree: value}, or {regex: value}.', ['exclude', '0'], '0'],
+            "exclude:\n  - subtree: vendor\n",
         ];
 
         yield 'format (scalar)' => [
@@ -231,69 +168,73 @@ final class YamlKeyReachabilityTest extends TestCase
         yield 'disabled_rules → disabledRules (list)' => [
             'disabled_rules',
             "disabled_rules:\n  - complexity.ccn\n",
-            ['disabledRules'],
+            ['disabled_rules'],
             ['complexity.ccn'],
         ];
 
         yield 'only_rules → onlyRules (list)' => [
             'only_rules',
             "only_rules:\n  - complexity.ccn\n",
-            ['onlyRules'],
+            ['only_rules'],
             ['complexity.ccn'],
         ];
 
         yield 'suppress_paths → suppressPaths (list)' => [
             'suppress_paths',
             "suppress_paths:\n  - src/Generated/*\n",
-            ['suppressPaths'],
-            ['src/Generated/*'],
+            ['suppress_paths'],
+            [['exact' => 'src/Generated/*']],
+            ['"suppress_paths[0]" in configuration file "{actual_config_path}" must be a map, got string. A selector names its kind: {exact: value}, {subtree: value}, or {regex: value}.', ['suppress_paths', '0'], '0'],
+            "suppress_paths:\n  - exact: 'src/Generated/*'\n",
         ];
 
         yield 'suppress_namespaces → suppressNamespaces (list)' => [
             'suppress_namespaces',
             "suppress_namespaces:\n  - App\\Generated\n",
-            ['suppressNamespaces'],
-            ['App\\Generated'],
+            ['suppress_namespaces'],
+            [['subtree' => 'App\\Generated']],
+            ['"suppress_namespaces[0]" in configuration file "{actual_config_path}" must be a map, got string. A selector names its kind: {exact: value}, {subtree: value}, or {regex: value}.', ['suppress_namespaces', '0'], '0'],
+            "suppress_namespaces:\n  - subtree: 'App\\Generated'\n",
         ];
 
         yield 'fail_on → failOn (scalar)' => [
             'fail_on',
             "fail_on: error\n",
-            ['failOn'],
+            ['fail_on'],
             'error',
         ];
 
-        yield 'exclude_health → excludeHealth (list)' => [
+        yield 'exclude_health → exclude_health (list)' => [
             'exclude_health',
             "exclude_health:\n  - tests/**\n",
-            ['excludeHealth'],
+            ['exclude_health'],
             ['tests/**'],
         ];
 
         yield 'include_generated → includeGenerated (scalar bool)' => [
             'include_generated',
             "include_generated: true\n",
-            ['includeGenerated'],
+            ['include_generated'],
             true,
         ];
 
         yield 'include_autoload_dev → includeAutoloadDev (scalar bool)' => [
             'include_autoload_dev',
             "include_autoload_dev: true\n",
-            ['includeAutoloadDev'],
+            ['include_autoload_dev'],
             true,
         ];
 
         yield 'memory_limit → memoryLimit (scalar)' => [
             'memory_limit',
             "memory_limit: 512M\n",
-            ['memoryLimit'],
+            ['memory_limit'],
             '512M',
         ];
     }
 
     /**
-     * @return iterable<string, array{string, string, non-empty-list<string|int>, mixed}>
+     * @return iterable<string, array{string, string, non-empty-list<string|int>, mixed, 4?: array{string, list<string>, string}, 5?: string}>
      */
     public static function provideSectionSubKeyCases(): iterable
     {
@@ -321,17 +262,19 @@ final class YamlKeyReachabilityTest extends TestCase
         yield 'coupling.framework_namespaces → coupling.frameworkNamespaces (list)' => [
             'coupling.framework_namespaces',
             "coupling:\n  framework_namespaces:\n    - Symfony\\\n",
-            ['coupling', 'frameworkNamespaces'],
-            ['Symfony\\'],
+            ['coupling', 'framework_namespaces'],
+            [['subtree' => 'Symfony']],
+            ['"coupling.framework_namespaces[0]" in configuration file "{actual_config_path}" must be a map, got string.', ['coupling', 'framework_namespaces', '0'], '0'],
+            "coupling:\n  framework_namespaces:\n    - subtree: Symfony\n",
         ];
     }
 
     /**
-     * @return iterable<string, array{string, string, non-empty-list<string|int>, mixed}>
+     * @return iterable<string, array{string, string, non-empty-list<string|int>, mixed, 4?: array{string, list<string>, string}, 5?: string}>
      */
     public static function provideIdentifierSectionCases(): iterable
     {
-        // rules.<rule-name> — name preserved verbatim (identifier section).
+
         yield 'rules: dotted rule name preserved' => [
             'rules.complexity.ccn',
             "rules:\n  complexity.ccn:\n    enabled: true\n",
@@ -342,69 +285,82 @@ final class YamlKeyReachabilityTest extends TestCase
         yield 'rules: kebab-case rule name preserved' => [
             'rules.cyclomatic-complexity',
             "rules:\n  cyclomatic-complexity:\n    enabled: true\n",
-            ['rules', 'cyclomatic-complexity', 'enabled'],
+            ['rules', 'complexity.ccn', 'enabled'],
             true,
+            ['Rule option owner "cyclomatic-complexity" does not match any registered producer rule.', ['rules', 'cyclomatic-complexity'], 'cyclomatic-complexity'],
+            "rules:\n  complexity.ccn:\n    enabled: true\n",
         ];
 
         yield 'rules: snake_case rule name preserved' => [
             'rules.namespace_size',
             "rules:\n  namespace_size:\n    enabled: true\n",
-            ['rules', 'namespace_size', 'enabled'],
+            ['rules', 'size.class-count', 'enabled'],
             true,
+            ['Rule option owner "namespace_size" does not match any registered producer rule.', ['rules', 'namespace_size'], 'namespace_size'],
+            "rules:\n  size.class-count:\n    enabled: true\n",
         ];
 
-        // Rule option keys: snake_case normalized to camelCase under the
-        // (preserved) rule identifier.
         yield 'rules: option warning_threshold → warningThreshold' => [
             'rules.complexity.ccn.warning_threshold',
             "rules:\n  complexity.ccn:\n    warning_threshold: 10\n",
-            ['rules', 'complexity.ccn', 'warningThreshold'],
+            ['rules', 'complexity.ccn', 'callable', 'warning'],
             10,
+            ['Unknown key "rules.complexity.ccn.warning_threshold" in configuration file "{actual_config_path}". Accepted keys: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.', ['rules', 'complexity.ccn', 'warning_threshold'], 'warning_threshold'],
+            "rules:\n  complexity.ccn:\n    callable:\n      warning: 10\n",
         ];
 
         yield 'rules: option error_threshold → errorThreshold' => [
             'rules.complexity.ccn.error_threshold',
             "rules:\n  complexity.ccn:\n    error_threshold: 20\n",
-            ['rules', 'complexity.ccn', 'errorThreshold'],
+            ['rules', 'complexity.ccn', 'callable', 'error'],
             20,
+            ['Unknown key "rules.complexity.ccn.error_threshold" in configuration file "{actual_config_path}". Accepted keys: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.', ['rules', 'complexity.ccn', 'error_threshold'], 'error_threshold'],
+            "rules:\n  complexity.ccn:\n    callable:\n      error: 20\n",
         ];
 
         yield 'rules: nested hierarchical option preserved.callable.warning' => [
             'rules.complexity.callable.warning',
             "rules:\n  complexity:\n    callable:\n      warning: 12\n",
-            ['rules', 'complexity', 'callable', 'warning'],
+            ['rules', 'complexity.ccn', 'callable', 'warning'],
             12,
+            ['Rule option owner "complexity" does not match any registered producer rule.', ['rules', 'complexity'], 'complexity'],
+            "rules:\n  complexity.ccn:\n    callable:\n      warning: 12\n",
         ];
 
-        // computed_metrics → computedMetrics root; child identifiers preserved.
-        yield 'computed_metrics → computedMetrics root key' => [
+        yield 'computed_metrics → computed_metrics root key' => [
             'computed_metrics',
             "computed_metrics:\n  computed.my-score:\n    formula: 'loc * 2'\n",
-            ['computedMetrics', 'computed.my-score', 'formula'],
-            'loc * 2',
+            ['computed_metrics', 'computed.my-score', 'formula'],
+            'm["size.loc"] * 2',
+            ['Invalid formula syntax for computed metric "computed.my-score": Variable "loc" is not valid around position 1 for expression `loc * 2`. (formula: loc * 2)', ['computed_metrics', 'computed.my-score', 'formula'], 'formula'],
+            "computed_metrics:\n  computed.my-score:\n    formula: 'm[\"size.loc\"] * 2'\n",
         ];
 
         yield 'computed_metrics: dotted metric name preserved' => [
             'computed_metrics.computed.my-score',
             "computed_metrics:\n  computed.my-score:\n    formula: 'size.loc'\n",
-            ['computedMetrics', 'computed.my-score'],
-            ['formula' => 'size.loc'],
+            ['computed_metrics', 'computed.my-score'],
+            ['formula' => 'm["size.loc"]'],
+            ['Invalid formula syntax for computed metric "computed.my-score": Variable "size" is not valid around position 1 for expression `size.loc`. (formula: size.loc)', ['computed_metrics', 'computed.my-score', 'formula'], 'formula'],
+            "computed_metrics:\n  computed.my-score:\n    formula: 'm[\"size.loc\"]'\n",
         ];
 
         yield 'computed_metrics: option warning_threshold → warningThreshold' => [
             'computed_metrics.<name>.warning_threshold',
             "computed_metrics:\n  computed.my-score:\n    formula: 'size.loc'\n    warning_threshold: 80\n",
-            ['computedMetrics', 'computed.my-score', 'warningThreshold'],
+            ['computed_metrics', 'computed.my-score', 'warning'],
             80,
+            ['Invalid formula syntax for computed metric "computed.my-score": Variable "size" is not valid around position 1 for expression `size.loc`. (formula: size.loc)', ['computed_metrics', 'computed.my-score', 'formula'], 'formula'],
+            "computed_metrics:\n  computed.my-score:\n    formula: 'm[\"size.loc\"]'\n    warning: 80\n",
         ];
     }
 
     /**
-     * @return iterable<string, array{string, string, non-empty-list<string|int>, mixed}>
+     * @return iterable<string, array{string, string, non-empty-list<string|int>, mixed, 4?: array{string, list<string>, string}, 5?: string}>
      */
     public static function provideArchitectureSubKeyCases(): iterable
     {
-        // `layers` is a single-word key — survives unchanged.
+
         yield 'architecture.layers (single-word key)' => [
             'architecture.layers',
             "architecture:\n  layers:\n    - name: app\n      patterns: ['App']\n",
@@ -412,16 +368,13 @@ final class YamlKeyReachabilityTest extends TestCase
             'app',
         ];
 
-        // `allow` is a single-word key — survives unchanged. (Subtree
-        // verbatim-preservation covered by provideArchitectureAllowCases.)
         yield 'architecture.allow (single-word key)' => [
             'architecture.allow',
             "architecture:\n  layers:\n    - name: a\n      patterns: ['A']\n    - name: b\n      patterns: ['B']\n  allow:\n    a:\n      - b\n",
             ['architecture', 'allow', 'a'],
-            ['b'],
+            [['b']],
         ];
 
-        // `coverage-gap` is a single-word key — survives unchanged.
         yield 'architecture.coverage-gap (single-word scalar)' => [
             'architecture.coverage-gap',
             "architecture:\n  layers:\n    - name: a\n      patterns: ['A']\n  coverage-gap: ignore\n",
@@ -429,13 +382,6 @@ final class YamlKeyReachabilityTest extends TestCase
             'ignore',
         ];
 
-        // FIXED in Phase 3.5 (ADR 0009): `architecture` migrated to
-        // PRESERVE_SUBTREE, so the `max_expanded_layers` scalar leaf
-        // survives normalization verbatim and reaches
-        // ArchitectureConfigurationFactory under the snake_case spelling
-        // it looks for. Independent consumer-expectation test at
-        // {@see \Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\MaxExpandedLayersFromYamlTest}
-        // verifies the end-to-end factory wiring.
         yield 'architecture.max_expanded_layers (PRESERVE_SUBTREE — fixed in Phase 3.5)' => [
             'architecture.max_expanded_layers (snake_case preserved verbatim by section policy)',
             "architecture:\n  layers:\n    - name: a\n      patterns: ['A']\n  max_expanded_layers: 256\n",
@@ -445,7 +391,7 @@ final class YamlKeyReachabilityTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{string, string, non-empty-list<string|int>, mixed}>
+     * @return iterable<string, array{string, string, non-empty-list<string|int>, mixed, 4?: array{string, list<string>, string}, 5?: string}>
      */
     public static function provideArchitectureLayerEntryCases(): iterable
     {
@@ -462,35 +408,35 @@ final class YamlKeyReachabilityTest extends TestCase
             'architecture.layers[].patterns',
             $base . "    - name: a\n      patterns:\n        - 'App\\Pattern'\n",
             ['architecture', 'layers', 0, 'patterns'],
-            ['App\\Pattern'],
+            [['App\\Pattern']],
         ];
 
         yield 'layers[].suffix (string)' => [
             'architecture.layers[].suffix',
             $base . "    - name: a\n      suffix: 'Service'\n",
             ['architecture', 'layers', 0, 'suffix'],
-            'Service',
+            ['Service'],
         ];
 
         yield 'layers[].attributes (list)' => [
             'architecture.layers[].attributes',
             $base . "    - name: a\n      attributes:\n        - 'App\\Attr'\n",
             ['architecture', 'layers', 0, 'attributes'],
-            ['App\\Attr'],
+            [['App\\Attr']],
         ];
 
         yield 'layers[].implements (list)' => [
             'architecture.layers[].implements',
             $base . "    - name: a\n      implements:\n        - 'App\\Iface'\n",
             ['architecture', 'layers', 0, 'implements'],
-            ['App\\Iface'],
+            [['App\\Iface']],
         ];
 
         yield 'layers[].extends (list)' => [
             'architecture.layers[].extends',
             $base . "    - name: a\n      extends:\n        - 'App\\Base'\n",
             ['architecture', 'layers', 0, 'extends'],
-            ['App\\Base'],
+            [['App\\Base']],
         ];
 
         yield 'layers[].match (string)' => [
@@ -500,42 +446,39 @@ final class YamlKeyReachabilityTest extends TestCase
             'any',
         ];
 
-        // Nested exclude block keys — note `match` and the criterion keys
-        // are all single-word, so they survive trivially. The shape itself
-        // is the contract.
         yield 'layers[].exclude.patterns (list, nested map)' => [
             'architecture.layers[].exclude.patterns',
             $base . "    - name: a\n      patterns: ['App']\n      exclude:\n        patterns:\n          - 'App\\Legacy\\**'\n",
             ['architecture', 'layers', 0, 'exclude', 'patterns'],
-            ['App\\Legacy\\**'],
+            [['App\\Legacy\\**']],
         ];
 
         yield 'layers[].exclude.suffix (string)' => [
             'architecture.layers[].exclude.suffix',
             $base . "    - name: a\n      patterns: ['App']\n      exclude:\n        suffix: 'Test'\n",
             ['architecture', 'layers', 0, 'exclude', 'suffix'],
-            'Test',
+            ['Test'],
         ];
 
         yield 'layers[].exclude.attributes (list)' => [
             'architecture.layers[].exclude.attributes',
             $base . "    - name: a\n      patterns: ['App']\n      exclude:\n        attributes:\n          - 'App\\Attr'\n",
             ['architecture', 'layers', 0, 'exclude', 'attributes'],
-            ['App\\Attr'],
+            [['App\\Attr']],
         ];
 
         yield 'layers[].exclude.implements (list)' => [
             'architecture.layers[].exclude.implements',
             $base . "    - name: a\n      patterns: ['App']\n      exclude:\n        implements:\n          - 'App\\Iface'\n",
             ['architecture', 'layers', 0, 'exclude', 'implements'],
-            ['App\\Iface'],
+            [['App\\Iface']],
         ];
 
         yield 'layers[].exclude.extends (list)' => [
             'architecture.layers[].exclude.extends',
             $base . "    - name: a\n      patterns: ['App']\n      exclude:\n        extends:\n          - 'App\\Base'\n",
             ['architecture', 'layers', 0, 'exclude', 'extends'],
-            ['App\\Base'],
+            [['App\\Base']],
         ];
 
         yield 'layers[].exclude.match (string)' => [
@@ -545,7 +488,6 @@ final class YamlKeyReachabilityTest extends TestCase
             'any',
         ];
 
-        // Template layer captures (curly braces in name) preserve verbatim.
         yield 'layers[].name with capture variable preserved' => [
             'architecture.layers[].name (template)',
             $base . "    - name: 'app-{m}'\n      patterns: ['App\\{m}\\App']\n",
@@ -555,7 +497,7 @@ final class YamlKeyReachabilityTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{string, string, non-empty-list<string|int>, mixed}>
+     * @return iterable<string, array{string, string, non-empty-list<string|int>, mixed, 4?: array{string, list<string>, string}, 5?: string}>
      */
     public static function provideArchitectureAllowCases(): iterable
     {
@@ -565,68 +507,54 @@ final class YamlKeyReachabilityTest extends TestCase
             'architecture.allow.<snake_case_source>',
             "architecture:\n  layers:\n    - name: app_core\n      patterns: ['Core']\n    - name: app_service\n      patterns: ['Service']\n  allow:\n    app_core:\n      - app_service\n",
             ['architecture', 'allow', 'app_core'],
-            ['app_service'],
+            [['app_service']],
         ];
 
         yield 'kebab-case source layer name preserved as map key' => [
             'architecture.allow.<kebab-source>',
             "architecture:\n  layers:\n    - name: 'app-core'\n      patterns: ['Core']\n    - name: 'app-service'\n      patterns: ['Service']\n  allow:\n    'app-core':\n      - 'app-service'\n",
             ['architecture', 'allow', 'app-core'],
-            ['app-service'],
+            [['app-service']],
         ];
 
         yield 'capture-variable source layer template preserved as map key' => [
             'architecture.allow.<template-source>',
             "architecture:\n  layers:\n    - name: 'app-orders'\n      patterns: ['App\\Orders\\App']\n    - name: 'domain-orders'\n      patterns: ['App\\Orders\\Domain']\n  allow:\n    'app-{m}':\n      - 'domain-{m}'\n",
             ['architecture', 'allow', 'app-{m}'],
-            ['domain-{m}'],
+            [['domain-{m}']],
         ];
 
         yield 'long-form target key preserved' => [
             'architecture.allow.<src>[].target',
             $layers . "  allow:\n    a:\n      - target: b\n",
-            ['architecture', 'allow', 'a', 0, 'target'],
+            ['architecture', 'allow', 'a', 0, 0, 'target'],
             'b',
         ];
 
         yield 'long-form relations key preserved (list of tokens)' => [
             'architecture.allow.<src>[].relations',
             $layers . "  allow:\n    a:\n      - target: b\n        relations:\n          - static_call\n",
-            ['architecture', 'allow', 'a', 0, 'relations'],
+            ['architecture', 'allow', 'a', 0, 0, 'relations'],
             ['static_call'],
         ];
 
         yield 'long-form allow_cross_instance preserved (snake_case scalar)' => [
             'architecture.allow.<src>[].allow_cross_instance',
             $layers . "  allow:\n    a:\n      - target: b\n        allow_cross_instance: true\n",
-            ['architecture', 'allow', 'a', 0, 'allow_cross_instance'],
+            ['architecture', 'allow', 'a', 0, 0, 'allow_cross_instance'],
             true,
         ];
 
-        // Documenting subtree preservation: even if a user invented a
-        // snake_case key under allow (a typo or future field), it would
-        // survive verbatim — that's the contract of the
-        // architecture section's PRESERVE_SUBTREE policy
-        // (ConfigSchema::sectionPolicies()). The downstream long-form
-        // normalizer will reject the unknown key, but the loader must
-        // NOT have mangled it on the way in.
         yield 'unknown long-form snake_case key reaches validator verbatim' => [
             'architecture.allow.<src>[].future_snake_key',
             $layers . "  allow:\n    a:\n      - target: b\n        future_snake_key: 'whatever'\n",
-            ['architecture', 'allow', 'a', 0, 'future_snake_key'],
+            ['architecture', 'allow', 'a', 0, 0, 'target'],
             'whatever',
+            ['architecture.allow.a[0]: unknown long-form key \'future_snake_key\'. Allowed keys: \'target\', \'relations\', \'allow_cross_instance\'.', ['architecture', 'allow', 'a', '0', 'future_snake_key'], 'future_snake_key'],
+            "architecture:\n  layers:\n    - name: a\n      patterns: ['A']\n    - name: b\n      patterns: ['B']\n    - name: whatever\n      patterns: ['Whatever']\n  allow:\n    a:\n      - target: whatever\n",
         ];
     }
 
-    /**
-     * Schema-coverage smoke test: every documented top-level key in
-     * {@see ConfigSchema::ENTRIES} appears in at least one positive case.
-     * Catches the failure mode where a contributor adds a new ENTRIES row
-     * but forgets to add a reachability case.
-     *
-     * Architecture is checked via the dedicated providers above (not as a
-     * single top-level row).
-     */
     #[Test]
     public function itGivesEveryDocumentedRootKeyAReachabilityCase(): void
     {
@@ -634,7 +562,7 @@ final class YamlKeyReachabilityTest extends TestCase
 
         $missing = [];
         foreach (ConfigSchema::ENTRIES as [$sourcePath, $resultKey, $rootType]) {
-            $root = str_contains($sourcePath, '.') ? explode('.', $sourcePath, 2)[0] : $sourcePath;
+            $root = ConfigKeySpelling::rewriteLike(str_contains($sourcePath, '.') ? explode('.', $sourcePath, 2)[0] : $sourcePath, '_');
             if (isset($covered[$root])) {
                 continue;
             }
@@ -657,10 +585,7 @@ final class YamlKeyReachabilityTest extends TestCase
     {
         $covered = [];
 
-        // Read by reflection rather than named six times: a seventh provider
-        // added beside a seventh case would otherwise be invisible here, and
-        // this control would go on reporting full coverage over a smaller set
-        // than the file actually carries.
+        // A provider added beside another case must remain visible to this coverage sweep.
         $allCases = [];
 
         foreach ((new ReflectionClass(self::class))->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
@@ -668,7 +593,6 @@ final class YamlKeyReachabilityTest extends TestCase
                 continue;
             }
 
-            /** @var iterable<mixed> $cases */
             $cases = $method->invoke(null);
             $allCases = [...$allCases, ...iterator_to_array($cases, false)];
         }
@@ -686,21 +610,78 @@ final class YamlKeyReachabilityTest extends TestCase
     }
 
     /**
+     * @param array{string, list<string>, string}|null $refusal
+     *
+     * @return array<string, mixed>
+     */
+    private function acceptedYaml(string $yaml, ?array $refusal, ?string $companion): array
+    {
+        if ($refusal !== null) {
+            $file = $this->writeYaml($yaml);
+            $this->assertRefusedFile($file, $refusal);
+            self::assertNotNull($companion);
+            $yaml = $companion;
+        }
+
+        return $this->loadYaml($yaml);
+    }
+
+    private function writeYaml(string $yaml): string
+    {
+        $file = $this->tempDir . '/config_' . bin2hex(random_bytes(6)) . '.yaml';
+        file_put_contents($file, $yaml);
+
+        return $file;
+    }
+
+    /**
+     * @param array{string, list<string>, string} $expected
+     */
+    private function assertRefusedFile(string $file, array $expected): void
+    {
+        try {
+            $this->loadFile($file);
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame(str_replace('{actual_config_path}', $file, $expected[0]), $refusal->summary());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
+            self::assertSame($file, $refusal->sources()[0]->locator());
+            $position = $refusal->position();
+            self::assertNotNull($position);
+            self::assertSame($expected[1], $position->segments);
+            self::assertSame($expected[2], $position->written);
+
+            return;
+        }
+
+        self::fail('The original YAML must be refused before loading its lawful companion.');
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function loadYaml(string $yaml): array
     {
-        $path = $this->tempDir . '/config_' . bin2hex(random_bytes(6)) . '.yaml';
-        file_put_contents($path, $yaml);
-
-        return $this->loader->load($path);
+        return $this->loadFile($this->writeYaml($yaml));
     }
 
     /**
-     * Walks the post-normalization array along {@code $path} and asserts the
-     * leaf equals {@code $expected}. Each path segment is either a string
-     * (associative key) or an integer (sequential list index).
-     *
+     * @return array<string, mixed>
+     */
+    private function loadFile(string $file): array
+    {
+        $document = $this->pipeline->resolve(new ConfigurationResolutionRequest(
+            AbsolutePath::fromString($this->tempDir),
+            configFilePath: $file,
+        ));
+
+        return array_map(
+            static fn(ResolvedValueInterface $value): mixed => $value->plain(),
+            $document->resolved()->roots(),
+        );
+    }
+
+    /**
      * @param array<string, mixed> $config
      * @param non-empty-list<string|int> $path
      */

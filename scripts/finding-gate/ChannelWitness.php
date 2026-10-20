@@ -185,12 +185,34 @@ final class ChannelWitness
     /** @return array{static: array<string, list<string>>, computed: array<string, list<string>>, levels: list<string>} */
     private function probe(?CaseDefinition $case): array
     {
-        $directory = $case === null ? $this->treeRoot : $case->directory;
-        $configuration = $case === null ? 'qmx.yaml' : $case->config;
-        $result = Process::run(
-            [\PHP_BINARY, __DIR__ . '/probe-channels.php', $this->treeRoot, $directory, $configuration],
-            $directory,
-        );
+        $scratch = Fs::temporaryDirectory('channel-witness-');
+        $mode = $case === null ? 'static' : 'case';
+        try {
+            if ($case === null) {
+                $directory = $scratch . '/static';
+                mkdir($directory);
+                $arguments = ['check', '--no-ansi', '-c', $this->treeRoot . '/qmx.yaml'];
+            } else {
+                $inputs = new CaseInputTranslation(
+                    RenameMaps::fromPairs([]),
+                    false,
+                    $scratch,
+                    'candidate-probe',
+                    DeclaredStructuralMaps::load($this->treeRoot . '/finding-gate'),
+                );
+                $case = $inputs->materialize($case);
+                $directory = $case->directory;
+                $arguments = ['check', ...$case->paths, '--workers=0', '--no-cache', '--no-ansi', '--fail-on=error',
+                    '-c', $inputs->configuration($case), ...$inputs->arguments($case), '-f', 'json'];
+            }
+            $result = Process::run(
+                [\PHP_BINARY, __DIR__ . '/probe-channels.php', $this->treeRoot, $mode, $directory, json_encode($arguments, \JSON_THROW_ON_ERROR)],
+                $directory,
+                environmentAdditions: ['XDG_CACHE_HOME' => $scratch . '/cache'],
+            );
+        } finally {
+            Fs::removeRecursively($scratch);
+        }
 
         if ($result['exit'] !== 0) {
             throw new GateError(\sprintf("Channel probe failed (exit %d):\n%s", $result['exit'], $result['stderr']));
@@ -200,6 +222,7 @@ final class ChannelWitness
 
         if (
             !\is_array($decoded)
+            || ($decoded['mode'] ?? null) !== $mode
             || !\is_array($decoded['static'] ?? null)
             || !\is_array($decoded['computed'] ?? null)
             || !\is_array($decoded['levels'] ?? null)

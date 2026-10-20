@@ -1,0 +1,10 @@
+{
+    "name": "finding-gate-corpus/name-case",
+    "description": "Corpus case: case-insensitive PHP identities written with distinct source spellings",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Corpus\\NameCase\\": "src/"
+        }
+    }
+}

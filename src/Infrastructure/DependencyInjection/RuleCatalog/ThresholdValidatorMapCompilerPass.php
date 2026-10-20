@@ -1,0 +1,56 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog;
+
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Finding\HealthThresholdOverrideValidator;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionDocumentFormsInterface;
+
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
+use Qualimetrix\Analysis\Policy\Inline\Threshold\RuleValidatorMapFactory;
+use Qualimetrix\Analysis\Policy\Inline\Threshold\ThresholdOverrideExtractor;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConsumerBoundPassInterface;
+use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
+use Symfony\Component\DependencyInjection\Reference;
+
+/**
+ * Builds the rule-name => OverrideValidatorInterface map from tagged rule
+ * services and injects it into the {@see ThresholdOverrideExtractor}.
+ *
+ * Runs after {@see RuleRegistryCompilerPass} so the tag list is stable.
+ * The Extractor itself is registered separately in the DI configurator;
+ * this pass only supplies its `$validators` constructor argument.
+ */
+final class ThresholdValidatorMapCompilerPass implements CompilerPassInterface, ConsumerBoundPassInterface
+{
+    public static function consumerServiceIds(): array
+    {
+        return [ThresholdOverrideExtractor::class];
+    }
+
+    public function process(ContainerBuilder $container): void
+    {
+        if (!$container->hasDefinition(ThresholdOverrideExtractor::class)) {
+            return;
+        }
+
+        $ruleClasses = [];
+
+        foreach ($container->findTaggedServiceIds(RuleRegistryCompilerPass::TAG) as $id => $tags) {
+            $class = $container->getDefinition($id)->getClass();
+
+            if ($class !== null) {
+                $ruleClasses[] = $class;
+            }
+        }
+
+        /** @var list<class-string<RuleDefinitionInterface>> $ruleClasses */
+        $container->getDefinition(ThresholdOverrideExtractor::class)
+            ->setArgument('$validators', (new Definition())
+                ->setFactory([RuleValidatorMapFactory::class, 'build'])
+                ->setArguments([new Reference(RuleOptionDocumentFormsInterface::class), $ruleClasses, (new Definition())->setFactory([HealthThresholdOverrideValidator::class, 'forBuiltinHealthProducers'])]));
+    }
+}

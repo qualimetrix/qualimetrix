@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
-use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
+use Qualimetrix\Infrastructure\Console\CheckReport\FormatBinding\FormatterContextFactory;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * `--format-opt` with a key no formatter reads, through the real container.
@@ -27,6 +30,24 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(CheckCommand::class)]
 final class FormatOptionKeyRefusalTest extends TestCase
 {
+    private static ?ContainerBuilder $container = null;
+
+    public static function tearDownAfterClass(): void
+    {
+        self::$container = null;
+    }
+
+    private static function container(): ContainerBuilder
+    {
+        $container = self::$container ??= (new ContainerFactory())->create();
+        $manifest = $container->get(ManifestSnapshotControlInterface::class);
+        if (!$manifest instanceof ManifestSnapshotControlInterface) {
+            throw new LogicException('The command fixture has no manifest snapshot lifetime owner.');
+        }
+        $manifest->beginInvocation();
+
+        return $container;
+    }
     private string $fixture = '';
 
     protected function setUp(): void
@@ -132,7 +153,7 @@ final class FormatOptionKeyRefusalTest extends TestCase
     /** @param array<string, mixed> $options */
     private function execute(array $options): CommandTester
     {
-        $command = (new ContainerFactory())->create()->get(CheckCommand::class);
+        $command = self::container()->get(CheckCommand::class);
         self::assertInstanceOf(CheckCommand::class, $command);
 
         $tester = new CommandTester($command);

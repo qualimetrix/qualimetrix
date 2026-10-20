@@ -95,6 +95,22 @@ final class TccLccClassData
     }
 
     /**
+     * @return array{
+     *     methods: array<string, true>,
+     *     propertyAccesses: array<string, array<string, true>>,
+     *     propertyCount: int
+     * }
+     */
+    public function factState(): array
+    {
+        return [
+            'methods' => $this->methods,
+            'propertyAccesses' => $this->propertyAccesses,
+            'propertyCount' => $this->propertyCount,
+        ];
+    }
+
+    /**
      * Calculate TCC (Tight Class Cohesion).
      *
      * TCC = NDC / NP

@@ -6,6 +6,7 @@ namespace Qualimetrix\Core\Symbol;
 
 use InvalidArgumentException;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\SourceText\SourceBytes;
 
 /**
  * Durable identity of one source declaration.
@@ -14,6 +15,8 @@ use Qualimetrix\Core\Path\RelativePath;
  * one file. It is a rank, not a position, so editing text above a declaration
  * leaves its identity alone. There is no default: dropping the argument during
  * a migration must not silently mean "the first one".
+ *
+ * @qmx-threshold coupling.cbo 23 -- This public fact or option contract combines its declaration vocabulary with bounded implementation dependencies; its incoming readers do not independently justify a popularity exception.
  */
 final readonly class DeclarationPath
 {
@@ -39,7 +42,7 @@ final readonly class DeclarationPath
         $canonical = \sprintf(
             self::CANONICAL_PREFIX . '%s@%s',
             $this->logical->toCanonical(),
-            $this->file->value(),
+            SourceBytes::escape($this->file->value(), '#'),
         );
 
         return $this->ordinal->isFirst() ? $canonical : $canonical . '#' . $this->ordinal->value;

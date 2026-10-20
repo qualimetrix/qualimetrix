@@ -4,31 +4,7 @@ declare(strict_types=1);
 
 namespace QmxFindingGate;
 
-/**
- * The third kind of declaration: what a step changed that is not a rename.
- *
- * A map says "this name became that name"; normalization says "this field is not
- * compared". Neither can state that splitting one rule turns one aggregate group
- * into three, or adds rows to the rule inventory. That is a structural change to
- * a surface, and it is declared as the exact diff of that surface — index row
- * plus a file holding the whole unified diff, produced by
- * `--derive-declared-delta` rather than written by hand.
- *
- * Four properties keep this from becoming a rubber stamp, and they live in Gate
- * because three of them need the measured diff: the computed diff must equal the
- * declared one byte for byte (`delta-mismatch`), a declaration on a surface that
- * turned out to match is stale (`delta-stale`), a diff past the size limit is
- * refused so the pressure stays on declaring another map row rather than
- * dropping in a blob (`delta-too-large`), and a diff line may not change a field
- * the equivalence tuple compares unless a declared split already explains that
- * record (`delta-overreach`).
- *
- * The `reason` column is the one thing a run cannot produce, so a re-derivation
- * carries an existing reason over — and only while the diff it was written
- * against is unchanged. A surface that is new, or whose diff moved, gets `?`,
- * and loading refuses `?`: an undeclared reason is not a declaration, and a
- * sentence inherited by a diff it was never written for is worse than none.
- */
+/** Intent-scoped structural differences; reasons belong to intentions and survive measurement. */
 final class DeclaredDelta
 {
     public const COLUMNS = ['surface', 'file', 'reason'];
@@ -72,8 +48,7 @@ final class DeclaredDelta
 
             if ($row['reason'] === '' || $row['reason'] === '?') {
                 throw new GateError(\sprintf(
-                    '%s declares "%s" with no reason. A derived row carries "?" until someone says why the surface'
-                    . ' changed structurally; that sentence is the declaration.',
+                    '%s declares "%s" with no reason. A structural intention requires its explanation before measurement.',
                     self::INDEX,
                     $surface,
                 ));
@@ -94,6 +69,11 @@ final class DeclaredDelta
             $entries[$surface] = ['file' => $row['file'], 'reason' => $row['reason'], 'diff' => $diff];
         }
 
+        foreach (array_keys($entries) as $surface) {
+            if (str_contains($surface, '|') && isset($entries[Surfaces::surfaceClass($surface)])) {
+                throw new GateError('A structural intention overlaps a full surface and its surface class: ' . $surface);
+            }
+        }
         return new self($root, $entries);
     }
 
@@ -127,14 +107,14 @@ final class DeclaredDelta
     /** The declared diff for a surface that turned out to differ, or null. */
     public function claim(string $surfaceKey): ?string
     {
-        $this->consulted[$surfaceKey] = true;
+        $this->consulted[$this->intentOf($surfaceKey)] = true;
 
-        return $this->entries[$surfaceKey]['diff'] ?? null;
+        return $this->entries[$this->intentOf($surfaceKey)]['diff'] ?? null;
     }
 
     public function fileOf(string $surfaceKey): string
     {
-        return $this->entries[$surfaceKey]['file'] ?? self::INDEX;
+        return $this->entries[$this->intentOf($surfaceKey)]['file'] ?? self::INDEX;
     }
 
     /**
@@ -150,8 +130,8 @@ final class DeclaredDelta
     }
 
     /**
-     * Writes the index and one file per surface, preserving the reasons already
-     * recorded against a surface that still differs.
+     * Writes measured intentions, preserving reasons and prior contents of
+     * intentions this partial derivation could not measure.
      *
      * @param array<string, string> $diffs surface key => unified diff
      *
@@ -159,6 +139,23 @@ final class DeclaredDelta
      */
     public function rewrite(array $diffs): array
     {
+        $measured = [];
+        foreach ($diffs as $surface => $diff) {
+            $intent = $this->intentOf($surface);
+            if (!isset($this->entries[$intent])) {
+                throw new GateError('A derivation cannot write an unannounced surface: ' . $surface);
+            }
+            if (isset($measured[$intent]) && $measured[$intent] !== $diff) {
+                throw new GateError('Cases of one surface class measured different structural differences.');
+            }
+            $measured[$intent] = $diff;
+        }
+        foreach ($this->entries as $surface => $entry) {
+            if (!isset($measured[$surface])) {
+                $measured[$surface] = $entry['diff'];
+            }
+        }
+        $diffs = $measured;
         $directory = $this->root . '/' . self::DIRECTORY;
         Fs::removeRecursively($directory);
         ksort($diffs);
@@ -178,26 +175,23 @@ final class DeclaredDelta
         return $written;
     }
 
-    /**
-     * The sentence already written against this surface — but only while the
-     * diff it explains is the same diff.
-     *
-     * Carry-over used to be keyed on the surface alone, so a later step that
-     * changed `case:design|format:json` structurally for an entirely different
-     * reason inherited this step's sentence and nothing noticed: loading refuses
-     * `?`, not a sentence that has stopped being true. The reason is the one
-     * thing a run cannot measure, which is exactly why it must not be allowed to
-     * outlive the measurement it was written for.
-     */
+    public function intentOf(string $surfaceKey): string
+    {
+        if (isset($this->entries[$surfaceKey])) {
+            return $surfaceKey;
+        }
+        $surface = str_contains($surfaceKey, '|') ? Surfaces::surfaceClass($surfaceKey) : $surfaceKey;
+        return isset($this->entries[$surface]) ? $surface : $surfaceKey;
+    }
+
+    public function hasSurfaceIntention(string $surfaceKey): bool
+    {
+        return isset($this->entries[$this->intentOf($surfaceKey)]);
+    }
+
     private function reasonFor(string $surface, string $diff): string
     {
-        $existing = $this->entries[$surface] ?? null;
-
-        if ($existing === null || $existing['diff'] !== $diff) {
-            return '?';
-        }
-
-        return $existing['reason'];
+        return $this->entries[$surface]['reason'];
     }
 
     private static function slug(string $surfaceKey): string

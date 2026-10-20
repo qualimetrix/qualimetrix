@@ -12,22 +12,21 @@ use PhpParser\Node\Stmt;
  * means "try the next item" rather than "ignore the failure".
  *
  * A try qualifies only as a direct statement of the foreach body that can end the search on
- * success: it holds a `return`, or a `continue` that skips statements following the try — at its
- * top level or inside its `if` branches. A `continue` with nothing after the try skips nothing,
+ * success: it holds a `return` or `break`, or a `continue` that skips statements following the try — at its
+ * top level or inside its `if` branches. The exit must follow work in the try. A `continue` with nothing after the try skips nothing,
  * so such a catch swallows every failure of the loop.
  */
 final class ChainOfAttempts
 {
+    public function __construct(private readonly AttemptWork $work = new AttemptWork()) {}
+
     /** @return list<Stmt\TryCatch> */
     public function attempts(Stmt\Foreach_ $loop): array
     {
         $attempts = [];
         $statements = $this->withoutNops($loop->stmts);
         foreach ($statements as $index => $statement) {
-            $iterationExits = isset($statements[$index + 1])
-                ? [Stmt\Return_::class, Stmt\Continue_::class]
-                : [Stmt\Return_::class];
-            if ($statement instanceof Stmt\TryCatch && $this->holdsExit($statement->stmts, $iterationExits)) {
+            if ($statement instanceof Stmt\TryCatch && $this->holdsExit($statement->stmts, $statements[$index + 1] ?? null)) {
                 $attempts[] = $statement;
             }
         }
@@ -37,27 +36,50 @@ final class ChainOfAttempts
 
     /**
      * @param array<Stmt> $statements
-     * @param list<class-string<Stmt>> $iterationExits
      */
-    private function holdsExit(array $statements, array $iterationExits): bool
+    private function holdsExit(array $statements, ?Stmt $fallback, ?Node $priorWork = null): bool
     {
+        $statements = $this->withoutNops($statements);
+        $lastStatement = $statements[array_key_last($statements)] ?? null;
         foreach ($statements as $statement) {
-            foreach ($iterationExits as $exit) {
-                if ($statement instanceof $exit) {
-                    return true;
-                }
-            }
-
-            if ($statement instanceof Stmt\If_ && $this->branchHoldsExit($statement, $iterationExits)) {
+            if ($this->endsAttemptAfterWork($statement, $fallback, $priorWork)) {
                 return true;
+            }
+            if ($this->ifBranchHoldsExit($statement, $lastStatement, $fallback, $priorWork)) {
+                return true;
+            }
+            if ($statement instanceof Stmt\Expression && $this->work->in($statement->expr)) {
+                $priorWork = $statement;
             }
         }
 
         return false;
     }
 
-    /** @param list<class-string<Stmt>> $iterationExits */
-    private function branchHoldsExit(Stmt\If_ $if, array $iterationExits): bool
+    private function ifBranchHoldsExit(Stmt $statement, ?Stmt $lastStatement, ?Stmt $fallback, ?Node $priorWork): bool
+    {
+        if (!$statement instanceof Stmt\If_) {
+            return false;
+        }
+
+        $branchWork = $priorWork;
+        if ($branchWork === null && $statement === $lastStatement && $this->work->in($statement->cond)) {
+            $branchWork = $statement->cond;
+        }
+
+        return $this->branchHoldsExit($statement, $fallback, $branchWork);
+    }
+
+    private function endsAttemptAfterWork(Stmt $statement, ?Stmt $fallback, ?Node $priorWork): bool
+    {
+        if ($statement instanceof Stmt\Return_) {
+            return $priorWork !== null || ($statement->expr !== null && $this->work->in($statement->expr));
+        }
+
+        return $priorWork !== null && ($statement instanceof Stmt\Break_ || ($fallback !== null && $statement instanceof Stmt\Continue_));
+    }
+
+    private function branchHoldsExit(Stmt\If_ $if, ?Stmt $fallback, ?Node $priorWork): bool
     {
         $branches = [$if->stmts, ...array_map(static fn(Stmt\ElseIf_ $elseif): array => $elseif->stmts, $if->elseifs)];
         if ($if->else !== null) {
@@ -65,7 +87,7 @@ final class ChainOfAttempts
         }
 
         foreach ($branches as $branch) {
-            if ($this->holdsExit($branch, $iterationExits)) {
+            if ($this->holdsExit($branch, $fallback, $priorWork)) {
                 return true;
             }
         }

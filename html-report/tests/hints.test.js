@@ -924,3 +924,27 @@ describe('catalog completeness', () => {
     }
   });
 });
+
+
+describe('prepared project health inputs', () => {
+  it('keeps null and numeric zero distinct without consulting static inputs', () => {
+    const hint = getHealthHint('health.cohesion', {
+      type: 'project', metrics: { 'health.cohesion': null, 'cohesion.tcc.avg': 0.9 },
+      preparedDecomposition: { 'health.cohesion': [
+        { humanName: 'TCC', value: null, coverage: { measured: 0, eligible: 2 } },
+        { humanName: 'LCOM', value: 0, coverage: { measured: 2, eligible: 2 } },
+      ] },
+    });
+    expect(hint.text).toBe('Cohesion: not measured');
+    expect(hint.details).toEqual(['TCC: not measured 0/2', 'LCOM = 0']);
+  });
+
+  it('does not borrow builtin decomposition for an authored literal score', () => {
+    const hint = getHealthHint('health.cohesion', {
+      type: 'project', metrics: { 'health.cohesion': 80, 'cohesion.tcc.avg': 0.1 },
+      preparedDecomposition: { 'health.cohesion': [] },
+    });
+    expect(hint.text).toBe('Cohesion: 80 / 100');
+    expect(hint.details).toEqual([]);
+  });
+});

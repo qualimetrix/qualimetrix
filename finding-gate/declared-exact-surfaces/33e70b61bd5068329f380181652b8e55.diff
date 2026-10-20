@@ -1,0 +1,154 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 50348
++visible 51134
+@@ -41,0 +41,36 @@
++            "producer": "architecture.layer-declaration",
++            "channel": "architecture.doubted-assignment",
++            "level": "project",
++            "gate": "prepared-evidence",
++            "reason": "Prepared layer evidence is unavailable. Required population context was not judged.",
++            "unit": "invocation",
++            "count": 1,
++            "examples": [
++                "architecture.layer-declaration"
++            ]
++        },
++        {
++            "producer": "architecture.layer-declaration",
++            "channel": "architecture.layer-overlap",
++            "level": "project",
++            "gate": "prepared-evidence",
++            "reason": "Prepared layer evidence is unavailable. Required population context was not judged.",
++            "unit": "invocation",
++            "count": 1,
++            "examples": [
++                "architecture.layer-declaration"
++            ]
++        },
++        {
++            "producer": "architecture.layer-violation",
++            "channel": "architecture.layer-violation",
++            "level": "class",
++            "gate": "prepared-evidence",
++            "reason": "Prepared layer evidence is unavailable. Required population context was not judged.",
++            "unit": "invocation",
++            "count": 1,
++            "examples": [
++                "architecture.layer-violation"
++            ]
++        },
++        {
+@@ -54,2 +90,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -68,2 +103,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -81,2 +115,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -94,2 +127,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -107,2 +139,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -120,2 +151,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -135,2 +165,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -148,2 +177,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -161,2 +189,1 @@
+-            ],
+-            "dataGap": true
++            ]
+@@ -176,2 +203,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -190,2 +216,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -205,2 +230,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -222,2 +246,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -237,2 +260,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -253,2 +275,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -267,2 +288,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -282,2 +302,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -295,2 +314,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -312,2 +330,1 @@
+-            ],
+-            "dataGap": false
++            ]
+@@ -325,2 +342,1 @@
+-            ],
+-            "dataGap": true
++            ]
+@@ -540,1 +556,1 @@
+-            "channel": "complexity.ccn",
++            "channel": "complexity.cognitive",
+@@ -547,6 +563,6 @@
+-            "rule": "complexity.ccn",
+-            "code": "complexity.ccn",
+-            "severity": "error",
+-            "message": "Cyclomatic complexity is 13, exceeds threshold of 8. Consider extracting methods or simplifying conditions",
+-            "recommendation": "Cyclomatic complexity: 13 (threshold: 8) \u2014 too many code paths",
+-            "metricValue": 13,
++            "rule": "complexity.cognitive",
++            "code": "complexity.cognitive",
++            "severity": "error",
++            "message": "Cognitive complexity is 20, exceeds threshold of 8. Top: nested if +3 L13, nested catch +3 L22, nested if +3 L27. Reduce nesting and break into smaller methods",
++            "recommendation": "Cognitive complexity: 20 (threshold: 8). Top: nested if +3 L13, nested catch +3 L22, nested if +3 L27 \u2014 deeply nested, hard to follow",
++            "metricValue": 20,
+@@ -568,1 +584,1 @@
+-            "channel": "complexity.cognitive",
++            "channel": "complexity.ccn",
+@@ -575,6 +591,6 @@
+-            "rule": "complexity.cognitive",
+-            "code": "complexity.cognitive",
+-            "severity": "error",
+-            "message": "Cognitive complexity is 20, exceeds threshold of 8. Top: nested if +3 L13, nested catch +3 L22, nested if +3 L27. Reduce nesting and break into smaller methods",
+-            "recommendation": "Cognitive complexity: 20 (threshold: 8). Top: nested if +3 L13, nested catch +3 L22, nested if +3 L27 \u2014 deeply nested, hard to follow",
+-            "metricValue": 20,
++            "rule": "complexity.ccn",
++            "code": "complexity.ccn",
++            "severity": "error",
++            "message": "Cyclomatic complexity is 13, exceeds threshold of 8. Consider extracting methods or simplifying conditions",
++            "recommendation": "Cyclomatic complexity: 13 (threshold: 8) \u2014 too many code paths",
++            "metricValue": 13,

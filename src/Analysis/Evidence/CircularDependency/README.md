@@ -27,6 +27,11 @@ search that keeps each node's predecessor rather than a copy of its path, so a
 long cycle is found in linear rather than quadratic time. Neither change moves
 the output: members, representative, path and order are what they were.
 
+The positive `max-cycle-size` ceiling declares which prepared cycles can be
+judged. A cycle at the ceiling remains eligible; a larger one is unjudged,
+before severity selection. Zero or a negative ceiling leaves the population
+unrestricted. Selected cycle accounting is separate from emitted findings.
+
 ## Layout
 
 ```text
@@ -35,6 +40,7 @@ CircularDependency/
 ├── CircularDependencyAnalysis.php
 ├── CircularDependencyDetector.php
 ├── Cycle.php
+├── CycleFinding.php             # Cycle message, recommendation and occurrence projection
 ├── CycleMemberLabels.php
 ├── CircularDependencyOptions.php
 └── CircularDependencyRule.php

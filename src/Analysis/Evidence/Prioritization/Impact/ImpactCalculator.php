@@ -13,12 +13,11 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 /**
  * Scores and ranks findings by estimated refactoring impact.
  *
- * Impact is computed as: classRank * severityWeight * debtMinutes.
+ * Impact is computed as: classRankShare * severityWeight * debtMinutes.
  * This prioritizes findings in highly-connected classes that are severe and costly to fix.
  *
- * When classRank is unavailable for a finding, the project's median classRank is used
- * as fallback. This avoids inflating unranked findings (fallback 1.0 would dominate
- * real hotspots since typical classRank values are 0.001–0.05).
+ * When the share is unavailable for a finding, the project's measured median share
+ * supplies a typical influence weight in the same units as ranked findings.
  */
 final readonly class ImpactCalculator
 {
@@ -58,14 +57,13 @@ final readonly class ImpactCalculator
                 Severity::Info => 0,
             };
 
-            // Use median classRank as fallback, or 0 if no classes have classRank at all
             $effectiveRank = $classRank ?? $medianFallback ?? 0.0;
             $impact = $effectiveRank * $severityWeight * $debtMinutes;
 
             $ranked[] = new RankedIssue(
                 finding: $finding,
                 impactScore: $impact,
-                classRank: $classRank,
+                classRankShare: $classRank,
                 debtMinutes: $debtMinutes,
                 severityWeight: $severityWeight,
             );

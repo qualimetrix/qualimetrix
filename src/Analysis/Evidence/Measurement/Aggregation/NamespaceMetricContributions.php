@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Measurement\Aggregation;
 
+use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -21,12 +24,51 @@ use Qualimetrix\Core\Symbol\SymbolType;
  */
 final class NamespaceMetricContributions
 {
+    /** @param list<int|float|array{total: int|float, files: int}> $values */
+    public static function applyFileContributions(AggregationStrategy $strategy, array $values): int|float
+    {
+        [$total, $files] = self::fileContributionTotals($values);
+
+        return match ($strategy) {
+            AggregationStrategy::Sum => $total,
+            AggregationStrategy::Count => $files,
+            AggregationStrategy::Average => $files > 0 ? $total / $files : 0,
+            default => throw new LogicException('Unsupported namespace file-contribution strategy'),
+        };
+    }
+
+    /**
+     * @param list<int|float|array{total: int|float, files: int}> $values
+     *
+     * @return array{int|float, int}
+     */
+    private static function fileContributionTotals(array $values): array
+    {
+        $total = 0;
+        $files = 0;
+        foreach ($values as $value) {
+            if (\is_array($value)) {
+                $total += $value['total'];
+                $files += $value['files'];
+            } else {
+                $total += $value;
+                ++$files;
+            }
+        }
+
+        if ($files === 0 && (float) $total !== 0.0) {
+            throw new LogicException('Namespace contribution total requires contributing files');
+        }
+
+        return [$total, $files];
+    }
+
     /**
      * @param list<SymbolInfo> $symbolInfos
      * @param list<SymbolInfo> $fileSymbols
      * @param list<MetricDefinition> $definitions
      *
-     * @return array<string, list<int|float>>
+     * @return array<string, list<int|float|array{total: int|float, files: int}>>
      */
     public static function collectValues(
         MetricRepositoryInterface $repository,
@@ -55,41 +97,11 @@ final class NamespaceMetricContributions
     }
 
     /**
-     * @return array<string, list<string>> file path => namespaces
-     */
-    public static function mapFilesToNamespaces(MetricRepositoryInterface $repository): array
-    {
-        $map = [];
-
-        foreach ($repository->allDeclarations() as $info) {
-            $namespace = $info->subject?->toSymbolPath()->namespace;
-
-            if ($namespace !== null && $info->file !== null) {
-                $map[$info->file->value()][$namespace] = $namespace;
-            }
-        }
-
-        // Aggregate-only class records still own their physical file. They have
-        // no declaration subject, but must keep that file eligible for file LOC.
-        foreach ($repository->allLogicalClasses() as $info) {
-            $namespace = $info->subject?->toSymbolPath()->namespace;
-
-            if ($namespace !== null && $info->file !== null) {
-                $map[$info->file->value()][$namespace] = $namespace;
-            }
-        }
-
-        return array_map(static fn(array $namespaces): array => array_values($namespaces), $map);
-    }
-
-    /**
-     * @param array<string, list<string>> $fileToNamespaces
-     *
      * @return array<string, list<SymbolInfo>>
      */
     public static function mapNamespacesToFileSymbols(
         MetricRepositoryInterface $repository,
-        array $fileToNamespaces,
+        FileNamespaceIndex $fileNamespaces,
     ): array {
         $map = [];
 
@@ -98,7 +110,7 @@ final class NamespaceMetricContributions
                 continue;
             }
 
-            foreach ($fileToNamespaces[$fileInfo->file->value()] ?? [] as $namespace) {
+            foreach ($fileNamespaces->namespacesOf($fileInfo->file) as $namespace) {
                 $map[$namespace][] = $fileInfo;
             }
         }
@@ -109,7 +121,7 @@ final class NamespaceMetricContributions
     /**
      * @param list<SymbolInfo> $symbolInfos
      * @param list<MetricDefinition> $definitions
-     * @param array<string, list<int|float>> $values
+     * @param array<string, list<int|float|array{total: int|float, files: int}>> $values
      */
     private static function collectFromSymbols(
         MetricRepositoryInterface $repository,
@@ -128,6 +140,10 @@ final class NamespaceMetricContributions
                 continue;
             }
 
+            if ($declarationType === SymbolType::Class_ && $info->subject?->declarationPath() === null) {
+                continue;
+            }
+
             $sourceLevel = SymbolLevelProjection::ofDeclaration($declarationType);
 
             self::appendValues($repository, $info, $definitions, $values, $sourceLevel);
@@ -137,7 +153,7 @@ final class NamespaceMetricContributions
     /**
      * @param list<SymbolInfo> $fileSymbols
      * @param list<MetricDefinition> $definitions
-     * @param array<string, list<int|float>> $values
+     * @param array<string, list<int|float|array{total: int|float, files: int}>> $values
      * @param array<string, true> $namespaceProvided
      */
     private static function collectFromFiles(
@@ -158,7 +174,9 @@ final class NamespaceMetricContributions
                 $value = $bag->get($definition->name);
 
                 if ($value !== null) {
-                    $values[$definition->name][] = $value;
+                    $values[$definition->name][] = $definition->namespaceFileContribution
+                        ? ['total' => $value, 'files' => 1]
+                        : $value;
                 }
             }
         }
@@ -167,7 +185,7 @@ final class NamespaceMetricContributions
     /**
      * @param list<SymbolInfo> $symbolInfos
      * @param list<MetricDefinition> $definitions
-     * @param array<string, list<int|float>> $values
+     * @param array<string, list<int|float|array{total: int|float, files: int}>> $values
      *
      * @return array<string, true>
      */
@@ -192,7 +210,7 @@ final class NamespaceMetricContributions
             $bag = $repository->get($info->symbolPath);
 
             foreach ($definitions as $definition) {
-                if ($definition->collectedAt === SymbolLevel::File
+                if ($definition->namespaceFileContribution
                     && self::appendExplicitNamespaceContributions($bag, $definition, $targetLevel, $values)
                 ) {
                     $provided[$definition->name] = true;
@@ -204,7 +222,7 @@ final class NamespaceMetricContributions
     }
 
     /**
-     * @param array<string, list<int|float>> $values
+     * @param array<string, list<int|float|array{total: int|float, files: int}>> $values
      */
     private static function appendExplicitNamespaceContributions(
         MetricBag $bag,
@@ -218,29 +236,20 @@ final class NamespaceMetricContributions
             return false;
         }
 
-        // A sum-only aggregation needs the namespace total once, not a
-        // synthetic value per contributing file. Splitting an integer total
-        // such as 1 across six contributions creates repeating fractions whose
-        // sum can be 0.999..., corrupting count metrics after an integer cast.
-        if ($definition->getStrategiesForLevel($targetLevel) === [AggregationStrategy::Sum]) {
-            $values[$definition->name][] = $total;
-
-            return true;
+        $files = 0;
+        foreach ($bag->entries(MetricName::NAMESPACE_FILE_CONTRIBUTION) as $entry) {
+            if (($entry['metric'] ?? null) === $definition->name) {
+                ++$files;
+            }
         }
-
-        $count = (int) ($bag->get($definition->name . '.count') ?? 1);
-        $perContribution = $count > 0 ? $total / $count : $total;
-
-        for ($i = 0; $i < max(1, $count); ++$i) {
-            $values[$definition->name][] = $perContribution;
-        }
+        $values[$definition->name][] = ['total' => $total, 'files' => $files];
 
         return true;
     }
 
     /**
      * @param list<MetricDefinition> $definitions
-     * @param array<string, list<int|float>> $values
+     * @param array<string, list<int|float|array{total: int|float, files: int}>> $values
      */
     private static function appendValues(
         MetricRepositoryInterface $repository,

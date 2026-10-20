@@ -1,0 +1,16 @@
+{
+    "id": "scoped-layers",
+    "description": "The main run is narrowed to one file; its baseline source has no readable production autoload and has unknown scope. Both report a proven shadow; the unknown source withholds claims that a declared layer is unreachable.",
+    "coverage": "auxiliary",
+    "paths": [
+        "src/Service.php"
+    ],
+    "config": "qmx.yaml",
+    "args": [],
+    "channels": [
+        "architecture.potential-shadow@project"
+    ],
+    "layerAssignmentSubjects": [
+        "Corpus\\ScopedLayers\\Service"
+    ]
+}

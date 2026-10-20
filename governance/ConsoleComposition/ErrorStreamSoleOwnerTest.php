@@ -8,7 +8,7 @@ use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
@@ -26,7 +26,7 @@ use RecursiveIteratorIterator;
  *
  * A second *instance* is the same defect with everything spelled correctly —
  * two `ErrorStream` objects each keeping a private section list, redrawing
- * around nothing. Only the composition root may construct one, so `new
+ * around nothing. Only ConsoleDiagnostics may construct one, so `new
  * ErrorStream` anywhere in the shipped code is that defect, and the constructors
  * take the owner as a required argument so it cannot be reintroduced by
  * omission.
@@ -45,8 +45,16 @@ final class ErrorStreamSoleOwnerTest extends TestCase
      *                            is not the owner's business
      */
     private const array ALLOWED = [
-        'src/Infrastructure/Console/ErrorStream.php'
-            => 'the owner itself',
+        'src/Infrastructure/Console/Application/ConsoleDiagnostics.php'
+            => 'the single constructor shared by the application and its product container',
+        'src/Infrastructure/Console/Refusal/OutOfMemoryHint.php'
+            => 'coordinator fatal-memory emergency diagnostic without a bound ErrorStream',
+        'src/Infrastructure/Parallel/WorkerFatalNotes.php'
+            => 'worker fatal note: the worker has no ErrorStream, and the coordinator parses the line',
+        'src/Infrastructure/Console/Terminal/Diagnostics/ErrorStream.php'
+            => 'the sole constructor of the private shared section-list lifecycle',
+        'src/Infrastructure/Console/Terminal/Diagnostics/ErrorSections.php'
+            => 'the owner’s private section-list lifecycle, constructed only by ErrorStream',
         'src/Infrastructure/Git/GitClient.php'
             => 'Symfony\\Component\\Process::getErrorOutput() returns a captured string, not a stream',
         'bin/qmx'
@@ -130,8 +138,8 @@ final class ErrorStreamSoleOwnerTest extends TestCase
                     $found[$token[2]] = 'error_log()';
                 }
 
-                if ($token[1] === 'ErrorStream' && self::isConstructed($tokens, $i)) {
-                    $found[$token[2]] = 'new ErrorStream (a second owner)';
+                if (\in_array($token[1], ['ErrorStream', 'ErrorSections'], true) && self::isConstructed($tokens, $i)) {
+                    $found[$token[2]] = 'new ' . $token[1] . ' (a second owner)';
                 }
             }
         }

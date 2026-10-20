@@ -5,36 +5,15 @@ declare(strict_types=1);
 namespace QmxFindingGate;
 
 /**
- * What the product's own source says a metric name can be: the closed list of
- * aggregation suffixes, and the base keys it declares.
+ * Source-declared aggregation suffixes and independent metric base keys.
  *
- * A metric is published bare AND once per aggregation strategy declared for it,
- * spelled `<key>.<strategy>` ({@see \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName::agg()}).
- * A `metric-keys.tsv` row therefore has to reach the suffixed spellings of the
- * key it names, and the suffix has to come from a closed list — an open one
- * would turn a declared rename into a substring rewrite over every longer name
- * that happens to start with the key, which is the one thing the map's
- * whole-name rule exists to refuse. Measured 2026-08-26 over the 14-case
- * corpus: 212 of 295 published spellings are `base.<strategy>`, against 83 base
- * keys, so declaring them one row each is not a list anybody can keep complete.
- *
- * The suffix list is read from BOTH trees and they have to agree, which is not
- * symmetry for its own sake: forward translation is applied to the REFERENCE's
- * artifacts, so a strategy the step removed would stop being expanded while the
- * reference is still publishing it — a rename leaking into an undeclared diff,
- * silently. The comparison lives in {@see ReferenceTree::create()} rather than
- * in the gate's own sequence, so that obtaining a reference tree at all is what
- * performs it: a check the caller has to remember is a check one refactoring
- * removes.
- *
- * The base keys are read for a second check, and what they are is a partial
- * universe rather than the whole one — said here because a check that overstates
- * its reach is worse than one that states it. `MetricName`'s constants are 71 of
- * the 82 published base keys; the other eleven are collector-owned literals
- * (`getterCount`, the three `methodCount*`, …) that no single file declares, and
- * their constants are introduced by the same vocabulary migration. The overlap
- * check therefore covers every key the product names in one place, but cannot
- * see a key with no single declaration.
+ * Both trees are read as text; the reference's product classes are never loaded
+ * into the tool process. RenameMaps binds the vocabularies before comparison,
+ * requiring complete suffix equality after exactly the declared strategy rows.
+ * Independent base keys prevent an expanded spelling from consuming a distinct
+ * metric that one tree declares. Collector-owned literals absent from MetricName
+ * remain outside this finite source vocabulary and receive no inferred strategy
+ * translation.
  */
 final class MetricVocabulary
 {
@@ -96,9 +75,8 @@ final class MetricVocabulary
         throw new GateError(\sprintf(
             'The two trees do not agree on the aggregation suffixes a metric key may carry: [%s] against [%s].'
             . ' Forward translation runs over the reference\'s artifacts, so a suffix only it publishes would fall'
-            . ' out of every metric-keys row silently. A step that means to change this vocabulary renames a'
-            . ' published spelling on every aggregated metric at once, and the gate has no shape to declare that'
-            . ' in — so it stops here rather than comparing a translation it cannot state.',
+            . ' out of every metric-keys row silently. Identity comparison requires the same suffix vocabulary;'
+            . ' declared strategy correspondence must be checked through RenameMaps instead.',
             implode(', ', $this->suffixes),
             implode(', ', $other->suffixes),
         ));

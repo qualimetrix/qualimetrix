@@ -13,14 +13,6 @@ namespace Qualimetrix\Core;
  * capability, so no capability owns it. Kept separate from {@see Version}
  * rather than merged into it: a version number and a documentation address are
  * two facts from two sources, not one fact with two fields.
- *
- * @qmx-threshold coupling.cbo 24 -- Every output channel reads its documentation address from here
- *                instead of spelling it, so each channel that points at the documentation is one
- *                more inbound edge by design — including the HTML report, whose HtmlTreeBuilder
- *                reads it into report-data for the footer, and the graph exporter, whose
- *                JsonGraphExporter reads it into the graph document's meta block. The class has no
- *                dependency of its own beyond Version. Raw CBO 23 gets one-edge headroom from the
- *                inclusive threshold of 24.
  */
 final class ProductIdentity
 {

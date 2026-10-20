@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -36,6 +37,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  *
  * Requires classCount, implementingEnumCount, traitCount, abstractClassCount and
  * interfaceCount aggregated at namespace level.
+ *
+ * @qmx-threshold health.cohesion 40.0 -- Independent immutable observations or stateless declaration operations intentionally have no shared instance-field graph; this finite class boundary keeps a further cohesion loss visible.
  */
 final class AbstractnessCollector implements GlobalContextCollectorInterface
 {
@@ -53,6 +56,11 @@ final class AbstractnessCollector implements GlobalContextCollectorInterface
             MetricName::agg(MetricName::SIZE_ABSTRACT_CLASS_COUNT, AggregationStrategy::Sum),
             MetricName::agg(MetricName::SIZE_INTERFACE_COUNT, AggregationStrategy::Sum),
         ];
+    }
+
+    public function getMetricReach(): MetricReach
+    {
+        return MetricReach::Run;
     }
 
     public function provides(): array
@@ -94,9 +102,13 @@ final class AbstractnessCollector implements GlobalContextCollectorInterface
             $totalTypes = $classCount + $traitCount + $interfaceCount + $implementingEnumCount;
             $totalAbstractions = $abstractCount + $interfaceCount;
 
-            $abstractness = $this->computeAbstractness($totalTypes, $totalAbstractions);
-
-            $repository->addScalar($nsPath, MetricName::COUPLING_ABSTRACTNESS, $abstractness);
+            if ($totalTypes > 0) {
+                $repository->addScalar(
+                    $nsPath,
+                    MetricName::COUPLING_ABSTRACTNESS,
+                    $this->computeAbstractness($totalTypes, $totalAbstractions),
+                );
+            }
 
             $this->addOwnAbstractness($repository, $nsPath);
         }
@@ -138,15 +150,10 @@ final class AbstractnessCollector implements GlobalContextCollectorInterface
     /**
      * Computes abstractness: A = abstractions / total types.
      *
-     * Returns 0.0 if total is 0 (empty namespace).
-     * Ensures result is in [0, 1] range.
+     * Called only when the denominator is positive. Ensures [0, 1] range.
      */
     private function computeAbstractness(int $totalTypes, int $abstractions): float
     {
-        if ($totalTypes === 0) {
-            return 0.0;
-        }
-
         $abstractness = $abstractions / $totalTypes;
 
         // Ensure A is in [0, 1] range

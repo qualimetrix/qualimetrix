@@ -1,0 +1,73 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 14123
++visible 14133
+@@ -23,1 +23,1 @@
+-            "src"
++            "src/Other.php"
+@@ -70,0 +70,12 @@
++            "producer": "code-smell.boolean-argument",
++            "reason": "filtered",
++            "statement": "only_rules: [architecture.layer-violation]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.constructor-overinjection",
++            "reason": "filtered",
++            "statement": "only_rules: [architecture.layer-violation]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
+@@ -77,0 +89,6 @@
++            "reason": "filtered",
++            "statement": "only_rules: [architecture.layer-violation]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.empty-catch",
+@@ -106,18 +124,0 @@
+-            "producer": "code-smell.superglobals",
+-            "reason": "filtered",
+-            "statement": "only_rules: [architecture.layer-violation]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "code-smell.boolean-argument",
+-            "reason": "filtered",
+-            "statement": "only_rules: [architecture.layer-violation]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "code-smell.empty-catch",
+-            "reason": "filtered",
+-            "statement": "only_rules: [architecture.layer-violation]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+@@ -130,1 +130,1 @@
+-            "producer": "code-smell.constructor-overinjection",
++            "producer": "code-smell.long-parameter-list",
+@@ -136,1 +136,1 @@
+-            "producer": "code-smell.long-parameter-list",
++            "producer": "code-smell.superglobals",
+@@ -190,1 +190,1 @@
+-            "producer": "coupling.distance",
++            "producer": "coupling.class-rank",
+@@ -196,1 +196,1 @@
+-            "producer": "coupling.class-rank",
++            "producer": "coupling.distance",
+@@ -262,0 +262,6 @@
++            "producer": "security.command-injection",
++            "reason": "filtered",
++            "statement": "only_rules: [architecture.layer-violation]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
+@@ -269,6 +275,0 @@
+-            "reason": "filtered",
+-            "statement": "only_rules: [architecture.layer-violation]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "security.command-injection",

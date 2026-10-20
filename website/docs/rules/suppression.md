@@ -26,9 +26,21 @@ The two questions look alike in a report and lead to opposite actions, which is 
 
 All the channels report at **project level**, at severity `warning`.
 
-They are only judged on a run whose paths cover everything the project's `composer.json` declares under `autoload` — `psr-4` and `psr-0` roots, `classmap` and `files` entries alike — and, with [`--include-autoload-dev`](../usage/cli-options.md#--include-autoload-dev), everything under `autoload-dev` as well. On a narrower run a value binds nothing simply because the code it names lies outside the slice, which is the caller's choice and not the author's mistake, and the report's [project scope](../usage/output-formats.md#project-scope-in-every-format) names these channels among those not judged. On a project whose manifest declares nothing in the sections the run counts — no `composer.json`, one that does not parse, or one with no such section — the paths you name are the whole project and the channels judge their path values; a path value is still spared when the place it names exists outside those paths. Namespace values are not judged there at all: with no declared autoload to place a namespace, `suppress_namespaces: [{subtree: Tests}]` on `qmx check src` may name code in a directory the run never read, and "matched nothing" would be a guess. The report's project scope reads `unknown` and names each such value in `unjudgedValues`, with its channel in `unjudgedChannels`. This holds on a run over the whole tree as well, where a miss would be a fact; to have namespace values judged, give the project a `composer.json` with `autoload`.
+Measured [project scope](../usage/output-formats.md#project-scope-in-every-format)
+asks two questions. Namespace absence needs complete declaration evidence:
+omitted PHP, authored PHP removal, generated exclusions and an uncertain universe
+withhold it. Path values use PHP-path completeness and universe certainty
+separately; authored/generated removal alone does not close that question.
+Rule-ledger namespace values also ask the declaration question.
 
-Each value is then judged separately, against the place it names. `subtree: tests/Legacy` points at `tests/`, which `qmx check src/` never analysed, so that entry is not judged on that run — while `subtree: src/Legacy` on the same run is. A skipped value is not silent: the report's project scope names it in `unjudgedValues`, on a `covered` run too. A namespace value is placed through the PSR-4 map, `autoload-dev` included. An arbitrary `regex` has no sound static location; it is therefore judged only when the run covers the complete relevant universe, never by guessing a literal prefix from regex syntax.
+Every value is placed separately. Accepted production/development PSR-4 facts
+from the invocation snapshot locate namespaces independently of report state;
+without a map they remain unjudged. A literal under a removed entry is not judged.
+Path/ledger regex is unjudged with incomplete paths or authored removal that could
+hide a match; namespace regex also requires complete declaration evidence. This
+conservative answer can withhold an unrelated stale regex: rerun without the
+exclusion. Reports name every skipped `{channel, option, pattern}` value,
+including on a `covered` run.
 
 They are not written into a generated baseline: `baseline:generate` measures findings on a different seam, and a warning about the author's own configuration should not become accepted debt in the file that author generates with one command.
 
@@ -81,3 +93,7 @@ rules:
 ```bash
 bin/qmx check src/ --disable-rule=suppression.configuration
 ```
+
+## Owner and namespace membership
+
+A suppress_namespace_channels key must address a channel of its configured producer at Namespace level. One channel must witness both owner membership and the applied level; a level from a sibling channel cannot justify it. Write the keyed map in YAML. The audit itself uses final selection and keeps its existing whole/partial-coverage limits. enabled:true is an intentional exact enable over a lower disable.

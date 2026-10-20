@@ -1,7 +1,14 @@
 # 0076. A Floor Is Reported, and Said to Be One
 
 **Date:** 2026-09-21
-**Status:** Accepted
+**Status:** Partially superseded by [0107](0107-inheritance-chain-outcomes.md)
+
+
+[ADR 0107](0107-inheritance-chain-outcomes.md) replaces the ancestry outcome,
+published incompleteness and warning-ownership decisions below. Floors remain
+numeric, but loops do not; incompleteness is published and warnings belong to
+the enabled inheritance rule. Historical measurements and rationale are
+retained.
 
 ## Context
 

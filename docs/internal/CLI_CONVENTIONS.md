@@ -79,6 +79,12 @@ on one — the mode flag hides the review step that makes the split worth having
    included: `check`, `graph:export` and `debug:layer-assignment` all read the same way, and a
    boolean flag cannot grow a third representation without becoming a second option.
 
+Graph's `--direction` has no short alias: Symfony reserves `-d` for its global
+`--working-dir` option. `graph:export --format/-f` is the graph's own `dot|json`
+dictionary, independent of the analysis `format` key in the shared document.
+Commands that read the document judge it completely before consuming only their
+own values; a command profile does not make invalid authored values invisible.
+
 ### Rule CLI aliases
 
 Dynamic options generated from rule classes via the repeatable class-level attribute `#[CliAlias('alias', 'optionName')]`, read at runtime by `CliAliasReader`.
@@ -113,65 +119,57 @@ Dynamic options generated from rule classes via the repeatable class-level attri
 Options that apply to any rule, not tied to a specific one:
 
 ```
---disable-rule=<prefix>    # disable rules by name or group prefix
---only-rule=<prefix>       # run only matching rules
+--disable-rule=<selector> # exact producer/channel or strict descendants X.*
+--only-rule=<selector>    # select exact producer/channel or strict descendants X.*
 --rule-opt=<rule:opt=val>  # generic rule option override
 ```
 
-The selection options are channel-aware. A bare selector may use the producer
-rule's full `NAME` (`complexity.ccn`), a group prefix (`complexity`), a
-channel `ruleName`, or a `violationCode`; `ruleName#violationCode` is the
-explicit full-channel form. `--rule-opt` still accepts producer rule names
-only, because options configure the producer rather than an emitted channel.
+The selection options are channel-aware. A bare selector addresses an exact
+producer (`complexity.ccn`) or a declared channel code. `complexity.*` selects
+strict descendants of `complexity`, never the prefix itself; bare `complexity`
+is refused. A `channel-name:level` pair narrows a declared channel to a level
+it actually reports at. `--rule-opt` accepts exact producer names only, because
+options configure the producer rather than an emitted channel.
 
-### Rule option key casing: canon vs. accepted input
+### Rule option grammar and provenance
 
-Rule option keys reach the tool through three channels — `qmx.yaml`, presets,
-and `--rule-opt=RULE:OPTION=VALUE` (including the short `#[CliAlias(...)]`
-flags above) — and all three land in the same internal representation before
-an Options class ever sees them. This section documents what the code
-actually does today, not an aspirational convention.
+Document owners declare every accepted key, level slot and value form before
+an Options instance exists. Canonical YAML uses `snake_case`; canonical CLI
+addresses use `kebab-case`. Declared snake, camel and kebab spellings of the
+same key are equivalent, but unrelated case variants are refused with the
+canonical hint. Two spellings of one key are duplicate writes, not two options.
+Constructor reflection and a permissive unknown-option warning are not the schema.
 
-**Canonical spelling per channel:**
+`--rule-opt=PRODUCER:OPTION=YAML_VALUE` and dedicated aliases use the same
+YAML value grammar and authored CLI layer. A sequence requires a sequence:
+`--lcom-exclude-methods='[getName, getDescription]'`. Booleans and numeric
+forms retain their actual type; null does not become a string. Duplicate writes
+through two aliases, or an alias and `--rule-opt`, refuse with exit 3.
+An option address may traverse a declared level slot only. Channel-keyed
+`suppress_namespace_channels` maps belong in YAML.
 
-| Channel                            | Canonical casing | Example                                                                |
-| ---------------------------------- | ---------------- | ---------------------------------------------------------------------- |
-| `qmx.yaml` / preset YAML           | `snake_case`     | `suppress_namespaces: [...]`, `max_distance_warning: 0.5`              |
-| `--rule-opt` / `#[CliAlias]` flags | `kebab-case`     | `--rule-opt=coupling.cbo:min-class-count=5`, `--cyclomatic-warning=15` |
+A bare selection name addresses an exact producer or channel. `X.*` addresses
+strict descendants, never `X` itself; a bare group prefix is refused with the
+starred hint. A `channel-name:level` pair uses a declared channel code and a
+level that the same channel reports at. An identically named producer works
+because that name is also a channel; producers with differently named channels
+have no `producer:level` alias. Bare producer selection still addresses the
+producer as a whole. No legacy `ruleName#violationCode` selector exists.
 
-The repository's own root `qmx.yaml` follows this and is snake_case
-throughout (`suppress_namespaces`, `max_distance_warning`, `min_afferent`,
-`max_warning`, …) — treat it as the reference example, not the kebab-case
-form implied by `--rule-opt` alone.
+Selection compares authored layer precedence and specificity. A later exact
+producer enable can reverse a lower disable; same-layer exact enable beats a
+less specific group disable. Exact enable and disable of one producer in one
+layer refuse even under a later override. `only_rules` is a filter, not an
+enable statement. Empty selections, dead selectors and explicit enables outside
+the effective filter refuse with their decisive writers; later disables may
+lawfully narrow an earlier filter. Option activity, including a mode of
+`ignore`, is concluded after typed options are built. Preparation uses that
+final answer and does not rerun name matching.
 
-**All three spellings are always accepted, everywhere.** Internally, every
-option key is normalized to camelCase (the PHP constructor parameter name)
-before it reaches an Options class:
-
-- `RuleOptionsFactory::normalizeKeys()` normalizes `qmx.yaml`/preset keys
-  (snake_case, kebab-case, or already-camelCase) to camelCase.
-- `RuleOptionsParser::normalizeOptionName()` does the same for `--rule-opt`
-  and `#[CliAlias]` option names.
-
-So `suppress_namespaces`, `suppress-namespaces`, and `suppressNamespaces` are
-all equivalent in `qmx.yaml`; `min-class-count`, `min_class_count`, and
-`minClassCount` are all equivalent on `--rule-opt`. There is no channel where
-only one casing works — the canonical spellings above are the *documented,
-idiomatic* choice per channel, not the *only accepted* one.
-
-**Reporting:** when the tool needs to show option names back to the user
-(the "Unknown option ... Available options: ..." warning from
-`RuleOptionsFactory::warnAboutUnknownKeys()`), it converts the internal
-camelCase name to kebab-case via `toCanonicalDisplayName()` — e.g. a
-`maxDistanceWarning` constructor parameter is reported as
-`max-distance-warning`, regardless of which casing the user actually typed.
-Kebab-case is therefore the spelling users see in tool output, even though
-`qmx.yaml` itself is conventionally snake_case.
-
-> **Known gap:** `warnAboutUnknownKeys()` only recognizes constructor
-> parameter names (reflected off the Options class). Shorthand keys consumed
-> by `ThresholdParser` but not also a constructor parameter — the bare
-> `threshold` key, or rule-specific ones like `vo_threshold` on
-> `code-smell.long-parameter-list` — are invisible to this check and can trigger a
-> false "Unknown option" warning even though `ThresholdParser` accepts them
-> correctly. See `RuleOptionsFactory::warnAboutUnknownKeys()` docblock.
+File/preset diagnostics preserve authored full paths and their real source.
+CLI diagnostics name the actual flag or option locator and have no document
+position. Do not relabel authored failures as `resolved`; cross-layer refusals
+retain every contributing writer. Listings print accepted options independently
+of aliases. `qmx rules` also prints `Selection source: ... (...; layer N)` for
+the effective only writer and every decisive disabled writer. Repeated cells
+of one writer are deduplicated; identical text from different layers is not.

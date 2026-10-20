@@ -8,7 +8,6 @@ use PhpParser\Node;
 use PhpParser\Node\Expr\Array_;
 use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Expr\ConstFetch;
-use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Identifier;
@@ -18,6 +17,7 @@ use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Nop;
 use PhpParser\Node\Stmt\Return_;
+use PhpParser\Node\Stmt\Trait_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
 
@@ -30,8 +30,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterfac
  * - For each method: set of methods called via $this->method()
  * - Static method markers (excluded from LCOM graph)
  *
- * Constructors and destructors are excluded from the graph entirely — see the
- * `__construct`/`__destruct` guard in {@see enterNode()} for why.
+ * Lifecycle bodies remain available to trait aliases; the effective method
+ * population excludes constructor and destructor names.
  *
  * Anonymous classes are ignored.
  */
@@ -39,10 +39,7 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
 {
     use ClassVisitorStackTrait;
 
-    /**
-     * @var array<string, LcomClassData>
-     *                                   Class FQN => LCOM data
-     */
+    /** @var array<int, LcomClassData> */
     private array $classData = [];
 
     /**
@@ -60,7 +57,7 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
     }
 
     /**
-     * @return array<string, LcomClassData>
+     * @return array<int, LcomClassData>
      */
     public function getClassData(): array
     {
@@ -79,12 +76,12 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
         // Track class-like types
         if ($this->isClassLikeNode($node)) {
             $className = $this->extractClassLikeName($node);
-            $this->pushClass($className);
+            $this->pushClass($className, $className === null ? null : $node->getStartFilePos());
 
             // Only create data for named classes
             if ($className !== null) {
-                $fqn = $this->buildClassFqn($className);
-                $this->classData[$fqn] = new LcomClassData(
+                $position = $node->getStartFilePos();
+                $this->classData[$position] = new LcomClassData(
                     namespace: $this->currentNamespace,
                     className: $className,
                     line: $node->getStartLine(),
@@ -99,56 +96,15 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
         // to keep push/pop balanced with leaveNode.
         $currentClass = $this->getCurrentClass();
 
+        if ($node instanceof Node\Stmt\TraitUse || $node instanceof Node\Stmt\Property) {
+            $position = $this->getCurrentClassPosition();
+            CohesionAstFacts::captureMember($node, $position === null ? null : ($this->classData[$position] ?? null));
+
+            return null;
+        }
+
         if ($node instanceof ClassMethod) {
-            $methodName = $node->name->toString();
-            $this->methodStack[] = $methodName;
-
-            // Abstract methods have no body and no property access, creating
-            // disconnected nodes that inflate LCOM. Skip them from the graph.
-            if ($node->isAbstract()) {
-                return null;
-            }
-
-            // Constructors and destructors are excluded from the graph, matching
-            // the B&K-derived treatment already applied by TccLccVisitor. A
-            // constructor whose assigned fields no other stateful method reads
-            // has no recorded property access shared with the rest of the class
-            // and no method calls — it lands in the graph as an isolated vertex
-            // and inflates LCOM by one, whether the assignment is a body
-            // statement or property promotion (`private array $x` in the
-            // parameter list, which never produces a PropertyFetch node at all —
-            // the guaranteed case, covering the 85% of constructors that use
-            // promotion; see cohesion.md). Recording promoted parameters as
-            // property accesses was considered and rejected: it would turn
-            // `__construct` into a hub touching every promoted property,
-            // connecting all methods through it and making LCOM report 1 almost
-            // everywhere — silently defeating the metric rather than fixing it.
-            // Excluding the constructor/destructor outright, as the
-            // constructor's edges say nothing about behavioral cohesion, is the
-            // same call already made for TCC/LCC.
-            if (\in_array($methodName, ['__construct', '__destruct'], true)) {
-                return null;
-            }
-
-            // Only register with classData for named classes
-            if ($currentClass !== null) {
-                $fqn = $this->buildClassFqn($currentClass);
-                if (isset($this->classData[$fqn])) {
-                    $this->classData[$fqn]->addMethod($methodName);
-
-                    if ($node->isStatic()) {
-                        $this->classData[$fqn]->markStatic($methodName);
-                    }
-
-                    if ($this->isStatelessConstant($node)) {
-                        $this->classData[$fqn]->markStatelessConstant($methodName);
-                    }
-
-                    if (!$this->isMethodTrivial($node)) {
-                        $this->classData[$fqn]->markNonTrivial();
-                    }
-                }
-            }
+            $this->captureMethod($node, $currentClass);
 
             return null;
         }
@@ -158,8 +114,8 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
             return null;
         }
 
-        $fqn = $this->buildClassFqn($currentClass);
-        if (!isset($this->classData[$fqn])) {
+        $position = $this->getCurrentClassPosition();
+        if (!isset($this->classData[$position])) {
             return null;
         }
 
@@ -170,42 +126,45 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
         ) {
             $propertyName = $this->extractPropertyName($node);
             if ($propertyName !== null) {
-                $this->classData[$fqn]->addPropertyAccess($currentMethod, $propertyName);
+                $this->classData[$position]->addPropertyAccess($currentMethod, $propertyName);
             }
 
             return null;
         }
 
-        // Track method call via $this->method()
-        if ($node instanceof MethodCall
-            && $node->var instanceof Variable
-            && $node->var->name === 'this'
-            && $node->name instanceof Identifier
-        ) {
-            $this->classData[$fqn]->addMethodCall($currentMethod, $node->name->toString());
-
-            return null;
-        }
+        CohesionAstFacts::captureCall($node, $this->classData[$position], $currentMethod);
 
         return null;
     }
 
+    private function captureMethod(ClassMethod $node, ?string $currentClass): void
+    {
+        $methodName = $node->name->toString();
+        $this->methodStack[] = $methodName;
+
+        $position = $this->getCurrentClassPosition();
+        CohesionAstFacts::captureMethod($node, $position === null ? null : ($this->classData[$position] ?? null));
+
+        // Lifecycle bodies can become ordinary methods through trait aliases.
+        if ($node->isAbstract()) {
+            return;
+        }
+        if ($currentClass === null || !isset($this->classData[$position])) {
+            return;
+        }
+
+        $this->classData[$position]->addMethod($methodName);
+        if ($node->isStatic()) {
+            $this->classData[$position]->markStatic($methodName);
+        }
+        if ($this->isStatelessConstant($node)) {
+            $this->classData[$position]->markStatelessConstant($methodName);
+        }
+    }
+
     public function leaveNode(Node $node): ?int
     {
-        // Exit method scope
-        if ($node instanceof ClassMethod) {
-            array_pop($this->methodStack);
-        }
-
-        // Exit class-like scope
-        if ($this->isClassLikeNode($node)) {
-            $this->popClass();
-        }
-
-        // Exit namespace scope
-        if ($node instanceof Node\Stmt\Namespace_) {
-            $this->handleNamespaceLeave();
-        }
+        $this->leaveClassVisitorNode($node);
 
         return null;
     }
@@ -223,31 +182,11 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
     }
 
     /**
-     * Checks if node is a class-like type for LCOM calculation (class only).
-     *
-     * Note: Traits, interfaces, and enums are intentionally excluded - LCOM is not meaningful for them.
+     * Class and trait bodies carry facts; only classes receive LCOM in this phase.
      */
     private function isClassLikeNode(Node $node): bool
     {
-        return $node instanceof Class_;
-    }
-
-    /**
-     * Determines whether a method body is trivial.
-     *
-     * Trivial methods: empty body, or a single return of null/scalar/constant/empty array/
-     * class constant (self::X, static::X).
-     * Classes where ALL methods are trivial (e.g., Null Objects) get LCOM=1
-     * to avoid misleadingly high LCOM values.
-     */
-    private function isMethodTrivial(ClassMethod $node): bool
-    {
-        // Abstract methods (stmts === null) are already excluded from the LCOM graph
-        if ($node->stmts === null || $node->stmts === []) {
-            return true;
-        }
-
-        return $this->hasConstantBody($node);
+        return $node instanceof Class_ || $node instanceof Trait_;
     }
 
     /**
@@ -260,8 +199,7 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
      * The classification is based purely on the method body shape. The actual absence
      * of property/method-call edges is verified in LcomClassData::isEffectivelyStateless().
      *
-     * Note: shares the body-shape check with isMethodTrivial() via hasConstantBody(),
-     * but applies different guard conditions — abstract/static methods are excluded here
+     * Abstract/static methods are excluded here
      * because they are already handled separately in the LCOM graph.
      */
     private function isStatelessConstant(ClassMethod $node): bool
@@ -287,8 +225,7 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
     /**
      * Whether a method body consists of a single return of a constant expression (or is empty after filtering Nops).
      *
-     * Shared by isMethodTrivial() and isStatelessConstant() — both need to detect
-     * the same body shape, but apply different pre-conditions (guard clauses).
+     * The stateless classifier uses the body shape after graph exclusions.
      */
     private function hasConstantBody(ClassMethod $node): bool
     {

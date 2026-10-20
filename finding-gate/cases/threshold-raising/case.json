@@ -1,0 +1,15 @@
+{
+    "id": "threshold-raising",
+    "description": "Pinned configuration boundaries can be raised by a declaration directive; GodClass and DataClass apply their own override axes, with unchanged neighbours proving declaration locality.",
+    "coverage": "auxiliary",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "args": [],
+    "channels": [
+        "complexity.ccn@callable",
+        "design.god-class@class",
+        "design.data-class@class"
+    ]
+}

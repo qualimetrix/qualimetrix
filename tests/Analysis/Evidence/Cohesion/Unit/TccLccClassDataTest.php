@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Cohesion\CohesionFactWire;
 use Qualimetrix\Analysis\Evidence\Cohesion\TccLccClassData;
 
 #[CoversClass(TccLccClassData::class)]
@@ -20,6 +21,28 @@ final class TccLccClassDataTest extends TestCase
         // No methods = perfect cohesion by definition
         self::assertSame(1.0, $data->calculateTcc());
         self::assertSame(1.0, $data->calculateLcc());
+    }
+
+    #[Test]
+    public function itPreservesExactFactRowsAcrossTheCollectionWire(): void
+    {
+        $data = new TccLccClassData('App', 'Service', 7, 19);
+        $data->incrementPropertyCount(2);
+        $data->addMethod('one');
+        $data->addMethod('two');
+        $data->addPropertyAccess('one', 'state');
+        $data->addPropertyAccess('two', 'state');
+
+        $rows = [
+            ['tag' => 'declaration', 'namespace' => 'App', 'name' => 'Service', 'line' => 7, 'position' => 19, 'propertyCount' => 2, 'rowCount' => 5],
+            ['tag' => 'method', 'name' => 'one'],
+            ['tag' => 'method', 'name' => 'two'],
+            ['tag' => 'property', 'method' => 'one', 'name' => 'state'],
+            ['tag' => 'property', 'method' => 'two', 'name' => 'state'],
+        ];
+
+        self::assertSame($rows, CohesionFactWire::tccRows($data));
+        self::assertSame($rows, CohesionFactWire::tccRows(CohesionFactWire::tccFromRows($rows)));
     }
 
     #[Test]

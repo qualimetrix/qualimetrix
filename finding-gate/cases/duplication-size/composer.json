@@ -1,0 +1,10 @@
+{
+    "name": "finding-gate-corpus/duplication-size",
+    "description": "The same token block spans unequal line counts: its longest copy admits both copies, including one shorter than min_lines.",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Corpus\\DuplicationSize\\": "src/"
+        }
+    }
+}

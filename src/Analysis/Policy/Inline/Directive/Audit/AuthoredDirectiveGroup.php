@@ -34,13 +34,6 @@ use Qualimetrix\Core\Symbol\MetricSubject;
  * {@see MetricSubject::equals()} rather than by intersecting canonical strings.
  * The two answer alike only because the canonical form separates the identity
  * families — held by `MetricSubjectTest`, not by inspection of this class.
- *
- * @qmx-ignore health.cohesion -- Each accessor of an immutable record exposes a different one of
- *   the facts settled at construction: covers() reads the subjects, overlaps() the rule name,
- *   site() the identity. Shared-field cohesion counts that as unrelated method groups, which is
- *   what a record of independent facts looks like rather than a defect. The health.cohesion
- *   producer supports no threshold override, so `@qmx-ignore` is the only inline mechanism that
- *   can state it.
  */
 final readonly class AuthoredDirectiveGroup
 {
@@ -91,6 +84,7 @@ final readonly class AuthoredDirectiveGroup
                 line: $line,
                 form: self::FORM,
                 target: $rule,
+                position: null,
             ),
         );
     }

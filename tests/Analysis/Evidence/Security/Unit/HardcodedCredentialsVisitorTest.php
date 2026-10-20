@@ -106,11 +106,11 @@ final class HardcodedCredentialsVisitorTest extends TestCase
             'expectedPattern' => 'variable',
         ];
 
-        // --- Dot-notation identifiers (should NOT detect) ---
+        // --- Dot-notation identifiers and capitalized values ---
 
         yield 'dot-notation metric name in class constant' => [
             'code' => '<?php class MetricName { const SECURITY_HARDCODED_CREDENTIALS = "security.hardcodedCredentials"; }',
-            'expectedCount' => 0,
+            'expectedCount' => 1,
         ];
 
         yield 'dot-notation config key in class constant' => [
@@ -120,7 +120,7 @@ final class HardcodedCredentialsVisitorTest extends TestCase
 
         yield 'dot-notation config path in class constant' => [
             'code' => '<?php class Config { const SECRET = "app.config.secretManager"; }',
-            'expectedCount' => 0,
+            'expectedCount' => 1,
         ];
 
         // --- Real credentials should still be flagged ---

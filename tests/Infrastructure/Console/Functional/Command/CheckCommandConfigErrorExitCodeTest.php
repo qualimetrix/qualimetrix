@@ -4,14 +4,18 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional\Command;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Infrastructure\Console\Application;
-use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
-use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
+use Qualimetrix\Infrastructure\Console\Application\Application;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\TestSupport\WorkingDirectory\RunsFromRepositoryRoot;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * Input/configuration errors must surface as exit code 3 ("input/config error"),
@@ -24,6 +28,26 @@ use Symfony\Component\Console\Tester\CommandTester;
  */
 final class CheckCommandConfigErrorExitCodeTest extends TestCase
 {
+    use RunsFromRepositoryRoot;
+
+    private static ?ContainerBuilder $container = null;
+
+    public static function tearDownAfterClass(): void
+    {
+        self::$container = null;
+    }
+
+    private static function container(): ContainerBuilder
+    {
+        $container = self::$container ??= (new ContainerFactory())->create();
+        $manifest = $container->get(ManifestSnapshotControlInterface::class);
+        if (!$manifest instanceof ManifestSnapshotControlInterface) {
+            throw new LogicException('The command fixture has no manifest snapshot lifetime owner.');
+        }
+        $manifest->beginInvocation();
+
+        return $container;
+    }
     private string $tempDir;
 
     protected function setUp(): void
@@ -35,6 +59,26 @@ final class CheckCommandConfigErrorExitCodeTest extends TestCase
     protected function tearDown(): void
     {
         self::removeDirectory($this->tempDir);
+    }
+
+    #[Test]
+    public function itRoutesAnActualEvaluatorRuntimeFailureToQuietJsonExitThree(): void
+    {
+        $config = $this->writeFile('runtime.yaml', <<<'YAML'
+            computed_metrics:
+              computed.bad:
+                formula: 'sqrt(-1)'
+                levels: [project]
+            YAML);
+        $tester = $this->runCheck(['--config' => $config, '--quiet' => true]);
+        self::assertSame(3, $tester->getStatusCode());
+        $envelope = self::envelope($tester);
+        self::assertSame(3, $envelope['exit_code']);
+        self::assertStringContainsString('Computed metric "computed.bad" failed at level "project"', $envelope['error']);
+        self::assertSame(['computed_metrics', 'computed.bad', 'formula'], $envelope['position']['path']);
+        self::assertSame([['kind' => 'file', 'name' => $config, 'imported_by' => null]], $envelope['source']);
+        self::assertStringNotContainsString('Computed metric', $tester->getErrorOutput());
+        self::assertArrayNotHasKey('metrics', $envelope);
     }
 
     #[Test]
@@ -77,15 +121,16 @@ final class CheckCommandConfigErrorExitCodeTest extends TestCase
 
     /**
      * The envelope's `position` promises what the throw site located, no more:
-     * a merged value carries none even though its sentence names the key, and
-     * a required key the author left out is where the path ends.
+     * a winning authored value names its file coordinate, and a required key
+     * the author left out is where the path ends.
      */
     #[Test]
-    public function itPublishesOnlyThePositionItsThrowSiteLocated(): void
+    public function itPublishesThePositionItsThrowSiteLocated(): void
     {
+        $mergedConfig = $this->writeFile('merged.yaml', "memory_limit: 010M\n");
         $merged = $this->runCheck([
             '--format' => 'json',
-            '--config' => $this->writeFile('merged.yaml', "memory_limit: 010M\n"),
+            '--config' => $mergedConfig,
         ]);
         $missing = $this->runCheck([
             '--format' => 'json',
@@ -94,7 +139,14 @@ final class CheckCommandConfigErrorExitCodeTest extends TestCase
 
         self::assertSame(3, $merged->getStatusCode());
         self::assertStringContainsString('memory_limit', self::envelopeError($merged));
-        self::assertNull(self::envelope($merged)['position']);
+        self::assertSame(
+            ['path' => ['memory_limit'], 'written' => 'memory_limit', 'accepted' => [], 'closed' => false],
+            self::envelope($merged)['position'],
+        );
+        self::assertSame(
+            [['kind' => 'file', 'name' => $mergedConfig, 'imported_by' => null]],
+            self::envelope($merged)['source'],
+        );
         self::assertSame(3, $missing->getStatusCode());
         self::assertSame(
             ['path' => ['computed_metrics', 'computed.foo', 'formulas', 'namespace'], 'written' => 'namespace', 'accepted' => [], 'closed' => false],
@@ -158,12 +210,12 @@ final class CheckCommandConfigErrorExitCodeTest extends TestCase
      */
     private function runCheck(array $options): CommandTester
     {
-        $container = (new ContainerFactory())->create();
+        $container = self::container();
         /** @var CheckCommand $command */
         $command = $container->get(CheckCommand::class);
         /** @var RefusalPresenter $refusalPresenter */
         $refusalPresenter = $container->get(RefusalPresenter::class);
-        $application = new Application(new ErrorStream(), $refusalPresenter);
+        $application = new Application(new ErrorStream(), $refusalPresenter, static fn() => new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $application->addCommand($command);
 
         $tester = new CommandTester($command);
@@ -183,10 +235,10 @@ final class CheckCommandConfigErrorExitCodeTest extends TestCase
         return self::envelope($tester)['error'];
     }
 
-    /** @return array{error: string, exit_code: int, position: mixed} */
+    /** @return array{error: string, exit_code: int, position: mixed, source: mixed} */
     private static function envelope(CommandTester $tester): array
     {
-        /** @var array{error: string, exit_code: int, position: mixed} $envelope */
+        /** @var array{error: string, exit_code: int, position: mixed, source: mixed} $envelope */
         $envelope = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
 
         return $envelope;

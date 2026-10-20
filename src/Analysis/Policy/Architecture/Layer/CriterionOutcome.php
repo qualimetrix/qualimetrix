@@ -30,7 +30,7 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
  * {@see DoesNotMatch} decides, and {@see Matches} requires every declared kind
  * to be decided. {@see Undecidable} is what is left over, and it must reach a
  * reader rather than collapse back into {@see DoesNotMatch} — see
- * {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DeclaredLayerReachability::coverage()},
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\DeclaredLayerReachability::coverage()},
  * where it is named in `architecture.coverage-gap`.
  */
 enum CriterionOutcome

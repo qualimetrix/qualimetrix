@@ -1,0 +1,67 @@
+--- candidate
++++ reference (mapped)
+@@ -51,0 +51,12 @@
++            "producer": "code-smell.boolean-argument",
++            "reason": "filtered",
++            "statement": "only_rules: [complexity.ccn, architecture.circular-dependency, architecture.layer-violation, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.constructor-overinjection",
++            "reason": "filtered",
++            "statement": "only_rules: [complexity.ccn, architecture.circular-dependency, architecture.layer-violation, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
+@@ -58,0 +70,6 @@
++            "reason": "filtered",
++            "statement": "only_rules: [complexity.ccn, architecture.circular-dependency, architecture.layer-violation, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
++            "producer": "code-smell.empty-catch",
+@@ -87,18 +105,0 @@
+-            "producer": "code-smell.superglobals",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, architecture.circular-dependency, architecture.layer-violation, duplication.clone]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "code-smell.boolean-argument",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, architecture.circular-dependency, architecture.layer-violation, duplication.clone]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "code-smell.empty-catch",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, architecture.circular-dependency, architecture.layer-violation, duplication.clone]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+@@ -111,1 +111,1 @@
+-            "producer": "code-smell.constructor-overinjection",
++            "producer": "code-smell.long-parameter-list",
+@@ -117,1 +117,1 @@
+-            "producer": "code-smell.long-parameter-list",
++            "producer": "code-smell.superglobals",
+@@ -165,1 +165,1 @@
+-            "producer": "coupling.distance",
++            "producer": "coupling.class-rank",
+@@ -171,1 +171,1 @@
+-            "producer": "coupling.class-rank",
++            "producer": "coupling.distance",
+@@ -237,0 +237,6 @@
++            "producer": "security.command-injection",
++            "reason": "filtered",
++            "statement": "only_rules: [complexity.ccn, architecture.circular-dependency, architecture.layer-violation, duplication.clone]",
++            "layer": "configuration file \"qmx.yaml\""
++        },
++        {
+@@ -244,6 +250,0 @@
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, architecture.circular-dependency, architecture.layer-violation, duplication.clone]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "security.command-injection",

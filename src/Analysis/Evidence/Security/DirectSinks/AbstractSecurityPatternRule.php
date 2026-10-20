@@ -1,0 +1,144 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Analysis\Evidence\Security\DirectSinks;
+
+use LogicException;
+use Qualimetrix\Analysis\Evidence\Security\HardcodedCredentialsRule;
+
+use Qualimetrix\Analysis\Evidence\Security\SensitiveParameterRule;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Rule\AbstractRule;
+use Qualimetrix\Core\Symbol\MetricSubjectCodec;
+use Qualimetrix\Core\Symbol\SymbolLevel;
+
+/**
+ * Base class for security pattern rules.
+ *
+ * Concrete rules are expected to define their metadata via typed class
+ * constants (NAME, DOCS_PAGE, REMEDIATION_MINUTES, DESCRIPTION, PATTERN_TYPE,
+ * MESSAGE_TEMPLATE, RECOMMENDATION), read here via late static binding —
+ * mirrors {@see \Qualimetrix\Analysis\Evidence\CodeSmell\AbstractCodeSmellRule},
+ * which keeps concrete code-smell rules free of the same boilerplate hook
+ * methods for the same reason: three near-identical subclasses that only
+ * override a handful of methods returning a literal each were themselves
+ * a duplication finding once a fourth per-rule constant
+ * (`REMEDIATION_MINUTES`) tipped them over the detector's threshold.
+ */
+abstract class AbstractSecurityPatternRule extends AbstractRule
+{
+    /**
+     * Overridden by every concrete subclass with its own slug
+     * (`security.command-injection`, `security.sql-injection`,
+     * `security.xss`). Declared here — empty, never used directly — only so
+     * {@see channelDeclarations()} can read it via `static::NAME` through
+     * late static binding, the same idiom {@see AbstractCodeSmellRule}
+     * already uses for the same reason.
+     */
+    public const string NAME = '';
+
+    /**
+     * Empty here for the same reason as {@see NAME}: it exists only so that
+     * concrete subclasses are forced to declare their own value. Unlike
+     * `NAME`, nothing in this class reads `static::DOCS_PAGE` — its sole
+     * purpose is to make an *omitted* declaration on a subclass distinguishable
+     * from a *declared* one by {@see \Qualimetrix\Analysis\Finding\Contract\Rule\RuleDocsPageReader},
+     * which checks `getDeclaringClass()` and rejects this inherited empty
+     * string rather than silently accepting it.
+     */
+    public const string DOCS_PAGE = '';
+
+    /**
+     * Empty (zero) here for the same reason as {@see DOCS_PAGE}: it forces
+     * every concrete subclass to declare its own value, and
+     * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader}
+     * rejects this inherited placeholder via `getDeclaringClass()` rather
+     * than silently accepting it.
+     */
+    public const int REMEDIATION_MINUTES = 0;
+
+    public const string DESCRIPTION = '';
+    protected const string PATTERN_TYPE = '';
+    protected const string MESSAGE_TEMPLATE = '';
+    protected const ?string RECOMMENDATION = null;
+
+    /**
+     * @return class-string<SecurityPatternOptions>
+     */
+    public static function getOptionsClass(): string
+    {
+        return SecurityPatternOptions::class;
+    }
+
+    /**
+     * All three concrete subclasses emit their channel through the loop in
+     * {@see analyze()} below with a fixed `1.0` occurrence marker projected
+     * by {@see SecurityPatternFinding} and a fixed {@see Severity::Error} —
+     * never a measured magnitude — so `occurrence` is the correct shape
+     * uniformly. `static::NAME` resolves per concrete subclass via late
+     * static binding; {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader} reads
+     * this method by reflection on the concrete rule class, so the binding
+     * target is correct without any special-casing on the reader's side.
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            static::NAME => ChannelDeclaration::occurrence(SymbolLevel::Callable, SymbolLevel::File),
+        ];
+    }
+
+    /**
+     * Shared by every subclass — a fixed marker, never a measured magnitude.
+     * {@see HardcodedCredentialsRule} and {@see SensitiveParameterRule} are
+     * the same family but extend {@see AbstractRule} directly, so they
+     * declare their own `occurrence` value instead of inheriting this one.
+     */
+    public const ChannelShape SHAPE = ChannelShape::Occurrence;
+
+    /**
+     * @return list<Finding>
+     */
+    public function analyze(AnalysisContext $context): array
+    {
+        if (!$this->options instanceof SecurityPatternOptions || !$this->options->isEnabled()) {
+            return [];
+        }
+
+        $findings = [];
+        $type = static::PATTERN_TYPE;
+        $declaration = static::channelDeclarations()[static::NAME];
+
+        foreach ($context->metrics->all(SymbolLevel::File) as $fileInfo) {
+            $metrics = $context->metrics->get($fileInfo->symbolPath);
+            $entries = $metrics->entries("security.{$type}");
+
+            if ($entries === []) {
+                continue;
+            }
+
+            foreach ($entries as $entryOrdinal => $entry) {
+                $file = $fileInfo->file ?? throw new LogicException('File symbol must carry a relative path');
+                $subject = MetricSubjectCodec::decodeEntry($entry, $file);
+                $context->admit(static::NAME, new FindingChannel(static::NAME), $subject::levelOfCanonical($subject->toCanonical()), PopulationIdentity::occurrence($subject->toCanonical(), $entryOrdinal), $declaration, []);
+                $findings[] = SecurityPatternFinding::fromEntry($entry, $file)->toFinding(
+                    static::NAME,
+                    $type,
+                    Severity::Error,
+                    static::MESSAGE_TEMPLATE,
+                    static::RECOMMENDATION,
+                );
+            }
+        }
+
+        return $findings;
+    }
+}

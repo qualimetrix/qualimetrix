@@ -1,0 +1,17 @@
+{
+  "id": "baseline-cycle",
+  "description": "A lower source captures a ratchet ceiling and a stale identity; the main source breaches the ceiling, removes the stale entry, and carries channels through a rename map.",
+  "coverage": "auxiliary",
+  "paths": [
+    "src"
+  ],
+  "config": "qmx.yaml",
+  "args": [],
+  "channels": [
+    "complexity.ccn@callable"
+  ],
+  "explainSubjects": [
+    "declaration:callable:Corpus\\BaselineCycle\\Breach::run@src/Breach.php"
+  ],
+  "renameChannelsMap": "rename-channels.tsv"
+}

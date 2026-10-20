@@ -16,12 +16,23 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\DrillDown\DrillDownBinding;
 
 #[CoversClass(DrillDownBinding::class)]
 final class DrillDownBindingTest extends TestCase
 {
+    #[Test]
+    public function itBindsTheEmptyGlobalNamespaceInsteadOfItsDisplayLabel(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $repository->add(SymbolPath::forNamespace(''), new MetricBag(), null, null);
+        $binding = new DrillDownBinding();
+        self::assertSame(0, $binding->namespaceBindings(\Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('(global)'), $repository, null));
+        self::assertSame(1, $binding->namespaceBindings(\Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::regex('^$'), $repository, null));
+    }
+
     #[Test]
     public function itBindsANamespaceThatNamesAnAnalyzedOne(): void
     {
@@ -214,7 +225,7 @@ final class DrillDownBindingTest extends TestCase
             kind: CallableKind::Method,
             anonymousSyntax: null,
             lexicalClassContext: null,
-            classAggregationOwner: null,
+            classAggregationOwner: DeclarationPath::of(SymbolPath::forClass('Demo\\Alpha', 'Widget'), RelativePath::fromString('src/Alpha/Widget.php'), DeclarationOrdinal::fromRank(0)),
             metrics: new MetricBag(),
         ));
 
@@ -236,14 +247,22 @@ final class DrillDownBindingTest extends TestCase
     private function repository(): InMemoryMetricRepository
     {
         $repository = new InMemoryMetricRepository();
-        $repository->add(
-            SymbolPath::forClass('Demo\\Alpha', 'Widget'),
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(
+                SymbolPath::forClass('Demo\\Alpha', 'Widget'),
+                RelativePath::fromString('src/Alpha/Widget.php'),
+                DeclarationOrdinal::fromRank(0),
+            )),
             new MetricBag(),
             RelativePath::fromString('src/Alpha/Widget.php'),
             5,
         );
-        $repository->add(
-            SymbolPath::forClass('Demo\\Beta\\Deep', 'Thing'),
+        $repository->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(
+                SymbolPath::forClass('Demo\\Beta\\Deep', 'Thing'),
+                RelativePath::fromString('src/Beta/Deep/Thing.php'),
+                DeclarationOrdinal::fromRank(0),
+            )),
             new MetricBag(),
             RelativePath::fromString('src/Beta/Deep/Thing.php'),
             5,

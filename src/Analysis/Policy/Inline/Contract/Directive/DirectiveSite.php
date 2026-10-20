@@ -12,9 +12,9 @@ use Qualimetrix\Core\Path\RelativePath;
  * The identity of a directive is never a binding: an annotation on a class
  * docblock is materialised once per declaration that docblock governs, and
  * those are bindings of one annotation. What identifies it is where it was
- * written, which tag it is, and what it addresses — the same four facts the
- * three grouping keys in this capability already agree on, named once instead
- * of spelled out at every place that carries them.
+ * written, which tag it is, and what it addresses. Byte position separates
+ * identical tags in different comments on one line. Threshold overrides
+ * carry no byte position, so identical rule/line sites remain indistinguishable.
  *
  * `$form` keeps the directive's own type rather than a family, because that is
  * what those keys do: a report that collapses `symbol`, `next-line` and `file`
@@ -32,5 +32,6 @@ final readonly class DirectiveSite
         public int $line,
         public string $form,
         public string $target,
+        public ?int $position,
     ) {}
 }

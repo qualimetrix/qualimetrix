@@ -9,19 +9,66 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Policy\Inline\Contract\DocumentationRegions;
 
-/**
- * Which parts of a comment quote a directive rather than write one.
- *
- * Every case here is a framing an author can put around the same tag, and each
- * one is checked in both directions: a quoted tag must disappear, and a written
- * tag must survive whatever quoting stands elsewhere in the same comment. The
- * pairing rule these test is what makes the two independent — while regions
- * were paired across the whole comment, one stray backtick decided both.
- */
+/** Physical placement controls whether a tag is live; quoting controls its diagnosis. */
 #[CoversClass(DocumentationRegions::class)]
 final class DocumentationRegionsTest extends TestCase
 {
     private const string TAG = '@qmx-ignore complexity.ccn';
+
+    #[Test]
+    public function itRefusesMidlineProseEvenInsideACodeSpan(): void
+    {
+        $text = '* A ` stray, then ' . self::TAG . '` here';
+        self::assertStringNotContainsString('@qmx-ignore', DocumentationRegions::mask($text));
+        $mentions = DocumentationRegions::mentions($text);
+        self::assertCount(1, $mentions);
+        self::assertSame('not-at-line-start', $mentions[0]['reason']->value);
+        self::assertSame(strpos($text, '@qmx-ignore'), $mentions[0]['offset']);
+    }
+
+    #[Test]
+    public function itDistinguishesCommentStartsFromQuotedAndUnquotedMentions(): void
+    {
+        foreach (['/*** ', '/// ', ' ** ', '# ', '    '] as $prefix) {
+            self::assertStringContainsString(self::TAG, DocumentationRegions::mask($prefix . self::TAG));
+            self::assertSame([], DocumentationRegions::mentions($prefix . self::TAG));
+        }
+        foreach (['* - ', '* @internal ', '/** Summary. ', '* `', '* a stray ` then `'] as $prefix) {
+            $text = $prefix . self::TAG;
+            self::assertStringNotContainsString('@qmx-ignore', DocumentationRegions::mask($text));
+            self::assertCount(1, DocumentationRegions::mentions($text), $text);
+        }
+        foreach (['* ``' . self::TAG . '``', '* `// ' . self::TAG . '`', '* `` `' . self::TAG . '` ``', '* \\`' . self::TAG . '`'] as $text) {
+            self::assertSame([], DocumentationRegions::mentions($text), $text);
+        }
+        self::assertCount(1, DocumentationRegions::mentions('* `' . self::TAG . '``'));
+        self::assertCount(1, DocumentationRegions::mentions('* a stray ` here, and `' . self::TAG . '`'));
+        self::assertStringContainsString(self::TAG, DocumentationRegions::mask("* `above\n* " . self::TAG . "\n* below`"));
+    }
+
+    #[Test]
+    public function itRequiresAFenceToCloseWithTheSameCharacterAndEnoughDelimiters(): void
+    {
+        foreach (['```php', '~~~php', '````php'] as $opening) {
+            $text = "/**\n * " . $opening . "\n * " . self::TAG . "\n * " . $opening[0] . $opening[0] . $opening[0] . $opening[0] . " */";
+            self::assertSame([], DocumentationRegions::mentions($text), $text);
+            self::assertStringNotContainsString('@qmx-ignore', DocumentationRegions::mask($text));
+        }
+        foreach (['```', '~~~~', '````php'] as $opening) {
+            $text = "/**\n * " . $opening . "\n * " . self::TAG . "\n * ~~\n * " . self::TAG . "\n */";
+            $mentions = DocumentationRegions::mentions($text);
+            self::assertCount(2, $mentions, $text);
+            self::assertSame('inside-unclosed-fence', $mentions[0]['reason']->value);
+            self::assertSame(2, $mentions[0]['fenceLine']);
+            self::assertStringNotContainsString('@qmx-ignore', DocumentationRegions::mask($text));
+        }
+        self::assertSame([], DocumentationRegions::mentions("* ~~~~~~~\n* no tags"));
+        self::assertStringContainsString(self::TAG, DocumentationRegions::mask("* ```bad`info\n* " . self::TAG));
+        self::assertCount(1, DocumentationRegions::mentions("* ```\n* " . self::TAG . "\n* ``` trailing"));
+        self::assertCount(1, DocumentationRegions::mentions("* ```\n* " . self::TAG . "\n* ~~~"));
+        self::assertSame([], DocumentationRegions::mentions('// ```'));
+        self::assertStringContainsString(self::TAG, DocumentationRegions::mask('// ' . self::TAG));
+    }
 
     #[Test]
     public function itBlanksAQuotedTagOnOneLine(): void
@@ -110,34 +157,19 @@ final class DocumentationRegionsTest extends TestCase
         self::assertStringContainsString(self::TAG, $masked);
     }
 
-    /**
-     * Pairing left to right within a line still let a stray backtick earlier
-     * on the same line take the quote's opening backtick as its partner, and
-     * the quoted tag came out live — a silent suppression when the channel it
-     * names exists. A backtick written directly before a tag is the author
-     * quoting it, so it opens a region whatever stands before it.
-     */
     #[Test]
-    public function itQuotesATagWhoseOpeningBacktickFollowsAStrayOneOnTheSameLine(): void
+    public function itMasksATagWhoseOpeningBacktickFollowsAStrayOneOnTheSameLine(): void
     {
         $masked = DocumentationRegions::mask("     * Don't put ` in names; quote the tag as `" . self::TAG . '` instead.');
 
         self::assertStringNotContainsString('@qmx-ignore', $masked);
     }
 
-    /**
-     * The legitimate neighbours of the rule above: a tag no backtick stands
-     * directly before is written, not quoted, whatever quoting surrounds it
-     * on its line — and an opening backtick nothing closes quotes nothing.
-     */
     #[Test]
     public function itReadsATagThatNoBacktickStandsDirectlyBefore(): void
     {
         foreach ([
             '     * ' . self::TAG . ' -- keep `code` in the reason',
-            '     * See `this` first; ' . self::TAG . ' -- written after quoted prose',
-            '     * A stray ` then ' . self::TAG . ' -- written after an unpaired backtick',
-            '     * `' . self::TAG . ' -- an opening backtick nothing closes',
         ] as $line) {
             self::assertStringContainsString(self::TAG, DocumentationRegions::mask($line), $line);
         }

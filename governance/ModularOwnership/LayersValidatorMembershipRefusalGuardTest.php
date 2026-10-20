@@ -23,7 +23,7 @@ use PHPUnit\Framework\TestCase;
  * The exception is only safe because the `try` body is measured to be a
  * single constructor call whose only `InvalidArgumentException` sources are
  * named VO invariants (`MembershipSpec`'s "no non-empty criterion" check and
- * `CriterionListValidator`'s two per-entry checks).
+ * `CriterionListValidator`'s three per-entry checks).
  *
  * This is a two-sided guard, not one: pinning the source text of the `try`
  * body alone would miss a new `InvalidArgumentException` throw introduced
@@ -31,7 +31,7 @@ use PHPUnit\Framework\TestCase;
  * widening what "input" means). So this class asserts, from the AST rather
  * than by reading the file, that the `try` is exactly one call and that the
  * three files in its call tree throw `InvalidArgumentException` exactly
- * 0 / 1 / 2 times. A fourth occurrence anywhere in the tree would need a
+ * 0 / 1 / 3 times. A fifth occurrence anywhere in the tree would need a
  * deliberate review because it would widen the set of defects caught as
  * invalid user input.
  */
@@ -60,7 +60,7 @@ final class LayersValidatorMembershipRefusalGuardTest extends TestCase
     }
 
     #[Test]
-    public function itCountsInvalidArgumentExceptionThrowsInTheMembershipCallTreeAsZeroOneTwo(): void
+    public function itCountsInvalidArgumentExceptionThrowsInTheMembershipCallTreeAsZeroOneThree(): void
     {
         $root = $this->repositoryRoot() . '/src/Analysis/Policy/Architecture/Layer';
 
@@ -75,9 +75,9 @@ final class LayersValidatorMembershipRefusalGuardTest extends TestCase
             'MembershipSpec.php must throw exactly one InvalidArgumentException — the "no non-empty criterion" invariant.',
         );
         self::assertSame(
-            2,
+            3,
             $this->countInvalidArgumentExceptionThrows($root . '/CriterionListValidator.php'),
-            'CriterionListValidator.php must throw exactly two InvalidArgumentException — the non-string and empty-string checks.',
+            'CriterionListValidator.php must throw exactly three InvalidArgumentException — the non-string, empty-string and named-type checks.',
         );
     }
 

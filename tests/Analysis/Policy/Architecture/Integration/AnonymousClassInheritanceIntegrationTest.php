@@ -10,29 +10,20 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContextFactory;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
-use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
-use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
-use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\AllowListBuilder;
+use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysis;
 
 /**
  * Regression coverage for the anonymous-class-inheritance defect:
  * an anonymous class nested inside a named class has no declaration identity
  * of its own, so its `extends`/`implements`/`attributes` header used to be
  * recorded with the ENCLOSING named class as source. Layer membership walked
- * that data directly ({@see \Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory}),
+ * that data directly ({@see \Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContextFactory}),
  * so the enclosing class was silently assigned to layers written for the
  * nested anonymous class instead — including transitively, since
  * {@code extendsMap} is walked as a BFS closure.
@@ -62,9 +53,7 @@ final class AnonymousClassInheritanceIntegrationTest extends TestCase
     {
         // extends: [L1] — L1 is the DIRECT parent of the anonymous class
         // nested inside AnonExtendsHost, not of AnonExtendsHost itself.
-        $sourceFqns = $this->classifiedSources($this->registryFor(
-            new MembershipSpec(extends: [self::FIXTURE_NAMESPACE . '\\Marker\\L1']),
-        ));
+        $sourceFqns = $this->classifiedSources(['extends' => [self::FIXTURE_NAMESPACE . '\\Marker\\L1']]);
 
         self::assertNotContains(
             self::FIXTURE_NAMESPACE . '\\Host\\AnonExtends\\AnonExtendsHost',
@@ -85,9 +74,7 @@ final class AnonymousClassInheritanceIntegrationTest extends TestCase
         // extends: [L0] — the GRANDPARENT, reached only through the BFS
         // closure over extendsMap. Pre-cure, the enclosing class inherited
         // the anonymous class's whole ancestry, not just its direct parent.
-        $sourceFqns = $this->classifiedSources($this->registryFor(
-            new MembershipSpec(extends: [self::FIXTURE_NAMESPACE . '\\Marker\\L0']),
-        ));
+        $sourceFqns = $this->classifiedSources(['extends' => [self::FIXTURE_NAMESPACE . '\\Marker\\L0']]);
 
         self::assertNotContains(
             self::FIXTURE_NAMESPACE . '\\Host\\AnonExtends\\AnonExtendsHost',
@@ -106,9 +93,7 @@ final class AnonymousClassInheritanceIntegrationTest extends TestCase
     #[Test]
     public function itDoesNotAssignTheEnclosingClassByItsNestedAnonymousClassesImplements(): void
     {
-        $sourceFqns = $this->classifiedSources($this->registryFor(
-            new MembershipSpec(implements: [self::FIXTURE_NAMESPACE . '\\Marker\\Iface']),
-        ));
+        $sourceFqns = $this->classifiedSources(['implements' => [self::FIXTURE_NAMESPACE . '\\Marker\\Iface']]);
 
         self::assertNotContains(
             self::FIXTURE_NAMESPACE . '\\Host\\AnonImplements\\AnonImplementsHost',
@@ -126,9 +111,7 @@ final class AnonymousClassInheritanceIntegrationTest extends TestCase
     #[Test]
     public function itDoesNotAssignTheEnclosingClassByItsNestedAnonymousClassesAttribute(): void
     {
-        $sourceFqns = $this->classifiedSources($this->registryFor(
-            new MembershipSpec(attributes: [self::FIXTURE_NAMESPACE . '\\Marker\\Mark']),
-        ));
+        $sourceFqns = $this->classifiedSources(['attributes' => [self::FIXTURE_NAMESPACE . '\\Marker\\Mark']]);
 
         self::assertNotContains(
             self::FIXTURE_NAMESPACE . '\\Host\\AnonAttribute\\AnonAttributeHost',
@@ -151,21 +134,14 @@ final class AnonymousClassInheritanceIntegrationTest extends TestCase
         // that genuinely extend L1. Both the positive membership map and the
         // exclude map are built by the same ClassContextFactory — this proves
         // the cure applies there too, not only to plain `extends:` layers.
-        $registry = new LayerRegistry([
-            new LayerDefinition(
-                'all-hosts',
-                new MembershipSpec(
-                    patterns: [self::FIXTURE_NAMESPACE . '\\Host\\**'],
-                    exclude: new ExcludeSpec(extends: [self::FIXTURE_NAMESPACE . '\\Marker\\L1']),
-                ),
-            ),
-            new LayerDefinition(
-                'sink',
-                new MembershipSpec(patterns: [self::FIXTURE_NAMESPACE . '\\Sink\\**']),
-            ),
+        $sourceFqns = $this->classifiedSourcesFromConfig([
+            'layers' => [
+                ['name' => 'all-hosts', 'patterns' => [self::FIXTURE_NAMESPACE . '\\Host\\**'], 'exclude' => ['extends' => [self::FIXTURE_NAMESPACE . '\\Marker\\L1']]],
+                ['name' => 'sink', 'patterns' => [self::FIXTURE_NAMESPACE . '\\Sink\\**']],
+            ],
+            'allow' => ['all-hosts' => [], 'sink' => []],
+            'coverage-gap' => 'ignore',
         ]);
-
-        $sourceFqns = $this->classifiedSourcesFromRegistry($registry);
 
         self::assertContains(
             self::FIXTURE_NAMESPACE . '\\Host\\AnonExtends\\AnonExtendsHost',
@@ -203,63 +179,58 @@ final class AnonymousClassInheritanceIntegrationTest extends TestCase
     // gets its factory, which is a different subject from this file.
 
     /**
-     * Builds a two-layer registry: the criterion under test (self-allow-only)
+     * Builds a two-layer declaration: the criterion under test (self-allow-only)
      * plus a 'sink' catch-all (self-allow-only) so every Host\* class's
      * typed Sink dependency becomes a violation iff the Host class was
      * classified into the criterion layer.
+     *
+     * @param array<string, list<string>> $criterion
+     *
+     * @return list<string>
      */
-    private function registryFor(MembershipSpec $criterion): LayerRegistry
+    private function classifiedSources(array $criterion): array
     {
-        return new LayerRegistry([
-            new LayerDefinition('matched', $criterion),
-            new LayerDefinition('sink', new MembershipSpec(patterns: [self::FIXTURE_NAMESPACE . '\\Sink\\**'])),
+        return $this->classifiedSourcesFromConfig([
+            'layers' => [
+                ['name' => 'matched', ...$criterion],
+                ['name' => 'sink', 'patterns' => [self::FIXTURE_NAMESPACE . '\\Sink\\**']],
+            ],
+            'allow' => ['matched' => [], 'sink' => []],
+            'coverage-gap' => 'ignore',
         ]);
     }
 
     /**
+     * @param array<string, mixed> $config
+     *
      * @return list<string>
      */
-    private function classifiedSources(LayerRegistry $registry): array
+    private function classifiedSourcesFromConfig(array $config): array
     {
-        return $this->classifiedSourcesFromRegistry($registry);
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function classifiedSourcesFromRegistry(LayerRegistry $registry): array
-    {
-        $policy = AllowListBuilder::policyFromExactMap(array_fill_keys($registry->layerNames(), []));
-
-        $configuration = new ArchitectureConfiguration($registry, $policy, CoverageMode::Ignore);
-        $analysis = $this->runPipelineWithConfiguration($configuration);
+        $analysis = $this->runPipelineWithConfiguration($config);
 
         return $this->collectSourceFqns(
-            $this->filterByRule($analysis->findings, LayerViolationRule::NAME),
+            $this->filterByRule($analysis->findings(), LayerViolationRule::NAME),
         );
     }
 
-    private function runPipelineWithConfiguration(ArchitectureConfiguration $architecture): AnalysisResult
+    /** @param array<string, mixed> $architecture */
+    private function runPipelineWithConfiguration(array $architecture): AnalysisResult
     {
-        $container = (new ContainerFactory())->create();
-
+        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
+        $fixture = PreparedAnalysis::start($root, [$root], ['architecture' => $architecture, 'include_generated' => true]);
+        $container = $fixture->container();
         $holder = $container->get(ArchitecturePolicyConfiguratorInterface::class);
         self::assertInstanceOf(ArchitecturePolicy::class, $holder);
-        $holder->bind($architecture);
 
         $pipeline = $container->get(AnalysisPipelineInterface::class);
         self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
 
-        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
-
-        return $pipeline->analyze(new RunConfiguration(
-            [$root],
-            [],
-            $root,
-            GeneratedFilePolicy::Include,
-            coversProjectScope: true,
-            authoredPathExcludes: [],
-        ));
+        try {
+            return $pipeline->analyze($fixture->prepared()->runConfiguration);
+        } finally {
+            $fixture->close();
+        }
     }
 
     /**

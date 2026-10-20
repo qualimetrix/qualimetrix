@@ -47,7 +47,7 @@ use SplFileInfo;
 final class RuleOptionDeclarationReaderCensusTest extends TestCase
 {
     /** The only file in `src/` allowed to ask an options class for its key set. */
-    private const string READER = 'src/Analysis/Finding/Contract/Rule/RuleOptionSurface.php';
+    private const string READER = 'src/Analysis/Finding/Contract/Rule/OptionLanguage/RuleOptionSurface.php';
 
     /**
      * A call to the declaration, static or instance, on anything but the

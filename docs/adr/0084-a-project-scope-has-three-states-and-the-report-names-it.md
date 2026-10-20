@@ -1,5 +1,7 @@
 # 0084. A Project Scope Has Three States, and the Report Names It
 
+> **Amendment:** [ADR 0093](0093-measured-run-scope-and-project-tree-queries.md) replaces the single `coversProjectScope` predicate with separate measured declaration-absence and exclude-selector judgements and adds the ninth consumer channel. The report state represents evidence rather than authorizing both questions. Original observations below remain historical.
+
 **Date:** 2026-09-24
 **Status:** Accepted
 
@@ -7,6 +9,26 @@ Amends the 2026-09-24 amendment to
 [ADR 0079](0079-a-criterion-the-run-cannot-answer-is-undecidable.md): its
 paragraph "Two verdicts need the whole project" first recorded the opposite
 decision — a manifest-less project never judged — and now defers here.
+
+## Current amendment
+
+The decision below records the original three-state policy. The 2026-09-29
+amendment in [ADR 0089](0089-composer-manifest-facts-and-project-scope-reasons.md)
+adds `unmeasured` for subsets without a complete declared universe and for
+inferred partial defaults. A whole root still judges as `unknown`; when the
+selected manifest is damaged, that root must be authored. Reasons retain
+manifest damage, rejected records, pruned/missing targets and observed install
+omissions. Accepted PSR-4 facts locate namespace values independently of state.
+
+The price was measured before changing the predicate: 130 pinned installed
+packages, 169 shipped manifests, 128 main intact-declared roots and two intact
+no-declared-code roots, with no naturally damaged main root. In 420 considered
+modes the predicate was unchanged. Two measured proper subsets each analysed
+one `index.php`, with six and zero findings and zero withdrawn findings in
+the eight whole-project channels. The 32 actual gate invocations retained
+31 `covered` and one `narrowed` answer. These observations cover those
+invocations and one subset per affected package, not arbitrary subsets or
+naturally damaged manifests. The original price below remains historical.
 
 ## Context
 

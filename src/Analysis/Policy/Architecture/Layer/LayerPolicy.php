@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowListEntry;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowTarget;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\CaptureBinding;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelector;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowListEntry;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowTarget;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\CaptureBinding;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerSelector;
 
 /**
  * Immutable allow-list of inter-layer dependencies.

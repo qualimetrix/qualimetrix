@@ -11,14 +11,8 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Cache\CacheKeyGenerator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use SplFileInfo;
 
-/**
- * Pins the symlink-aware cache key stability contract (ADR 0015 Phase 5):
- * a file accessed through a symlink and through its canonical real path
- * must produce the same cache key, so AST cache hits survive checkout/build
- * directories that route through `dist/` or `link-to-src/` symlinks.
- */
+/** Content keys depend on bytes rather than source path identity. */
 #[CoversClass(CacheKeyGenerator::class)]
 final class CacheKeyGeneratorVOTest extends TestCase
 {
@@ -49,24 +43,6 @@ final class CacheKeyGeneratorVOTest extends TestCase
     }
 
     #[Test]
-    public function itProducesStableCacheKeyForSymlinkedFiles(): void
-    {
-        $realFile = $this->tempDir . '/real.php';
-        $symlinkFile = $this->tempDir . '/link.php';
-        file_put_contents($realFile, '<?php class Real {}');
-        symlink($realFile, $symlinkFile);
-
-        $generator = new CacheKeyGenerator();
-
-        $keyForReal = $generator->generate(new SplFileInfo($realFile));
-        $keyForSymlink = $generator->generate(new SplFileInfo($symlinkFile));
-
-        // Both paths resolve to the same realpath, so cache keys must match —
-        // this is the property that lets AST caches survive symlinked build dirs.
-        self::assertSame($keyForReal, $keyForSymlink);
-    }
-
-    #[Test]
     public function itProducesDifferentKeysForDifferentRealFiles(): void
     {
         $fileA = $this->tempDir . '/a.php';
@@ -77,8 +53,8 @@ final class CacheKeyGeneratorVOTest extends TestCase
         $generator = new CacheKeyGenerator();
 
         self::assertNotSame(
-            $generator->generate(new SplFileInfo($fileA)),
-            $generator->generate(new SplFileInfo($fileB)),
+            $generator->generateForContent((string) file_get_contents($fileA)),
+            $generator->generateForContent((string) file_get_contents($fileB)),
         );
     }
 
@@ -94,8 +70,8 @@ final class CacheKeyGeneratorVOTest extends TestCase
         $generator = new CacheKeyGenerator();
 
         self::assertSame(
-            $generator->generate(new SplFileInfo($fileA)),
-            $generator->generate(new SplFileInfo($fileB)),
+            $generator->generateForContent((string) file_get_contents($fileA)),
+            $generator->generateForContent((string) file_get_contents($fileB)),
         );
     }
 

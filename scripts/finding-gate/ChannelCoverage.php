@@ -22,7 +22,7 @@ namespace QmxFindingGate;
  * hands it a synthetic universe and asserts the verdict, including the one that
  * shows the same universe accounted by names is green.
  *
- * Multiplicity stays counted per channel — see {@see Gate::checkSingleProducer()}.
+ * Multiplicity stays counted per channel — see {@see CoverageCheck::checkSingleProducer()}.
  */
 final class ChannelCoverage
 {
@@ -30,7 +30,7 @@ final class ChannelCoverage
      * @param list<string> $declaredPairs from the declaration witnesses, never from a claim
      * @param list<string> $observedPairs what the authoritative cases fired
      */
-    public static function check(
+    public static function inspectCoverage(
         GateReport $report,
         array $declaredPairs,
         array $observedPairs,

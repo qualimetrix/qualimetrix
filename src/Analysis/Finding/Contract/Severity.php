@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract;
 
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+
 /**
  * Finding severity levels, ordered from least to most severe.
  *

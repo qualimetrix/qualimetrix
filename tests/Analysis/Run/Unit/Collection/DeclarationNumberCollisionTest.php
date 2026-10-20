@@ -74,8 +74,8 @@ final class DeclarationNumberCollisionTest extends TestCase
         $this->expectExceptionMessage('was collected at file positions 40 and 900');
 
         $this->process(self::callableCollector([
-            new CallableWithMetrics($path, 40, CallableKind::Method, null, null, null, MetricBag::fromArray(['complexity.ccn' => 1]), 3),
-            new CallableWithMetrics($path, 900, CallableKind::Method, null, null, null, MetricBag::fromArray(['complexity.ccn' => 2]), 3),
+            new CallableWithMetrics($path, 40, CallableKind::Method, null, null, DeclarationPath::of(SymbolPath::forClass($path->logical->namespace ?? '', $path->logical->type ?? ''), $path->file, DeclarationOrdinal::fromRank(0)), MetricBag::fromArray(['complexity.ccn' => 1]), 3),
+            new CallableWithMetrics($path, 900, CallableKind::Method, null, null, DeclarationPath::of(SymbolPath::forClass($path->logical->namespace ?? '', $path->logical->type ?? ''), $path->file, DeclarationOrdinal::fromRank(0)), MetricBag::fromArray(['complexity.ccn' => 2]), 3),
         ]));
     }
 

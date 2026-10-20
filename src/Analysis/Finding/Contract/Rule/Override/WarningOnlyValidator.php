@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract\Rule\Override;
 
-use Qualimetrix\Analysis\Finding\Rule\Override\OverrideValidationFailure;
+use Qualimetrix\Analysis\Finding\Rule\Override\NonNegativeOverrideThresholds;
 
 /**
  * Validator for rules where only the warning threshold is meaningful.
@@ -27,19 +27,14 @@ final class WarningOnlyValidator implements OverrideValidatorInterface
 
     private function __construct() {}
 
-    public function validate(
-        int|float|null $warning,
-        int|float|null $error,
-        bool $errorWasExplicit,
-    ): ?OverrideValidationFailure {
-        if ($warning !== null && $warning < 0) {
-            return new OverrideValidationFailure(
-                code: 'negative_warning',
-                message: \sprintf('warning threshold must be non-negative (got %s)', self::format($warning)),
-            );
+    public function validate(ThresholdOverrideRequest $request): ?OverrideValidationFailure
+    {
+        $failure = NonNegativeOverrideThresholds::warningProblem($request->warning);
+        if ($failure !== null) {
+            return $failure;
         }
 
-        if ($errorWasExplicit && $error !== null) {
+        if ($request->hasAuthored(OverrideAxis::Error)) {
             return new OverrideValidationFailure(
                 code: 'error_not_supported',
                 message: 'this rule only honours the warning threshold; the error value would be ignored',
@@ -48,10 +43,5 @@ final class WarningOnlyValidator implements OverrideValidatorInterface
         }
 
         return null;
-    }
-
-    private static function format(int|float $value): string
-    {
-        return \is_int($value) ? (string) $value : \sprintf('%g', $value);
     }
 }

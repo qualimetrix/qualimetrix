@@ -43,18 +43,6 @@ final class GeneratedFileFilter implements GeneratedFileFilterInterface
     private const string GENERATED_PATTERN = '/^\s*(?:\/\/|\/\*+|#|\*)\s*(?:\S+\s+)?@generated\b/im';
 
     /**
-     * Filters out generated files from a list of discovered files.
-     *
-     * @param list<SplFileInfo> $files
-     *
-     * @return list<SplFileInfo>
-     */
-    public function filter(array $files): array
-    {
-        return array_values(array_filter($files, fn(SplFileInfo $file): bool => !$this->isGenerated($file)));
-    }
-
-    /**
      * Checks if a file is marked as generated.
      *
      * Reads the first 2KB and looks for `@generated` as a comment annotation.
@@ -66,24 +54,25 @@ final class GeneratedFileFilter implements GeneratedFileFilterInterface
      * the parser sees it, so the regular-file question is asked here too and
      * not left to whoever hands the list over.
      */
-    public function isGenerated(SplFileInfo $file): bool
+    public function isGenerated(SplFileInfo $file): ?bool
     {
         $path = $file->getPathname();
 
         if (!is_file($path) || !is_readable($path)) {
-            return false;
+            return null;
         }
 
-        $handle = fopen($path, 'r');
+        $handle = @fopen($path, 'rb');
         if ($handle === false) {
-            return false;
+            return null;
         }
 
-        $header = fread($handle, self::HEADER_BYTES);
+        // @qmx-ignore-next-line code-smell.error-suppression -- A failed header read remains null and becomes UnreadableFile; interpreter notices must not precede the report document.
+        $header = @fread($handle, self::HEADER_BYTES);
         fclose($handle);
 
-        if ($header === false || $header === '') {
-            return false;
+        if ($header === false) {
+            return null;
         }
 
         return preg_match(self::GENERATED_PATTERN, $header) === 1;

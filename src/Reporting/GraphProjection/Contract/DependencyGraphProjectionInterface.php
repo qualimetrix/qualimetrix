@@ -26,4 +26,14 @@ interface DependencyGraphProjectionInterface
      *                      every include value bound, and when none was given
      */
     public function unboundIncludeNamespaces(DependencyGraphInterface $graph, GraphProjectionRequest $request): array;
+
+    /**
+     * The request's exclude namespaces that bind to no class of this graph.
+     *
+     * A suggestion is present when the selector would bind if its namespace
+     * value used the graph's exact ASCII case.
+     *
+     * @return list<array{selector: string, suggestion: ?string}> in request order
+     */
+    public function unboundExcludeNamespaces(DependencyGraphInterface $graph, GraphProjectionRequest $request): array;
 }

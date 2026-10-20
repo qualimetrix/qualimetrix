@@ -9,7 +9,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
-use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\CliStage;
@@ -18,8 +17,10 @@ use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureSection;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
@@ -55,7 +56,7 @@ YAML);
         $document = $this->createPipeline()->resolve(
             new ConfigurationResolutionRequest(AbsolutePath::fromString($this->tempDir)),
         );
-        self::assertCount(1, $document->contributions('architecture'));
+        self::assertNotNull($document->resolved()->get('architecture'));
 
         $policy = new ArchitecturePolicy();
         $resolved = $policy->resolve($document);
@@ -84,7 +85,7 @@ YAML);
         $document = $this->createPipeline()->resolve(
             new ConfigurationResolutionRequest(AbsolutePath::fromString($this->tempDir)),
         );
-        self::assertCount(1, $document->contributions('architecture'));
+        self::assertNotNull($document->resolved()->get('architecture'));
 
         $policy = new ArchitecturePolicy();
         $resolved = $policy->resolve($document);
@@ -129,8 +130,9 @@ YAML);
     private function createPipeline(): ConfigurationPipeline
     {
         $pipeline = new ConfigurationPipeline();
+        $pipeline->addSection(new ArchitectureSection());
         $pipeline->addStage(new DefaultsStage());
-        $pipeline->addStage(new ComposerDiscoveryStage(new ComposerReader()));
+        $pipeline->addStage(new ComposerDiscoveryStage(new ComposerManifestReader()));
         $pipeline->addStage(new ConfigFileStage(new YamlConfigLoader()));
         $pipeline->addStage(new CliStage());
 

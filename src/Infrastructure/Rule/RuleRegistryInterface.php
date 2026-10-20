@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Rule;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
-use Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException;
 
 /**
  * Registry of available rules.

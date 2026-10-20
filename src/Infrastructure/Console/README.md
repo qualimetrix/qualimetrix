@@ -10,51 +10,275 @@ CLI application based on Symfony Console with support for:
 - Baseline management
 - Graph export
 
+Terminal diagnostics own one progress/diagnostic stream lifecycle. Glyphs own
+the selected output alphabet, its environment spelling and Symfony output
+adapters. ReportPublication owns raw answer writes and completed report
+publication; neither writer reinterprets serialized payloads as console markup.
+
+Configuration input owns its preflight profile and diagnostic publication. Hook
+owns the binary-location port it consumes. Terminal owns raw output, while
+`Terminal/ReportPublication` owns a completed report awaiting publication.
+`Baseline/` and `LayerAssignment/` directly name the actions their commands deliver.
+
+Application command loading owns lazy product-container lookup and container-build
+failures separately from process-wide diagnostic setup. Check-report assembly,
+finding projection and format binding have separate lifecycles: assembly builds
+the published snapshot, projection selects findings, and format binding judges
+rendering options before analysis. `--format-opt` belongs to that binding.
+Run setup separates input preflight, finding configuration, execution settings
+and capability-state replacement; its root coordinates runtime effects and the
+analysed project source.
+
 ## Structure
 
-```
+```text
 Console/
-├── Application.php
-├── CliSelectorDecoder.php       # explicit kind:value scalar → Core path/namespace pattern
-├── CliOptionsParser.php
-├── MeasuredFindingSet.php         # The set a baseline measures (ADR 0017): the pipeline's findings before the baseline stage. Defined by configuration alone — qmx.yaml, source annotations, and the config CLI flags baseline commands share with check (--preset, --disable-rule, --only-rule, --include-generated, --include-autoload-dev), which can narrow or widen it; check's own --suppress-path/--suppress-namespace flags never reach it, since baseline commands deliberately omit them
-├── FindingFilterOrchestrator.php  # Builds Reporting projection options and renders stage diagnostics; policy and ordering remain in Reporting
-├── RuntimeConfigurator.php
-├── RuntimeLoggerConfigurator.php    # Creates, publishes, and returns the logger for one run
-├── AnalysisRuntimeConfigurator.php  # Per-run rule, collector, cache, and feature state
-├── CheckScopeResolver.php           # Git scope first, then warnings for that exact scope
-├── ResolvedCheckScope.php           # Resolved Git scope plus deferred warning messages
-├── ErrorStream.php                   # The run's single error-stream owner: the progress section and every diagnostic writer
-├── RuleInputValidator.php            # Fail-closed selector/option-owner validation
-├── ChannelExclusionKeyValidator.php  # Whether one suppress_namespace_channels key can exclude anything
-├── ChannelExclusionKeyHints.php      # What to say when it cannot
-├── ResultPresenter.php
-├── ArtifactFile.php                 # A file an option names for an artifact (--output, --profile, graph --output): one model of the target for the precheck and the write
-├── CommandLineSpelling.php          # An option or argument value as argv would spell it; every valued door reads through it
-├── FormatOptionPairs.php            # The --format-opt door: every written pair judged, a repeated key and two spellings of one value refused
-├── CheckCommandDefinition.php
-├── FilteredInputDefinition.php      # InputDefinition that hides rule-specific options from --help
-├── OutputHelper.php                 # Line-by-line output with flush (avoids PTY truncation)
-├── RunningBinaryLocator.php         # Where the qmx binary running this process lives on disk
-├── RunningBinaryLocatorInterface.php
+├── Application/
+│   ├── CommandLoading/
+│   │   ├── ContainerBuildFailure.php
+│   │   └── ProductCommandLoader.php
+│   ├── Application.php
+│   └── ConsoleDiagnostics.php
+├── Baseline/
+│   ├── ChannelRename/
+│   │   ├── BaselineRenameChannelsCommand.php
+│   │   └── ChannelRenameReporter.php
+│   ├── Explanation/
+│   │   ├── BaselineConfiguredThresholds.php
+│   │   ├── BaselineExplainCommand.php
+│   │   └── BaselineExplanationRenderer.php
+│   ├── Generation/
+│   │   ├── BaselineCaptureReporter.php
+│   │   └── BaselineGenerateCommand.php
+│   ├── Maintenance/
+│   │   ├── BaselineCleanupCommand.php
+│   │   ├── BaselineUpdateCommand.php
+│   │   └── BaselineUpdateInvocation.php
+│   ├── Measurement/
+│   │   └── BaselineRun.php
+│   ├── BaselineCommand.php
+│   ├── BaselineCommandDefinition.php
+│   ├── BaselineRunContext.php
+│   ├── BaselineRunInterface.php
+│   └── LoadedBaselineRun.php
+├── BaselineCommand/
+│   ├── BaselineProjectionCoverage.php
+│   ├── MeasuredAnalysisRun.php
+│   └── MeasuredFindingSet.php
+├── CacheLifecycle/
+│   └── CacheRunLifecycle.php
+├── Check/
+│   └── CheckCommand.php
+├── CheckReport/
+│   ├── Assembly/
+│   │   ├── ReportAssembler.php
+│   │   └── ReportCoverageProjection.php
+│   ├── FormatBinding/
+│   │   ├── BoundCheckReportFormat.php
+│   │   ├── FormatOptionPairs.php
+│   │   ├── FormatterContextFactory.php
+│   │   └── ReportFormatter.php
+│   ├── Projection/
+│   │   ├── BaselineFilterReporter.php
+│   │   ├── CheckFindingProjection.php
+│   │   ├── FindingDiagnostics.php
+│   │   └── FindingProjection.php
+│   ├── CheckReportDelivery.php
+│   ├── CheckReportRenderer.php
+│   └── CheckResponse.php
+├── CheckScope/
+│   ├── CheckScopeResolver.php
+│   ├── FindingProjectionOptionsResolver.php
+│   ├── ObservedProjectScopeReasons.php
+│   ├── ProjectScopePresenter.php
+│   ├── ResolvedCheckScope.php
+│   └── ScopeWarningChecker.php
+├── Directives/
+│   ├── DirectiveAuditPresenter.php
+│   ├── DirectiveAuditTextPresenter.php
+│   ├── DirectiveVerdictTally.php
+│   └── DirectivesCommand.php
+├── GraphExport/
+│   ├── GraphExportCommand.php
+│   └── GraphExportInput.php
 ├── Hook/
-│   └── PreCommitHook.php            # The generated pre-commit hook: its text, its marker, and what counts as ours
-├── LayerAssignmentResolver.php      # Rebuilds collected project state for layer-assignment diagnostics
+│   ├── AbstractHookCommand.php
+│   ├── HookBackupTransaction.php
+│   ├── HookEntryAccess.php
+│   ├── HookFileTransaction.php
+│   ├── HookInstallCommand.php
+│   ├── HookStatusCommand.php
+│   ├── HookUninstallCommand.php
+│   ├── PreCommitHook.php
+│   ├── RunningBinaryLocator.php
+│   └── RunningBinaryLocatorInterface.php
+├── Invocation/
+│   ├── CommandDefinition/
+│   │   ├── AnalysisReportCommandDefinition.php
+│   │   ├── CheckCommandDefinition.php
+│   │   └── FilteredInputDefinition.php
+│   ├── Configuration/
+│   │   ├── Diagnostics/
+│   │   │   ├── AnalysisPreflightProfile.php
+│   │   │   └── ConfigurationDiagnosticsPublisher.php
+│   │   ├── ConfigurationInputAdapter.php
+│   │   └── WorkerCountParser.php
+│   ├── RuleOptions/
+│   │   ├── AuthoredRuleOptionWrites.php
+│   │   ├── CliOptionsParser.php
+│   │   ├── CliRuleOptionAddressing.php
+│   │   └── RuleOptionArgv.php
+│   ├── CliSelectorDecoder.php
+│   └── CommandLineSpelling.php
+├── LayerAssignment/
+│   ├── LayerAssignmentCommand.php
+│   ├── LayerAssignmentJsonPresenter.php
+│   ├── LayerAssignmentResolver.php
+│   └── LayerAssignmentTextPresenter.php
+├── Profile/
+│   ├── ProfilePresenter.php
+│   └── ProfileSummaryRenderer.php
 ├── Progress/
 │   ├── ConsoleProgressBar.php
-│   ├── ProgressConfigurator.php      # Whether this run shows a frame, and on what
+│   ├── ProgressConfigurator.php
 │   └── SwitchableProgressReporter.php
-└── Command/
-    ├── CheckCommand.php             # Main analysis command
-    ├── AbstractHookCommand.php      # Shared by the three below: locate the repository, spell hooks/pre-commit, refuse once
-    ├── BaselineCleanupCommand.php   # Cleanup stale baseline entries
-    ├── GraphExportCommand.php       # Export dependency graph (DOT, JSON)
-    ├── HookInstallCommand.php       # Install pre-commit hook
-    ├── HookStatusCommand.php        # Check hook status
-    ├── HookUninstallCommand.php     # Remove pre-commit hook
-    └── Debug/
-        └── LayerAssignmentCommand.php # Validate input, configure runtime, and render layer matches
+├── Refusal/
+│   ├── ConsoleExitCode.php
+│   ├── EnvironmentRefusal.php
+│   ├── FileTargetRefusal.php
+│   ├── MachineReadableFormats.php
+│   ├── OutOfMemoryHint.php
+│   └── RefusalPresenter.php
+├── RuleListing/
+│   ├── RuleListingPresenter.php
+│   └── RulesCommand.php
+├── RunSetup/
+│   ├── CapabilityState/
+│   │   ├── AnalysisRuntimeConfigurator.php
+│   │   └── PreparedAnalysisRuntimeConfiguration.php
+│   ├── Execution/
+│   │   ├── ResolvedRunConfiguration.php
+│   │   └── RunConfigurationPreparation.php
+│   ├── Finding/
+│   │   ├── CheckConfigurationResolvers.php
+│   │   ├── CheckResolvedConfiguration.php
+│   │   └── FindingConfigurationPreparation.php
+│   ├── Input/
+│   │   ├── AnalysisInputPathValidator.php
+│   │   ├── AnalysisPreflight.php
+│   │   └── PreparedAnalysisInput.php
+│   ├── ProjectSourceConfigurator.php
+│   └── RuntimeConfigurator.php
+├── RunTarget/
+│   ├── ProcessStreams.php
+│   ├── RunTargetClaimLifecycle.php
+│   ├── RunTargetSession.php
+│   ├── RunTargets.php
+│   ├── StagedSignalGuard.php
+│   ├── TargetAccess.php
+│   └── TargetCollisions.php
+├── RuntimePolicy/
+│   ├── ExitCodeResolver.php
+│   ├── ExitPolicy.php
+│   ├── ExitPolicySection.php
+│   ├── MemoryLimitSection.php
+│   ├── RuntimeEffects.php
+│   ├── RuntimeLimits.php
+│   ├── RuntimeLimitsController.php
+│   └── RuntimeLoggerConfigurator.php
+└── Terminal/
+    ├── Diagnostics/
+    │   ├── ErrorSections.php
+    │   └── ErrorStream.php
+    ├── Glyphs/
+    │   ├── GlyphConsoleSection.php
+    │   ├── GlyphOutput.php
+    │   └── OutputEncoding.php
+    └── ReportPublication/
+        ├── OutputHelper.php
+        ├── RenderedCheckReport.php
+        └── ReportPublication.php
 ```
+
+`ExitPolicySection` and `MemoryLimitSection` declare the Console-owned
+`fail_on` and `memory_limit` roots. Their context-free forms are judged in every
+writing layer through the same validators the resolved runtime values use.
+`ExitPolicy::CONFIGURATION_KEY` and `RuntimeLimits::MEMORY_LIMIT_KEY` name
+those owner roots; `ConfigSchema` retains the flat ingress mappings.
+Whether PHP can apply a valid memory limit depends on the running process and
+is judged only when configuring that runtime. `fail_on: false` is refused;
+`fail_on: none` selects the policy that does not fail for findings.
+
+The pipeline result exposes `measured` for repository, coverage, namespace tree,
+final project scope and duration, and `directives` for observed suppression and
+threshold-override maps. Console reads `findings()` for execution publication
+plus late findings. Baseline's `MeasuredAnalysisRun.findings` remains its
+post-suppression set; it is not the pipeline's late-published list. Hand-built
+fixtures without rule execution explicitly pass null and their findings as late.
+
+`Hook`, `RuleListing` and `Directives` keep their commands beside their
+existing publication and lifecycle operations. `Check` and `GraphExport` are
+distinct user operations; the `Command` root is navigation only.
+
+Baseline's common invocation owns `BaselineRunInterface` and its returned
+`BaselineRunContext`, together with the shared scope guard. Its measurement
+implementation lives in `Measurement`; generation, entry maintenance, channel
+rename and explanation retain their own command operations. The configured
+threshold reader belongs to explanation.
+
+`Invocation/CommandDefinition` owns declared command forms and help visibility;
+`RuleOptions` preserves authored rule-option occurrences and binds them to
+document writes; `Configuration` constructs the configuration request, including
+workers parsing. Common scalar spelling and selectors stay in `Invocation`.
+`Terminal/ReportPublication` publishes serialized reports and prose command
+reports through checked stdout or held-target writes. The single stderr and
+progress-frame owner, its sections and glyph mode stay in `Terminal`.
+
+## Response and runtime operations
+
+`Invocation` owns CLI spelling, option definitions and worker-count parsing.
+`WorkerCountParser` applies PHP's integer validator before a CLI worker value
+enters the document, including the graph profile. YAML values remain subject to
+Parallel's own semantic validation.
+
+`CheckConfigurationResolvers` resolves run/cache/parallel, exclusions, output
+format and Finding configuration from the same document in that order. The
+mandatory `CheckResolvedConfiguration` result carries those accepted parts.
+Resolved-format binding and ExitPolicy judgement retain their order before
+runtime commit; the configuration resolver performs no runtime effects.
+
+`CheckScopeResolver` accepts Git scope, validates selected paths, publishes scope
+warnings and preflights projection selectors and baseline in that order. Its
+mandatory `ResolvedCheckScope.projectionOptions` is the same value late
+projection receives. Scope preparation finishes before targets are claimed,
+cache is cleared or analysis starts; it does not reread the manifest or document.
+
+`RunSetup` resolves and commits accepted owner values. `RuntimeEffects` owns
+limits, logger, progress and profiler effects after that commit; those effects
+are fallible and do not roll committed stores back. `CacheRunLifecycle` resets
+cache state and reports discarded entries once across both session and loader
+completion. The committed ComputedMetrics catalog intentionally has no reset.
+
+`CheckScope` binds projection selectors and preflights the baseline before
+claiming targets. Its `ProjectScopePresenter` reads the pipeline's final measured
+scope. `FindingProjection` performs late projection and population accounting;
+`FindingDiagnostics` publishes baseline, annotation and exclusion diagnostics
+through the shared `ErrorStream`.
+
+`ReportAssembler` constructs the report, including computed evaluation,
+population, drill-down and suppression composition. `ReportFormatter` binds one
+formatter instance and preserves its structured or prose publication contract.
+`CheckReportRenderer` owns the reporting span and calculates the whole-run exit
+before report drill-down can hide findings. `ReportPublication` owns terminal
+and held-target report delivery.
+
+`CheckReportDelivery` prepares one invocation-local `CheckResponse`. The response
+starts analysis only after the command's remaining preflight and target claim,
+then projects findings, settles targets, renders, records one profile outcome,
+exports the profile, settles targets again, publishes the report and marks
+publication. The once flag is set before profile export, so an export failure
+cannot retry the profile or publish the ready report. Graph and baseline runs
+do not enter this check-only response operation.
 
 ## Commands
 
@@ -62,39 +286,47 @@ Console/
 
 **Name:** `check`
 
-`CheckCommand` has ten constructor dependencies and thirteen properties. Its
-direct collaborators are `RuleRegistryInterface`, `AnalysisPipelineInterface`,
-`CacheFactory`, `FindingFilterOrchestrator`,
-`ConfigurationPipelineInterface`, `RuntimeConfigurator`, `ResultPresenter`,
-`RuleInputValidator`, and `CheckScopeResolver`. The command
-has no logger, `GitScopeResolver`, or `ScopeWarningChecker` property.
+`CheckCommand` orchestrates the shared document, runtime, rule inputs, scope
+and report adapters. `ConfigurationInputAdapter` and
+`CheckConfigurationResolvers` prepare its inputs through `RunConfigurationPreparation`; the command does not perform
+another manifest read.
 
-`CheckScopeResolver` owns the narrow scope seam. It resolves
-`GitScopeResolution` first, so invalid Git references fail before warnings or a
-payload are produced, and only then asks Run's `ProjectScopeCoverage` which of
-the project's autoload targets — production, plus `autoload-dev` under
-`AutoloadDevPolicy::Include` — the resolved paths leave uncovered. That one
-measurement feeds every output of `ResolvedCheckScope`: `ScopeWarningChecker`
-renders its uncovered targets as the partial-autoload warning, its
-`ProjectScopeState` decides the `coversProjectScope` boolean `CheckCommand` puts
-on the scoped `RunConfiguration` (true for `Covered` and for `Unknown`, where
-the manifest declares nothing and the paths are the project), and the same
-state becomes the `Reporting\ReportProjectScope` `ResultPresenter` adds to the
-report — naming, on a `Narrowed` run, the uncovered targets and
-`ProjectScopeCoverage::WHOLE_PROJECT_CHANNELS` as not judged. A rule that must
-stay quiet on a slice, the warning about that slice and the report's statement
-of it cannot disagree. The suppression audit reads the same answer rather than
-measuring again: `FindingFilterOrchestrator::valueScope()` builds Finding's
-per-value `ValueScopeJudgement` once from `ResolvedCheckScope` — `null` on a
-narrowed run — and both the audit's findings and the values it skipped, which
-`projectScope()` adds to the report's scope, are read from it. The measurement's pruned targets —
-declared entries under a `vendor`, `node_modules` or `.git` directory, which are
-neither analysed by default nor counted — get a warning line of their own,
-independent of coverage: a whole-project run can still have dropped them.
-The coverage is taken for the resolved paths, not the configured ones: a Git
-report scope narrows the run after the configuration was resolved. `CheckCommand` validates the resolved paths
-before emitting the messages through its stderr-only warning route; structured
-stdout remains a clean report payload.
+`RunConfigurationResolver` captures the invocation's universe and input evidence.
+`CheckScopeResolver` resolves Git publication scope without widening analysis paths
+or rereading the manifest. The pipeline adds final filesystem facts once and
+publishes the final `ProjectScopeMeasurement`; initial target state alone is not
+the report. A complete file roster can cover PHP paths, and an omitted empty
+directory alone is not missing PHP evidence.
+
+Finding's single `ProjectScopeJudgement` travels in the result/context and copied
+threshold contexts. Declaration absence and exclude-selector completeness are
+separate questions; Console does not synthesize another coverage boolean.
+`FindingProjection` uses that judgement for per-value suppression binding.
+It reads the final measurement's single `ValueScopeJudgement` for both late
+suppression findings and skipped-value reporting. The main manifest source and
+state also come from Run's captured facts, without another Console read.
+Reports preserve reasons and each skipped `{channel, option, pattern}` value.
+`AnalysisInputPathValidator` still refuses missing paths and explicitly named
+non-PHP regular files before discovery.
+
+Authored excludes remove named entries. If `analyzed=0`, `failed=0` and
+`excluded + generatedExcluded > 0`, the complete intentionally empty result
+succeeds with measured counts and an explanation; an empty unrelated named root
+is not described as excluded. Any incomplete input takes priority with exit 4.
+`check`/`directives` retain diagnostic reports; baseline commands do not mutate,
+and graph does not publish an authoritative artifact. Truly undiscovered empty
+input retains each command's existing outcome.
+
+`DirectiveAuditPresenter` owns shared text/JSON values and JSON serialization;
+private `DirectiveAuditTextPresenter` renders human wording from those values. For intentionally
+empty coverage it builds `ReportCoverage` from its report and asks
+`CoverageNarrator` for the note, rendered as text and `scope.note` in JSON beside
+the existing verdict/selection/sweep fields. The command passes no separate note
+parameter. `ReportCoverageProjection` transfers named `excluded` independently
+of `discovered`: analyzed PHP plus generated-excluded PHP plus selected failed
+terminal entries. Diagnostics remain on stderr and structured stdout retains its format.
+The report also carries the measured project scope: JSON publishes it as
+`scope.project_scope`, and text combines its explanation with the coverage note.
 
 The Console package is an adapter. It imports Run, Configuration, Finding, and
 Reporting contracts, parses options, configures one run, and renders
@@ -110,7 +342,7 @@ and delegates binding and PCRE validation to Core. `CliOptionsParser` retains
 the Finding-owned `RULE:OPTION=VALUE` grammar; selector-valued rule options are
 wired only once their Finding owners accept the bound values.
 
-`RuleInputValidator` validates selectors against one immutable rule-channel
+`FindingConfigurationPreparation` validates selectors against one immutable rule-channel
 snapshot for the resolved run. The snapshot is assembled by Infrastructure Rule
 from `ResolvedComputedMetricDefinitions`; Console consumes only that resolved
 snapshot while processing the invocation.
@@ -128,28 +360,67 @@ whether a name is wrong, the other what to say about it.
 `LayerAssignmentResolver` is an internal Console collaborator for
 `debug:layer-assignment`. It owns the adapter-side discovery, generated-file
 filtering, collection, dependency-graph and class-set preparation needed to
-query `LayerAssignmentInspectorInterface`; the command retains input validation, runtime
-configuration, error mapping and rendering. This keeps both declarations below
-their constructor-dependency thresholds without introducing a public port.
+query `LayerAssignmentInspectorInterface`; the command retains input validation,
+runtime configuration, error mapping and presentation routing. The text and
+JSON presenters each receive the complete `LayerAssignment`, so format-specific
+branching and shadow projection do not remain in the command. The text presenter
+also owns the documentation pointer after every enabled-policy report; disabled
+policy output and JSON omit it. This keeps the
+adapter declarations below their complexity thresholds without introducing a
+public port.
 
-The resolver also owns the answer to "was this class analysed at all": an FQN
-that names no analysed declaration raises `ConfigurationRefusal` (exit 3)
-instead of reaching the inspector, so "never analysed" and "analysed, no layer
-matched" stop sharing the `(no layer)` report. Membership folds ASCII case the
-way PHP folds class names; layer matching itself stays case-sensitive.
+Debug JSON publishes `meta`, canonical `fqn`, `policyDisabled`, `edgeEndOnly`,
+assignment and contender evidence. An enabled shadow carries `reported` and,
+when exempt, the typed `exemption`; disabled shadow output omits both fields and
+the text omits diagnostic guidance. All arguments other than empty input are
+resolved through observed identities after collection, never an identifier regex.
+See [ADR 0103](../../../docs/adr/0103-layer-policy-declaration-evidence-and-selection.md).
+
+The JSON presenter uses Reporting's `PublishedUtf8` contract: invalid UTF-8
+bytes in observed names become `%XX`, and `invalidUtf8Replaced` counts repaired
+strings. Valid UTF-8 output omits that key.
+
+`LayerAssignmentResolver::resolve(RunConfiguration, SymbolPath, bool)` receives the
+captured configuration and final Architecture producer enablement directly and
+delegates to `ProjectFilesInterface` with its universe, aliases and generated
+policy. It does not reconstruct config from paths/excludes/root or expose
+`resolveIncludingGenerated()`.
+
+The inspector resolves the authored argument through Architecture's observed
+name index after collection. That population contains analysed declarations
+and dependency-graph declarations, classes and edge ends, without the
+Composer-install-only fallback. The canonical observed spelling drives both
+layer matching and output; a graph-end-only name is accepted and marked as
+such. A miss raises `ConfigurationRefusal` (exit 3), so "not observed" and
+"observed, no layer matched" do not share the `(no layer)` report.
+
+The command judges only an empty argument before collection. It does not parse
+PHP name grammar: high-byte declaration names and differently cased input are
+resolved from parser-derived identities, while any other non-empty spelling is
+an ordinary observed-name miss. Final Finding enablement is mandatory; when no
+Architecture producer runs, a known type still resolves but the text and JSON
+state that the policy is disabled instead of claiming an active diagnostic.
 
 **Arguments:**
 - `paths` (required, array) — paths for analysis
 
 **Exit codes:**
 
-| Code | Description                                             |
-| ---- | ------------------------------------------------------- |
-| 0    | No findings                                             |
-| 1    | Warnings present (but no errors)                        |
-| 2    | Errors present                                          |
-| 3    | Configuration or input error                            |
-| 4    | Analysis incomplete; policy result is not authoritative |
+| Code | Description                                 |
+| ---- | ------------------------------------------- |
+| 0    | No findings                                 |
+| 1    | Warnings present (but no errors)            |
+| 2    | Errors present                              |
+| 3    | Configuration, input or environment refusal |
+| 4    | Analysis incomplete or coordinator OOM      |
+| 5    | Internal error                              |
+
+Missing inferred autoload targets are attributed to `composer.json`, with the
+offending target and a single error prefix. Explicit paths retain their own source. Automatic
+configuration discovery names both files when exact names collide. A near-name
+warning is suppressed only for the same physical file already selected as a
+custom preset; an unrelated file with the same basename still warns. An
+unlistable working directory is a directory failure, not a fictitious file.
 
 Unknown `--only-rule` / `--disable-rule` selectors and unknown rule-option
 owners are input errors (exit 3); a bare group prefix is refused with the
@@ -158,28 +429,78 @@ refuses an empty value for the five doors whose owners would read it as
 "not given" (`--config`, `--preset`, `--baseline`, `--output`, `--report`), and
 `ProfilePresenter::refuseImpossibleExport()` refuses a `--profile-format` outside
 its closed set and a `--profile` target the export cannot be written to, and
-`ResultPresenter::assertOutputIsWritable()` the same for `--output` — all before
-analysis. Both targets, and `graph:export --output`, are judged by
-`ArtifactFile`, which also makes the write, so the precheck cannot model a
-different write than the one made. The write is a shell's `>` as nearly as
-PHP allows, and the kernel decides what a path leads to: a target it reaches is
-opened by the path as written and written in place; a name it reaches nothing
-at is created by `touch()`, whose open the kernel resolves, so a dangling link
-creates its target and a link `fs.protected_symlinks` forbids is refused —
-every other PHP open resolves links in userspace, beyond that rule. The
-precheck asks only what the kernel answers without a write (not a directory; a
-reachable target writable; a new name's directory writable and searchable; a
-descriptor held and, on Linux, open for writing) and leaves a link it does not
-follow to the write, which refuses after the run. The supported spellings
-`/dev/stdout`, `/dev/stderr`, `/dev/fd/N` and `/proc/self/fd/N`, exactly as
-written, go through `php://fd/N` in blocking mode, because PHP on Linux opens
-those paths by resolving them, which fails on a pipe and truncates a redirected
-file; another spelling is opened by its path. A write that fails midway removes
-a file it created and leaves an existing target partly written. A profile write
-that still fails after the report is published
-ends the run with exit 3 through `RefusalPresenter::refusalAfterPublishedReport()`:
-the sentence goes to stderr whatever the format, so stdout keeps the report as
-its only document. `FormatOptionPairs` judges every written `--format-opt` pair
+`ReportPublication::assertOutputIsWritable()` the same for `--output` — all before
+analysis. `RunTargets` owns report, profile and log target judgement, collision
+checks. Its private `RunTargetClaimLifecycle` owns held resources, staged
+publication, signal ownership and teardown; `TargetCollisions` judges target
+identities and names. Core resolves target components and trusted links;
+unknown wrappers, exposed links and unsupported targets refuse. Pure preflight
+checks writable regular targets and writable/searchable parents without opening
+them. Descriptor existence is checked on both platforms; Linux fdinfo also
+identifies descriptors opened only for reading. On macOS an unknown original
+access mode is left to the actual write and its typed environment refusal.
+
+Check and Graph report every judged directory exposure on stderr before claiming
+targets or entering analysis, naming the option, target, directory and actor.
+`OutputHelper` publishes command answers at QUIET verbosity. `-q`, `--silent`
+and `SHELL_VERBOSITY=-1|-2` keep answers while muting progress and status.
+For a borrowed `StreamOutput` resource it checks complete writes and flush,
+preserving raw bytes; other `OutputInterface` implementations retain their own
+write contract. Multiline answers are assembled in a `BufferedOutput` with the
+caller's formatter and decoration before publication.
+Baseline explanation groups are printed in lexicographic channel-identity order.
+Multiple occurrences of one channel retain their measured report order.
+
+The styled Docs pointer for `directives`, `hook:status`, and `baseline:explain`
+is included in that same answer publication, not written to the stream later.
+
+Preparation happens after configuration, scope, selector and baseline input
+checks, before cache clearing or analysis. Named regular report, profile and graph
+targets hold a private sibling; a new final name remains absent and existing bytes
+remain unchanged until complete writes, flush and identity checks permit atomic
+publication. Replacement changes the final inode and preserves its mode; other
+hard links retain the old bytes. Closed symbolic links keep their entry and
+publish the resolved referent. The parent must already exist and allow creation
+and replacement, including for a writable existing final file. Explicit
+descriptors retain offset and use blocking writes. Equal authored destination
+inodes or absent names refuse, including collisions with explicit configuration
+and baseline inputs. A shell-inherited `2>&1` is not a second authored target.
+Character devices may coincide. `--clear-cache` refuses a destination or its
+sibling inside the physical cache root before clearing or analysis.
+
+`StagedSignalGuard` scopes SIGINT/SIGTERM to the current staged operation, latches
+interruption across worker recovery, checks it before publication and restores
+handlers and asynchronous-signal mode after cleanup. Its own siblings are removed
+before returning 128 + signal when pcntl and exclusive signal ownership are
+available. Missing pcntl, foreign handlers or pending Revolt signal callbacks
+leave ordinary private-sibling and atomic publication available, without
+installing a guard or replacing foreign handlers. The guard uses raw
+asynchronous pcntl handlers;
+interruption propagates through worker recovery as `Amp\CancelledException`, and
+the worker pool kills pending workers instead of awaiting graceful shutdown.
+Revolt's public callback inspection does not expose the signal number, so even a
+pending callback for another signal prevents guard installation. Replacing
+handlers during a guarded operation is unsupported. Without a safely attached
+guard, interruption may leave the private sibling; cleanup is also not guaranteed
+for SIGKILL, cleanup failure or an already published target. Each target has
+its own atomic publication. Check renders a report in memory, publishes its
+profile, and then publishes the report. A failed profile export therefore
+produces a run refusal in place of an unpublished report. Coordinator OOM
+before profile publication releases claimed unwritten targets without exporting
+a profile. If OOM occurs after a profile is atomically published but before
+the report is complete, that published profile remains; an existing profile
+is never removed to mimic a rollback.
+The shared logger buffers early records, attaches its claimed target, latches
+append failures and reports lost records at settle before report publication.
+`RunTargetSession` runs Check and Graph actions, attempts target cleanup, then
+classifies the primary and cleanup failures. After successful report or graph
+publication, both diagnostics use stderr without another stdout envelope.
+An environment cleanup failure overrides a findings exit code; an internal
+failure keeps exit 5. Failed cleanup can leave an unwritten new target behind,
+and names that failure. The publication marker covers completed presenter
+calls, not partially written output or exceptions inside the presenter. The
+existing inner claim cleanup and terminal-presenter fallback retain their own
+boundaries. `FormatOptionPairs` judges every written `--format-opt` pair
 before any fold by key and refuses a key written twice, and two keys that set
 one value (`violations` and `limit`, or `limit` beside `--all`);
 `FormatterContextFactory` refuses `--detail` or `--detail=N` beside `--all` the
@@ -188,25 +509,50 @@ and again in `create()` — a `--namespace` or `--class` selection under a forma
 `OutOfScopeFindings::FORMATS_WITHOUT_A_PLACE` names. `--report`
 is read here, through `CommandLineSpelling`, and handed to
 `Git\GitScopeResolver` as a string.
+`--format=suppressed` with `--namespace` or `--class` is refused before analysis
+because suppression composition describes the whole run. With either reporting
+selector, `--show-suppressed` still lists the whole run and says that selectors
+are not applied in both the inline and per-rule suppression headings.
+
 Every valued option and argument is read through `CommandLineSpelling`: argv
 delivers strings, and an embedder's array input may deliver any PHP value, so an
 integer is read as its digits and any other shape is refused (exit 3) instead
-of reaching a string-typed reader as a type error (exit 1) or being dropped.
+of reaching a string-typed reader as a type error (exit 5) or being dropped.
 Flags are read as booleans, and a value-optional option decides its "written
 alone" forms (`null`, or `true` from an array input) before spelling the value.
 `Application::doRun()` reads the long `--format` off the raw tokens, so a
 refusal it catches is enveloped for the JSON formats like one a command catches,
 and `RefusalPresenter` frames the fallback path exactly like a carried refusal.
-The JSON envelope is `{error, exit_code, position}`: `position` publishes a
+The JSON envelope is `{error, exit_code, position, source}`: `position` publishes a
 refusal's `RefusedPosition` (`path`, `written`, `accepted`, `closed`) — the
 refused spot as its throw site located it — and is `null` for every outcome
 without one, including a merged value whose sentence names its key. On incomplete analysis, the selected report is
 still rendered for diagnosis and exit 4 takes precedence over finding policy.
 Non-payload diagnostics from `check` are written to stderr.
 
+`ConfigurationInputAdapter` resolves the configuration document for every
+command that reads it — `check`, and through `AnalysisPreflight` and
+`BaselineRun` `directives`, `debug:layer-assignment`, `graph:export` and the
+four `baseline:*` commands that measure, and directly `rules` — and answers its author there too:
+`writeDiagnostics()` prints each warning about the accepted configuration on
+stderr as one `Warning:` line, after the runtime is configured, and
+`publishedDiagnostics()` gives `check`'s report the same warnings with their
+sources in the refusal envelope's `source` form.
+
+The adapter and runtime resolvers read `fail_on`, `memory_limit` and `format`
+from resolved leaves. When PHP rejects a requested memory limit, the runtime
+wrapper preserves the refusal's sources, position, summary and previous cause
+through `ConfigurationRefusal::acrossLayers()`. `RuntimeLimits` refuses a
+byte count above `PHP_INT_MAX` before changing ini, without a float conversion.
+The controller sends the successfully applied leaf's `ConfigurationOrigin` to
+the shared `OutOfMemoryHint`; resetting the run restores the startup limit and
+clears that authored source, so an unconfigured run reports `php.ini`.
+
 ### BaselineCleanupCommand
 
-Cleanup baseline from stale entries (findings that have already been fixed).
+Inspect stale candidates; comparable absence does not itself prove that code was fixed.
+The command reports removal counts only after the guarded atomic baseline write
+has completed; count pluralization is separate from selection and publication.
 
 **Name:** `baseline:cleanup`
 
@@ -215,12 +561,18 @@ Cleanup baseline from stale entries (findings that have already been fixed).
 
 ### GraphExportCommand
 
-Export dependency graph in DOT or JSON format.
+Export dependency graph in DOT or JSON format. `GraphExportInput` defines the
+command options, decodes projection selectors and refuses unbound namespace
+filters; the command coordinates analysis, completeness and publication.
 
 The command is an adapter: it obtains the graph through
 `DependencyGraphAnalyzerInterface` and renders it through Reporting's public
 `DependencyGraphProjectionInterface`. It never imports or constructs the
-internal DOT/JSON exporters.
+internal DOT/JSON exporters. Its graph profile resolves Run, Cache, Parallel,
+Coupling and memory-limit inputs after the entire document is judged, and
+passes `RunConfiguration` plus the configured finder to the analyzer. The graph
+format remains `GraphExportFormat::Dot|Json`, separate from the analysis output
+format. No Finding selection or analysis-format consumer runs on this path.
 
 **Name:** `graph:export`
 
@@ -228,7 +580,19 @@ internal DOT/JSON exporters.
 - `--output` — output file path (default: stdout)
 - `--namespace` — include an explicit `exact:`, `subtree:`, or `regex:` namespace selector (repeatable)
 - `--exclude-namespace` — exclude an explicit namespace selector (repeatable; exclusion wins)
-- `--format` — output format: `dot` (default) or `json`
+- `--format` / `-f` — output format: `dot` (default) or `json`
+- `--config`, `--preset` — shared document sources
+- `--exclude`, `--include-generated`, `--include-autoload-dev` — run discovery policy
+- `--no-cache`, `--workers` / `-w`, `--memory-limit` — run settings
+- `--direction` — DOT direction; no short alias
+
+With no path argument, graph export uses resolved document or Composer defaults.
+`rules` reads and judges the document without requesting a Run configuration or
+refusing an empty analysis tree. It includes named computed metrics and marks
+the current stated `only_rules`/`disabled_rules` selection. Finding owns the
+shared resolver; Console has no second raw rule parser.
+`debug:layer-assignment` accepts `--preset`; all four measuring baseline commands
+share `--no-cache`, `--workers` and `--memory-limit`.
 
 **Output formats:**
 - **DOT** (Graphviz) — circular dependencies highlighted in red, clustering by namespace
@@ -243,6 +607,13 @@ does not create a missing destination, and preserves an existing destination.
 **HookStatusCommand** — check hook status
 **HookUninstallCommand** — remove the hook, if it is ours
 
+`HookFileTransaction` owns target judgement, identity checks, backup, replacement,
+removal and restoration. Commands retain option parsing, repository discovery,
+messages and the exit ladder; status reads the same hook-owned file facts.
+`HookBackupTransaction` performs judged backup creation while the file
+transaction retains removal and restoration. Both share `HookEntryAccess` for
+guarded reads, identity checks and one set of directory-exposure warnings.
+
 The hook's contents are generated rather than shipped: `/scripts/` is excluded
 from the composer distribution, so a script living there reaches no consumer
 ([ADR 0068](../../../docs/adr/0068-the-pre-commit-hook-is-generated-not-shipped.md)).
@@ -250,8 +621,8 @@ All three commands test `is_link` before `file_exists`, because a hook
 installed by an earlier release is now a symlink leading nowhere, and
 `file_exists` follows the link and calls it absent.
 
-They refuse the way every other command does: by throwing a
-`ConfigurationRefusal`, which `Application::doRun()` turns into exit 3 and a
+They refuse the way every other command does: by throwing a typed input or
+environment refusal, which `Application::doRun()` turns into exit 3 and a
 line on stderr — no hook command writes its reason to stdout or returns 1.
 The `.backup` slot is single because `--restore-backup` reads it by that name,
 so `hook:install --force` refuses to overwrite a slot holding a different hook
@@ -270,11 +641,11 @@ not against the working directory `--working-dir` has since changed.
 
 ### Caching
 
-| Option          | Default      | Description                 |
-| --------------- | ------------ | --------------------------- |
-| `--no-cache`    | false        | Disable caching             |
-| `--cache-dir`   | `.qmx-cache` | Cache directory             |
-| `--clear-cache` | false        | Clear cache before analysis |
+| Option          | Default          | Description                                             |
+| --------------- | ---------------- | ------------------------------------------------------- |
+| `--no-cache`    | false            | Disable caching                                         |
+| `--cache-dir`   | user cache `qmx` | Directory resolving outside the project to a POSIX path |
+| `--clear-cache` | false            | Clear cache before analysis                             |
 
 ### Git Integration
 
@@ -297,40 +668,72 @@ not against the working directory `--working-dir` has since changed.
 | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--baseline`                   | Use baseline file                                                                                                                                                                                                                                                                                                                                                                                        |
 | `--show-resolved`              | Show count of resolved findings                                                                                                                                                                                                                                                                                                                                                                          |
-| `--show-suppressed`            | Show suppressed findings — `@qmx-ignore` tags and per-rule `suppress_namespaces` / `suppress_namespace_channels` / `suppress_paths` exclusions, each listed in its own block. `--format=suppressed` (or `format: suppressed` in `qmx.yaml`) reports the same composition, across all seven suppression mechanisms, as machine-readable JSON — either route arms the same capture (`RuntimeConfigurator`) |
+| `--show-suppressed`            | Show suppressed findings — `@qmx-ignore` tags and per-rule `suppress_namespaces` / `suppress_namespace_channels` / `suppress_paths` exclusions, each listed in its own block. `--format=suppressed` (or `format: suppressed` in `qmx.yaml`) reports the same composition, across all eight suppression mechanisms, as machine-readable JSON — either route arms the same capture (`RuntimeConfigurator`) |
 | `--no-suppression-annotations` | Report findings `@qmx-ignore` suppresses. It does **not** change what a baseline measures: the annotated findings never reach the baseline stage and are never captured, so they are shown at their own severity and compared against no entry. A flag may narrow the measured set (`--suppress-path`, `--suppress-namespace`), never widen it                                                           |
 
 ### `check`'s baseline reporting
 
-`FindingFilterOrchestrator` prints up to three unconditional, non-failing
-reports about the loaded baseline — each with its own header and its own
-explaining line, so they never run together. None of the three prints
-anything on a run without `--baseline`.
+`EntryBinding\UnusedEntryAudit` emits `baseline.unused-entry` project-level
+Warnings for stale and inert entries after the full ceiling and before Git
+projection. The rule's remediation estimate is 5 minutes. Audit findings never
+enter the measured set, capture or accept-new; authored path/namespace
+suppression and Git projection cannot hide them. When unselected, stderr reports
+counts only. Uncompared entries likewise produce count diagnostics, not path dumps.
+Six finding formats publish the audit; Checkstyle and GitLab Code Quality omit
+its fileless project subject, while Metrics, Health and Suppressed retain their
+own subjects. All eleven preserve the ordinary failure policy: an isolated
+audit warning exits 0 by default, with `--fail-on=error` or `none`, and 1 with
+`--fail-on=warning`. Incomplete analysis has priority and exits 4.
 
-- **Stale entries** — an entry whose complete v11 identity (typed subject,
-  channel, optional semantic occurrence, and optional edge)
-  did not appear in the measured set. `--show-resolved` reads the same
-  list and reports the same predicate in a different unit — entries, not
-  findings. Because the predicate is keyed on the *full* identity rather
-  than the symbol, a group that shrank without vanishing (say five members
-  down to two) is neither stale nor "resolved": its identity still fired, so
-  it is invisible to `--show-resolved` by design (ADR 0017 residual-limitation
-  list, item 2) — not a bug to be fixed later.
-- **Inert entries** — an entry the loaded baseline could not apply at all:
-  malformed, addressing an undeclared channel, mismatching its channel's
-  shape in either direction, an unrecognized `mode`, or a duplicate identity
-  (ADR 0017). Each line names the symbol, the channel, the entry's selector and the
-  reason. An inert entry does not suppress anything and is not a load error —
-  the findings it was meant to cover are reported at their own severity, and
-  the run does not fail on it.
-- **Scope mismatch** — when this run's analysed paths do not cover the
-  baseline file's recorded `scope` (ADR 0017), `check` names the uncovered paths.
-  This never fails the run: a narrower run legitimately sees fewer
-  identities, and failing on it would punish the ordinary case of checking
-  one directory. The scope guard that *does* refuse to run is a precondition
-  of the writing commands (`baseline:update`, `baseline:cleanup`), not a
-  `check` behaviour — every identity under an uncovered path looks absent
-  from this run and is already counted among the stale entries above.
+The five document readers preflight once before analysis: check, update, cleanup,
+explain and rename-channels. Grammar refusal is early; configured entry semantics
+follow configuration. Incomplete lifecycle analysis exits 4 before mutation.
+
+Ordinary update only tightens existing accepted groups. It preserves recorded
+scope, exclusions, inert payload and modes. Equal acceptance is `unchanged`;
+a no-op does not publish, change generated time or acquire a writer lock.
+Absent or incomparable groups are retained rather than converted into zero.
+
+`--accept-new=channel` is repeatable and additive: only new complete comparable
+measured identities of named selected channels are admitted. Existing caps are
+not tightened by this mode. Exact channel admission follows configuration and
+precedes analysis; undeclared, wildcard, level-qualified, configuration-error
+and `baseline.unused-entry` names refuse with exit 3.
+
+`--record-exclusions` requires exactly the recorded paths even with `--force`.
+It records the complete current exclusion definition and recaptures only groups
+whose sole comparison obstacle is the exclusion change, preserving modes.
+Other entries follow ordinary tightening. Unknown delta, changed generated
+policy without sufficient proof, incomplete analysis or unavailable required
+groups refuses the whole write. The options cannot combine.
+
+Normalized accepted payload is preserved for arbitrary human JSON input.
+Exact unchanged entry bytes are guaranteed only for canonical writer-produced
+entries; arbitrary field order and numeric spelling may be normalized.
+
+`BaselineDocumentReader` acquires and judges the held input before analysis;
+`BaselineLoader` loads semantic entries from that same `BaselineDocument`.
+
+`BoundaryExplanationService` answers one `EffectiveBoundary` per identity.
+Channel declarations are constructor dependencies. Invocation threshold arrays
+travel in `BoundaryThresholdSources`; measured findings, coverage and optional
+symbol locations travel in `BoundaryRunFacts`.
+Its mandatory `Contract\CurrentMeasurement now` is independent of its nullable
+baseline source, configured threshold and inline override. No baseline or an
+inert entry can still have a current measured group. Known valid entries read
+one full `CeilingOutcome`; stored acceptance does not cause a second absence
+classification or synthetic baseline.
+
+The renderer prints separate baseline and now lines. Current states are
+`reported`, `nothing-reported`, `not-measured`, `outside-coverage`,
+`not-compared` and `level-not-reported`. Undeclared subject levels are identified
+before coverage classification, with the currently declared levels. Current
+channel declarations determine shape; an inert payload does not. Unknown
+channels retain an unknown shape. A nonfinite magnitude group retains its total
+count and count without a finite magnitude, but no partial magnitude vector.
+Accepted caps, suppress mode and inert reason remain on the baseline source.
+Unreadable identities are listed separately. Exact subject/repository evidence
+continues to own annotation binding; logical identity never invents a declaration.
 
 ### Rules
 
@@ -367,6 +770,11 @@ frame at the bottom of the screen: a log line, a preflight warning, a report
 note or an uncaught throwable erases the frame, is written permanently, and the
 frame is redrawn beneath it. Progress and detailed logging are therefore both
 shown at `-v`, `-vv` and `-vvv`; neither erases the other.
+`ErrorStream` implements Parallel's `WorkerDiagnosticsInterface` for the
+strategy and its worker-note reader. The container passes the same run-bound
+instance, so child diagnostics cannot enter report stdout or bypass the
+progress frame. The command's memory refusal remains with `OutOfMemoryHint`;
+worker fatal-note state belongs to Parallel.
 
 **Features:**
 - Shown only for projects > 10 files
@@ -422,7 +830,7 @@ bin/qmx hook:uninstall
 ## Definition of Done
 
 - `CheckCommand` works with all options
-- Exit codes are correct (0/1/2 policy, 3 input/configuration, 4 incomplete analysis)
+- Exit codes are correct (0/1/2 policy, 3 input/configuration, 4 incomplete analysis, 5 internal error)
 - Progress bar works for large projects
 - Git integration via --report option
 - Baseline management via options
@@ -433,6 +841,101 @@ bin/qmx hook:uninstall
 - End-to-end integration tests
 
 
+## Prepared rule handoff and listing
+
+The configuration input adapter resolves the complete declared document and
+builds the actual invocation channel snapshot. Measurement commands perform
+RuleEnablementResolver decide → RuleOptionsBuild build → conclude before runtime
+publication. Aliases and rule-opt contribute to one authored CLI layer with the
+same YAML value grammar, duplicate-write refusal, actual option locator and
+complete authored flag/value expression.
+`RuleOptionArgv` preserves repeated tokens before Symfony folds scalar options;
+`AuthoredRuleOptionWrites` retains the bound-input fallback.
+`CliRuleOptionAddressing` judges aliases and addresses through the single
+`RuleOptionSurface` declaration and receives `RuleOptionDocumentFormsInterface`
+for its document interpretation. `ConfigurationInputAdapter` owns ingress
+and delegates diagnostic publication to `ConfigurationDiagnosticsPublisher`.
+The shared document/run doors and mandatory scope remain unchanged.
+
+`rules` reads declared forms and resolves stated selection without build,
+conclude or store commit. It lists accepted root and level options separately
+from aliases and shared framework footer. It retains the effective only filter
+and all tied decisive disabling writers. `Selection source` names actual
+origin.describe() and zero-based layerIndex; repeated cells of a writer collapse,
+while identical displayed text from distinct writers remains distinct.
+`RuleListingPresenter` renders the selected rows, computed-metric footer and
+selection sources together. DoD distinguishes a valid listing from successful
+effective-band preflight.
+
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+### Terminal refusals
+
+The final application and command catch branches use `RefusalPresenter::unhandled()`
+to classify configuration refusals, environment refusals and raw Core environment
+failures. Refusals exit with code 3; unrelated exceptions remain internal errors
+with code 5. Configuration source metadata, including import chains, survives
+the shared `RefusalInterface`. A failure after report publication is written to
+stderr so stdout retains one report document. `Application::forProduct()` shares
+one `ConsoleDiagnostics` with the container and places its lazy construction
+inside the exit ladder. `--version` and a rejected top-level command name never
+build the container. Vendor lists, help and completion retain their resolution
+and can build it. Top-level names require exact spelling and case; suggestions
+never execute another command. The snapshot resolver obtains the same container's
+`ManifestSnapshotControlInterface` at product execution, after working-directory
+selection; a later invocation begins a fresh snapshot.
+
+After the memory hint is registered and bound, coordinator exhaustion uses exit
+4 and the requested JSON envelope or a text diagnostic on stderr. It names the
+failure site, current `memory_limit`, authored limit source (otherwise `php.ini`)
+and remediation. Exhaustion before registration, or a foreign shutdown callback
+that overwrites PHP's last error before this callback runs, can retain PHP's exit
+255. The hint captures its decision before its own target-release callbacks;
+their warnings and exceptions cannot replace the outcome. Fatal OOM can interrupt
+a streamed report, so already published bytes may precede the envelope.
+
+For a stream output, the JSON refusal writer verifies every write and the final
+flush. If stdout cannot accept the envelope, the same terminal diagnostic is
+published on stderr. Partial delivery can leave incomplete JSON on stdout; the
+stderr diagnostic still explains the refusal. Buffered outputs retain their raw
+quiet output semantics.
+
+## Hook publication
+
+Hook commands receive the shared `ErrorStream` as their third constructor
+argument. Core judgement precedes writing and reports the first writable exposure
+for each hook or backup target. An unreadable existing hook refuses with
+environment exit 3 rather than being reported healthy or replaced as foreign.
+Installing a foreign-hook backup preserves its mode; restoring it moves the inode
+back and consumes the backup name. Content publication uses a complete temporary
+sibling. The subject-owned unlink and restore rename repeat entry identities
+immediately beforehand, with a remaining inspection/use race.
+
+`BaselineGenerateCommand` requires the same stream as its fourth argument and
+reports destination exposure before measurement. It passes a prepared target to
+the Baseline writer; parent creation is the caller's responsibility.
+
+`Application::doRun()` judges `QMX_ASCII` before working-directory selection or
+command execution, inside the common refusal ladder. Case-insensitive
+`1/true/yes/on` enables ASCII; `0/false/no/off`, empty and an absent variable
+select Unicode. Other values produce a configuration refusal, including for
+commands that never analyse PHP. ErrorStream defaults to Unicode until the
+mode is bound; rebinding a different mode is an internal lifecycle error.
+
+Prose report publication and all error-stream diagnostics use the closed
+Reporting glyph table. Progress sections transform before Symfony accounts
+for their content. ASCII replaces identical table glyphs occurring in source
+names too; choose Unicode to preserve those. Other Unicode characters remain
+unchanged. Other commands' stdout, including rule listings, directive text,
+selected debug output and DOT, is outside this presentation choice.
+
+### Generated hook revision
+
+`PreCommitHook::isCurrent()` recognizes the current generating template's
+SHA-256 revision. `hook:status` names an owned older revision as outdated,
+suggests `qmx hook:install --force` and retains informational exit 0. Ownership
+recognition and third-party hook handling are unchanged. Analysis codes 1/2
+are measured findings; 3/4/5 carry failure reasons without baseline advice.
+A revision marker does not prove arbitrary edited content equivalent.

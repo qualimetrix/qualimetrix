@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Design\GodClass;
 
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
+use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Rule\AbstractRule;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -41,20 +43,13 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class GodClassRule extends AbstractRule
 {
     public const string NAME = 'design.god-class';
+
+    public const string DESCRIPTION = 'Detects God Classes (overly complex, large, low cohesion)';
     public const string DOCS_PAGE = 'rules/design.md';
 
     public const int REMEDIATION_MINUTES = 120;
 
     public const ChannelShape SHAPE = ChannelShape::Magnitude;
-    public function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public function getDescription(): string
-    {
-        return 'Detects God Classes (overly complex, large, low cohesion)';
-    }
 
     /**
      * @return list<Finding>
@@ -65,10 +60,11 @@ final class GodClassRule extends AbstractRule
             return [];
         }
 
+        $declaration = self::channelDeclarations()[self::NAME];
         $findings = [];
 
-        foreach ($context->metrics->allDeclarations() as $classInfo) {
-            $finding = $this->evaluateClass($context, $classInfo);
+        foreach ($context->metrics->allClassDeclarations() as $classInfo) {
+            $finding = $this->evaluateClass($context, $classInfo, $declaration);
             if ($finding !== null) {
                 $findings[] = $finding;
             }
@@ -77,33 +73,28 @@ final class GodClassRule extends AbstractRule
         return $findings;
     }
 
-    private function evaluateClass(AnalysisContext $context, SymbolInfo $classInfo): ?Finding
+    private function evaluateClass(AnalysisContext $context, SymbolInfo $classInfo, ChannelDeclaration $declaration): ?Finding
     {
         $subject = $classInfo->subject;
-        if ($subject === null || $subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+        if ($subject === null) {
             return null;
         }
-        $metrics = $context->metrics->get($subject->toSymbolPath());
-
-        // Apply `@qmx-threshold` overrides for this class
-        $effectiveOptions = $this->getEffectiveOptions(
-            $context,
-            $this->options,
-            $subject,
-        );
-        \assert($effectiveOptions instanceof GodClassOptions);
-
-        if ($this->isExcluded($effectiveOptions, $metrics)) {
+        $effectiveOptions = null;
+        $results = [];
+        $inputs = (function () use ($subject, $context, &$effectiveOptions, &$results): iterable {
+            yield GateInput::kind('logicalKind', $subject->toSymbolPath()->getType());
+            $metrics = $context->metrics->getSubject($subject);
+            $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $subject);
+            \assert($effectiveOptions instanceof GodClassOptions);
+            yield GateInput::metrics('excludeReadonly', $metrics, option: $effectiveOptions->excludeReadonly);
+            yield GateInput::metrics('minMethods', $metrics, $effectiveOptions->minMethods);
+            $results = GodClassCriteriaEvaluator::evaluate($metrics, $effectiveOptions);
+            yield GateInput::ruleNumber('minCriteria', \count($results), $effectiveOptions->minCriteria);
+        })();
+        if (!$context->admit(self::NAME, new FindingChannel(self::NAME), SymbolLevel::Class_, PopulationIdentity::subject($subject), $declaration, $inputs)) {
             return null;
         }
-
-        $results = GodClassCriteriaEvaluator::evaluate($metrics, $effectiveOptions);
         $evaluableCount = \count($results);
-
-        // Not enough evaluable criteria
-        if ($evaluableCount < $effectiveOptions->minCriteria) {
-            return null;
-        }
 
         $matched = array_values(array_filter(
             $results,
@@ -138,21 +129,6 @@ final class GodClassRule extends AbstractRule
     }
 
     /**
-     * Skips readonly classes (if configured) and classes with too few methods
-     * to be meaningfully assessed for God Class criteria.
-     */
-    private function isExcluded(GodClassOptions $options, MetricBag $metrics): bool
-    {
-        if ($options->excludeReadonly && $metrics->get(MetricName::DESIGN_IS_READONLY) === 1) {
-            return true;
-        }
-
-        $methodCount = (int) ($metrics->get(MetricName::SIZE_METHOD_COUNT) ?? 0);
-
-        return $methodCount < $options->minMethods;
-    }
-
-    /**
      * Error when every evaluable criterion matched, Warning when at least
      * minCriteria matched, null (no finding) otherwise.
      */
@@ -182,9 +158,9 @@ final class GodClassRule extends AbstractRule
      * the (up to 4) evaluable God Class criteria matched — as `metricValue`
      * (see the emission above), not any individual criterion's value. Higher
      * is worse: {@see determineSeverity()} returns `Severity::Error` when
-     * `$matchedCount === $evaluableCount` (line 165, all evaluable criteria
+     * `$matchedCount === $evaluableCount` (all evaluable criteria
      * matched) and `Severity::Warning` when `$matchedCount >=
-     * $options->minCriteria` (line 169) — both branches escalate as the
+     * $options->minCriteria` — both branches escalate as the
      * count grows.
      *
      * @return array<string, ChannelDeclaration>
@@ -192,7 +168,12 @@ final class GodClassRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_)->withGates(
+                self::populationGate('logical-class-kind', self::NAME, SymbolLevel::Class_, 'declaration', self::kindIn('logicalKind', [SymbolType::Class_]), 'Only class declarations are judged.'),
+                self::populationGate('readonly-class', self::NAME, SymbolLevel::Class_, 'declaration', self::flagExcludes('excludeReadonly', MetricName::DESIGN_IS_READONLY, activeWhen: true), 'Readonly classes are excluded by configuration.'),
+                self::populationGate('method-floor', self::NAME, SymbolLevel::Class_, 'declaration', self::keyThreshold('minMethods', [MetricName::SIZE_METHOD_COUNT], '>=', 'minMethods', missing: 'zero'), 'The class has too few methods for god-class judgement.'),
+                self::populationGate('evaluable-criteria', self::NAME, SymbolLevel::Class_, 'declaration', self::ruleValueThreshold('minCriteria', '>=', 'minCriteria'), 'Too few god-class criteria can be evaluated.'),
+            ),
         ];
     }
 

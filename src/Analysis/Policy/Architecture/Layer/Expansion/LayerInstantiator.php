@@ -104,6 +104,8 @@ final class LayerInstantiator
                 implements: $membership->exclude->implements,
                 extends: $membership->exclude->extends,
                 mode: $membership->exclude->mode,
+                memberAttributes: $membership->exclude->memberAttributes,
+                namedTypes: $membership->exclude->namedTypes,
             )
             : null;
 
@@ -118,6 +120,8 @@ final class LayerInstantiator
             extends: $membership->extends,
             mode: $membership->mode,
             exclude: $exclude,
+            memberAttributes: $membership->memberAttributes,
+            namedTypes: $membership->namedTypes,
         );
     }
 
