@@ -16,8 +16,6 @@ use QmxFindingGate\SyntheticTree;
 
 final class SyntheticTreeTest extends TestCase
 {
-    private const string DETACHED_AUTO_MAINTENANCE_VERSION = '2.56.0';
-
     public static function setUpBeforeClass(): void
     {
         require_once \dirname(__DIR__) . '/classes.php';
@@ -66,12 +64,11 @@ final class SyntheticTreeTest extends TestCase
     #[Test]
     public function itLeavesNoDetachedAutomaticMaintenanceInsideTheSyntheticRepository(): void
     {
-        $version = self::gitVersion();
-        if (version_compare($version, self::DETACHED_AUTO_MAINTENANCE_VERSION, '<')) {
+        $version = self::gitVersionOutput();
+        if (self::usesObservedOldSystemAppleGit(\PHP_OS_FAMILY, $version)) {
             self::markTestSkipped(\sprintf(
-                'Git %s predates the detached automatic-maintenance behavior exercised by Git %s and newer.',
-                $version,
-                self::DETACHED_AUTO_MAINTENANCE_VERSION,
+                'Process observation is skipped for the owner-approved old system macOS Git exception: %s.',
+                trim($version),
             ));
         }
 
@@ -97,6 +94,18 @@ final class SyntheticTreeTest extends TestCase
             SyntheticTree::remove($root);
         }
     }
+
+    #[Test]
+    public function itLimitsTheProcessObservationExceptionToObservedOldSystemAppleGit(): void
+    {
+        self::assertTrue(self::usesObservedOldSystemAppleGit('Darwin', "git version 2.54.0 (Apple Git-157)\n"));
+        self::assertFalse(self::usesObservedOldSystemAppleGit('Linux', "git version 2.54.0 (Apple Git-157)\n"));
+        self::assertFalse(self::usesObservedOldSystemAppleGit('Linux', "git version 2.55.0\n"));
+        self::assertFalse(self::usesObservedOldSystemAppleGit('Darwin', "git version 2.55.0 (Apple Git-999)\n"));
+        self::assertFalse(self::usesObservedOldSystemAppleGit('Darwin', "git version 2.54.0.custom (Apple Git-157)\n"));
+        self::assertFalse(self::usesObservedOldSystemAppleGit('Darwin', "wrapper: git version 2.54.0 (Apple Git-157)\n"));
+    }
+
     #[Test]
     public function itPublishesOneSortedSarifCatalogEntryPerCode(): void
     {
@@ -358,13 +367,19 @@ final class SyntheticTreeTest extends TestCase
         return $answer['stdout'];
     }
 
-    private static function gitVersion(): string
+    private static function gitVersionOutput(): string
     {
         $result = Process::run(['git', '--version'], __DIR__);
         self::assertSame(0, $result['exit'], $result['stderr']);
-        self::assertSame(1, preg_match('/\bgit version ([0-9]+\.[0-9]+\.[0-9]+)/', $result['stdout'], $matches));
+        self::assertNotSame('', trim($result['stdout']));
 
-        return $matches[1];
+        return $result['stdout'];
+    }
+
+    private static function usesObservedOldSystemAppleGit(string $osFamily, string $versionOutput): bool
+    {
+        return $osFamily === 'Darwin'
+            && preg_match('/\Agit version 2\.54\.[0-9]+ \(Apple Git-[^)]+\)\R?\z/', $versionOutput) === 1;
     }
 
     /** @return array{list<string>, list<string>} */
