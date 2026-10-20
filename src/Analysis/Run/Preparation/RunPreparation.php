@@ -5,20 +5,25 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Run\Preparation;
 
 use LogicException;
-
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
+use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
-
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\SkippedEntry;
@@ -28,6 +33,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeRule;
 use Qualimetrix\Analysis\Run\InlineDirectiveRun;
+use Qualimetrix\Analysis\Run\Measurement\CompletedMeasurements;
 use Qualimetrix\Analysis\Run\Measurement\RunMeasurement;
 use Qualimetrix\Analysis\Run\RuleProducerPreparation;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -38,6 +44,7 @@ use Qualimetrix\Core\Symbol\ClassNameSpelling;
 use Qualimetrix\Core\Symbol\MixedSpelling;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitCompositionFailure;
+use SplFileInfo;
 
 /**
  * Prepares one measured execution context shared by normal reporting and directive audit.
@@ -80,8 +87,6 @@ final class RunPreparation
      * nothing about a directive.
      *
      * @return array{PreparedRun, \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement}
-     *
-     * @qmx-threshold maintainability.mi 34.016537 -- One preparation coordinates discovery, retry after trait-composition failure and the measured rule context. Reporting and rule execution were separated; this finite floor keeps further phase complexity visible.
      */
     public function prepare(RunConfiguration $configuration): array
     {
@@ -96,114 +101,29 @@ final class RunPreparation
         ]);
 
         $populationPublication = $this->rulePublication->publication();
-        // Phase 1: Discovery
-        $profiler->start('discovery', 'pipeline');
-        $discoveredFiles = $this->projectFiles->discover($configuration);
-        $measuredScope = $configuration->projectScope->withDiscoveredFiles($discoveredFiles);
-        $discoveryPopulation = $this->unmatchedExcludeAudit->population(
-            $measuredScope->judgement(),
-            $populationPublication,
-            new FindingChannel(UnmatchedExcludeRule::NAME),
-            UnmatchedExcludeRule::channelDeclarations()[UnmatchedExcludeRule::NAME],
-        );
-        $files = $discoveredFiles->eligibleFiles;
-        $generatedExcludedFiles = $discoveredFiles->generatedExcludedFiles;
-
-        $eligiblePaths = [];
-        $publishedByInput = [];
-        foreach ($files as $file) {
-            $input = PathFactory::fromCliArgument($file->getPathname(), $configuration->projectRoot);
-            $published = PathFactory::published($input, $configuration->projectRoot);
-            $eligiblePaths[] = $published;
-            $publishedByInput[$input->value()] = $published;
-        }
-        $skippedFailures = array_map(
-            static fn(SkippedEntry $skip): AnalysisFailure => new AnalysisFailure(
-                $skip->relativeTo($configuration->projectRoot),
-                $skip->reason,
-                $skip->detail,
-            ),
-            $discoveredFiles->skippedEntries,
-        );
-
-        $profiler->stop('discovery');
-
-        $this->logger->info('Discovered files', ['count' => $discoveredFiles->discoveredCount]);
-
-        if ($generatedExcludedFiles !== []) {
-            $this->logger->info('Skipped @generated files', ['count' => \count($generatedExcludedFiles)]);
-        }
-
-        $compositionFailures = [];
-        while (true) {
-            $repository = $this->runMeasurement->startRepository();
-            try {
-                // Phase 2: Collection (metrics + dependencies in single AST traversal)
-                $phaseStartTime = hrtime(true);
-                $this->logger->debug('Starting collection phase', ['files' => \count($files)]);
-
-                $profiler->start('collection', 'pipeline');
-                $collectionResult = $this->collectionOrchestrator->collect($files, $repository, $configuration->projectRoot);
-                $profiler->stop('collection');
-
-                $this->logPhaseCompleted('Collection', $phaseStartTime, [
-                    'processed' => $collectionResult->filesAnalyzed,
-                    'errors' => $collectionResult->filesSkipped,
-                    'dependencies' => \count($collectionResult->dependencies),
-                ]);
-
-                $filesAnalyzed = $collectionResult->filesAnalyzed;
-                $analyzedFiles = $collectionResult->analyzedFiles;
-                $collectionFailures = [...$collectionResult->failures, ...$compositionFailures];
-                $suppressions = $collectionResult->suppressions;
-                $thresholdOverrides = $collectionResult->thresholdOverrides;
-                $thresholdDiagnostics = $collectionResult->thresholdDiagnostics;
-
-                // Phase 2.5: Build dependency graph from collected dependencies.
-                $this->logger->debug('Building dependency graph', [
-                    'dependencies' => \count($collectionResult->dependencies),
-                ]);
-                $profiler->start('dependency', 'pipeline');
-                $graphBuild = $this->graphBuilder->build(
-                    $collectionResult->dependencies,
-                    $collectionResult->classLikeDeclarations,
-                );
-                unset($collectionResult);
-                $graph = $graphBuild->graph;
-                $profiler->stop('dependency');
-                $this->reportMixedSpellings([...$repository->mixedSpellings(), ...$graphBuild->mixedSpellings]);
-
-                // Phase 2.6: prepare Architecture-owned layer policy from this run's
-                // graph and class universe. Run selects the producer rule through its
-                // public contract and never receives Architecture state.
-                $this->ruleProducerPreparation->prepareArchitecture(
-                    $graph,
-                    self::collectClassPaths($repository),
-                    $profiler,
-                );
-
-                // Phase 3: Measurement aggregation and global reaggregation.
-                $measurements = $this->runMeasurement->complete($repository, $graph, $filesAnalyzed);
-                $namespaceTree = $measurements->namespaceTree;
-                $computedMetricEvaluation = $measurements->computedMetricEvaluation;
-                break;
-            } catch (TraitCompositionFailure $failure) {
-                $declaration = $failure->declaration;
-                if ($declaration === null) {
-                    throw $failure;
-                }
-                $remaining = array_values(array_filter($files, static fn($file): bool => !$publishedByInput[PathFactory::fromCliArgument($file->getPathname(), $configuration->projectRoot)->value()]->equals($declaration->file)));
-                if (\count($remaining) === \count($files)) {
-                    throw $failure;
-                }
-                $compositionFailures[] = FileProcessingResult::failure(
-                    $declaration->file,
-                    $declaration->logical->toString() . ': ' . $failure->getMessage(),
-                    FileProcessingFailureKind::Parse,
-                );
-                $files = $remaining;
-            }
-        }
+        [
+            $measuredScope,
+            $discoveryPopulation,
+            $files,
+            $eligiblePaths,
+            $generatedExcludedFiles,
+            $publishedByInput,
+            $skippedFailures,
+            $namedExcluded,
+        ] = $this->discover($configuration, $populationPublication);
+        [
+            $repository,
+            $graph,
+            $measurements,
+            $analyzedFiles,
+            $collectionFailures,
+            $suppressions,
+            $thresholdOverrides,
+            $thresholdDiagnostics,
+            $files,
+        ] = $this->collectWithTraitRetry($files, $publishedByInput, $configuration);
+        $namespaceTree = $measurements->namespaceTree;
+        $computedMetricEvaluation = $measurements->computedMetricEvaluation;
 
         // Phase 5: Circular dependency preparation.
         $this->ruleProducerPreparation->prepareCircularDependencies(
@@ -244,7 +164,7 @@ final class RunPreparation
             $analyzedFiles,
             $collectionFailures,
             $skippedFailures,
-            $discoveredFiles->namedExcluded,
+            $namedExcluded,
             $inspectionFailures,
         );
         $subjectCoverage = SubjectCoverageFacts::fromMeasured(
@@ -266,6 +186,164 @@ final class RunPreparation
             discoveryPopulation: $discoveryPopulation,
             populationPublication: $populationPublication,
         ), $measuredScope];
+    }
+
+    /**
+     * @return array{
+     *     ProjectScopeMeasurement,
+     *     JudgedPopulation,
+     *     list<SplFileInfo>,
+     *     list<RelativePath>,
+     *     list<RelativePath>,
+     *     array<string, RelativePath>,
+     *     list<AnalysisFailure>,
+     *     list<RelativePath>
+     * }
+     */
+    private function discover(RunConfiguration $configuration, ChannelPublication $populationPublication): array
+    {
+        $this->profiler->start('discovery', 'pipeline');
+        $discoveredFiles = $this->projectFiles->discover($configuration);
+        $measuredScope = $configuration->projectScope->withDiscoveredFiles($discoveredFiles);
+        $discoveryPopulation = $this->unmatchedExcludeAudit->population(
+            $measuredScope->judgement(),
+            $populationPublication,
+            new FindingChannel(UnmatchedExcludeRule::NAME),
+            UnmatchedExcludeRule::channelDeclarations()[UnmatchedExcludeRule::NAME],
+        );
+
+        $eligiblePaths = [];
+        $publishedByInput = [];
+        foreach ($discoveredFiles->eligibleFiles as $file) {
+            $input = PathFactory::fromCliArgument($file->getPathname(), $configuration->projectRoot);
+            $published = PathFactory::published($input, $configuration->projectRoot);
+            $eligiblePaths[] = $published;
+            $publishedByInput[$input->value()] = $published;
+        }
+        $skippedFailures = array_map(
+            static fn(SkippedEntry $skip): AnalysisFailure => new AnalysisFailure(
+                $skip->relativeTo($configuration->projectRoot),
+                $skip->reason,
+                $skip->detail,
+            ),
+            $discoveredFiles->skippedEntries,
+        );
+
+        $this->profiler->stop('discovery');
+        $this->logger->info('Discovered files', ['count' => $discoveredFiles->discoveredCount]);
+        if ($discoveredFiles->generatedExcludedFiles !== []) {
+            $this->logger->info('Skipped @generated files', ['count' => \count($discoveredFiles->generatedExcludedFiles)]);
+        }
+
+        return [
+            $measuredScope,
+            $discoveryPopulation,
+            $discoveredFiles->eligibleFiles,
+            $eligiblePaths,
+            $discoveredFiles->generatedExcludedFiles,
+            $publishedByInput,
+            $skippedFailures,
+            $discoveredFiles->namedExcluded,
+        ];
+    }
+
+    /**
+     * @param list<SplFileInfo> $files
+     * @param array<string, RelativePath> $publishedByInput
+     *
+     * @return array{
+     *     MetricRepositoryInterface,
+     *     DependencyGraphInterface,
+     *     CompletedMeasurements,
+     *     list<RelativePath>,
+     *     list<FileProcessingResult>,
+     *     array<string, list<Suppression>>,
+     *     array<string, list<ThresholdOverride>>,
+     *     array<string, list<ThresholdDiagnostic>>,
+     *     list<SplFileInfo>
+     * }
+     */
+    private function collectWithTraitRetry(array $files, array $publishedByInput, RunConfiguration $configuration): array
+    {
+        $compositionFailures = [];
+        while (true) {
+            $repository = $this->runMeasurement->startRepository();
+            try {
+                $phaseStartTime = hrtime(true);
+                $this->logger->debug('Starting collection phase', ['files' => \count($files)]);
+
+                $this->profiler->start('collection', 'pipeline');
+                $collectionResult = $this->collectionOrchestrator->collect($files, $repository, $configuration->projectRoot);
+                $this->profiler->stop('collection');
+
+                $this->logPhaseCompleted('Collection', $phaseStartTime, [
+                    'processed' => $collectionResult->filesAnalyzed,
+                    'errors' => $collectionResult->filesSkipped,
+                    'dependencies' => \count($collectionResult->dependencies),
+                ]);
+
+                $this->logger->debug('Building dependency graph', [
+                    'dependencies' => \count($collectionResult->dependencies),
+                ]);
+                $this->profiler->start('dependency', 'pipeline');
+                $graphBuild = $this->graphBuilder->build(
+                    $collectionResult->dependencies,
+                    $collectionResult->classLikeDeclarations,
+                );
+                $graph = $graphBuild->graph;
+                $this->profiler->stop('dependency');
+                $this->reportMixedSpellings([...$repository->mixedSpellings(), ...$graphBuild->mixedSpellings]);
+
+                $this->ruleProducerPreparation->prepareArchitecture(
+                    $graph,
+                    self::collectClassPaths($repository),
+                    $this->profiler,
+                );
+
+                $filesAnalyzed = $collectionResult->filesAnalyzed;
+                $analyzedFiles = $collectionResult->analyzedFiles;
+                $collectionFailures = [...$collectionResult->failures, ...$compositionFailures];
+                $suppressions = $collectionResult->suppressions;
+                $thresholdOverrides = $collectionResult->thresholdOverrides;
+                $thresholdDiagnostics = $collectionResult->thresholdDiagnostics;
+                unset($collectionResult);
+
+                $measurements = $this->runMeasurement->complete($repository, $graph, $filesAnalyzed);
+
+                return [
+                    $repository,
+                    $graph,
+                    $measurements,
+                    $analyzedFiles,
+                    $collectionFailures,
+                    $suppressions,
+                    $thresholdOverrides,
+                    $thresholdDiagnostics,
+                    $files,
+                ];
+            } catch (TraitCompositionFailure $failure) {
+                $declaration = $failure->declaration;
+                if ($declaration === null) {
+                    throw $failure;
+                }
+                $remaining = array_values(array_filter(
+                    $files,
+                    static fn(SplFileInfo $file): bool => !$publishedByInput[PathFactory::fromCliArgument(
+                        $file->getPathname(),
+                        $configuration->projectRoot,
+                    )->value()]->equals($declaration->file),
+                ));
+                if (\count($remaining) === \count($files)) {
+                    throw $failure;
+                }
+                $compositionFailures[] = FileProcessingResult::failure(
+                    $declaration->file,
+                    $declaration->logical->toString() . ': ' . $failure->getMessage(),
+                    FileProcessingFailureKind::Parse,
+                );
+                $files = $remaining;
+            }
+        }
     }
 
     private function executeRules(AnalysisContext $context): \Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult

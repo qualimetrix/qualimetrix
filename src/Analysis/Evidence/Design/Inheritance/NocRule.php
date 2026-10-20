@@ -119,7 +119,7 @@ final class NocRule extends AbstractRule
                 SymbolLevel::Class_,
             )->withGates(
                 self::populationGate('logical-class-kind', self::NAME, SymbolLevel::Class_, 'declaration', self::kindIn('logicalKind', [SymbolType::Class_]), 'Only class declarations are judged.'),
-                self::populationGate('noc-present', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('noc-present', [MetricName::DESIGN_NOC], absenceBoundaries: [MetricName::DESIGN_IS_INTERFACE => 1]), 'The direct-child count was not published.'),
+                self::populationGate('noc-present', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('noc-present', [MetricName::DESIGN_NOC], absenceBoundaries: [MetricName::DESIGN_IS_INTERFACE => 1, MetricName::DESIGN_IS_TRAIT => 1, MetricName::DESIGN_IS_ENUM => 1]), 'The direct-child count was not published.'),
                 self::populationGate('noc-positive', self::NAME, SymbolLevel::Class_, 'declaration', self::keyThreshold('noc-positive', [MetricName::DESIGN_NOC], '>', 0, nonnegative: true), 'A class with no children is outside the NOC population.'),
             ),
         ];

@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
@@ -79,6 +80,8 @@ final class MethodCountCollector extends AbstractCollector implements Declaratio
             MetricName::DESIGN_IS_DATA_CLASS,
             MetricName::DESIGN_IS_ABSTRACT,
             MetricName::DESIGN_IS_INTERFACE,
+            MetricName::DESIGN_IS_TRAIT,
+            MetricName::DESIGN_IS_ENUM,
             MetricName::DESIGN_WOC,
         ];
     }
@@ -148,7 +151,9 @@ final class MethodCountCollector extends AbstractCollector implements Declaratio
             MetricName::DESIGN_IS_PROMOTED_PROPERTIES_ONLY => $isPromotedOnly ? 1 : 0,
             MetricName::DESIGN_IS_DATA_CLASS => $metrics->isDataClass() ? 1 : 0,
             MetricName::DESIGN_IS_ABSTRACT => $metrics->isAbstract ? 1 : 0,
-            MetricName::DESIGN_IS_INTERFACE => $metrics->isInterface ? 1 : 0,
+            MetricName::DESIGN_IS_INTERFACE => $metrics->classType === ClassType::Interface_ ? 1 : 0,
+            MetricName::DESIGN_IS_TRAIT => $metrics->classType === ClassType::Trait_ ? 1 : 0,
+            MetricName::DESIGN_IS_ENUM => $metrics->classType === ClassType::Enum_ ? 1 : 0,
             MetricName::DESIGN_WOC => $metrics->woc(),
         ];
     }
@@ -270,6 +275,22 @@ final class MethodCountCollector extends AbstractCollector implements Declaratio
             ),
             new MetricDefinition(
                 name: MetricName::DESIGN_IS_INTERFACE,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: [
+                    SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
+                    SymbolLevel::Project->value => [AggregationStrategy::Sum],
+                ],
+            ),
+            new MetricDefinition(
+                name: MetricName::DESIGN_IS_TRAIT,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: [
+                    SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
+                    SymbolLevel::Project->value => [AggregationStrategy::Sum],
+                ],
+            ),
+            new MetricDefinition(
+                name: MetricName::DESIGN_IS_ENUM,
                 collectedAt: SymbolLevel::Class_,
                 aggregations: [
                     SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],

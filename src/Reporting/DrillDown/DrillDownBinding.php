@@ -115,6 +115,19 @@ final readonly class DrillDownBinding
         return $declarations;
     }
 
+    public function classDeclarationFileCount(string $fqcn, MetricRepositoryInterface $metrics): int
+    {
+        $files = [];
+        foreach ($metrics->allClassDeclarations() as $info) {
+            $file = $info->subject?->declarationPath()?->file;
+            if ($info->symbolPath->toString() === $fqcn && $file !== null) {
+                $files[$file->value()] = true;
+            }
+        }
+
+        return \count($files);
+    }
+
     /**
      * Size of the universe a class value is offered, for the refusal to name.
      */

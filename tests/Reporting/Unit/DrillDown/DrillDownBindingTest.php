@@ -181,6 +181,31 @@ final class DrillDownBindingTest extends TestCase
         self::assertSame(2, (new DrillDownBinding())->classUniverseSize($this->repository()));
     }
 
+    #[Test]
+    public function itCountsDistinctDeclarationFilesFromExactIdentity(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        foreach ([
+            ['src/Same.php', 0],
+            ['src/Same.php', 1],
+            ['src/Other.php', 0],
+        ] as [$file, $rank]) {
+            $path = RelativePath::fromString($file);
+            $repository->addSubject(
+                MetricSubject::declaration(DeclarationPath::of(
+                    SymbolPath::forClass('Demo', 'Repeated'),
+                    $path,
+                    DeclarationOrdinal::fromRank($rank),
+                )),
+                new MetricBag(),
+                null,
+                1,
+            );
+        }
+
+        self::assertSame(2, (new DrillDownBinding())->classDeclarationFileCount('Demo\\Repeated', $repository));
+    }
+
     /**
      * A canonical name that no filter ever compares must not count as a
      * binding.

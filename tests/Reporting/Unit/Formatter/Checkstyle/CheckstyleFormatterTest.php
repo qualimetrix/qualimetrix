@@ -8,11 +8,16 @@ use DOMDocument;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
 use Qualimetrix\Reporting\Contract\Formatting\GroupBy;
@@ -315,6 +320,19 @@ final class CheckstyleFormatterTest extends TestCase
     #[Test]
     public function itPublishesEveryFindingWithTruthfulAggregateAnchors(): void
     {
+        $metrics = new InMemoryMetricRepository();
+        $metrics->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\One', 'First'), RelativePath::fromString('src/Domain/First.php'), DeclarationOrdinal::fromRank(0))),
+            new MetricBag(),
+            RelativePath::fromString('src/Domain/First.php'),
+            1,
+        );
+        $metrics->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Nested', 'Second'), RelativePath::fromString('src/Domain/Nested/Second.php'), DeclarationOrdinal::fromRank(0))),
+            new MetricBag(),
+            RelativePath::fromString('src/Domain/Nested/Second.php'),
+            1,
+        );
         $fileless = [];
         foreach ([SymbolPath::forNamespace('App'), SymbolPath::forNamespace(''), SymbolPath::forProject()] as $symbol) {
             $fileless[] = self::finding(
@@ -328,7 +346,7 @@ final class CheckstyleFormatterTest extends TestCase
         }
 
         foreach ([true, false] as $includeSource) {
-            $builder = ReportBuilder::create()->addFindings($fileless);
+            $builder = ReportBuilder::create()->addFindings($fileless)->metrics($metrics);
             if ($includeSource) {
                 $builder->addFinding(self::finding(
                     location: new Location(RelativePath::fromString('src/A.php'), 12),
@@ -343,11 +361,12 @@ final class CheckstyleFormatterTest extends TestCase
             $xml = $this->parseXml($output);
             $files = $xml->getElementsByTagName('file');
             $errors = $xml->getElementsByTagName('error');
-            self::assertSame($includeSource ? 2 : 1, $files->length);
-            self::assertSame('.', $files->item(0)?->getAttribute('name'));
+            self::assertSame($includeSource ? 3 : 2, $files->length);
+            self::assertSame('src/Domain', $files->item(0)?->getAttribute('name'));
+            self::assertSame('.', $files->item(1)?->getAttribute('name'));
             self::assertSame($includeSource ? 4 : 3, $errors->length);
             if ($includeSource) {
-                $file = $files->item(1);
+                $file = $files->item(2);
                 $error = $errors->item(3);
                 self::assertNotNull($file);
                 self::assertNotNull($error);

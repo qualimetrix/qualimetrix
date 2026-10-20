@@ -12,12 +12,15 @@ use PhpParser\Node\Param;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\ClassMethod;
+use PhpParser\Node\Stmt\Enum_;
 use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\Interface_;
 use PhpParser\Node\Stmt\Property;
 use PhpParser\Node\Stmt\Return_;
+use PhpParser\Node\Stmt\Trait_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
+use Qualimetrix\Core\Symbol\ClassType;
 
 /**
  * Visitor for counting methods and properties in classes by visibility.
@@ -131,9 +134,14 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
             className: $className,
             line: $node->getStartLine(),
             startFilePos: $position,
+            classType: match (true) {
+                $node instanceof Interface_ => ClassType::Interface_,
+                $node instanceof Trait_ => ClassType::Trait_,
+                $node instanceof Enum_ => ClassType::Enum_,
+                default => ClassType::Class_,
+            },
         );
         $this->classMetrics[$position] = $metrics;
-        $metrics->isInterface = $node instanceof Interface_;
 
         if ($node instanceof Class_) {
             $metrics->isReadonly = $node->isReadonly();
