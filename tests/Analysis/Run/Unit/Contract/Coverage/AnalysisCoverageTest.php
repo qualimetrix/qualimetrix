@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Run\Unit\Pipeline;
+namespace Qualimetrix\Tests\Analysis\Run\Unit\Contract\Coverage;
 
 use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;

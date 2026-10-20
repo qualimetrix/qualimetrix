@@ -1795,6 +1795,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Integration\ConfigurationPipelineIntegrationTest::itRetainsSourcesAndExposesTheirResolvedAndDiscoveryOutputs
  - Qualimetrix\Tests\Analysis\Configuration\Integration\DocumentRootsIntegrationTest::itAcceptsAnIntegerMemoryLimit
  - Qualimetrix\Tests\Analysis\Configuration\Integration\DocumentRootsIntegrationTest::itJudgesRegisteredSectionsInAuthoredOrder
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\DocumentRootsIntegrationTest::itKeepsTheFalseMigrationHintToTheRetiredValue"empty collection"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\DocumentRootsIntegrationTest::itKeepsTheFalseMigrationHintToTheRetiredValue"float"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\DocumentRootsIntegrationTest::itKeepsTheFalseMigrationHintToTheRetiredValue"integer"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\DocumentRootsIntegrationTest::itKeepsTheFalseMigrationHintToTheRetiredValue"map"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\DocumentRootsIntegrationTest::itKeepsTheFalseMigrationHintToTheRetiredValue"true"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\DocumentRootsIntegrationTest::itKeepsTheFalseMigrationHintToTheRetiredValue"zero"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\DocumentRootsIntegrationTest::itKeepsTheIntentHintToTheFormItExplains
  - Qualimetrix\Tests\Analysis\Configuration\Integration\DocumentRootsIntegrationTest::itNamesTheOptionOfAMalformedCommandLineValue
  - Qualimetrix\Tests\Analysis\Configuration\Integration\DocumentRootsIntegrationTest::itNamesThePresetThatWroteAMalformedValue
@@ -6713,9 +6719,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationErrorClassificationTopologyTest::itFailsTheBuildWhenAChannelIsDeclaredByBothProducerKinds
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationErrorClassificationTopologyTest::itFailsTheBuildWhenAValidatorNamesAProducerThatIsNotARule
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationErrorClassificationTopologyTest::itStampsTheAssemblyWithExactlyWhatAValidatorDeclares
- - Qualimetrix\Tests\Analysis\Finding\Integration\Contract\Selection\ContainerRuleNameValidationTest::itAcceptsARegisteredRuleName
- - Qualimetrix\Tests\Analysis\Finding\Integration\Contract\Selection\ContainerRuleNameValidationTest::itRefusesAnUnknownRuleNameInAPreset
- - Qualimetrix\Tests\Analysis\Finding\Integration\Contract\Selection\ContainerRuleNameValidationTest::itRefusesAnUnknownRuleNameInTheConfigurationFile
  - Qualimetrix\Tests\Analysis\Finding\Integration\HierarchicalLevelActivityTest::itRecordsEveryLevelAsNotRunWhenAllOfThemAreSwitchedOff"complexity.ccn"
  - Qualimetrix\Tests\Analysis\Finding\Integration\HierarchicalLevelActivityTest::itRecordsEveryLevelAsNotRunWhenAllOfThemAreSwitchedOff"complexity.cognitive"
  - Qualimetrix\Tests\Analysis\Finding\Integration\HierarchicalLevelActivityTest::itRecordsEveryLevelAsNotRunWhenAllOfThemAreSwitchedOff"complexity.npath"
@@ -6726,6 +6729,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\HierarchicalLevelActivityTest::itRecordsOnlyTheLevelItsConfigurationSwitchedOff"complexity.npath"
  - Qualimetrix\Tests\Analysis\Finding\Integration\HierarchicalLevelActivityTest::itRecordsOnlyTheLevelItsConfigurationSwitchedOff"coupling.cbo"
  - Qualimetrix\Tests\Analysis\Finding\Integration\HierarchicalLevelActivityTest::itRecordsOnlyTheLevelItsConfigurationSwitchedOff"coupling.instability"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleConfiguration\Selection\ContainerRuleNameValidationTest::itAcceptsARegisteredRuleName
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleConfiguration\Selection\ContainerRuleNameValidationTest::itRefusesAnUnknownRuleNameInAPreset
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleConfiguration\Selection\ContainerRuleNameValidationTest::itRefusesAnUnknownRuleNameInTheConfigurationFile
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesErrorViaDedicatedCliFlag
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesErrorViaRuleOptToOneDimensionOnly
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesVoErrorViaConfigFileKebabKey
@@ -7145,37 +7151,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule\OptionLanguage\ThresholdParserTest::itUsesTheDefaultErrorWhenOnlyWarningIsConfigured
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule\OptionLanguage\ThresholdParserTest::itUsesTheDefaultWarningWhenOnlyTheErrorKeyIsConfigured
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule\OptionLanguage\ThresholdParserTest::itUsesTheThresholdKeyForBothWarningAndError
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\ChannelExclusionKeyValidatorTest::itAcceptsAWildcardKeyWhoseOwnRuleReportsAtTheLevel
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\ChannelExclusionKeyValidatorTest::itAcceptsTheNamespaceLevelAndTheLevelFreeSpelling
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\ChannelExclusionKeyValidatorTest::itRefusesALevelFreeKeyNamingAnotherRulesChannel
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\ChannelExclusionKeyValidatorTest::itRefusesALevelTheOptionNeverAsksAbout
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\ChannelExclusionKeyValidatorTest::itRefusesAWildcardKeyWhoseLevelAndProductionWitnessesAreDifferentChannels
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\ChannelExclusionKeyValidatorTest::itRefusesTheRetiredPairBeforeTheLevel
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementRefusalTest::itNamesBothEqualRankDisableWritersBehindAnEmptyFilter
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementRefusalTest::itNamesTheDefaultMutedModeWhenItMakesTheOnlyFilterEmpty
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementRefusalTest::itNamesTheUpperExplicitEnableAndLowerFilterWriters
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementRefusalTest::itRefusesADeadFilterSelectorBesideALiveSelector
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementRefusalTest::itRefusesALowerLayerContradictionEvenWhenAnUpperLayerOverridesIt
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementRefusalTest::itRefusesAnExplicitEnableExcludedByItsLayerFilter
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementRefusalTest::itRefusesAnOnlyFilterWithNoLiveSelectableCell
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementRefusalTest::itRefusesContradictoryStrongestStatementsWithinAnAuthoredLayer
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementRefusalTest::itRefusesExplicitEnableOfAnAuthoredIgnoreModeWithBothWriters
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementRoleTest::itAdmitsAnExplicitlyEnabledAddressedDiagnosticOutsideTheDirectFilter
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementRoleTest::itCountsADirectlyFilteredDiagnosticCellAsANonemptySelection
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementRoleTest::itKeepsASyntheticFilterExemptCellLiveOutsideTheDirectFilter
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameValidatorTest::itAcceptsARuleNameThatExactlyMatchesAKnownRule
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameValidatorTest::itAcceptsAnEmptyRulesSection
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameValidatorTest::itAcceptsConfigWithoutARulesSection
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameValidatorTest::itNamesTheSourceFileInTheExceptionForAnUnknownRule
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameValidatorTest::itOmitsASuggestionWhenNoKnownRuleIsClose
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameValidatorTest::itRefusesTheFirstUnknownOwnerBeforeInspectingTheNext
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameValidatorTest::itRejectsAGroupKeyThatNamesNoRule
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameValidatorTest::itRejectsAKeyRefiningARuleNameWithAChannelSuffix
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameValidatorTest::itRejectsAWildcardKey
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameValidatorTest::itRejectsAnUnknownRuleName
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameValidatorTest::itReportsEachUnknownRuleNameSeparately
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameValidatorTest::itSuggestsACloseMatchForAMisspelledRuleName
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameValidatorTest::itSuggestsTheRenamedRuleByItsSharedLeafNotByRawDistance
  - Qualimetrix\Tests\Analysis\Finding\Unit\Exclusion\ConfiguredSuppressionTest::itReadsNothingRatherThanThrowingOnAMalformedValue
  - Qualimetrix\Tests\Analysis\Finding\Unit\Exclusion\ConfiguredSuppressionTest::itReadsTheRawChannelMapNeededByInputValidation
  - Qualimetrix\Tests\Analysis\Finding\Unit\Exclusion\ConfiguredSuppressionTest::itRefusesToTakeAKeyThatIsNotASuppressionOption
@@ -7308,6 +7283,21 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RulesSectionTest::itRefusesAnUnsupportedSectionRoot
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RulesSectionTest::itRefusesFrameworkSuppressionInsideALevel
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RulesSectionTest::itRefusesOverlappingAuthoredSpreadingPathsInTheSameLayer
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\ChannelExclusionKeyValidatorTest::itAcceptsAWildcardKeyWhoseOwnRuleReportsAtTheLevel
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\ChannelExclusionKeyValidatorTest::itAcceptsTheNamespaceLevelAndTheLevelFreeSpelling
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\ChannelExclusionKeyValidatorTest::itRefusesALevelFreeKeyNamingAnotherRulesChannel
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\ChannelExclusionKeyValidatorTest::itRefusesALevelTheOptionNeverAsksAbout
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\ChannelExclusionKeyValidatorTest::itRefusesAWildcardKeyWhoseLevelAndProductionWitnessesAreDifferentChannels
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\ChannelExclusionKeyValidatorTest::itRefusesTheRetiredPairBeforeTheLevel
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleEnablementRefusalTest::itNamesBothEqualRankDisableWritersBehindAnEmptyFilter
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleEnablementRefusalTest::itNamesTheDefaultMutedModeWhenItMakesTheOnlyFilterEmpty
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleEnablementRefusalTest::itNamesTheUpperExplicitEnableAndLowerFilterWriters
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleEnablementRefusalTest::itRefusesADeadFilterSelectorBesideALiveSelector
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleEnablementRefusalTest::itRefusesALowerLayerContradictionEvenWhenAnUpperLayerOverridesIt
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleEnablementRefusalTest::itRefusesAnExplicitEnableExcludedByItsLayerFilter
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleEnablementRefusalTest::itRefusesAnOnlyFilterWithNoLiveSelectableCell
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleEnablementRefusalTest::itRefusesContradictoryStrongestStatementsWithinAnAuthoredLayer
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleEnablementRefusalTest::itRefusesExplicitEnableOfAnAuthoredIgnoreModeWithBothWriters
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleEnablementResolverTest::itAttributesFinalModeActivityToTheUpperWrittenLayer
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleEnablementResolverTest::itCarriesTheNarrowedGroupDiagnosticWithEveryIndexedWriter
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleEnablementResolverTest::itClearsTheOnlyFilterWhenAHighLayerWritesAnEmptyList
@@ -7320,9 +7310,25 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleEnablementResolverTest::itLetsTheHigherLayerOutrankAProblemFromTheMoreSpecificLowerLayer
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleEnablementResolverTest::itNamesTheWinningOnlyFilterForANotRunProducer
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleEnablementResolverTest::itUsesTheMoreSpecificStatementInsideOneLayer
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleEnablementRoleTest::itAdmitsAnExplicitlyEnabledAddressedDiagnosticOutsideTheDirectFilter
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleEnablementRoleTest::itCountsADirectlyFilteredDiagnosticCellAsANonemptySelection
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleEnablementRoleTest::itKeepsASyntheticFilterExemptCellLiveOutsideTheDirectFilter
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleNameJudgeTest::itDistinguishesTheComputedProducerFromItsDeclaredDescendants
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleNameJudgeTest::itRefusesBareGroupsAndDifferentlyNamedProducerLevelAliases
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleNameJudgeTest::itRequiresANamespaceWitnessInTheInvocationDefinitions
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleNameValidatorTest::itAcceptsARuleNameThatExactlyMatchesAKnownRule
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleNameValidatorTest::itAcceptsAnEmptyRulesSection
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleNameValidatorTest::itAcceptsConfigWithoutARulesSection
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleNameValidatorTest::itNamesTheSourceFileInTheExceptionForAnUnknownRule
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleNameValidatorTest::itOmitsASuggestionWhenNoKnownRuleIsClose
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleNameValidatorTest::itRefusesTheFirstUnknownOwnerBeforeInspectingTheNext
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleNameValidatorTest::itRejectsAGroupKeyThatNamesNoRule
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleNameValidatorTest::itRejectsAKeyRefiningARuleNameWithAChannelSuffix
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleNameValidatorTest::itRejectsAWildcardKey
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleNameValidatorTest::itRejectsAnUnknownRuleName
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleNameValidatorTest::itReportsEachUnknownRuleNameSeparately
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleNameValidatorTest::itSuggestsACloseMatchForAMisspelledRuleName
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleNameValidatorTest::itSuggestsTheRenamedRuleByItsSharedLeafNotByRawDistance
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleDocsPageReaderTest::itReadsTheDocsPageConstantWithoutInstantiation
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleDocsPageReaderTest::itRejectsAClassThatCannotBeLoaded
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleDocsPageReaderTest::itRejectsADocsPageConstantOnlyInheritedFromAnAbstractAncestor
@@ -10156,6 +10162,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Collection\CollectionPhaseOutputTest::itHoldsAnalyzedAndSkippedCounts
  - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Collection\CollectionPhaseOutputTest::itRejectsAPathClaimedByMultipleTerminalStates
  - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Collection\CollectionPhaseOutputTest::itRejectsSuccessfulResultsInTheFailureState
+ - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Coverage\AnalysisCoverageTest::itGivesASkippedEntryATerminalStateThatMakesTheRunIncomplete
+ - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Coverage\AnalysisCoverageTest::itMergesCoverageDeterministically
+ - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Coverage\AnalysisCoverageTest::itModelsEveryDiscoveredFileInExactlyOneTerminalState
+ - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Coverage\AnalysisCoverageTest::itRefusesASkipForAPathThatAlreadyHasATerminalState
+ - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Coverage\AnalysisCoverageTest::itRejectsMoreThanOneTerminalStateForTheSamePath
+ - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Coverage\AnalysisCoverageTest::itTreatsGeneratedExclusionsAsCompleteCoverage
  - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Discovery\SkippedEntryTest::itKeepsTheLinksOwnNameWhenTheTreeIsInsideTheProjectRoot
  - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Discovery\SkippedEntryTest::itRefusesALinkOutsideTheProjectRoot
  - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Discovery\SkippedEntryTest::itRefusesARegularEntryOutsideTheProjectRoot
@@ -10302,12 +10314,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itUsesTheGenericParticipantSpanWithoutALogger
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\RuleSelectorProducerGateStateTest::itAnswersDifferentlyAfterTheConfigurationBehindItIsReplaced
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\RuleSelectorProducerGateStateTest::itAnswersDifferentlyForTwoConfigurationsCarryingDifferentChannels
- - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisCoverageTest::itGivesASkippedEntryATerminalStateThatMakesTheRunIncomplete
- - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisCoverageTest::itMergesCoverageDeterministically
- - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisCoverageTest::itModelsEveryDiscoveredFileInExactlyOneTerminalState
- - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisCoverageTest::itRefusesASkipForAPathThatAlreadyHasATerminalState
- - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisCoverageTest::itRejectsMoreThanOneTerminalStateForTheSamePath
- - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisCoverageTest::itTreatsGeneratedExclusionsAsCompleteCoverage
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisPipelineTest::itMeasuresElapsedSecondsWhenTheWallClockMovesBackwards
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisPipelineTest::itPassesCapturedConfigurationToProjectFiles
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisPipelineTest::itRefusesRuntimeFormulaFailureDuringSharedAuditPreparation

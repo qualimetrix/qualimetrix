@@ -230,7 +230,7 @@ criterion (`patterns`, `suffix`, … — one string or a list) and an allow targ
 keys by the document's spelling rule (snake_case, kebab-case or camelCase).
 Their form is judged in every layer that writes them, before the merge —
 `ArchitectureSection` declares `LayerCriterionNormalizer::ofLayerEntry()` on a layer
-entry and `CarriedValueForm::ofAllowTarget()` on a target — so a preset's
+entry and `AllowValidator::judgeAuthoredTarget()` on a target — so a preset's
 malformed criterion or target is refused even under a file that replaces
 `layers` or the target list. Static-layer name grammar, fixed exclude capture
 placement, pattern and selector syntax, match and relation kinds, the coverage

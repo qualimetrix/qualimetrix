@@ -49,6 +49,29 @@ final class AllowValidator
     }
 
     /**
+     * Judges one target while its authored layer is still visible, before a
+     * higher layer can replace the containing allow list.
+     */
+    public static function judgeAuthoredTarget(SectionSpot $entry): void
+    {
+        $path = $entry->path;
+        $count = \count($path);
+        $source = $path[$count - 2];
+        $index = (int) $path[$count - 1];
+        $value = $entry->value();
+
+        if (\is_array($value) && !array_is_list($value)) {
+            [$selector, , $relationTokens, $relations] = LongFormAllowEntryNormalizer::normalize($source, $index, $entry);
+            CarriedValueForm::parseSelector($selector, $entry->display(), $entry->child('target'));
+            self::relationTypes($relationTokens, $relations, $entry->display());
+
+            return;
+        }
+
+        CarriedValueForm::parseSelector(CarriedValueForm::selector($source, $index, $entry), $entry->display(), $entry);
+    }
+
+    /**
      * @param list<string> $layerNames Names from the registry; used for cross-validation of exact selectors only.
      * @param list<ArchitectureConfigurationWarning> $warnings Accumulator, mutated by reference for warning collection.
      *
@@ -85,7 +108,7 @@ final class AllowValidator
      *
      * @return list<DependencyType>|null
      */
-    private function expandRelationTokens(?array $tokens, SectionSpot $relations, string $context): ?array
+    private static function relationTypes(?array $tokens, SectionSpot $relations, string $context): ?array
     {
         if ($tokens === null) {
             return null;
@@ -402,7 +425,7 @@ final class AllowValidator
             return [
                 CarriedValueForm::parseSelector($targetRaw, $context, $entry->child('target')),
                 $allowCrossInstance,
-                $this->expandRelationTokens($tokens, $relations, $context),
+                self::relationTypes($tokens, $relations, $context),
             ];
         }
 

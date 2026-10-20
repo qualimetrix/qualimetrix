@@ -64,7 +64,11 @@ final readonly class ArchitectureSection implements DocumentSectionSchemaInterfa
                 },
             ),
             'allow' => NodeSchema::namedMap(
-                NodeSchema::list(NodeSchema::opaque()->judgedInEachLayer(CarriedValueForm::ofAllowTarget(...))),
+                NodeSchema::list(NodeSchema::opaque()->judgedInEachLayer(
+                    static function (ResolvedValueInterface $target, array $path): void {
+                        AllowValidator::judgeAuthoredTarget(SectionSpot::node($path, $target));
+                    },
+                )),
                 NameVocabulary::fromSibling('layers', self::layerNames(...), self::refersToALayer(...)),
             )->judgedInEachLayer(CarriedValueForm::ofAllowMap(...)),
             'coverage-gap' => NodeSchema::scalar(ScalarForm::String)->judgedInEachLayer(CarriedValueForm::ofCoverageMode(...)),
