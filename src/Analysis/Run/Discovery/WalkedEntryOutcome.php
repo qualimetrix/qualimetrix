@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\Discovery;
 
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Discovery\SkippedEntry;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\ExcludeBinding\ExcludeSelectorLedger;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
@@ -15,7 +15,7 @@ use SplFileInfo;
 /**
  * Accumulated consequences of already inspected and admitted entries.
  *
- * @qmx-ignore coupling.instability:class -- Two callers publish this private walk outcome; its eight outgoing measured values share one lifecycle, and splitting the publication only transfers the small-population ratio.
+ * @qmx-threshold coupling.instability 0.800001 -- Two callers publish this private walk outcome; its eight outgoing measured values share one lifecycle, and this finite boundary keeps another dependency visible.
  */
 final class WalkedEntryOutcome
 {

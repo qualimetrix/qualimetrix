@@ -22,8 +22,11 @@ Run/
 ├── Contract/
 │   ├── Collection/             # collection inputs and wire-safe outputs
 │   ├── Configuration/          # mandatory RunConfiguration, captured universe, current measurement and reasons
+│   ├── Coverage/               # terminal file coverage, failures and incomplete-run refusal
+│   ├── DependencyGraph/        # graph-analysis entry point and result
 │   ├── Discovery/              # ProjectFiles and opt-in ProjectTree metadata contracts
-│   ├── Pipeline/               # AnalysisResult, MeasuredRunResult and coverage contracts
+│   ├── DirectiveAudit/         # directive-audit entry point and report
+│   ├── Pipeline/               # main analysis entry point and measured/final results
 │   └── FileSetInspectionParticipantInterface.php
 ├── Collection/                 # per-file processing and private SourceReader;
 │                               # CollectionPhaseFold assembles per-file
@@ -196,6 +199,12 @@ duration negative.
 ## Contracts and consumers
 
 - `AnalysisPipelineInterface` is the public run entry point for adapters.
+- `DependencyGraphAnalyzerInterface` and `DirectiveAuditInterface` publish the
+  graph-export and directive-audit operations without enlarging the main
+  analysis pipeline surface.
+- `AnalysisCoverage`, its failure vocabulary and
+  `IncompleteAnalysisException` form the shared terminal-state contract read by
+  discovery, analysis and reporting.
 - `ProjectFilesInterface`, `CollectionOrchestratorInterface`, and
   `FileProcessorInterface` describe Run-owned mechanics.
 - `ExecutionStrategyInterface` runs the selected file processor. The strategy
@@ -399,8 +408,10 @@ runs retain one collection pass.
 `Measurement/RunMeasurement` starts each attempt's repository and completes
 measurement aggregation before computed-metric evaluation. Its
 `CompletedMeasurements` value carries the namespace tree and evaluation summary.
-`Preparation/RunPreparation` owns discovery, collection retries, graph preparation
-and the first rule execution over one measured context. `PreparedRun` retains
-that observation for both consumers. `Pipeline/AnalysisPipeline` selects normal
-publication or directive audit over the shared preparation. These are concrete
-internal operations, not new lifecycle ports.
+`Preparation/RunPreparation` owns discovery, trait-failure recollection, graph
+preparation and the first rule execution over one measured context. Its
+`discover()` and `collectWithTraitRetry()` operations keep the successful path
+short while preserving one retry authority. `PreparedRun` retains that
+observation for analysis and directive audit. `Pipeline/AnalysisPipeline`
+selects normal publication or directive audit over the shared preparation.
+These are concrete internal operations, not new lifecycle ports.

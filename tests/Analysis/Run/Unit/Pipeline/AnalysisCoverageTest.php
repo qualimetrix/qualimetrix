@@ -8,9 +8,9 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisCoverage;
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailure;
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailureKind;
 use Qualimetrix\Core\Path\RelativePath;
 
 #[CoversClass(AnalysisCoverage::class)]

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Duplication\Index;
 
 use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlockFinder;
-use Qualimetrix\Analysis\Evidence\Duplication\TokenNormalizer;
-use Qualimetrix\Analysis\Evidence\Duplication\TokenStream;
+use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenNormalizer;
+use Qualimetrix\Analysis\Evidence\Duplication\Token\TokenStream;
 use Qualimetrix\Analysis\Run\Contract\FileSetInspectionFailure;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;

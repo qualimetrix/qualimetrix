@@ -7,7 +7,7 @@ namespace Qualimetrix\Infrastructure\DependencyInjection\Console\RuleListing;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
-use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleEnablementResolver;
 use Qualimetrix\Infrastructure\Console\Invocation\Configuration\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\RuleListing\RuleListingPresenter;
 use Qualimetrix\Infrastructure\Console\RuleListing\RulesCommand;

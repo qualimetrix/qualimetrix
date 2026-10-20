@@ -1,4 +1,5 @@
 mechanism	suppressor	channel	file	symbol	severity	count
+rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Analysis\Configuration\Contract\Document	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Analysis\Configuration\Contract\Document\Schema	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Analysis\Configuration\Contract\Refusal	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition	warning	1
@@ -11,7 +12,6 @@ rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Analy
 rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Analysis\Finding\Contract\Rule	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Analysis\Finding\Contract\Rule\Override	warning	1
-rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Analysis\Finding\Contract\Selection	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Analysis\Policy\Architecture\Contract	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Analysis\Policy\Baseline\Contract	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Analysis\Policy\Baseline\Contract\Entry	warning	1
@@ -35,11 +35,13 @@ rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualime
 rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualimetrix\Analysis\Finding\Contract\Rule	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualimetrix\Analysis\Finding\Contract\Rule\Override	error	1
+rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualimetrix\Analysis\Finding\Contract\Selection	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualimetrix\Analysis\Policy\Baseline\Contract	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualimetrix\Analysis\Policy\Baseline\Contract\Entry	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualimetrix\Analysis\Policy\Inline\Contract\Directive	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualimetrix\Analysis\ProjectManifest\Contract	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualimetrix\Analysis\Run\Contract\Configuration	warning	1
+rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualimetrix\Analysis\Run\Contract\Coverage	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualimetrix\Core\FileTarget	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualimetrix\Core\Path	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	(no file)	Qualimetrix\Core\Pattern	error	1
@@ -119,9 +121,11 @@ rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/Measuremen
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/Measurement/Contract/MetricName.php	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/Measurement/Contract/MetricRepositoryInterface.php	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/Measurement/Contract/ResettableVisitorInterface.php	Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface	warning	1
+rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/Size/MethodCount/MethodCountVisitor.php	Qualimetrix\Analysis\Evidence\Size\MethodCount\MethodCountVisitor	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/Size/MethodStatementCountVisitor.php	Qualimetrix\Analysis\Evidence\Size\MethodStatementCountVisitor	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Channel/ChannelDeclaration.php	Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Channel/ChannelDeclarationRegistryInterface.php	Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterface	error	1
+rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Channel/ChannelPublication.php	Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Channel/ChannelShape.php	Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Channel/FindingChannel.php	Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Finding.php	Qualimetrix\Analysis\Finding\Contract\Finding	error	1
@@ -203,8 +207,6 @@ suppression	src/Analysis/Evidence/ComputedMetrics/Contract/Finding/ComputedMetri
 suppression	src/Analysis/Evidence/DependencyModel/Contract/ClassLikeDeclaration.php	code-smell.boolean-argument	src/Analysis/Evidence/DependencyModel/Contract/ClassLikeDeclaration.php	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration::of	warning	2
 suppression	src/Analysis/Evidence/DependencyModel/Contract/Dependency.php	code-smell.boolean-argument	src/Analysis/Evidence/DependencyModel/Contract/Dependency.php	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency::ofAttribute	warning	1
 suppression	src/Analysis/Evidence/DependencyModel/Contract/Dependency.php	code-smell.boolean-argument	src/Analysis/Evidence/DependencyModel/Contract/Dependency.php	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency::ofClassLike	warning	2
-suppression	src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	health.cohesion	src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorMethodContext	warning	1
-suppression	src/Analysis/Evidence/Prioritization/Impact/ClassRankIndex.php	health.cohesion	src/Analysis/Evidence/Prioritization/Impact/ClassRankIndex.php	Qualimetrix\Analysis\Evidence\Prioritization\Impact\ClassRankIndex	warning	1
 suppression	src/Analysis/Finding/Contract/Population/FlagExcludes.php	code-smell.boolean-argument	src/Analysis/Finding/Contract/Population/FlagExcludes.php	Qualimetrix\Analysis\Finding\Contract\Population\FlagExcludes::excludes	warning	1
 suppression	src/Analysis/Finding/Contract/Population/GateInput.php	code-smell.boolean-argument	src/Analysis/Finding/Contract/Population/GateInput.php	Qualimetrix\Analysis\Finding\Contract\Population\GateInput::active	warning	1
 suppression	src/Analysis/Finding/Contract/Population/GateInput.php	code-smell.boolean-argument	src/Analysis/Finding/Contract/Population/GateInput.php	Qualimetrix\Analysis\Finding\Contract\Population\GateInput::boundName	warning	2
@@ -222,7 +224,6 @@ suppression	src/Analysis/Finding/Rule/RulePopulationDeclarations.php	code-smell.
 suppression	src/Analysis/Finding/Rule/RulePopulationDeclarations.php	code-smell.boolean-argument	src/Analysis/Finding/Rule/RulePopulationDeclarations.php	Qualimetrix\Analysis\Finding\Rule\RulePopulationDeclarations::ruleValueThreshold	warning	1
 suppression	src/Analysis/Finding/Selection/AuthoredSelection.php	code-smell.boolean-argument	src/Analysis/Finding/Selection/AuthoredSelection.php	Qualimetrix\Analysis\Finding\Selection\AuthoredSelection::authored	warning	1
 suppression	src/Analysis/Policy/Architecture/ArchitecturePolicy.php	code-smell.boolean-argument	src/Analysis/Policy/Architecture/ArchitecturePolicy.php	Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy::inspect	warning	1
-suppression	src/Analysis/Policy/Architecture/Configuration/LayerCriterionNormalizer.php	health.cohesion	src/Analysis/Policy/Architecture/Configuration/LayerCriterionNormalizer.php	Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerCriterionNormalizer	warning	1
 suppression	src/Analysis/Policy/Architecture/Contract/LayerAssignmentInspectorInterface.php	code-smell.boolean-argument	src/Analysis/Policy/Architecture/Contract/LayerAssignmentInspectorInterface.php	Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentInspectorInterface::inspect	warning	1
 suppression	src/Analysis/Policy/Architecture/Layer/ClassContext/ClassContext.php	code-smell.boolean-argument	src/Analysis/Policy/Architecture/Layer/ClassContext/ClassContext.php	Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContext::__construct	warning	1
 suppression	src/Analysis/Run/Discovery/EntryInspector.php	code-smell.error-suppression	src/Analysis/Run/Discovery/EntryInspector.php	Qualimetrix\Analysis\Run\Discovery\EntryInspector::canList	warning	1
@@ -230,10 +231,7 @@ suppression	src/Analysis/Run/Discovery/EntryInspector.php	code-smell.error-suppr
 suppression	src/Analysis/Run/Discovery/EntryInspector.php	code-smell.error-suppression	src/Analysis/Run/Discovery/EntryInspector.php	Qualimetrix\Analysis\Run\Discovery\EntryInspector::inspectLink	warning	1
 suppression	src/Analysis/Run/Discovery/EntryInspector.php	code-smell.error-suppression	src/Analysis/Run/Discovery/EntryInspector.php	Qualimetrix\Analysis\Run\Discovery\EntryInspector::list	warning	1
 suppression	src/Analysis/Run/Discovery/GeneratedFileFilter.php	code-smell.error-suppression	src/Analysis/Run/Discovery/GeneratedFileFilter.php	Qualimetrix\Analysis\Run\Discovery\GeneratedFileFilter::isGenerated	warning	1
-suppression	src/Analysis/Run/Discovery/ProjectWalk.php	coupling.instability	src/Analysis/Run/Discovery/ProjectWalk.php	Qualimetrix\Analysis\Run\Discovery\ProjectWalk	warning	1
-suppression	src/Analysis/Run/Discovery/ScopeFacts.php	health.cohesion	src/Analysis/Run/Discovery/ScopeFacts.php	Qualimetrix\Analysis\Run\Discovery\ScopeFacts	warning	1
 suppression	src/Analysis/Run/Discovery/WalkedEntryOutcome.php	code-smell.boolean-argument	src/Analysis/Run/Discovery/WalkedEntryOutcome.php	Qualimetrix\Analysis\Run\Discovery\WalkedEntryOutcome::result	warning	2
-suppression	src/Analysis/Run/Discovery/WalkedEntryOutcome.php	coupling.instability	src/Analysis/Run/Discovery/WalkedEntryOutcome.php	Qualimetrix\Analysis\Run\Discovery\WalkedEntryOutcome	warning	1
 suppression	src/Analysis/Run/ExcludeBinding/ExcludeSelectorLedger.php	code-smell.boolean-argument	src/Analysis/Run/ExcludeBinding/ExcludeSelectorLedger.php	Qualimetrix\Analysis\Run\ExcludeBinding\ExcludeSelectorLedger::verdicts	warning	1
 suppression	src/Infrastructure/Ast/CachedFileParser.php	code-smell.empty-catch	src/Infrastructure/Ast/CachedFileParser.php	Qualimetrix\Infrastructure\Ast\CachedFileParser::parseContent	error	1
 suppression	src/Infrastructure/Console/Hook/RunningBinaryLocator.php	code-smell.superglobals	src/Infrastructure/Console/Hook/RunningBinaryLocator.php	Qualimetrix\Infrastructure\Console\Hook\RunningBinaryLocator::path	warning	2

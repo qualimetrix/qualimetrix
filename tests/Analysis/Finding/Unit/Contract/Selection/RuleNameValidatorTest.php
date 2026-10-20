@@ -21,8 +21,8 @@ use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
 use Qualimetrix\Analysis\Evidence\Complexity\Cyclomatic\ComplexityOptions;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
-use Qualimetrix\Analysis\Finding\Contract\Selection\RuleNameJudge;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleNameJudge;
 
 #[CoversClass(RuleNameJudge::class)]
 final class RuleNameValidatorTest extends TestCase

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Console\Directives;
 
-use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
+use Qualimetrix\Analysis\Run\Contract\DirectiveAudit\DirectiveAuditInterface;
 
 use Qualimetrix\Infrastructure\Console\Directives\DirectivesCommand;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;

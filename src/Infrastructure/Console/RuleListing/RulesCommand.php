@@ -11,7 +11,7 @@ use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
-use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleEnablementResolver;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Invocation\CommandLineSpelling;
 use Qualimetrix\Infrastructure\Console\Invocation\Configuration\ConfigurationInputAdapter;

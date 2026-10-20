@@ -17,7 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
-use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleEnablementResolver;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;

@@ -14,12 +14,12 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarInter
 use Qualimetrix\Analysis\Run\Collection\SourceReader;
 use Qualimetrix\Analysis\Run\Collection\UnreadableSource;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisCoverage;
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailure;
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailureKind;
+use Qualimetrix\Analysis\Run\Contract\DependencyGraph\DependencyGraphAnalysisResult;
+use Qualimetrix\Analysis\Run\Contract\DependencyGraph\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Ast\NameResolution;
 use Qualimetrix\Core\Ast\ParseException;

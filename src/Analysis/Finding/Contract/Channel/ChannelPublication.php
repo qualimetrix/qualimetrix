@@ -22,8 +22,6 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * own options (`class: { enabled: false }`) is part of the activity, which the
  * selection never sees. Either alone would call the level the other one
  * stopped published.
- *
- * @qmx-threshold coupling.cbo 22 -- This public fact or option contract combines its declaration vocabulary with bounded implementation dependencies; its incoming readers do not independently justify a popularity exception.
  */
 final readonly class ChannelPublication
 {

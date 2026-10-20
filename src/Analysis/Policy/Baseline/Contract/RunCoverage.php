@@ -6,10 +6,10 @@ namespace Qualimetrix\Analysis\Policy\Baseline\Contract;
 
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse;
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeSnapshot;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 

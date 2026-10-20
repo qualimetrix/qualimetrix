@@ -15,8 +15,8 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionAddress;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionRefusalWording;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface;
-use Qualimetrix\Analysis\Finding\Contract\Selection\RuleNameJudge;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleNameJudge;
 use Qualimetrix\Infrastructure\Console\Invocation\CliSelectorDecoder;
 
 /** Admits one CLI rule-option address against its declared producer surface.

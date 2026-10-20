@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
-
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
+use Qualimetrix\Analysis\Policy\Architecture\Allow\InvalidSelectorException;
+use Qualimetrix\Analysis\Policy\Architecture\Allow\LayerSelectorParser;
 
 /**
  * The `architecture:` section as the configuration document declares it:

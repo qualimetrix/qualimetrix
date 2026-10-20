@@ -124,7 +124,7 @@ Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclarationRegistryInterfac
 Qualimetrix\Analysis\Finding\Contract\Channel\ChannelIdentityInterface	Analysis.Finding	11	3
 Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPresentation	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPresentationInterface	Analysis.Finding	3	3
-Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication	Analysis.Finding	12	4
+Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication	Analysis.Finding	13	4
 Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole	Analysis.Finding	3	3
 Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape	Analysis.Finding	49	17
 Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface	Analysis.Finding	4	3
@@ -224,8 +224,6 @@ Qualimetrix\Analysis\Finding\Contract\Rule\RuleShapeReader	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface	Analysis.Finding	28	9
 Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOptionQueries	Analysis.Finding	12	7
 Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader	Analysis.Finding	1	1
-Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver	Analysis.Finding	4	2
-Qualimetrix\Analysis\Finding\Contract\Selection\RuleNameJudge	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Selection\SelectionRecord	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Selection\StatedEnablement	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	86	18
@@ -234,6 +232,8 @@ Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride	Analysis.Findi
 Qualimetrix\Analysis\Finding\Contract\ValueReach	Analysis.Finding	6	3
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser	Analysis.Finding	2	1
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory	Analysis.Finding	1	1
+Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleEnablementResolver	Analysis.Finding	4	2
+Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleNameJudge	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Rule\AbstractRule	Analysis.Finding	37	15
 Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit	Analysis.Finding	2	1
 Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement	Analysis.Finding	2	2
@@ -325,6 +325,13 @@ Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReasonKind	Analysis.
 Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse	Analysis.Run	1	1
 Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	15	3
 Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface	Analysis.Run	2	2
+Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisCoverage	Analysis.Run	3	2
+Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailure	Analysis.Run	1	1
+Qualimetrix\Analysis\Run\Contract\Coverage\IncompleteAnalysisException	Analysis.Run	4	1
+Qualimetrix\Analysis\Run\Contract\DependencyGraph\DependencyGraphAnalysisResult	Analysis.Run	2	1
+Qualimetrix\Analysis\Run\Contract\DependencyGraph\DependencyGraphAnalyzerInterface	Analysis.Run	2	2
+Qualimetrix\Analysis\Run\Contract\DirectiveAudit\DirectiveAuditInterface	Analysis.Run	3	2
+Qualimetrix\Analysis\Run\Contract\DirectiveAudit\DirectiveAuditReport	Analysis.Run	3	1
 Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface	Analysis.Run	1	1
 Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence	Analysis.Run	6	1
 Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface	Analysis.Run	5	2
@@ -332,15 +339,8 @@ Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface	Analysis.R
 Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeSnapshot	Analysis.Run	1	1
 Qualimetrix\Analysis\Run\Contract\FileSetInspectionFailure	Analysis.Run	2	1
 Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface	Analysis.Run	3	2
-Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage	Analysis.Run	3	2
-Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure	Analysis.Run	1	1
 Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface	Analysis.Run	3	2
 Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult	Analysis.Run	10	1
-Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult	Analysis.Run	2	1
-Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface	Analysis.Run	2	2
-Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface	Analysis.Run	3	2
-Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport	Analysis.Run	3	1
-Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException	Analysis.Run	4	1
 Qualimetrix\Analysis\Run\Contract\Progress\ProgressReporterInterface	Analysis.Run	4	2
 Qualimetrix\Core\Ast\FileParserInterface	Core.Neutral	9	3
 Qualimetrix\Core\Ast\NameResolution	Core.Neutral	4	3
@@ -377,7 +377,7 @@ Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	23	8
 Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	13	7
 Qualimetrix\Core\Symbol\CallableKind	Core.Symbol	10	4
 Qualimetrix\Core\Symbol\ClassNameSpelling	Core.Symbol	20	10
-Qualimetrix\Core\Symbol\ClassType	Core.Symbol	16	7
+Qualimetrix\Core\Symbol\ClassType	Core.Symbol	19	8
 Qualimetrix\Core\Symbol\DeclarationKey	Core.Symbol	3	2
 Qualimetrix\Core\Symbol\DeclarationOrdinal	Core.Symbol	4	1
 Qualimetrix\Core\Symbol\DeclarationPath	Core.Symbol	12	5
@@ -392,7 +392,7 @@ Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	32	12
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	165	22
 Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	6	4
 Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	91	21
-Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	42	13
+Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	43	13
 Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitCompositionFailure	Core.Symbol	3	3
 Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitCompositionResult	Core.Symbol	1	1
 Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitDefinitionFacts	Core.Symbol	4	2

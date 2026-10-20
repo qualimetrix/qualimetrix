@@ -23,9 +23,9 @@ use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfig
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
-use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineConflictException;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;

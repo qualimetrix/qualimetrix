@@ -9,8 +9,8 @@ use InvalidArgumentException;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
+use Qualimetrix\Analysis\Run\Contract\Coverage\IncompleteAnalysisException;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Core\Environment\EnvironmentFailureInterface;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Infrastructure\Console\CheckReport\FormatBinding\FormatterContextFactory;

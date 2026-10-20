@@ -5,7 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
-
+use Qualimetrix\Analysis\Policy\Architecture\Allow\AllowAliasExpander;
+use Qualimetrix\Analysis\Policy\Architecture\Allow\AllowListEntry;
+use Qualimetrix\Analysis\Policy\Architecture\Allow\AllowTarget;
+use Qualimetrix\Analysis\Policy\Architecture\Allow\LayerSelector;
+use Qualimetrix\Analysis\Policy\Architecture\Allow\WildcardSelfAllowDetector;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationWarning;
 
 /**
@@ -37,6 +41,13 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationW
  */
 final class AllowValidator
 {
+    private readonly WildcardSelfAllowDetector $wildcardSelfAllowDetector;
+
+    public function __construct(?WildcardSelfAllowDetector $wildcardSelfAllowDetector = null)
+    {
+        $this->wildcardSelfAllowDetector = $wildcardSelfAllowDetector ?? new WildcardSelfAllowDetector();
+    }
+
     /**
      * @param list<string> $layerNames Names from the registry; used for cross-validation of exact selectors only.
      * @param list<ArchitectureConfigurationWarning> $warnings Accumulator, mutated by reference for warning collection.
@@ -64,7 +75,37 @@ final class AllowValidator
             $entries[] = new AllowListEntry($sourceSelector, $allowTargets);
         }
 
+        $this->wildcardSelfAllowDetector->detect($entries, $warnings);
+
         return $entries;
+    }
+
+    /**
+     * @param list<string>|null $tokens
+     *
+     * @return list<DependencyType>|null
+     */
+    private function expandRelationTokens(?array $tokens, SectionSpot $relations, string $context): ?array
+    {
+        if ($tokens === null) {
+            return null;
+        }
+
+        $expanded = [];
+        foreach ($tokens as $index => $token) {
+            $types = AllowAliasExpander::expand($token)
+                ?? throw $relations->child($index)->refusal(
+                    AllowAliasExpander::unknownTokenMessage($context, $token),
+                    AllowAliasExpander::acceptedTokens(),
+                    $token,
+                );
+
+            foreach ($types as $type) {
+                $expanded[$type->value] ??= $type;
+            }
+        }
+
+        return array_values($expanded);
     }
 
     /**
@@ -356,9 +397,13 @@ final class AllowValidator
         $context = \sprintf('architecture.allow.%s[%d]', $source, $index);
 
         if (self::isLongForm($entry)) {
-            [$targetRaw, $allowCrossInstance, $relations] = LongFormAllowEntryNormalizer::normalize($source, $index, $entry);
+            [$targetRaw, $allowCrossInstance, $tokens, $relations] = LongFormAllowEntryNormalizer::normalize($source, $index, $entry);
 
-            return [CarriedValueForm::parseSelector($targetRaw, $context, $entry->child('target')), $allowCrossInstance, $relations];
+            return [
+                CarriedValueForm::parseSelector($targetRaw, $context, $entry->child('target')),
+                $allowCrossInstance,
+                $this->expandRelationTokens($tokens, $relations, $context),
+            ];
         }
 
         return [CarriedValueForm::parseSelector(CarriedValueForm::selector($source, $index, $entry), $context, $entry), false, null];

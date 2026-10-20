@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Support;
 
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowListEntry;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowTarget;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerSelector;
+use Qualimetrix\Analysis\Policy\Architecture\Allow\AllowListEntry;
+use Qualimetrix\Analysis\Policy\Architecture\Allow\AllowTarget;
+use Qualimetrix\Analysis\Policy\Architecture\Allow\LayerSelector;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy;
 
 /**

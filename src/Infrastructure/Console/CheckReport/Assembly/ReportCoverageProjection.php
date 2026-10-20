@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\CheckReport\Assembly;
 
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisCoverage;
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailure;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Reporting\Coverage\CoverageFailure;
 use Qualimetrix\Reporting\Coverage\ReportCoverage;

@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\UnmatchedTypeWarningInterface;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailure;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
 use Qualimetrix\Core\Path\AbsolutePath;

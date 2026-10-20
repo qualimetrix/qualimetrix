@@ -10,7 +10,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdictRefusal;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
+use Qualimetrix\Analysis\Run\Contract\DirectiveAudit\DirectiveAuditReport;
 
 final readonly class DirectiveAuditTextPresenter
 {

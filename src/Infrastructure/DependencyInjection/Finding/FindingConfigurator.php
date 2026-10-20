@@ -10,11 +10,11 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionDocument
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
-use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Finding\FindingPublication;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Analysis\Finding\RuleMaterialization;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule;

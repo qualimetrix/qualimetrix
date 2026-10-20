@@ -8,7 +8,7 @@ use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
-use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\UnassignedClassLayerRequirementInterface;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 

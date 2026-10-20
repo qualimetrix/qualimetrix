@@ -231,14 +231,14 @@
         ]
       }
     ],
-    "declaration:callable:Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\SelectorSegment::capture@src/Analysis/Policy/Architecture/Configuration/SelectorSegment.php": [
+    "declaration:callable:Qualimetrix\\Analysis\\Policy\\Architecture\\Allow\\SelectorSegment::capture@src/Analysis/Policy/Architecture/Allow/SelectorSegment.php": [
       {
         "channel": "code-smell.boolean-argument",
         "occurrence": "9056ff0fa0e43c3a",
         "count": 1
       }
     ],
-    "declaration:callable:Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\WildcardSelfAllowDetector::detect@src/Analysis/Policy/Architecture/Configuration/WildcardSelfAllowDetector.php": [
+    "declaration:callable:Qualimetrix\\Analysis\\Policy\\Architecture\\Allow\\WildcardSelfAllowDetector::detect@src/Analysis/Policy/Architecture/Allow/WildcardSelfAllowDetector.php": [
       {
         "channel": "complexity.cognitive",
         "magnitudes": [
@@ -511,7 +511,7 @@
         ]
       }
     ],
-    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Duplication\\DataDeclarationTagger@src/Analysis/Evidence/Duplication/DataDeclarationTagger.php": [
+    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Duplication\\Normalization\\DataDeclarationTagger@src/Analysis/Evidence/Duplication/Normalization/DataDeclarationTagger.php": [
       {
         "channel": "complexity.wmc",
         "magnitudes": [
@@ -535,7 +535,7 @@
         ]
       }
     ],
-    "declaration:class:Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\ParseCapturedState@src/Analysis/Policy/Architecture/Configuration/ParseCapturedState.php": [
+    "declaration:class:Qualimetrix\\Analysis\\Policy\\Architecture\\Allow\\ParseCapturedState@src/Analysis/Policy/Architecture/Allow/ParseCapturedState.php": [
       {
         "channel": "design.data-class",
         "magnitudes": [
@@ -543,7 +543,7 @@
         ]
       }
     ],
-    "declaration:class:Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\WildcardSelfAllowDetector@src/Analysis/Policy/Architecture/Configuration/WildcardSelfAllowDetector.php": [
+    "declaration:class:Qualimetrix\\Analysis\\Policy\\Architecture\\Allow\\WildcardSelfAllowDetector@src/Analysis/Policy/Architecture/Allow/WildcardSelfAllowDetector.php": [
       {
         "channel": "health.maintainability",
         "magnitudes": [
@@ -777,14 +777,6 @@
         ]
       }
     ],
-    "ns:Qualimetrix\\Analysis\\Configuration\\Contract\\Document": [
-      {
-        "channel": "coupling.cbo",
-        "magnitudes": [
-          29
-        ]
-      }
-    ],
     "ns:Qualimetrix\\Analysis\\Configuration\\Document": [
       {
         "channel": "size.class-count",
@@ -903,19 +895,19 @@
         ]
       }
     ],
-    "ns:Qualimetrix\\Analysis\\Finding\\Contract\\Selection": [
-      {
-        "channel": "coupling.distance",
-        "magnitudes": [
-          0.5277777777777778
-        ]
-      }
-    ],
     "ns:Qualimetrix\\Analysis\\Finding\\RuleConfiguration": [
       {
         "channel": "coupling.cbo",
         "magnitudes": [
-          19
+          20
+        ]
+      }
+    ],
+    "ns:Qualimetrix\\Analysis\\Policy\\Architecture\\Allow": [
+      {
+        "channel": "coupling.distance",
+        "magnitudes": [
+          0.6666666666666667
         ]
       }
     ],
@@ -923,7 +915,7 @@
       {
         "channel": "size.class-count",
         "magnitudes": [
-          24
+          15
         ]
       }
     ],
@@ -1025,14 +1017,6 @@
         ]
       }
     ],
-    "ns:Qualimetrix\\Analysis\\Run\\Contract\\Pipeline": [
-      {
-        "channel": "coupling.cbo",
-        "magnitudes": [
-          30
-        ]
-      }
-    ],
     "ns:Qualimetrix\\Analysis\\Run\\Measurement": [
       {
         "channel": "health.cohesion",
@@ -1085,7 +1069,7 @@
       {
         "channel": "coupling.cbo",
         "magnitudes": [
-          22
+          23
         ]
       },
       {
@@ -1143,7 +1127,7 @@
       {
         "channel": "coupling.cbo",
         "magnitudes": [
-          20
+          21
         ]
       },
       {

@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Duplication\Matching\BalancedSegments;
-use Qualimetrix\Analysis\Evidence\Duplication\TokenNormalizer;
+use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenNormalizer;
 
 #[CoversClass(BalancedSegments::class)]
 final class BalancedSegmentsTest extends TestCase

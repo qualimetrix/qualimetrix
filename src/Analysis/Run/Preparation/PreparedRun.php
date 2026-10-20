@@ -16,7 +16,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisCoverage;
 
 /**
  * One run of the pipeline, up to and including the first rule execution.

@@ -25,10 +25,10 @@ use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\SkippedEntry;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\Run\Discovery\ScopeFacts;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;

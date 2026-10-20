@@ -25,24 +25,15 @@ moves a model-limited signal to a neighbouring class, the class carries its own
 finite `@qmx-threshold` and reason. A class or method model limitation is never
 parked in the ratchet.
 
-The only authorised exception to the error invariant is namespace CBO for these
-exact pre-existing subjects:
-
-| Subject                                                | Before subject split | After subject split | Reason                                                                           |
-| ------------------------------------------------------ | -------------------: | ------------------: | -------------------------------------------------------------------------------- |
-| `Qualimetrix\Analysis\Run\Contract\Pipeline`           | 18                   | 25                  | More complete far-side namespace names for the same run protocol                 |
-| `Qualimetrix\Reporting`                                | 23                   | 27                  | More complete far-side namespace names for the same publication boundary         |
-| `Qualimetrix\Analysis\Configuration\Contract\Document` | 24                   | 30                  | More complete far-side namespace names for the same resolved-document vocabulary |
-
-These values record the historical transition, not permission for an unreviewed
-ceiling increase. The explicit category-4 recalibration of Pipeline to 30 is
-justified by the exact dependency inventory below; it authorises no later
-growth. The exception does not follow a renamed or newly created namespace by
-similarity. An entry whose subject no longer produces that finding is removed.
-The revised source census retains the Document and Pipeline exceptions; the
-Reporting root no longer produces a finding and its row is removed. The
-Pipeline dependency inventory below records its revised measurement; the
-Document exception retains its recorded boundary.
+There is no authorised error entry in the ratchet. Reporting stopped producing
+its former finding after its subject split. Pipeline's dependency-graph,
+directive-audit and coverage contracts now have their own subject namespaces,
+so the main Pipeline contract returns below the error boundary and its former
+30 entry is removed. The resolved-document namespace contains only the shared
+read vocabulary and provenance values consumed by declared configuration
+owners: 64 classes across 28 incoming namespaces, against two outgoing
+contract namespaces. Its former error entry is therefore replaced by the exact
+namespace-CBO public-readership exception used for intentional public readership.
 
 Changing namespace CBO's definition is separate work: compare direct namespaces
 with descendants on the existing calibration corpus, document the semantic
@@ -55,6 +46,25 @@ the incoming population must itself reach the configured warning boundary; an
 future outgoing growth in that one channel; implementations and sibling
 subjects remain measured. Public vocabulary is not a licence to keep executable
 policy in a `Contract` directory.
+
+Architecture's shared Allow language remains concrete by design: it carries
+selector parsing, relation-token expansion, immutable policy values and the
+self-glob semantic judgement below the Configuration and Layer operations.
+Moving the judgement into that language and keeping authored shape extraction
+in Configuration changes its distance from 0.83 (error) to 0.67 (warning), with
+four incoming classes and two outgoing semantic contracts. Architecture owns
+the finite category-3 warning ratchet. Its closure condition is a complete
+`src/` analysis without a baseline measuring this namespace below the 0.50
+warning boundary.
+
+The F7 contract split recalibrates three warning ceilings by one exact
+far-side namespace; none reaches the rule's error boundary:
+
+| Subject                                          | Before | After | Added subject boundary                                         |
+| ------------------------------------------------ | -----: | ----: | -------------------------------------------------------------- |
+| `Qualimetrix\Analysis\Finding\RuleConfiguration` | 19     | 20    | executable selection resolution beside rule configuration      |
+| `Qualimetrix\Infrastructure\Console\Baseline`    | 22     | 23    | terminal coverage separated from the remaining pipeline result |
+| `Qualimetrix\Infrastructure\Console\CheckReport` | 20     | 21    | terminal coverage separated from the remaining pipeline result |
 
 Immutable fact carriers retain finite arity/property ceilings at the first
 unaccepted magnitude. Report severity counts are derived from the published
@@ -79,6 +89,36 @@ Finding-owned threshold pair. Metric-owned Options retain their exact defaults
 and option-key declarations. Repetition consisting solely of structural
 interface or attribute declarations can be documented as structurally
 inapplicable to clone detection; executable parsing is not such an exception.
+
+Executable selection services live outside the vocabulary-only contract tree:
+
+| Old name                                                                 | New name                                                                          |
+| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| `Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver` | `Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleEnablementResolver` |
+| `Qualimetrix\Analysis\Finding\Contract\Selection\RuleNameJudge`          | `Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleNameJudge`          |
+
+Both operations interpret the same authored rule configuration lifecycle:
+name judgement validates the schema's keys and selectors, while enablement
+resolution combines those statements with resolved option activity. Keeping
+them in RuleConfiguration avoids executable policy in Contract and avoids
+separate one-class operation namespaces.
+
+Run's public operations and terminal coverage use separate subject contracts;
+method signatures and returned values are unchanged:
+
+| Old name                                                                      | New name                                                                             |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage`                 | `Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisCoverage`                        |
+| `Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure`                  | `Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailure`                         |
+| `Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind`              | `Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailureKind`                     |
+| `Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException`      | `Qualimetrix\Analysis\Run\Contract\Coverage\IncompleteAnalysisException`             |
+| `Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult`    | `Qualimetrix\Analysis\Run\Contract\DependencyGraph\DependencyGraphAnalysisResult`    |
+| `Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface` | `Qualimetrix\Analysis\Run\Contract\DependencyGraph\DependencyGraphAnalyzerInterface` |
+| `Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface`          | `Qualimetrix\Analysis\Run\Contract\DirectiveAudit\DirectiveAuditInterface`           |
+| `Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport`             | `Qualimetrix\Analysis\Run\Contract\DirectiveAudit\DirectiveAuditReport`              |
+
+Consumers replace these imports directly. No old-namespace aliases or
+compatibility declarations remain.
 
 ## Consequences
 
@@ -112,76 +152,3 @@ permanent checker is introduced for this policy.
 - Promoting the entire computed producer to a retunable rule would conflate
   unrelated runtime names and directions. Only the closed six health producers
   accept the single exact class boundary.
-
-## Pipeline namespace-CBO recalibration
-
-The native graph analysed all production sources at `0f735530f` (before the
-subject split), `59191fbec` (the previous runtime), and the revised runtime. A
-one-off exporter intercepted only serialization, retaining the actual
-dependency analyser and each source snapshot. Its inventory follows
-`getAllClasses()` / `getClassDependencies()`, exactly as `CoupledNamespaces`
-does; `getAllDependencies()` also retains builtin inheritance edges that
-coupling excludes and is not the metric's population. Both the native metric
-and the independently enumerated far-side set agree at **18 / 25 / 30**.
-
-The category-4 adjustment is **25 to 30**, with this exact explanation:
-
-- The former DI Configurator namespace's existing run-analysis and directive /
-  graph-export bindings now belong to Run, Console Directives and Console
-  GraphExport: one far-side namespace becomes three (**+2**).
-- Existing AnalysisResult / AnalysisCoverage / AnalysisFailure publication readers
-  now belong to CheckReport Assembly and Projection alongside CheckReport:
-  one namespace becomes three (**+2**).
-- RunPreparation and PreparedRun now hold the discovery/collection preparation
-  operation previously inside Pipeline, and read the same AnalysisCoverage /
-  AnalysisFailure / AnalysisFailureKind run protocol (**+1**).
-- Console Command Baseline and its Measurement subject become Console Baseline
-  and Console Baseline Measurement: two far-side names replace two (**0**).
-
-These changes are subject ownership and intended reads of an existing run
-protocol, not five added responsibilities inside that protocol. The native
-graph and independent far-side enumeration agree, as recorded above and in the
-namespace inventory below. Class-level outgoing quality remains measured and
-the preparation split has its own finite thresholds. The owner of this
-exceptional error remains **Coupling metric definition follow-up**: compare
-direct and descendant namespace semantics on the calibration corpus, adopt and
-document the chosen definition, and remove this exact error entry. A new
-namespace reader requires another explicit decision.
-
-| Far-side namespace                                                   | Before subject split: 0f735530f | Previous runtime: 59191fbec | Revised runtime |
-| -------------------------------------------------------------------- | ------------------------------- | --------------------------- | --------------- |
-| `Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation`  | yes                             | yes                         | yes             |
-| `Qualimetrix\Analysis\Evidence\DependencyModel\Contract`             | yes                             | yes                         | yes             |
-| `Qualimetrix\Analysis\Evidence\Measurement\Contract`                 | yes                             | yes                         | yes             |
-| `Qualimetrix\Analysis\Finding\Contract`                              | yes                             | yes                         | yes             |
-| `Qualimetrix\Analysis\Finding\Contract\Channel`                      | —                               | yes                         | yes             |
-| `Qualimetrix\Analysis\Finding\Contract\Population`                   | yes                             | yes                         | yes             |
-| `Qualimetrix\Analysis\Finding\Contract\ProjectScope`                 | yes                             | yes                         | yes             |
-| `Qualimetrix\Analysis\Policy\Baseline\Contract`                      | yes                             | yes                         | yes             |
-| `Qualimetrix\Analysis\Policy\Inline\Contract`                        | yes                             | yes                         | yes             |
-| `Qualimetrix\Analysis\Policy\Inline\Contract\Directive`              | yes                             | yes                         | yes             |
-| `Qualimetrix\Analysis\Run\Contract\Configuration`                    | yes                             | yes                         | yes             |
-| `Qualimetrix\Analysis\Run\Contract\Discovery`                        | yes                             | yes                         | yes             |
-| `Qualimetrix\Analysis\Run\Discovery`                                 | yes                             | yes                         | yes             |
-| `Qualimetrix\Analysis\Run\FileSetInspection`                         | yes                             | yes                         | yes             |
-| `Qualimetrix\Analysis\Run\Pipeline`                                  | yes                             | yes                         | yes             |
-| `Qualimetrix\Analysis\Run\Preparation`                               | —                               | —                           | yes             |
-| `Qualimetrix\Core\Path`                                              | yes                             | yes                         | yes             |
-| `Qualimetrix\Infrastructure\Console`                                 | yes                             | —                           | —               |
-| `Qualimetrix\Infrastructure\Console\Baseline`                        | —                               | —                           | yes             |
-| `Qualimetrix\Infrastructure\Console\BaselineCommand`                 | —                               | yes                         | yes             |
-| `Qualimetrix\Infrastructure\Console\Baseline\Measurement`            | —                               | —                           | yes             |
-| `Qualimetrix\Infrastructure\Console\Check`                           | —                               | yes                         | yes             |
-| `Qualimetrix\Infrastructure\Console\CheckReport`                     | —                               | yes                         | yes             |
-| `Qualimetrix\Infrastructure\Console\CheckReport\Assembly`            | —                               | —                           | yes             |
-| `Qualimetrix\Infrastructure\Console\CheckReport\Projection`          | —                               | —                           | yes             |
-| `Qualimetrix\Infrastructure\Console\CheckScope`                      | —                               | yes                         | yes             |
-| `Qualimetrix\Infrastructure\Console\Command`                         | yes                             | —                           | —               |
-| `Qualimetrix\Infrastructure\Console\Command\Baseline`                | —                               | yes                         | —               |
-| `Qualimetrix\Infrastructure\Console\Command\Baseline\Measurement`    | —                               | yes                         | —               |
-| `Qualimetrix\Infrastructure\Console\Directives`                      | —                               | yes                         | yes             |
-| `Qualimetrix\Infrastructure\Console\GraphExport`                     | —                               | yes                         | yes             |
-| `Qualimetrix\Infrastructure\DependencyInjection\Configurator`        | yes                             | yes                         | —               |
-| `Qualimetrix\Infrastructure\DependencyInjection\Console\Directives`  | —                               | —                           | yes             |
-| `Qualimetrix\Infrastructure\DependencyInjection\Console\GraphExport` | —                               | —                           | yes             |
-| `Qualimetrix\Infrastructure\DependencyInjection\Run`                 | —                               | —                           | yes             |

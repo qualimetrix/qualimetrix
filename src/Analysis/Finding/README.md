@@ -28,13 +28,11 @@ Finding/
 │   ├── Configuration/    # completed carrier and public typed options construction
 │   │   ├── FindingConfiguration.php
 │   │   └── RuleOptionsBuild.php
-│   ├── Selection/        # public authored decisions and name judgement
+│   ├── Selection/        # public authored decisions and their trace
 │   │   ├── SelectionCellAddress.php # declared producer/channel/level/role
 │   │   ├── AuthoredCellDecision.php # switch, admission and decisive writers
 │   │   ├── CellSwitch.php
 │   │   ├── CellAdmission.php
-│   │   ├── RuleEnablementResolver.php
-│   │   ├── RuleNameJudge.php
 │   │   ├── SelectionFilter.php
 │   │   ├── SelectionRecord.php
 │   │   ├── SelectionTrace.php
@@ -98,10 +96,13 @@ Finding/
 │   ├── RulePopulationDeclarations.php # stateless protected population vocabulary
 │   └── Override/
 │       └── NonNegativeOverrideThresholds.php # shared numeric judgement and spelling
-├── RuleConfiguration/    # private RulesSection schema, suppression decoder and invocation stores
+├── RuleConfiguration/    # private rule configuration language and resolution
 │   ├── ProducerOptionsBuild.php # immutable options for one producer
 │   ├── OptionActivityResolution.php # per-cell mode and level activity
 │   ├── ThresholdBandRefusal.php # winning authored and default halves
+│   ├── Selection/        # authored selection interpretation
+│   │   ├── RuleEnablementResolver.php # executable enablement resolution
+│   │   └── RuleNameJudge.php # registered/retired name judgement
 │   └── OptionForms/      # private declaration interpretation
 │       ├── RuleOptionShapeMatcher.php # value matching
 │       ├── RuleOptionShapeWording.php # declared and written form descriptions
@@ -352,8 +353,13 @@ canonical keys. The constructor is not another dictionary. `RulesSection` is reg
 `rules`, `only_rules` and `disabled_rules`; no undeclared raw rule subtree remains.
 
 The named external operations are published by
-`Contract\Configuration\RuleOptionsBuild` and
-`Contract\Selection\{RuleEnablementResolver,RuleNameJudge,StatedEnablement}`.
+`Contract\Configuration\RuleOptionsBuild` and the concrete
+`RuleConfiguration\Selection\RuleEnablementResolver` and
+`RuleConfiguration\Selection\RuleNameJudge` services. They share the rule configuration
+language lifecycle: name judgement validates its authored keys, enablement
+resolution interprets its selection statements and option activity. Their public values
+remain the vocabulary-only `Contract\Selection` types, including
+`StatedEnablement`.
 Console preflight consumes Build/Resolver, RulesCommand consumes Resolver,
 CliOptionsParser consumes Judge, and DI composes the same concrete services.
 The returned StatedEnablement exposes decisions, diagnostics and the only filter.
@@ -542,6 +548,10 @@ import.
 `GatePredicate` is exposed through the public `PopulationGate.predicate` field.
 The manifest records that surface for each exact external consumer of
 `PopulationGate`; those consumers do not need a direct interface import.
+`ContextGuard::namespaceOwnCountExpected()` is the ordinary structural boundary
+for namespace rules that require a direct declaration: a namespace with no own
+declarations is ineligible. A namespace that does own declarations but lacks
+`size.class-count` still reaches the own-count/data-gap judgement.
 
 `ChannelDeclaration` owns the complete ordered population gates, and
 `AnalysisContext::admit()` uses the same pure eligibility for direct, selected

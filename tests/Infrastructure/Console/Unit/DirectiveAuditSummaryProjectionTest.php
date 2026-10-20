@@ -20,8 +20,8 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdictRefusa
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisCoverage;
+use Qualimetrix\Analysis\Run\Contract\DirectiveAudit\DirectiveAuditReport;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Console\Directives\DirectiveAuditPresenter;

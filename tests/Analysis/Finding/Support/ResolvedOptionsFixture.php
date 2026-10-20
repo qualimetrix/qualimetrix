@@ -36,12 +36,12 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOption
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
-use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Finding\FindingPublication;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Analysis\Finding\RuleMaterialization;
 use Qualimetrix\Core\Path\AbsolutePath;

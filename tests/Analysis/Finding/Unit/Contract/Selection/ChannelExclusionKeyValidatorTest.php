@@ -12,7 +12,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
-use Qualimetrix\Analysis\Finding\Contract\Selection\RuleNameJudge;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleNameJudge;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;

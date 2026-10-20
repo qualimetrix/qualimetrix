@@ -24,32 +24,32 @@ final class ArchitectureInternalTopologyTest extends TestCase
     /** @var list<string> */
     private const array ARCHITECTURE_DECLARATIONS = [
         'Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy',
-        'Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowAliasExpander',
-        'Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowListEntry',
-        'Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowTarget',
+        'Qualimetrix\Analysis\Policy\Architecture\Allow\AllowAliasExpander',
+        'Qualimetrix\Analysis\Policy\Architecture\Allow\AllowListEntry',
+        'Qualimetrix\Analysis\Policy\Architecture\Allow\AllowTarget',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowValidator',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureFactoryResult',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureSection',
-        'Qualimetrix\Analysis\Policy\Architecture\Configuration\CaptureBinding',
+        'Qualimetrix\Analysis\Policy\Architecture\Allow\CaptureBinding',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\CarriedValueForm',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageValidator',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\DuplicatePatternRejector',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\ExactAllowCycleValidator',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\ExcludeBlockValidator',
-        'Qualimetrix\Analysis\Policy\Architecture\Configuration\InvalidSelectorException',
+        'Qualimetrix\Analysis\Policy\Architecture\Allow\InvalidSelectorException',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerCriterionNormalizer',
-        'Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerSelector',
-        'Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerSelectorParser',
+        'Qualimetrix\Analysis\Policy\Architecture\Allow\LayerSelector',
+        'Qualimetrix\Analysis\Policy\Architecture\Allow\LayerSelectorParser',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\LayersValidator',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\LongFormAllowEntryNormalizer',
-        'Qualimetrix\Analysis\Policy\Architecture\Configuration\ParseCapturedState',
+        'Qualimetrix\Analysis\Policy\Architecture\Allow\ParseCapturedState',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\SectionSpot',
-        'Qualimetrix\Analysis\Policy\Architecture\Configuration\SelectorKind',
-        'Qualimetrix\Analysis\Policy\Architecture\Configuration\SelectorSegment',
-        'Qualimetrix\Analysis\Policy\Architecture\Configuration\WildcardSelfAllowDetector',
+        'Qualimetrix\Analysis\Policy\Architecture\Allow\SelectorKind',
+        'Qualimetrix\Analysis\Policy\Architecture\Allow\SelectorSegment',
+        'Qualimetrix\Analysis\Policy\Architecture\Allow\WildcardSelfAllowDetector',
         'Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels',
         'Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationWarning',
         'Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface',
@@ -135,27 +135,13 @@ final class ArchitectureInternalTopologyTest extends TestCase
         'Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassSummary',
     ];
 
-    /** @var list<string> */
-    private const array ALLOW_LANGUAGE_DECLARATIONS = [
-        'AllowAliasExpander',
-        'AllowListEntry',
-        'AllowTarget',
-        'CaptureBinding',
-        'InvalidSelectorException',
-        'LayerSelector',
-        'LayerSelectorParser',
-        'ParseCapturedState',
-        'SelectorKind',
-        'SelectorSegment',
-    ];
-
     /** @var array<string, list<string>> */
     private const array ALLOWED = [
         'Contract' => [],
-        'Configuration/Allow' => ['Contract'],
-        'Layer' => ['Contract', 'Configuration/Allow'],
-        'Configuration' => ['Contract', 'Configuration/Allow', 'Layer'],
-        'Layer/Expansion' => ['Contract', 'Configuration', 'Configuration/Allow', 'Layer'],
+        'Allow' => ['Contract'],
+        'Layer' => ['Contract', 'Allow'],
+        'Configuration' => ['Contract', 'Allow', 'Layer'],
+        'Layer/Expansion' => ['Contract', 'Allow', 'Configuration', 'Layer'],
         'LayerAssignment' => ['Contract', 'Configuration', 'Layer'],
         'ArchitecturePolicy' => ['Contract', 'Configuration', 'Layer', 'Layer/Expansion', 'LayerAssignment'],
         'Observation' => ['Contract', 'ArchitecturePolicy', 'Configuration', 'Layer'],
@@ -174,7 +160,9 @@ final class ArchitectureInternalTopologyTest extends TestCase
         );
         $declarations = array_keys($expected);
         sort($declarations, \SORT_STRING);
-        self::assertSame(self::ARCHITECTURE_DECLARATIONS, $declarations);
+        $declared = self::ARCHITECTURE_DECLARATIONS;
+        sort($declared, \SORT_STRING);
+        self::assertSame($declared, $declarations);
 
         $resolvedArchitecturePolicy = $targets['Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface'];
         self::assertIsArray($resolvedArchitecturePolicy);
@@ -200,8 +188,8 @@ final class ArchitectureInternalTopologyTest extends TestCase
     #[Test]
     public function itRejectsInjectedReverseAndUnknownCrossZoneEdgesWithoutWildcardWidening(): void
     {
-        $allowValue = 'Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\AllowTarget';
-        self::assertSame('Configuration/Allow', $this->zoneForFqcn($allowValue));
+        $allowValue = 'Qualimetrix\\Analysis\\Policy\\Architecture\\Allow\\AllowTarget';
+        self::assertSame('Allow', $this->zoneForFqcn($allowValue));
         self::assertSame([], $this->disallowedDependencies('Layer', [$allowValue]));
 
         $configurationOperations = [
@@ -273,10 +261,7 @@ final class ArchitectureInternalTopologyTest extends TestCase
     {
         return match (true) {
             str_contains($path, '/Contract/') => 'Contract',
-            // The logical allow-language zone survives its physical rejoin; Layer must
-            // still be unable to call the adjacent configuration validators and factory.
-            str_starts_with($path, 'src/Analysis/Policy/Architecture/Configuration/')
-                && \in_array(basename($path, '.php'), self::ALLOW_LANGUAGE_DECLARATIONS, true) => 'Configuration/Allow',
+            str_contains($path, '/Allow/') => 'Allow',
             str_contains($path, '/Layer/Expansion/') => 'Layer/Expansion',
             str_contains($path, '/LayerAssignment/') => 'LayerAssignment',
             str_contains($path, '/Observation/') => 'Observation',

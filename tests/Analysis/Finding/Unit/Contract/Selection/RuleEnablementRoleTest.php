@@ -16,7 +16,7 @@ use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole;
 use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
-use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleEnablementResolver;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;

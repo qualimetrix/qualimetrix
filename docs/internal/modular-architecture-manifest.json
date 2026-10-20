@@ -391,7 +391,7 @@
         },
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\RuleEnablementResolver"
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\Selection\\RuleEnablementResolver"
         },
         {
           "owner": "Analysis.Finding",
@@ -950,7 +950,7 @@
         },
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\RuleNameJudge"
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\Selection\\RuleNameJudge"
         }
       ]
     },
@@ -4047,7 +4047,7 @@
         {
           "owner": "Analysis.Run",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\DependencyGraphAnalysisResult",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\DependencyGraph\\DependencyGraphAnalysisResult",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphInterface"
         },
         {
@@ -4360,7 +4360,7 @@
         },
         {
           "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\DependencyGraphAnalysisResult"
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\DependencyGraph\\DependencyGraphAnalysisResult"
         },
         {
           "owner": "Analysis.Run",
@@ -4480,7 +4480,7 @@
         },
         {
           "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\AllowAliasExpander"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Allow\\AllowAliasExpander"
         },
         {
           "owner": "Analysis.Policy.Architecture",
@@ -4955,8 +4955,8 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Duplication\\DataDeclarationTagger": {
-      "path": "src/Analysis/Evidence/Duplication/DataDeclarationTagger.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\Normalization\\DataDeclarationTagger": {
+      "path": "src/Analysis/Evidence/Duplication/Normalization/DataDeclarationTagger.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
@@ -5067,22 +5067,22 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Duplication\\RetokenizedFiles": {
-      "path": "src/Analysis/Evidence/Duplication/RetokenizedFiles.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\Token\\RetokenizedFiles": {
+      "path": "src/Analysis/Evidence/Duplication/Token/RetokenizedFiles.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Duplication\\TokenNormalizer": {
-      "path": "src/Analysis/Evidence/Duplication/TokenNormalizer.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\Normalization\\TokenNormalizer": {
+      "path": "src/Analysis/Evidence/Duplication/Normalization/TokenNormalizer.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Duplication\\TokenStream": {
-      "path": "src/Analysis/Evidence/Duplication/TokenStream.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\Token\\TokenStream": {
+      "path": "src/Analysis/Evidence/Duplication/Token/TokenStream.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
@@ -8221,6 +8221,10 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\DirectiveUsagePopulation"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Preparation\\RunPreparation"
         }
       ]
     },
@@ -10547,7 +10551,7 @@
           "owner": "Infrastructure.Console",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunSetup\\Finding\\FindingConfigurationPreparation",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\RuleEnablementResolver"
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\Selection\\RuleEnablementResolver"
         },
         {
           "owner": "Infrastructure.Console",
@@ -13271,8 +13275,8 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\RuleEnablementResolver": {
-      "path": "src/Analysis/Finding/Contract/Selection/RuleEnablementResolver.php",
+    "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\Selection\\RuleEnablementResolver": {
+      "path": "src/Analysis/Finding/RuleConfiguration/Selection/RuleEnablementResolver.php",
       "owner": "Analysis.Finding",
       "kind": "class",
       "visibility": "contract",
@@ -13295,8 +13299,8 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\RuleNameJudge": {
-      "path": "src/Analysis/Finding/Contract/Selection/RuleNameJudge.php",
+    "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\Selection\\RuleNameJudge": {
+      "path": "src/Analysis/Finding/RuleConfiguration/Selection/RuleNameJudge.php",
       "owner": "Analysis.Finding",
       "kind": "class",
       "visibility": "contract",
@@ -13395,13 +13399,13 @@
           "owner": "Infrastructure.Console",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleListing\\RulesCommand",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\RuleEnablementResolver"
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\Selection\\RuleEnablementResolver"
         },
         {
           "owner": "Infrastructure.Console",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunSetup\\Finding\\FindingConfigurationPreparation",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\RuleEnablementResolver"
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\Selection\\RuleEnablementResolver"
         },
         {
           "owner": "Infrastructure.Console",
@@ -14485,22 +14489,22 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\AllowAliasExpander": {
-      "path": "src/Analysis/Policy/Architecture/Configuration/AllowAliasExpander.php",
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\Allow\\AllowAliasExpander": {
+      "path": "src/Analysis/Policy/Architecture/Allow/AllowAliasExpander.php",
       "kind": "class",
       "owner": "Analysis.Policy.Architecture",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\AllowListEntry": {
-      "path": "src/Analysis/Policy/Architecture/Configuration/AllowListEntry.php",
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\Allow\\AllowListEntry": {
+      "path": "src/Analysis/Policy/Architecture/Allow/AllowListEntry.php",
       "kind": "class",
       "owner": "Analysis.Policy.Architecture",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\AllowTarget": {
-      "path": "src/Analysis/Policy/Architecture/Configuration/AllowTarget.php",
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\Allow\\AllowTarget": {
+      "path": "src/Analysis/Policy/Architecture/Allow/AllowTarget.php",
       "kind": "class",
       "owner": "Analysis.Policy.Architecture",
       "visibility": "internal",
@@ -14541,8 +14545,8 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\CaptureBinding": {
-      "path": "src/Analysis/Policy/Architecture/Configuration/CaptureBinding.php",
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\Allow\\CaptureBinding": {
+      "path": "src/Analysis/Policy/Architecture/Allow/CaptureBinding.php",
       "kind": "class",
       "owner": "Analysis.Policy.Architecture",
       "visibility": "internal",
@@ -14590,8 +14594,8 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\InvalidSelectorException": {
-      "path": "src/Analysis/Policy/Architecture/Configuration/InvalidSelectorException.php",
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\Allow\\InvalidSelectorException": {
+      "path": "src/Analysis/Policy/Architecture/Allow/InvalidSelectorException.php",
       "kind": "class",
       "owner": "Analysis.Policy.Architecture",
       "visibility": "internal",
@@ -14604,15 +14608,15 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\LayerSelector": {
-      "path": "src/Analysis/Policy/Architecture/Configuration/LayerSelector.php",
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\Allow\\LayerSelector": {
+      "path": "src/Analysis/Policy/Architecture/Allow/LayerSelector.php",
       "kind": "class",
       "owner": "Analysis.Policy.Architecture",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\LayerSelectorParser": {
-      "path": "src/Analysis/Policy/Architecture/Configuration/LayerSelectorParser.php",
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\Allow\\LayerSelectorParser": {
+      "path": "src/Analysis/Policy/Architecture/Allow/LayerSelectorParser.php",
       "kind": "class",
       "owner": "Analysis.Policy.Architecture",
       "visibility": "internal",
@@ -14632,8 +14636,8 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\ParseCapturedState": {
-      "path": "src/Analysis/Policy/Architecture/Configuration/ParseCapturedState.php",
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\Allow\\ParseCapturedState": {
+      "path": "src/Analysis/Policy/Architecture/Allow/ParseCapturedState.php",
       "kind": "class",
       "owner": "Analysis.Policy.Architecture",
       "visibility": "internal",
@@ -14646,22 +14650,22 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\SelectorKind": {
-      "path": "src/Analysis/Policy/Architecture/Configuration/SelectorKind.php",
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\Allow\\SelectorKind": {
+      "path": "src/Analysis/Policy/Architecture/Allow/SelectorKind.php",
       "kind": "enum",
       "owner": "Analysis.Policy.Architecture",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\SelectorSegment": {
-      "path": "src/Analysis/Policy/Architecture/Configuration/SelectorSegment.php",
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\Allow\\SelectorSegment": {
+      "path": "src/Analysis/Policy/Architecture/Allow/SelectorSegment.php",
       "kind": "class",
       "owner": "Analysis.Policy.Architecture",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\WildcardSelfAllowDetector": {
-      "path": "src/Analysis/Policy/Architecture/Configuration/WildcardSelfAllowDetector.php",
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\Allow\\WildcardSelfAllowDetector": {
+      "path": "src/Analysis/Policy/Architecture/Allow/WildcardSelfAllowDetector.php",
       "kind": "class",
       "owner": "Analysis.Policy.Architecture",
       "visibility": "internal",
@@ -16589,11 +16593,11 @@
       "consumers": [
         {
           "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\DirectiveAuditInterface"
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\DirectiveAudit\\DirectiveAuditInterface"
         },
         {
           "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\DirectiveAuditReport"
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\DirectiveAudit\\DirectiveAuditReport"
         },
         {
           "owner": "Analysis.Run",
@@ -18321,8 +18325,8 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\AnalysisCoverage": {
-      "path": "src/Analysis/Run/Contract/Pipeline/AnalysisCoverage.php",
+    "Qualimetrix\\Analysis\\Run\\Contract\\Coverage\\AnalysisCoverage": {
+      "path": "src/Analysis/Run/Contract/Coverage/AnalysisCoverage.php",
       "kind": "class",
       "owner": "Analysis.Run",
       "visibility": "contract",
@@ -18341,8 +18345,8 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\AnalysisFailure": {
-      "path": "src/Analysis/Run/Contract/Pipeline/AnalysisFailure.php",
+    "Qualimetrix\\Analysis\\Run\\Contract\\Coverage\\AnalysisFailure": {
+      "path": "src/Analysis/Run/Contract/Coverage/AnalysisFailure.php",
       "kind": "class",
       "owner": "Analysis.Run",
       "visibility": "contract",
@@ -18353,8 +18357,8 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\AnalysisFailureKind": {
-      "path": "src/Analysis/Run/Contract/Pipeline/AnalysisFailureKind.php",
+    "Qualimetrix\\Analysis\\Run\\Contract\\Coverage\\AnalysisFailureKind": {
+      "path": "src/Analysis/Run/Contract/Coverage/AnalysisFailureKind.php",
       "kind": "enum",
       "owner": "Analysis.Run",
       "visibility": "internal",
@@ -18428,8 +18432,8 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\DependencyGraphAnalysisResult": {
-      "path": "src/Analysis/Run/Contract/Pipeline/DependencyGraphAnalysisResult.php",
+    "Qualimetrix\\Analysis\\Run\\Contract\\DependencyGraph\\DependencyGraphAnalysisResult": {
+      "path": "src/Analysis/Run/Contract/DependencyGraph/DependencyGraphAnalysisResult.php",
       "kind": "class",
       "owner": "Analysis.Run",
       "visibility": "contract",
@@ -18444,8 +18448,8 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\DependencyGraphAnalyzerInterface": {
-      "path": "src/Analysis/Run/Contract/Pipeline/DependencyGraphAnalyzerInterface.php",
+    "Qualimetrix\\Analysis\\Run\\Contract\\DependencyGraph\\DependencyGraphAnalyzerInterface": {
+      "path": "src/Analysis/Run/Contract/DependencyGraph/DependencyGraphAnalyzerInterface.php",
       "kind": "interface",
       "owner": "Analysis.Run",
       "visibility": "contract",
@@ -18460,8 +18464,8 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\DirectiveAuditInterface": {
-      "path": "src/Analysis/Run/Contract/Pipeline/DirectiveAuditInterface.php",
+    "Qualimetrix\\Analysis\\Run\\Contract\\DirectiveAudit\\DirectiveAuditInterface": {
+      "path": "src/Analysis/Run/Contract/DirectiveAudit/DirectiveAuditInterface.php",
       "kind": "interface",
       "owner": "Analysis.Run",
       "visibility": "contract",
@@ -18480,8 +18484,8 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\DirectiveAuditReport": {
-      "path": "src/Analysis/Run/Contract/Pipeline/DirectiveAuditReport.php",
+    "Qualimetrix\\Analysis\\Run\\Contract\\DirectiveAudit\\DirectiveAuditReport": {
+      "path": "src/Analysis/Run/Contract/DirectiveAudit/DirectiveAuditReport.php",
       "kind": "class",
       "owner": "Analysis.Run",
       "visibility": "contract",
@@ -18500,8 +18504,8 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\IncompleteAnalysisException": {
-      "path": "src/Analysis/Run/Contract/Pipeline/IncompleteAnalysisException.php",
+    "Qualimetrix\\Analysis\\Run\\Contract\\Coverage\\IncompleteAnalysisException": {
+      "path": "src/Analysis/Run/Contract/Coverage/IncompleteAnalysisException.php",
       "kind": "class",
       "owner": "Analysis.Run",
       "visibility": "contract",
@@ -20371,11 +20375,11 @@
         },
         {
           "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\AnalysisCoverage"
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Coverage\\AnalysisCoverage"
         },
         {
           "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\AnalysisFailure"
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Coverage\\AnalysisFailure"
         },
         {
           "owner": "Core.Neutral",
@@ -21358,6 +21362,18 @@
         {
           "owner": "Analysis.Evidence.Cohesion",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionCompositionCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Size",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCount\\MethodCountCollector"
+        },
+        {
+          "owner": "Analysis.Evidence.Size",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCount\\MethodCountMetrics"
+        },
+        {
+          "owner": "Analysis.Evidence.Size",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCount\\MethodCountVisitor"
         }
       ]
     },
@@ -22525,7 +22541,7 @@
         },
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\RuleNameJudge"
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\Selection\\RuleNameJudge"
         },
         {
           "owner": "Analysis.Finding",
@@ -23394,6 +23410,10 @@
         {
           "owner": "Analysis.Evidence.ComputedMetrics.Health",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Offender\\OffenderNamespaceSelection"
+        },
+        {
+          "owner": "Analysis.Evidence.Size",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\ClassCount\\ClassCountRule"
         }
       ]
     },

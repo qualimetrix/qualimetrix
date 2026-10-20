@@ -34,7 +34,7 @@ use RuntimeException;
  * and must match the complete FQN. Character classes and raw PCRE syntax are
  * deliberately outside this DSL.
  *
- * Unlike the {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerSelectorParser}
+ * Unlike the {@see \Qualimetrix\Analysis\Policy\Architecture\Allow\LayerSelectorParser}
  * grammar (which treats {@code \{} / {@code \}} as escaped literal braces),
  * FQN patterns reserve {@code \} as the namespace separator only. PHP FQNs
  * never contain literal {@code &#123;} / {@code &#125;}, so the escape
@@ -43,7 +43,7 @@ use RuntimeException;
  * public {@code exact/subtree/regex} selector shape.
  *
  * **Variable name regex** ({@see VARIABLE_NAME_REGEX}) intentionally mirrors
- * {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerSelectorParser::VARIABLE_NAME_REGEX}.
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\Allow\LayerSelectorParser::VARIABLE_NAME_REGEX}.
  * The two grammars share the same identifier rules but live in independent
  * namespaces so {@code Layer/} need not depend on {@code Allow/} — the
  * duplication is local and intentional.
@@ -54,7 +54,7 @@ final readonly class CapturePattern
 {
     /**
      * Regex defining a capture-variable identifier — same shape as
-     * {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerSelectorParser::VARIABLE_NAME_REGEX}.
+     * {@see \Qualimetrix\Analysis\Policy\Architecture\Allow\LayerSelectorParser::VARIABLE_NAME_REGEX}.
      */
     public const string VARIABLE_NAME_REGEX = CapturePatternCompiler::VARIABLE_NAME_REGEX;
 

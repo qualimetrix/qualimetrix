@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\Contract\Discovery;
 
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailureKind;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;

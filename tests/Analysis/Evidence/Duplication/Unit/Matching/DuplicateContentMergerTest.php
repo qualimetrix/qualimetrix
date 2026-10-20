@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateContentMerger;
-use Qualimetrix\Analysis\Evidence\Duplication\TokenStream;
+use Qualimetrix\Analysis\Evidence\Duplication\Token\TokenStream;
 
 #[CoversClass(DuplicateContentMerger::class)]
 final class DuplicateContentMergerTest extends TestCase

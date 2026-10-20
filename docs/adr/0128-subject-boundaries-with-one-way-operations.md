@@ -29,10 +29,17 @@ operation. Specifically:
   depending on report publication.
 - Written nodes and positioned reading context belong to authored-document facts,
   consumed independently by document composition and name binding.
-- Architecture's shape reader and validators form one reading operation. Allow
-  selectors and policy values do not depend on that reader. Criterion values
-  belong to Matching; whole-layer matching reads declaration context beside the
-  layer operation.
+- Architecture's shape reader and document validators form one reading operation.
+  Configuration retains the authored position while judging list shape; the
+  selector language, relation-token semantics, policy values and self-glob
+  judgement live in the shared `Architecture\Allow` leaf below Configuration
+  and Layer and depend on neither operation. Criterion
+  values belong to Matching; whole-layer matching reads declaration context
+  beside the layer operation.
+- Duplication source-to-token behavior lives in `Duplication\Normalization`.
+  The immutable stream and retokenized-file batch live in `Duplication\Token`,
+  a common fact subject below Normalization, detection, Index and Matching.
+  Neither subject calls those consuming operations.
 - Baseline scope owns portable normalization; stored entries and current coverage
   consume it. A group's capture judgement owns its refusal vocabulary.
 - Worker-roster composition consumes collector and rule tags without introducing
@@ -86,6 +93,26 @@ are provided.
 | `Core\Symbol\TraitMethodSource`                 | `Core\Symbol\TraitComposition\Contract\TraitMethodSource`      |
 | `Core\Symbol\TraitUseFacts`                     | `Core\Symbol\TraitComposition\Contract\TraitUseFacts`          |
 
+Additional one-way fact moves are:
+
+| Old name                                                               | New name                                                            |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `Analysis\Evidence\Duplication\DataDeclarationTagger`                  | `Analysis\Evidence\Duplication\Normalization\DataDeclarationTagger` |
+| `Analysis\Evidence\Duplication\RetokenizedFiles`                       | `Analysis\Evidence\Duplication\Token\RetokenizedFiles`              |
+| `Analysis\Evidence\Duplication\TokenNormalizer`                        | `Analysis\Evidence\Duplication\Normalization\TokenNormalizer`       |
+| `Analysis\Evidence\Duplication\TokenStream`                            | `Analysis\Evidence\Duplication\Token\TokenStream`                   |
+| `Analysis\Policy\Architecture\Configuration\AllowAliasExpander`        | `Analysis\Policy\Architecture\Allow\AllowAliasExpander`             |
+| `Analysis\Policy\Architecture\Configuration\AllowListEntry`            | `Analysis\Policy\Architecture\Allow\AllowListEntry`                 |
+| `Analysis\Policy\Architecture\Configuration\AllowTarget`               | `Analysis\Policy\Architecture\Allow\AllowTarget`                    |
+| `Analysis\Policy\Architecture\Configuration\CaptureBinding`            | `Analysis\Policy\Architecture\Allow\CaptureBinding`                 |
+| `Analysis\Policy\Architecture\Configuration\InvalidSelectorException`  | `Analysis\Policy\Architecture\Allow\InvalidSelectorException`       |
+| `Analysis\Policy\Architecture\Configuration\LayerSelector`             | `Analysis\Policy\Architecture\Allow\LayerSelector`                  |
+| `Analysis\Policy\Architecture\Configuration\LayerSelectorParser`       | `Analysis\Policy\Architecture\Allow\LayerSelectorParser`            |
+| `Analysis\Policy\Architecture\Configuration\ParseCapturedState`        | `Analysis\Policy\Architecture\Allow\ParseCapturedState`             |
+| `Analysis\Policy\Architecture\Configuration\SelectorKind`              | `Analysis\Policy\Architecture\Allow\SelectorKind`                   |
+| `Analysis\Policy\Architecture\Configuration\SelectorSegment`           | `Analysis\Policy\Architecture\Allow\SelectorSegment`                |
+| `Analysis\Policy\Architecture\Configuration\WildcardSelfAllowDetector` | `Analysis\Policy\Architecture\Allow\WildcardSelfAllowDetector`      |
+
 Portable scope normalization also moves from
 `Analysis\Policy\Baseline\Entry\Baseline::normalizeScope()` to
 `Analysis\Policy\Baseline\Contract\RunScope::normalize()`. Call the latter
@@ -104,3 +131,8 @@ A namespace's smaller population alone is not evidence of lower coupling, and
 reuniting a real operation may retain a bounded namespace warning. Existing
 behavior tests remain the evidence for algorithms and delivery; this decision
 adds no architecture inventory or permanent check of another check.
+
+The common-fact moves remove the Duplication/Index/Matching cycle and the
+Architecture Configuration/Layer cycle. Architecture Layer/ClassContext and
+Baseline Contract/Entry remain the two known namespace-cycle residues; neither
+is widened by these leaves.

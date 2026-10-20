@@ -58,42 +58,47 @@ Debug shadow verdicts are mandatory typed projections of the same authority;
 disabled policy output retains observed spelling without claiming a reported
 shadow or publishing a diagnostic hint.
 
-`Configuration/` owns the whole shape-reading and validation operation.
-`Configuration/` retains selector and policy values without importing the
-reader. Matching owns criterion values, including `NamedType`; the whole-layer
-`LayerCriteriaMatcher` reads declaration context beside the layer operation.
+`Configuration/` owns authored shape reading, positioned refusals and the
+validation operation. `Allow/` owns the selector language and policy values
+shared by configuration reading and layer matching, including relation-token
+semantics and the self-glob judgement; it imports neither operation.
+`LongFormAllowEntryNormalizer` retains each token's authored position before
+`AllowValidator` applies that semantic vocabulary. Layer owns criterion values,
+including `NamedType`; the whole-layer `LayerCriteriaMatcher` reads declaration
+context beside the layer operation.
 
 ## Layout
 
 ```text
 Architecture/
-├── Configuration/
+├── Allow/
 │   ├── AllowAliasExpander.php
 │   ├── AllowListEntry.php
 │   ├── AllowTarget.php
+│   ├── CaptureBinding.php
+│   ├── InvalidSelectorException.php
+│   ├── LayerSelector.php
+│   ├── LayerSelectorParser.php
+│   ├── ParseCapturedState.php
+│   ├── SelectorKind.php
+│   ├── SelectorSegment.php
+│   └── WildcardSelfAllowDetector.php
+├── Configuration/
 │   ├── AllowValidator.php
 │   ├── ArchitectureConfiguration.php
 │   ├── ArchitectureConfigurationFactory.php
 │   ├── ArchitectureFactoryResult.php
 │   ├── ArchitectureSection.php
-│   ├── CaptureBinding.php
 │   ├── CarriedValueForm.php
 │   ├── CoverageMode.php
 │   ├── CoverageValidator.php
 │   ├── DuplicatePatternRejector.php
 │   ├── ExactAllowCycleValidator.php
 │   ├── ExcludeBlockValidator.php
-│   ├── InvalidSelectorException.php
 │   ├── LayerCriterionNormalizer.php
-│   ├── LayerSelector.php
-│   ├── LayerSelectorParser.php
 │   ├── LayersValidator.php
 │   ├── LongFormAllowEntryNormalizer.php
-│   ├── ParseCapturedState.php
-│   ├── SectionSpot.php
-│   ├── SelectorKind.php
-│   ├── SelectorSegment.php
-│   └── WildcardSelfAllowDetector.php
+│   └── SectionSpot.php
 ├── Contract/
 │   ├── ArchitectureChannels.php
 │   ├── ArchitectureConfigurationWarning.php
@@ -661,11 +666,10 @@ predicate. Authored provenance distinguishes equal FQNs at separate positions;
 expanded copies retain the native coalescing. The five configuration-validator
 channels stay outside ordinary rule population accounting.
 
-Configuration reads and validates the layer-policy language in one subject,
-including allow selectors, their parsing and the checks over their meaning.
-Layer owns membership criteria and their evaluation together. Their concrete
-values have no independent module lifecycle; the earlier role subdivisions
-made internal readers appear to be external stability dependencies.
+Configuration reads and validates the layer-policy document. Allow owns the
+shared selector language below both Configuration and Layer, including parsing
+and capture values; it has no independent lifecycle and imports neither
+consumer. Layer owns membership criteria and their evaluation together.
 
 `Layer/KnownTypes` judges whether a type named by a membership criterion was
 met in the analysed project. It shares ownership with `NamedType` and unmatched

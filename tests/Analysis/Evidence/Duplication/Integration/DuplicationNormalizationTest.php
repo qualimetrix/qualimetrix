@@ -11,7 +11,7 @@ use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
 use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlock;
-use Qualimetrix\Analysis\Evidence\Duplication\TokenNormalizer;
+use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenNormalizer;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Core\Path\AbsolutePath;

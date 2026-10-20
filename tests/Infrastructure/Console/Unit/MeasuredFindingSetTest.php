@@ -21,7 +21,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\MeasuredRunResult;

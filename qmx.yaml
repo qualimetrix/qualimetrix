@@ -432,7 +432,6 @@ architecture:
       patterns:
         - 'Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions'
         - 'Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\DataDeclarationTagger'
         - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector'
         - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider'
         - 'Qualimetrix\Analysis\Evidence\Duplication\Index\HashIndexBuildResult'
@@ -448,9 +447,10 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateLocation'
         - 'Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateMatchCandidates'
         - 'Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateSearchRequest'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\RetokenizedFiles'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\TokenNormalizer'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\TokenStream'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Normalization\DataDeclarationTagger'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenNormalizer'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Token\RetokenizedFiles'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Token\TokenStream'
     - name: analysis-evidence-maintainability
       patterns:
         - 'Qualimetrix\Analysis\Evidence\Maintainability\Halstead\HalsteadCollector'
@@ -710,8 +710,6 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision'
         - 'Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission'
         - 'Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch'
-        - 'Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver'
-        - 'Qualimetrix\Analysis\Finding\Contract\Selection\RuleNameJudge'
         - 'Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress'
         - 'Qualimetrix\Analysis\Finding\Contract\Selection\SelectionFilter'
         - 'Qualimetrix\Analysis\Finding\Contract\Selection\SelectionRecord'
@@ -742,6 +740,8 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleSuppressionSelectorDecoder'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection'
+        - 'Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleEnablementResolver'
+        - 'Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleNameJudge'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\ThresholdBandRefusal'
         - 'Qualimetrix\Analysis\Finding\RuleExecution'
         - 'Qualimetrix\Analysis\Finding\RuleMaterialization'
@@ -765,33 +765,33 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement'
     - name: analysis-policy-architecture
       patterns:
+        - 'Qualimetrix\Analysis\Policy\Architecture\Allow\AllowAliasExpander'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Allow\AllowListEntry'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Allow\AllowTarget'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Allow\CaptureBinding'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Allow\InvalidSelectorException'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Allow\LayerSelector'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Allow\LayerSelectorParser'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Allow\ParseCapturedState'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Allow\SelectorKind'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Allow\SelectorSegment'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Allow\WildcardSelfAllowDetector'
         - 'Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy'
-        - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowAliasExpander'
-        - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowListEntry'
-        - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowTarget'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowValidator'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureFactoryResult'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureSection'
-        - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\CaptureBinding'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\CarriedValueForm'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageValidator'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\DuplicatePatternRejector'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\ExactAllowCycleValidator'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\ExcludeBlockValidator'
-        - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\InvalidSelectorException'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerCriterionNormalizer'
-        - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerSelector'
-        - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerSelectorParser'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\LayersValidator'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\LongFormAllowEntryNormalizer'
-        - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\ParseCapturedState'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\SectionSpot'
-        - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\SelectorKind'
-        - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\SelectorSegment'
-        - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\WildcardSelfAllowDetector'
         - 'Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels'
         - 'Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationWarning'
         - 'Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface'
@@ -1067,6 +1067,14 @@ architecture:
         - 'Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse'
         - 'Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration'
         - 'Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface'
+        - 'Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisCoverage'
+        - 'Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailure'
+        - 'Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailureKind'
+        - 'Qualimetrix\Analysis\Run\Contract\Coverage\IncompleteAnalysisException'
+        - 'Qualimetrix\Analysis\Run\Contract\DependencyGraph\DependencyGraphAnalysisResult'
+        - 'Qualimetrix\Analysis\Run\Contract\DependencyGraph\DependencyGraphAnalyzerInterface'
+        - 'Qualimetrix\Analysis\Run\Contract\DirectiveAudit\DirectiveAuditInterface'
+        - 'Qualimetrix\Analysis\Run\Contract\DirectiveAudit\DirectiveAuditReport'
         - 'Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles'
         - 'Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence'
@@ -1076,16 +1084,8 @@ architecture:
         - 'Qualimetrix\Analysis\Run\Contract\Discovery\SkippedEntry'
         - 'Qualimetrix\Analysis\Run\Contract\FileSetInspectionFailure'
         - 'Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface'
-        - 'Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage'
-        - 'Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure'
-        - 'Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind'
         - 'Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult'
-        - 'Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult'
-        - 'Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface'
-        - 'Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface'
-        - 'Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport'
-        - 'Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException'
         - 'Qualimetrix\Analysis\Run\Contract\Pipeline\MeasuredRunResult'
         - 'Qualimetrix\Analysis\Run\Contract\Progress\ProgressReporterInterface'
         - 'Qualimetrix\Analysis\Run\Discovery\EntryInspector'
@@ -1970,6 +1970,9 @@ rules:
         - exact: 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition'
         # Exact inbound contract vocabulary; descendant namespaces remain judged.
         - exact: 'Qualimetrix\Analysis\Configuration\Contract\Refusal'
+        # Resolved-document values and interfaces are public vocabulary read by
+        # declared configuration owners; executable policy remains judged.
+        - exact: 'Qualimetrix\Analysis\Configuration\Contract\Document'
         - exact: 'Qualimetrix\Analysis\Finding\Contract\ProjectScope'
         # These exact contract namespaces grow with their intended named readers.
         - exact: 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract'
@@ -1993,7 +1996,6 @@ rules:
         - exact: 'Qualimetrix\Core\Pattern'
         - exact: 'Qualimetrix\Core\Symbol'
         - exact: 'Qualimetrix\Reporting\Contract\Report'
-        - exact: 'Qualimetrix\Analysis\Finding\Contract\Selection'
         - exact: 'Qualimetrix\Analysis\Policy\Baseline\Contract\Entry'
         - exact: 'Qualimetrix\Analysis\Run\Contract\Discovery'
         - exact: 'Qualimetrix\Reporting\FindingProjection\Contract'
@@ -2014,6 +2016,9 @@ rules:
       - exact: src/Analysis/Configuration/Contract/Refusal/RefusedPosition.php
       - exact: src/Analysis/Finding/Contract/Channel/ChannelDeclaration.php
       - exact: src/Analysis/Finding/Contract/Channel/ChannelDeclarationRegistryInterface.php
+      # Publication is the shared channel-population contract read by Finding,
+      # Run, Baseline, Inline and Reporting; its CBO growth is inbound readership.
+      - exact: src/Analysis/Finding/Contract/Channel/ChannelPublication.php
       - exact: src/Analysis/Finding/Contract/Channel/ChannelShape.php
       - exact: src/Analysis/Finding/Contract/Finding.php
       - exact: src/Analysis/Finding/Contract/Channel/FindingChannel.php
@@ -2143,6 +2148,10 @@ rules:
       - exact: 'Qualimetrix\Reporting\Contract\Report'
       # Rule definitions, typed option contracts and their queries form the public authoring language.
       - exact: 'Qualimetrix\Analysis\Finding\Contract\Rule'
+      # Authored selection values form the public decision and trace vocabulary read by execution and adapters.
+      - exact: 'Qualimetrix\Analysis\Finding\Contract\Selection'
+      # Terminal analysis coverage and failure values form the public run-completion vocabulary read by Console and Baseline.
+      - exact: 'Qualimetrix\Analysis\Run\Contract\Coverage'
       # Trait declaration facts, method sources, result and failure values are neutral public vocabulary; resolution operations remain outside Contract.
       - exact: 'Qualimetrix\Core\Symbol\TraitComposition\Contract'
       # Acceptance entries, identities and modes are concrete public values read across baseline and Console.

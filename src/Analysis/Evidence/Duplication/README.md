@@ -1,8 +1,8 @@
 # Duplication
 
-Token normalization belongs to the duplication operation itself. Its token
-stream and retokenized-file records are private algorithm state shared by the
-detection phases, rather than an independently consumed module.
+Token normalization owns the source-to-token operation. The immutable token
+stream and retokenized-file batch belong to the separate Token subject shared
+by normalization, indexing and matching. Both remain private to Duplication.
 
 ## Subject, promise and owners
 
@@ -37,14 +37,16 @@ Duplication/
 │   ├── DuplicateLocation.php
 │   ├── DuplicateMatchCandidates.php
 │   └── DuplicateSearchRequest.php
+├── Normalization/
+│   ├── DataDeclarationTagger.php
+│   └── TokenNormalizer.php
+├── Token/
+│   ├── RetokenizedFiles.php
+│   └── TokenStream.php
 ├── CodeDuplicationOptions.php
 ├── CodeDuplicationRule.php
-├── DataDeclarationTagger.php
 ├── DuplicationDetector.php
-├── DuplicationResultProvider.php
-├── RetokenizedFiles.php
-├── TokenNormalizer.php
-└── TokenStream.php
+└── DuplicationResultProvider.php
 ```
 
 ## External integration
@@ -101,8 +103,8 @@ the body does. Unit tests live below `Unit/`, where the owning test root is
 `Duplication`; subject folders group the classes within that root. `Unit/Index/`
 contains `PackedPositionTest` and `SaturatingCandidateFilterTest`.
 `Unit/Matching/` owns balanced segments, display hints, connected coverage,
-block finding, candidate storage and copy identity. `Unit/`
-owns data tagging, normalization and packed coordinate alignment.
+block finding, candidate storage and copy identity. `Unit/Normalization/` owns
+data tagging and normalization. `Unit/Token/` owns packed coordinate alignment.
 `CodeDuplicationRuleTest` stays directly under `Unit/` because the rule stays
 in the root. These tests run in memory.
 
