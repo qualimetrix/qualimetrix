@@ -38,6 +38,8 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationW
  * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy::isAllowed()} checks
  * the actual dependency edge against. Bare-string targets keep the legacy
  * "all relations allowed" semantics.
+ *
+ * @qmx-threshold coupling.instability 0.800001 -- Authored-layer and resolved-policy callers share this typed allow-language judgement; splitting the phases would duplicate selector and relation semantics, while the finite boundary keeps another dependency visible.
  */
 final class AllowValidator
 {
