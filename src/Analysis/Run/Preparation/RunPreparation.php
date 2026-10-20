@@ -25,11 +25,11 @@ use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisCoverage;
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailure;
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\SkippedEntry;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeRule;
 use Qualimetrix\Analysis\Run\InlineDirectiveRun;
@@ -49,8 +49,8 @@ use SplFileInfo;
 /**
  * Prepares one measured execution context shared by normal reporting and directive audit.
  *
- * @qmx-threshold coupling.cbo 34 -- Preparation combines discovery, collection retry, measured graph and one rule context. The execution and measurement subjects were separated; further splitting these connected inputs would move the same dependency set to another coordinator.
- * @qmx-threshold coupling.instability 0.939395 -- The preparation coordinator calls the participants needed for one measured context after measurement and publication were separated; its outward protocol retains a finite instability boundary.
+ * @qmx-threshold coupling.cbo 35 -- Preparation combines discovery, collection retry, measured graph and one rule context. Current CBO 34 includes the typed ChannelPublication snapshot shared by discovery and the final PreparedRun; the next dependency remains visible.
+ * @qmx-threshold coupling.instability 0.941177 -- Current Ca=2 and Ce=32 include the typed ChannelPublication snapshot shared by discovery and the final PreparedRun; the finite boundary exposes the next outward dependency.
  */
 final class RunPreparation
 {
