@@ -2034,6 +2034,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itAddsTheNodesHintToTheRefusalOfItsForm"a scalar for a list"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itAddsTheNodesHintToTheRefusalOfItsForm"a scalar for a map"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itAddsTheNodesHintToTheRefusalOfItsForm"a scalar of the wrong type"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itDoesNotTreatACollectionAsAScalarNullForAHint#0
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itDoesNotTreatACollectionAsAScalarNullForAHint#1
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itDoesNotTreatACollectionAsAScalarNullForAHint#2
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itJudgesClosedWordsNumericFloorsAndNonEmptyTextInEachLayer
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itJudgesRetiredKeysEvenWhenWrittenAsNull
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itReadsABareBooleanAsTheDeclaredFieldWithoutTreatingNullAsFalse
