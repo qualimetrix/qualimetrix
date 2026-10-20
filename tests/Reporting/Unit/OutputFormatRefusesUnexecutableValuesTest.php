@@ -114,6 +114,20 @@ final class OutputFormatRefusesUnexecutableValuesTest extends TestCase
         self::fail('an unknown format name was not refused');
     }
 
+    #[Test]
+    public function itNamesTheReplacementForTheRetiredVerboseTextFormat(): void
+    {
+        try {
+            self::resolve('text-verbose');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString('--format=text --detail=all', $refusal->getMessage());
+
+            return;
+        }
+
+        self::fail('the retired verbose text format was not refused');
+    }
+
     private static function resolve(mixed $value, bool $withCommandLineOverride = false): \Qualimetrix\Reporting\Contract\OutputFormat
     {
         $sources = [['source' => 'qmx.yaml', 'values' => ['format' => $value]]];

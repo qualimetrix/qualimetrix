@@ -73,6 +73,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - AST entries use a new allowlisted codec instead of igbinary; old formats become cache misses and `ext-igbinary` is no longer suggested. `--clear-cache` removes only qmx-owned entries, across every project/worktree sharing that root, after all invocation checks pass. Rerun a valid invocation to clear the cache and retain foreign files separately.
 
+- `--clear-cache` with foreign content in the cache root now exits 3 before analysis; it previously printed `Cache cleared`, ran analysis and exited 0 or 2 according to findings. Remove the foreign files or configure a dedicated `cache.dir`/`--cache-dir`, then retry.
+
 - Parallel collection uses worker processes only; `ext-parallel` transport is removed. For an eligible explicit worker request, failed startup/first probe now exits 3 instead of silently running sequentially; automatic selection falls back with a warning. A startup refusal may take up to ten seconds. Configure `--workers=0` for sequential execution.
 
 - Worker output is captured instead of passing raw stdout/stderr through machine-report streams. Missing or invalid registered collector/traversal types now produce one coordinator internal error before startup; custom collectors need the parallel-safe marker or sequential execution. Consume coordinator diagnostics rather than parsing raw worker output.
@@ -234,11 +236,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Rule-population warnings now identify actual missing evidence; deliberately ineligible subjects and architecture rules without configured layers do not create artificial incomplete-population warnings; JSON `abstentions[].dataGap` identifies real missing evidence.
 
-- Conflicting trait methods without a resolving adaptation now fail that file with incomplete-analysis exit 4, name its class and preserve the remaining report. Ambiguous `--class` selection now refuses with exit 3 and both declarations instead of an internal error.
+- Conflicting trait methods without a resolving adaptation now fail that file with incomplete-analysis exit 4, name its class and preserve the remaining report. Ambiguous `--class` selection now refuses with exit 3 and both declarations instead of an internal error; when both declarations share one file, analyse that file without `--class` or rename one declaration.
 
-- Interrupted parallel runs remove worker startup files for stdout-only runs and coordinator memory exhaustion. Killed workers no longer incur a second ten-second wait for an absent shutdown note.
+- With ext-pcntl and available SIGINT/SIGTERM ownership, signal-interrupted parallel runs remove worker startup files, including stdout-only runs. Coordinator memory exhaustion also removes them. Killed workers no longer incur a second ten-second wait for an absent shutdown note.
 
-- Cache sweeping/clearing recognizes publication temporaries and retries retained detached directories; incomplete clearing no longer prints successful `Cache cleared`. Corrupt/foreign AST entries reparse, and `--no-cache`/`cache.enabled: false` actually prevent reads/writes.
+- Cache sweeping/clearing recognizes publication temporaries and retries retained detached directories. Corrupt/foreign AST entries reparse, and `--no-cache`/`cache.enabled: false` actually prevent reads/writes.
+
+- Refusals for retired `fail_on: false` and `--format=text-verbose` inputs now name their `fail_on: none` and `--format=text --detail=all` replacements.
 
 - Integer refusals suggest the actual whole-number spelling, and baseline cleanup reports every removed physical entry, including duplicate identities.
 

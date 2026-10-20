@@ -39,9 +39,8 @@ final class RetiredOutputFormatTest extends TestCase
 
             self::assertSame(3, $tester->getStatusCode(), $tester->getErrorOutput());
             self::assertSame('', $tester->getDisplay());
-            self::assertStringContainsString('Output format "text-verbose" is not one of:', $tester->getErrorOutput());
-            self::assertStringContainsString('summary', $tester->getErrorOutput());
-            self::assertStringContainsString('text', $tester->getErrorOutput());
+            self::assertStringContainsString('Output format "text-verbose" was retired', $tester->getErrorOutput());
+            self::assertStringContainsString('--format=text --detail=all', $tester->getErrorOutput());
         } finally {
             chdir($previous);
             unlink($fixture . '/Source.php');

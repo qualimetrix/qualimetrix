@@ -46,8 +46,6 @@ What follows from the decision: trade-offs, constraints, and implications.
 
 ## Current decisions
 
-- [0128 — One-Way Subject Operations](0128-subject-boundaries-with-one-way-operations.md) — authored facts, file-target resources, named metric families and deterministic directive advice.
-
 - [0001 — Computed Metrics](0001-computed-metrics.md) — formula-based computed metrics and health scores.
 - [0002 — Interactive HTML Report](0002-html-report.md) — self-contained interactive report delivery.
 - [0003 — Reporting UX Redesign](0003-reporting-ux-redesign.md) — summary-first reporting and progressive disclosure.
@@ -123,6 +121,10 @@ What follows from the decision: trade-offs, constraints, and implications.
 
 - [0088 — Atomic Section Declarations and a Shared Format Vocabulary](0088-atomic-section-declarations-and-format-vocabulary.md) — one key/schema declaration per provider, one registered format dictionary for both validation boundaries, and one project-scope measurement for callers.
 
+- [0089 — Composer Manifest Facts and Project Scope Reasons](0089-composer-manifest-facts-and-project-scope-reasons.md) — one captured Composer universe distinguishes intact, partial and unavailable project evidence.
+
+- [0090 — Exact Finding Gate Surface Deltas](0090-exact-finding-gate-surface-deltas.md) — measured surface changes and baseline eligibility are declared exactly when semantic forms cannot express them.
+
 - [0091 — Declared Rule Options and Enablement](0091-declared-rule-options-and-enablement.md) — typed authored forms and one immutable execution/publication snapshot.
 
 - [0092 — Typed Document Declarations and Option Judgement](0092-typed-document-declarations-and-option-judgement.md) — typed document facts and rule option form projection.
@@ -136,6 +138,8 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0096 — File Target Claims](0096-file-target-claims.md) — neutral filesystem judgement, held writes, publication and explicit descriptor/race limits.
 
 - [0097 — Duplication Copy Evidence](0097-duplication-copy-evidence.md) — connected token coverage, copy-owned values, File identity and explicit incomplete-run limits.
+- [0098 — Baseline Entry Comparability](0098-baseline-entry-comparability.md) — baseline ceilings compare only complete, compatible finding groups with explicit unmeasured outcomes.
+- [0099 — Rule Option Shape Is a Declaration](0099-rule-option-shape-is-a-declaration.md) — rule option shapes are immutable declaration data projected through the shared configuration schema.
 - [0100 — Core AST Name Resolution and Superglobal Reads](0100-core-ast-name-resolution-and-superglobal-reads.md) — shared, bounded AST evidence for detector consumers.
 - [0101 — Class Count Judges the Own Namespace](0101-class-count-judges-own-namespace.md) — all namespace levels use own count while subtree totals stay published.
 - [0102 — Detector Verdicts and Finding Identity](0102-detector-verdicts-and-finding-identity.md) — credential and smell decisions, declaration identity, and raw threshold wording.
@@ -144,8 +148,13 @@ What follows from the decision: trade-offs, constraints, and implications.
 
 - [0104 — Source Bytes and Prose Publication](0104-source-bytes-and-prose-publication.md) — canonical identity, display repairs and the closed prose mode.
 - [0105 — Finding Publication and Drill-down](0105-finding-publication-and-drill-down.md) — shared records, published bags, selection reach and generated-hook revision.
+- [0106 — Declaration Metric Records and Declared Publication](0106-declaration-metric-records-and-declared-publication.md) — exact declaration records separate metric publication from logical dependency identities.
 
 - [0107 — Inheritance Chain Outcomes](0107-inheritance-chain-outcomes.md) — exact depths, numeric floors, non-numeric loops and independent Throwable knowledge share one Design-owned ancestry result.
+
+- [0108 — Health Score Applicability and Evaluation](0108-health-score-applicability-and-evaluation.md) — health evaluation distinguishes measured zero, absent input, inapplicability and invalid applicable input.
+- [0109 — Rule Populations and Coupling Units](0109-rule-populations-and-coupling-units.md) — channel declarations own eligibility, data-gap judgement and stable coupling units.
+- [0110 — Complete Offender Ranking and Catalog Thresholds](0110-complete-offender-ranking-and-catalog-thresholds.md) — one complete offender snapshot and resolved definition catalog drive ranking and presentation.
 
 - [0111 — Resolved RFC Targets and Trait Composition](0111-resolved-rfc-targets-and-trait-composition.md) — exact response membership and neutral PHP trait method composition.
 
@@ -166,6 +175,9 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0123 — Worker Process Boundary and Strategy Port](0123-worker-process-boundary-and-strategy-port.md) — Parallel owns both sides of its task protocol, and runtime startup determines worker availability.
 - [0124 — Finding Publication and Rule Execution Contracts](0124-finding-publication-and-rule-execution-contracts.md) — publication readers use a narrow contract over the shared invocation snapshot and ledger.
 - [0125 — Subject Boundaries and Explicit Composition](0125-subject-boundaries-and-explicit-composition.md) — subject namespaces, finite DI registration and separate Console preparation, assembly and publication.
+- [0126 — Warning-Only Ratchet and Exact Signal Decisions](0126-warning-only-ratchet-and-exact-signal-decisions.md) — residual debt stays warning-only while class limits and contract-popularity exceptions remain exact.
+- [0128 — One-Way Subject Operations](0128-subject-boundaries-with-one-way-operations.md) — authored facts, file-target resources, named metric families and deterministic directive advice.
+- [0129 — Public Report and Baseline Values with Subject-Owned Delivery](0129-public-report-and-baseline-values-with-subject-owned-delivery.md) — public immutable report and baseline values remain separate from subject-owned assembly and delivery.
 
 ## Superseded history
 

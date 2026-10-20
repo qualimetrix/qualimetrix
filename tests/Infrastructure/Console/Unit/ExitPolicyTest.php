@@ -111,6 +111,7 @@ final class ExitPolicyTest extends TestCase
             self::assertSame('qmx.yaml', $refusal->sources()[0]->locator());
             self::assertSame(['fail_on'], $refusal->position()?->segments);
             self::assertStringContainsString('must be string, got bool', $refusal->summary());
+            self::assertStringContainsString('use "none"', $refusal->summary());
         }
     }
 
