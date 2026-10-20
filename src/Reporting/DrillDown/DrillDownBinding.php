@@ -102,30 +102,22 @@ final readonly class DrillDownBinding
         return \count($this->namespaceUniverse($metrics, $namespaceTree));
     }
 
-    /** @return list<string> Exact declarations selected by this logical class name. */
-    public function classDeclarations(string $fqcn, MetricRepositoryInterface $metrics): array
+    /** @return array{declarations: list<string>, fileCount: int} */
+    public function classDeclarationSelection(string $fqcn, MetricRepositoryInterface $metrics): array
     {
         $declarations = [];
+        $files = [];
         foreach ($metrics->allClassDeclarations() as $info) {
             if ($info->symbolPath->toString() === $fqcn && $info->subject !== null) {
                 $declarations[] = $info->subject->toCanonical();
+                $file = $info->subject->declarationPath()?->file;
+                if ($file !== null) {
+                    $files[$file->value()] = true;
+                }
             }
         }
         sort($declarations, \SORT_STRING);
-        return $declarations;
-    }
-
-    public function classDeclarationFileCount(string $fqcn, MetricRepositoryInterface $metrics): int
-    {
-        $files = [];
-        foreach ($metrics->allClassDeclarations() as $info) {
-            $file = $info->subject?->declarationPath()?->file;
-            if ($info->symbolPath->toString() === $fqcn && $file !== null) {
-                $files[$file->value()] = true;
-            }
-        }
-
-        return \count($files);
+        return ['declarations' => $declarations, 'fileCount' => \count($files)];
     }
 
     /**

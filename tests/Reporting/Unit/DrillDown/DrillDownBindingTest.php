@@ -203,7 +203,17 @@ final class DrillDownBindingTest extends TestCase
             );
         }
 
-        self::assertSame(2, (new DrillDownBinding())->classDeclarationFileCount('Demo\\Repeated', $repository));
+        self::assertSame(
+            [
+                'declarations' => [
+                    'declaration:class:Demo\\Repeated@src/Other.php',
+                    'declaration:class:Demo\\Repeated@src/Same.php',
+                    'declaration:class:Demo\\Repeated@src/Same.php#1',
+                ],
+                'fileCount' => 2,
+            ],
+            (new DrillDownBinding())->classDeclarationSelection('Demo\\Repeated', $repository),
+        );
     }
 
     /**

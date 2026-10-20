@@ -89,9 +89,10 @@ final readonly class ReportAssembler
         }
 
         if ($context->class !== null) {
-            $declarations = $binding->classDeclarations($context->class, $metrics);
+            $selection = $binding->classDeclarationSelection($context->class, $metrics);
+            $declarations = $selection['declarations'];
             if (\count($declarations) > 1) {
-                $advice = $binding->classDeclarationFileCount($context->class, $metrics) === 1
+                $advice = $selection['fileCount'] === 1
                     ? 'Exact selection is unavailable when one file declares the class more than once; analyse the file without --class or rename one declaration.'
                     : 'Analyse one declaring file to select an exact declaration.';
                 throw ConfigurationRefusal::aboutCommandLineInput('--class', \sprintf(
