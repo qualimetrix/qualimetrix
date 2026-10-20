@@ -388,6 +388,9 @@ Available tests:
  - QmxFindingGate\Tests\FsTest::itRefusesAnUnlinkFailureThatLeavesTheEntryPresent"finding gate"
  - QmxFindingGate\Tests\FsTest::itRemovesADanglingSymlink"controls"
  - QmxFindingGate\Tests\FsTest::itRemovesADanglingSymlink"finding gate"
+ - QmxFindingGate\Tests\FsTest::itReportsATruncatedLinuxProcessPopulationAndMatchingResults
+ - QmxFindingGate\Tests\FsTest::itReportsAnIncompleteLinuxObservationWhenAProcessCwdCannotBeRead
+ - QmxFindingGate\Tests\FsTest::itReportsAnUnavailableLinuxProcessPopulationWhenProcCannotBeListed
  - QmxFindingGate\Tests\FsTest::itReportsTheNativeFailureResidualEntriesAndProcessesInsideTheTree"controls"
  - QmxFindingGate\Tests\FsTest::itReportsTheNativeFailureResidualEntriesAndProcessesInsideTheTree"finding gate"
  - QmxFindingGate\Tests\FsTest::itTransportsGitConfigurationEnvironmentWithoutInterpretingItInControlsShell
@@ -446,17 +449,13 @@ Available tests:
  - QmxFindingGate\Tests\ProcessTest::itMeasuresChildAgeInSecondsWhenWallTimeMovesBackwards
  - QmxFindingGate\Tests\ProcessTest::itPassesAdditionsToTheChildWhilePreservingFixedAndParentEnvironment
  - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"COLUMNS"
- - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"GIT_CONFIG_COUNT"
- - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"GIT_CONFIG_KEY_0"
- - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"GIT_CONFIG_KEY_1"
- - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"GIT_CONFIG_VALUE_0"
- - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"GIT_CONFIG_VALUE_1"
  - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"HOME"
  - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"LC_ALL"
  - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"NO_COLOR"
  - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"PATH"
  - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"TMPDIR"
  - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"TZ"
+ - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingEveryInheritedGitConfigurationKey
  - QmxFindingGate\Tests\ProcessTest::itTransportsGitConfigurationVerbatimAndLeavesValidationToGit
  - QmxFindingGate\Tests\ProductProbeTypesTest::itComparesTheOptionalInterfaceNameWithoutLoadingIt
  - QmxFindingGate\Tests\ProductProbeTypesTest::itRefusesWhenNeitherSupportedTypeExists

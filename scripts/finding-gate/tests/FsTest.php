@@ -14,6 +14,7 @@ namespace QmxFindingGate\Tests {
     use QmxFindingGate\ProcessHandle;
     use QmxFindingGate\RemovalFailureDiagnostics;
     use QmxFindingGateControls\Shell;
+    use ReflectionMethod;
     use RuntimeException;
     use Throwable;
 
@@ -199,6 +200,43 @@ namespace QmxFindingGate\Tests {
         }
 
         #[Test]
+        public function itReportsAnUnavailableLinuxProcessPopulationWhenProcCannotBeListed(): void
+        {
+            FsNativeProbe::refuseProcListing();
+
+            self::assertSame(
+                'unavailable (cannot list /proc: native error not reported)',
+                self::linuxProcessDiagnostics($this->root),
+            );
+        }
+
+        #[Test]
+        public function itReportsATruncatedLinuxProcessPopulationAndMatchingResults(): void
+        {
+            $pids = array_map(strval(...), range(10_000, 14_096));
+            $workingDirectories = array_fill_keys(\array_slice($pids, 0, 17), $this->root);
+            FsNativeProbe::procPopulation($pids, $workingDirectories);
+
+            $diagnostics = self::linuxProcessDiagnostics($this->root);
+
+            self::assertIsArray($diagnostics);
+            self::assertCount(18, $diagnostics);
+            self::assertSame('<truncated: more than 16 matching processes>', $diagnostics[16]);
+            self::assertSame('<truncated: process population exceeds 4096 inspected entries>', $diagnostics[17]);
+        }
+
+        #[Test]
+        public function itReportsAnIncompleteLinuxObservationWhenAProcessCwdCannotBeRead(): void
+        {
+            FsNativeProbe::procPopulation(['100', '101'], ['100' => '/outside']);
+
+            self::assertSame(
+                ['<incomplete: cwd unavailable for 1 inspected process entry>'],
+                self::linuxProcessDiagnostics($this->root),
+            );
+        }
+
+        #[Test]
         public function itTransportsGitConfigurationEnvironmentWithoutInterpretingItInControlsShell(): void
         {
             $before = self::gitConfigurationEnvironment();
@@ -295,6 +333,27 @@ namespace QmxFindingGate\Tests {
                 }
             }
         }
+
+        /** @return list<string>|string */
+        private static function linuxProcessDiagnostics(string $root): array|string
+        {
+            $method = new ReflectionMethod(RemovalFailureDiagnostics::class, 'linuxProcesses');
+            $diagnostics = $method->invoke(null, $root);
+            if (\is_string($diagnostics)) {
+                return $diagnostics;
+            }
+            if (!\is_array($diagnostics) || !array_is_list($diagnostics)) {
+                throw new RuntimeException('Linux process diagnostics returned an unexpected value.');
+            }
+
+            return array_map(static function (mixed $entry): string {
+                if (!\is_string($entry)) {
+                    throw new RuntimeException('Linux process diagnostics returned a non-string entry.');
+                }
+
+                return $entry;
+            }, $diagnostics);
+        }
     }
 
     final class FsNativeProbe
@@ -313,11 +372,22 @@ namespace QmxFindingGate\Tests {
         /** @var array<string, string> */
         private static array $rmdir = [];
 
+        private static bool $refuseProcListing = false;
+
+        /** @var list<string>|null */
+        private static ?array $procEntries = null;
+
+        /** @var array<array-key, string> */
+        private static array $procWorkingDirectories = [];
+
         public static function reset(): void
         {
             self::$removeAfterDirectoryCheck = null;
             self::$unlink = [];
             self::$rmdir = [];
+            self::$refuseProcListing = false;
+            self::$procEntries = null;
+            self::$procWorkingDirectories = [];
         }
 
         public static function removeAfterDirectoryCheck(string $path): void
@@ -350,6 +420,21 @@ namespace QmxFindingGate\Tests {
             self::$rmdir[$path] = self::MAKE_NONEMPTY_DURING_RMDIR;
         }
 
+        public static function refuseProcListing(): void
+        {
+            self::$refuseProcListing = true;
+        }
+
+        /**
+         * @param list<string> $pids
+         * @param array<array-key, string> $workingDirectories
+         */
+        public static function procPopulation(array $pids, array $workingDirectories): void
+        {
+            self::$procEntries = ['.', '..', ...$pids];
+            self::$procWorkingDirectories = $workingDirectories;
+        }
+
         public static function isDirectory(string $path): bool
         {
             $isDirectory = is_dir($path);
@@ -365,7 +450,23 @@ namespace QmxFindingGate\Tests {
         /** @return list<string>|false */
         public static function scanDirectory(string $path): array|false
         {
+            if ($path === '/proc' && self::$refuseProcListing) {
+                return false;
+            }
+            if ($path === '/proc' && self::$procEntries !== null) {
+                return self::$procEntries;
+            }
+
             return scandir($path);
+        }
+
+        public static function readLink(string $path): string|false
+        {
+            if (self::$procEntries !== null && preg_match('#^/proc/([^/]+)/cwd$#', $path, $matches) === 1) {
+                return self::$procWorkingDirectories[$matches[1]] ?? false;
+            }
+
+            return readlink($path);
         }
 
         public static function unlink(string $path): bool

@@ -142,22 +142,46 @@ final class RemovalFailureDiagnostics
         };
     }
 
-    /** @return list<string> */
-    private static function linuxProcesses(string $root): array
+    /** @return list<string>|string */
+    private static function linuxProcesses(string $root): array|string
     {
-        $entries = @scandir('/proc');
+        [$entries, $nativeError] = self::capture(static fn(): array|false => scandir('/proc'));
         if ($entries === false) {
-            return [];
+            return 'unavailable (cannot list /proc: '
+                . ($nativeError ?? 'native error not reported')
+                . ')';
         }
 
-        $pids = array_values(array_filter($entries, static fn(string $entry): bool => ctype_digit($entry)));
+        $pids = [];
+        $populationTruncated = false;
+        foreach ($entries as $entry) {
+            if (!ctype_digit($entry)) {
+                continue;
+            }
+            if (\count($pids) >= self::PROC_PID_LIMIT) {
+                $populationTruncated = true;
+                break;
+            }
+            $pids[] = $entry;
+        }
         sort($pids, \SORT_NUMERIC);
         $found = [];
+        $matchingTruncated = false;
+        $unreadableWorkingDirectories = 0;
 
-        foreach (\array_slice($pids, 0, self::PROC_PID_LIMIT) as $pid) {
+        foreach ($pids as $pid) {
             $cwd = @readlink('/proc/' . $pid . '/cwd');
-            if (!\is_string($cwd) || !self::inside($cwd, $root)) {
+            if (!\is_string($cwd)) {
+                ++$unreadableWorkingDirectories;
                 continue;
+            }
+            if (!self::inside($cwd, $root)) {
+                continue;
+            }
+
+            if (\count($found) >= self::PROCESS_LIMIT) {
+                $matchingTruncated = true;
+                break;
             }
 
             $command = @file_get_contents('/proc/' . $pid . '/comm');
@@ -167,9 +191,20 @@ final class RemovalFailureDiagnostics
                 self::oneLine(\is_string($command) ? trim($command) : 'unknown', 80),
                 $cwd,
             );
-            if (\count($found) >= self::PROCESS_LIMIT) {
-                break;
-            }
+        }
+
+        if ($matchingTruncated) {
+            $found[] = '<truncated: more than 16 matching processes>';
+        }
+        if ($populationTruncated) {
+            $found[] = '<truncated: process population exceeds 4096 inspected entries>';
+        }
+        if ($unreadableWorkingDirectories > 0) {
+            $found[] = \sprintf(
+                '<incomplete: cwd unavailable for %d inspected process %s>',
+                $unreadableWorkingDirectories,
+                $unreadableWorkingDirectories === 1 ? 'entry' : 'entries',
+            );
         }
 
         return $found;
@@ -221,10 +256,11 @@ final class RemovalFailureDiagnostics
             } elseif ($field === 'c') {
                 $command = self::oneLine($value, 80);
             } elseif ($field === 'n' && $pid !== null && self::inside($value, $root)) {
-                $found[] = \sprintf('pid=%s command=%s cwd=%s', $pid, $command, $value);
                 if (\count($found) >= self::PROCESS_LIMIT) {
+                    $found[] = '<truncated: more than 16 matching processes>';
                     break;
                 }
+                $found[] = \sprintf('pid=%s command=%s cwd=%s', $pid, $command, $value);
             }
         }
 

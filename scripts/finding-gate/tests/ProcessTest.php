@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use QmxFindingGate\GateError;
 use QmxFindingGate\Process;
+use QmxFindingGate\ProcessHandle;
 
 final class ProcessTest extends TestCase
 {
@@ -111,14 +112,7 @@ final class ProcessTest extends TestCase
     /** @return iterable<string,array{string}> */
     public static function fixedKeys(): iterable
     {
-        $keys = ['PATH', 'HOME', 'LC_ALL', 'TZ', 'COLUMNS', 'NO_COLOR', 'TMPDIR', 'GIT_CONFIG_COUNT'];
-        $count = (int) getenv('GIT_CONFIG_COUNT');
-        for ($index = 0; $index < $count; ++$index) {
-            $keys[] = 'GIT_CONFIG_KEY_' . $index;
-            $keys[] = 'GIT_CONFIG_VALUE_' . $index;
-        }
-
-        foreach ($keys as $key) {
+        foreach (['PATH', 'HOME', 'LC_ALL', 'TZ', 'COLUMNS', 'NO_COLOR', 'TMPDIR'] as $key) {
             yield $key => [$key];
         }
     }
@@ -130,5 +124,21 @@ final class ProcessTest extends TestCase
         $this->expectException(GateError::class);
         $this->expectExceptionMessage('fixed child environment');
         Process::run([\PHP_BINARY, '-r', 'exit(0);'], __DIR__, environmentAdditions: [$key => 'replacement']);
+    }
+
+    #[Test]
+    public function itRefusesReplacingEveryInheritedGitConfigurationKey(): void
+    {
+        $configuration = ProcessHandle::inheritedGitConfiguration();
+        self::assertNotEmpty($configuration);
+
+        foreach (array_keys($configuration) as $key) {
+            try {
+                Process::run([\PHP_BINARY, '-r', 'exit(0);'], __DIR__, environmentAdditions: [$key => 'replacement']);
+                self::fail('The inherited Git configuration key was replaceable: ' . $key);
+            } catch (GateError $error) {
+                self::assertStringContainsString('fixed child environment key ' . $key, $error->getMessage());
+            }
+        }
     }
 }

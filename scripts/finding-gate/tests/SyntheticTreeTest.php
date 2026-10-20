@@ -88,11 +88,11 @@ final class SyntheticTreeTest extends TestCase
                 usleep(25_000);
             }
 
+            self::assertSame([], array_values(array_unique($inside)), 'Detached git maintenance remained inside the synthetic repository.');
+
             if ($unreadable !== []) {
                 self::markTestSkipped('Cannot inspect cwd for git maintenance process(es): ' . implode(', ', array_unique($unreadable)));
             }
-
-            self::assertSame([], array_values(array_unique($inside)), 'Detached git maintenance remained inside the synthetic repository.');
         } finally {
             SyntheticTree::remove($root);
         }

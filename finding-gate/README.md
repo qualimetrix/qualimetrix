@@ -725,8 +725,11 @@ their targets. A refusal reports the warning from the failed filesystem call,
 the numeric errno when that warning exposes one (otherwise `errno=unknown`), up
 to 32 residual entries and up to 16 processes whose current directory is the
 tree or one of its descendants. Linux reads `/proc`; macOS uses a supervised
-`lsof` probe with a two-second deadline. Diagnostic failures are reported in
-the same line and never replace the original cleanup refusal. Cleanup assumes
+`lsof` probe with a two-second deadline. An unavailable process population,
+unreadable Linux process working directories, and either population or result
+truncation are marked explicitly instead of implying that no matching process
+exists. Diagnostic failures are reported in the same line and never replace
+the original cleanup refusal. Cleanup assumes
 entries are not concurrently substituted or created: path-based
 classification, traversal and removal are not atomic and do not protect
 against those races.
