@@ -15,7 +15,7 @@ use SplFileInfo;
 /**
  * Accumulated consequences of already inspected and admitted entries.
  *
- * @qmx-threshold coupling.instability 0.800001 -- Two callers publish this private walk outcome; its eight outgoing measured values share one lifecycle, and this finite boundary keeps another dependency visible.
+ * @qmx-threshold coupling.instability 0.800001 -- Callers publish this private walk outcome; its measured values share one lifecycle, and this finite boundary keeps another dependency visible.
  */
 final class WalkedEntryOutcome
 {

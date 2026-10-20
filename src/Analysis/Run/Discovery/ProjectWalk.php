@@ -13,7 +13,7 @@ use Qualimetrix\Core\Path\RelativePath;
 /**
  * One filesystem walk answers selection, outside scope and selector binding.
  *
- * @qmx-threshold coupling.instability 0.846155 -- Two callers enter this private walk seam; splitting its eleven outgoing types merely moves the small-population ratio between admission and measured outcomes, while this finite boundary keeps another dependency visible.
+ * @qmx-threshold coupling.instability 0.846155 -- Callers enter this private walk seam; splitting its outgoing types merely moves the small-population ratio between admission and measured outcomes, while this finite boundary keeps another dependency visible.
  */
 final class ProjectWalk
 {

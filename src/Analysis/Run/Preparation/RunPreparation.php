@@ -49,8 +49,8 @@ use SplFileInfo;
 /**
  * Prepares one measured execution context shared by normal reporting and directive audit.
  *
- * @qmx-threshold coupling.cbo 35 -- Preparation combines discovery, collection retry, measured graph and one rule context. Current CBO 34 includes the typed ChannelPublication snapshot shared by discovery and the final PreparedRun; the next dependency remains visible.
- * @qmx-threshold coupling.instability 0.941177 -- Current Ca=2 and Ce=32 include the typed ChannelPublication snapshot shared by discovery and the final PreparedRun; the finite boundary exposes the next outward dependency.
+ * @qmx-threshold coupling.cbo 35 -- Preparation combines discovery, collection retry, measured graph and one rule context. The typed immutable ChannelPublication snapshot is shared by discovery and the final PreparedRun; the finite class boundary exposes another dependency.
+ * @qmx-threshold coupling.instability 0.941177 -- The typed immutable ChannelPublication snapshot preserves one publication view across discovery and the final PreparedRun; the finite class boundary exposes another outward dependency.
  */
 final class RunPreparation
 {

@@ -24,7 +24,7 @@ use Qualimetrix\Core\Symbol\FileDeclarationIndex;
  *
  * @qmx-threshold coupling.cbo 24 -- This traversal composition root coordinates four identity collaborators and routes promoted property hooks through Param and Variable nodes; raw CBO 23 gets one-edge headroom.
  * @qmx-threshold coupling.instability 0.913045 -- This traversal entry point composes separate lexical, numbering, subject, and callable-metadata owners for a small incoming population. Another wrapper would move the same parser vocabulary; the ceiling keeps added dependencies visible.
- * @qmx-threshold health.cohesion 45.0 -- This composition root bundles four independent traversal collaborators so visitors hold one dependency; the finite boundary keeps a further cohesion loss visible.
+ * @qmx-threshold health.cohesion 45.0 -- This composition root bundles independent traversal collaborators so visitors hold one dependency; the finite boundary keeps a further cohesion loss visible.
  */
 final class VisitorMethodContext
 {

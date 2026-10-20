@@ -911,14 +911,6 @@
         ]
       }
     ],
-    "ns:Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration": [
-      {
-        "channel": "size.class-count",
-        "magnitudes": [
-          15
-        ]
-      }
-    ],
     "ns:Qualimetrix\\Analysis\\Policy\\Architecture\\Layer": [
       {
         "channel": "coupling.distance",

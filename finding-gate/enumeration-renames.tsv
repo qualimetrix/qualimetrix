@@ -56,7 +56,7 @@ security.hardcoded-credentials	channel	?		7	43	0	0	0	15	0	11	1	1	0	0
 security.sensitive-parameter	channel	?		6	29	0	0	0	13	0	7	1	1	0	0
 security.sql-injection	channel	?		3	10	0	0	0	13	0	6	0	0	1	1
 security.xss	channel	?		4	20	0	0	0	13	0	7	0	0	1	1
-size.class-count	channel	?		39	250	2	1	4	32	0	12	0	0	0	0
+size.class-count	channel	?		39	250	2	1	3	32	0	12	0	0	0	0
 size.method-count	channel	?		31	243	2	2	0	59	0	12	0	0	0	0
 size.property-count	channel	?		26	39	2	2	0	30	0	8	0	0	0	0
 suppression.unmatched-namespace	channel	?		3	11	0	0	0	9	0	1	0	0	0	0
@@ -133,7 +133,7 @@ maintainability.mi	metric-key	?		18	201	2	2	0	33	0	5	0	0	0	0
 security.hardcoded-credentials	metric-key	?		7	43	0	0	0	15	0	11	0	0	0	0
 security.sensitive-parameter	metric-key	?		6	29	0	0	0	13	0	7	0	0	0	0
 size.abstract-class-count	metric-key	?		11	15	0	0	0	0	0	0	0	0	0	0
-size.class-count	metric-key	?		39	250	2	1	4	32	0	12	0	0	0	0
+size.class-count	metric-key	?		39	250	2	1	3	32	0	12	0	0	0	0
 size.class-loc	metric-key	?		18	85	0	0	0	4	0	3	0	0	0	0
 size.cloc	metric-key	?		8	23	0	0	0	2	0	0	0	0	0	0
 size.enum-count	metric-key	?		15	25	0	0	0	0	0	0	0	0	0	0
@@ -211,7 +211,7 @@ security.hardcoded-credentials	producer	?		7	43	0	0	0	15	0	11	0	0	0	0
 security.sensitive-parameter	producer	?		6	29	0	0	0	13	0	7	0	0	0	0
 security.sql-injection	producer	?		3	10	0	0	0	13	0	6	0	0	0	0
 security.xss	producer	?		4	20	0	0	0	13	0	7	0	0	0	0
-size.class-count	producer	?		39	250	2	1	4	32	0	12	0	0	0	0
+size.class-count	producer	?		39	250	2	1	3	32	0	12	0	0	0	0
 size.method-count	producer	?		31	243	2	2	0	59	0	12	0	0	0	0
 size.property-count	producer	?		26	39	2	2	0	30	0	8	0	0	0	0
 suppression.configuration	producer	?		1	0	0	0	0	16	0	1	0	0	0	0

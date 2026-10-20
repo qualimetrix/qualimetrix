@@ -109,7 +109,7 @@ final class ClassCountRule extends AbstractRule
             $severity = $effectiveOptions->getSeverity($classCount);
 
             if ($severity !== null) {
-                $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
+                $threshold = self::thresholdFor($severity, $effectiveOptions);
 
                 $findings[] = new Finding(
                     location: new Location($namespaceInfo->file),
@@ -138,6 +138,11 @@ final class ClassCountRule extends AbstractRule
         }
 
         return false;
+    }
+
+    private static function thresholdFor(Severity $severity, ClassCountOptions $options): int
+    {
+        return $severity === Severity::Error ? $options->error : $options->warning;
     }
 
     /**
