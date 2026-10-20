@@ -87,15 +87,8 @@ final class ClassCountRule extends AbstractRule
             $subject = $namespaceInfo->subject
                 ?? MetricSubject::aggregate($namespaceInfo->symbolPath);
             $metrics = $context->metrics->get($namespaceInfo->symbolPath);
-            $ownCountExpected = $metrics->has(MetricName::SIZE_CLASS_COUNT);
-            if (!$ownCountExpected) {
-                foreach ($context->metrics->forNamespace($namespaceInfo->symbolPath->namespace ?? '') as $info) {
-                    if ($info->subject?->declarationPath() !== null && $info->symbolPath->getType() === SymbolType::Class_) {
-                        $ownCountExpected = true;
-                        break;
-                    }
-                }
-            }
+            $ownCountExpected = $metrics->has(MetricName::SIZE_CLASS_COUNT)
+                || self::namespaceHasClassDeclaration($context, $namespaceInfo->symbolPath->namespace ?? '');
             if (!$context->admit(
                 self::NAME,
                 new FindingChannel(self::NAME),
@@ -134,6 +127,17 @@ final class ClassCountRule extends AbstractRule
         }
 
         return $findings;
+    }
+
+    private static function namespaceHasClassDeclaration(AnalysisContext $context, string $namespace): bool
+    {
+        foreach ($context->metrics->forNamespace($namespace) as $info) {
+            if ($info->subject?->declarationPath() !== null && $info->symbolPath->getType() === SymbolType::Class_) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
