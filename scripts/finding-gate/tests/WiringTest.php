@@ -39,6 +39,35 @@ final class WiringTest extends TestCase
         Fs::removeRecursively($this->directory);
     }
 
+    /**
+     * A hand-picked subset of requires broke every consumer that had not
+     * guessed a new dependency; a list that drifts from the directory brings
+     * that back one class at a time.
+     */
+    #[Test]
+    public function itNamesEveryClassFileOfTheGateInTheSharedLoaderOrAFormsWiringAndNoOther(): void
+    {
+        $gate = \dirname(__DIR__);
+        $onDisk = [];
+        $files = glob($gate . '/*.php');
+        foreach ($files === false ? [] : $files as $file) {
+            $name = basename($file, '.php');
+            if (ucfirst($name) === $name) {
+                $onDisk[] = $name;
+            }
+        }
+        $listed = Wiring::gate()->list('classes');
+        foreach (explode("\n", Fs::read($gate . '/classes.php')) as $line) {
+            if (preg_match("~^\\s*'([A-Z]\\w+)',~", $line, $matched) === 1) {
+                $listed[] = $matched[1];
+            }
+        }
+        sort($onDisk);
+        sort($listed);
+
+        self::assertSame($onDisk, $listed);
+    }
+
     #[Test]
     public function itLoadsAClassAFormListsInItsOwnFile(): void
     {

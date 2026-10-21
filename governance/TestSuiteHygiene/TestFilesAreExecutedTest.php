@@ -131,6 +131,7 @@ final class TestFilesAreExecutedTest extends TestCase
         'QmxFindingGate\\Tests\\FieldValuesCheckTest::itMeasuresApplicableFieldsBesideADeclaredRefusalAndKeepsAnUnexpectedRefusalRed',
         'QmxFindingGate\\Tests\\FieldValuesCheckTest::itRaisesAFieldValuesMismatchForAnObservedFieldWhoseMeasuredValuesDiffer',
         'QmxFindingGate\\Tests\\GateModesTest::itExitsThreeWhenTheGateCannotRun',
+        'QmxFindingGate\\Tests\\GateTest::itRaisesEnvMismatchAndRunsNoReferenceWhenTheTwoTreesDoNotShareADependencySet',
         'QmxFindingGate\\Tests\\GateTest::itRefusesACaseWhoseOutcomeNoRegisteredCheckVerifies',
         'QmxFindingGate\\Tests\\GateTest::itReportsTheReferenceInputRefusalBeforeReadingAnalysisRecords',
         'QmxFindingGate\\Tests\\RankingCheckTest::itChecksHealthyFullRankingAndZeroSlicesThroughThePublicGate',
@@ -143,6 +144,10 @@ final class TestFilesAreExecutedTest extends TestCase
         'QmxFindingGate\\Tests\\RankingCheckTest::itRaisesThePlantedRankingFailuresThroughThePublicGate',
         'QmxFindingGate\\Tests\\RankingCheckTest::itRefusesFifthPassHiddenRankingDriftWithoutWritingNormalization',
         'QmxFindingGate\\Tests\\RankingCheckTest::itRefusesHiddenValueDriftInTheSecondCandidateCapture',
+        'QmxFindingGate\\Tests\\ReferenceTreeReleaseTest::itDeregistersACheckoutWhenTheRunIsKilledDuringWorktreeAdd',
+        'QmxFindingGate\\Tests\\ReferenceTreeReleaseTest::itGivesTheCheckoutBackWhenCreationFailsAfterTakingIt',
+        'QmxFindingGate\\Tests\\ReferenceTreeReleaseTest::itReleasesARegistrationGitLeftLockedWhileInitializing',
+        'QmxFindingGate\\Tests\\ReferenceTreeReleaseTest::itReleasesEverythingARunTookWhenItIsInterrupted',
         'QmxFindingGate\\Tests\\SyntheticTreeTest::itKeepsGeneratedSummaryRowsWhenReusingAnAnswerAsAnOverride',
     ];
 

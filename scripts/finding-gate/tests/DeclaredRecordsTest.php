@@ -12,6 +12,9 @@ use QmxFindingGate\Fs;
 use QmxFindingGate\GateError;
 use QmxFindingGate\Tsv;
 
+/**
+ * @phpstan-import-type Specification from \QmxFindingGate\SyntheticTree
+ */
 final class DeclaredRecordsTest extends TestCase
 {
     private string $root;
@@ -229,6 +232,41 @@ final class DeclaredRecordsTest extends TestCase
             self::assertSame([false], array_values($unconfigured));
         } catch (\QmxFindingGate\GateError $error) {
             self::fail('A valid product eligibility probe did not execute: ' . $error->getMessage());
+        }
+    }
+
+    #[Test]
+    public function itRaisesRecordStaleWhileDerivingForAnIntentThatMeasuredNoResidualRecord(): void
+    {
+        $tree = \QmxFindingGate\SyntheticTree::clean();
+        [$clean] = self::derive($tree);
+        self::assertSame([], $clean->raised(), $clean->render());
+
+        $tree['candidateDeclarations'][DeclaredRecords::INDEX] = Tsv::render(DeclaredRecords::COLUMNS, [
+            [DeclaredRecords::WITHDRAWN, '*', 'json', 'format:json', '{"channel":"never.published"}', 'No record is removed.'],
+        ]);
+        [$report, $written] = self::derive($tree);
+
+        self::assertSame(
+            [[\QmxFindingGate\FailureClass::RECORD_STALE, DeclaredRecords::INDEX]],
+            array_map(static fn(array $failure): array => [$failure['class'], $failure['scope']], $report->raised()),
+            $report->render(),
+        );
+        self::assertSame([], $written);
+    }
+
+    /**
+     * @param Specification $tree
+     *
+     * @return array{\QmxFindingGate\GateReport, list<string>}
+     */
+    private static function derive(array $tree): array
+    {
+        $root = \QmxFindingGate\SyntheticTree::fixture($tree);
+        try {
+            return RecordedComparison::derive($tree, $root);
+        } finally {
+            \QmxFindingGate\SyntheticTree::remove($root);
         }
     }
 

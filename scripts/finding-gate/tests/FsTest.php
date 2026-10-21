@@ -225,6 +225,18 @@ namespace QmxFindingGate\Tests {
         }
 
         #[Test]
+        public function itWritesAHardlinkedFileWithoutWritingThroughTheLink(): void
+        {
+            Fs::write($this->root . '/original', "before\n");
+            self::assertTrue(link($this->root . '/original', $this->root . '/clone'));
+
+            Fs::write($this->root . '/clone', "after\n");
+
+            self::assertSame("before\n", Fs::read($this->root . '/original'));
+            self::assertSame("after\n", Fs::read($this->root . '/clone'));
+        }
+
+        #[Test]
         public function itRemovesADanglingSymlink(): void
         {
             $link = $this->root . '/link';

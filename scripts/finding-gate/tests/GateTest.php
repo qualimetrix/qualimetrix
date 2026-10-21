@@ -50,6 +50,21 @@ final class GateTest extends TestCase
     }
 
     #[Test]
+    public function itRaisesEnvMismatchAndRunsNoReferenceWhenTheTwoTreesDoNotShareADependencySet(): void
+    {
+        $tree = SyntheticTree::clean();
+        $tree['candidateLock'] = "{\"replay\": \"another lock\"}\n";
+        $root = SyntheticTree::create($tree);
+        try {
+            $report = new GateReport();
+            (new Gate(Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root), $report))->compare();
+            self::assertSame([[FailureClass::ENV_MISMATCH, 'reference tree']], array_map(static fn(array $failure): array => [$failure['class'], $failure['scope']], $report->raised()), $report->render());
+        } finally {
+            SyntheticTree::remove($root);
+        }
+    }
+
+    #[Test]
     public function itRefusesACaseWhoseOutcomeNoRegisteredCheckVerifies(): void
     {
         $tree = SyntheticTree::clean();

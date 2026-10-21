@@ -487,6 +487,30 @@ final class CaptureTest extends TestCase
     }
 
     #[Test]
+    public function itRefusesARulesListingThatBothSidesRefusedAlike(): void
+    {
+        [$root, $temporary, $artifacts] = self::stagePublicationFixture();
+        try {
+            foreach (['0' => false, '3' => true, '70' => true] as $exit => $refused) {
+                $run = self::captureContext($root, $temporary);
+                $published = $artifacts;
+                $published['tree|rules'] = $refused ? 'unsupported command' : "replayed rules\n";
+                $published['tree|exit:rules'] = (string) $exit;
+                CaptureCheck::create($run)->checkRun($published, $published);
+                $scopes = array_column(array_filter($run->report->raised(), static fn(array $failure): bool => $failure['class'] === FailureClass::SURFACE_MISMATCH), 'scope');
+                if ($refused) {
+                    self::assertContains('candidate / tree|rules', $scopes, 'exit ' . $exit . ' on both sides established a rules population');
+                } else {
+                    self::assertSame([], $run->report->raised(), $run->report->render());
+                }
+            }
+        } finally {
+            SyntheticTree::remove($root);
+            Fs::removeRecursively($temporary);
+        }
+    }
+
+    #[Test]
     #[Group('finding-gate-e2e')]
     public function itRefusesAMissingReplayKeyThroughThePublicGateWithoutWriting(): void
     {
@@ -706,6 +730,43 @@ final class CaptureTest extends TestCase
         } finally {
             Fs::removeRecursively($temporary);
             SyntheticTree::remove($root);
+        }
+    }
+
+    #[Test]
+    public function itRefusesAnOutputPublicationThatDoesNotNameExactlyTheChosenFile(): void
+    {
+        $file = SyntheticTree::caseAnswers('alpha', SyntheticTree::clean()['findings']['alpha'], false, [])['case:alpha|format:json']['stdout'] ?? '';
+        foreach ([
+            'the chosen file' => "Report written to {{output}}\n",
+            'a wrong destination' => "Report written to /wrong.json\n",
+            'no destination marker' => '',
+            'a duplicated destination marker' => "Report written to {{output}}\nReport written to {{output}}\n",
+        ] as $defect => $stderr) {
+            foreach ([false, true] as $refusal) {
+                $tree = $refusal ? RefusedCaseTree::fixture() : SyntheticTree::clean();
+                $tree['answers']['case:alpha|check:output'] = $refusal
+                    ? [...$tree['answers']['case:alpha|check:output'], 'stderr' => "Refused input\n" . $stderr]
+                    : ['stdout' => '', 'file' => $file, 'stderr' => $stderr];
+                $root = SyntheticTree::fixture($tree);
+                $temporary = Fs::temporaryDirectory('output-destination-');
+                try {
+                    $corpus = Corpus::load($root, ['alpha']);
+                    $case = $corpus->cases[0];
+                    $plan = self::planForSurfaces(CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate')), 'alpha', ['format:json', 'check:output']);
+                    $run = new TreeRun($root, $temporary, 'candidate', RenameMaps::fromPairs([]), false, $plan, DeclaredStructuralMaps::load($root . '/finding-gate'));
+                    try {
+                        $run->forCase($case);
+                        self::assertSame('the chosen file', $defect, 'An output publication naming ' . $defect . ' was accepted.');
+                    } catch (GateError $error) {
+                        self::assertNotSame('the chosen file', $defect, $error->getMessage());
+                        self::assertSame('The output publication is missing, empty, or does not name exactly the chosen file for case:alpha|check:output.', $error->getMessage());
+                    }
+                } finally {
+                    Fs::removeRecursively($temporary);
+                    SyntheticTree::remove($root);
+                }
+            }
         }
     }
 

@@ -125,6 +125,8 @@ Available tests:
  - QmxFindingGate\Tests\CaptureTest::itNormalizesOnlyDeclaredSarifCaptureUrisWithoutChangingRecordBytes
  - QmxFindingGate\Tests\CaptureTest::itNormalizesOnlyTheGuardedOutputDestinationField
  - QmxFindingGate\Tests\CaptureTest::itRefusesAMissingReplayKeyThroughThePublicGateWithoutWriting
+ - QmxFindingGate\Tests\CaptureTest::itRefusesARulesListingThatBothSidesRefusedAlike
+ - QmxFindingGate\Tests\CaptureTest::itRefusesAnOutputPublicationThatDoesNotNameExactlyTheChosenFile
  - QmxFindingGate\Tests\CaptureTest::itRefusesIncompleteOrUnrecognizedDirectivesAndNeighboringCommandExits
  - QmxFindingGate\Tests\CaptureTest::itRefusesIntentOnlyAndInexactCaptureExitMeasurements
  - QmxFindingGate\Tests\CaptureTest::itRefusesPrivateEvidenceThatChangesOnlyOnTheSecondCandidatePass
@@ -273,15 +275,41 @@ Available tests:
  - QmxFindingGate\Tests\CorpusCaseRunTest::itDistinguishesDeclaredOutcomesWithoutInventingEmptyFindings
  - QmxFindingGate\Tests\CorpusCaseRunTest::itRefusesMalformedOutcomesAndUnknownAnalysisPopulations
  - QmxFindingGate\Tests\CorpusTest::itExcludesUnselectedMalformedMetadata
+ - QmxFindingGate\Tests\CorpusTest::itKeepsEveryCaseInputInsideItsDirectoryAndRefusesAnUnmatchedCaseName
  - QmxFindingGate\Tests\CorpusTest::itLoadsANonemptyNumericSelectionWithAStringIdentity
  - QmxFindingGate\Tests\CorpusTest::itRefusesAMissingCorpusWithItsOriginalLoadFailure
  - QmxFindingGate\Tests\CorpusTest::itRefusesAnEmptyActualCorpusWithItsOriginalLoadFailure
  - QmxFindingGate\Tests\CorpusTest::itRefusesEveryUnknownRequestedCaseEvenBesideAKnownCase
  - QmxFindingGate\Tests\CorpusTest::itRefusesMalformedSelectedMetadataWithItsOriginalLoadFailure
+ - QmxFindingGate\Tests\CoverageCheckTest::itDowngradesAShortfallToPartialUnderIncompleteCorpus
+ - QmxFindingGate\Tests\CoverageCheckTest::itRaisesCandidateInputRefusedForACoverageBearingCaseWithNoObservedFindings
+ - QmxFindingGate\Tests\CoverageCheckTest::itRaisesCaseClaimMismatchForACaseFiringAPairItsClaimDoesNotName
+ - QmxFindingGate\Tests\CoverageCheckTest::itRaisesCoverageMultiplicityForAChannelTwoAuthoritativeCasesFire
+ - QmxFindingGate\Tests\CoverageCheckTest::itRaisesCoverageShortfallForADeclaredPairThatFiresInNoCase
+ - QmxFindingGate\Tests\CoverageCheckTest::itRaisesCoverageSurplusForAnObservedLevelNothingDeclares
+ - QmxFindingGate\Tests\CoverageCheckTest::itRaisesLevelVocabularyDriftForALevelTheProductSpellsDifferently
+ - QmxFindingGate\Tests\CoverageCheckTest::itRaisesWitnessDisagreementWhenTheFixtureAndTheContainerDifferOnALevel
  - QmxFindingGate\Tests\DeclarationsTest::itDoesNotAcceptACommentAsThePublishedMethod
  - QmxFindingGate\Tests\DeclarationsTest::itKeepsAReasonOnlyWhileItsRowIsUnchanged
  - QmxFindingGate\Tests\DeclarationsTest::itReadsAMissingTableAsNoDeclaration
  - QmxFindingGate\Tests\DeclarationsTest::itWritesADerivedTableOnlyUnderADeclaredIntentAndInOneOrder
+ - QmxFindingGate\Tests\DeclaredDeltaTest::itMeasuresTheWholeChangeAsAnExactUnclippedDiff
+ - QmxFindingGate\Tests\DeclaredDeltaTest::itSplitsTwoDistantChangesIntoTwoHunksAndCountsNoPaddingBetweenThem
+ - QmxFindingGate\Tests\DeclaredDeltaTest::itWritesExactlyTheAnnouncedSurfacesAndKeepsTheirAuthoredReasons
+ - QmxFindingGate\Tests\DeclaredFieldMovesTest::itJudgesNoFieldMoveWhileDeriving
+ - QmxFindingGate\Tests\DeclaredFieldMovesTest::itLicensesExactlyTheDeclaredDirectionalMoveOfOneFieldOnOneSurface
+ - QmxFindingGate\Tests\DeclaredFieldMovesTest::itLicensesNoMoveWithoutAnIndex
+ - QmxFindingGate\Tests\DeclaredFieldMovesTest::itRaisesFieldMoveStaleForALicensedMoveNoDiffLinePerformed
+ - QmxFindingGate\Tests\DeclaredFieldMovesTest::itRefusesARowNothingCouldConsultWhereItIsStillReadable"a field outside every compared schema"
+ - QmxFindingGate\Tests\DeclaredFieldMovesTest::itRefusesARowNothingCouldConsultWhereItIsStillReadable"a field that surface does not publish"
+ - QmxFindingGate\Tests\DeclaredFieldMovesTest::itRefusesARowNothingCouldConsultWhereItIsStillReadable"a row declaring no movement"
+ - QmxFindingGate\Tests\DeclaredFieldMovesTest::itRefusesARowNothingCouldConsultWhereItIsStillReadable"a row naming no field"
+ - QmxFindingGate\Tests\DeclaredFieldMovesTest::itRefusesARowNothingCouldConsultWhereItIsStillReadable"a row naming no surface"
+ - QmxFindingGate\Tests\DeclaredFieldMovesTest::itRefusesARowNothingCouldConsultWhereItIsStillReadable"a row with no reason"
+ - QmxFindingGate\Tests\DeclaredFieldMovesTest::itRefusesARowNothingCouldConsultWhereItIsStillReadable"a surface no run produces"
+ - QmxFindingGate\Tests\DeclaredFieldMovesTest::itRefusesARowNothingCouldConsultWhereItIsStillReadable"a value with an invisible edge"
+ - QmxFindingGate\Tests\DeclaredFieldMovesTest::itRefusesARowNothingCouldConsultWhereItIsStillReadable"the derived placeholder reason"
+ - QmxFindingGate\Tests\DeclaredFieldMovesTest::itRefusesTheSameMoveDeclaredTwice
  - QmxFindingGate\Tests\DeclaredFieldsTest::itAcceptsRankingOnlyAsAnExactJsonFieldsSchemaView
  - QmxFindingGate\Tests\DeclaredFieldsTest::itDerivesTheReferenceFieldsFromTheCandidates
  - QmxFindingGate\Tests\DeclaredFieldsTest::itKeepsChangesCreditsAndDerivedRowsWithinTheirReport
@@ -312,6 +340,7 @@ Available tests:
  - QmxFindingGate\Tests\DeclaredRecordsTest::itKeepsAnIntentWithoutAnyConsumedRecordStale
  - QmxFindingGate\Tests\DeclaredRecordsTest::itKeepsIdenticalSelectorsAndRecordsInDifferentViewsIndependent
  - QmxFindingGate\Tests\DeclaredRecordsTest::itLoadsReportSpecificRecordsWithoutTheJsonTuple
+ - QmxFindingGate\Tests\DeclaredRecordsTest::itRaisesRecordStaleWhileDerivingForAnIntentThatMeasuredNoResidualRecord
  - QmxFindingGate\Tests\DeclaredRecordsTest::itRefusesADerivedNeighbourOutsideTheDeclaredSelector
  - QmxFindingGate\Tests\DeclaredRecordsTest::itRefusesAMalformedMeasuredRecord"empty record"
  - QmxFindingGate\Tests\DeclaredRecordsTest::itRefusesAMalformedMeasuredRecord"list record"
@@ -389,11 +418,16 @@ Available tests:
  - QmxFindingGate\Tests\FsTest::itTreatsAFileAndItsParentDisappearingDuringUnlinkAsRemoved
  - QmxFindingGate\Tests\FsTest::itTreatsAFileDisappearingDuringUnlinkAsRemoved
  - QmxFindingGate\Tests\FsTest::itUnlinksASymlinkWithoutWalkingItsTarget
+ - QmxFindingGate\Tests\FsTest::itWritesAHardlinkedFileWithoutWritingThroughTheLink
  - QmxFindingGate\Tests\GateModesTest::itExitsThreeWhenTheGateCannotRun
+ - QmxFindingGate\Tests\GateReportTest::itIsGreenAndExitsZeroWithoutAFailureOrALimitation
+ - QmxFindingGate\Tests\GateReportTest::itIsPartialWithItsOwnExitCodeAfterALimitationAndDoesNotClaimFullEquivalence
+ - QmxFindingGate\Tests\GateReportTest::itLetsAFailureOutrankALimitation
  - QmxFindingGate\Tests\GateReportTest::itPublishesEveryDeclarationCountAndNamesTheOnesAGreenRunUsed
  - QmxFindingGate\Tests\GateReportTest::itPublishesFailureWitnessesWithoutSourceOrCallerIdentity
  - QmxFindingGate\Tests\GateReportTest::itPublishesRedDiagnosticsForInvalidSourceBytesWithoutChangingTheComparison
  - QmxFindingGate\Tests\GateReportTest::itRefusesACountNoFormPublishes
+ - QmxFindingGate\Tests\GateTest::itRaisesEnvMismatchAndRunsNoReferenceWhenTheTwoTreesDoNotShareADependencySet
  - QmxFindingGate\Tests\GateTest::itRefusesACaseWhoseOutcomeNoRegisteredCheckVerifies
  - QmxFindingGate\Tests\GateTest::itReportsTheReferenceInputRefusalBeforeReadingAnalysisRecords
  - QmxFindingGate\Tests\JsonTextTest::itReplacesOnlyTheValueSpanItAddresses"a key"
@@ -406,6 +440,9 @@ Available tests:
  - QmxFindingGate\Tests\JsonTextTest::itReplacesOnlyTheValueSpanItAddresses"nothing at a shallower path"
  - QmxFindingGate\Tests\JsonTextTest::itReplacesOnlyTheValueSpanItAddresses"numbers of every spelling"
  - QmxFindingGate\Tests\JsonTextTest::itReplacesOnlyTheValueSpanItAddresses"strings that look like structure"
+ - QmxFindingGate\Tests\MetricKeyMapsTest::itAppliesAMetricKeyRowOnlyOnSurfacesThatPublishKeys
+ - QmxFindingGate\Tests\MetricKeyMapsTest::itReadsTheAggregationVocabularyOutOfTheProductTree
+ - QmxFindingGate\Tests\MetricKeyMapsTest::itTranslatesAMetricKeyInEveryAggregatedSpellingAndNoLongerName
  - QmxFindingGate\Tests\MetricsRecordsTest::itDoesNotPairAnIdentityPublishedByOnlyOneSide
  - QmxFindingGate\Tests\MetricsRecordsTest::itFallsBackToTypeAndNameAcrossASubjectPublicationTransition
  - QmxFindingGate\Tests\MetricsRecordsTest::itLeavesOnlyUnmatchedDuplicateInstancesAsResiduals
@@ -429,9 +466,17 @@ Available tests:
  - QmxFindingGate\Tests\NormalizationDeriverTest::itRefusesSomethingOtherThanAWarningClock"other level"
  - QmxFindingGate\Tests\NormalizationDeriverTest::itRefusesSomethingOtherThanAWarningClock"second out of range"
  - QmxFindingGate\Tests\NormalizationDeriverTest::itRefusesSomethingOtherThanAWarningClock"unpadded hour"
+ - QmxFindingGate\Tests\NormalizationTest::itChangesOnlyTheMeasuredClockWithTheTrackedNamespaceSummaryRule
+ - QmxFindingGate\Tests\NormalizationTest::itPreservesExactJsonByteSpansBesideTheRedactedValue
+ - QmxFindingGate\Tests\NormalizationTest::itRaisesNormalizationStaleForARuleThatMatchedNothingInTheWholeRun
+ - QmxFindingGate\Tests\NormalizationTest::itReachesIntoTheEmbeddedHtmlReportDataAndLeavesSiblingsAlone
+ - QmxFindingGate\Tests\NormalizationTest::itRedactsAJsonPathFieldAndEveryElementAStarSegmentReaches
+ - QmxFindingGate\Tests\NormalizationTest::itRedactsOnlyTheVaryingPartOfALineRegexMatch
  - QmxFindingGate\Tests\PharComparisonTest::itDoesNotApplyProductTransitionsToArchiveEquivalence
+ - QmxFindingGate\Tests\ProcessTest::itLeavesNoChildThatATermHandlerSpawnedBehindTheDeadline
  - QmxFindingGate\Tests\ProcessTest::itMeasuresChildAgeInSecondsWhenWallTimeMovesBackwards
  - QmxFindingGate\Tests\ProcessTest::itPassesAdditionsToTheChildWhilePreservingFixedAndParentEnvironment
+ - QmxFindingGate\Tests\ProcessTest::itRefusesAChildThatClosedBothPipesBeforeHangingAtTheDeadline
  - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"COLUMNS"
  - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"HOME"
  - QmxFindingGate\Tests\ProcessTest::itRefusesReplacingAFixedChildEnvironmentKey"LC_ALL"
@@ -446,6 +491,8 @@ Available tests:
  - QmxFindingGate\Tests\ProductProbeTypesTest::itSelectsTheNativeExistingType"both prefer current"
  - QmxFindingGate\Tests\ProductProbeTypesTest::itSelectsTheNativeExistingType"current only"
  - QmxFindingGate\Tests\ProductProbeTypesTest::itSelectsTheNativeExistingType"previous only"
+ - QmxFindingGate\Tests\PublishedOrderTest::itClassifiesEveryCaptureKeyByItsSurface
+ - QmxFindingGate\Tests\PublishedOrderTest::itReordersRecordsByTheirPublishedIdentityAndRefusesASideOutOfItsOwnOrder
  - QmxFindingGate\Tests\RankingCheckTest::itChecksHealthyFullRankingAndZeroSlicesThroughThePublicGate
  - QmxFindingGate\Tests\RankingCheckTest::itChecksSummaryRoundingAdviceProjectLocationTagAndDebt
  - QmxFindingGate\Tests\RankingCheckTest::itDerivesAnExactWithdrawalThatPullsTheNextRankedFindingIntoTheSlice
@@ -499,6 +546,12 @@ Available tests:
  - QmxFindingGate\Tests\RankingOrderTest::itKeepsComplementOccurrencesWhoseOrdinalsCoincide
  - QmxFindingGate\Tests\RankingOrderTest::itPreservesDuplicateOccurrencesAndSelectsTheEarliestIndexPairs
  - QmxFindingGate\Tests\RankingOrderTest::itRefusesUnequalOccurrencePopulations
+ - QmxFindingGate\Tests\ReferenceTreeReleaseTest::itDeregistersACheckoutWhenTheRunIsKilledDuringWorktreeAdd
+ - QmxFindingGate\Tests\ReferenceTreeReleaseTest::itGivesTheCheckoutBackWhenCreationFailsAfterTakingIt
+ - QmxFindingGate\Tests\ReferenceTreeReleaseTest::itReleasesARegistrationGitLeftLockedWhileInitializing
+ - QmxFindingGate\Tests\ReferenceTreeReleaseTest::itReleasesEverythingARunTookWhenItIsInterrupted"SIGINT"
+ - QmxFindingGate\Tests\ReferenceTreeReleaseTest::itReleasesEverythingARunTookWhenItIsInterrupted"SIGTERM"
+ - QmxFindingGate\Tests\ReferenceTreeReleaseTest::itReleasesEverythingARunTookWhenItIsInterrupted"a PHP fatal"
  - QmxFindingGate\Tests\ReferenceTreeTest::itComparesNativeLockFactsExceptRootContentHash
  - QmxFindingGate\Tests\RefusalDeclarationsTest::itCanonicalizesAnEmptyDeltaIndexOnlyForACompleteGreenMeasurement#0
  - QmxFindingGate\Tests\RefusalDeclarationsTest::itCanonicalizesAnEmptyDeltaIndexOnlyForACompleteGreenMeasurement#1
@@ -510,6 +563,14 @@ Available tests:
  - QmxFindingGate\Tests\RefusalDeclarationsTest::itReadsTheRefusalPublishersKeysRatherThanAFrozenEnvelope
  - QmxFindingGate\Tests\RefusalDeclarationsTest::itRemovesOnlyTheDeclaredDocumentMemberAndItsOwnLine
  - QmxFindingGate\Tests\RefusalDeclarationsTest::itTreatsOnlyARefusingBaselineWithoutRecordsAsDeltaOverreach
+ - QmxFindingGate\Tests\RenameMapsTest::itAllowsACollapseForwardsAndExplainsASplitRecordByRecord
+ - QmxFindingGate\Tests\RenameMapsTest::itCreditsAProducerMoveOnlyForARecordOfItsOwnKeyThatMoved
+ - QmxFindingGate\Tests\RenameMapsTest::itKeepsALongerInputRowFromBeingShadowedByAShorterPrefixRow
+ - QmxFindingGate\Tests\RenameMapsTest::itRestatesEverySplitProducerNameBackwardsAndRefusesForwards
+ - QmxFindingGate\Tests\RenameMapsTest::itTranslatesAQuotedReportValueOnlyOnTheSurfaceDeclaredForIt
+ - QmxFindingGate\Tests\RenameMapsTest::itTranslatesEveryChannelRowShapeAndTheTitleCasedSarifSpelling
+ - QmxFindingGate\Tests\RenameMapsTest::itTranslatesWholeTokensInOnePassAndReportsIdleRowsStale
+ - QmxFindingGate\Tests\RenameMapsTest::itTreatsAConfigurationKeyWithItsColonAsAWholeInputToken
  - QmxFindingGate\Tests\ReportRecordsTest::itAcceptsOnlyTheRecognizedNonemptyMetricSubjectProfile
  - QmxFindingGate\Tests\ReportRecordsTest::itChecksBaselineEntriesAgainstTheirVariantSourceInsteadOfMainJson
  - QmxFindingGate\Tests\ReportRecordsTest::itChecksSameInputOutputAndParallelRecordsAgainstTheirOwnMainPublication
@@ -567,6 +628,17 @@ Available tests:
  - QmxFindingGate\Tests\ReportRecordsTest::itSuppliesFullDuplicateMeasurementsBeforeStoppingAnUnreadyIdentityView
  - QmxFindingGate\Tests\ReportRecordsTest::itSuppliesIdenticalInstancesSeparatelyForBothAuthorityViews
  - QmxFindingGate\Tests\ReportRecordsTest::itWritesTheCompleteSelectedRecordWithItsDuplicateMultiplicity
+ - QmxFindingGate\Tests\ScratchTest::itReleasesHoldingsInReverseOnceAndNotACancelledOneAndSurvivesAFailingOne
+ - QmxFindingGate\Tests\StaleDeclarationCheckTest::itJudgesNothingWhileDeriving
+ - QmxFindingGate\Tests\StaleDeclarationCheckTest::itRaisesFieldDeclarationStaleForAFieldNeitherSideAddsOrDrops
+ - QmxFindingGate\Tests\StaleDeclarationCheckTest::itRaisesRecordStaleForAnIntentAndADerivedRecordNoRecordOfTheRunMatched
+ - QmxFindingGate\Tests\StaleDeclarationCheckTest::itRaisesStructuralMapStaleForARowThatMovedNoKeyOfAnyCaseInput
+ - QmxFindingGate\Tests\StaleDeclarationCheckTest::itRaisesSurfaceDeclarationStaleForAnIntroducedSurfaceTheRunNeverCaptured
+ - QmxFindingGate\Tests\SubjectLevelTest::itLevelsEverySubjectShapeAndRefusesOneItCannotLevel
+ - QmxFindingGate\Tests\SubjectLevelTest::itRefusesAClaimNoObservedSetCouldSatisfyWhereTheCaseIsLoaded
+ - QmxFindingGate\Tests\SurfaceComparisonRecordsTest::itComparesACleanRecordedTreeWithoutAnyFailure
+ - QmxFindingGate\Tests\SurfaceComparisonRecordsTest::itRaisesFindingCountMismatchWhenTheCandidateReportsAnotherNumberOfFindings
+ - QmxFindingGate\Tests\SurfaceComparisonRecordsTest::itRaisesPublishedOrderDriftForABaselineNotInItsOwnKeyOrder
  - QmxFindingGate\Tests\SurfaceComparisonTest::itChecksOnlyTheChosenOutputMarkerAfterItsNamedNormalization
  - QmxFindingGate\Tests\SurfaceComparisonTest::itClassifiesBothPublicationFormsBeforeReadingRecordAuthority
  - QmxFindingGate\Tests\SurfaceComparisonTest::itComparesOnePositionIndependentDeltaForEveryCaseOfASurfaceClass
@@ -607,8 +679,15 @@ Available tests:
  - QmxFindingGate\Tests\SyntheticTreeTest::itReplaysFullRankingsAndPhysicalFindingsSeparatelyFromTheOriginalSlice
  - QmxFindingGate\Tests\SyntheticTreeTest::itRequiresAnExactKnownInvocationAndExposesTheChildEnvironment
  - QmxFindingGate\Tests\SyntheticTreeTest::itRetainsFilelessFindingsOnlyOnFormatsThatPublishThem
+ - QmxFindingGate\Tests\TupleCheckTest::itAcceptsATrackedTupleThatIsWhatThePublisherPublishes
+ - QmxFindingGate\Tests\TupleCheckTest::itLoadsATupleOnlyWhileEverySourceNamesAFileAndAMethodTheTreeStillHas
+ - QmxFindingGate\Tests\TupleCheckTest::itRaisesFindingTupleMismatchForAPublishedFindingWithAKeyTheTupleDoesNotName
+ - QmxFindingGate\Tests\TupleCheckTest::itRaisesTupleFieldDriftWhenTheFingerprintHashesAFieldTheTupleDoesNotCompare
+ - QmxFindingGate\Tests\TupleCheckTest::itRaisesTupleFieldDriftWhenThePublisherPublishesAFieldTheTupleLacks
+ - QmxFindingGate\Tests\TupleCheckTest::itRewritesTheTrackedTupleFromThePublisherAndExitsWithTheWriteCode
  - QmxFindingGate\Tests\WiringTest::itLoadsAClassAFormListsInItsOwnFile
  - QmxFindingGate\Tests\WiringTest::itLoadsAFormsClassesThroughTheLoadersEveryEntryPointRequires
+ - QmxFindingGate\Tests\WiringTest::itNamesEveryClassFileOfTheGateInTheSharedLoaderOrAFormsWiringAndNoOther
  - QmxFindingGate\Tests\WiringTest::itReadsEveryFormsEntriesInTheOrderOfTheFixedList
  - QmxFindingGate\Tests\WiringTest::itRefusesAFormWhoseFileIsMissing
  - QmxFindingGate\Tests\WiringTest::itRefusesARegisteredCheckItDoesNotLoad

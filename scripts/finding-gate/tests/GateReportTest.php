@@ -6,12 +6,14 @@ namespace QmxFindingGate\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use QmxFindingGate\FailureClass;
 use QmxFindingGate\Fs;
 use QmxFindingGate\GateError;
 use QmxFindingGate\GateReport;
 
 /**
- * Every declaration a green run was green under is published, by machine and in the verdict sentence.
+ * Every declaration a green run was green under is published, by machine and in the verdict sentence,
+ * and the verdict a report reaches maps to its own exit code.
  */
 final class GateReportTest extends TestCase
 {
@@ -74,6 +76,39 @@ final class GateReportTest extends TestCase
         self::assertSame(['- K�'], $published['failures'][0]['diff']);
         self::assertStringContainsString($detail, $report->render());
         self::assertStringContainsString('- K' . \chr(254), $report->render());
+    }
+
+    #[Test]
+    public function itIsGreenAndExitsZeroWithoutAFailureOrALimitation(): void
+    {
+        $report = new GateReport();
+
+        self::assertSame(GateReport::VERDICT_GREEN, $report->verdict());
+        self::assertSame(GateReport::EXIT_GREEN, $report->exitCode());
+    }
+
+    #[Test]
+    public function itIsPartialWithItsOwnExitCodeAfterALimitationAndDoesNotClaimFullEquivalence(): void
+    {
+        $report = new GateReport();
+        $report->limit('the corpus was restricted');
+
+        self::assertSame(GateReport::VERDICT_PARTIAL, $report->verdict());
+        self::assertSame(GateReport::EXIT_PARTIAL, $report->exitCode());
+        self::assertSame(2, $report->exitCode());
+        self::assertStringContainsString('PARTIAL', $report->render());
+        self::assertStringNotContainsString('finding-equivalent under the declared maps', $report->render());
+    }
+
+    #[Test]
+    public function itLetsAFailureOutrankALimitation(): void
+    {
+        $report = new GateReport();
+        $report->limit('the corpus was restricted');
+        $report->fail(FailureClass::RUN_FAILED, 'scope', 'detail');
+
+        self::assertSame(GateReport::VERDICT_RED, $report->verdict());
+        self::assertSame(GateReport::EXIT_RED, $report->exitCode());
     }
 
     #[Test]

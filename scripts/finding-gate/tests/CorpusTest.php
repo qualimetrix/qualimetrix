@@ -118,4 +118,111 @@ final class CorpusTest extends TestCase
             self::assertStringContainsString($message, $error->getMessage());
         }
     }
+
+    /**
+     * The corpus is external and self-contained, and a restricted run says
+     * which cases it ran.
+     *
+     * Both halves are exercised on a written corpus, because loading is where
+     * the tracked corpus meets them. Every refusal below loaded before its check
+     * existed: `paths` was the only value held to the case directory, and a
+     * misspelt `--cases` name beside a real one was dropped while the limit line
+     * still named it.
+     */
+    #[Test]
+    public function itKeepsEveryCaseInputInsideItsDirectoryAndRefusesAnUnmatchedCaseName(): void
+    {
+        $root = Fs::temporaryDirectory('corpus-boundaries-');
+        try {
+            $directory = $root . '/finding-gate/cases/probe';
+            mkdir($directory . '/src', 0o777, true);
+            Fs::write($directory . '/qmx.yaml', "suppress_paths: []\n");
+            Fs::write($directory . '/preset.yaml', "rules: {}\n");
+            Fs::write(\dirname($directory) . '/qmx.yaml', "suppress_paths: []\n");
+
+            $loads = static function (string $config, array $args) use ($root, $directory): bool {
+                Fs::write($directory . '/case.json', (string) json_encode([
+                    'id' => 'probe',
+                    'description' => 'a written case, so what it may point at is checked where a case is loaded',
+                    'paths' => ['src'],
+                    'config' => $config,
+                    'args' => $args,
+                    'channels' => ['a.code@class'],
+                ]));
+
+                return !self::throws(static fn(): mixed => Corpus::load($root, []));
+            };
+
+            self::assertTrue(
+                $loads('qmx.yaml', ['--preset=strict', '--preset=preset.yaml', '-c', 'qmx.yaml', '--rule-opt=a.b:c=1']),
+                'a case whose config, presets and path arguments stay in its directory loads',
+            );
+            self::assertTrue(!$loads('../qmx.yaml', []), 'a config reached through ".." outside the directory is refused');
+            self::assertTrue($loads('../probe/qmx.yaml', []), 'while one whose ".." leads back inside loads');
+            self::assertTrue(!$loads('missing.yaml', []), 'and a config that does not exist is refused');
+
+            foreach ([
+                'an absolute config as a separated -c' => ['-c', '/elsewhere/qmx.yaml'],
+                'an attached -c' => ['-c/elsewhere/qmx.yaml'],
+                'a -c inside a short-option cluster' => ['-qc/elsewhere/qmx.yaml'],
+                'an attached --config' => ['--config=/elsewhere/qmx.yaml'],
+                'a separated --config' => ['--config', '../../qmx.yaml'],
+                'a preset path' => ['--preset=../../../preset.yaml'],
+                'a preset hidden in a comma list' => ['--preset=strict,/elsewhere/preset.yaml'],
+                'a baseline' => ['--baseline=/elsewhere/baseline.json'],
+            ] as $what => $args) {
+                self::assertTrue(!$loads('qmx.yaml', $args), \sprintf('%s outside the case directory is refused', $what));
+            }
+
+            foreach ([
+                'a separated -o' => ['-o', 'report.json'],
+                'a -o inside a short-option cluster' => ['-qoreport.json'],
+                'an attached --output' => ['--output=report.json'],
+                'a log file' => ['--log-file=qmx.log'],
+                'a cache directory' => ['--cache-dir=cache'],
+                'a profile without a file' => ['--profile'],
+                'a separated working directory' => ['-d', 'src'],
+                'an attached --working-dir' => ['--working-dir=src'],
+            ] as $what => $args) {
+                self::assertTrue(!$loads('qmx.yaml', $args), \sprintf('%s is refused wherever it points', $what));
+            }
+
+            self::assertTrue(
+                !$loads('qmx.yaml', ['--format', 'json']),
+                'a bare token that is no path option\'s value is refused: whether it names a path cannot be known',
+            );
+            self::assertTrue(!$loads('qmx.yaml', ['--', 'src']), 'and so is ending option parsing, after which every token is one');
+
+            $loads('qmx.yaml', []);
+            $unmatched = null;
+
+            try {
+                Corpus::load($root, ['probe', 'nope']);
+            } catch (GateError $error) {
+                $unmatched = $error->getMessage();
+            }
+
+            self::assertTrue(
+                $unmatched !== null && str_contains($unmatched, 'nope'),
+                'a --cases name that selects no case is refused by name even beside one that does',
+            );
+            self::assertTrue(
+                !self::throws(static fn(): mixed => Corpus::load($root, ['probe'])),
+                'while a --cases list whose every name selects a case loads',
+            );
+        } finally {
+            Fs::removeRecursively($root);
+        }
+    }
+
+    private static function throws(callable $callback): bool
+    {
+        try {
+            $callback();
+
+            return false;
+        } catch (GateError) {
+            return true;
+        }
+    }
 }

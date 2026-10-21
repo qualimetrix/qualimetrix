@@ -7,6 +7,7 @@ namespace QmxFindingGate\Tests;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use QmxFindingGate\Fs;
 use QmxFindingGate\GateError;
 use QmxFindingGate\Process;
 use QmxFindingGate\ProcessHandle;
@@ -29,6 +30,52 @@ final class ProcessTest extends TestCase
         self::assertSame(0, $run['exit'], $run['stderr']);
         self::assertSame('["\/tmp\/gate-child-cache","C","UTC"]', $run['stdout']);
         self::assertSame($before, getenv('XDG_CACHE_HOME'));
+    }
+
+    #[Test]
+    public function itRefusesAChildThatClosedBothPipesBeforeHangingAtTheDeadline(): void
+    {
+        $startedAt = hrtime(true) / 1_000_000_000;
+        try {
+            Process::run([\PHP_BINARY, '-r', 'fclose(STDOUT); fclose(STDERR); usleep(2000000);'], __DIR__, 0.1);
+            self::fail('A child that closed its pipes outlived the deadline unrefused.');
+        } catch (GateError $error) {
+            self::assertStringContainsString('Timed out after 0.1 seconds', $error->getMessage());
+        }
+
+        self::assertLessThan(1.5, hrtime(true) / 1_000_000_000 - $startedAt, 'the deadline fell through to an unbounded wait for the child');
+    }
+
+    #[Test]
+    public function itLeavesNoChildThatATermHandlerSpawnedBehindTheDeadline(): void
+    {
+        $root = Fs::temporaryDirectory('process-group-test-');
+        $pidPath = $root . '/late-child.pid';
+        $script = <<<'SH'
+            trap 'sleep 30 & echo $! > "$1"; exit 0' TERM
+            while :; do sleep 1; done
+            SH;
+        try {
+            try {
+                Process::run(['/bin/sh', '-c', $script, 'finding-gate-process-group-test', $pidPath], __DIR__, 0.1);
+            } catch (GateError) {
+                // The deadline is what terminates the group.
+            }
+            $deadline = hrtime(true) / 1_000_000_000 + 0.5;
+            while (!is_file($pidPath) && hrtime(true) / 1_000_000_000 < $deadline) {
+                usleep(10_000);
+            }
+            $pid = (int) (is_file($pidPath) ? Fs::read($pidPath) : '0');
+            self::assertGreaterThan(1, $pid, 'the TERM handler never spawned the late child');
+
+            $deadline = hrtime(true) / 1_000_000_000 + 0.5;
+            while (@posix_kill($pid, 0) && hrtime(true) / 1_000_000_000 < $deadline) {
+                usleep(10_000);
+            }
+            self::assertFalse(@posix_kill($pid, 0), 'the late child outlived the supervised group');
+        } finally {
+            Fs::removeRecursively($root);
+        }
     }
 
     #[Test]
