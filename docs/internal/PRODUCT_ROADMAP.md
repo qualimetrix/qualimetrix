@@ -1,6 +1,6 @@
 # Qualimetrix Product Roadmap
 
-**Updated:** 2026-09-13
+**Updated:** 2026-10-21
 **Based on:** [Competitive analysis](COMPETITOR_COMPARISON.md), cross-ecosystem research (SonarQube, ESLint, Semgrep,
 NDepend, CodeScene, RuboCop, Ruff, ArchUnit), triple expert evaluation (Gemini + Codex, 2026-03-25)
 
@@ -192,36 +192,49 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 
 ---
 
-## Deferred Obligations and Unscheduled Candidates
+## Open Work
 
-These entries preserve user value and unresolved decisions that would otherwise
-be easy to lose. They are backlog records, not approved implementation plans.
-Replanning starts only when the stated condition is met and the current code is
-rechecked. A count from a frozen inventory locates deferred scope; it is not a
-count of confirmed product defects.
+Known defects, deferred features and internal debt are tracked as GitHub issues, one per mechanism. This section
+indexes them by area; the issue is the authoritative record of the problem, its decisions and its closure
+condition. When an issue closes, drop its line here.
 
-### PHPDoc-Derived Dependency Edges
+### Product defects
 
-**Value:** Include declared type relationships in dependency evidence.
-**Owner:** `Analysis.Evidence.DependencyModel`; Configuration owns consumer
-policy. **Current state / decision:** Native syntax is extracted; no PHPDoc
-parser or edges exist. A reviewed design records choices, but there is no ADR
-or scheduled implementation, so this remains a candidate. **Replan when:**
-Dependency-graph completeness is prioritized; reconfirm supported forms,
-false-positive boundaries, and default behavior. **ADR:** None.
+- [#159](https://github.com/qualimetrix/qualimetrix/issues/159) Namespace CBO changes when a neighbouring namespace is split (metric definition; blocks #175)
+- [#160](https://github.com/qualimetrix/qualimetrix/issues/160) CLI messages that misstate the condition or grow without bound
+- [#161](https://github.com/qualimetrix/qualimetrix/issues/161) Metric results on unusual but legal inputs
+- [#162](https://github.com/qualimetrix/qualimetrix/issues/162) Deep ASTs are refused by the cache on read
+- [#163](https://github.com/qualimetrix/qualimetrix/issues/163) Findings in a namespace-only file lose their namespace
+- [#164](https://github.com/qualimetrix/qualimetrix/issues/164) hardcoded-credentials misses lowercase dotted secret phrases
+- [#165](https://github.com/qualimetrix/qualimetrix/issues/165) empty-catch exempts a "prepare, guard, then work" loop
+- [#166](https://github.com/qualimetrix/qualimetrix/issues/166) Duplication can report one copy in two overlapping groups
+- [#167](https://github.com/qualimetrix/qualimetrix/issues/167) `--rule-opt` cannot address an option map key that contains a dot
 
-### New-Findings-Only Regression Gate
+### Product improvements
 
-**Value:** Let CI distinguish findings introduced by a change from findings
-merely located in touched files, without requiring trend history. **Owner:**
-`Analysis.Policy.Baseline`, `Infrastructure.Git`, and Console. **Current state /
-decision:** Git reporting narrows file scope but does not classify new findings.
-Variant C is accepted as a design direction, not scheduled or specified by an
-ADR; it remains distinct from history-backed trends. **Replan when:** A CI use
-case needs a no-history new-findings gate; decide comparison source and
-incomparable cases first. **ADR:** None.
+- [#168](https://github.com/qualimetrix/qualimetrix/issues/168) Report-target preflight is best-effort
+- [#169](https://github.com/qualimetrix/qualimetrix/issues/169) `--format=metrics` key vocabularies and class owner
+- [#170](https://github.com/qualimetrix/qualimetrix/issues/170) Overlap of `long-parameter-list` and `constructor-overinjection`
+- [#171](https://github.com/qualimetrix/qualimetrix/issues/171) Dependency graph: PHPDoc types as dependency edges
+- [#172](https://github.com/qualimetrix/qualimetrix/issues/172) Dependency graph: global functions as nodes
+- [#173](https://github.com/qualimetrix/qualimetrix/issues/173) New-findings-only CI gate against a base revision
+- [#174](https://github.com/qualimetrix/qualimetrix/issues/174) Phar as a required check and the Docker image built from it
 
-### Baseline Memory-Bounded Revalidation
+### Internal debt
+
+- [#175](https://github.com/qualimetrix/qualimetrix/issues/175) Self-analysis: namespace coupling and namespace cycles
+- [#176](https://github.com/qualimetrix/qualimetrix/issues/176) Self-analysis: method and class complexity and code-smell ceilings
+- [#177](https://github.com/qualimetrix/qualimetrix/issues/177) Testing and validation harness: size and speed
+- [#178](https://github.com/qualimetrix/qualimetrix/issues/178) Repository checks that report green without looking
+- [#179](https://github.com/qualimetrix/qualimetrix/issues/179) Developer tooling leftovers
+
+### Unscheduled candidates
+
+These preserve user value and unresolved decisions; they are not approved
+plans. Replanning starts only when the stated condition is met and the current
+code is rechecked.
+
+#### Baseline Memory-Bounded Revalidation
 
 **Value:** Keep baseline comparison viable as accepted state grows without
 changing verdicts. **Owner:** `Analysis.Policy.Baseline`. **Current state /
@@ -232,32 +245,7 @@ approved, and the old goal alone does not prove a current performance defect.
 constraint; confirm callers and result lifetime before choosing a contract.
 **ADR:** ADRs 0017 and 0026 define identity context, not materialization.
 
-### Configuration Content-Form Coverage
-
-**Value:** Make acceptance and refusal reproducible for forms users can
-actually supply, without confusing parser normalization with product behavior.
-**Owner:** `Analysis.Configuration` and consuming capability owners.
-**Current state / decision:** Axis F remains explicitly deferred; some forms
-are refused or collapse before reaching the product, and controls do not fully
-guard the axis. No content-form contract is accepted. **Replan when:** Owners
-decide which parsed forms must differ observably; rebuild coverage through YAML
-and CLI and prove its controls fail closed. **ADR:** ADR 0058 covers related
-precedence, not this axis.
-
-### Promise-versus-Effect Deferred Cases
-
-**Value:** Ensure layered configuration honors each source's promise rather
-than silently dropping an option. **Owner:** `Analysis.Configuration` and
-owning rule-option classes. **Current state / decision:** Accepted key-shape and
-selected layer-precedence behavior are implemented. The frozen ledger retains
-115 deferred cases (including cross-source axis-B pairs and scope-wide cases),
-not 115 confirmed defects; source composition (axis C), inline input, and
-cross-layer conflicts remain outside the accepted contract. ADR 0055 accepts
-only bounded behavior. **Replan when:** A supported use case depends on
-a deferred interaction and owners first decide precedence/refusal semantics;
-refresh evidence from current code. **ADR:** ADR 0055; ADRs 0058 and 0061 are related.
-
-### Conditional Duplicate-FQN Semantics
+#### Conditional Duplicate-FQN Semantics
 
 **Value:** Make metrics predictable when valid mutually exclusive declarations
 share one fully qualified name. **Owner:** `Analysis.Evidence.Measurement` owns
@@ -271,23 +259,6 @@ duplicates is not by itself a defect. **Replan when:** A representative PHP use
 case makes the distinction material; freeze fixtures and decide the product
 contract before changing aggregation or graph semantics. **ADR:** ADR 0021
 leaves this semantic question open; ADR 0026 governs declaration keys only.
-
-### Rule and Metric Residuals
-
-**Value:** Keep findings actionable and metric descriptions accurate. **Owner:**
-`Analysis.Evidence.CodeSmell`, `Analysis.Evidence.Size`, project-configuration
-owners, and website documentation. **Current state / decision:** Both
-parameter-count rules still inspect constructors and their intended overlap is
-unsettled. The public size-rule page omits the accessor exclusion documented by
-the owning capability. Broad CBO and ClassRank suppressions for Finding
-contracts remain in project configuration without a current justification
-established here and need explicit owner confirmation. These need owner
-decisions, not blanket behavior changes; only the wording correction is clearly
-required. Older audit records mix closed and open findings, so other claims are
-not carried forward without revalidation.
-**Replan when:** Preparing the documentation correction, reviewing rule overlap,
-or next calibrating project configuration. **ADR:** ADRs 0035 and 0060 govern
-names; ADR 0047 governs suppression versus exclusion, not these decisions.
 
 ---
 
