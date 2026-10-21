@@ -288,9 +288,8 @@ final class GateReport
             'warnings' => $this->warnings,
             'failures' => $this->failures,
             'failureClasses' => $this->failureClasses(),
-            // Read by the controls harness: a control that declares the gate
-            // stays GREEN under a declared map row has to be able to assert that
-            // it stayed green without a declared delta absorbing the difference.
+            // A GREEN verdict that rested on a declared delta is told apart from
+            // one that did not by these counts.
             'declaredDeltaCount' => $this->declaredDeltaCount,
             'declaredExactSurfaceCount' => $this->declaredExactSurfaceCount,
             'exactSurfaceUsedCount' => $this->exactSurfaceUsedCount,

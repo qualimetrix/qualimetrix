@@ -11,7 +11,6 @@ namespace QmxFindingGate\Tests {
     use QmxFindingGate\GateError;
     use QmxFindingGate\ProcessHandle;
     use QmxFindingGate\RemovalFailureDiagnostics;
-    use QmxFindingGateControls\Shell;
     use ReflectionMethod;
     use RuntimeException;
     use Throwable;
@@ -23,7 +22,6 @@ namespace QmxFindingGate\Tests {
         public static function setUpBeforeClass(): void
         {
             require_once \dirname(__DIR__) . '/classes.php';
-            require_once \dirname(__DIR__, 2) . '/finding-gate-controls/Shell.php';
         }
 
         protected function setUp(): void
@@ -100,25 +98,6 @@ namespace QmxFindingGate\Tests {
             $this->expectExceptionMessage('Cannot unlink ' . $path . ' while removing it.');
 
             Fs::removeRecursively($path);
-        }
-
-        #[Test]
-        public function itKeepsControlsCleanupRefusalsAtTheSharedRemovalBoundary(): void
-        {
-            $path = $this->root . '/file';
-            self::assertNotFalse(file_put_contents($path, 'content'));
-            FsNativeProbe::refuseUnlink($path);
-
-            try {
-                Shell::removeRecursively($path);
-                self::fail('A failed controls cleanup must be refused.');
-            } catch (RuntimeException $error) {
-                self::assertNotInstanceOf(GateError::class, $error);
-                self::assertStringContainsString('Cannot unlink ' . $path . ' while removing it.', $error->getMessage());
-                self::assertStringContainsString('errno=unknown', $error->getMessage());
-                self::assertStringContainsString('native error=', $error->getMessage());
-                self::assertStringContainsString('remaining entries=["."]', $error->getMessage());
-            }
         }
 
         #[Test]
@@ -231,41 +210,6 @@ namespace QmxFindingGate\Tests {
         }
 
         #[Test]
-        public function itTransportsGitConfigurationEnvironmentWithoutInterpretingItInControlsShell(): void
-        {
-            $before = self::gitConfigurationEnvironment();
-            $transported = [
-                'GIT_CONFIG_COUNT' => 'not-a-count',
-                'GIT_CONFIG_KEY_unusual' => 'section.key',
-                'GIT_CONFIG_VALUE_unusual' => 'value',
-                'GIT_CONFIG_KEY_9' => 'orphan.key',
-            ];
-
-            try {
-                self::replaceGitConfigurationEnvironment($transported);
-                $probe = <<<'PHP'
-                    echo json_encode([
-                        'GIT_CONFIG_COUNT' => getenv('GIT_CONFIG_COUNT'),
-                        'GIT_CONFIG_KEY_unusual' => getenv('GIT_CONFIG_KEY_unusual'),
-                        'GIT_CONFIG_VALUE_unusual' => getenv('GIT_CONFIG_VALUE_unusual'),
-                        'GIT_CONFIG_KEY_9' => getenv('GIT_CONFIG_KEY_9'),
-                        'GIT_CONFIG_VALUE_9' => getenv('GIT_CONFIG_VALUE_9'),
-                    ], JSON_THROW_ON_ERROR);
-                    PHP;
-                $result = Shell::run([\PHP_BINARY, '-r', $probe], $this->root);
-
-                self::assertSame(0, $result['exit']);
-                self::assertSame('', $result['stderr']);
-                self::assertSame([
-                    ...$transported,
-                    'GIT_CONFIG_VALUE_9' => false,
-                ], json_decode($result['stdout'], true, 512, \JSON_THROW_ON_ERROR));
-            } finally {
-                self::replaceGitConfigurationEnvironment($before);
-            }
-        }
-
-        #[Test]
         public function itUnlinksASymlinkWithoutWalkingItsTarget(): void
         {
             $target = $this->root . '/target';
@@ -289,41 +233,6 @@ namespace QmxFindingGate\Tests {
             Fs::removeRecursively($link);
 
             self::assertFalse(is_link($link));
-        }
-
-        /** @return array<string, string> */
-        private static function gitConfigurationEnvironment(): array
-        {
-            $environment = getenv();
-            if ($environment === false) {
-                throw new RuntimeException('Cannot snapshot the test process environment.');
-            }
-
-            $configuration = [];
-            foreach ($environment as $name => $value) {
-                if ($name === 'GIT_CONFIG_COUNT'
-                    || str_starts_with($name, 'GIT_CONFIG_KEY_')
-                    || str_starts_with($name, 'GIT_CONFIG_VALUE_')) {
-                    $configuration[$name] = $value;
-                }
-            }
-
-            return $configuration;
-        }
-
-        /** @param array<string, string> $replacement */
-        private static function replaceGitConfigurationEnvironment(array $replacement): void
-        {
-            foreach (array_keys(self::gitConfigurationEnvironment()) as $name) {
-                if (!putenv($name)) {
-                    throw new RuntimeException('Cannot remove ' . $name . ' from the test process environment.');
-                }
-            }
-            foreach ($replacement as $name => $value) {
-                if (!putenv($name . '=' . $value)) {
-                    throw new RuntimeException('Cannot set ' . $name . ' in the test process environment.');
-                }
-            }
         }
 
         /** @return list<string>|string */

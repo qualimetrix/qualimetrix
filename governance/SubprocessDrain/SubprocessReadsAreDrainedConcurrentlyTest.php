@@ -246,14 +246,9 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . 'Only stderr is a pipe and it is drained before reaping; stdout writes to the file, so no second '
             . 'read stream can be left unserviced.',
 
-        'scripts/finding-gate-controls/Shell.php:97' => 'The finding-gate controls supervisor: a global '
-            . '`stream_select` across every live child, plus process-group isolation, descendant termination and a '
-            . 'bounded parallel scheduler. That is supervision layered on the read discipline, a different subject '
-            . 'from flat capture, and its behaviour is what `composer gate:controls` measures.',
-
         'scripts/finding-gate/ProcessHandle.php:89' => 'The finding-gate worker handle: non-blocking reads under a '
-            . 'bounded scheduler, with process-group isolation and launcher-disappearance detection. Same '
-            . 'supervision subject as the line above.',
+            . 'bounded scheduler, with process-group isolation and launcher-disappearance detection, a '
+            . 'different subject from flat capture.',
 
         'scripts/finding-gate/ProcessHandle.php:233' => '`groupedCommand()`: source text inside a nowdoc handed to '
             . '`php -r`, so this is a literal here and a real call in the child. The child opens no pipe at all — '

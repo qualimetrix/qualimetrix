@@ -169,10 +169,8 @@ Available tests:
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesAnUnknownCaseDefinitionKey
  - QmxFindingGate\Tests\CaseDefinitionTest::itRefusesBothSpellingsOfATrackedBaselineInput
  - QmxFindingGate\Tests\CaseDefinitionTest::itStillRequiresTheChannelsListOnAnAuxiliaryRefusal
- - QmxFindingGate\Tests\CaseInputTranslationTest::itBuildsControlExpectationsFromTheCurrentComparisonDeclarations
  - QmxFindingGate\Tests\CaseInputTranslationTest::itCarriesActualWorkerStructuralCreditsIntoTheParentAndPublicVerdict
  - QmxFindingGate\Tests\CaseInputTranslationTest::itCarriesPresetArgumentsThroughTheRealComputedChannelProbe
- - QmxFindingGate\Tests\CaseInputTranslationTest::itKeepsNamespaceSuppressionWhenTheControlRenamesItsDeclaredRoot
  - QmxFindingGate\Tests\CaseInputTranslationTest::itMaterializesTheWholeCaseAndReplacesVariantAnalysisPaths
  - QmxFindingGate\Tests\CaseInputTranslationTest::itPreservesContainedDirectoryLinksAndNeverLoadsCaseCode
  - QmxFindingGate\Tests\CaseInputTranslationTest::itRefusesUnsupportedDocumentTargetsAndSymbolPathGeometry
@@ -379,7 +377,6 @@ Available tests:
  - QmxFindingGate\Tests\FieldValuesCheckTest::itSharesLiveRolesAndReleasesTheRunAfterItsLastRoleIsDropped
  - QmxFindingGate\Tests\FieldValuesCheckTest::itUsesOneInstanceAndOneWriterForTheCompleteReportAndViewUnion
  - QmxFindingGate\Tests\FsTest::itDoesNotLetADiagnosticFailureReplaceTheCleanupRefusal
- - QmxFindingGate\Tests\FsTest::itKeepsControlsCleanupRefusalsAtTheSharedRemovalBoundary
  - QmxFindingGate\Tests\FsTest::itRefusesAResidualNonemptyDirectory
  - QmxFindingGate\Tests\FsTest::itRefusesAnInaccessibleEntryInsteadOfCallingItAbsent
  - QmxFindingGate\Tests\FsTest::itRefusesAnUnlinkFailureThatLeavesTheEntryPresent
@@ -388,7 +385,6 @@ Available tests:
  - QmxFindingGate\Tests\FsTest::itReportsAnIncompleteLinuxObservationWhenAProcessCwdCannotBeRead
  - QmxFindingGate\Tests\FsTest::itReportsAnUnavailableLinuxProcessPopulationWhenProcCannotBeListed
  - QmxFindingGate\Tests\FsTest::itReportsTheNativeFailureResidualEntriesAndProcessesInsideTheTree
- - QmxFindingGate\Tests\FsTest::itTransportsGitConfigurationEnvironmentWithoutInterpretingItInControlsShell
  - QmxFindingGate\Tests\FsTest::itTreatsADirectoryDisappearingBetweenInspectionAndListingAsRemoved
  - QmxFindingGate\Tests\FsTest::itTreatsADirectoryDisappearingDuringRmdirAsRemoved
  - QmxFindingGate\Tests\FsTest::itTreatsAFileAndItsParentDisappearingDuringUnlinkAsRemoved

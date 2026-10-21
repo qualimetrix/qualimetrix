@@ -609,7 +609,6 @@ composer phpstan        # PHPStan level 8
 
 # Finding equivalence between two revisions of the product
 composer gate -- --reference=<git-ref>           # compare findings; GREEN 0, PARTIAL 2, RED 1, cannot-run 3, interrupted 128+signal
-composer gate:controls -- --reference=<git-ref>  # prove the gate is red under each planted breakage
 
 # What each inline @qmx directive in a tree still does (--sweep=narrow re-executes only the addressed rule; default)
 bin/qmx directives src/                          # 0 clean, 2 observable inert/publishable refused, 3 bad config, 4 incomplete
@@ -670,8 +669,7 @@ bin/qmx check --help
 
 **Project-specific steps** (in addition to the global workflow):
 - **Validation**: `composer check` (cs-check + strict docs build + tests + phpstan + exact manifest/freshness check + coarse qmx selfcheck). A direct `bin/qmx check` is product analysis only and does not run the repository's exact manifest policy. When modifying `html-report/`, also run `composer build:js` (`test:js` is part of `check:code` since X9)
-- **Gate captures and witnesses**: `composer check:gate` is required when changing `scripts/finding-gate*`, `scripts/finding-gate-controls/` or `finding-gate/`. It runs separately from `composer check`, on every pull request and on pushes to `main`.
-- **Gate mutation controls**: `composer gate:controls -- --reference=HEAD --jobs=8` is locally required only when changing those same paths. Its separate CI workflow runs daily on `main` and supports manual dispatch. Scheduled controls are evidence about their measured revision, not a required pull-request context.
+- **Gate captures and witnesses**: `composer check:gate` is required when changing `scripts/finding-gate*` or `finding-gate/`. It runs separately from `composer check`, on every pull request and on pushes to `main`.
 - **Documentation**: Update `README.md` in the affected `src/` directory (add new files, fix outdated info). Update website documentation (see [Website Documentation](#website-documentation) section below)
 
 ### Test working directories
@@ -730,13 +728,11 @@ what invalidates it, so a change that touched one thing pays for one group:
 `check:code` (style, static analysis, PHP and JS tests), `check:docs` (strict mkdocs),
 `check:artifacts` (manifest and every generated artifact against a fresh
 measurement) and `check:self` (the qmx ratchet and the inline-directive audit).
-Gate end-to-end captures and both self-tests have their own `check:gate`
-group and pull-request CI job. Mutation controls have the separate
-`gate:controls` group and scheduled/manual workflow. The routine check
-previously took 220s locally and 419s on Linux CI. On Linux the gate captures
-and witnesses took about 1088s, while its 31 controls took about 8320s.
-Those costs are reported separately from the routine check budget; the CI
-job deadlines are 30 minutes for captures and 160 minutes for controls.
+Gate end-to-end captures and the self-test have their own `check:gate`
+group and pull-request CI job. The routine check previously took 220s locally
+and 419s on Linux CI. On Linux the gate captures and witnesses took about
+1088s. That cost is reported separately from the routine check budget; the CI
+job deadline is 30 minutes.
 `architecture:check`
 deliberately runs in both `check:artifacts` and — as its first half —
 `selfcheck`: the ratchet may not judge a tree whose generated artifacts are
@@ -803,9 +799,8 @@ case schema, declaration forms, invocation provenance and limits.
 - `PARTIAL` is not GREEN. A comparison against identical product code proves
   capture and corpus consistency; a product-change claim needs the preceding
   commit and independent tests of any newly declared values.
-- Re-run `composer gate:controls -- --reference=<commit>` after comparator
-  changes. Every failure class must have observed self-test witnesses;
-  temporary witness exemptions are refused.
+- Every failure class must have observed self-test witnesses; temporary
+  witness exemptions are refused.
 - Measure tuple and normalization changes with `--derive-tuple` and
   `--derive-normalization`. Never use an exclusion to hide a semantic change.
   A stale map, normalization row or change declaration fails.

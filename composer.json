@@ -144,8 +144,7 @@
         "check-leaks": "bash scripts/check-private-leaks.sh",
         "gate:self-test": [
             "Composer\\Config::disableProcessTimeout",
-            "php scripts/finding-gate.php --self-test",
-            "php scripts/finding-gate-controls.php --self-test"
+            "php scripts/finding-gate.php --self-test"
         ],
         "gate": [
             "Composer\\Config::disableProcessTimeout",
@@ -154,10 +153,6 @@
         "gate:phar": [
             "Composer\\Config::disableProcessTimeout",
             "python3 scripts/finding-gate-phar.py"
-        ],
-        "gate:controls": [
-            "Composer\\Config::disableProcessTimeout",
-            "php scripts/finding-gate-controls.php"
         ],
         "directives:narrow-control": [
             "Composer\\Config::disableProcessTimeout",

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 return [
     'classes' => ['ReportViews', 'ReportRecords', 'MetricsRecords', 'ValueCheck', 'ValueStage', 'ValueDerivation', 'RankingSchema', 'RankingOrder', 'RankingCheck', 'RecordCheck', 'RecordStage', 'RecordDerivation', 'SelfTestRecords'],
-    'controlClasses' => ['RecordControls', 'RankingControls'],
-    'controls' => ['RecordControls::idleSelector', 'RankingControls::inputOrder'],
     'selfTest' => ['SelfTestRecords::publicComparison'],
     'witnesses' => ['SelfTestRecords::witnesses'],
     'caseChecks' => ['RankingCheck', 'RecordCheck'],

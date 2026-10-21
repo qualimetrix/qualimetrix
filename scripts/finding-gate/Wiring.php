@@ -11,10 +11,9 @@ use Closure;
  * fixed list.
  *
  * The forms are written in parallel, and every one of them has to reach the
- * same few places: the class loader, the controls table, the self-test, the
- * check witnesses, the case checks,
- * the stages of a surface's comparison, the checks of a whole run and the
- * derivations. A shared list at each of those places is a file every form
+ * same few places: the class loader, the self-test, the check witnesses, the
+ * case checks, the stages of a surface's comparison, the checks of a whole run
+ * and the derivations. A shared list at each of those places is a file every form
  * edits; a file per form is one only that form edits. So each place reads the
  * union of these files, and a form registers itself in its own.
  *
@@ -30,7 +29,6 @@ final class Wiring
         'capture' => 'capture',
         'outcomes' => 'outcomes',
         'maps' => 'maps',
-        'corpus' => 'corpus',
     ];
 
     /**
@@ -38,8 +36,6 @@ final class Wiring
      * `Class::method` entries.
      *
      * - `classes`: gate classes, `scripts/finding-gate/<Class>.php`
-     * - `controlClasses`: controls-harness classes, `scripts/finding-gate-controls/<Class>.php`
-     * - `controls`: `Class::method` of the harness, returning a `Control`
      * - `selfTest`: `Class::method` of a {@see SelfTestGroup}
      * - `witnesses`: `Class::method` returning a list of {@see CheckWitnesses::witness()}
      * - `caseChecks`, `surfaceStages`, `runChecks`, `derivations`: gate classes
@@ -47,8 +43,6 @@ final class Wiring
      */
     public const array KEYS = [
         'classes',
-        'controlClasses',
-        'controls',
         'selfTest',
         'witnesses',
         'caseChecks',
@@ -89,14 +83,6 @@ final class Wiring
     {
         foreach ($this->list('classes') as $class) {
             require_once $this->directory . '/' . $class . '.php';
-        }
-    }
-
-    /** Requires every controls-harness class the forms register. */
-    public function loadControls(string $controlsDirectory): void
-    {
-        foreach ($this->list('controlClasses') as $class) {
-            require_once $controlsDirectory . '/' . $class . '.php';
         }
     }
 
@@ -225,7 +211,7 @@ final class Wiring
             throw new GateError(\sprintf('%s: "%s" must be a list of strings.', $path, $key));
         }
 
-        $pattern = \in_array($key, ['controls', 'selfTest', 'witnesses'], true)
+        $pattern = \in_array($key, ['selfTest', 'witnesses'], true)
             ? '~^[A-Z]\w*::[a-z]\w*$~'
             : '~^[A-Z]\w*$~';
         $valid = [];

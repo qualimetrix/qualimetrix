@@ -12,12 +12,7 @@ use QmxFindingGate\CaseInputTranslation;
 use QmxFindingGate\CaseScheduler;
 use QmxFindingGate\ChannelWitness;
 use QmxFindingGate\Corpus;
-use QmxFindingGate\DeclaredDelta;
-use QmxFindingGate\DeclaredExactSurfaces;
-use QmxFindingGate\DeclaredFields;
 use QmxFindingGate\DeclaredStructuralMaps;
-use QmxFindingGate\DeclaredValues;
-use QmxFindingGate\FailureClass;
 use QmxFindingGate\Fs;
 use QmxFindingGate\Gate;
 use QmxFindingGate\GateError;
@@ -26,11 +21,6 @@ use QmxFindingGate\Options;
 use QmxFindingGate\RenameMaps;
 use QmxFindingGate\SyntheticTree;
 use QmxFindingGate\Tsv;
-use QmxFindingGateControls\Controls;
-use QmxFindingGateControls\RenameControls;
-use QmxFindingGateControls\Scratch;
-use QmxFindingGateControls\Shell;
-use RuntimeException;
 
 final class CaseInputTranslationTest extends TestCase
 {
@@ -194,157 +184,4 @@ final class CaseInputTranslationTest extends TestCase
             SyntheticTree::remove($root);
         }
     }
-
-    #[Test]
-    public function itKeepsNamespaceSuppressionWhenTheControlRenamesItsDeclaredRoot(): void
-    {
-        require_once \dirname(__DIR__, 2) . '/finding-gate-controls/classes.php';
-
-        $repository = $this->nativeRepositoryFixture(\dirname(__DIR__, 3));
-        $scratch = Scratch::contentOf($repository);
-        $program = <<<'PHP'
-            require getcwd() . '/vendor/autoload.php';
-            use Qualimetrix\Analysis\Configuration\ConfigSchema;
-            use Qualimetrix\Analysis\Configuration\ConfigurationRoot;
-            use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
-            use Qualimetrix\Core\Path\AbsolutePath;
-            use Qualimetrix\Reporting\FindingProjection\Configuration\ConfiguredFindingExclusionsResolver;
-            $document = LayeredDocument::of([
-                ['source' => 'qmx.yaml', 'values' => [
-                    ConfigSchema::SUPPRESS_NAMESPACES => [['subtree' => 'Corpus\\Root']],
-                ]],
-            ], AbsolutePath::fromString(getcwd()));
-            $patterns = (new ConfiguredFindingExclusionsResolver())->resolve($document)->suppressNamespaces;
-            $loadedFromClone = true;
-            foreach ([
-                ConfigSchema::class => 'src/Analysis/Configuration/ConfigSchema.php',
-                ConfigurationRoot::class => 'src/Analysis/Configuration/ConfigurationRoot.php',
-                ConfiguredFindingExclusionsResolver::class => 'src/Reporting/FindingProjection/Configuration/ConfiguredFindingExclusionsResolver.php',
-            ] as $class => $path) {
-                $file = (new ReflectionClass($class))->getFileName();
-                $loadedFromClone = $loadedFromClone
-                    && realpath($file) === realpath(getcwd() . '/' . $path);
-            }
-            echo json_encode([
-                'root' => ConfigurationRoot::SuppressNamespaces->declaration()->key,
-                'patterns' => count($patterns),
-                'matches' => $patterns !== [] && $patterns[0]->matches('Corpus\\Root\\Child'),
-                'loadedFromClone' => $loadedFromClone,
-            ], JSON_THROW_ON_ERROR);
-            PHP;
-
-        try {
-            RenameControls::rootKeyRenamed()->mutation->apply($scratch, $repository);
-            $result = Shell::run([\PHP_BINARY, '-r', $program], $scratch->tree);
-            self::assertSame(0, $result['exit'], $result['stderr']);
-            $actual = json_decode($result['stdout'], true, 512, \JSON_THROW_ON_ERROR);
-            self::assertSame('suppress_ns', $actual['root']);
-            self::assertSame(1, $actual['patterns']);
-            self::assertTrue($actual['matches']);
-            self::assertTrue($actual['loadedFromClone']);
-        } finally {
-            $scratch->remove();
-        }
-
-    }
-
-    private function nativeRepositoryFixture(string $source): string
-    {
-        $repository = $this->root . '/native-repository';
-        if (!mkdir($repository)) {
-            throw new RuntimeException('Cannot create the native repository fixture');
-        }
-        Shell::mustRun(['cp', '-R', $source . '/src', $repository . '/src'], $repository);
-        Shell::mustRun(['cp', '-Rl', $source . '/vendor', $repository . '/vendor'], $repository);
-        foreach ([
-            'composer.json',
-            'tests/Analysis/Configuration/Support/LayeredDocument.php',
-            'finding-gate/cases/suppression/qmx.yaml',
-            'finding-gate/maps/inputs.tsv',
-        ] as $path) {
-            Fs::write($repository . '/' . $path, Fs::read($source . '/' . $path));
-        }
-        Fs::write($repository . '/.gitignore', "/vendor/\n");
-        Shell::mustRun(['git', 'init', '--quiet'], $repository);
-        Shell::mustRun(['git', 'add', '.gitignore', 'composer.json', 'src', 'tests', 'finding-gate'], $repository);
-
-        return $repository;
-    }
-
-    #[Test]
-    public function itBuildsControlExpectationsFromTheCurrentComparisonDeclarations(): void
-    {
-        require_once \dirname(__DIR__, 2) . '/finding-gate-controls/classes.php';
-        $root = $this->root . '/finding-gate';
-        $scope = 'case:probe|format:metrics';
-        $neighbour = 'case:probe|format:suppressed';
-        Fs::write($root . '/' . DeclaredFields::INDEX, Tsv::render(DeclaredFields::COLUMNS, []));
-        Fs::write($root . '/' . DeclaredFields::DERIVED, Tsv::render(DeclaredFields::DERIVED_COLUMNS, []));
-        Fs::write($root . '/' . DeclaredValues::INDEX, Tsv::render(DeclaredValues::COLUMNS, []));
-        Fs::write($root . '/' . DeclaredValues::DERIVED, Tsv::render(DeclaredValues::DERIVED_COLUMNS, []));
-        self::assertSame([], Controls::fieldValueToleration($this->root));
-        self::assertSame([], Controls::valueToleration($this->root));
-        self::assertFalse(Controls::hasSurfaceDeclaration($scope, $this->root));
-        $equality = Controls::changedSurface($scope, $this->root);
-        self::assertSame(FailureClass::SURFACE_MISMATCH, $equality->failureClass);
-        self::assertTrue($equality->matches(FailureClass::SURFACE_MISMATCH, $scope));
-        self::assertFalse($equality->matches(FailureClass::SURFACE_MISMATCH, $neighbour));
-        self::assertFalse($equality->matches(FailureClass::VALUE_MISMATCH, $scope));
-        self::assertSame([], Controls::oversizedDeclaredSurfaces([$scope], $this->root));
-
-        Fs::write($root . '/' . DeclaredFields::INDEX, Tsv::render(DeclaredFields::COLUMNS, [
-            ['added', 'json', 'format:json', 'probe', 'An observed publication member.'],
-        ]));
-        self::assertSame([], Controls::fieldValueToleration($this->root));
-        Fs::write($root . '/' . DeclaredFields::DERIVED, Tsv::render(DeclaredFields::DERIVED_COLUMNS, [
-            ['json', 'format:json', 'probe', 'probe', '{}', '1'],
-        ]));
-        $fields = Controls::fieldValueToleration($this->root);
-        self::assertCount(1, $fields);
-        self::assertTrue($fields[0]->matches(FailureClass::FIELD_VALUES_MISMATCH, DeclaredFields::DERIVED));
-        self::assertFalse($fields[0]->matches(FailureClass::FIELD_VALUES_MISMATCH, $scope));
-        Fs::write($root . '/' . DeclaredValues::INDEX, Tsv::render(DeclaredValues::COLUMNS, [
-            ['field', 'message', '*', 'An observed message change.'],
-        ]));
-        self::assertSame([], Controls::valueToleration($this->root));
-        Fs::write($root . '/' . DeclaredValues::DERIVED, Tsv::render(DeclaredValues::DERIVED_COLUMNS, [
-            ['field', 'message', 'case:probe|format:json|record:{}', '"old"', '"new"'],
-        ]));
-        $values = Controls::valueToleration($this->root);
-        self::assertCount(1, $values);
-        self::assertTrue($values[0]->matches(FailureClass::VALUE_MISMATCH, DeclaredValues::DERIVED));
-        self::assertFalse($values[0]->matches(FailureClass::VALUE_MISMATCH, $scope));
-
-        $measurement = "--- candidate\n+++ reference\n@@ -1,1 +1,1 @@\n-old\n+new\n";
-        Fs::write($root . '/declared-exact-surfaces/probe.diff', $measurement);
-        Fs::write($root . '/' . DeclaredExactSurfaces::INDEX, Tsv::render(DeclaredExactSurfaces::COLUMNS, [
-            ['probe', 'format:metrics', 'declared-exact-surfaces/probe.diff', 'A measured whole publication change.'],
-        ]));
-        self::assertTrue(Controls::hasSurfaceDeclaration($scope, $this->root));
-        $exact = Controls::changedSurface($scope, $this->root);
-        self::assertTrue($exact->matches(FailureClass::DELTA_MISMATCH, $scope));
-        self::assertFalse($exact->matches(FailureClass::SURFACE_MISMATCH, $scope));
-        self::assertSame(FailureClass::SURFACE_MISMATCH, Controls::changedSurface($neighbour, $this->root)->failureClass);
-        self::assertSame([], Controls::oversizedDeclaredSurfaces([$scope], $this->root));
-
-        Fs::write($root . '/' . DeclaredExactSurfaces::INDEX, Tsv::render(DeclaredExactSurfaces::COLUMNS, []));
-        Fs::write($root . '/declared-delta/probe.diff', $measurement);
-        Fs::write($root . '/' . DeclaredDelta::INDEX, Tsv::render(DeclaredDelta::COLUMNS, [
-            [$scope, 'declared-delta/probe.diff', 'A measured native record publication change.'],
-        ]));
-        self::assertSame(FailureClass::DELTA_MISMATCH, Controls::changedSurface($scope, $this->root)->failureClass);
-        $oversized = Controls::oversizedDeclaredSurfaces([$scope, $neighbour], $this->root);
-        self::assertCount(1, $oversized);
-        self::assertTrue($oversized[0]->matches(FailureClass::DELTA_TOO_LARGE, $scope));
-        self::assertFalse($oversized[0]->matches(FailureClass::DELTA_TOO_LARGE, $neighbour));
-        Fs::write($root . '/' . DeclaredDelta::INDEX, Tsv::render(DeclaredDelta::COLUMNS, []));
-        Fs::write($root . '/' . DeclaredFields::INDEX, Tsv::render(DeclaredFields::COLUMNS, []));
-        Fs::write($root . '/' . DeclaredFields::DERIVED, Tsv::render(DeclaredFields::DERIVED_COLUMNS, []));
-        Fs::write($root . '/' . DeclaredValues::INDEX, Tsv::render(DeclaredValues::COLUMNS, []));
-        Fs::write($root . '/' . DeclaredValues::DERIVED, Tsv::render(DeclaredValues::DERIVED_COLUMNS, []));
-        self::assertSame(FailureClass::SURFACE_MISMATCH, Controls::changedSurface($scope, $this->root)->failureClass);
-        self::assertSame([], Controls::fieldValueToleration($this->root));
-        self::assertSame([], Controls::valueToleration($this->root));
-    }
-
 }

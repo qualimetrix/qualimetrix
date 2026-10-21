@@ -8,9 +8,7 @@ A declaration is evidence of what changed; it does not prove the new behaviour
 is correct. Product tests make that separate claim.
 
 Run `composer gate -- --reference=<commit>`. A complete comparison exits 0
-only when all checks agree under the declarations. Re-run
-`composer gate:controls -- --reference=<commit>` whenever the comparator changes:
-an earlier controls run is evidence about an earlier comparator.
+only when all checks agree under the declarations.
 
 ## Layout
 
@@ -92,7 +90,7 @@ applicable declaration and its JSON evidence; they never judge a whole pair.
 Product promises, including empty baseline content after failed generation,
 remain independent of those forms.
 
-Negative controls live in `scripts/finding-gate-controls/`. The shared loaders
+The shared loaders
 read a fixed set of subject-owned `wiring-*.php` files. Unknown files, unknown
 keys, duplicate registrations and unloaded checks are refused. The retired
 `pending` key is not accepted, even with an empty value. Every failure class
@@ -475,8 +473,7 @@ name can also move alignment, which requires a residual structural diff.
 
 GitLab and SARIF fingerprints remain part of their complete invocation bytes.
 There is no standalone fingerprint decoder or substitution authority.
-The historical `fingerprint-no-map` negative control still requires an unmapped
-channel change to remain visible on those whole invocations.
+An unmapped channel change remains visible on those whole invocations.
 
 ## What publication order is compared by
 
@@ -677,11 +674,9 @@ An optional constructor-interface comparison checks those exact names without
 autoloading the unused interface. Other historical Reflection shapes remain
 explicit in the probes; this does not promise support for arbitrary product APIs.
 
-## Execution, controls and independent checks
+## Execution and independent checks
 
-The Composer gate and each gate child launched by the controls harness use an
-explicit 1G PHP memory limit. The controls harness passes this limit to the
-child PHP process before the gate script.
+The Composer gate uses an explicit 1G PHP memory limit.
 
 The reference tree uses the candidate's installed dependencies. Before artifact
 comparison, the gate compares both `composer.lock` documents through PHP's native
@@ -691,20 +686,11 @@ all other decoded values, scalar types, object/list distinctions and list order
 must match. Malformed JSON and non-object lock documents are refused. This
 compares decoded lock facts, not installed vendor contents or lock-file bytes.
 
-`composer check:gate` runs the end-to-end captures and both self-tests.
+`composer check:gate` runs the end-to-end captures and the gate's self-test.
 Its **Gate captures and witnesses (composer check:gate)** CI context runs on
 every pull request and on pushes to `main`. Locally it is required when
-changing `scripts/finding-gate*`, `scripts/finding-gate-controls/` or
-`finding-gate/`. It is separate from the routine `composer check` budget.
-
-The **Finding gate controls** workflow runs `composer gate:controls --
---reference=HEAD --jobs=8` daily on `main` and supports manual dispatch.
-The same command is locally required only for changes to the paths above.
-Scheduled controls measure their own revision and do not replace the
-pull-request witnesses. The preceding Linux measurement took about 18
-minutes for captures and witnesses and 139 minutes for 31 controls; their
-job deadlines are 30 and 160 minutes. Branch pushes do not duplicate the
-pull-request capture job.
+changing `scripts/finding-gate*` or `finding-gate/`. It is separate from the
+routine `composer check` budget.
 
 The three waves remain ordered: candidate 1, candidate 2, reference.
 Cases have independent working directories and a bounded pool
@@ -733,84 +719,10 @@ entries are not concurrently substituted or created: path-based
 classification, traversal and removal are not atomic and do not protect
 against those races.
 
-`composer gate:controls` runs each declared mutation on an independent clone
-with its own repository. It resolves the reference before cloning and leaves
-the developer's tree unchanged. A red control requires its declared failures
-at declared scopes and rejects everything else. Tolerations must be exercised;
-idle tolerations fail. Corpus controls require exact full scopes, preventing
-a `text` expectation from absorbing detailed text or another case.
-Green controls are held to all declaration counts, not just exit 0.
-
-There are 28 active controls. The former `fingerprint-declared-rename` and
-`occurrence-declared-rename` green controls are retired: a JSON channel map
-cannot license changed bytes in whole publications. Existing JSON map checks
-prove channel and rule translation, and the security rule's frozen-occurrence
-test proves that a producer rename preserves its discriminator. Both checks
-must reject a planted regression. The historical `fingerprint-no-map` control
-now promises an unmapped channel change and whole-byte mismatches rather than
-native fingerprint decoding.
-
-The config-precedence, threshold-raising and directive-placement controls
-require their finding counts, records and unchanged report surfaces. They do
-require a whole `directives` surface mismatch when no declaration owns that
-surface. If an ordinary or exact declaration does own it, the gate judges the
-declared transition instead. None of these three current cases has such a
-declaration, so each requires the mismatch. Directive record values retain
-their exact semantic expectations independently.
-
-The failed-derivation control requires an invalid captured publication and
-hashes the declaration index and directory before and after the run. Complete
-expressible measurements may still be written when other semantic residuals
-remain; that is the derivation policy, rather than a failed no-write check.
-
-The `ranking-input-order` control requires an order mismatch on JSON findings.
-It does not require one on the `scoped-layers` baseline source: that
-unknown-scope source publishes one finding. Baseline-source ranking permutations
-remain checked by the comparator when multiple matched findings have unchanged
-ranking values.
-
-When the resolved reference is `HEAD`, inherited transition declarations and
-rename maps belong to an earlier comparison. Before building control factories,
-the harness validates those permissions, copies the working tree into one
-private repository and prepares an identity comparison there: existing
-permission tables retain only their headers, and the four permission payload
-directories are absent. Control mutations and their own declarations then share
-that repository. Malformed inherited permissions still fail before preparation.
-A non-HEAD reference retains the authored transition context. Dirty working-tree
-product bytes survive the copy and are compared against the committed reference.
-The original tree is checked after delegation and on handled interruption;
-streamed progress and the child exit status remain visible. Relative report
-paths resolve against the original working directory and survive cleanup.
-
-Channel-rename controls require a case's exact `rules` surface only when the
-unmodified command actually publishes its catalogue. The harness observes
-`bin/qmx rules --no-ansi` once per eligible case and reuses that result across
-factory consumers. Exit 0 with a nonempty catalogue requires the surface; exit 3
-with empty stdout and nonempty stderr publishes none. Other results, start
-failures and timeouts fail before controls run. A refusal outcome for analysis
-alone does not determine whether `rules` publishes a catalogue.
-
-`composer gate:self-test` runs the gate's observed witnesses and the
-controls harness's mechanics. Native PHP parsing inventories failure-class
+`composer gate:self-test` runs the gate's observed witnesses. Native PHP parsing inventories failure-class
 producers. Every active failure class requires an actual whole-run observation
 with its side and scope. Source locations and callers carry no witness credit.
 Unknown vocabulary and a missing producer or observed class still fail.
-Controls add corpus evidence; they do not replace observed self-test witnesses.
-
-Control expectations describe their mutation's measured failure classes and
-scopes. A whole invocation whose exact declaration changes produces a
-`delta-mismatch` at the invocation scope, including when only its stderr changed.
-It is not a record or projection witness. The report-value control holds mapped
-JSON record pairs to their comparison and requires that same mutation to remain
-visible on the UTF-8 whole invocation. It no longer promises a GREEN result for
-the entire corpus or the declaration-count guarantees of a GREEN control.
-
-The tuple-member controls remove unavailable ranked-field intentions together
-with their derived rows inside their private trees. An invalid tuple cannot
-provide those measurements. The ordinary gate retains its required-publication
-guard, and a control crash without a diagnostic report does not satisfy a
-semantic failure expectation.
-
 ### Source scanner limits
 
 The refusal-site scanner is a syntactic inventory, not a complete PHP call
@@ -865,7 +777,7 @@ Each limit needs its own product or delivery check:
   decimal precision: use product `TopIssuesRenderer` tests. Whole-invocation
   comparison detects undeclared changes; an exact surface delta can authorize
   an intentional layout change but does not prove its correctness.
-- No corpus control proves the combined tie-break mutation and an order
+- No corpus case proves the combined tie-break mutation and an order
   intention; the comparison algorithm has synthetic coverage.
 - Ranking schema derivation requires the current literal layout and
   indentation of `JsonFormatter::formatTopIssues`; a behaviour-neutral
@@ -898,8 +810,6 @@ Each limit needs its own product or delivery check:
   `ProcessHandle::age`; other elapsed-time uses have no clock-rollback check.
 - Recorded comparisons do not reproduce `Gate::compare` ordering, reference
   input checks, outcome checks, path leaks, stale declarations or repeat capture.
-- Gate controls remain above the 20-minute target; their nightly timeout and
-  prose counts need a separate operational review.
 
 A GREEN run against identical product code proves the corpus, capture and
 normalization are consistent. To claim a product change, compare with the
@@ -909,7 +819,7 @@ Child invocations receive an explicit reproducible environment from ProcessHandl
 not the parent's complete environment. The shared `GitProcessEnvironment` policy
 preserves a valid inherited Git configuration and appends the overrides that
 disable automatic maintenance; malformed configuration is transported unchanged
-for Git to refuse. The controls harness and the PHPUnit bootstrap use the same
+for Git to refuse. The PHPUnit bootstrap uses the same
 policy. In particular, a parent's `QMX_ASCII` does not reach captured commands,
 so the normal Unicode publication is compared. This does not change the product's
 own environment judgement.

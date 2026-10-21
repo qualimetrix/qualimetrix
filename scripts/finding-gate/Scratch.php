@@ -11,9 +11,7 @@ use Throwable;
  * directories, and the reference worktree registered in the developer's
  * repository.
  *
- * Not the controls harness's own `Scratch`, which is a
- * hardlink clone of a working tree. This one holds no content of its own; it
- * holds the releases.
+ * It holds no content of its own; it holds the releases.
  *
  * Acquiring is what arms the release, rather than the entry point remembering
  * to: {@see directory()} arms interruption handling before it creates anything,

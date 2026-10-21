@@ -63,12 +63,10 @@ final class WiringTest extends TestCase
     {
         $scripts = $this->directory . '/scripts';
 
-        foreach (['finding-gate', 'finding-gate-controls'] as $directory) {
-            $files = glob(\dirname(__DIR__, 2) . '/' . $directory . '/*.php');
+        $files = glob(\dirname(__DIR__, 2) . '/finding-gate/*.php');
 
-            foreach ($files === false ? [] : $files as $file) {
-                Fs::write($scripts . '/' . $directory . '/' . basename($file), Fs::read($file));
-            }
+        foreach ($files === false ? [] : $files as $file) {
+            Fs::write($scripts . '/finding-gate/' . basename($file), Fs::read($file));
         }
         Fs::write(
             $scripts . '/subprocess/GitProcessEnvironment.php',
@@ -76,23 +74,21 @@ final class WiringTest extends TestCase
         );
 
         Fs::write($scripts . '/finding-gate/RecordProbe.php', "<?php\n\nnamespace QmxFindingGate;\n\nfinal class RecordProbe {}\n");
-        Fs::write($scripts . '/finding-gate-controls/RecordProbeControls.php', "<?php\n\nnamespace QmxFindingGateControls;\n\nfinal class RecordProbeControls {}\n");
         Fs::write(
             $scripts . '/finding-gate/wiring-records.php',
-            "<?php\n\nreturn ['classes' => ['RecordProbe'], 'controlClasses' => ['RecordProbeControls']];\n",
+            "<?php\n\nreturn ['classes' => ['RecordProbe']];\n",
         );
 
         $loaded = Process::run([
             \PHP_BINARY,
             '-r',
-            'require $argv[1] . "/finding-gate/classes.php"; require $argv[1] . "/finding-gate-controls/classes.php";'
-            . ' echo json_encode([class_exists("QmxFindingGate\\RecordProbe", false),'
-            . ' class_exists("QmxFindingGateControls\\RecordProbeControls", false)]);',
+            'require $argv[1] . "/finding-gate/classes.php";'
+            . ' echo json_encode(class_exists("QmxFindingGate\\RecordProbe", false));',
             $scripts,
         ], $scripts);
 
         self::assertSame(0, $loaded['exit'], $loaded['stderr']);
-        self::assertSame('[true,true]', $loaded['stdout']);
+        self::assertSame('true', $loaded['stdout']);
     }
 
     #[Test]
@@ -120,12 +116,12 @@ final class WiringTest extends TestCase
     #[Test]
     public function itReadsEveryFormsEntriesInTheOrderOfTheFixedList(): void
     {
-        Fs::write(Wiring::fileOf($this->directory, 'maps'), "<?php\n\nreturn ['controls' => ['MapControls::stale']];\n");
-        Fs::write(Wiring::fileOf($this->directory, 'records'), "<?php\n\nreturn ['controls' => ['RecordControls::withdrawn']];\n");
+        Fs::write(Wiring::fileOf($this->directory, 'maps'), "<?php\n\nreturn ['witnesses' => ['MapProbe::stale']];\n");
+        Fs::write(Wiring::fileOf($this->directory, 'records'), "<?php\n\nreturn ['witnesses' => ['RecordProbe::withdrawn']];\n");
 
         self::assertSame(
-            [['Probe\\RecordControls', 'withdrawn'], ['Probe\\MapControls', 'stale']],
-            Wiring::of($this->directory)->methods('controls', 'Probe'),
+            [['Probe\\RecordProbe', 'withdrawn'], ['Probe\\MapProbe', 'stale']],
+            Wiring::of($this->directory)->methods('witnesses', 'Probe'),
         );
     }
 
