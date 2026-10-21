@@ -48,8 +48,7 @@ final class SeededFixtureIsolationTest extends TestCase
      *
      * What this catches is a copy, not a rewrite: a leaked file someone then
      * edited is out of its reach, and no cheap check has that reach. It is the
-     * mistake the planting probe in `directives:controls` makes, and the one a
-     * misplaced `git mv` or an over-broad `cp -R` makes.
+     * mistake a misplaced `git mv` or an over-broad `cp -R` makes.
      */
     #[Test]
     public function itKeepsEverySeededFixtureFileOutOfSrc(): void

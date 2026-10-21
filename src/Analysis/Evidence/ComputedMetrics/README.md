@@ -358,7 +358,7 @@ current test and relation inventories are generated under
 subject's actual relations, including the retained Reporting assembly tests and
 composed carriers. The classified set includes `ResolvedComputedMetricDefinitions`
 relations to
-`AnalysisRuntimeConfigurator`, `RuleInputValidator`, and
+`AnalysisRuntimeConfigurator`, `FindingConfigurationPreparation`, and
 `RuleChannelSnapshotFactoryInterface`. `ChannelUniverse` itself reads only
 `ComputedMetricDefinitionCatalogInterface`: the concrete resolved value reaches
 it through that factory contract and never as an import of its own. Reverse, unknown-zone, cross-owner

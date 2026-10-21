@@ -26,7 +26,8 @@ use Throwable;
  *   the derive then lowers the ceiling for good — intended, and argued in
  *   {@see TestSubjectPaths}'s docblock, where the measurement that rules out
  *   the stricter alternative is. The count here is a live measurement; the
- *   census stage 05 adjudicates is the one this stage recorded.
+ *   census a later adjudication works from is the one recorded when this list
+ *   was first derived.
  * - **remainder is not a prefix**: the path owner is among the covered owners
  *   and the path below the level is still not a prefix of the subject's
  *   namespace. Every current member truncates in the *middle* — `Unit/Collection/`

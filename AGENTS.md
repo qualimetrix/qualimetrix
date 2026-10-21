@@ -149,7 +149,6 @@ not, under a green `composer check`.
 | a root whose test directory is **not** test-shaped (the `governance/` shape) — outside that sweep's population entirely. Declared under a `<testsuite>` the suite classifier catches it; undeclared, nothing does (ADR 0067 records this as an open residue)                                                                                                                                             | **silently** |
 | `scripts/generate-modular-architecture-test-inventory.php` — `testSuitePrefixTable()`, `currentSuite()`, `classifyOwner()`, `dispositionFor()`, `targetPath()`                                                                                                                                                                                                                                           | loudly       |
 | a development root declared anywhere other than `composer.json` `autoload-dev` `psr-4` — `src/` importing it is not refused, because the ban is derived from that section alone                                                                                                                                                                                                                          | **silently** |
-| `scripts/generate-rename-enumeration.php` — `surfaces()`, or a later move reads as a drop in a column nobody re-derives                                                                                                                                                                                                                                                                                  | **silently** |
 | `governance/TestSuiteHygiene/ScratchPathsCarryRealEntropyTest.php` — `ROOTS`, and every other control that carries its own root list                                                                                                                                                                                                                                                                     | **silently** |
 | the mover's `createIsolatedProject()` helper (e.g. `scripts/modular-architecture/tests/ModularArchitectureGeneratorRefusalTest.php`) — its copy list must contain every root the tracked config declares, or PHPUnit exits 2 inside the scratch project, **and** every path the generator's own literals name, or a planted refusal is replaced by a generic one                                         | loudly       |
 | `.githooks/pre-commit` — the staged-file path filter, or the root's PHP skips the local hook                                                                                                                                                                                                                                                                                                             | **silently** |
@@ -624,15 +623,6 @@ composer directives:audit                        # bin/qmx directives over src/,
 # the 70-second src/ run last is the difference between seeing the new signal and not.
 composer directives:narrow-control                # 0 agreed, 1 disagreed, 2 population too uniform,
                                                   # 3 a run that cannot be compared, 7 an unreadable report
-
-# Proving the threshold audit's own tests bite
-composer directives:controls                     # coverage arithmetic first (seconds), then plant one breakage at a
-                                                  # time; every case must be reddened by one
-composer directives:controls -- --only=<id,...>  # one probe, for iterating (coverage is then not evidence)
-composer directives:controls -- --jobs=1         # same verdicts, one worker; re-read a disagreement here first
-composer directives:controls:coverage            # the cheap half on its own: removing a declaration must redden
-                                                  # exactly its own case, and a declared case the run never carried
-                                                  # is a distinct stale-declaration refusal
 
 # HTML report (run when modifying html-report/)
 composer test:js        # JS tests for HTML report (vitest)

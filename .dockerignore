@@ -57,13 +57,9 @@ coverage/
 # that test rather than re-reading this paragraph.
 **/tests/
 tools/phpstan/tests/
-scripts/promise-effect/tests/
 scripts/directive-audit/tests/
-scripts/directive-audit-controls/tests/
-scripts/tautology-controls/tests/
 scripts/finding-gate/tests/
 scripts/suppression-snapshot/tests/
-scripts/rename-enumeration/tests/
 scripts/health-calibration/tests/
 scripts/benchmark/tests/
 scripts/modular-architecture/tests/

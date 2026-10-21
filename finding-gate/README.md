@@ -30,16 +30,15 @@ finding-gate/
 ├── declared-fields.tsv         # added/removed report fields
 ├── declared-fields.derived.tsv
 ├── declared-surfaces.tsv        # introduced JSON publications
-├── declared-surfaces/
+├── declared-surfaces/          # one diff per row; present only while the index has rows
 ├── declared-structural-maps.tsv # translated configuration paths
 ├── declared-delta.tsv           # exact residual diffs, after record/value work
-├── declared-delta/
+├── declared-delta/             # one diff per row; present only while the index has rows
 ├── declared-exact-surfaces.tsv # last-resort exact case/surface intentions
-├── declared-exact-surfaces/
+├── declared-exact-surfaces/    # one diff per row; present only while the index has rows
 ├── declared-field-moves.tsv     # exact field moves permitted inside a diff
 ├── normalization.tsv           # exclusions measured from repeated runs
 ├── equivalence-tuple.tsv       # physical finding fields derived from code
-└── enumeration-*.tsv           # measured vocabulary and rename decisions
 ```
 
 An absent optional declaration table means no declarations. Existing tables
@@ -839,12 +838,7 @@ tables. Permissions for a product change between commits do not apply to an
 archive that must match its own commit. The committed declarations remain
 unchanged; the full corpus, equivalence tuple and normalization are preserved.
 
-The corpus is also read by the channel-level drift governance control and
-the rename/runtime-channel generators. `composer enumeration:renames`
-measures current vocabulary and preserves authored rename decisions and
-executed history. Its three output inventories are excluded from occurrence
-counts: otherwise a new metric counts its own newly written row on the next
-run. All three inventories still have freshness consumers.
+The corpus is also read by the channel-level drift governance control.
 
 The optional JSON diagnostic report replaces unrepresentable source bytes with
 U+FFFD through PHP's native JSON encoder. This is display-only: captured bytes,

@@ -189,7 +189,7 @@ which no repaired code can cause. `UnboundSuppressionRule` gives the three
 `suppression.unmatched-*` channels their identity, options and place in
 `qmx rules`; `UnboundSuppressionAudit` — the namespace's only published type —
 builds the findings and passes them through `publishable()` itself, and is
-called by `FindingFilterOrchestrator` at the reporting seam, the one place the
+called by `FindingProjection` at the reporting seam, the one place the
 configured values and the run's universes are both in hand.
 Every value is an explicit `exact`, `subtree`, or `regex` selector mapping;
 the application and audit carry the same bound Core pattern, while reports use

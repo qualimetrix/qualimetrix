@@ -65,8 +65,8 @@ producer never reaches a running analysis.
 
 **No observable surface changes.** Shape was never published — not in any
 formatter, not in the baseline file format, not in `bin/qmx rules`. The
-finding-gate proves this the same way it proved Ш2 and Ш3: GREEN against the
-prior step's commit with every map empty and zero declared deltas.
+finding-gate proves this the same way it proved the earlier steps of this
+series: GREEN against the prior step's commit with every map empty and zero declared deltas.
 
 **Cost, paid once per producer.** Every one of the 45 rules and both
 configuration validators now declares `shape()` — most through a shared

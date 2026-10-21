@@ -136,8 +136,7 @@ final class ChannelWitness
      * never reaches a compared artifact: it is compared against a claim written
      * in the same gate-internal spelling, so a `SymbolLevel` case value changing
      * under it would leave every claim matching and the run green. The docblock
-     * used to assert the two agreed; this measures it, in the one campaign whose
-     * subject is the level vocabulary.
+     * used to assert the two agreed; this measures it.
      *
      * @param list<string> $productLevels
      */

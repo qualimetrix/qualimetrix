@@ -115,8 +115,8 @@ final class FindingConfigurationResolverTest extends TestCase
     }
 
     /**
-     * The band is asserted as a pair on purpose (per this round's DoD: no
-     * fixture checks only one half). Lower layer writes the `threshold`
+     * The band is asserted as a pair on purpose (no fixture checks only one
+     * half). Lower layer writes the `threshold`
      * shorthand (unfolds to both halves); the overlay writes `warning: ~`,
      * which must not erase the unfolded `warning` — both halves must read 5.
      */

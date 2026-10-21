@@ -106,10 +106,8 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * than the five static exceptions are: it resolves at metric-lookup time,
  * after this compiler pass has already finished, so nothing build-time could
  * see its keys — a fact about *when* the channel is known, not an oversight
- * in this pass. `composer enumeration:channel-universe` prints both halves of
- * the channel universe — this pass's static half and that runtime half —
- * side by side, with their own counts; this docblock does not repeat those
- * counts in prose.
+ * in this pass. This docblock does not repeat the counts of the two halves
+ * of the channel universe in prose.
  *
  * The capability-owned channel family contract supplies the names and the
  * facts of the classless producers. The pass never imports the internal rule

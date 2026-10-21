@@ -7,8 +7,8 @@ computed_metrics:
   health.maintainability: { warning: 100, error: 100 }
   health.overall: { warning: 100, error: 100 }
   # A user-defined computed metric that READS a metric key, and whose name has
-  # more than one word. Both properties were retired for exactly one step: Ш5e3
-  # replaced the grammar a formula addresses a key in, and it also changed how a
+  # more than one word. Both properties were retired for exactly one step: the
+  # metric-key rename replaced the grammar a formula addresses a key in, and it also changed how a
   # leaf is spelled, and `recommendation` — derived from the leaf — is a compared
   # field no declared delta may move. The reference of this step already speaks
   # kebab and `m["..."]`, so both come back with no map row at all.

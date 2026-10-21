@@ -1060,7 +1060,7 @@ final class SummaryFormatterTest extends TestCase
     #[Test]
     public function itShowsScopedFindingsOnlyInDetailWithNamespaceFilter(): void
     {
-        // Findings are pre-filtered by ResultPresenter before reaching the formatter.
+        // Findings are pre-filtered by CheckFindingProjection before reaching the formatter.
         // Only in-scope findings are included in the report.
         $report = $this->createReport(
             findings: [

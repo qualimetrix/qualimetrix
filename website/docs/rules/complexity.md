@@ -386,7 +386,7 @@ Just 8 independent `if` statements already produce 256 paths.
 
 - **Extract groups of related checks** into separate methods. Splitting validation into `validateContactInfo()` and `validateAddress()` cuts the path count dramatically.
 - **Reduce independent branches.** Combine related conditions or use data-driven validation (e.g., loop over a list of required fields).
-- **Avoid deeply nested conditions** -- they multiply NPath even faster than sequential ones.
+- **Break up long runs of independent decisions.** Sequential decisions multiply NPath, while a decision nested inside a branch only adds its paths to that branch: two `if` statements in a row give 4, the same two nested give 3.
 
 <!-- llms:skip-end -->
 

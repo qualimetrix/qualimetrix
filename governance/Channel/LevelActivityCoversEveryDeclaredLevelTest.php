@@ -38,14 +38,8 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * declared by its configuration validator rather than by the rule class, so a
  * rule that answers only for its own declarations never mentions them.
  *
- * **This guard is not in `directives:controls`, and deliberately so.** That
- * stand judges a probe by whether one of its 81 directive cases reddens, and
- * the channels this guard is about are `architecture.*` at project level, which
- * no case in that population carries a directive for: the probe was measured
- * there and missed its case, which would have recorded the mutation as
- * "guarded by nothing" rather than as guarded here. Omitting a declared
- * validator pair from the enablement snapshot makes this test name the
- * missing channel and level.
+ * Omitting a declared validator pair from the enablement snapshot makes this
+ * test name the missing channel and level.
  *
  * **Population.** An explicitly empty immutable computed-metric catalog
  * limits this guard to all statically declared channel/level pairs. Dynamic

@@ -1,7 +1,0 @@
-{
-    "exit": 3,
-    "stdout": "",
-    "stderr": "Not enough arguments (missing: \"fqn\").\n",
-    "file": false,
-    "dir": false
-}

@@ -36,7 +36,8 @@ use SplFileInfo;
  * declare?" — so a class that answers it wrongly turns a working key into exit
  * 3 in silence, with no other check in the tree between the declaration and the
  * user. This file is that check, and it is deliberately *not* the guard of
- * П4.1: that one asks whether the declaration covers what `fromArray()` reads,
+ * {@see DeclaredOptionKeysCoverReadKeysTest}: that one asks whether the
+ * declaration covers what `fromArray()` reads,
  * against an AST oracle. This one asks whether the population answering the
  * contract is the population that must, and whether each answer is well formed.
  *

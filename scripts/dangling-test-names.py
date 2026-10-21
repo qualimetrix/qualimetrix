@@ -107,7 +107,7 @@ KNOWN = {
         "a P6_RENAMED_TEST_IDS key, as above",
     "Qualimetrix\\Tests\\Infrastructure\\Integration\\RuleExclusionStatsWiringTest":
         "the *value* half of that same record, and stale: the file has not carried this namespace since"
-        " stage 02/03. The owner's call is whether the record survives at all",
+        " the test tree was reorganised. The owner's call is whether the record survives at all",
 }
 
 
@@ -208,11 +208,10 @@ def main():
         print(f"cannot read the tree: {error}", file=sys.stderr)
         return 2
 
-    # Plans, ADRs and generated artifacts name what the tree used to carry;
+    # ADRs and generated artifacts name what the tree used to carry;
     # that is the record working, not an address rotting.
     # Everything else that spells a name is asserting the name exists.
     history = (
-        "docs/internal/plans/",
         "docs/adr/",
         "docs/internal/generated/",
         "CHANGELOG.md",

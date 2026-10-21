@@ -64,7 +64,10 @@ judges classes including abstract classes, and requires positive afferent
 coupling. Other PHP kinds retain graph evidence without entering this rule's
 class population. Missing or conflicting exact kind facts are invariants, not
 invented healthy classes. Rule defaults are fixed shares 5 and 10; equality
-crosses the boundary. Display uses the shortest common precision from two to
+crosses the boundary. The two values were chosen without a recorded measurement:
+no distribution of the share over the benchmark corpus or any other population
+is kept in the repository, so 5 and 10 times the uniform rank are round
+multiples that have not been calibrated, not thresholds derived from data. Display uses the shortest common precision from two to
 six decimals that preserves the visible distinction, and labels remaining
 rounded collisions. Severity and findings retain unrounded values.
 

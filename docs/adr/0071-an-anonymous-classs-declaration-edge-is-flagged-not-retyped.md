@@ -176,28 +176,18 @@ is why the change is `Fixed`, not `Breaking`: no published contract, the
 parallel run and a `--workers=0` run agree on the flag, not just on the four
 fields that existed before it.
 
-**Known residue, not addressed here.** The `attributes:` membership criterion
-already does not distinguish where an attribute is written. `FunctionLikeHandler`
-and `PropertyHandler` record an `Attribute` edge with the *enclosing class* as
-source whenever a method, parameter, or property carries one — so a class
-whose only `#[Mark]` sits on a method is matched by a layer declared
-`attributes: ['Mark']`, the same shape of defect this ADR fixes for anonymous
-classes, but wider: it reaches every named class with an attributed member,
-not only classes with a nested anonymous class. This decision does not touch
-it; it is reported here as a defect the same fork could plausibly cure next,
-not folded into scope now.
-
-The gap also opens *inside* the very shape this decision cures, not only
-outside it. `new #[Mark] class {}` is fixed — the flag now covers the
-anonymous class's own header — but `new class { #[Mark] public function f(): void {} }`
-is not: the attribute sits on the anonymous class's *member*, so it reaches
-`FunctionLikeHandler`/`PropertyHandler` and is dispatched through
-`dispatchInCurrentContext()` like any other body-level edge, never bracketed
-by `startDescribingNestedAnonymousClass()`. Both forms attribute `#[Mark]` to
-the same enclosing named class; only the header form is corrected here. The
-asymmetry is not a gap this ADR introduces — it is the wider `attributes:`
-defect above, observed at the point where it happens to overlap the shape
-this ADR does fix.
+**Residue noted at the time, since cured.** When this decision was taken, the
+`attributes:` membership criterion did not distinguish where an attribute is
+written: `FunctionLikeHandler` and `PropertyHandler` recorded an `Attribute`
+edge with the *enclosing class* as source whenever a method, parameter, or
+property carried one, so a class whose only `#[Mark]` sat on a method matched a
+layer declared `attributes: ['Mark']`. The same reach applied to an attribute on
+a member of an anonymous class, which this decision's flag did not bracket. Both
+forms were cured by the later split of the criterion (see the 0.28.0 changelog):
+`attributes:` matches the class-like declaration's own attributes, and the
+separate `member_attributes:` criterion addresses its own members; an attribute
+on an anonymous class's member reaches neither criterion of the enclosing named
+class.
 
 ## Operational commitment: retire the gate's declared rows after merge (discharged)
 

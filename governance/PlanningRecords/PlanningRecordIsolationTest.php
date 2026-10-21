@@ -4,25 +4,21 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Governance\PlanningRecords;
 
-use FilesystemIterator;
 use LogicException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Subprocess\ChildProcess;
 use RuntimeException;
-use SplFileInfo;
 
 require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
 
 /**
- * Tracked prose must name a tracked non-plan document; every section sign and
- * declared record-id spelling outside the plan tree must have an exact reason.
+ * Tracked prose must name a tracked document; every section sign and
+ * declared record-id spelling must have an exact reason.
  * Product regressions cannot reach a new planning dependency in another source.
  *
- * The population is the Git index minus plans, vendored directory segments,
- * symbolic links, this control and the exact deferred verification-tool files
- * below. Those files still await their subject's migration; this census does
- * not yet promise to judge their references. Documentation is included; ADRs
+ * The population is the Git index minus vendored directory segments,
+ * symbolic links and this control. Documentation is included; ADRs
  * are historical for paths and section signs, but not external record ids.
  * Path tokens are prose-only: Markdown, native PHP comments, the existing
  * shell/Python/JavaScript comment extraction and leading hash lines elsewhere.
@@ -54,33 +50,8 @@ final class PlanningRecordIsolationTest extends TestCase
 
     private const string MD_PATTERN = '~(?<![A-Za-z0-9_.\-/])((?:\.{1,2}/)*/?[A-Za-z0-9_.\-/]*[A-Za-z0-9_\-]\.md)(?![A-Za-z0-9_])~';
 
-    /** @var list<string> Exact deferred files, never directory prefixes. */
-    private const array DEFERRED_VERIFICATION_FILES = [
-        'promise-effect/floor.tsv',
-        'promise-effect/pair-kind-scope.tsv',
-        'promise-effect/promise-ledger.tsv',
-        'promise-effect/run-declaration.tsv',
-        'promise-effect/witness-envelopes.tsv',
-        'scripts/input-doors-bootstrap.php',
-        'scripts/input-doors/Declarations.php',
-        'scripts/promise-effect-controls.php',
-        'scripts/promise-effect-controls/Cases.php',
-        'scripts/promise-effect-grid.php',
-        'scripts/promise-effect.php',
-        'scripts/promise-effect/Classifier.php',
-        'scripts/promise-effect/CrossCheck.php',
-        'scripts/promise-effect/FifthSet.php',
-        'scripts/promise-effect/Floor.php',
-        'scripts/promise-effect/Population.php',
-        'scripts/promise-effect/ProcessProbe.php',
-        'scripts/promise-effect/RunDeclaration.php',
-        'scripts/promise-effect/Stamp.php',
-        'scripts/promise-effect/Stand.php',
-    ];
-
     /** @var list<array{rule: string, file: string, line: string, token: string, reason: string}> */
     private const array REFERENCE_EXCEPTIONS = [
-        ['rule' => 'md', 'file' => 'scripts/check-review-disposition.sh', 'line' => '#   scripts/check-review-disposition.sh <plan.md> <findings-dir>...', 'token' => 'plan.md', 'reason' => 'Usage-line metavariable.'],
         ['rule' => 'md', 'file' => 'website/CONTRIBUTING_DOCS.md', 'line' => '- English: `page.md`', 'token' => 'page.md', 'reason' => 'Page-name metavariable.'],
         ['rule' => 'md', 'file' => 'website/CONTRIBUTING_DOCS.md', 'line' => '- Russian: `page.ru.md`', 'token' => 'page.ru.md', 'reason' => 'Page-name metavariable.'],
         ['rule' => 'md', 'file' => 'website/CONTRIBUTING_DOCS.md', 'line' => 'Compact list for agents. See [Default Thresholds](../reference/default-thresholds.md) for values.', 'token' => '../reference/default-thresholds.md', 'reason' => 'The example is written from a rule page, not this contributor guide.'],
@@ -93,31 +64,6 @@ final class PlanningRecordIsolationTest extends TestCase
     public static function setUpBeforeClass(): void
     {
         self::$projectRoot = \dirname(__DIR__, 2);
-    }
-
-    #[Test]
-    public function itIndexesEveryActivePlanDirectory(): void
-    {
-        $plansRoot = self::$projectRoot . '/docs/internal/plans';
-        $directories = [];
-
-        foreach (new FilesystemIterator($plansRoot, FilesystemIterator::SKIP_DOTS) as $entry) {
-            if (!$entry instanceof SplFileInfo) {
-                continue;
-            }
-
-            if ($entry->isDir()) {
-                $directories[] = $entry->getBasename();
-            }
-        }
-
-        sort($directories);
-        $index = $this->readFile('docs/internal/plans/README.md');
-        preg_match_all('~\]\(([^/)]+)/~', $index, $matches);
-        $indexed = array_values(array_unique($matches[1]));
-        sort($indexed);
-
-        self::assertSame($directories, $indexed, 'The plan index must list every active plan directory exactly once.');
     }
 
     #[Test]
@@ -233,7 +179,7 @@ final class PlanningRecordIsolationTest extends TestCase
             if ($path === $self) {
                 continue;
             }
-            if (str_starts_with($path, 'docs/internal/plans/') || \in_array($path, self::DEFERRED_VERIFICATION_FILES, true) || is_link(self::$projectRoot . '/' . $path)) {
+            if (is_link(self::$projectRoot . '/' . $path)) {
                 continue;
             }
 
@@ -290,17 +236,6 @@ final class PlanningRecordIsolationTest extends TestCase
         );
     }
 
-    private function readFile(string $relativePath): string
-    {
-        $path = self::$projectRoot . '/' . $relativePath;
-        self::assertFileExists($path, "Documentation file not found: {$relativePath}");
-
-        $content = file_get_contents($path);
-        \assert($content !== false);
-
-        return $content;
-    }
-
     private static function commentContent(string $syntax, string $content): string
     {
         return implode("\n", array_map(static fn(array $span): string => substr($content, $span[0], $span[1] - $span[0]), self::commentSpans($syntax, $content)));
@@ -308,7 +243,7 @@ final class PlanningRecordIsolationTest extends TestCase
 
     /**
      * The files this control judges: what a fresh clone receives, less the
-     * plans, symbolic links, deferred files and vendored directory segments.
+     * symbolic links and vendored directory segments.
      *
      * Asked of git rather than of this disk, so a file that exists only here
      * is not judged and a tracked file cannot be missed by a walk. Two losses
@@ -359,14 +294,13 @@ final class PlanningRecordIsolationTest extends TestCase
     /**
      * Whether a tracked path is outside this control's subject.
      *
-     * Only the plan tree itself is excluded from documentation. Deferred
-     * verification files are exact paths. The three directory names are vendored output, matched
+     * The three directory names are vendored output, matched
      * as whole segments: `str_contains('/vendor/')` misses a `vendor/` at the
      * repository root, which is exactly where it would be.
      */
     private static function isExcluded(string $path): bool
     {
-        if (str_starts_with($path, 'docs/internal/plans/') || \in_array($path, self::DEFERRED_VERIFICATION_FILES, true) || is_link(self::$projectRoot . '/' . $path)) {
+        if (is_link(self::$projectRoot . '/' . $path)) {
             return true;
         }
 
@@ -557,7 +491,7 @@ final class PlanningRecordIsolationTest extends TestCase
                     preg_match('~^§\s?(?:"[^"\n]{1,60}"|[A-Za-z]?\d+(?:\.\d+)*[a-z]?|[A-Z][A-Za-z]+(?:\s[A-Z][A-Za-z]+)*)?~u', mb_scrub(substr($content, $offset, 80), 'UTF-8'), $item);
                     $add('section', $item[0] ?? '§', $offset);
                 }
-                preg_match_all('~docs/internal/plans/(?!README\.md\b)[A-Za-z0-9._/-]+~', $content, $concrete, \PREG_OFFSET_CAPTURE);
+                preg_match_all('~docs/internal/plans/[A-Za-z0-9._/-]*~', $content, $concrete, \PREG_OFFSET_CAPTURE);
                 foreach ($concrete[0] as [$token, $offset]) {
                     if (!self::inSpans($offset, $prose)) {
                         $add('plan-path', $token, $offset);
@@ -597,8 +531,7 @@ final class PlanningRecordIsolationTest extends TestCase
             $candidates = [self::normalizePath(\dirname($file) . '/' . $token), self::normalizePath($token), self::normalizePath($site . '/' . $token)];
         }
         foreach ($candidates as $candidate) {
-            if ($candidate !== null && isset($tracked[$candidate])
-                && (!str_starts_with($candidate, 'docs/internal/plans/') || $candidate === 'docs/internal/plans/README.md')) {
+            if ($candidate !== null && isset($tracked[$candidate])) {
                 return true;
             }
         }

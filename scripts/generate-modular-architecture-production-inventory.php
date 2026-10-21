@@ -28,8 +28,8 @@ function fail(string $message): void
  * still reading as covered.
  *
  * **This is narrower than "every development namespace".** A namespace declared
- * outside `src/` but absent from `autoload-dev.psr-4` -- `QmxFindingGate`,
- * `Qualimetrix\PromiseEffect` and the `tools/phpstan` fixtures among them -- is
+ * outside `src/` but absent from `autoload-dev.psr-4` -- `QmxFindingGate`
+ * and the `tools/phpstan` fixtures among them -- is
  * not returned here and production importing it is not refused. Closing that
  * needs a different source of truth than this section, because the tree also
  * declares generic fixture roots (`App`, `Foo`, `Vendor`) that a rule derived
@@ -2370,7 +2370,6 @@ function documentationInventory(string $root): string
         $paths,
         static fn(string $path): bool => !str_ends_with($path, '.local.md')
             && !str_starts_with($path, 'docs/internal/generated/')
-            && !str_starts_with($path, 'docs/internal/plans/')
             && (is_file($root . '/' . $path) || is_link($root . '/' . $path)),
     ));
     $paths = array_values(array_unique($paths));

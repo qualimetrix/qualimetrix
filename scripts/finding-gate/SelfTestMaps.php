@@ -309,11 +309,11 @@ final class SelfTestMaps extends SelfTestGroup
             'the row does not fire inside a --rule-opt argument, where the same name is followed by "=" rather than ":"',
         );
 
-        // The known counterexample on the forward side: FindingFilterOrchestrator
-        // prints the old per-rule vocabulary in one stderr sentence, and the
-        // writing "suppress_paths:" is right there in it — but a "/" precedes it,
-        // and "/" continues a name, so the left boundary refuses the match. This
-        // is not something A1 fixes; A3 covers the surface with a declared delta.
+        // The known counterexample on the forward side: a former reporting
+        // service printed the old per-rule vocabulary in one stderr sentence, and
+        // the writing "suppress_paths:" is right there in it — but a "/" precedes
+        // it, and "/" continues a name, so the left boundary refuses the match.
+        // That surface is covered by a declared delta, not by this boundary.
         $pathsKey = RenameMaps::fromPairs([
             ['old' => 'suppress_paths:', 'new' => 'suppress-paths:', 'source' => RenameMaps::INPUTS],
         ]);

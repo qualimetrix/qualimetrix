@@ -360,7 +360,6 @@ final class ChannelPublicationConsistencyTest extends TestCase
     private const SWEEP_EXCLUDED_PREFIXES = [
         'website/docs/changelog.md',
         'docs/adr/',
-        'docs/internal/plans/',
         'docs/internal/generated/',
     ];
 

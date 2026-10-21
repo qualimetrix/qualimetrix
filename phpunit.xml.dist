@@ -85,13 +85,9 @@
         </testsuite>
         <testsuite name="Tooling">
             <directory>tools/phpstan/tests</directory>
-            <directory>scripts/promise-effect/tests</directory>
             <directory>scripts/directive-audit/tests</directory>
-            <directory>scripts/directive-audit-controls/tests</directory>
-            <directory>scripts/tautology-controls/tests</directory>
             <directory>scripts/finding-gate/tests</directory>
             <directory>scripts/suppression-snapshot/tests</directory>
-            <directory>scripts/rename-enumeration/tests</directory>
             <directory>scripts/health-calibration/tests</directory>
             <directory>scripts/benchmark/tests</directory>
             <directory>scripts/modular-architecture/tests</directory>
@@ -123,7 +119,6 @@
             <directory>governance/PublishedText</directory>
             <directory>governance/FormatOptionKeys</directory>
             <directory>governance/DirectiveVocabulary</directory>
-            <directory>governance/ControlRigLedger</directory>
             <directory>governance/CommitSubjectPolicy</directory>
             <directory>governance/HealthVocabulary</directory>
             <directory>governance/FindingVocabulary</directory>

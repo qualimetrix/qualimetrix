@@ -434,7 +434,7 @@ constructors default to an empty immutable summary. Directive audit retains its
 separate verdict document.
 
 `ReportBuilder::population()` retains the selected rule population independently
-of computed outcomes and findings. `ResultPresenter` combines run and late-filter
+of computed outcomes and findings. `ReportAssembler` combines run and late-filter
 partitions once; `SummaryEnricher` preserves that value in both branches. A
 repeated adoption of the same frozen partition is idempotent, while independent
 calls sum their native counts. Synthetic reports default to an empty population.

@@ -230,11 +230,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Inline-directive channel suggestions now sort equal edit-distance matches lexically, giving consistent advice across registrations.
 
+- Built-in health rules accept an exact class-level `@qmx-threshold` boundary, so an intentional class design can keep a finite limit without a baseline entry. Use a single numeric boundary (or equal warning/error values); namespace and project thresholds stay configured in `computed_metrics`. User-defined `computed` channels still do not accept inline threshold overrides.
+
 ### Fixed
 
 - Rule execution and metadata use lexical rule-name order instead of source-file registration order, with built-in health rules retaining their separate append sequence; `baseline:explain` sorts channels by code and preserves occurrence order within each channel. Producer names are unchanged; refresh order-sensitive snapshots.
 
-- Built-in health rules accept an exact class-level `@qmx-threshold` boundary, so an intentional class design can keep a finite limit without a baseline entry. Use a single numeric boundary (or equal warning/error values); namespace and project thresholds stay configured in `computed_metrics`. User-defined `computed` channels still do not accept inline threshold overrides.
 - Narrow runs publish declared uncovered autoload targets instead of every missing PHP file, keeping scope explanations bounded by configured targets.
 
 - GitLab Code Quality and Checkstyle no longer drop namespace/project/unused-baseline findings counted by the exit status; their published locations identify real declarations, directories or an in-project baseline. Directory anchors, including external-baseline/project fallbacks, do not provide source-line links in the GitLab UI.
