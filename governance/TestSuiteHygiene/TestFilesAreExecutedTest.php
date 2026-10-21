@@ -85,18 +85,17 @@ require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
  * 6. a case the runner runs that no suite reaches — the direction the
  *    difference in 3 would otherwise discard in silence.
  *
- * Refusals 3–5 are why `SuppressionSnapshotFreshnessTest`,
- * `ModularArchitectureGovernanceIntegrationTest` and `HtmlBundleFreshnessTest`
- * (with the gate end-to-end cases named in {@see SILENTLY_EXCLUDED}) are visible at all: they sit in
- * listed directories, carry `#[Test]`, are named `itXxx` and have correct
- * namespaces — and still do not run under `composer check`. Nothing else in the
- * tree sees that. They also make `--exclude-group=benchmark` a measured fact:
+ * Refusals 3–5 are why `ModularArchitectureGovernanceIntegrationTest`
+ * (with the gate end-to-end cases named in {@see SILENTLY_EXCLUDED}) is visible at all: it sits in a
+ * listed directory, carries `#[Test]`, is named `itXxx` and has a correct
+ * namespace — and still does not run under `composer check`. Nothing else in the
+ * tree sees that. These refusals also make `--exclude-group=benchmark` a measured fact:
  * it removes nothing today, and the day it removes something, refusal 3 names
  * what.
  *
  * Refusal 1 is judged against the listing taken *without* the runner's
  * arguments, so a class whose every case carries an excluded group — which is
- * true of `SuppressionSnapshotFreshnessTest` today — is reachable, not orphaned.
+ * true of `GateModesTest` today — is reachable, not orphaned.
  * What happens to its cases afterwards is refusals 3–4's subject, and folding
  * the two questions together would have needed a silent exemption inside
  * refusal 1.
@@ -118,10 +117,6 @@ final class TestFilesAreExecutedTest extends TestCase
             . '::itCompletesTheDuplicationLifetimePipelineUnder128M',
         'Qualimetrix\Governance\ModularOwnership\ModularArchitectureGovernanceIntegrationTest'
             . '::itChecksEveryGeneratedProjectionWithoutWriting',
-        'Qualimetrix\Governance\GeneratedArtifactFreshness\SuppressionSnapshotFreshnessTest'
-            . '::itMatchesAFreshSelfAnalysisOfSrc',
-        'Qualimetrix\Governance\GeneratedArtifactFreshness\HtmlBundleFreshnessTest'
-            . '::itMatchesAFreshBuildOfHtmlReportSrc',
         'QmxFindingGate\\Tests\\CaptureTest::itDerivesNormalizationOnlyAfterValidatingFullPhysicalAndRefusalCaptures',
         'QmxFindingGate\\Tests\\CaptureTest::itRefusesAMissingReplayKeyThroughThePublicGateWithoutWriting',
         'QmxFindingGate\\Tests\\CaptureTest::itRefusesPrivateEvidenceThatChangesOnlyOnTheSecondCandidatePass',
