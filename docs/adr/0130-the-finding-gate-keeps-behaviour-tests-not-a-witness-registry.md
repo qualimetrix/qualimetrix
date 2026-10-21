@@ -25,15 +25,20 @@ classes the comparator still raises were left with no test asserting them.
 The gate keeps tests of its own behaviour and drops the machinery that
 counted them.
 
-- **Kept, as PHPUnit tests** under `scripts/finding-gate/tests/`: every
-  scenario whose subject is gate behaviour, and one test per failure class the
-  live comparator raises — a minimal planted input that raises exactly that
-  class beside a legal neighbour that does not.
+- **Kept, as PHPUnit tests** under `scripts/finding-gate/tests/`: the
+  scenarios whose subject is gate behaviour and that no existing test already
+  reproduced, and a test for every place the live comparator raises a failure
+  class — a minimal planted input that raises it beside a legal neighbour
+  that does not. A whole-run scenario whose class is already asserted from
+  the same place is not re-created as a run.
 - **The cheapest level that reproduces it**: the check class called directly,
   then a recorded comparison without capture processes, and a whole synthetic
-  run only where the check needs one. A test that spawns a run, a repository
-  or a signalled child carries the `finding-gate-e2e` group and runs in
-  `composer check:gate`, not on the routine `composer check` shard.
+  run only where the check needs one. A test that drives a tree run, builds a
+  repository or worktree, or otherwise costs more than about a second carries
+  the `finding-gate-e2e` group and runs in `composer check:gate`, not on the
+  routine `composer check` shard. A sub-second test of one child process —
+  a deadline, a process-group kill, the scratch registry in a child — stays
+  on the routine shard.
 - **Dropped**: the witness registry, the raise-site inventory, the
   `--self-test` mode and its CI step, and the mutation-controls harness with
   its workflow.
@@ -59,6 +64,11 @@ counted them.
   pipes, termination of the whole process group, release of a reference
   checkout on SIGINT, SIGTERM, a PHP fatal or a kill during `git worktree add`
   — is pinned by those tests rather than by mutation runs.
+- Two run-failure places in `Gate` are reached only through a real run, so
+  only the `finding-gate-e2e` group guards them: a tree run whose case worker
+  refuses its capture, and a capture without validated physical authority
+  (the planted ranking runs). A third, the findings claim without its own
+  capture, is unreachable from the gate's callers and has no test.
 
 ## Rejected alternatives
 
