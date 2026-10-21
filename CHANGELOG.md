@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.28.0] - 2026-10-21
+
 ### Breaking
 
 - Path and PHP-name selectors no longer accept bare strings or implicit globs. Use `{exact: value}`, `{subtree: value}` or `{regex: fragment}` in YAML and `exact:value`, `subtree:value` or `regex:fragment` in CLI options; regex fragments match the whole canonical path/name. This covers exclusions, suppressions, framework namespaces, Distance namespace inclusion, report namespaces and graph filters. Translate old globs by intent; rule/channel `X.*` selectors and Architecture patterns have separate grammars. See [ADR 0077](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0077-open-universe-selectors-are-explicit.md).
@@ -1752,7 +1754,8 @@ Initial release.
 [0.9.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.0...v0.7.1
-[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.27.0...HEAD
+[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.28.0...HEAD
+[0.28.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.27.0...v0.28.0
 [0.27.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.26.0...v0.27.0
 [0.26.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.25.0...v0.26.0
 [0.25.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.24.0...v0.25.0
