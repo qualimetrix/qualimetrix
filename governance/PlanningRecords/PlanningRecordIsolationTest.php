@@ -78,7 +78,6 @@ final class PlanningRecordIsolationTest extends TestCase
 
     /** @var list<array{rule: string, file: string, line: string, token: string, reason: string}> */
     private const array REFERENCE_EXCEPTIONS = [
-        ['rule' => 'md', 'file' => 'scripts/check-review-disposition.sh', 'line' => '#   scripts/check-review-disposition.sh <plan.md> <findings-dir>...', 'token' => 'plan.md', 'reason' => 'Usage-line metavariable.'],
         ['rule' => 'md', 'file' => 'website/CONTRIBUTING_DOCS.md', 'line' => '- English: `page.md`', 'token' => 'page.md', 'reason' => 'Page-name metavariable.'],
         ['rule' => 'md', 'file' => 'website/CONTRIBUTING_DOCS.md', 'line' => '- Russian: `page.ru.md`', 'token' => 'page.ru.md', 'reason' => 'Page-name metavariable.'],
         ['rule' => 'md', 'file' => 'website/CONTRIBUTING_DOCS.md', 'line' => 'Compact list for agents. See [Default Thresholds](../reference/default-thresholds.md) for values.', 'token' => '../reference/default-thresholds.md', 'reason' => 'The example is written from a rule page, not this contributor guide.'],
