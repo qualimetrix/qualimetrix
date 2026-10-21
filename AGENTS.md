@@ -749,8 +749,8 @@ Every confirmed defect gets a regression test, at the cheapest level that
 reproduces it: a unit or stage-level test, and a test that spawns processes or
 builds a repository only when the defect lives in that wiring.
 
-Anything beyond a regression test — a governance test, a gate form or control,
-a stand, a generated artifact with a freshness check, a CI job — is added only
+Anything beyond a regression test — a governance test, a gate form, a
+stand, a generated artifact with a freshness check, a CI job — is added only
 when it catches a harm no regression test can. Name that harm, its runtime
 cost and its false-red modes in the change's ADR or review material; if you
 cannot name the harm, do not add the check.
