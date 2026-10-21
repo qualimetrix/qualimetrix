@@ -14,7 +14,7 @@ final class PublishedVocabulary
     private const JSON_CAPTURES = ['check:output:file', 'check:parallel', 'check:baseline', 'check:baseline-source'];
 
     /** @return list<string> Fields decoded by the JSON record comparator. */
-    public static function comparedFieldsOf(string $surface, string $codec = 'current'): array
+    public static function comparedFieldsOf(string $surface): array
     {
         return match (self::syntaxSurface($surface)) {
             'format:json' => ReportRecords::SCHEMAS['json'],
