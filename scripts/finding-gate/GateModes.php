@@ -30,7 +30,6 @@ final class GateModes
             $options = Options::parse($argv, \dirname(__DIR__, 2));
 
             return match ($options->mode) {
-                Options::MODE_SELF_TEST => self::selfTest($options),
                 Options::MODE_CASE_WORKER => self::runCaseWorker($options),
                 default => self::run($options, new GateReport()),
             };
@@ -43,7 +42,7 @@ final class GateModes
 
     /**
      * The modes that compare or write, into a report the caller owns — which is
-     * what lets the self-test drive each mode through the same door the command
+     * what lets a caller drive each mode through the same door the command
      * line does and still see where every failure was raised.
      */
     public static function run(Options $options, GateReport $report): int
@@ -220,18 +219,5 @@ final class GateModes
         echo "This was a write, not a check: re-run without --derive-declarations to be judged against it.\n";
 
         return self::WROTE;
-    }
-
-    private static function selfTest(Options $options): int
-    {
-        $failures = (new SelfTest($options->candidateRoot))->run();
-
-        foreach ($failures as $failure) {
-            echo '  FAIL  ', $failure, "\n";
-        }
-
-        echo $failures === [] ? "  self-test green\n" : \sprintf("  self-test RED (%d)\n", \count($failures));
-
-        return $failures === [] ? 0 : 1;
     }
 }

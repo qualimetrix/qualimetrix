@@ -97,21 +97,6 @@ foreach (
         'Gate',
         'GateModes',
         'SyntheticTree',
-        'RaiseSites',
-        'CheckWitnesses',
-        'WitnessRegistry',
-        'SelfTestGroup',
-        'SelfTestMaps',
-        'SelfTestMetricKeys',
-        'SelfTestCoverage',
-        'SelfTestDeclaredDelta',
-        'SelfTestNormalization',
-        'SelfTestFindingShape',
-        'SelfTestSurfaces',
-        'SelfTestVerdict',
-        'SelfTestResources',
-        'SelfTestRegistries',
-        'SelfTest',
     ] as $class
 ) {
     require_once __DIR__ . '/' . $class . '.php';

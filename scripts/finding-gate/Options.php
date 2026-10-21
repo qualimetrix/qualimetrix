@@ -10,7 +10,6 @@ final class Options
     public const MODE_DERIVE_TUPLE = 'derive-tuple';
     public const MODE_DERIVE_NORMALIZATION = 'derive-normalization';
     public const MODE_DERIVE_DECLARATIONS = 'derive-declarations';
-    public const MODE_SELF_TEST = 'self-test';
     public const MODE_CASE_WORKER = 'case-worker';
 
     private const DEFAULT_JOBS = 4;
@@ -56,7 +55,6 @@ final class Options
                 $argument === '--derive-tuple' => $mode = self::MODE_DERIVE_TUPLE,
                 $argument === '--derive-normalization' => $mode = self::MODE_DERIVE_NORMALIZATION,
                 $argument === '--derive-declarations' => $mode = self::MODE_DERIVE_DECLARATIONS,
-                $argument === '--self-test' => $mode = self::MODE_SELF_TEST,
                 $argument === '--worker-reverse-input' => $workerReverseInput = true,
                 $argument === '--incomplete-corpus' => $incomplete = true,
                 str_starts_with($argument, '--candidate=') => $candidate = self::directory($value),
@@ -145,7 +143,6 @@ final class Options
                                       it declares. A change no declaration covers keeps the run red, and a red
                                       run writes nothing. The `reason` of an unchanged row is kept; a new row
                                       gets "?" and the run refuses to load it until someone writes why.
-              --self-test             Check the gate's own map and normalization mechanics.
             TEXT;
     }
 

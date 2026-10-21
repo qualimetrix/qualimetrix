@@ -24,7 +24,6 @@ use QmxFindingGate\Options;
 use QmxFindingGate\Process;
 use QmxFindingGate\RenameMaps;
 use QmxFindingGate\RunContext;
-use QmxFindingGate\SelfTestOutcomes;
 use QmxFindingGate\SyntheticTree;
 use ReflectionMethod;
 use WeakReference;
@@ -224,7 +223,7 @@ PHP;
     public function itJudgesNormalizationMeasurementsByTheirCanonicalOutcomeSide(): void
     {
         foreach ([false, true] as $malformed) {
-            $tree = SelfTestOutcomes::fixture();
+            $tree = RefusedCaseTree::fixture();
             if ($malformed) {
                 $publication = (new ReflectionMethod(SyntheticTree::class, 'findingPublication'))->invoke(null, []);
                 $stdout = json_encode($publication, \JSON_THROW_ON_ERROR);

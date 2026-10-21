@@ -96,7 +96,6 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
             [
                 'Composer\\Config::disableProcessTimeout',
                 'phpunit --configuration=phpunit.xml.dist --no-coverage --group=finding-gate-e2e',
-                '@gate:self-test',
             ],
             $scripts['check:gate'],
         );

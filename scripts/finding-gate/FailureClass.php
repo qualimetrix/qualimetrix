@@ -11,8 +11,7 @@ namespace QmxFindingGate;
  * them, so renaming one is a breaking change to those assertions, not an
  * editorial edit.
  *
- * Every active class requires a source producer and an observed class/side/scope
- * self-test witness. Unsupported vocabulary is refused.
+ * Unsupported vocabulary is refused.
  */
 final class FailureClass
 {

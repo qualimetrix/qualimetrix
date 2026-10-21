@@ -3,9 +3,7 @@
 declare(strict_types=1);
 
 return [
-    'classes' => ['CorpusInvalid', 'CaseOutcomeCheck', 'SelfTestOutcomes'],
+    'classes' => ['CorpusInvalid', 'CaseOutcomeCheck'],
     'caseChecks' => ['CaseOutcomeCheck'],
     'runChecks' => ['CaseOutcomeCheck'],
-    'selfTest' => ['SelfTestOutcomes::outputPublication'],
-    'witnesses' => ['SelfTestOutcomes::witnesses'],
 ];

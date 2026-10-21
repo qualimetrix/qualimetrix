@@ -179,29 +179,6 @@ final class PublishedVocabulary
         return $values;
     }
 
-    /**
-     * The surface classes a field is readable on, as a list.
-     *
-     * @return list<string>
-     */
-    public static function readableSurfaces(): array
-    {
-        return [...array_keys(self::SURFACES), ...self::JSON_CAPTURES];
-    }
-
-    /**
-     * The keys one surface renames a compared field to, for the self-test to
-     * pin against the formatter that writes them.
-     *
-     * @return array<string, string>
-     */
-    public static function keysOf(string $surfaceClass, string $codec = 'legacy'): array
-    {
-        if ($codec === 'current' && self::syntaxSurface($surfaceClass) === 'format:html') {
-            return array_combine(ReportRecords::SCHEMAS['json'], ReportRecords::SCHEMAS['json']);
-        }
-        return self::SURFACES[self::syntaxSurface($surfaceClass)]['keys'] ?? [];
-    }
     /** @return list<string> Fields decoded by the JSON record comparator. */
     public static function comparedFieldsOf(string $surface, string $codec = 'current'): array
     {

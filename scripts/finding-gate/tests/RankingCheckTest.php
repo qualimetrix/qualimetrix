@@ -1432,12 +1432,9 @@ final class RankingCheckTest extends TestCase
 
     #[Test]
     #[Group('finding-gate-e2e')]
-    public function itObservesRegisteredRankingClassesAndScopesThroughThePublicGate(): void
+    public function itRaisesThePlantedRankingFailuresThroughThePublicGate(): void
     {
-        foreach (\QmxFindingGate\SelfTestRecords::witnesses() as $witness) {
-            if (!str_starts_with($witness['id'], 'ranking-')) {
-                continue;
-            }
+        foreach (RankingPlants::scenarios() as $witness) {
             $tree = $witness['plant'](SyntheticTree::clean());
             if ($witness['id'] === 'ranking-unchanged-order') {
                 self::assertSame($tree['answers']['case:ranking-order|format:summary'], $tree['candidateAnswers']['case:ranking-order|format:summary']);

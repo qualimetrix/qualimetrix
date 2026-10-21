@@ -6,7 +6,6 @@ namespace QmxFindingGate\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use QmxFindingGate\CheckWitnesses;
 use QmxFindingGate\FailureClass;
 use QmxFindingGate\Fs;
 use QmxFindingGate\GateError;
@@ -92,37 +91,12 @@ final class WiringTest extends TestCase
     }
 
     #[Test]
-    public function itRefusesAWitnessOfAnUnknownScenario(): void
-    {
-        $class = 'WitnessProbe' . bin2hex(random_bytes(4));
-        Fs::write(
-            $this->directory . '/' . $class . '.php',
-            "<?php\n\nnamespace QmxFindingGate;\n\nfinal class " . $class . " {\n    public static function all(): array\n    {\n"
-            . "        return [CheckWitnesses::witness('probe', 'nowhere', static fn(array \$tree): array => \$tree, [])];\n    }\n}\n",
-        );
-        Fs::write(
-            Wiring::fileOf($this->directory, 'records'),
-            "<?php\n\nreturn ['classes' => ['" . $class . "'], 'witnesses' => ['" . $class . "::all']];\n",
-        );
-        $wiring = Wiring::of($this->directory);
-        $wiring->load();
-
-        $this->expectException(GateError::class);
-        $this->expectExceptionMessage('no scenario of CheckWitnesses::MODES');
-
-        CheckWitnesses::registered($wiring);
-    }
-
-    #[Test]
     public function itReadsEveryFormsEntriesInTheOrderOfTheFixedList(): void
     {
-        Fs::write(Wiring::fileOf($this->directory, 'maps'), "<?php\n\nreturn ['witnesses' => ['MapProbe::stale']];\n");
-        Fs::write(Wiring::fileOf($this->directory, 'records'), "<?php\n\nreturn ['witnesses' => ['RecordProbe::withdrawn']];\n");
+        Fs::write(Wiring::fileOf($this->directory, 'maps'), "<?php\n\nreturn ['classes' => ['MapProbe']];\n");
+        Fs::write(Wiring::fileOf($this->directory, 'records'), "<?php\n\nreturn ['classes' => ['RecordProbe']];\n");
 
-        self::assertSame(
-            [['Probe\\RecordProbe', 'withdrawn'], ['Probe\\MapProbe', 'stale']],
-            Wiring::of($this->directory)->methods('witnesses', 'Probe'),
-        );
+        self::assertSame(['RecordProbe', 'MapProbe'], Wiring::of($this->directory)->list('classes'));
     }
 
     #[Test]

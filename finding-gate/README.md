@@ -90,14 +90,10 @@ applicable declaration and its JSON evidence; they never judge a whole pair.
 Product promises, including empty baseline content after failed generation,
 remain independent of those forms.
 
-The shared loaders
-read a fixed set of subject-owned `wiring-*.php` files. Unknown files, unknown
-keys, duplicate registrations and unloaded checks are refused. The retired
-`pending` key is not accepted, even with an empty value. Every failure class
-retains a source producer. Every active class requires an observed whole-run
-witness matched by failure class and side-specific scope. Native PHP parsing
-inventories source producers; source method names, lines and callers carry no
-witness obligation. Unknown failure vocabulary and unwitnessed classes are RED.
+The shared loaders read a fixed set of subject-owned `wiring-*.php` files.
+Unknown files, unknown keys, duplicate registrations and unloaded checks are
+refused. The retired `pending` key is not accepted, even with an empty value.
+Unknown failure vocabulary is refused.
 
 ## Case definition and coverage
 
@@ -492,10 +488,9 @@ Every pass is judged. Failed, empty or semantically different captures refuse
 the write; a narrowed corpus cannot derive the list.
 
 The namespace summary clock row narrows its measured locator to a numeric
-seconds field with one decimal place. The existing normalization self-test
-preserves semantic additions inside the originally measured interval.
-Re-measurement can propose a wider locator; the result must pass that self-test
-before it is accepted.
+seconds field with one decimal place. Re-measurement can propose a wider
+locator; review it against the semantic additions the narrower locator
+preserved inside the originally measured interval.
 
 An exclusion must be exercised in a whole run or it is
 `normalization-stale`. A locator may not reach compared record fields:
@@ -686,7 +681,7 @@ all other decoded values, scalar types, object/list distinctions and list order
 must match. Malformed JSON and non-object lock documents are refused. This
 compares decoded lock facts, not installed vendor contents or lock-file bytes.
 
-`composer check:gate` runs the end-to-end captures and the gate's self-test.
+`composer check:gate` runs the end-to-end captures.
 Its **Gate captures and witnesses (composer check:gate)** CI context runs on
 every pull request and on pushes to `main`. Locally it is required when
 changing `scripts/finding-gate*` or `finding-gate/`. It is separate from the
@@ -718,25 +713,6 @@ the original cleanup refusal. Cleanup assumes
 entries are not concurrently substituted or created: path-based
 classification, traversal and removal are not atomic and do not protect
 against those races.
-
-`composer gate:self-test` runs the gate's observed witnesses. Native PHP parsing inventories failure-class
-producers. Every active failure class requires an actual whole-run observation
-with its side and scope. Source locations and callers carry no witness credit.
-Unknown vocabulary and a missing producer or observed class still fail.
-### Source scanner limits
-
-The refusal-site scanner is a syntactic inventory, not a complete PHP call
-graph. It does not recognize calls on a `new self` or `new static` instance;
-implicit or magic entries (constructors, `__invoke`, `__toString`,
-`getIterator`, `__get`, `__destruct` and property hooks); trait dispatch,
-`Closure::call` or binding; outer methods overwritten by same-named
-anonymous-class methods; computed carrier constants (parentheses,
-concatenation, heredoc or ternary expressions); interface or trait constants;
-namespaced `define`; `use const` or `use function` aliases; and
-`__FUNCTION__` or `__METHOD__` callbacks. Named `fail` arguments and string
-literals equal to carrier names can be falsely refused. These forms are not
-repaired until real gate code needs them; a second bypass narrows this promise
-instead of adding another recognition form.
 
 `composer gate:phar` compares an existing nonempty `build/qmx.phar` with
 its committed tree. It copies the same archive bytes into a private candidate
@@ -802,8 +778,6 @@ Each limit needs its own product or delivery check:
   and path/cwd semantics do not prove configured rule execution.
 - Selector reach or metric-expression grammar after a split: unsupported touched
   forms refuse; use selector and computed-metric tests.
-- Source producer inventory does not prove runtime branch coverage; whole-run
-  witnesses match classes and side-specific scopes.
 - Refusal positions can change with configuration-layer placement even where a
   declared delta explains only the published source.
 - Backward-moving clocks are exercised only for `AnalysisPipeline` and

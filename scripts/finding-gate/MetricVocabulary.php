@@ -46,7 +46,7 @@ final class MetricVocabulary
     }
 
     /**
-     * A vocabulary stated outright, for the self-test.
+     * A vocabulary stated outright, for tests.
      *
      * A shape proved on synthetic rows must not depend on what the product
      * happens to declare today, so the cases that are about the suffix expansion

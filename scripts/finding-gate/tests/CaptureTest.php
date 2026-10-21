@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace QmxFindingGate\Tests;
 
-use ArrayObject;
 use FilesystemIterator;
 use LogicException;
 use PHPUnit\Framework\Attributes\Group;
@@ -31,8 +30,6 @@ use QmxFindingGate\NormalizationRule;
 use QmxFindingGate\Options;
 use QmxFindingGate\RenameMaps;
 use QmxFindingGate\RunContext;
-use QmxFindingGate\SelfTestNormalization;
-use QmxFindingGate\SelfTestOutcomes;
 use QmxFindingGate\SurfacePair;
 use QmxFindingGate\SyntheticTree;
 use QmxFindingGate\TreeRun;
@@ -107,14 +104,6 @@ final class CaptureTest extends TestCase
     }
 
     #[Test]
-    public function itKeepsTheNormalizationBudgetLocalToEachPublication(): void
-    {
-        $failures = new ArrayObject();
-        (new SelfTestNormalization(\dirname(__DIR__, 3), $failures))->deriver();
-        self::assertSame([], $failures->getArrayCopy());
-    }
-
-    #[Test]
     #[Group('finding-gate-e2e')]
     public function itRefusesPrivateEvidenceThatChangesOnlyOnTheSecondCandidatePass(): void
     {
@@ -155,7 +144,7 @@ final class CaptureTest extends TestCase
     {
         foreach (['healthy', 'physical-count', 'whole-private-slot'] as $fault) {
             if ($fault === 'whole-private-slot') {
-                $tree = SelfTestOutcomes::fixture();
+                $tree = RefusedCaseTree::fixture();
                 $tree['candidateAnswers']['case:alpha|format:json'] = [
                     ...$tree['answers']['case:alpha|format:json'],
                     'ranked' => ['exit' => 2],

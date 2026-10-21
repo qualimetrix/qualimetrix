@@ -601,7 +601,7 @@ composer check:code     # what a code change invalidates: cs-check, phpstan, PHP
 composer check:docs     # what a website change invalidates: a strict mkdocs build
 composer check:artifacts # what a manifest, config or corpus change invalidates: every generated artifact
 composer check:self     # what the product says about this repo: qmx ratchet + directive audit
-composer check:gate     # gate end-to-end captures and both self-test witnesses
+composer check:gate     # gate end-to-end captures
 composer architecture:check # exact manifest policy + generated-artifact freshness
 composer docs:check     # mkdocs --strict build of website/ (broken links, nav gaps)
 composer test           # PHPUnit
@@ -669,7 +669,7 @@ bin/qmx check --help
 
 **Project-specific steps** (in addition to the global workflow):
 - **Validation**: `composer check` (cs-check + strict docs build + tests + phpstan + exact manifest/freshness check + coarse qmx selfcheck). A direct `bin/qmx check` is product analysis only and does not run the repository's exact manifest policy. When modifying `html-report/`, also run `composer build:js` (`test:js` is part of `check:code` since X9)
-- **Gate captures and witnesses**: `composer check:gate` is required when changing `scripts/finding-gate*` or `finding-gate/`. It runs separately from `composer check`, on every pull request and on pushes to `main`.
+- **Gate captures**: `composer check:gate` is required when changing `scripts/finding-gate*` or `finding-gate/`. It runs separately from `composer check`, on every pull request and on pushes to `main`.
 - **Documentation**: Update `README.md` in the affected `src/` directory (add new files, fix outdated info). Update website documentation (see [Website Documentation](#website-documentation) section below)
 
 ### Test working directories
@@ -728,11 +728,10 @@ what invalidates it, so a change that touched one thing pays for one group:
 `check:code` (style, static analysis, PHP and JS tests), `check:docs` (strict mkdocs),
 `check:artifacts` (manifest and every generated artifact against a fresh
 measurement) and `check:self` (the qmx ratchet and the inline-directive audit).
-Gate end-to-end captures and the self-test have their own `check:gate`
-group and pull-request CI job. The routine check previously took 220s locally
-and 419s on Linux CI. On Linux the gate captures and witnesses took about
-1088s. That cost is reported separately from the routine check budget; the CI
-job deadline is 30 minutes.
+Gate end-to-end captures have their own `check:gate` group and pull-request CI
+job. The routine check previously took 220s locally and 419s on Linux CI. The
+gate's cost is reported separately from the routine check budget; the CI job
+deadline is 30 minutes.
 `architecture:check`
 deliberately runs in both `check:artifacts` and — as its first half —
 `selfcheck`: the ratchet may not judge a tree whose generated artifacts are
@@ -799,8 +798,8 @@ case schema, declaration forms, invocation provenance and limits.
 - `PARTIAL` is not GREEN. A comparison against identical product code proves
   capture and corpus consistency; a product-change claim needs the preceding
   commit and independent tests of any newly declared values.
-- Every failure class must have observed self-test witnesses; temporary
-  witness exemptions are refused.
+- A comparator change is proved to bite once, with a planted defect in the
+  change itself (see "Adding checks"); no standing mutation harness exists.
 - Measure tuple and normalization changes with `--derive-tuple` and
   `--derive-normalization`. Never use an exclusion to hide a semantic change.
   A stale map, normalization row or change declaration fails.

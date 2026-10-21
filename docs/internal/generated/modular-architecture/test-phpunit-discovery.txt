@@ -120,7 +120,6 @@ Available tests:
  - QmxFindingGate\Tests\CaptureTest::itKeepsRawUnknownAndIncompleteCapturePopulationsRefused
  - QmxFindingGate\Tests\CaptureTest::itKeepsSarifResultsAndNeighboringMetadataProtectedFromNormalization
  - QmxFindingGate\Tests\CaptureTest::itKeepsTheExactHtmlRefusalAndJudgesReadableNeighboringArtifacts
- - QmxFindingGate\Tests\CaptureTest::itKeepsTheNormalizationBudgetLocalToEachPublication
  - QmxFindingGate\Tests\CaptureTest::itKeepsUnreadableHtmlAsWholeBytesWithoutAReportedPredecessor
  - QmxFindingGate\Tests\CaptureTest::itKeepsWholeGraphExitOutsideRecordValueDeclarations
  - QmxFindingGate\Tests\CaptureTest::itNormalizesOnlyDeclaredSarifCaptureUrisWithoutChangingRecordBytes
@@ -366,7 +365,7 @@ Available tests:
  - QmxFindingGate\Tests\FieldValuesCheckTest::itKeepsMainAndBaselineSourceFieldLicensesSeparateFromRecordedReports"swap"
  - QmxFindingGate\Tests\FieldValuesCheckTest::itMeasuresAnAddedDocumentMemberWithoutTurningItIntoAFindingField
  - QmxFindingGate\Tests\FieldValuesCheckTest::itMeasuresApplicableFieldsBesideADeclaredRefusalAndKeepsAnUnexpectedRefusalRed
- - QmxFindingGate\Tests\FieldValuesCheckTest::itObservesTheRegisteredFieldValueWitnessFromItsActualProducer
+ - QmxFindingGate\Tests\FieldValuesCheckTest::itRaisesAFieldValuesMismatchForAnObservedFieldWhoseMeasuredValuesDiffer
  - QmxFindingGate\Tests\FieldValuesCheckTest::itRefusesAnExtraReportThroughThePublicCliWithoutWritingDeclarations
  - QmxFindingGate\Tests\FieldValuesCheckTest::itRefusesEveryNeighbourAndLeavesTheWholeDerivedUnionUntouched"instance"
  - QmxFindingGate\Tests\FieldValuesCheckTest::itRefusesEveryNeighbourAndLeavesTheWholeDerivedUnionUntouched"record"
@@ -390,9 +389,7 @@ Available tests:
  - QmxFindingGate\Tests\FsTest::itTreatsAFileAndItsParentDisappearingDuringUnlinkAsRemoved
  - QmxFindingGate\Tests\FsTest::itTreatsAFileDisappearingDuringUnlinkAsRemoved
  - QmxFindingGate\Tests\FsTest::itUnlinksASymlinkWithoutWalkingItsTarget
- - QmxFindingGate\Tests\GateModesTest::itExitsOneWhenTheSelfTestFails
  - QmxFindingGate\Tests\GateModesTest::itExitsThreeWhenTheGateCannotRun
- - QmxFindingGate\Tests\GateModesTest::itExitsZeroWhenTheSelfTestIsGreen
  - QmxFindingGate\Tests\GateReportTest::itPublishesEveryDeclarationCountAndNamesTheOnesAGreenRunUsed
  - QmxFindingGate\Tests\GateReportTest::itPublishesFailureWitnessesWithoutSourceOrCallerIdentity
  - QmxFindingGate\Tests\GateReportTest::itPublishesRedDiagnosticsForInvalidSourceBytesWithoutChangingTheComparison
@@ -416,6 +413,7 @@ Available tests:
  - QmxFindingGate\Tests\MetricsRecordsTest::itPairsBySubjectOnlyWhenBothSidesPublishIt
  - QmxFindingGate\Tests\MetricsRecordsTest::itUsesCallableLevelsForBothMethodAndFunctionRecords
  - QmxFindingGate\Tests\NormalizationDeriverTest::itDerivesTheWholeWarningClockAcrossMidnight
+ - QmxFindingGate\Tests\NormalizationDeriverTest::itKeepsTheNormalizationBudgetLocalToEachPublication
  - QmxFindingGate\Tests\NormalizationDeriverTest::itMeasuresOnlyTheClockWhenTheOutputDestinationStaysEqual
  - QmxFindingGate\Tests\NormalizationDeriverTest::itMeasuresOnlyTheDestinationWhenTheWarningClockStaysEqual
  - QmxFindingGate\Tests\NormalizationDeriverTest::itMeasuresTheOutputDestinationAndWarningClockSeparately
@@ -448,9 +446,6 @@ Available tests:
  - QmxFindingGate\Tests\ProductProbeTypesTest::itSelectsTheNativeExistingType"both prefer current"
  - QmxFindingGate\Tests\ProductProbeTypesTest::itSelectsTheNativeExistingType"current only"
  - QmxFindingGate\Tests\ProductProbeTypesTest::itSelectsTheNativeExistingType"previous only"
- - QmxFindingGate\Tests\RaiseSitesTest::itReadsNativePhpAndIgnoresCommentAndStringLookalikes
- - QmxFindingGate\Tests\RaiseSitesTest::itRefusesAnUnknownVocabularyProducerAndAMissingProducer
- - QmxFindingGate\Tests\RaiseSitesTest::itRefusesPhpTheNativeParserCannotRead
  - QmxFindingGate\Tests\RankingCheckTest::itChecksHealthyFullRankingAndZeroSlicesThroughThePublicGate
  - QmxFindingGate\Tests\RankingCheckTest::itChecksSummaryRoundingAdviceProjectLocationTagAndDebt
  - QmxFindingGate\Tests\RankingCheckTest::itDerivesAnExactWithdrawalThatPullsTheNextRankedFindingIntoTheSlice
@@ -469,9 +464,9 @@ Available tests:
  - QmxFindingGate\Tests\RankingCheckTest::itMeasuresRankingSchemaExtensionsAndRemovedMembersWithoutAddingAG1View
  - QmxFindingGate\Tests\RankingCheckTest::itMeasuresTieBreakAndInputOrderWithDeterministicDuplicateLabels
  - QmxFindingGate\Tests\RankingCheckTest::itNormalizesOnlyTheClockInInternalCaptureWarnings
- - QmxFindingGate\Tests\RankingCheckTest::itObservesRegisteredRankingClassesAndScopesThroughThePublicGate
  - QmxFindingGate\Tests\RankingCheckTest::itPreservesCompleteRepeatedOccurrenceCountsAcrossCandidatePasses
  - QmxFindingGate\Tests\RankingCheckTest::itPreservesRawRankedNumberSpellingsBeforeAnyNormalization
+ - QmxFindingGate\Tests\RankingCheckTest::itRaisesThePlantedRankingFailuresThroughThePublicGate
  - QmxFindingGate\Tests\RankingCheckTest::itRefusesEachBrokenSideLocalRankingFromRecordedReports"ascending"
  - QmxFindingGate\Tests\RankingCheckTest::itRefusesEachBrokenSideLocalRankingFromRecordedReports"declared-score-non-prefix"
  - QmxFindingGate\Tests\RankingCheckTest::itRefusesEachBrokenSideLocalRankingFromRecordedReports"duplicate"
@@ -618,11 +613,8 @@ Available tests:
  - QmxFindingGate\Tests\WiringTest::itRefusesAFormWhoseFileIsMissing
  - QmxFindingGate\Tests\WiringTest::itRefusesARegisteredCheckItDoesNotLoad
  - QmxFindingGate\Tests\WiringTest::itRefusesAWiringFileNoFormOwns
- - QmxFindingGate\Tests\WiringTest::itRefusesAWitnessOfAnUnknownScenario
  - QmxFindingGate\Tests\WiringTest::itRefusesAnUnknownKey
  - QmxFindingGate\Tests\WiringTest::itRefusesTheRetiredPendingKeyEvenWhenItIsEmpty
- - QmxFindingGate\Tests\WitnessRegistryTest::itAcceptsTheTrackedFailureClassesWhenEveryOneHasAProducer
- - QmxFindingGate\Tests\WitnessRegistryTest::itRequiresAProducerAndObservedClassWithoutSourceIdentity
  - Qualimetrix\Benchmark\Tests\BenchmarkCoverageRefusalTest::itDoesNotPartiallyRatchetWhenAConfiguredProjectIsSkipped
  - Qualimetrix\Benchmark\Tests\BenchmarkCoverageRefusalTest::itDoesNotUpdateBaselinesFromANonAuthoritativeArtifact#0
  - Qualimetrix\Benchmark\Tests\BenchmarkCoverageRefusalTest::itDoesNotUpdateBaselinesFromANonAuthoritativeArtifact#1

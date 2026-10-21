@@ -49,8 +49,7 @@ final class SubjectLevel
      * class this repository has already paid for — so this is the gate's only
      * copy of that vocabulary, and it is held against the product's own enum
      * rather than asserted to match it:
-     * {@see ChannelWitness::checkLevelVocabulary()}, run by every comparison and
-     * by `--self-test`.
+     * {@see ChannelWitness::checkLevelVocabulary()}, run by every comparison.
      *
      * @var array<string, string>
      */

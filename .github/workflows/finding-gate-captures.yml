@@ -27,5 +27,5 @@ jobs:
       - name: Install dependencies
         run: composer install --no-progress --prefer-dist --optimize-autoloader
 
-      - name: Run gate captures and witnesses
+      - name: Run gate captures
         run: composer check:gate

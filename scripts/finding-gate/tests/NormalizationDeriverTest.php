@@ -153,6 +153,57 @@ final class NormalizationDeriverTest extends TestCase
         self::derive('stderr:check:output', "[23:59:59] [WARNING] Parent unreadable.\n", "[00:00:00] [WARNING] Parent unreadable.\n");
     }
 
+    #[Test]
+    public function itKeepsTheNormalizationBudgetLocalToEachPublication(): void
+    {
+        $rules = NormalizationDeriver::derive([
+            ['case:x|format:json' => '{"meta":{"timestamp":"a","version":"1"}}'],
+            ['case:x|format:json' => '{"meta":{"timestamp":"b","version":"1"}}'],
+        ]);
+        self::assertCount(1, $rules, 'the deriver emits one row per diverging field');
+        self::assertSame('meta.timestamp', $rules[0]->locator);
+        self::assertSame(NormalizationRule::KIND_JSON_PATH, $rules[0]->kind);
+
+        $many = [[], []];
+        for ($index = 0; $index < 6; ++$index) {
+            $many[0]['case:x|report:' . $index] = '{"clock":"a","duration":1}';
+            $many[1]['case:x|report:' . $index] = '{"clock":"b","duration":2}';
+        }
+        self::assertCount(12, NormalizationDeriver::derive($many), 'independent metadata copies across six publications do not share a global row budget');
+
+        $fields = array_fill_keys(array_map(static fn(int $index): string => 'clock' . $index, range(0, 10)), 1);
+        $changed = array_fill_keys(array_keys($fields), 2);
+        self::assertTrue(self::refused(static fn(): array => NormalizationDeriver::derive([
+            ['case:x|format:json' => json_encode($fields, \JSON_THROW_ON_ERROR)],
+            ['case:x|format:json' => json_encode($changed, \JSON_THROW_ON_ERROR)],
+        ])), 'eleven varying fields in one published surface remain refused');
+
+        $lines = NormalizationDeriver::derive([
+            ['case:x|format:summary' => "Analysed in 1.2s\n"],
+            ['case:x|format:summary' => "Analysed in 1.3s\n"],
+        ]);
+        self::assertCount(1, $lines, 'a text surface derives one row per diverging line');
+        self::assertSame(1, preg_match($lines[0]->locator, 'Analysed in 9.9s'), 'the derived locator matches the same line with another value');
+        self::assertNotSame(1, preg_match($lines[0]->locator, 'Elapsed 1.2s'), 'the derived locator is anchored on the field label, not on a substring');
+
+        self::assertTrue(self::refused(static fn(): array => NormalizationDeriver::derive([
+            ['case:x|format:json' => '{"violations":[{"a":1}]}'],
+            ['case:x|format:json' => '{"violations":[{"a":1},{"a":2}]}'],
+        ])), 'a structural divergence is refused rather than normalized away');
+    }
+
+    /** @param callable(): mixed $callback */
+    private static function refused(callable $callback): bool
+    {
+        try {
+            $callback();
+
+            return false;
+        } catch (GateError) {
+            return true;
+        }
+    }
+
     /** @return list<NormalizationRule> */
     private static function derive(string $surface, string $left, string $right): array
     {

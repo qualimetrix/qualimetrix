@@ -4,16 +4,13 @@ declare(strict_types=1);
 
 namespace QmxFindingGate;
 
-use Closure;
-
 /**
  * What each declaration form adds to the gate, one file per form, read from a
  * fixed list.
  *
  * The forms are written in parallel, and every one of them has to reach the
- * same few places: the class loader, the self-test, the check witnesses, the
- * case checks, the stages of a surface's comparison, the checks of a whole run
- * and the derivations. A shared list at each of those places is a file every form
+ * same few places: the class loader, the case checks, the stages of a
+ * surface's comparison, the checks of a whole run and the derivations. A shared list at each of those places is a file every form
  * edits; a file per form is one only that form edits. So each place reads the
  * union of these files, and a form registers itself in its own.
  *
@@ -32,19 +29,14 @@ final class Wiring
     ];
 
     /**
-     * What a form file may register. Each is a list of class names, or of
-     * `Class::method` entries.
+     * What a form file may register. Each is a list of class names.
      *
      * - `classes`: gate classes, `scripts/finding-gate/<Class>.php`
-     * - `selfTest`: `Class::method` of a {@see SelfTestGroup}
-     * - `witnesses`: `Class::method` returning a list of {@see CheckWitnesses::witness()}
      * - `caseChecks`, `surfaceStages`, `runChecks`, `derivations`: gate classes
      *   implementing {@see CaseCheck}, {@see SurfaceStage}, {@see RunCheck}, {@see Derivation}
      */
     public const array KEYS = [
         'classes',
-        'selfTest',
-        'witnesses',
         'caseChecks',
         'surfaceStages',
         'runChecks',
@@ -94,45 +86,6 @@ final class Wiring
         }
 
         return $this->lists[$key] ?? [];
-    }
-
-    /**
-     * `Class::method` entries as the fully qualified class and the method.
-     *
-     * @return list<array{0: string, 1: string}>
-     */
-    public function methods(string $key, string $namespace): array
-    {
-        $methods = [];
-
-        foreach ($this->list($key) as $entry) {
-            [$class, $method] = explode('::', $entry, 2);
-            $methods[] = [$namespace . '\\' . $class, $method];
-        }
-
-        return $methods;
-    }
-
-    /**
-     * `Class::method` entries naming static factories, ready to call.
-     *
-     * @return list<Closure>
-     */
-    public function factories(string $key, string $namespace): array
-    {
-        $factories = [];
-
-        foreach ($this->methods($key, $namespace) as [$class, $method]) {
-            $factory = [$class, $method];
-
-            if (!\is_callable($factory)) {
-                throw new GateError(\sprintf('The wiring registers %s::%s() under "%s", which cannot be called.', $class, $method, $key));
-            }
-
-            $factories[] = Closure::fromCallable($factory);
-        }
-
-        return $factories;
     }
 
     public static function fileOf(string $directory, string $form): string
@@ -211,20 +164,11 @@ final class Wiring
             throw new GateError(\sprintf('%s: "%s" must be a list of strings.', $path, $key));
         }
 
-        $pattern = \in_array($key, ['selfTest', 'witnesses'], true)
-            ? '~^[A-Z]\w*::[a-z]\w*$~'
-            : '~^[A-Z]\w*$~';
         $valid = [];
 
         foreach ($entries as $entry) {
-            if (!\is_string($entry) || preg_match($pattern, $entry) !== 1) {
-                throw new GateError(\sprintf(
-                    '%s: "%s" carries %s, which is not a %s.',
-                    $path,
-                    $key,
-                    json_encode($entry),
-                    $pattern === '~^[A-Z]\w*$~' ? 'class name' : '"Class::method" entry',
-                ));
+            if (!\is_string($entry) || preg_match('~^[A-Z]\w*$~', $entry) !== 1) {
+                throw new GateError(\sprintf('%s: "%s" carries %s, which is not a class name.', $path, $key, json_encode($entry)));
             }
 
             $valid[] = $entry;

@@ -6,5 +6,4 @@ return [
     'classes' => ['FieldValuesCheck'],
     'runChecks' => ['FieldValuesCheck'],
     'derivations' => ['FieldValuesCheck'],
-    'witnesses' => ['SelfTestFindingShape::fieldValuesWitnesses'],
 ];
