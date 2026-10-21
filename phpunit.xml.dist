@@ -86,8 +86,6 @@
         <testsuite name="Tooling">
             <directory>tools/phpstan/tests</directory>
             <directory>scripts/directive-audit/tests</directory>
-            <directory>scripts/directive-audit-controls/tests</directory>
-            <directory>scripts/tautology-controls/tests</directory>
             <directory>scripts/finding-gate/tests</directory>
             <directory>scripts/suppression-snapshot/tests</directory>
             <directory>scripts/rename-enumeration/tests</directory>

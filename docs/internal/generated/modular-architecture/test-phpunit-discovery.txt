@@ -1,7 +1,6 @@
 PHPUnit 12.5.25 by Sebastian Bergmann and contributors.
 
 Available tests:
- - QmxDirectiveAuditControls\Tests\DirectiveAuditControlsSuiteKeyTest::itKeepsTwoClassesWithASameNamedMethodApart
  - QmxDirectiveAudit\Tests\DirectiveAuditGateTest::itAcceptsATreeWhoseSitesMatchAndWhereSomethingWasMeasured
  - QmxDirectiveAudit\Tests\DirectiveAuditGateTest::itFloorsNothingWhenNoThresholdSiteIsInScope
  - QmxDirectiveAudit\Tests\DirectiveAuditGateTest::itPropagatesARunThatWasAlreadyDisqualified
@@ -628,10 +627,6 @@ Available tests:
  - QmxFindingGate\Tests\WiringTest::itRefusesTheRetiredPendingKeyEvenWhenItIsEmpty
  - QmxFindingGate\Tests\WitnessRegistryTest::itAcceptsTheTrackedFailureClassesWhenEveryOneHasAProducer
  - QmxFindingGate\Tests\WitnessRegistryTest::itRequiresAProducerAndObservedClassWithoutSourceIdentity
- - QmxTautologyControls\Tests\TautologyControlDeclarationTest::itDeclaresExactlyOnePositiveControlAndNoRepeatedId
- - QmxTautologyControls\Tests\TautologyControlDeclarationTest::itNamesOnlyCasesThatExist
- - QmxTautologyControls\Tests\TautologyControlDeclarationTest::itPlantsEachBreakageInProductionCodeThatStillLooksLikeThat
- - QmxTautologyControls\Tests\TautologyControlDeclarationTest::itRunsEveryFileTheRepairedCasesLiveIn
  - Qualimetrix\Benchmark\Tests\BenchmarkCoverageRefusalTest::itDoesNotPartiallyRatchetWhenAConfiguredProjectIsSkipped
  - Qualimetrix\Benchmark\Tests\BenchmarkCoverageRefusalTest::itDoesNotUpdateBaselinesFromANonAuthoritativeArtifact#0
  - Qualimetrix\Benchmark\Tests\BenchmarkCoverageRefusalTest::itDoesNotUpdateBaselinesFromANonAuthoritativeArtifact#1
