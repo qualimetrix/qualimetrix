@@ -682,7 +682,7 @@ must match. Malformed JSON and non-object lock documents are refused. This
 compares decoded lock facts, not installed vendor contents or lock-file bytes.
 
 `composer check:gate` runs the end-to-end captures.
-Its **Gate captures and witnesses (composer check:gate)** CI context runs on
+Its **Gate captures (composer check:gate)** CI context runs on
 every pull request and on pushes to `main`. Locally it is required when
 changing `scripts/finding-gate*` or `finding-gate/`. It is separate from the
 routine `composer check` budget.
