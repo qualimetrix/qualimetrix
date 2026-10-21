@@ -68,14 +68,4 @@ final class ReportViews
     {
         return self::REPORTS[$report][0] ?? throw new GateError('Unknown authoritative report: ' . $report);
     }
-
-    public static function reportOf(string $view): string
-    {
-        foreach (self::REPORTS as $report => $views) {
-            if (\in_array($view, $views, true)) {
-                return $report;
-            }
-        }
-        throw new GateError('Unknown authoritative view: ' . $view);
-    }
 }
