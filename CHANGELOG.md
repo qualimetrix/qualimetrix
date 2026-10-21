@@ -195,6 +195,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The composer package carries only what qmx runs: `src/` without its module notes, `bin/qmx`, the four HTML report assets, `composer.json`, `LICENSE`, `README.md` and `qmx.yaml.example` (7.1 MB → 5.7 MB). The repository's own configuration, ratchet, lock file, changelog and contributor notes are no longer installed into `vendor/`.
 - Standalone `qmx.phar` ships with releases. Keep the `.phar` suffix to avoid copying the archive for parallel startup; generated hooks work with Composer installs, source checkouts and the phar.
 
 - Shipped HTML assets move from `src/Reporting/Template/` to `html-report/`; update direct asset paths. Ordinary HTML generation needs no configuration change.

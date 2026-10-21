@@ -16,8 +16,9 @@ PSR-4 roots.
 - `dist/d3.min.js`
 
 Everything else here (`src/`, `tests/`, `scripts/`, `package.json`,
-`package-lock.json`, `vite.config.js`, `dev.html`) is held out of the composer
-package by the `export-ignore` rows in `.gitattributes`. The two `dist/*.js`
+`package-lock.json`, `vite.config.js`, `dev.html`) stays out of the composer
+package: `.gitattributes` excludes the whole repository and lets back in only
+what a consumer runs, these four assets among it. The two `dist/*.js`
 files are tracked and rebuilt by `composer build:js`, not generated at
 install time.
 
