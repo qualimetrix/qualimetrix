@@ -417,8 +417,7 @@ final class CliOptionsParserTest extends TestCase
      * same `''` fallback and produced a genuine one-element list `['']`
      * instead of falling back to the option's default.
      *
-     * The door's own promise (`promise-effect/promise-ledger.tsv`, `cli-alias`
-     * rows) is `refuse`, not "fold to the default": the fix raises a
+     * The door's promise is to refuse, not to "fold to the default": the fix raises a
      * `ConfigurationRefusal` naming the alias, rule and option instead of a
      * silent `null`, so the defective `['']` still never reaches
      * `LcomOptions::fromResolved(ResolvedOptionsFixture::values(LcomOptions::class, ))`, and the door keeps its promise besides.

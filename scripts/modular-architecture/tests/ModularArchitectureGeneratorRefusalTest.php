@@ -515,9 +515,9 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
     {
         $cases = [
             [
-                "'input-doors/fixtures/main/tests/' =>",
-                "'input-doors/fixtures/gone/tests/' =>",
-                'input-doors/fixtures/gone/tests/ is excused in NON_SCANNED_TEST_DIRECTORIES but git carries'
+                'const NON_SCANNED_TEST_DIRECTORIES = [',
+                "const NON_SCANNED_TEST_DIRECTORIES = [\n    'fixtures/gone/tests/' => 'a planted probe',",
+                'fixtures/gone/tests/ is excused in NON_SCANNED_TEST_DIRECTORIES but git carries'
                     . ' no file under it',
             ],
             [
@@ -646,10 +646,6 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 $projectRoot . '/scripts/subprocess/tests',
             );
             self::copyDirectory(
-                $sourceRoot . '/scripts/promise-effect/tests',
-                $projectRoot . '/scripts/promise-effect/tests',
-            );
-            self::copyDirectory(
                 $sourceRoot . '/scripts/directive-audit/tests',
                 $projectRoot . '/scripts/directive-audit/tests',
             );
@@ -697,20 +693,6 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 $sourceRoot . '/scripts/check-code-parallel/tests',
                 $projectRoot . '/scripts/check-code-parallel/tests',
             );
-            // Not a test root and not scanned: this is the one path
-            // NON_SCANNED_TEST_DIRECTORIES excuses, and
-            // assertEveryTestDirectoryIsScanned() refuses an excuse whose path
-            // git no longer carries. So the copy list now has to hold every
-            // path the generator's literals name, not only every root the
-            // tracked configuration declares. Without this copy step (and
-            // 'input-doors' in the git add list below) the stale-exclusion
-            // refusal preempts every planting case whose own refusal is raised
-            // after assertEveryTestDirectoryIsScanned() runs — stated as a
-            // mechanism for the reason given beside the html-report copy.
-            self::copyDirectory(
-                $sourceRoot . '/input-doors/fixtures/main/tests',
-                $projectRoot . '/input-doors/fixtures/main/tests',
-            );
             self::assertTrue(copy($sourceRoot . '/.gitignore', $projectRoot . '/.gitignore'));
             self::assertTrue(copy($sourceRoot . '/phpunit.xml.dist', $projectRoot . '/phpunit.xml.dist'));
             self::assertTrue(symlink($sourceRoot . '/vendor', $projectRoot . '/vendor'));
@@ -727,7 +709,6 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 'tools',
                 'scripts',
                 'html-report',
-                'input-doors',
             ], $projectRoot);
             self::assertSame(0, $result['exitCode'], $result['stdout'] . $result['stderr']);
 

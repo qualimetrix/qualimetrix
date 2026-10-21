@@ -18,9 +18,7 @@ require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
  * Product regressions cannot reach a new planning dependency in another source.
  *
  * The population is the Git index minus vendored directory segments,
- * symbolic links, this control and the exact deferred verification-tool files
- * below. Those files still await their subject's migration; this census does
- * not yet promise to judge their references. Documentation is included; ADRs
+ * symbolic links and this control. Documentation is included; ADRs
  * are historical for paths and section signs, but not external record ids.
  * Path tokens are prose-only: Markdown, native PHP comments, the existing
  * shell/Python/JavaScript comment extraction and leading hash lines elsewhere.
@@ -51,30 +49,6 @@ final class PlanningRecordIsolationTest extends TestCase
     ];
 
     private const string MD_PATTERN = '~(?<![A-Za-z0-9_.\-/])((?:\.{1,2}/)*/?[A-Za-z0-9_.\-/]*[A-Za-z0-9_\-]\.md)(?![A-Za-z0-9_])~';
-
-    /** @var list<string> Exact deferred files, never directory prefixes. */
-    private const array DEFERRED_VERIFICATION_FILES = [
-        'promise-effect/floor.tsv',
-        'promise-effect/pair-kind-scope.tsv',
-        'promise-effect/promise-ledger.tsv',
-        'promise-effect/run-declaration.tsv',
-        'promise-effect/witness-envelopes.tsv',
-        'scripts/input-doors-bootstrap.php',
-        'scripts/input-doors/Declarations.php',
-        'scripts/promise-effect-controls.php',
-        'scripts/promise-effect-controls/Cases.php',
-        'scripts/promise-effect-grid.php',
-        'scripts/promise-effect.php',
-        'scripts/promise-effect/Classifier.php',
-        'scripts/promise-effect/CrossCheck.php',
-        'scripts/promise-effect/FifthSet.php',
-        'scripts/promise-effect/Floor.php',
-        'scripts/promise-effect/Population.php',
-        'scripts/promise-effect/ProcessProbe.php',
-        'scripts/promise-effect/RunDeclaration.php',
-        'scripts/promise-effect/Stamp.php',
-        'scripts/promise-effect/Stand.php',
-    ];
 
     /** @var list<array{rule: string, file: string, line: string, token: string, reason: string}> */
     private const array REFERENCE_EXCEPTIONS = [
@@ -205,7 +179,7 @@ final class PlanningRecordIsolationTest extends TestCase
             if ($path === $self) {
                 continue;
             }
-            if (\in_array($path, self::DEFERRED_VERIFICATION_FILES, true) || is_link(self::$projectRoot . '/' . $path)) {
+            if (is_link(self::$projectRoot . '/' . $path)) {
                 continue;
             }
 
@@ -269,7 +243,7 @@ final class PlanningRecordIsolationTest extends TestCase
 
     /**
      * The files this control judges: what a fresh clone receives, less the
-     * symbolic links, deferred files and vendored directory segments.
+     * symbolic links and vendored directory segments.
      *
      * Asked of git rather than of this disk, so a file that exists only here
      * is not judged and a tracked file cannot be missed by a walk. Two losses
@@ -326,7 +300,7 @@ final class PlanningRecordIsolationTest extends TestCase
      */
     private static function isExcluded(string $path): bool
     {
-        if (\in_array($path, self::DEFERRED_VERIFICATION_FILES, true) || is_link(self::$projectRoot . '/' . $path)) {
+        if (is_link(self::$projectRoot . '/' . $path)) {
             return true;
         }
 

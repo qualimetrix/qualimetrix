@@ -123,7 +123,6 @@ const P7_MEASUREMENT_PATHS = [
 const TOOLING_TEST_ROOT_OWNERS = [
     'governance/' => 'Architecture.Governance',
     'tools/phpstan/tests/' => 'Tooling/PhpStan',
-    'scripts/promise-effect/tests/' => 'Tooling/PromiseEffect',
     'scripts/directive-audit/tests/' => 'Tooling/DirectiveAudit',
     'scripts/directive-audit-controls/tests/' => 'Tooling/DirectiveAuditControls',
     'scripts/tautology-controls/tests/' => 'Tooling/TautologyControls',
@@ -203,8 +202,8 @@ const NON_PROJECT_PATH_SEGMENTS = ['vendor', 'node_modules'];
  * hiding inside a pattern.
  *
  * A pattern would have done the job in fewer characters and is the reason this
- * is a list: a glob for "anything under a `fixtures` directory" excuses the
- * entry below, and it goes on excusing every future directory that happens to
+ * is a list: a glob for "anything under a `fixtures` directory" excuses one
+ * fixture directory, and it goes on excusing every future directory that happens to
  * sit under one — including a real test root someone files there by mistake. A
  * literal excuses one path and says so by name.
  *
@@ -216,11 +215,19 @@ const NON_PROJECT_PATH_SEGMENTS = ['vendor', 'node_modules'];
  *
  * @var array<string, string> path (trailing slash) => why it is not this repository's to scan
  */
-const NON_SCANNED_TEST_DIRECTORIES = [
-    'input-doors/fixtures/main/tests/' => 'the test directory of the fixture project the input-door stand'
-        . ' analyses, not a test directory of this repository: its one file is input to a measurement, and'
-        . ' running it as a test of this tree is exactly what it must not do.',
-];
+const NON_SCANNED_TEST_DIRECTORIES = [];
+
+/**
+ * The excuse list read through its declared type. While the list is empty,
+ * static analysis folds a literal `[]` and refuses both loops over it as dead
+ * code; the refusals those loops raise are what the list's first entry needs.
+ *
+ * @return array<string, string>
+ */
+function nonScannedTestDirectories(): array
+{
+    return NON_SCANNED_TEST_DIRECTORIES;
+}
 
 /** @var list<string> Exact Run test classes; future siblings require an ownership decision. */
 const P3_TEST_PATHS = [
@@ -1274,7 +1281,6 @@ function testSuitePrefixTable(): array
         ['prefix' => 'governance/PublishedText/', 'suite' => 'Governance'],
         ['prefix' => 'governance/FormatOptionKeys/', 'suite' => 'Governance'],
         ['prefix' => 'governance/DirectiveVocabulary/', 'suite' => 'Governance'],
-        ['prefix' => 'governance/ControlRigLedger/', 'suite' => 'Governance'],
         ['prefix' => 'governance/CommitSubjectPolicy/', 'suite' => 'Governance'],
         ['prefix' => 'governance/HealthVocabulary/', 'suite' => 'Governance'],
         ['prefix' => 'governance/FindingVocabulary/', 'suite' => 'Governance'],
@@ -1283,7 +1289,6 @@ function testSuitePrefixTable(): array
         ['prefix' => 'governance/SubprocessDrain/', 'suite' => 'Governance'],
         ['prefix' => 'governance/DeclaredDependencies/', 'suite' => 'Governance'],
         ['prefix' => 'tools/phpstan/tests/', 'suite' => 'Tooling'],
-        ['prefix' => 'scripts/promise-effect/tests/', 'suite' => 'Tooling'],
         ['prefix' => 'scripts/directive-audit/tests/', 'suite' => 'Tooling'],
         ['prefix' => 'scripts/directive-audit-controls/tests/', 'suite' => 'Tooling'],
         ['prefix' => 'scripts/tautology-controls/tests/', 'suite' => 'Tooling'],
@@ -1609,7 +1614,7 @@ function assertEveryTestDirectoryIsScanned(string $projectRoot): void
 
     $problems = [];
     foreach ($candidates as $candidate) {
-        if (isset(NON_SCANNED_TEST_DIRECTORIES[$candidate]) || $scannedThrough[$candidate] !== null) {
+        if (isset(nonScannedTestDirectories()[$candidate]) || $scannedThrough[$candidate] !== null) {
             continue;
         }
         $problems[] = $candidate
@@ -1618,7 +1623,7 @@ function assertEveryTestDirectoryIsScanned(string $projectRoot): void
             . ' the reason it is not this repository\'s to scan';
     }
 
-    foreach (NON_SCANNED_TEST_DIRECTORIES as $excused => $reason) {
+    foreach (nonScannedTestDirectories() as $excused => $reason) {
         if (trim($reason) === '') {
             $problems[] = $excused
                 . ' is excused in NON_SCANNED_TEST_DIRECTORIES with an empty reason, which excuses it from this'
