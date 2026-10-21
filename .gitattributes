@@ -7,62 +7,25 @@ promise-effect/config-paths.tsv whitespace=-blank-at-eol
 promise-effect/promise-ledger-frozen-ranges.tsv whitespace=-blank-at-eol
 promise-effect/promise-ledger.tsv whitespace=-blank-at-eol
 
-# Exclude from composer dist package
-/.github/               export-ignore
-/.githooks/             export-ignore
-/docs/                  export-ignore
-/tests/                 export-ignore
-/governance/            export-ignore
-/scripts/               export-ignore
-/tools/                 export-ignore
-/directive-audit/**     export-ignore
-/finding-gate/**        export-ignore
-/input-doors/**         export-ignore
-/promise-effect/**      export-ignore
-
-# The HTML report is an npm project living at the repository root, outside the
-# PSR-4 tree (stage 02 of the viewer relocation moved it out of
-# src/Reporting/). A consumer needs only the four assets HtmlFormatter reads at
-# runtime; without these lines the dist package would carry every entry under
-# it, including the eight vitest files, the sources they test, the lockfile,
-# the vite config and the directory's own README. Measured with
-# `git archive --worktree-attributes` on the tree that closed the relocation:
-# 34 -> 6. The count moved from 34 on the tree that closed stage 01 for two
-# offsetting reasons: the relocation deleted scripts/collect-metric-keys.mjs
-# and added this directory's own README.md, so the total stayed at 34 by
-# coincidence rather than by construction — re-derive it rather than trusting
-# this line. The four that stay are load-bearing, so this is a list of what
-# leaves, never an export-ignore on the tree.
-/html-report/src/              export-ignore
-/html-report/tests/            export-ignore
-/html-report/scripts/          export-ignore
-/html-report/package.json      export-ignore
-/html-report/package-lock.json export-ignore
-/html-report/vite.config.js    export-ignore
-/html-report/dev.html          export-ignore
-/html-report/README.md         export-ignore
-/benchmark-results/     export-ignore
-/coverage/              export-ignore
-/.gitattributes         export-ignore
-/.gitignore             export-ignore
-/.editorconfig          export-ignore
-/.dockerignore          export-ignore
-# The phar's include list. It describes how this repository builds an archive;
-# a consumer who installed the dist builds nothing.
-/box.json              export-ignore
-/.php-cs-fixer.dist.php export-ignore
-/phpunit.xml.dist       export-ignore
-/phpstan.neon           export-ignore
-/deptrac.yaml           export-ignore
-/docker-compose.yml     export-ignore
-/Dockerfile             export-ignore
-/CLAUDE.md              export-ignore
-/baseline.json          export-ignore
-/profile.json           export-ignore
-/.claude/               export-ignore
-/.serena/               export-ignore
-/benchmarks/            export-ignore
-/website/               export-ignore
+# Composer dist package: an allowlist. Everything at the root is excluded, then
+# exactly what a consumer runs is let back in, so a new development directory
+# stays out of the package without anyone remembering to list it. The phar's
+# include list (box.json) must not carry anything this file keeps out; that
+# pairing is held by governance/DistributedPackage.
+/*                       export-ignore
+/src                     -export-ignore
+/src/**/README.md        export-ignore
+/bin                     -export-ignore
+/composer.json           -export-ignore
+/LICENSE                 -export-ignore
+/README.md               -export-ignore
+/qmx.yaml.example        -export-ignore
+# The HTML report is an npm project; HtmlFormatter reads only these four assets.
+/html-report             -export-ignore
+/html-report/*           export-ignore
+/html-report/report.html -export-ignore
+/html-report/report.css  -export-ignore
+/html-report/dist        -export-ignore
 
 # Generated ratchet snapshot: collapse its diff by default in both forges
 qmx-baseline.json linguist-generated

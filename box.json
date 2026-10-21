@@ -7,9 +7,6 @@
         "KevinGH\\Box\\Compactor\\Php",
         "KevinGH\\Box\\Compactor\\Json"
     ],
-    "directories": [
-        "src"
-    ],
     "files": [
         "LICENSE",
         "html-report/report.html",
@@ -18,6 +15,14 @@
         "html-report/dist/report.min.js"
     ],
     "finder": [
+        {
+            "in": [
+                "src"
+            ],
+            "notName": [
+                "README.md"
+            ]
+        },
         {
             "in": [
                 "vendor"

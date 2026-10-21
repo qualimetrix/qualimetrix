@@ -543,8 +543,9 @@ jobs:
             sort($carried);
             file_put_contents("build/evidence/phar-src.txt", implode("\n", $carried) . "\n");
           ' build/qmx.phar
+          # box.json's finder leaves dot-files and the module notes (README.md) out of src/.
           git ls-tree -r --name-only HEAD -- src \
-            | grep -v -E '(^|/)\.' > build/evidence/head-src.txt
+            | grep -v -E '(^|/)\.' | grep -v -E '(^|/)README\.md$' > build/evidence/head-src.txt
           test -s build/evidence/phar-src.txt
           diff -u build/evidence/head-src.txt build/evidence/phar-src.txt
 

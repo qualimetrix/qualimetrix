@@ -27,7 +27,7 @@ require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
  * anyway reverses that decision without restating it.
  *
  * A file in the dist that the phar omits is usually correct — a consumer
- * running an archive has no use for `composer.lock` or `README.md` — so the
+ * running an archive has no use for `composer.json` or `README.md` — so the
  * omissions are declared below with their reason rather than tolerated as a
  * class. Adding a load-bearing file to the dist and forgetting `box.json` then
  * fails here instead of at a user's first run.
@@ -39,7 +39,7 @@ require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
  * **What this control cannot see.** It resolves `box.json` itself rather than
  * reading a built artifact, so it judges the configuration's meaning, not the
  * archive's contents. One consequence is specific enough to name: box resolves
- * `directories` through a Finder that calls `ignoreVCS()` but never
+ * `src/` through a Finder that calls `ignoreVCS()` but never
  * `ignoreVCSIgnored()`, so a build carries every untracked and every ignored
  * file under `src/` — and this repository's `.gitignore` holds a blanket
  * `*.json`. This control reads `HEAD`, so it cannot see that payload. Reading
@@ -48,7 +48,7 @@ require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
  * archive against the same committed listing, which is the point where
  * untracked payload is real rather than hypothetical. That keeps it free of a build step and a network fetch,
  * and it costs the case where box resolves the same configuration differently
- * than this file does — a box upgrade changing `directories` semantics would
+ * than this file does — a box upgrade changing finder semantics would
  * pass here and diverge in the artifact. The artifact-level comparison belongs
  * to the job that builds one.
  */
@@ -62,16 +62,10 @@ final class PharCarriesWhatTheDistCarriesTest extends TestCase
      * @var array<string, string>
      */
     private const array DIST_ONLY = [
-        'AGENTS.md' => 'working rules for this repository, meaningless to a consumer',
-        'CHANGELOG.md' => 'read on the release page, not from inside an archive',
         'README.md' => 'read on the repository, not from inside an archive',
-        'action.yml' => 'the GitHub Action reads it from a checkout of this repository',
         'composer.json' => 'box writes the archive\'s own autoloader; a consumer installs nothing',
-        'composer.lock' => 'same',
-        'qmx-baseline.json' => 'this repository\'s own ratchet snapshot, not a consumer\'s',
-        'qmx.yaml' => 'this repository\'s own dogfooding configuration, not a consumer\'s',
         'qmx.yaml.example' => 'a sample to copy out of the repository, not to carry in the archive',
-        'src/.gitkeep' => "box resolves directories through Finder, which ignores dot-files; this one holds no code",
+        'src/.gitkeep' => "box resolves src/ through Finder, which ignores dot-files; this one holds no code",
     ];
 
     #[Test]
@@ -146,18 +140,18 @@ final class PharCarriesWhatTheDistCarriesTest extends TestCase
      * What `box.json` puts in the archive, `vendor/` aside.
      *
      * Resolved from the committed tree rather than from disk. Both sides of
-     * the comparison then answer about one tree: reading `directories` off the
+     * the comparison then answer about one tree: reading a directory off the
      * filesystem while the dist side reads `HEAD` made an uncommitted file
      * under `src/` look like a phar carrying something the dist excludes —
      * a red control naming the wrong cause, on the ordinary path where
      * `composer check` runs before the commit.
      *
-     * Dot-files are dropped because box resolves `directories` through
-     * Symfony's Finder, which ignores them by default. That rule is reproduced
-     * here rather than inherited, and it is the one place this control models
-     * box's behaviour instead of reading it; before it was reproduced, the
-     * control believed `src/.gitkeep` shipped and the two sides balanced
-     * because the dist carries it too.
+     * Dot-files are dropped because box resolves directories and finder blocks
+     * through Symfony's Finder, which ignores them by default. That rule is
+     * reproduced here rather than inherited, and with `notName` it is where
+     * this control models box's behaviour instead of reading it; before the
+     * dot-file rule was reproduced, the control believed `src/.gitkeep` shipped
+     * and the two sides balanced because the dist carries it too.
      *
      * `main` is included because box adds the entry point whether or not any
      * other setting names it, and it is a file the dist ships too.
@@ -183,14 +177,6 @@ final class PharCarriesWhatTheDistCarriesTest extends TestCase
             ),
         );
 
-        self::assertSame(
-            [['in' => ['vendor'], 'notPath' => ['#^bin/#'], 'ignoreVCS' => true]],
-            $config['finder'] ?? null,
-            'The finder block is excluded from this comparison on the grounds that it adds nothing outside '
-            . 'vendor/. This control cannot resolve a finder block, so it pins the one it was written against '
-            . 'instead: any change here has to be re-argued, including one that only looks like a tidy-up.',
-        );
-
         $paths = [];
 
         if (isset($config['main']) && \is_string($config['main'])) {
@@ -208,26 +194,84 @@ final class PharCarriesWhatTheDistCarriesTest extends TestCase
         $directories = $config['directories'] ?? [];
 
         foreach ($directories as $directory) {
-            $tracked = self::committedFilesUnder($directory);
+            array_push($paths, ...self::finderPayload($directory, []));
+        }
 
-            self::assertNotSame(
+        /** @var list<array<string, mixed>> $finders */
+        $finders = $config['finder'] ?? [];
+
+        foreach ($finders as $finder) {
+            if ($finder === self::VENDOR_FINDER) {
+                continue;
+            }
+
+            /** @var list<string> $in */
+            $in = $finder['in'] ?? [];
+            /** @var list<string> $notName */
+            $notName = $finder['notName'] ?? [];
+
+            self::assertSame(
                 [],
-                $tracked,
-                \sprintf('box.json names the directory "%s", and HEAD carries no file under it.', $directory),
+                array_values(array_diff(array_keys($finder), ['in', 'notName'])),
+                'A finder block outside vendor/ may carry only "in" and literal "notName" names: those are the '
+                . 'two this control resolves. Teach it any other key before box.json uses one.',
             );
 
-            foreach ($tracked as $path) {
-                if (self::hasDotSegment($path)) {
-                    continue;
-                }
+            foreach ($notName as $name) {
+                self::assertMatchesRegularExpression(
+                    '/^[A-Za-z0-9._-]+$/',
+                    $name,
+                    'notName is resolved here as a literal file name; a glob or a pattern would be matched by box '
+                    . 'and not by this control.',
+                );
+            }
 
-                $paths[] = $path;
+            foreach ($in as $directory) {
+                array_push($paths, ...self::finderPayload($directory, $notName));
             }
         }
 
         sort($paths, \SORT_STRING);
 
         return array_values(array_unique($paths));
+    }
+
+    /**
+     * The vendor/ block, excluded from the comparison because it adds nothing
+     * the dist could carry. Pinned rather than recognised by shape: any change
+     * to it has to be re-argued, including one that only looks like a tidy-up.
+     */
+    private const array VENDOR_FINDER = ['in' => ['vendor'], 'notPath' => ['#^bin/#'], 'ignoreVCS' => true];
+
+    /**
+     * What box takes from one directory: its committed files, less dot-files
+     * and the names a finder block leaves out.
+     *
+     * @param list<string> $notName
+     *
+     * @return list<string>
+     */
+    private static function finderPayload(string $directory, array $notName): array
+    {
+        $tracked = self::committedFilesUnder($directory);
+
+        self::assertNotSame(
+            [],
+            $tracked,
+            \sprintf('box.json names the directory "%s", and HEAD carries no file under it.', $directory),
+        );
+
+        $paths = [];
+
+        foreach ($tracked as $path) {
+            if (self::hasDotSegment($path) || \in_array(basename($path), $notName, true)) {
+                continue;
+            }
+
+            $paths[] = $path;
+        }
+
+        return $paths;
     }
 
     /**
