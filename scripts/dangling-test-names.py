@@ -208,11 +208,10 @@ def main():
         print(f"cannot read the tree: {error}", file=sys.stderr)
         return 2
 
-    # Plans, ADRs and generated artifacts name what the tree used to carry;
+    # ADRs and generated artifacts name what the tree used to carry;
     # that is the record working, not an address rotting.
     # Everything else that spells a name is asserting the name exists.
     history = (
-        "docs/internal/plans/",
         "docs/adr/",
         "docs/internal/generated/",
         "CHANGELOG.md",

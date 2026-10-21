@@ -1469,7 +1469,7 @@ final class Stand
      * THE SEARCH IS OBSERVATIONAL, AND THAT IS A DECISION. The value written
      * depends on the build under test: a magnitude equal to what the product
      * does anyway is stepped over. Measured on this tree, inside the five
-     * rules the shorthand-scope round cures this fires on 71 of 506 sides and
+     * rules whose shorthands expand per layer this fires on 71 of 506 sides and
      * on one leaf, `enabled`, choosing between `true` and `false`. The
      * alternative — declaring per leaf which magnitude is inert — puts a
      * second source of truth beside the product's own defaults and goes stale
