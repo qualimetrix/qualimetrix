@@ -18,9 +18,9 @@ namespace QmxFindingGate;
  * those pairs.
  *
  * Separated from {@see Gate} because the arithmetic is the whole content of the
- * check and it must be exercisable without a reference tree: `--self-test`
- * hands it a synthetic universe and asserts the verdict, including the one that
- * shows the same universe accounted by names is green.
+ * check and it must be exercisable without a reference tree: a test hands it a
+ * synthetic universe and asserts the verdict, including the one that shows the
+ * same universe accounted by names is green.
  *
  * Multiplicity stays counted per channel — see {@see CoverageCheck::checkSingleProducer()}.
  */

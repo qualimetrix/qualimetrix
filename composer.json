@@ -142,11 +142,6 @@
         ],
         "selfcheck:analysis": "php bin/qmx check src/ --baseline=qmx-baseline.json --fail-on=warning --memory-limit=512M",
         "check-leaks": "bash scripts/check-private-leaks.sh",
-        "gate:self-test": [
-            "Composer\\Config::disableProcessTimeout",
-            "php scripts/finding-gate.php --self-test",
-            "php scripts/finding-gate-controls.php --self-test"
-        ],
         "gate": [
             "Composer\\Config::disableProcessTimeout",
             "php -d memory_limit=1G scripts/finding-gate.php"
@@ -154,10 +149,6 @@
         "gate:phar": [
             "Composer\\Config::disableProcessTimeout",
             "python3 scripts/finding-gate-phar.py"
-        ],
-        "gate:controls": [
-            "Composer\\Config::disableProcessTimeout",
-            "php scripts/finding-gate-controls.php"
         ],
         "directives:narrow-control": [
             "Composer\\Config::disableProcessTimeout",
@@ -192,8 +183,7 @@
         ],
         "check:gate": [
             "Composer\\Config::disableProcessTimeout",
-            "phpunit --configuration=phpunit.xml.dist --no-coverage --group=finding-gate-e2e",
-            "@gate:self-test"
+            "phpunit --configuration=phpunit.xml.dist --no-coverage --group=finding-gate-e2e"
         ],
         "check:code:tests": [
             "@cs-check",
@@ -250,7 +240,7 @@
         "check:self": "What the product says about this repository: the qmx ratchet and the directive audit",
         "directives:narrow-control": "Prove --sweep=narrow and --sweep=full agree verdict for verdict: the seeded fixture whole (every verdict and every refusal), its Silenced/ half (where a wrong-producer defect reaches the comparison), then src/. Cheapest signal first, because composer stops at the first run that fails",
         "directives:audit": "Fail if any inline @qmx directive over src/ does nothing",
-        "check:gate": "Gate end-to-end tests and observed witnesses; required for finding-gate changes",
+        "check:gate": "Gate end-to-end tests; required for finding-gate changes",
         "check:code:tests": "Run style, verified PHPUnit shards, the name census, JavaScript and cross-tool tests",
         "check:parallel": "Run PHPStan and the remaining validation groups concurrently, collecting both results",
         "check:remaining": "Run documentation, generated-artifact and self-analysis checks in order"

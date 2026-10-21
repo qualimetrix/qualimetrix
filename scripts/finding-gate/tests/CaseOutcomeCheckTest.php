@@ -24,7 +24,6 @@ use QmxFindingGate\Options;
 use QmxFindingGate\Process;
 use QmxFindingGate\RenameMaps;
 use QmxFindingGate\RunContext;
-use QmxFindingGate\SelfTestOutcomes;
 use QmxFindingGate\SyntheticTree;
 use ReflectionMethod;
 use WeakReference;
@@ -224,7 +223,7 @@ PHP;
     public function itJudgesNormalizationMeasurementsByTheirCanonicalOutcomeSide(): void
     {
         foreach ([false, true] as $malformed) {
-            $tree = SelfTestOutcomes::fixture();
+            $tree = RefusedCaseTree::fixture();
             if ($malformed) {
                 $publication = (new ReflectionMethod(SyntheticTree::class, 'findingPublication'))->invoke(null, []);
                 $stdout = json_encode($publication, \JSON_THROW_ON_ERROR);
@@ -278,6 +277,28 @@ PHP;
             }
             $this->expectException(CorpusInvalid::class);
             Corpus::load($root);
+        } finally {
+            SyntheticTree::remove($root);
+        }
+    }
+
+    #[Test]
+    public function itRaisesRunFailedForAJsonPublicationWithNoFindingsSection(): void
+    {
+        $root = SyntheticTree::fixture(SyntheticTree::clean());
+        try {
+            $corpus = Corpus::load($root);
+            foreach (['{"violations": []}' => [], '{"violationsMeta":{"total":0,"truncated":false,"byRule":{}}}' => null] as $publication => $expected) {
+                $report = new GateReport();
+                $findings = (new CaseOutcomeCheck($report, $corpus))->findingsOf('candidate', $corpus->cases[0], ['case:alpha|format:json' => $publication]);
+
+                self::assertSame($expected, $findings);
+                // The baseline half of the case is judged separately and is absent from both inputs.
+                self::assertSame(
+                    $expected === null ? [FailureClass::RUN_FAILED] : [],
+                    array_column(array_filter($report->raised(), static fn(array $failure): bool => $failure['scope'] === 'candidate / alpha'), 'class'),
+                );
+            }
         } finally {
             SyntheticTree::remove($root);
         }

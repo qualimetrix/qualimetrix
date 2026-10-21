@@ -2,14 +2,26 @@
 
 declare(strict_types=1);
 
-namespace QmxFindingGate;
+namespace QmxFindingGate\Tests;
+
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use QmxFindingGate\Fs;
+use QmxFindingGate\GateError;
+use QmxFindingGate\MetricVocabulary;
+use QmxFindingGate\RenameMaps;
 
 /**
- * Metric keys as a map translates them: the product's own vocabulary, aggregated spellings, and the
- * surfaces a key travels on.
+ * Metric keys as a map translates them: the product's own vocabulary, the
+ * aggregated spellings of one key, and the surfaces a key travels on.
  */
-final class SelfTestMetricKeys extends SelfTestGroup
+final class MetricKeyMapsTest extends TestCase
 {
+    public static function setUpBeforeClass(): void
+    {
+        require_once \dirname(__DIR__) . '/classes.php';
+    }
+
     /**
      * A metric key is published bare and once per aggregation strategy, and one
      * row has to reach all of those spellings.
@@ -20,7 +32,8 @@ final class SelfTestMetricKeys extends SelfTestGroup
      * as its own input — {@see MetricVocabulary} is what holds the run to the
      * product's real list, and it is proved separately below.
      */
-    public function metricKeys(): void
+    #[Test]
+    public function itTranslatesAMetricKeyInEveryAggregatedSpellingAndNoLongerName(): void
     {
         $strategies = ['avg', 'count', 'max', 'min', 'p5', 'p95', 'sum'];
         $vocabulary = MetricVocabulary::of($strategies);
@@ -28,14 +41,14 @@ final class SelfTestMetricKeys extends SelfTestGroup
             ['old' => 'ccn', 'new' => 'complexity.ccn', 'source' => RenameMaps::METRIC_KEYS],
         ], $vocabulary);
 
-        $this->same(
+        self::assertSame(
             '"complexity.ccn"',
             $keys->forward('"ccn"', 'format:json'),
             'a key row translates the bare spelling',
         );
 
         foreach ($strategies as $strategy) {
-            $this->same(
+            self::assertSame(
                 '"complexity.ccn.' . $strategy . '"',
                 $keys->forward('"ccn.' . $strategy . '"', 'format:json'),
                 'and the aggregated spelling for ' . $strategy,
@@ -46,7 +59,7 @@ final class SelfTestMetricKeys extends SelfTestGroup
         // a substring rewrite over every longer name starting with the key,
         // which is what a step renaming three keys and declaring one needs to
         // stay green.
-        $this->same(
+        self::assertSame(
             '"ccn.average" and "ccn.avg.avg" and "ccnx"',
             $keys->forward('"ccn.average" and "ccn.avg.avg" and "ccnx"', 'format:json'),
             'an unknown suffix, a doubled one and a longer name are not translated',
@@ -56,7 +69,7 @@ final class SelfTestMetricKeys extends SelfTestGroup
             ['old' => 'ccn', 'new' => 'complexity.ccn', 'source' => RenameMaps::METRIC_KEYS],
         ], $vocabulary);
         $idle->forward('nothing this row can translate', 'format:json');
-        $this->same(
+        self::assertSame(
             [RenameMaps::METRIC_KEYS . ': "ccn" -> "complexity.ccn"'],
             $idle->staleRows(),
             'a key row that translated nothing at all is stale',
@@ -66,13 +79,13 @@ final class SelfTestMetricKeys extends SelfTestGroup
             ['old' => 'ccn', 'new' => 'complexity.ccn', 'source' => RenameMaps::METRIC_KEYS],
         ], $vocabulary);
         $suffixOnly->forward('"ccn.p5"', 'format:json');
-        $this->same(
+        self::assertSame(
             [],
             $suffixOnly->staleRows(),
             'a key row whose only match was an aggregated spelling is not stale',
         );
 
-        $this->assert(
+        self::assertTrue(
             self::throws(static fn(): mixed => RenameMaps::fromPairs([
                 ['old' => 'ccn', 'new' => 'complexity.ccn', 'source' => RenameMaps::METRIC_KEYS],
                 ['old' => 'ccn.sum', 'new' => 'complexity.total-ccn', 'source' => RenameMaps::METRIC_KEYS],
@@ -80,7 +93,7 @@ final class SelfTestMetricKeys extends SelfTestGroup
             'a key whose aggregated spelling is another declared key is refused when the map loads',
         );
 
-        $this->assert(
+        self::assertTrue(
             self::throws(static fn(): mixed => RenameMaps::fromPairs([
                 ['old' => 'complexity.cyclomatic#complexity.cyclomatic', 'new' => 'ccn#ccn', 'source' => RenameMaps::METRIC_KEYS],
             ], $vocabulary)),
@@ -92,7 +105,7 @@ final class SelfTestMetricKeys extends SelfTestGroup
         // corpus writes into its own arguments, so a reverse pass would hand the
         // reference rules it does not have. `coupling.class-rank` is in all
         // fourteen cases' `--rule-opt` tokens.
-        $this->same(
+        self::assertSame(
             '--rule-opt=coupling.class-rank:warning=2',
             RenameMaps::fromPairs([
                 ['old' => 'classRank', 'new' => 'coupling.class-rank', 'source' => RenameMaps::METRIC_KEYS],
@@ -108,23 +121,23 @@ final class SelfTestMetricKeys extends SelfTestGroup
             ['old' => 'computed.branch_load', 'new' => 'computed.branch-load', 'source' => RenameMaps::CHANNELS],
             ['old' => 'computed.branch_load', 'new' => 'computed.branch-load', 'source' => RenameMaps::INPUTS],
         ], $vocabulary);
-        $this->same(
+        self::assertSame(
             1,
             \count($roles->declaredRows()),
             'a pair declared in two maps is one declaration, not two rows renaming one name',
         );
-        $this->same(
+        self::assertSame(
             'computed.branch_load:',
             $roles->reverse('computed.branch-load:'),
             'and it is applied backwards, because one of its roles is an input',
         );
-        $this->same(
+        self::assertSame(
             [],
             $roles->staleRows(),
             'firing once is what a declaration owes, whichever of its roles the occurrence belonged to',
         );
 
-        $this->assert(
+        self::assertTrue(
             self::throws(static fn(): mixed => RenameMaps::fromPairs([
                 ['old' => 'computed.branch_load', 'new' => 'computed.branch-load', 'source' => RenameMaps::CHANNELS],
                 ['old' => 'computed.branch_load', 'new' => 'computed.other-name', 'source' => RenameMaps::INPUTS],
@@ -139,7 +152,7 @@ final class SelfTestMetricKeys extends SelfTestGroup
         // that fires when some caller happens to substitute in that direction has
         // its moment decided by the run, and the reverse direction is not built
         // at all on a run whose reference needs no input translated.
-        $this->assert(
+        self::assertTrue(
             self::throws(static fn(): mixed => RenameMaps::fromPairs([
                 ['old' => 'qmx.foo', 'new' => 'other.bar', 'source' => RenameMaps::SYMBOLS],
                 ['old' => 'foo', 'new' => 'baz', 'source' => RenameMaps::CHANNELS],
@@ -151,7 +164,7 @@ final class SelfTestMetricKeys extends SelfTestGroup
         // records under it can be explained instead. An expansion that reached it
         // would translate exactly the spelling the split calls undecidable —
         // measured, it did, so the overlap check is given the dropped halves too.
-        $this->assert(
+        self::assertTrue(
             self::throws(static fn(): mixed => RenameMaps::fromPairs([
                 ['old' => 'a.sum#x', 'new' => 'left#x', 'source' => RenameMaps::CHANNELS],
                 ['old' => 'a.sum#y', 'new' => 'right#y', 'source' => RenameMaps::CHANNELS],
@@ -163,7 +176,7 @@ final class SelfTestMetricKeys extends SelfTestGroup
         // The third population that can already carry an aggregated spelling: a
         // base key the product itself declares. A row whose expansion reaches one
         // would translate a key nobody named.
-        $this->assert(
+        self::assertTrue(
             self::throws(static fn(): mixed => RenameMaps::fromPairs([
                 ['old' => 'a', 'new' => 'renamed.a', 'source' => RenameMaps::METRIC_KEYS],
             ], MetricVocabulary::of(['sum'], ['a', 'a.sum']))),
@@ -175,7 +188,7 @@ final class SelfTestMetricKeys extends SelfTestGroup
         // channel row — so merging the two would leave one of them without its
         // roles and without its credit, reported stale for a spelling the other
         // translated. Kept apart, they collide loudly instead.
-        $this->assert(
+        self::assertTrue(
             self::throws(static fn(): mixed => RenameMaps::fromPairs([
                 ['old' => 'old.rule#a.code', 'new' => 'new.rule#z.code', 'source' => RenameMaps::CHANNELS],
                 ['old' => 'a.code', 'new' => 'z.code', 'source' => RenameMaps::METRIC_KEYS],
@@ -191,29 +204,26 @@ final class SelfTestMetricKeys extends SelfTestGroup
             ['old' => 'coupling.cbo', 'new' => 'coupling.class-coupling', 'source' => RenameMaps::METRIC_KEYS],
             ['old' => 'coupling.cbo', 'new' => 'coupling.class-coupling', 'source' => RenameMaps::INPUTS],
         ], $vocabulary);
-        $this->same(
+        self::assertSame(
             1,
             \count($both->declaredRows()),
             'a key that is also an input token is one declaration',
         );
-        $this->same(
+        self::assertSame(
             '--disable-rule=coupling.cbo',
             $both->reverse('--disable-rule=coupling.class-coupling'),
             'and its input role restates the token for the reference',
         );
-        $this->same(
+        self::assertSame(
             '"coupling.class-coupling.avg"',
             $both->reverse('"coupling.class-coupling.avg"'),
             'while its aggregated spelling stays put: that spelling belongs to the forward-only key role',
         );
-        $this->same(
+        self::assertSame(
             '"coupling.class-coupling.avg"',
             $both->forward('"coupling.cbo.avg"', 'format:json'),
             'and is translated forwards, where the key role does apply',
         );
-
-        $this->aggregationVocabulary();
-        $this->keysTravelOnlyWhereKeysArePublished();
     }
 
     /**
@@ -232,7 +242,8 @@ final class SelfTestMetricKeys extends SelfTestGroup
      * published, and a channel row — which every surface publishes — still
      * travels everywhere.
      */
-    private function keysTravelOnlyWhereKeysArePublished(): void
+    #[Test]
+    public function itAppliesAMetricKeyRowOnlyOnSurfacesThatPublishKeys(): void
     {
         $maps = RenameMaps::fromPairs([
             ['old' => 'cognitive', 'new' => 'complexity.cognitive', 'source' => RenameMaps::METRIC_KEYS],
@@ -241,27 +252,27 @@ final class SelfTestMetricKeys extends SelfTestGroup
 
         $prose = 'error[design.param-type-coverage]: Maximum method cognitive complexity is 29';
 
-        $this->same(
+        self::assertSame(
             'error[design.type-coverage.param]: Maximum method cognitive complexity is 29',
             $maps->forward($prose, 'format:text'),
             'on a surface that publishes no metric key, the key map is not applied and prose survives',
         );
-        $this->same(
+        self::assertSame(
             '{"cognitive": 29}',
             $maps->forward('{"cognitive": 29}', 'format:text'),
             'and the key itself is left alone there, so a key reaching a prose surface goes red instead of silent',
         );
-        $this->same(
+        self::assertSame(
             '{"message": "Maximum method cognitive complexity is 29"}',
             $maps->forward('{"message": "Maximum method cognitive complexity is 29"}', 'format:json'),
             'even where keys are published, a key inside a longer string is prose and is left alone',
         );
-        $this->same(
+        self::assertSame(
             '{"complexity.cognitive": 29}',
             $maps->forward('{"cognitive": 29}', 'format:metrics'),
             'on a surface that publishes keys, the key map is applied',
         );
-        $this->same(
+        self::assertSame(
             '{"complexity.cognitive.avg": 29}',
             $maps->forward('{"cognitive.avg": 29}', 'format:json'),
             'and so are the aggregated spellings of that same row',
@@ -269,25 +280,19 @@ final class SelfTestMetricKeys extends SelfTestGroup
     }
 
     /**
-     * The vocabulary is read from the product, and the suffix list from BOTH
-     * trees.
-     *
-     * Forward translation runs over the reference's artifacts, so a strategy the
-     * step removed would stop being expanded while the reference is still
-     * publishing it — a rename leaking into an undeclared diff, and silently.
-     * The comparison itself is a condition of obtaining a reference tree
-     * ({@see ReferenceTree::create()}), which is why what is proved here is the
-     * refusal rather than the wiring.
+     * The vocabulary is read out of the product tree as text, and a tree that
+     * declares none is refused rather than expanded over nothing.
      */
-    private function aggregationVocabulary(): void
+    #[Test]
+    public function itReadsTheAggregationVocabularyOutOfTheProductTree(): void
     {
-        $product = MetricVocabulary::ofTree($this->candidateRoot);
-        $this->same(
+        $product = MetricVocabulary::ofTree(self::repositoryRoot());
+        self::assertSame(
             ['avg', 'count', 'max', 'min', 'p5', 'p95', 'sum'],
             $product->suffixes,
             'the aggregation vocabulary is read out of the product',
         );
-        $this->assert(
+        self::assertTrue(
             \in_array('complexity.ccn', $product->baseKeys, true) && \count($product->baseKeys) > 50,
             'and so are the base keys the product declares in one place',
         );
@@ -295,7 +300,7 @@ final class SelfTestMetricKeys extends SelfTestGroup
         $root = Fs::temporaryDirectory('finding-gate-vocabulary-');
 
         try {
-            $this->assert(
+            self::assertTrue(
                 self::throws(static fn(): mixed => MetricVocabulary::ofTree($root)),
                 'a tree with no strategy enum is refused rather than expanded over nothing',
             );
@@ -304,7 +309,7 @@ final class SelfTestMetricKeys extends SelfTestGroup
                 $root . '/src/Analysis/Evidence/Measurement/Contract/AggregationStrategy.php',
                 "<?php\n\nenum AggregationStrategy: string\n{\n    case Sum = 'sum';\n}\n",
             );
-            $this->assert(
+            self::assertTrue(
                 self::throws(static fn(): mixed => MetricVocabulary::ofTree($root)),
                 'and one whose metric keys are missing is refused too, not read as an empty list',
             );
@@ -314,16 +319,26 @@ final class SelfTestMetricKeys extends SelfTestGroup
                 "<?php\n\nfinal class MetricName\n{\n    public const string CCN = 'ccn';\n}\n",
             );
             $vocabulary = MetricVocabulary::ofTree($root);
-            $this->same(['sum'], $vocabulary->suffixes, 'a tree that declares one strategy declares one');
-            $this->same(['ccn'], $vocabulary->baseKeys, 'and its keys are the constants it names');
-            $this->assert(
-                self::throws(static function () use ($vocabulary): void {
-                    $vocabulary->assertSuffixesAgreeWith(MetricVocabulary::of(['avg', 'sum']));
-                }),
-                'two trees disagreeing about the vocabulary stop the run',
-            );
+            self::assertSame(['sum'], $vocabulary->suffixes, 'a tree that declares one strategy declares one');
+            self::assertSame(['ccn'], $vocabulary->baseKeys, 'and its keys are the constants it names');
         } finally {
             Fs::removeRecursively($root);
         }
+    }
+
+    private static function throws(callable $callback): bool
+    {
+        try {
+            $callback();
+
+            return false;
+        } catch (GateError) {
+            return true;
+        }
+    }
+
+    private static function repositoryRoot(): string
+    {
+        return \dirname(__DIR__, 3);
     }
 }

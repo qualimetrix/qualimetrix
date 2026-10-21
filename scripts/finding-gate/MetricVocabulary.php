@@ -46,7 +46,7 @@ final class MetricVocabulary
     }
 
     /**
-     * A vocabulary stated outright, for the self-test.
+     * A vocabulary stated outright, for tests.
      *
      * A shape proved on synthetic rows must not depend on what the product
      * happens to declare today, so the cases that are about the suffix expansion
@@ -64,22 +64,6 @@ final class MetricVocabulary
     public static function none(): self
     {
         return new self([], []);
-    }
-
-    public function assertSuffixesAgreeWith(self $other): void
-    {
-        if ($this->suffixes === $other->suffixes) {
-            return;
-        }
-
-        throw new GateError(\sprintf(
-            'The two trees do not agree on the aggregation suffixes a metric key may carry: [%s] against [%s].'
-            . ' Forward translation runs over the reference\'s artifacts, so a suffix only it publishes would fall'
-            . ' out of every metric-keys row silently. Identity comparison requires the same suffix vocabulary;'
-            . ' declared strategy correspondence must be checked through RenameMaps instead.',
-            implode(', ', $this->suffixes),
-            implode(', ', $other->suffixes),
-        ));
     }
 
     /**

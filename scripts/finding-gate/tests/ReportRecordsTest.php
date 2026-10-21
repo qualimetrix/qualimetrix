@@ -891,7 +891,7 @@ final class ReportRecordsTest extends TestCase
     public function itSkipsRefusalRecordsWithoutInventingAnEmptyPublication(): void
     {
         SyntheticTree::remove($this->root);
-        $this->root = SyntheticTree::fixture(\QmxFindingGate\SelfTestOutcomes::fixture());
+        $this->root = SyntheticTree::fixture(RefusedCaseTree::fixture());
         $run = $this->context();
         $records = RecordCheck::create($run);
         $case = $run->corpus->cases[0];

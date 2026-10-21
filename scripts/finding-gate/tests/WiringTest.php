@@ -6,7 +6,6 @@ namespace QmxFindingGate\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use QmxFindingGate\CheckWitnesses;
 use QmxFindingGate\FailureClass;
 use QmxFindingGate\Fs;
 use QmxFindingGate\GateError;
@@ -40,6 +39,35 @@ final class WiringTest extends TestCase
         Fs::removeRecursively($this->directory);
     }
 
+    /**
+     * A hand-picked subset of requires broke every consumer that had not
+     * guessed a new dependency; a list that drifts from the directory brings
+     * that back one class at a time.
+     */
+    #[Test]
+    public function itNamesEveryClassFileOfTheGateInTheSharedLoaderOrAFormsWiringAndNoOther(): void
+    {
+        $gate = \dirname(__DIR__);
+        $onDisk = [];
+        $files = glob($gate . '/*.php');
+        foreach ($files === false ? [] : $files as $file) {
+            $name = basename($file, '.php');
+            if (ucfirst($name) === $name) {
+                $onDisk[] = $name;
+            }
+        }
+        $listed = Wiring::gate()->list('classes');
+        foreach (explode("\n", Fs::read($gate . '/classes.php')) as $line) {
+            if (preg_match("~^\\s*'([A-Z]\\w+)',~", $line, $matched) === 1) {
+                $listed[] = $matched[1];
+            }
+        }
+        sort($onDisk);
+        sort($listed);
+
+        self::assertSame($onDisk, $listed);
+    }
+
     #[Test]
     public function itLoadsAClassAFormListsInItsOwnFile(): void
     {
@@ -63,12 +91,10 @@ final class WiringTest extends TestCase
     {
         $scripts = $this->directory . '/scripts';
 
-        foreach (['finding-gate', 'finding-gate-controls'] as $directory) {
-            $files = glob(\dirname(__DIR__, 2) . '/' . $directory . '/*.php');
+        $files = glob(\dirname(__DIR__, 2) . '/finding-gate/*.php');
 
-            foreach ($files === false ? [] : $files as $file) {
-                Fs::write($scripts . '/' . $directory . '/' . basename($file), Fs::read($file));
-            }
+        foreach ($files === false ? [] : $files as $file) {
+            Fs::write($scripts . '/finding-gate/' . basename($file), Fs::read($file));
         }
         Fs::write(
             $scripts . '/subprocess/GitProcessEnvironment.php',
@@ -76,57 +102,30 @@ final class WiringTest extends TestCase
         );
 
         Fs::write($scripts . '/finding-gate/RecordProbe.php', "<?php\n\nnamespace QmxFindingGate;\n\nfinal class RecordProbe {}\n");
-        Fs::write($scripts . '/finding-gate-controls/RecordProbeControls.php', "<?php\n\nnamespace QmxFindingGateControls;\n\nfinal class RecordProbeControls {}\n");
         Fs::write(
             $scripts . '/finding-gate/wiring-records.php',
-            "<?php\n\nreturn ['classes' => ['RecordProbe'], 'controlClasses' => ['RecordProbeControls']];\n",
+            "<?php\n\nreturn ['classes' => ['RecordProbe']];\n",
         );
 
         $loaded = Process::run([
             \PHP_BINARY,
             '-r',
-            'require $argv[1] . "/finding-gate/classes.php"; require $argv[1] . "/finding-gate-controls/classes.php";'
-            . ' echo json_encode([class_exists("QmxFindingGate\\RecordProbe", false),'
-            . ' class_exists("QmxFindingGateControls\\RecordProbeControls", false)]);',
+            'require $argv[1] . "/finding-gate/classes.php";'
+            . ' echo json_encode(class_exists("QmxFindingGate\\RecordProbe", false));',
             $scripts,
         ], $scripts);
 
         self::assertSame(0, $loaded['exit'], $loaded['stderr']);
-        self::assertSame('[true,true]', $loaded['stdout']);
-    }
-
-    #[Test]
-    public function itRefusesAWitnessOfAnUnknownScenario(): void
-    {
-        $class = 'WitnessProbe' . bin2hex(random_bytes(4));
-        Fs::write(
-            $this->directory . '/' . $class . '.php',
-            "<?php\n\nnamespace QmxFindingGate;\n\nfinal class " . $class . " {\n    public static function all(): array\n    {\n"
-            . "        return [CheckWitnesses::witness('probe', 'nowhere', static fn(array \$tree): array => \$tree, [])];\n    }\n}\n",
-        );
-        Fs::write(
-            Wiring::fileOf($this->directory, 'records'),
-            "<?php\n\nreturn ['classes' => ['" . $class . "'], 'witnesses' => ['" . $class . "::all']];\n",
-        );
-        $wiring = Wiring::of($this->directory);
-        $wiring->load();
-
-        $this->expectException(GateError::class);
-        $this->expectExceptionMessage('no scenario of CheckWitnesses::MODES');
-
-        CheckWitnesses::registered($wiring);
+        self::assertSame('true', $loaded['stdout']);
     }
 
     #[Test]
     public function itReadsEveryFormsEntriesInTheOrderOfTheFixedList(): void
     {
-        Fs::write(Wiring::fileOf($this->directory, 'maps'), "<?php\n\nreturn ['controls' => ['MapControls::stale']];\n");
-        Fs::write(Wiring::fileOf($this->directory, 'records'), "<?php\n\nreturn ['controls' => ['RecordControls::withdrawn']];\n");
+        Fs::write(Wiring::fileOf($this->directory, 'maps'), "<?php\n\nreturn ['classes' => ['MapProbe']];\n");
+        Fs::write(Wiring::fileOf($this->directory, 'records'), "<?php\n\nreturn ['classes' => ['RecordProbe']];\n");
 
-        self::assertSame(
-            [['Probe\\RecordControls', 'withdrawn'], ['Probe\\MapControls', 'stale']],
-            Wiring::of($this->directory)->methods('controls', 'Probe'),
-        );
+        self::assertSame(['RecordProbe', 'MapProbe'], Wiring::of($this->directory)->list('classes'));
     }
 
     #[Test]

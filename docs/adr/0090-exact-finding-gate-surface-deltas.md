@@ -107,5 +107,8 @@ not replace semantic declarations or their narrower explanations.
   captures and adds an in-process semantic trial and bounded diff computation.
   A stale intention, missing authority, exceeded diff budget or changed product
   probe constructor can refuse a legitimate change until its data is refreshed.
-- Existing negative controls exercise the new route through their report
-  contract and rename plants; no additional control family is introduced.
+- The route is exercised by the gate's own tests of exact surfaces
+  (`SurfaceComparisonTest`, `ReportRecordsTest`, `RankingCheckTest`); no
+  additional check family is introduced. (Amended 2026-10-21: this used to
+  rest on the negative controls, retired by
+  [ADR 0130](0130-the-finding-gate-keeps-behaviour-tests-not-a-witness-registry.md).)

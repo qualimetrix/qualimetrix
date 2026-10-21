@@ -50,6 +50,40 @@ final class GateTest extends TestCase
     }
 
     #[Test]
+    public function itRaisesRunFailedForTheTreeRunWhoseCaseWorkerRefusedItsCapture(): void
+    {
+        $tree = SyntheticTree::clean();
+        $file = SyntheticTree::caseAnswers('alpha', $tree['findings']['alpha'], false, [])['case:alpha|format:json']['stdout'] ?? '';
+        $tree['candidateAnswers']['case:alpha|check:output'] = ['stdout' => '', 'file' => $file, 'stderr' => "Report written to /wrong.json\n"];
+        $root = SyntheticTree::create($tree);
+        try {
+            $report = new GateReport();
+            (new Gate(Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root), $report))->compare();
+            self::assertSame([[FailureClass::RUN_FAILED, 'candidate-1']], array_map(static fn(array $failure): array => [$failure['class'], $failure['scope']], $report->raised()), $report->render());
+            self::assertStringContainsString('does not name exactly the chosen file', $report->raised()[0]['detail']);
+        } finally {
+            SyntheticTree::remove($root);
+        }
+    }
+
+    #[Test]
+    public function itRaisesEnvMismatchAndRunsNoReferenceWhenTheTwoTreesDoNotShareADependencySet(): void
+    {
+        $tree = SyntheticTree::clean();
+        $tree['candidateLock'] = "{\"replay\": \"another lock\"}\n";
+        $root = SyntheticTree::create($tree);
+        try {
+            $report = new GateReport();
+            (new Gate(Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root), $report))->compare();
+            self::assertSame([[FailureClass::ENV_MISMATCH, 'reference tree']], array_map(static fn(array $failure): array => [$failure['class'], $failure['scope']], $report->raised()), $report->render());
+            // Coverage publishes this fact only after the reference tree was run and compared.
+            self::assertStringNotContainsString('observed channels', $report->render());
+        } finally {
+            SyntheticTree::remove($root);
+        }
+    }
+
+    #[Test]
     public function itRefusesACaseWhoseOutcomeNoRegisteredCheckVerifies(): void
     {
         $tree = SyntheticTree::clean();

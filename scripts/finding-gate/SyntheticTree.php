@@ -140,7 +140,7 @@ final class SyntheticTree
      */
     public static function create(array $specification, bool $versioned = true, bool $candidate = true): string
     {
-        $root = Fs::temporaryDirectory('self-test-synthetic-tree-');
+        $root = Fs::temporaryDirectory('synthetic-tree-');
         $reference = self::files($specification, $specification['findings'], $specification['answers'], $specification['lock']);
 
         foreach ($reference as $path => $content) {
@@ -161,7 +161,7 @@ final class SyntheticTree
                 }
             }
             self::git(['git', 'add', '--all'], $root);
-            self::git(['git', '-c', 'user.email=self-test@qmx', '-c', 'user.name=self-test', 'commit', '--quiet', '--message', 'reference'], $root);
+            self::git(['git', '-c', 'user.email=synthetic-tree@qmx', '-c', 'user.name=synthetic-tree', 'commit', '--quiet', '--message', 'reference'], $root);
         }
         if (!$candidate) {
             return $root;
@@ -265,7 +265,7 @@ final class SyntheticTree
             ),
             'finding-gate/normalization.tsv' => Tsv::render(
                 Normalization::COLUMNS,
-                array_map(static fn(array $row): array => [...$row, 'self-test'], $specification['normalization']),
+                array_map(static fn(array $row): array => [...$row, 'A synthetic tree rule.'], $specification['normalization']),
             ),
             'governance/Channel/Fixtures/declared.txt' => implode('', array_map(
                 static fn(string $channel, array $levels): string => \sprintf("%s reports %s\n", $channel, implode(',', $levels)),
@@ -294,7 +294,7 @@ final class SyntheticTree
         if ($specification['fieldMoves'] !== []) {
             $files['finding-gate/' . DeclaredFieldMoves::INDEX] = Tsv::render(
                 DeclaredFieldMoves::COLUMNS,
-                array_map(static fn(array $move): array => [...$move, 'self-test'], $specification['fieldMoves']),
+                array_map(static fn(array $move): array => [...$move, 'A synthetic tree move.'], $specification['fieldMoves']),
             );
         }
 

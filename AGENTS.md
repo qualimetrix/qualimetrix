@@ -601,7 +601,7 @@ composer check:code     # what a code change invalidates: cs-check, phpstan, PHP
 composer check:docs     # what a website change invalidates: a strict mkdocs build
 composer check:artifacts # what a manifest, config or corpus change invalidates: every generated artifact
 composer check:self     # what the product says about this repo: qmx ratchet + directive audit
-composer check:gate     # gate end-to-end captures and both self-test witnesses
+composer check:gate     # gate end-to-end captures
 composer architecture:check # exact manifest policy + generated-artifact freshness
 composer docs:check     # mkdocs --strict build of website/ (broken links, nav gaps)
 composer test           # PHPUnit
@@ -609,7 +609,6 @@ composer phpstan        # PHPStan level 8
 
 # Finding equivalence between two revisions of the product
 composer gate -- --reference=<git-ref>           # compare findings; GREEN 0, PARTIAL 2, RED 1, cannot-run 3, interrupted 128+signal
-composer gate:controls -- --reference=<git-ref>  # prove the gate is red under each planted breakage
 
 # What each inline @qmx directive in a tree still does (--sweep=narrow re-executes only the addressed rule; default)
 bin/qmx directives src/                          # 0 clean, 2 observable inert/publishable refused, 3 bad config, 4 incomplete
@@ -670,8 +669,7 @@ bin/qmx check --help
 
 **Project-specific steps** (in addition to the global workflow):
 - **Validation**: `composer check` (cs-check + strict docs build + tests + phpstan + exact manifest/freshness check + coarse qmx selfcheck). A direct `bin/qmx check` is product analysis only and does not run the repository's exact manifest policy. When modifying `html-report/`, also run `composer build:js` (`test:js` is part of `check:code` since X9)
-- **Gate captures and witnesses**: `composer check:gate` is required when changing `scripts/finding-gate*`, `scripts/finding-gate-controls/` or `finding-gate/`. It runs separately from `composer check`, on every pull request and on pushes to `main`.
-- **Gate mutation controls**: `composer gate:controls -- --reference=HEAD --jobs=8` is locally required only when changing those same paths. Its separate CI workflow runs daily on `main` and supports manual dispatch. Scheduled controls are evidence about their measured revision, not a required pull-request context.
+- **Gate captures**: `composer check:gate` is required when changing `scripts/finding-gate*` or `finding-gate/`. It runs separately from `composer check`, on every pull request and on pushes to `main`.
 - **Documentation**: Update `README.md` in the affected `src/` directory (add new files, fix outdated info). Update website documentation (see [Website Documentation](#website-documentation) section below)
 
 ### Test working directories
@@ -730,13 +728,10 @@ what invalidates it, so a change that touched one thing pays for one group:
 `check:code` (style, static analysis, PHP and JS tests), `check:docs` (strict mkdocs),
 `check:artifacts` (manifest and every generated artifact against a fresh
 measurement) and `check:self` (the qmx ratchet and the inline-directive audit).
-Gate end-to-end captures and both self-tests have their own `check:gate`
-group and pull-request CI job. Mutation controls have the separate
-`gate:controls` group and scheduled/manual workflow. The routine check
-previously took 220s locally and 419s on Linux CI. On Linux the gate captures
-and witnesses took about 1088s, while its 31 controls took about 8320s.
-Those costs are reported separately from the routine check budget; the CI
-job deadlines are 30 minutes for captures and 160 minutes for controls.
+Gate end-to-end captures have their own `check:gate` group and pull-request CI
+job. The routine check previously took 220s locally and 419s on Linux CI. The
+gate's cost is reported separately from the routine check budget; the CI job
+deadline is 30 minutes.
 `architecture:check`
 deliberately runs in both `check:artifacts` and — as its first half —
 `selfcheck`: the ratchet may not judge a tree whose generated artifacts are
@@ -754,8 +749,8 @@ Every confirmed defect gets a regression test, at the cheapest level that
 reproduces it: a unit or stage-level test, and a test that spawns processes or
 builds a repository only when the defect lives in that wiring.
 
-Anything beyond a regression test — a governance test, a gate form or control,
-a stand, a generated artifact with a freshness check, a CI job — is added only
+Anything beyond a regression test — a governance test, a gate form, a
+stand, a generated artifact with a freshness check, a CI job — is added only
 when it catches a harm no regression test can. Name that harm, its runtime
 cost and its false-red modes in the change's ADR or review material; if you
 cannot name the harm, do not add the check.
@@ -803,9 +798,8 @@ case schema, declaration forms, invocation provenance and limits.
 - `PARTIAL` is not GREEN. A comparison against identical product code proves
   capture and corpus consistency; a product-change claim needs the preceding
   commit and independent tests of any newly declared values.
-- Re-run `composer gate:controls -- --reference=<commit>` after comparator
-  changes. Every failure class must have observed self-test witnesses;
-  temporary witness exemptions are refused.
+- A comparator change is proved to bite once, with a planted defect in the
+  change itself (see "Adding checks"); no standing mutation harness exists.
 - Measure tuple and normalization changes with `--derive-tuple` and
   `--derive-normalization`. Never use an exclusion to hide a semantic change.
   A stale map, normalization row or change declaration fails.

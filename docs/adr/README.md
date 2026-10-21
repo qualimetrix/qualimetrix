@@ -117,7 +117,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0085 — A Copy of a Duplicate Block Is a Finding of Its Own](0085-a-copy-of-a-duplicate-block-is-a-finding-of-its-own.md) — `duplication.clone` reports one finding on each copy under an identity of its own and valued by the lines that copy spans, every copy of a block its longest copy admits by `min_lines` — so a pasted copy, however densely written, is a new finding in its own file and to GitLab/SARIF.
 - [0086 — One Configuration Document, Merged by Declared Policy](0086-one-configuration-document-merged-by-declared-policy.md) — every node of the configuration document declares its keys, form, merge policy and shorthands; one engine judges each layer before merging, `~` is "not written" and `{}` changes nothing at any depth, a refusal and a warning name the layers they are about, and the author's table of policies is generated from the declarations.
 
-- [0087 — The Finding Gate Declares Measured Changes](0087-the-finding-gate-declares-measured-changes.md) — complete physical records, one correspondence for ranking values, occurrence-preserving order and exact measured declaration forms.
+- [0087 — The Finding Gate Declares Measured Changes](0087-the-finding-gate-declares-measured-changes.md) — complete physical records, one correspondence for ranking values, occurrence-preserving order and exact measured declaration forms; its self-test witnesses and negative controls are superseded by ADR 0130.
 
 - [0088 — Atomic Section Declarations and a Shared Format Vocabulary](0088-atomic-section-declarations-and-format-vocabulary.md) — one key/schema declaration per provider, one registered format dictionary for both validation boundaries, and one project-scope measurement for callers.
 
@@ -178,6 +178,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0126 — Warning-Only Ratchet and Exact Signal Decisions](0126-warning-only-ratchet-and-exact-signal-decisions.md) — residual debt stays warning-only while class limits and contract-popularity exceptions remain exact.
 - [0128 — One-Way Subject Operations](0128-subject-boundaries-with-one-way-operations.md) — authored facts, file-target resources, named metric families and deterministic directive advice.
 - [0129 — Public Report and Baseline Values with Subject-Owned Delivery](0129-public-report-and-baseline-values-with-subject-owned-delivery.md) — public immutable report and baseline values remain separate from subject-owned assembly and delivery.
+- [0130 — The Finding Gate Keeps Behaviour Tests, Not a Witness Registry](0130-the-finding-gate-keeps-behaviour-tests-not-a-witness-registry.md) — behaviour and failure-class tests at the cheapest level; a comparator change proves its new check bites once.
 
 ## Superseded history
 

@@ -20,8 +20,8 @@ final class ProcessHandle
      * microseconds on an idle machine and never waited out — the loop leaves as
      * soon as `posix_setsid()` lands. Sharing 0.3 s made a loaded machine fail
      * to start a child at all: measured 2026-09-14 at load average 6-9 on 14
-     * cores, four of six controls died on "Cannot isolate the process group",
-     * and the same controls passed one at a time.
+     * cores, four of six concurrent runs died on "Cannot isolate the process
+     * group", and the same runs passed one at a time.
      */
     private const GROUP_ISOLATION_DEADLINE_MICROSECONDS = 5_000_000;
 

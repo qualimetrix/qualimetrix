@@ -1432,12 +1432,9 @@ final class RankingCheckTest extends TestCase
 
     #[Test]
     #[Group('finding-gate-e2e')]
-    public function itObservesRegisteredRankingClassesAndScopesThroughThePublicGate(): void
+    public function itRaisesThePlantedRankingFailuresThroughThePublicGate(): void
     {
-        foreach (\QmxFindingGate\SelfTestRecords::witnesses() as $witness) {
-            if (!str_starts_with($witness['id'], 'ranking-')) {
-                continue;
-            }
+        foreach (RankingPlants::scenarios() as $witness) {
             $tree = $witness['plant'](SyntheticTree::clean());
             if ($witness['id'] === 'ranking-unchanged-order') {
                 self::assertSame($tree['answers']['case:ranking-order|format:summary'], $tree['candidateAnswers']['case:ranking-order|format:summary']);
@@ -1458,6 +1455,32 @@ final class RankingCheckTest extends TestCase
             }
             foreach ($witness['tolerate'] as $pattern) {
                 self::assertNotSame([], array_filter($observed, static fn(array $row): bool => $row[0] === $pattern[0] && fnmatch($pattern[1], $row[1])), $witness['id'] . ': idle toleration');
+            }
+        }
+    }
+
+    #[Test]
+    public function itRaisesNondeterminismWhenTwoCandidatePassesDecideBaselineEligibilityDifferently(): void
+    {
+        $tree = SyntheticTree::clean();
+        $repeat = static fn(\QmxFindingGate\CaptureResult $capture): \QmxFindingGate\CaptureResult => $capture;
+        $flip = static fn(\QmxFindingGate\CaptureResult $capture): \QmxFindingGate\CaptureResult => new \QmxFindingGate\CaptureResult(
+            $capture->artifacts,
+            $capture->rankings,
+            array_map(static fn(array $groups): array => array_map(static fn(bool $eligible): bool => !$eligible, $groups), $capture->baselineEligibility),
+        );
+        foreach (['repeated' => $repeat, 'flipped' => $flip] as $pass => $second) {
+            $root = SyntheticTree::fixture($tree);
+            try {
+                [$report] = RecordedComparison::derive($tree, $root, null, $second);
+            } finally {
+                SyntheticTree::remove($root);
+            }
+            $scopes = array_column(array_filter($report->raised(), static fn(array $failure): bool => $failure['class'] === FailureClass::NONDETERMINISM_UNDECLARED), 'scope');
+            if ($pass === 'repeated') {
+                self::assertSame([], $report->raised(), $report->render());
+            } else {
+                self::assertContains('baseline eligibility', $scopes, $report->render());
             }
         }
     }

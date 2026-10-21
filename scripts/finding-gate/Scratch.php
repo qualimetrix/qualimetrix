@@ -11,9 +11,7 @@ use Throwable;
  * directories, and the reference worktree registered in the developer's
  * repository.
  *
- * Not the controls harness's own `Scratch`, which is a
- * hardlink clone of a working tree. This one holds no content of its own; it
- * holds the releases.
+ * It holds no content of its own; it holds the releases.
  *
  * Acquiring is what arms the release, rather than the entry point remembering
  * to: {@see directory()} arms interruption handling before it creates anything,
@@ -98,8 +96,7 @@ final class Scratch
      *
      * A failed release is reported to STDERR rather than raised. This runs from
      * the shutdown path, where an exception would replace the failure being
-     * reported with one about tidying up — the rule `Shell::descendants()`
-     * already follows. Reported and not swallowed, because the one failure that
+     * reported with one about tidying up. Reported and not swallowed, because the one failure that
      * matters here is a worktree that stayed registered, and silence about that
      * is what made this class necessary.
      */

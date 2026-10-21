@@ -61,7 +61,7 @@ use Throwable;
  *
  * Not part of `composer check`: it pays both sweeps' cost on top of what
  * `directives:audit` already pays once. Run it when the audit or the sweep
- * scopes change, same as `gate:controls`.
+ * scopes change.
  *
  * Usage:
  *   php scripts/directive-narrow-control.php --target=<path> --config=<path>

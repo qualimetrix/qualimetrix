@@ -2,20 +2,36 @@
 
 declare(strict_types=1);
 
-namespace QmxFindingGate;
+namespace QmxFindingGate\Tests;
+
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use QmxFindingGate\GateError;
+use QmxFindingGate\PublishedOrder;
+use QmxFindingGate\RenameMaps;
+use QmxFindingGate\Surfaces;
 
 /**
- * Surfaces as the comparison sees them: their classes and the order their records are published in.
+ * The reordering step on the two shapes it handles: a no-op under an identity
+ * map, a refusal when a side is not in its own key's order, and a permutation
+ * that moves records rather than re-encoding the document — and the surface
+ * classes a capture key belongs to.
  */
-final class SelfTestSurfaces extends SelfTestGroup
+final class PublishedOrderTest extends TestCase
 {
+    public static function setUpBeforeClass(): void
+    {
+        require_once \dirname(__DIR__) . '/classes.php';
+    }
+
     /**
      * The reordering step, on the two shapes it handles and the three claims it
      * has to keep: a no-op under an identity map, a refusal when a side is not
      * in its own key's order, and a permutation that moves records rather than
      * re-encoding the document.
      */
-    public function publishedOrder(): void
+    #[Test]
+    public function itReordersRecordsByTheirPublishedIdentityAndRefusesASideOutOfItsOwnOrder(): void
     {
         $finding = static fn(string $channel, string $message): string => <<<JSON
                 {
@@ -55,8 +71,8 @@ final class SelfTestSurfaces extends SelfTestGroup
             '"complexity.ccn": 1,' . "\n" . '                    "complexity.cognitive": 1',
         );
 
-        $this->same(null, PublishedOrder::disorder('format:json', $ordered), 'a JSON report in its key order is accepted');
-        $this->same(
+        self::assertSame(null, PublishedOrder::disorder('format:json', $ordered), 'a JSON report in its key order is accepted');
+        self::assertSame(
             $ordered,
             PublishedOrder::reorder('format:json', $ordered),
             'reordering a JSON report already in its key order returns the same bytes — the identity-map no-op',
@@ -66,7 +82,7 @@ final class SelfTestSurfaces extends SelfTestGroup
         // the whole step — translate, then reorder — returns the reference's own
         // bytes. Nothing it does can weaken a run that renames nothing.
         $identity = RenameMaps::fromPairs([]);
-        $this->same(
+        self::assertSame(
             $ordered,
             PublishedOrder::reorder('format:json', $identity->forward($ordered, 'format:json')),
             'under an identity map the reordering step returns the reference artifact unchanged',
@@ -80,12 +96,12 @@ final class SelfTestSurfaces extends SelfTestGroup
             '"complexity.cognitive": 1,' . "\n" . '                    "complexity.ccn": 1',
         );
 
-        $this->same(
+        self::assertSame(
             $ordered,
             PublishedOrder::reorder('format:json', $translated),
             'a translated reference is put back into the order its new names give, findings and tally alike',
         );
-        $this->assert(
+        self::assertTrue(
             PublishedOrder::disorder('format:json', $translated) !== null,
             'a JSON report out of its key order is refused rather than sorted in silence',
         );
@@ -111,18 +127,18 @@ final class SelfTestSurfaces extends SelfTestGroup
         $cognitive = $entry('complexity.cognitive', 29);
         $orderedBaseline = $baseline($ccn, $cognitive);
 
-        $this->same(null, PublishedOrder::disorder('baseline-file', $orderedBaseline), 'a baseline in its key order is accepted');
-        $this->same(
+        self::assertSame(null, PublishedOrder::disorder('baseline-file', $orderedBaseline), 'a baseline in its key order is accepted');
+        self::assertSame(
             $orderedBaseline,
             PublishedOrder::reorder('baseline-file', $identity->forward($orderedBaseline, 'baseline-file')),
             'under an identity map the reordering step returns the reference baseline unchanged',
         );
-        $this->same(
+        self::assertSame(
             $orderedBaseline,
             PublishedOrder::reorder('baseline-file', $baseline($cognitive, $ccn)),
             'a baseline block is re-sorted within its subject key, and each magnitude travels with its own channel',
         );
-        $this->assert(
+        self::assertTrue(
             PublishedOrder::disorder('baseline-file', $baseline($cognitive, $ccn)) !== null,
             'a baseline out of its key order is refused rather than sorted in silence',
         );
@@ -130,14 +146,9 @@ final class SelfTestSurfaces extends SelfTestGroup
         // The surface list is a claim about which producers order by identity,
         // and a surface outside it is left exactly as it is rather than being
         // quietly sorted by a key its producer never used.
-        $this->assert(!PublishedOrder::handles('format:sarif'), 'a surface that does not order by identity is not handled');
-        $this->same(
-            ReportRecords::IDENTITY_FIELDS,
-            ['channel', 'subject', 'occurrence', 'edge'],
-            'the key reads the published identity, whose field set has one owner',
-        );
+        self::assertFalse(PublishedOrder::handles('format:sarif'), 'a surface that does not order by identity is not handled');
 
-        $this->assert(
+        self::assertTrue(
             self::throws(static fn(): mixed => PublishedOrder::disorder('format:json', $document(
                 $finding('complexity.ccn', 'a'),
                 $finding('complexity.cognitive', 'b'),
@@ -147,11 +158,22 @@ final class SelfTestSurfaces extends SelfTestGroup
         );
     }
 
-    public function surfaces(): void
+    #[Test]
+    public function itClassifiesEveryCaptureKeyByItsSurface(): void
     {
-        $this->same('format:json', Surfaces::surfaceClass('case:smells|format:json'), 'a format is its own surface class');
-        $this->same('explain', Surfaces::surfaceClass('case:smells|explain:declaration:class:A@a.php'), 'every explained subject shares one surface class');
-        $this->same('stderr', Surfaces::surfaceClass('case:smells|stderr:format:json'), 'every stream of errors shares one surface class');
-        $this->same(\count(FailureClass::ALL), \count(array_unique(FailureClass::ALL)), 'the failure vocabulary has no duplicate');
+        self::assertSame('format:json', Surfaces::surfaceClass('case:smells|format:json'), 'a format is its own surface class');
+        self::assertSame('explain', Surfaces::surfaceClass('case:smells|explain:declaration:class:A@a.php'), 'every explained subject shares one surface class');
+        self::assertSame('stderr', Surfaces::surfaceClass('case:smells|stderr:format:json'), 'every stream of errors shares one surface class');
+    }
+
+    private static function throws(callable $callback): bool
+    {
+        try {
+            $callback();
+
+            return false;
+        } catch (GateError) {
+            return true;
+        }
     }
 }

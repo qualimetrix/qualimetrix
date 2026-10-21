@@ -1,7 +1,13 @@
 # 0087. The Finding Gate Declares Measured Changes
 
 **Date:** 2026-09-27
-**Status:** Accepted
+**Status:** Accepted; partially superseded by ADR 0130
+
+The self-test witness obligation for every failure class and raise site, the
+negative-control harness and its daily workflow are superseded by
+[ADR 0130](0130-the-finding-gate-keeps-behaviour-tests-not-a-witness-registry.md),
+which keeps the gate's behaviour tests and drops the registry that counted
+them. Every other decision here remains in force.
 
 ## Context
 

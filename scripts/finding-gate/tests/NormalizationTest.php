@@ -2,75 +2,177 @@
 
 declare(strict_types=1);
 
-namespace QmxFindingGate;
+namespace QmxFindingGate\Tests;
+
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use QmxFindingGate\Corpus;
+use QmxFindingGate\FailureClass;
+use QmxFindingGate\GateReport;
+use QmxFindingGate\Normalization;
+use QmxFindingGate\NormalizationCheck;
+use QmxFindingGate\NormalizationDeriver;
+use QmxFindingGate\NormalizationRule;
+use QmxFindingGate\Options;
+use QmxFindingGate\SyntheticTree;
 
 /**
- * The normalization list and the deriver that measures it.
+ * What a normalization rule of each kind redacts, the bytes it must leave
+ * alone, and the staleness that keeps a rule from outliving what it matched.
  */
-final class SelfTestNormalization extends SelfTestGroup
+final class NormalizationTest extends TestCase
 {
-    public function normalization(): void
+    public static function setUpBeforeClass(): void
     {
-        $rules = [
-            new NormalizationRule('format:json', 'meta.timestamp', NormalizationRule::KIND_JSON_PATH, 'test'),
-            new NormalizationRule('format:json', 'violations.*.seenAt', NormalizationRule::KIND_JSON_PATH, 'test'),
-            new NormalizationRule('format:json', 'meta.absent', NormalizationRule::KIND_JSON_PATH, 'test'),
-            new NormalizationRule('format:html', 'project.generatedAt', NormalizationRule::KIND_HTML_REPORT_DATA_PATH, 'test'),
-            new NormalizationRule('format:summary', '~^(Analysed in ).*()$~m', NormalizationRule::KIND_LINE_REGEX, 'test'),
-        ];
-        $normalization = Normalization::fromRules($rules);
+        require_once \dirname(__DIR__) . '/classes.php';
+    }
 
-        $json = $normalization->normalize('format:json', '{"meta":{"timestamp":"now","version":"1"},"violations":[{"seenAt":"a"},{"seenAt":"b"}]}');
-        $this->same(
+    #[Test]
+    public function itRedactsAJsonPathFieldAndEveryElementAStarSegmentReaches(): void
+    {
+        $json = self::normalization()->normalize('format:json', '{"meta":{"timestamp":"now","version":"1"},"violations":[{"seenAt":"a"},{"seenAt":"b"}]}');
+
+        self::assertSame(
             '{"meta":{"timestamp":"' . Normalization::REDACTED . '","version":"1"},"violations":[{"seenAt":"'
             . Normalization::REDACTED . '"},{"seenAt":"' . Normalization::REDACTED . '"}]}',
             $json,
-            'a json-path rule redacts its field, a `*` segment every element of a list, and nothing else is rewritten',
         );
+    }
 
-        // What a JSON surface publishes is its bytes: the redaction must leave
-        // layout, escaping and number spelling as they were, or a formatter that
-        // changed them would compare equal.
+    /**
+     * What a JSON surface publishes is its bytes: a formatter that changed
+     * layout, escaping or number spelling must not compare equal.
+     */
+    #[Test]
+    public function itPreservesExactJsonByteSpansBesideTheRedactedValue(): void
+    {
+        $normalization = self::normalization();
+
         foreach ([
             'layout' => ["{\n    \"meta\": {\"timestamp\": \"x\"},\n    \"a\": \"b/c\"\n}", '{"meta":{"timestamp":"y"},"a":"b/c"}'],
             'escaping' => ['{"meta":{"timestamp":"x"},"a":"b/c"}', '{"meta":{"timestamp":"y"},"a":"b\\/c"}'],
             'number spelling' => ['{"meta":{"timestamp":"x"},"a":1.5}', '{"meta":{"timestamp":"y"},"a":1.50}'],
             'repeated key' => ['{"meta":{"timestamp":"x"},"a":1}', '{"meta":{"timestamp":"y"},"a":0,"a":1}'],
         ] as $difference => [$published, $republished]) {
-            $this->same(
+            self::assertSame(
                 [str_replace('"x"', '"' . Normalization::REDACTED . '"', $published), str_replace('"y"', '"' . Normalization::REDACTED . '"', $republished)],
                 [$normalization->normalize('format:json', $published), $normalization->normalize('format:json', $republished)],
                 'normalization preserves exact JSON byte spans for ' . $difference,
             );
-            $this->assert(
-                $normalization->normalize('format:json', $published) !== $normalization->normalize('format:json', $republished),
+            self::assertNotSame(
+                $normalization->normalize('format:json', $published),
+                $normalization->normalize('format:json', $republished),
                 'a JSON surface that differs only in ' . $difference . ' still differs once normalized',
             );
         }
 
-        $this->same(
+        self::assertSame(
             $normalization->normalize('format:json', "{\n    \"meta\": {\"timestamp\": \"x\"}\n}\n"),
             $normalization->normalize('format:json', "{\n    \"meta\": {\"timestamp\": 17}\n}\n"),
             'two documents that differ only in a redacted value are equal once normalized',
         );
+    }
 
-        $html = $normalization->normalize(
+    #[Test]
+    public function itReachesIntoTheEmbeddedHtmlReportDataAndLeavesSiblingsAlone(): void
+    {
+        $html = self::normalization()->normalize(
             'format:html',
             '<script type="application/json" id="report-data">{"project":{"generatedAt":"then","name":"x"}}</script>',
         );
-        $this->assert(str_contains($html, Normalization::REDACTED), 'an html rule reaches into the embedded report data');
-        $this->assert(str_contains($html, '"name":"x"'), 'an html rule leaves its siblings alone');
 
-        $summary = $normalization->normalize('format:summary', "Analysed in 1.2s\nAnalysed nothing else\n");
-        $this->same("Analysed in " . Normalization::REDACTED . "\nAnalysed nothing else\n", $summary, 'a line-regex rule redacts only the varying part');
+        self::assertStringContainsString(Normalization::REDACTED, $html);
+        self::assertStringContainsString('"name":"x"', $html);
+    }
 
-        $tracked = Normalization::load($this->candidateRoot . '/finding-gate/normalization.tsv');
+    #[Test]
+    public function itRedactsOnlyTheVaryingPartOfALineRegexMatch(): void
+    {
+        self::assertSame(
+            'Analysed in ' . Normalization::REDACTED . "\nAnalysed nothing else\n",
+            self::normalization()->normalize('format:summary', "Analysed in 1.2s\nAnalysed nothing else\n"),
+        );
+    }
+
+    #[Test]
+    public function itRaisesNormalizationStaleForARuleThatMatchedNothingInTheWholeRun(): void
+    {
+        $normalization = self::normalization();
+        $normalization->normalize('format:json', '{"meta":{"timestamp":"now"},"violations":[{"seenAt":"a"}]}');
+        $normalization->normalize('format:html', '<script type="application/json" id="report-data">{"project":{"generatedAt":"then"}}</script>');
+        $normalization->normalize('format:summary', "Analysed in 1.2s\n");
+
+        $report = new GateReport();
+        (new NormalizationCheck(Options::parse(['gate', '--reference=HEAD'], \dirname(__DIR__, 3)), $report, $normalization))->checkStaleNormalization();
+
+        self::assertSame(
+            [[FailureClass::NORMALIZATION_STALE, 'format:json / meta.absent']],
+            array_map(static fn(array $failure): array => [$failure['class'], $failure['scope']], $report->raised()),
+        );
+    }
+
+    #[Test]
+    public function itRaisesNormalizationOverreachForARowWhoseLocatorNamesATupleField(): void
+    {
+        $root = SyntheticTree::fixture(SyntheticTree::clean());
+        try {
+            $raised = static function (NormalizationRule $rule) use ($root): array {
+                $report = new GateReport();
+                (new NormalizationCheck(Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root), $report, Normalization::fromRules([$rule])))->checkNormalizationScope();
+
+                return array_map(static fn(array $failure): array => [$failure['class'], $failure['scope']], $report->raised());
+            };
+
+            self::assertSame(
+                [[FailureClass::NORMALIZATION_OVERREACH, 'format:metrics / summary.channel']],
+                $raised(new NormalizationRule('format:metrics', 'summary.channel', NormalizationRule::KIND_JSON_PATH, 'test')),
+            );
+            self::assertSame([], $raised(new NormalizationRule('format:metrics', 'summary.duration', NormalizationRule::KIND_JSON_PATH, 'test')));
+        } finally {
+            SyntheticTree::remove($root);
+        }
+    }
+
+    /** A locator need not name a tuple field to reach one: `violations` alone takes every finding with it. */
+    #[Test]
+    public function itRaisesNormalizationOverreachWhenNormalizingTheFindingsSurfaceChangesItsFindings(): void
+    {
+        $tree = SyntheticTree::clean();
+        $root = SyntheticTree::fixture($tree);
+        try {
+            $case = Corpus::load($root)->cases[0];
+            $findings = $tree['findings']['alpha'];
+            $artifact = (string) json_encode(['violations' => $findings, 'meta' => ['clock' => 'now']], \JSON_THROW_ON_ERROR);
+            $raised = static function (string $locator) use ($root, $case, $artifact, $findings): array {
+                $report = new GateReport();
+                $rule = new NormalizationRule('format:json', $locator, NormalizationRule::KIND_JSON_PATH, 'test');
+                (new NormalizationCheck(Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root), $report, Normalization::fromRules([$rule])))
+                    ->checkNormalizationLeavesFindings('candidate', $case, $artifact, $findings);
+
+                return array_map(static fn(array $failure): array => [$failure['class'], $failure['scope']], $report->raised());
+            };
+
+            self::assertSame([[FailureClass::NORMALIZATION_OVERREACH, 'candidate / case:alpha|format:json']], $raised('violations'));
+            self::assertSame([], $raised('meta.clock'));
+        } finally {
+            SyntheticTree::remove($root);
+        }
+    }
+
+    /**
+     * The tracked namespace summary rule was measured on a whole publication;
+     * it may move the clock and nothing beside it.
+     */
+    #[Test]
+    public function itChangesOnlyTheMeasuredClockWithTheTrackedNamespaceSummaryRule(): void
+    {
+        $tracked = Normalization::load(\dirname(__DIR__, 3) . '/finding-gate/normalization.tsv');
         $namespaceRules = array_values(array_filter(
             $tracked->rules(),
             static fn(NormalizationRule $rule): bool => $rule->surface === 'format:summary'
                 && str_contains($rule->locator, 'namespace\\: subtree\\:Shop'),
         ));
-        $this->same(1, \count($namespaceRules), 'the measured namespace summary rule is present exactly once');
+        self::assertCount(1, $namespaceRules, 'the measured namespace summary rule is present exactly once');
         $namespaceSummary = <<<'SUMMARY'
             Qualimetrix dev-main — 6 files analyzed [namespace: subtree:Shop], 0.2s
 
@@ -165,12 +267,12 @@ final class SelfTestNormalization extends SelfTestGroup
         $namespaceSummary .= "\n";
         $differentClock = str_replace(', 0.2s', ', 0.1s', $namespaceSummary);
         $normalizedSummary = str_replace(', 0.2s', ', ' . Normalization::REDACTED . 's', $namespaceSummary);
-        $this->same(
+        self::assertSame(
             $normalizedSummary,
             $tracked->normalize('format:summary', $namespaceSummary),
             'the tracked namespace summary rule changes only the measured clock in the complete publication',
         );
-        $this->same(
+        self::assertSame(
             $normalizedSummary,
             $tracked->normalize('format:summary', $differentClock),
             'different namespace summary clocks compare equal through the tracked rule',
@@ -178,27 +280,28 @@ final class SelfTestNormalization extends SelfTestGroup
         foreach (['6 files' => '7 files', '7.50' => '8.50', 'src/Cart.php:8' => 'src/Cart.php:9'] as $before => $after) {
             $changedSummary = str_replace($before, $after, $namespaceSummary);
             $normalizedChanged = $tracked->normalize('format:summary', $changedSummary);
-            $this->same(
+            self::assertSame(
                 str_replace($before, $after, $normalizedSummary),
                 $normalizedChanged,
                 'namespace summary normalization preserves the complete publication beside ' . $before,
             );
-            $this->assert($normalizedSummary !== $normalizedChanged, 'namespace summary changes remain compared for ' . $before);
+            self::assertNotSame($normalizedSummary, $normalizedChanged, 'namespace summary changes remain compared for ' . $before);
         }
         $otherSelector = str_replace('subtree:Shop', 'subtree:ShopElse', $namespaceSummary);
-        $this->same($otherSelector, $tracked->normalize('format:summary', $otherSelector), 'the measured namespace locator does not match a neighbouring selector');
-        $this->assert(
-            $normalizedSummary !== $tracked->normalize('format:summary', $otherSelector),
+        self::assertSame($otherSelector, $tracked->normalize('format:summary', $otherSelector), 'the measured namespace locator does not match a neighbouring selector');
+        self::assertNotSame(
+            $normalizedSummary,
+            $tracked->normalize('format:summary', $otherSelector),
             'a different namespace selector remains compared',
         );
-        $this->same($namespaceSummary, $tracked->normalize('format:text', $namespaceSummary), 'the namespace clock rule does not match another format');
+        self::assertSame($namespaceSummary, $tracked->normalize('format:text', $namespaceSummary), 'the namespace clock rule does not match another format');
         $derivedSummary = NormalizationDeriver::derive([
             ['case:drill-down|format:summary' => $namespaceSummary],
             ['case:drill-down|format:summary' => $differentClock],
         ]);
-        $this->same(1, \count($derivedSummary), 'the complete namespace summary derives one measured field');
+        self::assertCount(1, $derivedSummary, 'the complete namespace summary derives one measured field');
         $derived = Normalization::fromRules($derivedSummary);
-        $this->same(
+        self::assertSame(
             [$derived->normalize('format:summary', $namespaceSummary), $derived->normalize('format:summary', $differentClock)],
             [$normalizedSummary, $tracked->normalize('format:summary', $differentClock)],
             'the measured and tracked rules produce identical bytes for both captured clock values',
@@ -208,71 +311,30 @@ final class SelfTestNormalization extends SelfTestGroup
             static fn(NormalizationRule $rule): bool => $rule->surface === 'format:summary'
                 && str_contains($rule->locator, 'namespace\\: subtree\\:Shop'),
         ));
-        $this->same(1, \count($activeNamespaceRules), 'the measured tracked namespace rule is active on the full publication');
+        self::assertCount(1, $activeNamespaceRules, 'the measured tracked namespace rule is active on the full publication');
 
         foreach ([
             'before clock' => str_replace('], 0.2s', '], 123 errors, 0.2s', $namespaceSummary),
             'after clock' => str_replace('], 0.2s', '], 0.2s, 123 skipped files', $namespaceSummary),
         ] as $position => $semanticSummary) {
             $normalizedSemantic = $tracked->normalize('format:summary', $semanticSummary);
-            $this->same($semanticSummary, $normalizedSemantic, 'the namespace rule preserves semantic header text ' . $position);
-            $this->assert(
-                $normalizedSummary !== $normalizedSemantic,
+            self::assertSame($semanticSummary, $normalizedSemantic, 'the namespace rule preserves semantic header text ' . $position);
+            self::assertNotSame(
+                $normalizedSummary,
+                $normalizedSemantic,
                 'semantic header text ' . $position . ' remains compared after normalization',
             );
         }
-
-        $stale = array_map(static fn(NormalizationRule $rule): string => $rule->locator, $normalization->staleRules());
-        $this->same(['meta.absent'], $stale, 'a rule that matched nothing is reported stale, and one that matched is not');
     }
 
-    public function deriver(): void
+    private static function normalization(): Normalization
     {
-        $rules = NormalizationDeriver::derive([
-            ['case:x|format:json' => '{"meta":{"timestamp":"a","version":"1"}}'],
-            ['case:x|format:json' => '{"meta":{"timestamp":"b","version":"1"}}'],
+        return Normalization::fromRules([
+            new NormalizationRule('format:json', 'meta.timestamp', NormalizationRule::KIND_JSON_PATH, 'test'),
+            new NormalizationRule('format:json', 'violations.*.seenAt', NormalizationRule::KIND_JSON_PATH, 'test'),
+            new NormalizationRule('format:json', 'meta.absent', NormalizationRule::KIND_JSON_PATH, 'test'),
+            new NormalizationRule('format:html', 'project.generatedAt', NormalizationRule::KIND_HTML_REPORT_DATA_PATH, 'test'),
+            new NormalizationRule('format:summary', '~^(Analysed in ).*()$~m', NormalizationRule::KIND_LINE_REGEX, 'test'),
         ]);
-        $this->same(1, \count($rules), 'the deriver emits one row per diverging field');
-        $this->same('meta.timestamp', $rules[0]->locator, 'the row names the field by path');
-        $this->same(NormalizationRule::KIND_JSON_PATH, $rules[0]->kind, 'a JSON surface derives a json-path row');
-
-        $many = [[], []];
-        for ($index = 0; $index < 6; ++$index) {
-            $many[0]['case:x|report:' . $index] = '{"clock":"a","duration":1}';
-            $many[1]['case:x|report:' . $index] = '{"clock":"b","duration":2}';
-        }
-        try {
-            $this->same(12, \count(NormalizationDeriver::derive($many)), 'independent metadata copies across six publications do not share a global row budget');
-        } catch (GateError) {
-            $this->assert(false, 'independent metadata copies across six publications do not share a global row budget');
-        }
-        $fields = array_fill_keys(array_map(static fn(int $index): string => 'clock' . $index, range(0, 10)), 1);
-        $changed = array_fill_keys(array_keys($fields), 2);
-        $this->assert(self::throws(static fn(): array => NormalizationDeriver::derive([
-            ['case:x|format:json' => json_encode($fields, \JSON_THROW_ON_ERROR)],
-            ['case:x|format:json' => json_encode($changed, \JSON_THROW_ON_ERROR)],
-        ])), 'eleven varying fields in one published surface remain refused');
-
-        $lines = NormalizationDeriver::derive([
-            ['case:x|format:summary' => "Analysed in 1.2s\n"],
-            ['case:x|format:summary' => "Analysed in 1.3s\n"],
-        ]);
-        $this->same(1, \count($lines), 'a text surface derives one row per diverging line');
-        $this->assert(
-            preg_match($lines[0]->locator, 'Analysed in 9.9s') === 1,
-            'the derived locator matches the same line with another value',
-        );
-        $this->assert(
-            preg_match($lines[0]->locator, 'Elapsed 1.2s') !== 1,
-            'the derived locator is anchored on the field label, not on a substring',
-        );
-
-        $this->assert(
-            self::throws(static fn(): mixed => NormalizationDeriver::derive([
-                ['case:x|format:json' => '{"violations":[{"a":1}]}'],
-                ['case:x|format:json' => '{"violations":[{"a":1},{"a":2}]}'],
-            ])),
-            'a structural divergence is refused rather than normalized away',
-        );
     }
 }

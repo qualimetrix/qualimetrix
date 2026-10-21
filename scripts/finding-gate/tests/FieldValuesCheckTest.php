@@ -25,7 +25,6 @@ use QmxFindingGate\Normalization;
 use QmxFindingGate\Options;
 use QmxFindingGate\RenameMaps;
 use QmxFindingGate\RunContext;
-use QmxFindingGate\SelfTestOutcomes;
 use QmxFindingGate\SyntheticTree;
 use QmxFindingGate\Tsv;
 use RecursiveDirectoryIterator;
@@ -252,19 +251,23 @@ final class FieldValuesCheckTest extends TestCase
 
     #[Test]
     #[Group('finding-gate-e2e')]
-    public function itObservesTheRegisteredFieldValueWitnessFromItsActualProducer(): void
+    public function itRaisesAFieldValuesMismatchForAnObservedFieldWhoseMeasuredValuesDiffer(): void
     {
-        $witnesses = \QmxFindingGate\SelfTestFindingShape::fieldValuesWitnesses();
-        self::assertCount(1, $witnesses);
-        self::assertSame('field-values-publication', $witnesses[0]['id']);
+        $record = ['file' => 'src/Alpha.php', 'line' => 1, 'form' => 'symbol', 'target' => 'replay.alpha', 'effect' => 'applied', 'reason' => 'replayed', 'masked_by' => null, 'boundary_observable' => true, 'refusals' => []];
+        $base = json_encode($record, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
+        $record['probe'] = 1;
+        $tree = SyntheticTree::clean();
+        $tree['candidateAnswers']['case:alpha|directives'] = ['stdout' => json_encode(['directives' => [$record], 'exit_code' => 0], \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n"];
+        $tree['declarations'][DeclaredFields::INDEX] = Tsv::render(DeclaredFields::COLUMNS, [['added', 'directives', 'directives', 'probe', 'a new observed directive field']]);
+        $tree['declarations'][DeclaredFields::DERIVED] = Tsv::render(DeclaredFields::DERIVED_COLUMNS, [['directives', 'directives', 'probe', 'alpha', $base, '2']]);
         SyntheticTree::remove($this->root);
-        $this->root = SyntheticTree::create($witnesses[0]['plant'](SyntheticTree::clean()));
+        $this->root = SyntheticTree::create($tree);
         $report = new GateReport();
         (new Gate(Options::parse(['gate', '--candidate=' . $this->root, '--reference=HEAD', '--jobs=4'], $this->root), $report))->compare();
         self::assertSame(GateReport::EXIT_RED, $report->exitCode(), $report->render());
         self::assertCount(1, $report->raised());
         $raised = $report->raised()[0];
-        self::assertSame($witnesses[0]['expect'][0], [$raised['class'], $raised['scope']]);
+        self::assertSame([FailureClass::FIELD_VALUES_MISMATCH, DeclaredFields::DERIVED], [$raised['class'], $raised['scope']]);
     }
 
     /** @return iterable<string,array{string}> */
@@ -457,7 +460,7 @@ final class FieldValuesCheckTest extends TestCase
     public function itMeasuresApplicableFieldsBesideADeclaredRefusalAndKeepsAnUnexpectedRefusalRed(): void
     {
         SyntheticTree::remove($this->root);
-        $tree = SelfTestOutcomes::fixture();
+        $tree = RefusedCaseTree::fixture();
         $definition = json_decode($tree['declarations']['cases/alpha/case.json'], true, 512, \JSON_THROW_ON_ERROR);
         $definition['outcome'] = ['kind' => \QmxFindingGate\CaseOutcome::REFUSAL, 'exit' => 3];
         $tree['declarations']['cases/alpha/case.json'] = json_encode($definition, \JSON_THROW_ON_ERROR);

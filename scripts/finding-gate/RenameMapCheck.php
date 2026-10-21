@@ -63,7 +63,7 @@ final class RenameMapCheck
      * the map translates the `code` half and leaves the untranslatable `rule`
      * half alone, so the pair read off such a finding is a chimera
      * (`old-rule#new-code`) that no declared key can ever be, and the lookup
-     * misses every time. A self-test on {@see ChannelSplit} could not see it —
+     * misses every time. A test on {@see ChannelSplit} alone could not see it —
      * it fed the class the raw pair the class expects, which is to say it
      * exercised a call this call site was not making.
      *

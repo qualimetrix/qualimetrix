@@ -214,7 +214,7 @@ final class RenameMaps
     }
 
     /**
-     * Synthetic rows, for the self-test.
+     * Synthetic rows, for tests.
      *
      * The vocabulary defaults to none rather than to the product's: a shape
      * proved on synthetic rows must not depend on what the product happens to
