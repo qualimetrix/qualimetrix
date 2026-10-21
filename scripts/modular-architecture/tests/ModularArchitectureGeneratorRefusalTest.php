@@ -658,10 +658,6 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 $projectRoot . '/scripts/suppression-snapshot/tests',
             );
             self::copyDirectory(
-                $sourceRoot . '/scripts/rename-enumeration/tests',
-                $projectRoot . '/scripts/rename-enumeration/tests',
-            );
-            self::copyDirectory(
                 $sourceRoot . '/scripts/health-calibration/tests',
                 $projectRoot . '/scripts/health-calibration/tests',
             );

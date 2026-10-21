@@ -52,11 +52,10 @@ use RuntimeException;
  * both into one class would leave every failure message hedging about which
  * of two mechanisms broke.
  *
- * Like its sibling it derives the measured set from source text on every run
- * — the same shapes `scripts/generate-rename-enumeration.php` scans for when
- * it fills `leaf_const`/`leaf_pin` — so a family that stops declaring the
- * constant drops out of the count instead of quietly passing, and a
- * thirteenth family adopting the shape fails here until it is pinned.
+ * Like its sibling it derives the measured set from source text on every run,
+ * so a family that stops declaring the constant drops out of the count instead
+ * of quietly passing, and a thirteenth family adopting the shape fails here
+ * until it is pinned.
  *
  * Source text is not execution, though, so the pins it finds are additionally
  * held to being tests PHPUnit runs — see

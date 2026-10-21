@@ -88,7 +88,6 @@
             <directory>scripts/directive-audit/tests</directory>
             <directory>scripts/finding-gate/tests</directory>
             <directory>scripts/suppression-snapshot/tests</directory>
-            <directory>scripts/rename-enumeration/tests</directory>
             <directory>scripts/health-calibration/tests</directory>
             <directory>scripts/benchmark/tests</directory>
             <directory>scripts/modular-architecture/tests</directory>

@@ -60,7 +60,6 @@ tools/phpstan/tests/
 scripts/directive-audit/tests/
 scripts/finding-gate/tests/
 scripts/suppression-snapshot/tests/
-scripts/rename-enumeration/tests/
 scripts/health-calibration/tests/
 scripts/benchmark/tests/
 scripts/modular-architecture/tests/
