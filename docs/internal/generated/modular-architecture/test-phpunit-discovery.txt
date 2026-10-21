@@ -4223,7 +4223,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itIsNotEmptyWhenFrameworkPrefixesAreConfigured
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itKeepsDeclarationOrderAmongTheUnboundPrefixes
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itMatchesASingleSegmentPrefixExactlyButNotAsASubstring
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itMatchesFrameworkNamespaceStringsAndRejectsNullOrEmpty
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itMatchesFrameworkPrefixesOnNamespaceBoundaries"App namespace"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itMatchesFrameworkPrefixesOnNamespaceBoundaries"PhpParser class"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itMatchesFrameworkPrefixesOnNamespaceBoundaries"PhpParserExtra should not match PhpParser"

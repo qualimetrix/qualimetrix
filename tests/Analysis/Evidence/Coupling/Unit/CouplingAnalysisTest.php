@@ -106,18 +106,6 @@ final class CouplingAnalysisTest extends TestCase
     }
 
     #[Test]
-    public function itMatchesFrameworkNamespaceStringsAndRejectsNullOrEmpty(): void
-    {
-        $fn = $this->configured(['Symfony', 'PhpParser']);
-
-        self::assertTrue($fn->isFrameworkNamespace('Symfony\\Component'));
-        self::assertTrue($fn->isFrameworkNamespace('PhpParser\\Node'));
-        self::assertFalse($fn->isFrameworkNamespace('App\\Service'));
-        self::assertFalse($fn->isFrameworkNamespace(null));
-        self::assertFalse($fn->isFrameworkNamespace(''));
-    }
-
-    #[Test]
     public function itUsesTheLastFrameworkNamespaceContribution(): void
     {
         $analysis = new CouplingAnalysis();

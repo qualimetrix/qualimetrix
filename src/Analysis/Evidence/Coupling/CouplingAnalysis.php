@@ -85,11 +85,6 @@ final class CouplingAnalysis implements CouplingConfiguratorInterface
         return array_values($unbound);
     }
 
-    public function isFrameworkNamespace(?string $namespace): bool
-    {
-        return $namespace !== null && $namespace !== '' && $this->isFramework($namespace);
-    }
-
     public function isEmpty(): bool
     {
         return $this->frameworkNamespaces === [];
