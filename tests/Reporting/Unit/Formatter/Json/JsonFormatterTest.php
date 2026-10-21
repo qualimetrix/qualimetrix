@@ -773,7 +773,7 @@ final class JsonFormatterTest extends TestCase
     #[Test]
     public function itFiltersFindingsByNamespace(): void
     {
-        // Findings are pre-filtered by ResultPresenter before reaching the formatter.
+        // Findings are pre-filtered by CheckFindingProjection before reaching the formatter.
         // Only in-scope findings are passed to the report builder, beside the
         // count of what the selection left out.
         $report = ReportBuilder::create()
@@ -898,7 +898,7 @@ final class JsonFormatterTest extends TestCase
     #[Test]
     public function itFiltersFindingsByNamespaceBoundaryAware(): void
     {
-        // App\PaymentGateway is NOT in App\Payment scope — ResultPresenter
+        // App\PaymentGateway is NOT in App\Payment scope — CheckFindingProjection
         // would filter it out before reaching the formatter. Empty report.
         $report = ReportBuilder::create()
             ->filesAnalyzed(1)
@@ -916,7 +916,7 @@ final class JsonFormatterTest extends TestCase
     #[Test]
     public function itFiltersFindingsByClass(): void
     {
-        // Only the matching class finding is passed (pre-filtered by ResultPresenter)
+        // Only the matching class finding is passed (pre-filtered by CheckFindingProjection)
         $report = ReportBuilder::create()
             ->addFinding(self::finding(
                 location: new Location(RelativePath::fromString('src/Payment/Pay.php'), 10),

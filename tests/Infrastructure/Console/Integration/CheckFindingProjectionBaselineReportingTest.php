@@ -60,7 +60,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Covers the three reporting facts added on top of the existing stale
- * / `--show-resolved` reporting in {@see FindingFilterOrchestratorTest}:
+ * / `--show-resolved` reporting in {@see CheckFindingProjectionTest}:
  *
  * - ADR 0017 — a group that shrank without vanishing is not "resolved".
  * - An entry the loaded baseline could not apply is reported as inert,
@@ -75,7 +75,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[CoversClass(\Qualimetrix\Infrastructure\Console\CheckReport\Projection\CheckFindingProjection::class)]
 #[CoversClass(\Qualimetrix\Infrastructure\Console\CheckReport\Projection\BaselineFilterReporter::class)]
 #[CoversClass(FindingProjectionResult::class)]
-final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
+final class CheckFindingProjectionBaselineReportingTest extends TestCase
 {
     /** @var list<string> */
     private array $tempFiles = [];

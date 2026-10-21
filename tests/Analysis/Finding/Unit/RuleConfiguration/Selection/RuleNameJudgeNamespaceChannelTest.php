@@ -28,7 +28,7 @@ use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
  * be told apart.
  */
 #[CoversClass(RuleNameJudge::class)]
-final class ChannelExclusionKeyValidatorTest extends TestCase
+final class RuleNameJudgeNamespaceChannelTest extends TestCase
 {
     /**
      * The level witness is `coupling.cbo`, the production witness is

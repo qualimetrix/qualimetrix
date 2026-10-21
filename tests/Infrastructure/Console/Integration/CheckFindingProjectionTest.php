@@ -71,7 +71,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[CoversClass(\Qualimetrix\Infrastructure\Console\CheckReport\Projection\FindingDiagnostics::class)]
 #[CoversClass(\Qualimetrix\Infrastructure\Console\CheckReport\Projection\CheckFindingProjection::class)]
 #[CoversClass(\Qualimetrix\Infrastructure\Console\CheckScope\ProjectScopePresenter::class)]
-final class FindingFilterOrchestratorTest extends TestCase
+final class CheckFindingProjectionTest extends TestCase
 {
     /** @var list<string> */
     private array $tempFiles = [];

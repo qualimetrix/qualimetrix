@@ -502,8 +502,8 @@ is refused rather than quietly addressing nothing.
 
 Whether a written pair *can* exist — whether the addressed channel declares that
 level — is a different question, and `ChannelLevelAddressing` is the one place it
-is answered. Both families of directive ask it: the configuration and CLI seams
-(`RuleInputValidator`, `ChannelExclusionKeyValidator`) turn its answer into a
+is answered. Both families of directive ask it: the configuration and CLI seam
+(`RuleNameJudge`) turns its answer into a
 refusal that ends the run, and the inline seam (`DirectiveAddressability`) turns
 it into `annotation.unresolved-directive`, which is a configuration error and
 ends the run too. Neither decides on its own, so the two cannot answer one

@@ -38,7 +38,7 @@ final class MaintainabilityIndexCalculator
      *
      * @param float $halsteadVolume Halstead Volume (V)
      * @param int|float $cyclomaticComplexity Cyclomatic Complexity (CCN)
-     * @param int|float $linesOfCode Lines of Code (LOC)
+     * @param int|float $linesOfCode Executable-statement count (the LOC term of the formula), not physical lines
      *
      * @return float Raw MI value (can be negative for very complex code)
      */
@@ -63,7 +63,7 @@ final class MaintainabilityIndexCalculator
      *
      * @param float $halsteadVolume Halstead Volume (V)
      * @param int|float $cyclomaticComplexity Cyclomatic Complexity (CCN)
-     * @param int|float $linesOfCode Lines of Code (LOC)
+     * @param int|float $linesOfCode Executable-statement count (the LOC term of the formula), not physical lines
      *
      * @return float Normalized MI value (0-100)
      */

@@ -205,7 +205,7 @@ function processItems(array $data): void {
 | Aspect         | CCN                        | NPath                          |
 | -------------- | -------------------------- | ------------------------------ |
 | What it counts | Independent paths (linear) | All combinations (exponential) |
-| Nesting        | Not considered             | Multiplication                 |
+| Sequence       | Adds                       | Multiplies                     |
 | `if + if`      | +2                         | x2 (2 x 2 = 4 paths)           |
 
 ### Formulas
@@ -216,12 +216,15 @@ function processItems(array $data): void {
 ```
 if (cond) { then } else { else }
 NPath = NPath(cond) + NPath(then) + NPath(else)
+
+if (cond) { then }                 // no else: one skip path
+NPath = NPath(cond) + NPath(then) + 1
 ```
 
 **Loops:**
 ```
 while (cond) { body }
-NPath = NPath(cond) + NPath(body)
+NPath = NPath(cond) + NPath(body) + 1   // the +1 is the exit path
 ```
 
 **Switch:**
@@ -252,14 +255,14 @@ function simple(int $x): int {
     return $x + 1;
 }
 
-// NPath = 4, CCN = 3
+// NPath = 3, CCN = 3
 function nested(int $x, int $y): int {
-    if ($x > 0) {           // 2 paths
-        if ($y > 0) {       // x 2 = 4 combinations
+    if ($x > 0) {           // outer if: NPath(then) + 1 skip path
+        if ($y > 0) {       // inner if: 1 + 1 skip path = 2 paths
             return $x + $y;
         }
         return $x;
-    }
+    }                       // outer if: 2 + 1 = 3 paths
     return 0;
 }
 
@@ -288,21 +291,18 @@ function manyIfs(bool $a, bool $b, bool $c, bool $d): int {
 ## Aggregation
 
 All metrics are collected at the **Callable** hierarchy level and aggregated upward.
-Concrete PHP methods and global functions are both represented as callables:
+Concrete PHP methods and global functions are both represented as callables.
 
-```php
-new MetricDefinition(
-    name: 'complexity.ccn', // 'complexity.cognitive', 'complexity.npath'
-    collectedAt: SymbolLevel::Callable,
-    aggregations: [
-        SymbolLevel::Class_->value => [Sum, Average, Max],
-        SymbolLevel::Namespace_->value => [Sum, Average, Max],
-        SymbolLevel::Project->value => [Sum, Average, Max],
-    ],
-)
-```
+| Metric                 | Class               | Namespace and project      |
+| ---------------------- | ------------------- | -------------------------- |
+| `complexity.ccn`       | `sum`, `avg`, `max` | `sum`, `avg`, `max`, `p95` |
+| `complexity.cognitive` | `sum`, `avg`, `max` | `sum`, `avg`, `max`, `p95` |
+| `complexity.npath`     | `max`, `avg`        | `max`, `avg`, `p95`        |
 
-**Aggregated names:** `complexity.ccn.sum`, `complexity.ccn.avg`, `complexity.ccn.max`, `complexity.cognitive.sum`, `complexity.npath.avg`, etc.
+NPath is never summed: the sum of path counts across callables is not a path
+count of anything.
+
+**Aggregated names:** `complexity.ccn.sum`, `complexity.ccn.avg`, `complexity.ccn.max`, `complexity.ccn.p95`, `complexity.cognitive.sum`, `complexity.npath.max`, `complexity.npath.avg`, etc.
 
 ## WMC (Weighted Methods per Class)
 

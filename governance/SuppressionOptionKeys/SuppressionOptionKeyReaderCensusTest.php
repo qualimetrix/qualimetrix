@@ -40,7 +40,7 @@ final class SuppressionOptionKeyReaderCensusTest extends TestCase
      *
      * The shape above only sees a key written *at* the subscript, and a reader
      * that puts its spellings in a constant and subscripts with the loop
-     * variable is invisible to it. `RuleInputValidator` was exactly that for
+     * variable is invisible to it. A since-removed validator class was exactly that for
      * `suppress_namespace_channels`, and it was found by a reviewer rather than
      * by this guard. What the pair of shapes recognises together is the real
      * subject: holding the enumeration, however it is later used.

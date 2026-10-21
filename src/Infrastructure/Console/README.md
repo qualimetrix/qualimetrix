@@ -347,15 +347,15 @@ snapshot for the resolved run. The snapshot is assembled by Infrastructure Rule
 from `ResolvedComputedMetricDefinitions`; Console consumes only that resolved
 snapshot while processing the invocation.
 
-`ChannelExclusionKeyValidator` answers the one question that needs the universe
-rather than the input: whether a `suppress_namespace_channels` key addresses a
-channel the rule it is written under actually produces. Keys read `NameSelector`,
-the one selector grammar; a key left in the retired `ruleName#violationCode`
-spelling is refused by name rather than treated as an unknown channel.
-`ChannelExclusionKeyHints`
-carries the wording, split along the same seam as
-`Inline\Directive\DirectiveAddressability` / `DirectiveNameHints`: one decides
-whether a name is wrong, the other what to say about it.
+Finding's `RuleNameJudge::namespaceChannel()` answers the one question that needs
+the universe rather than the input: whether a `suppress_namespace_channels` key
+addresses a channel the rule it is written under actually produces. Keys read
+`NameSelector`, the one selector grammar; a key left in the retired
+`ruleName#violationCode` spelling is refused by name rather than treated as an
+unknown channel. `ChannelLevelRefusalWording` carries the wording, split along
+the same seam as `Inline\Directive\DirectiveAddressability` /
+`DirectiveNameHints`: one decides whether a name is wrong, the other what to say
+about it.
 
 `LayerAssignmentResolver` is an internal Console collaborator for
 `debug:layer-assignment`. It owns the adapter-side discovery, generated-file

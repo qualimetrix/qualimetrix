@@ -72,7 +72,7 @@ require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
 #[CoversClass(\Qualimetrix\Infrastructure\Console\CheckReport\FormatBinding\ReportFormatter::class)]
 #[CoversClass(\Qualimetrix\Infrastructure\Console\Terminal\ReportPublication\ReportPublication::class)]
 #[CoversClass(OutputHelper::class)]
-final class ResultPresenterTest extends TestCase
+final class ReportAssemblerTest extends TestCase
 {
     #[Test]
     public function itMergesIndependentRunAndFilterPopulationsWithoutDoubleAdoption(): void
@@ -401,7 +401,7 @@ final class ResultPresenterTest extends TestCase
                 require $argv[1];
                 require $argv[2];
                 $GLOBALS['qmx_report_hit'] = 0;
-                $fixture = new \Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest('itRefusesInsteadOfSwallowingAWriteFailureAndBeatsTheFindingsExitCode');
+                $fixture = new \Qualimetrix\Tests\Infrastructure\Console\Integration\ReportAssemblerTest('itRefusesInsteadOfSwallowingAWriteFailureAndBeatsTheFindingsExitCode');
                 $stub = new \ReflectionMethod(\PHPUnit\Framework\TestCase::class, 'createStub');
                 $formatter = $stub->invoke(null, \Qualimetrix\Reporting\Contract\Formatting\FormatterInterface::class);
                 $formatter->method('getDefaultGroupBy')->willReturn(\Qualimetrix\Reporting\Contract\Formatting\GroupBy::None);

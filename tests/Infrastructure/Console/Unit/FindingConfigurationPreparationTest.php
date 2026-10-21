@@ -32,7 +32,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 
 #[CoversClass(FindingConfigurationPreparation::class)]
-final class RuleInputValidatorTest extends TestCase
+final class FindingConfigurationPreparationTest extends TestCase
 {
     #[Test]
     public function itIgnoresAnAbsentWorkersOption(): void

@@ -27,7 +27,7 @@ final class ResidualLimitationsCoverageTest extends TestCase
             'method' => 'itAcceptsAGroupWhoseMembersSwappedAtEqualMagnitude',
         ]],
         2 => [[
-            'class' => \Qualimetrix\Tests\Infrastructure\Console\Integration\FindingFilterOrchestratorBaselineReportingTest::class,
+            'class' => \Qualimetrix\Tests\Infrastructure\Console\Integration\CheckFindingProjectionBaselineReportingTest::class,
             'method' => 'itDoesNotCountAShrunkButPresentGroupAsResolved',
         ]],
         3 => [[
