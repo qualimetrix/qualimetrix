@@ -10,6 +10,11 @@ is correct. Product tests make that separate claim.
 Run `composer gate -- --reference=<commit>`. A complete comparison exits 0
 only when all checks agree under the declarations.
 
+A change to the comparator proves its new check bites once, in that change:
+plant the defect the check exists for, see the check go red, and keep the
+planted input as the check's test in `scripts/finding-gate/tests/`. Nothing
+re-proves it afterwards.
+
 ## Layout
 
 ```text

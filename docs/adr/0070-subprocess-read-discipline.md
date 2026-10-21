@@ -163,11 +163,16 @@ module.
 
 Two families therefore keep their own implementations:
 
-- The finding-gate's process handle and its controls' shell layer a *different*
-  subject on the read discipline: process-group isolation via `posix_setsid`,
-  `pgrep`-based descendant termination, launcher-disappearance detection and a
-  bounded parallel scheduler. Their behaviour is what `composer gate:controls`
-  measures; folding them changes what those measurements cover.
+- The finding-gate's process handle layers a *different* subject on the read
+  discipline: process-group isolation via `posix_setsid`, `pgrep`-based
+  descendant termination, launcher-disappearance detection and a bounded
+  parallel scheduler. The gate's own tests pin that behaviour — the deadline of
+  a child that closed its pipes, termination of the whole group, and the
+  release of a reference checkout on a signal or a fatal; folding it would move
+  those guarantees under a module that does not promise them. (Amended
+  2026-10-21: this rationale used to rest on `composer gate:controls`
+  measurements and named the controls' shell layer as a second member; both
+  were retired by [ADR 0130](0130-the-finding-gate-keeps-behaviour-tests-not-a-witness-registry.md).)
 - The console tests' pseudo-terminal runner reads pty masters, which report EIO
   where pipes report EOF. That is a different read discipline, not a caller of
   this one.
