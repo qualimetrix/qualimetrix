@@ -38,6 +38,11 @@ accepts only RuleExecutionInterface, so an internal decoder is not exposed as
 a replaceable public constructor dependency. Moving the concrete contracts is
 smaller than extra facade interfaces/delegation with no second implementation.
 
+ADR 0126 supersedes the placement of the two executable services:
+RuleEnablementResolver and RuleNameJudge now live in RuleConfiguration/Selection
+beside the document schema, option resolution and authored selection language
+they interpret. StatedEnablement remains public vocabulary in Contract/Selection.
+
 FindingConfiguration requires ResolvedDocument and provides four typed copies:
 withResolvedOptions, withChannelUniverse, withEnablement and withDiagnostics.
 The document/loader/layer ports retain positioned authored nodes, source

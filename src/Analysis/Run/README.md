@@ -22,8 +22,11 @@ Run/
 ├── Contract/
 │   ├── Collection/             # collection inputs and wire-safe outputs
 │   ├── Configuration/          # mandatory RunConfiguration, captured universe, current measurement and reasons
+│   ├── Coverage/               # terminal file coverage, failures and incomplete-run refusal
+│   ├── DependencyGraph/        # graph-analysis entry point and result
 │   ├── Discovery/              # ProjectFiles and opt-in ProjectTree metadata contracts
-│   ├── Pipeline/               # AnalysisResult, MeasuredRunResult and coverage contracts
+│   ├── DirectiveAudit/         # directive-audit entry point and report
+│   ├── Pipeline/               # main analysis entry point and measured/final results
 │   └── FileSetInspectionParticipantInterface.php
 ├── Collection/                 # per-file processing and private SourceReader;
 │                               # CollectionPhaseFold assembles per-file
@@ -39,6 +42,8 @@ Run/
 │   ├── RunMeasurement.php
 │   └── CompletedMeasurements.php
 ├── Preparation/                # discovery, collection retries and the shared measured rule context
+│   ├── CollectionResult.php
+│   ├── DiscoveryResult.php
 │   ├── RunPreparation.php
 │   └── PreparedRun.php
 ├── Pipeline/                   # report and audit entry points over one prepared run
@@ -196,6 +201,12 @@ duration negative.
 ## Contracts and consumers
 
 - `AnalysisPipelineInterface` is the public run entry point for adapters.
+- `DependencyGraphAnalyzerInterface` and `DirectiveAuditInterface` publish the
+  graph-export and directive-audit operations without enlarging the main
+  analysis pipeline surface.
+- `AnalysisCoverage`, its failure vocabulary and
+  `IncompleteAnalysisException` form the shared terminal-state contract read by
+  discovery, analysis and reporting.
 - `ProjectFilesInterface`, `CollectionOrchestratorInterface`, and
   `FileProcessorInterface` describe Run-owned mechanics.
 - `ExecutionStrategyInterface` runs the selected file processor. The strategy
@@ -216,11 +227,11 @@ duration negative.
   profiling with file-set inspection while `AnalysisPipeline` retains the
   complete phase order. It stores no capability result. Its Architecture input
   implements the preparation and `UnmatchedTypeWarningInterface` promises on
-  the same object. After execution, it asks the pure warning query only when
-  `ChannelPublication` publishes `architecture.layer-declaration` /
-  `architecture.unmatched-type` / `project`. The pipeline logs a returned warning
-  once; the rule and preparation perform no logging, and the execution result
-  gains no warning transport state.
+  the same object. The pipeline asks the pure warning query against the captured
+  publication only when `ChannelPublication` publishes
+  `architecture.layer-declaration` / `architecture.unmatched-type` / `project`,
+  then logs a returned warning after execution. The rule and preparation perform
+  no logging, and the execution result gains no warning transport state.
 - `InlineDirectiveRun` prepares authored Inline state and asks its two
   post-execution questions through `InlineDirectivePolicyInterface` and
   `ThresholdDirectiveAuditInterface`. It retains the same policy and audit
@@ -399,8 +410,14 @@ runs retain one collection pass.
 `Measurement/RunMeasurement` starts each attempt's repository and completes
 measurement aggregation before computed-metric evaluation. Its
 `CompletedMeasurements` value carries the namespace tree and evaluation summary.
-`Preparation/RunPreparation` owns discovery, collection retries, graph preparation
-and the first rule execution over one measured context. `PreparedRun` retains
-that observation for both consumers. `Pipeline/AnalysisPipeline` selects normal
-publication or directive audit over the shared preparation. These are concrete
-internal operations, not new lifecycle ports.
+`Preparation/RunPreparation` owns discovery, trait-failure recollection, graph
+preparation and the first rule execution over one measured context. Its
+`discover()` and `collectWithTraitRetry()` operations return named immutable
+phase results, keeping the successful path short while preserving one retry
+authority. `DiscoveryResult` reconciles later collection and inspection terminal
+states with its captured input roster; `CollectionResult` releases dependency
+inputs while retaining the successful collection observations by name. `PreparedRun`
+retains the resulting observation for analysis and directive audit.
+`Pipeline/AnalysisPipeline`
+selects normal publication or directive audit over the shared preparation.
+These are concrete internal operations, not new lifecycle ports.

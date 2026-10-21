@@ -95,16 +95,63 @@ final class CheckCommandTest extends TestCase
             self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
             self::assertStringContainsString('First.php', $tester->getDisplay());
             self::assertStringContainsString('Second.php', $tester->getDisplay());
+            self::assertStringContainsString('Analyse one declaring file', $tester->getDisplay());
             self::assertStringNotContainsString('Internal error', $tester->getDisplay());
         }
     }
 
     #[Test]
+    public function itExplainsWhenOneFileCannotDisambiguateAClassSelection(): void
+    {
+        file_put_contents($this->tempDir . '/Repeated.php', '<?php if (true) { class Repeated {} } else { class Repeated {} }');
+        $tester = $this->createCommandTester();
+        $tester->execute(['paths' => [$this->tempDir], '--format' => 'summary', '--no-cache' => true, '--workers' => '0', '--class' => 'Repeated']);
+
+        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('Exact selection is unavailable when one file declares the class more than once; analyse the file without --class or rename one declaration.', $tester->getDisplay());
+        self::assertStringNotContainsString('Analyse one declaring file', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itDoesNotSuggestAFileWhenEveryDeclaringFileRemainsAmbiguous(): void
+    {
+        file_put_contents($this->tempDir . '/First.php', '<?php if (true) { class Repeated {} } else { class Repeated {} }');
+        file_put_contents($this->tempDir . '/Second.php', '<?php if (true) { class Repeated {} } else { class Repeated {} }');
+        $tester = $this->createCommandTester();
+        $tester->execute(['paths' => [$this->tempDir], '--format' => 'summary', '--no-cache' => true, '--workers' => '0', '--class' => 'Repeated']);
+
+        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('Every declaring file contains the class more than once; analyse without --class or rename declarations.', $tester->getDisplay());
+        self::assertStringNotContainsString('Analyse one declaring file', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itSuggestsADeclaringFileWhenOneFileSelectsASingleDeclaration(): void
+    {
+        file_put_contents($this->tempDir . '/Ambiguous.php', '<?php if (true) { class Repeated {} } else { class Repeated {} }');
+        file_put_contents($this->tempDir . '/Singleton.php', '<?php class Repeated {}');
+        $tester = $this->createCommandTester();
+        $tester->execute(['paths' => [$this->tempDir], '--format' => 'summary', '--no-cache' => true, '--workers' => '0', '--class' => 'Repeated']);
+
+        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('Analyse one declaring file to select an exact declaration.', $tester->getDisplay());
+        self::assertStringNotContainsString('Every declaring file contains the class more than once', $tester->getDisplay());
+    }
+
+    #[Test]
     public function itKeepsPopulationBoundariesAndUnconfiguredArchitectureOutOfTheIncompleteWarning(): void
     {
-        file_put_contents($this->tempDir . '/Simple.php', '<?php interface Contract {} class Simple { public function method(): void {} }');
+        mkdir($this->tempDir . '/Child');
+        file_put_contents($this->tempDir . '/Child/Simple.php', '<?php namespace App\\Child; interface Contract {} enum Status { case Active; } trait SharedBehavior { public function shared(): void {} } class Simple { public function method(): void {} }');
         $tester = $this->createCommandTester();
-        $tester->execute(['paths' => [$this->tempDir], '--format' => 'summary', '--no-cache' => true, '--workers' => '0']);
+        $tester->execute([
+            'paths' => [$this->tempDir],
+            '--format' => 'summary',
+            '--no-cache' => true,
+            '--workers' => '0',
+            '--fail-on' => 'warning',
+        ]);
+        self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
         self::assertStringNotContainsString('Rule population incomplete', $tester->getDisplay());
     }
 

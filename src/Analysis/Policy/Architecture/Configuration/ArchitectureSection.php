@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
-
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
+use Qualimetrix\Analysis\Policy\Architecture\Allow\InvalidSelectorException;
+use Qualimetrix\Analysis\Policy\Architecture\Allow\LayerSelectorParser;
 
 /**
  * The `architecture:` section as the configuration document declares it:
@@ -63,7 +64,11 @@ final readonly class ArchitectureSection implements DocumentSectionSchemaInterfa
                 },
             ),
             'allow' => NodeSchema::namedMap(
-                NodeSchema::list(NodeSchema::opaque()->judgedInEachLayer(CarriedValueForm::ofAllowTarget(...))),
+                NodeSchema::list(NodeSchema::opaque()->judgedInEachLayer(
+                    static function (ResolvedValueInterface $target, array $path): void {
+                        AllowValidator::judgeAuthoredTarget(SectionSpot::node($path, $target));
+                    },
+                )),
                 NameVocabulary::fromSibling('layers', self::layerNames(...), self::refersToALayer(...)),
             )->judgedInEachLayer(CarriedValueForm::ofAllowMap(...)),
             'coverage-gap' => NodeSchema::scalar(ScalarForm::String)->judgedInEachLayer(CarriedValueForm::ofCoverageMode(...)),

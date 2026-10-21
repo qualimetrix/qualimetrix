@@ -637,6 +637,10 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
                 $sourceRoot . '/scripts/subprocess/ChildProcess.php',
                 $projectRoot . '/scripts/subprocess/ChildProcess.php',
             ));
+            self::assertTrue(copy(
+                $sourceRoot . '/scripts/subprocess/GitProcessEnvironment.php',
+                $projectRoot . '/scripts/subprocess/GitProcessEnvironment.php',
+            ));
             self::copyDirectory(
                 $sourceRoot . '/scripts/subprocess/tests',
                 $projectRoot . '/scripts/subprocess/tests',

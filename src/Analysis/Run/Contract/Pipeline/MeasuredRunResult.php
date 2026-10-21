@@ -9,6 +9,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisCoverage;
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailure;
 
 final readonly class MeasuredRunResult
 {

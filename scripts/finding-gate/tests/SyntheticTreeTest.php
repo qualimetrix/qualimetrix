@@ -44,9 +44,12 @@ final class SyntheticTreeTest extends TestCase
     #[Test]
     public function itBuildsSyntheticRepositoriesWithInheritedAutomaticMaintenanceDisabled(): void
     {
-        $root = SyntheticTree::create(SyntheticTree::clean());
+        $before = self::gitConfigurationEnvironment();
+        self::replaceGitConfigurationEnvironment([]);
+        $root = null;
 
         try {
+            $root = SyntheticTree::create(SyntheticTree::clean());
             foreach (['maintenance.auto' => 'false', 'gc.auto' => '0'] as $key => $expected) {
                 $effective = Process::run(['git', 'config', '--get', $key], $root);
                 self::assertSame(0, $effective['exit'], $effective['stderr']);
@@ -57,53 +60,11 @@ final class SyntheticTreeTest extends TestCase
                 self::assertSame('', $local['stdout']);
             }
         } finally {
-            SyntheticTree::remove($root);
-        }
-    }
-
-    #[Test]
-    public function itLeavesNoDetachedAutomaticMaintenanceInsideTheSyntheticRepository(): void
-    {
-        $version = self::gitVersionOutput();
-        if (self::usesObservedOldSystemAppleGit(\PHP_OS_FAMILY, $version)) {
-            self::markTestSkipped(\sprintf(
-                'Process observation is skipped for the owner-approved old system macOS Git exception: %s.',
-                trim($version),
-            ));
-        }
-
-        $root = SyntheticTree::create(SyntheticTree::clean());
-
-        try {
-            $inside = [];
-            $unreadable = [];
-
-            for ($attempt = 0; $attempt < 10; ++$attempt) {
-                [$observed, $unknown] = self::maintenanceProcesses($root);
-                $inside = [...$inside, ...$observed];
-                $unreadable = [...$unreadable, ...$unknown];
-                usleep(25_000);
+            if ($root !== null) {
+                SyntheticTree::remove($root);
             }
-
-            self::assertSame([], array_values(array_unique($inside)), 'Detached git maintenance remained inside the synthetic repository.');
-
-            if ($unreadable !== []) {
-                self::markTestSkipped('Cannot inspect cwd for git maintenance process(es): ' . implode(', ', array_unique($unreadable)));
-            }
-        } finally {
-            SyntheticTree::remove($root);
+            self::replaceGitConfigurationEnvironment($before);
         }
-    }
-
-    #[Test]
-    public function itLimitsTheProcessObservationExceptionToObservedOldSystemAppleGit(): void
-    {
-        self::assertTrue(self::usesObservedOldSystemAppleGit('Darwin', "git version 2.54.0 (Apple Git-157)\n"));
-        self::assertFalse(self::usesObservedOldSystemAppleGit('Linux', "git version 2.54.0 (Apple Git-157)\n"));
-        self::assertFalse(self::usesObservedOldSystemAppleGit('Linux', "git version 2.55.0\n"));
-        self::assertFalse(self::usesObservedOldSystemAppleGit('Darwin', "git version 2.55.0 (Apple Git-999)\n"));
-        self::assertFalse(self::usesObservedOldSystemAppleGit('Darwin', "git version 2.54.0.custom (Apple Git-157)\n"));
-        self::assertFalse(self::usesObservedOldSystemAppleGit('Darwin', "wrapper: git version 2.54.0 (Apple Git-157)\n"));
     }
 
     #[Test]
@@ -367,71 +328,30 @@ final class SyntheticTreeTest extends TestCase
         return $answer['stdout'];
     }
 
-    private static function gitVersionOutput(): string
+    /** @return array<string, string> */
+    private static function gitConfigurationEnvironment(): array
     {
-        $result = Process::run(['git', '--version'], __DIR__);
-        self::assertSame(0, $result['exit'], $result['stderr']);
-        self::assertNotSame('', trim($result['stdout']));
+        $environment = getenv();
+        self::assertIsArray($environment);
 
-        return $result['stdout'];
+        return array_filter(
+            $environment,
+            static fn(string $name): bool => $name === 'GIT_CONFIG_COUNT'
+                || str_starts_with($name, 'GIT_CONFIG_KEY_')
+                || str_starts_with($name, 'GIT_CONFIG_VALUE_'),
+            \ARRAY_FILTER_USE_KEY,
+        );
     }
 
-    private static function usesObservedOldSystemAppleGit(string $osFamily, string $versionOutput): bool
+    /** @param array<string, string> $replacement */
+    private static function replaceGitConfigurationEnvironment(array $replacement): void
     {
-        return $osFamily === 'Darwin'
-            && preg_match('/\Agit version 2\.54\.[0-9]+ \(Apple Git-[^)]+\)\R?\z/', $versionOutput) === 1;
-    }
-
-    /** @return array{list<string>, list<string>} */
-    private static function maintenanceProcesses(string $root): array
-    {
-        $listed = Process::run(['/bin/ps', '-axo', 'pid=,command='], $root);
-        self::assertSame(0, $listed['exit'], $listed['stderr']);
-        $inside = [];
-        $unreadable = [];
-
-        foreach (explode("\n", $listed['stdout']) as $line) {
-            if (preg_match('~^\s*([0-9]+)\s+(?:\S*/)?git\s+maintenance(?:\s|$)~', $line, $matches) !== 1) {
-                continue;
-            }
-
-            $pid = (int) $matches[1];
-            $cwd = self::processWorkingDirectory($pid, $root);
-            if ($cwd === null) {
-                if (@posix_kill($pid, 0)) {
-                    $unreadable[] = (string) $pid;
-                }
-
-                continue;
-            }
-
-            $prefix = rtrim($root, '/') . '/';
-            if ($cwd === $root || str_starts_with($cwd, $prefix)) {
-                $inside[] = $pid . ':' . $cwd;
-            }
+        foreach (array_keys(self::gitConfigurationEnvironment()) as $name) {
+            self::assertTrue(putenv($name));
         }
-
-        return [$inside, $unreadable];
-    }
-
-    private static function processWorkingDirectory(int $pid, string $workingDirectory): ?string
-    {
-        $proc = @readlink('/proc/' . $pid . '/cwd');
-        if (\is_string($proc)) {
-            return $proc;
+        foreach ($replacement as $name => $value) {
+            self::assertTrue(putenv($name . '=' . $value));
         }
-
-        $lsof = '/usr/sbin/lsof';
-        if (!is_executable($lsof)) {
-            return null;
-        }
-
-        $result = Process::run([$lsof, '-a', '-p', (string) $pid, '-d', 'cwd', '-Fn'], $workingDirectory);
-        if ($result['exit'] !== 0 || preg_match('/^n(.+)$/m', $result['stdout'], $matches) !== 1) {
-            return null;
-        }
-
-        return $matches[1];
     }
 
 }

@@ -78,6 +78,8 @@ final class MetricName
     public const string DESIGN_NOC = 'design.noc';
     public const string DESIGN_IS_ABSTRACT = 'design.is-abstract';
     public const string DESIGN_IS_INTERFACE = 'design.is-interface';
+    public const string DESIGN_IS_TRAIT = 'design.is-trait';
+    public const string DESIGN_IS_ENUM = 'design.is-enum';
     public const string DESIGN_IS_EXCEPTION = 'design.is-exception';
     public const string DESIGN_WOC = 'design.woc';
 

@@ -7,7 +7,7 @@ namespace Qualimetrix\Governance\TestSuiteHygiene;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Tests\TestSupport\WorkingDirectory\GitProcessEnvironment;
+use Qualimetrix\Subprocess\GitProcessEnvironment;
 use Symfony\Component\Process\Process;
 
 #[CoversClass(GitProcessEnvironment::class)]
@@ -58,7 +58,7 @@ final class SuiteGitEnvironmentTest extends TestCase
             $_ENV['GIT_CONFIG_COUNT'] = $_SERVER['GIT_CONFIG_COUNT'] = '01';
             $_ENV['GIT_CONFIG_KEY_0'] = $_SERVER['GIT_CONFIG_KEY_0'] = 'diff.relative';
             $_ENV['GIT_CONFIG_VALUE_0'] = $_SERVER['GIT_CONFIG_VALUE_0'] = 'true';
-            \Qualimetrix\Tests\TestSupport\WorkingDirectory\GitProcessEnvironment::disableAutomaticMaintenance();
+            \Qualimetrix\Subprocess\GitProcessEnvironment::publishForTestProcess();
             $values = [];
             for ($index = 0; $index < (int) getenv('GIT_CONFIG_COUNT'); ++$index) {
                 $values[getenv('GIT_CONFIG_KEY_' . $index)] = getenv('GIT_CONFIG_VALUE_' . $index);

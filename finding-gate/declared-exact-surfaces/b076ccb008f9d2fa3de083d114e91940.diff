@@ -1,27 +1,15 @@
 --- candidate
 +++ reference (mapped)
 @@ -1,1 +1,1 @@
--visible 3281
-+visible 3357
-@@ -7,2 +7,2 @@
--src/Model/Untyped.php: error[design.type-coverage.property]: Property type coverage is 0.0% (minimum: 50.0%). Add type declarations to properties (Untyped)
--src/Model/Untyped.php: error[design.type-coverage.return]: Return type coverage is 0.0% (minimum: 50.0%). Add return type declarations to methods (Untyped)
-+src/Model/Untyped.php: error[design.type-coverage.return]: Return type coverage is 0.0% (minimum: 50.0%). Add return type declarations to methods (Untyped)
-+src/Model/Untyped.php: error[design.type-coverage.property]: Property type coverage is 0.0% (minimum: 50.0%). Add type declarations to properties (Untyped)
-@@ -23,4 +23,4 @@
--Rule population incomplete — declaration: 204 judged, 3 not judged; namespace: 6 judged, 5 not judged.
+-visible 3176
++visible 3281
+@@ -23,3 +23,4 @@
 -Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 -
--invocation-format:text 3281
-+Rule population incomplete — callable: 140 judged, 56 not judged; declaration: 204 judged, 144 not judged; invocation: 0 judged, 3 not judged; namespace: 6 judged, 14 not judged.
+-invocation-format:text 3176
++Rule population incomplete — declaration: 204 judged, 3 not judged; namespace: 6 judged, 5 not judged.
 +Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 +
-+invocation-format:text 3357
-@@ -32,2 +32,2 @@
--src/Model/Untyped.php: error[design.type-coverage.property]: Property type coverage is 0.0% (minimum: 50.0%). Add type declarations to properties (Untyped)
--src/Model/Untyped.php: error[design.type-coverage.return]: Return type coverage is 0.0% (minimum: 50.0%). Add return type declarations to methods (Untyped)
-+src/Model/Untyped.php: error[design.type-coverage.return]: Return type coverage is 0.0% (minimum: 50.0%). Add return type declarations to methods (Untyped)
-+src/Model/Untyped.php: error[design.type-coverage.property]: Property type coverage is 0.0% (minimum: 50.0%). Add type declarations to properties (Untyped)
-@@ -48,1 +48,1 @@
--Rule population incomplete — declaration: 204 judged, 3 not judged; namespace: 6 judged, 5 not judged.
-+Rule population incomplete — callable: 140 judged, 56 not judged; declaration: 204 judged, 144 not judged; invocation: 0 judged, 3 not judged; namespace: 6 judged, 14 not judged.
++invocation-format:text 3281
+@@ -47,0 +48,1 @@
++Rule population incomplete — declaration: 204 judged, 3 not judged; namespace: 6 judged, 5 not judged.

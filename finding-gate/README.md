@@ -912,6 +912,10 @@ normalization are consistent. To claim a product change, compare with the
 commit before that change and also supply the independent checks above.
 
 Child invocations receive an explicit reproducible environment from ProcessHandle,
-not the parent's complete environment. In particular, a parent's `QMX_ASCII`
-does not reach captured commands, so the normal Unicode publication is compared.
-This does not change the product's own environment judgement.
+not the parent's complete environment. The shared `GitProcessEnvironment` policy
+preserves a valid inherited Git configuration and appends the overrides that
+disable automatic maintenance; malformed configuration is transported unchanged
+for Git to refuse. The controls harness and the PHPUnit bootstrap use the same
+policy. In particular, a parent's `QMX_ASCII` does not reach captured commands,
+so the normal Unicode publication is compared. This does not change the product's
+own environment judgement.

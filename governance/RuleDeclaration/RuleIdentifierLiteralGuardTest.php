@@ -136,7 +136,7 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
             'code-smell.unreachable-code' => self::METRIC_NAME_DECLARATION_REASON,
             'maintainability.mi' => self::METRIC_NAME_DECLARATION_REASON,
         ],
-        'src/Analysis/Finding/Contract/Selection/RuleNameJudge.php' => [
+        'src/Analysis/Finding/RuleConfiguration/Selection/RuleNameJudge.php' => [
             'computed' => 'The exact producer named by migration advice for computed.*. Its owner already'
                 . ' depends on Finding contracts, so importing it here would invert that dependency.',
         ],

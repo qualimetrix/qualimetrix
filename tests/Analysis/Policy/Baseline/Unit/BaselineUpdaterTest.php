@@ -532,7 +532,7 @@ final class BaselineUpdaterTest extends TestCase
         $result = $this->updater()->recordExclusions($baseline, [$finding], $this->coverageWithExclusions($baseline, ['exact:src/Excluded.php'], includeGenerated: true), []);
         self::assertSame($baseline, $result->baseline);
         self::assertSame(BaselineUpdateRefusalReason::ComparisonMetadataUnknown, $result->writeRefusal);
-        $partial = new \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage([RelativePath::fromString('src/Foo.php')], [], [new \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure(RelativePath::fromString('src/Broken.php'), \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind::Parse, 'broken fixture')]);
+        $partial = new \Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisCoverage([RelativePath::fromString('src/Foo.php')], [], [new \Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailure(RelativePath::fromString('src/Broken.php'), \Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailureKind::Parse, 'broken fixture')]);
         $result = $this->updater()->recordExclusions($baseline, [$finding], $this->coverageWithExclusions($baseline, ['exact:src/Excluded.php'], analysis: $partial), []);
         self::assertSame($baseline, $result->baseline);
         self::assertFalse($result->changed);
@@ -543,7 +543,7 @@ final class BaselineUpdaterTest extends TestCase
     }
 
     /** @param list<string> $patterns */
-    private function coverageWithExclusions(Baseline $baseline, array $patterns, bool $unknown = false, bool $includeGenerated = false, ?\Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage $analysis = null): \Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage
+    private function coverageWithExclusions(Baseline $baseline, array $patterns, bool $unknown = false, bool $includeGenerated = false, ?\Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisCoverage $analysis = null): \Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage
     {
         $current = StubRuleCoverage::completeFor($baseline, ['src/Excluded.php'], analysis: $analysis);
         $tree = new class ($unknown) implements \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface {

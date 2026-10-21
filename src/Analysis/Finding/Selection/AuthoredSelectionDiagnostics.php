@@ -12,7 +12,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedWriteHistoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\FrameworkOptionKeys;
-use Qualimetrix\Analysis\Finding\Contract\Selection\RuleNameJudge;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleNameJudge;
 
 /** Judges authored selector and namespace-channel spelling with its writers. */
 final class AuthoredSelectionDiagnostics

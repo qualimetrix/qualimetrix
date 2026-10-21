@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace QmxFindingGate;
 
+use Qualimetrix\Subprocess\GitProcessEnvironment;
+
 /** One supervised case worker, drained by the bounded scheduler. */
 final class ProcessHandle
 {
@@ -115,13 +117,7 @@ final class ProcessHandle
             throw new GateError('Cannot read the parent environment.');
         }
 
-        return array_filter(
-            $parent,
-            static fn(string $name): bool => $name === 'GIT_CONFIG_COUNT'
-                || str_starts_with($name, 'GIT_CONFIG_KEY_')
-                || str_starts_with($name, 'GIT_CONFIG_VALUE_'),
-            \ARRAY_FILTER_USE_KEY,
-        );
+        return GitProcessEnvironment::forChild($parent);
     }
 
     /** @return list<resource> */

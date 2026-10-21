@@ -10,7 +10,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RunScope;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineLoader;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
+use Qualimetrix\Analysis\Run\Contract\Coverage\IncompleteAnalysisException;
 use Qualimetrix\Core\FileTarget\Publication\PreparedTarget;
 use Qualimetrix\Core\FileTarget\Resolution\ResolvedTarget;
 use Qualimetrix\Core\ProductIdentity;

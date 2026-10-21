@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\GraphExport;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult;
+use Qualimetrix\Analysis\Run\Contract\DependencyGraph\DependencyGraphAnalysisResult;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Invocation\CliSelectorDecoder;

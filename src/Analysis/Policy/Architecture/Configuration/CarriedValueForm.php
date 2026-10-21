@@ -7,9 +7,11 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 use InvalidArgumentException;
 
 use LogicException;
-
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Policy\Architecture\Allow\InvalidSelectorException;
+use Qualimetrix\Analysis\Policy\Architecture\Allow\LayerSelector;
+use Qualimetrix\Analysis\Policy\Architecture\Allow\LayerSelectorParser;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\InvalidLayerDefinitionException;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
@@ -23,29 +25,6 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
  */
 final class CarriedValueForm
 {
-    /**
-     * @param list<string> $path canonical path of the target: architecture, allow, source, index
-     *
-     * @throws ConfigurationRefusal naming the layer that wrote the target
-     */
-    public static function ofAllowTarget(ResolvedValueInterface $target, array $path): void
-    {
-        $count = \count($path);
-        $source = $path[$count - 2];
-        $index = (int) $path[$count - 1];
-        $entry = SectionSpot::node($path, $target);
-        $value = $entry->value();
-
-        if (\is_array($value) && !array_is_list($value)) {
-            [$selector] = LongFormAllowEntryNormalizer::normalize($source, $index, $entry);
-            self::parseSelector($selector, $entry->display(), $entry->child('target'));
-
-            return;
-        }
-
-        self::parseSelector(self::selector($source, $index, $entry), $entry->display(), $entry);
-    }
-
     /** @param list<string> $path */
     public static function ofCoverageMode(ResolvedValueInterface $value, array $path): void
     {

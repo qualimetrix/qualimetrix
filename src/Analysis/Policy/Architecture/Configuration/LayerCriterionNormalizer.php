@@ -30,7 +30,7 @@ use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
  * caller-specific helper ({@see normalizeSuffixList},
  * {@see normalizeFqnList}, {@see normalizePatternList}).
  *
- * @qmx-ignore health.cohesion -- Stateless validation operations share no instance fields by design.
+ * @qmx-threshold health.cohesion 40.0 -- Stateless validation operations share no instance fields by design; the finite boundary keeps a further cohesion loss visible.
  */
 final class LayerCriterionNormalizer
 {

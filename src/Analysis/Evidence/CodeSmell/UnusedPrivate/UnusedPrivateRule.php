@@ -146,7 +146,7 @@ final class UnusedPrivateRule extends AbstractRule
                 SymbolLevel::Class_,
             )->withGates(
                 self::populationGate('class-coordinate', self::NAME, SymbolLevel::Class_, 'declaration', self::kindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the declared symbol coordinate.'),
-                self::populationGate('published-value', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('published-value', [MetricName::CODE_SMELL_UNUSED_PRIVATE_TOTAL], absenceBoundaries: [MetricName::DESIGN_IS_INTERFACE => 1]), 'The rule metric was not published.'),
+                self::populationGate('published-value', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('published-value', [MetricName::CODE_SMELL_UNUSED_PRIVATE_TOTAL], absenceBoundaries: [MetricName::DESIGN_IS_INTERFACE => 1, MetricName::DESIGN_IS_TRAIT => 1, MetricName::DESIGN_IS_ENUM => 1]), 'The rule metric was not published.'),
             ),
         ];
     }

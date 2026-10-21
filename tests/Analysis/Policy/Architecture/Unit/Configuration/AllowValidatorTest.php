@@ -10,13 +10,13 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowAliasExpander;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowListEntry;
+use Qualimetrix\Analysis\Policy\Architecture\Allow\AllowAliasExpander;
+use Qualimetrix\Analysis\Policy\Architecture\Allow\AllowListEntry;
+use Qualimetrix\Analysis\Policy\Architecture\Allow\LayerSelector;
+use Qualimetrix\Analysis\Policy\Architecture\Allow\SelectorKind;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowValidator;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerSelector;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\LongFormAllowEntryNormalizer;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\SectionSpot;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\SelectorKind;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationWarning;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
 

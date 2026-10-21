@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
-
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 
 /**
  * Parses the long-form allow-target map ({@code [target: ..., relations:
@@ -26,8 +24,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
  * whatever its value, `~` included.
  *
  * Static + stateless to mirror the rest of the configuration validator
- * surface ({@see LayerCriterionNormalizer}, {@see ExcludeBlockValidator},
- * {@see AllowAliasExpander}).
+ * surface ({@see LayerCriterionNormalizer} and {@see ExcludeBlockValidator}).
  */
 final class LongFormAllowEntryNormalizer
 {
@@ -42,22 +39,25 @@ final class LongFormAllowEntryNormalizer
     /**
      * Returns the parsed (targetRaw, allowCrossInstance, relations) triple for
      * a long-form entry. Caller is responsible for parsing {@code targetRaw}
-     * into a {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerSelector}.
+     * into a {@see \Qualimetrix\Analysis\Policy\Architecture\Allow\LayerSelector}.
      *
      * @throws ConfigurationRefusal When an unsupported key is present, the
      *                              target field is missing/empty, or the
      *                              per-key shape is violated.
      *
-     * @return array{0: string, 1: bool, 2: list<DependencyType>|null}
+     * @return array{0: string, 1: bool, 2: list<string>|null, 3: SectionSpot}
      */
     public static function normalize(string $source, int $index, SectionSpot $entry): array
     {
         [$keys, $targetRaw] = self::judgeKeysAndTarget($source, $index, $entry);
 
+        $relations = $entry->child($keys['relations'] ?? 'relations');
+
         return [
             $targetRaw,
             self::parseAllowCrossInstanceFlag($source, $index, $entry->child($keys['allow_cross_instance'] ?? 'allow_cross_instance')),
-            self::parseRelations($source, $index, $entry->child($keys['relations'] ?? 'relations')),
+            self::parseRelations($source, $index, $relations),
+            $relations,
         ];
     }
 
@@ -84,10 +84,10 @@ final class LongFormAllowEntryNormalizer
     /**
      * Not written — absent or {@code ~} — is the documented default, "any
      * relation allowed", the same as a bare target. A written list is a
-     * filter: {@see parseRelationList()} owns its shape (non-list, empty) and
-     * {@see AllowAliasExpander} its vocabulary.
+     * filter: {@see parseRelationList()} owns its shape (non-list, empty).
+     * Semantic token expansion belongs to {@see AllowValidator}.
      *
-     * @return list<DependencyType>|null
+     * @return list<string>|null
      */
     private static function parseRelations(string $source, int $index, SectionSpot $relations): ?array
     {
@@ -100,15 +100,15 @@ final class LongFormAllowEntryNormalizer
 
     /**
      * A written {@code relations:} list: a non-empty list of non-empty
-     * strings, each a direct {@see DependencyType} value or an alias, expanded
-     * in declaration order with later duplicates absorbed. Null when nothing
-     * is written, which the caller reads as "any relation allowed".
+     * authored tokens. Null when nothing is written, which the caller reads as
+     * "any relation allowed". Semantic vocabulary and deduplication are applied
+     * by {@see AllowValidator} after this syntax boundary.
      *
      * @param string $context the entry's path, e.g. {@code architecture.allow.app[0]}
      *
      * @throws ConfigurationRefusal through the layer that wrote the list
      *
-     * @return list<DependencyType>|null
+     * @return list<string>|null
      */
     public static function parseRelationList(SectionSpot $relations, string $context): ?array
     {
@@ -116,14 +116,7 @@ final class LongFormAllowEntryNormalizer
             return null;
         }
 
-        $expanded = [];
-        foreach (self::relationTokens($relations, $context) as $index => $token) {
-            foreach (self::expandToken($relations->child($index), $token, $context) as $type) {
-                $expanded[$type->value] ??= $type;
-            }
-        }
-
-        return array_values($expanded);
+        return self::relationTokens($relations, $context);
     }
 
     /**
@@ -160,13 +153,6 @@ final class LongFormAllowEntryNormalizer
         }
 
         return $tokens;
-    }
-
-    /** @return non-empty-list<DependencyType> */
-    private static function expandToken(SectionSpot $spot, string $token, string $context): array
-    {
-        return AllowAliasExpander::expand($token)
-            ?? throw $spot->refusal(AllowAliasExpander::unknownTokenMessage($context, $token), AllowAliasExpander::acceptedTokens(), $token);
     }
 
     /**

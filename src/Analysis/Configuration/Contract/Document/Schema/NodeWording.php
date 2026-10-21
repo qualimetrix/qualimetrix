@@ -11,14 +11,20 @@ namespace Qualimetrix\Analysis\Configuration\Contract\Document\Schema;
  */
 final readonly class NodeWording
 {
+    /** @param list<int|float|string|bool|null>|null $hintOnlyFor */
     public function __construct(
         public ?string $hint = null,
         public ?string $emptyOverrideNotice = null,
+        public ?array $hintOnlyFor = null,
     ) {}
 
-    /** This wording with the sentences given replaced; one not given stays. */
-    public function with(?string $hint = null, ?string $emptyOverrideNotice = null): self
+    /**
+     * This wording with the sentences given replaced; one not given stays.
+     *
+     * @param list<int|float|string|bool|null>|null $hintOnlyFor
+     */
+    public function with(?string $hint = null, ?string $emptyOverrideNotice = null, ?array $hintOnlyFor = null): self
     {
-        return new self($hint ?? $this->hint, $emptyOverrideNotice ?? $this->emptyOverrideNotice);
+        return new self($hint ?? $this->hint, $emptyOverrideNotice ?? $this->emptyOverrideNotice, $hint === null ? $this->hintOnlyFor : $hintOnlyFor);
     }
 }

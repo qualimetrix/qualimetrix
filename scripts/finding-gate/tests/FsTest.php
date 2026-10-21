@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace QmxFindingGate\Tests {
     require_once __DIR__ . '/Fixtures/FsNativeDelegates.php';
 
-    use Closure;
-    use PHPUnit\Framework\Attributes\DataProvider;
     use PHPUnit\Framework\Attributes\Test;
     use PHPUnit\Framework\TestCase;
     use QmxFindingGate\Fs;
@@ -28,17 +26,6 @@ namespace QmxFindingGate\Tests {
             require_once \dirname(__DIR__, 2) . '/finding-gate-controls/Shell.php';
         }
 
-        /** @return iterable<string, array{Closure(string): void, class-string<Throwable>}> */
-        public static function removers(): iterable
-        {
-            yield 'finding gate' => [static function (string $path): void {
-                Fs::removeRecursively($path);
-            }, GateError::class];
-            yield 'controls' => [static function (string $path): void {
-                Shell::removeRecursively($path);
-            }, RuntimeException::class];
-        }
-
         protected function setUp(): void
         {
             FsNativeProbe::reset();
@@ -53,34 +40,31 @@ namespace QmxFindingGate\Tests {
         }
 
         #[Test]
-        #[DataProvider('removers')]
-        public function itTreatsADirectoryDisappearingBetweenInspectionAndListingAsRemoved(Closure $remove, string $expectedException): void
+        public function itTreatsADirectoryDisappearingBetweenInspectionAndListingAsRemoved(): void
         {
             $path = $this->root . '/race';
             self::assertTrue(mkdir($path));
             FsNativeProbe::removeAfterDirectoryCheck($path);
 
-            $remove($path);
+            Fs::removeRecursively($path);
 
             self::assertFileDoesNotExist($path);
         }
 
         #[Test]
-        #[DataProvider('removers')]
-        public function itTreatsAFileDisappearingDuringUnlinkAsRemoved(Closure $remove, string $expectedException): void
+        public function itTreatsAFileDisappearingDuringUnlinkAsRemoved(): void
         {
             $path = $this->root . '/file';
             self::assertNotFalse(file_put_contents($path, 'content'));
             FsNativeProbe::removeDuringUnlink($path);
 
-            $remove($path);
+            Fs::removeRecursively($path);
 
             self::assertFileDoesNotExist($path);
         }
 
         #[Test]
-        #[DataProvider('removers')]
-        public function itTreatsAFileAndItsParentDisappearingDuringUnlinkAsRemoved(Closure $remove, string $expectedException): void
+        public function itTreatsAFileAndItsParentDisappearingDuringUnlinkAsRemoved(): void
         {
             $directory = $this->root . '/directory';
             $path = $directory . '/file';
@@ -88,43 +72,57 @@ namespace QmxFindingGate\Tests {
             self::assertNotFalse(file_put_contents($path, 'content'));
             FsNativeProbe::removeWithParentDuringUnlink($path);
 
-            $remove($directory);
+            Fs::removeRecursively($directory);
 
             self::assertDirectoryDoesNotExist($directory);
         }
 
         #[Test]
-        #[DataProvider('removers')]
-        public function itTreatsADirectoryDisappearingDuringRmdirAsRemoved(Closure $remove, string $expectedException): void
+        public function itTreatsADirectoryDisappearingDuringRmdirAsRemoved(): void
         {
             $path = $this->root . '/directory';
             self::assertTrue(mkdir($path));
             FsNativeProbe::removeDuringRmdir($path);
 
-            $remove($path);
+            Fs::removeRecursively($path);
 
             self::assertDirectoryDoesNotExist($path);
         }
 
-        /** @param class-string<Throwable> $expectedException */
         #[Test]
-        #[DataProvider('removers')]
-        public function itRefusesAnUnlinkFailureThatLeavesTheEntryPresent(Closure $remove, string $expectedException): void
+        public function itRefusesAnUnlinkFailureThatLeavesTheEntryPresent(): void
         {
             $path = $this->root . '/file';
             self::assertNotFalse(file_put_contents($path, 'content'));
             FsNativeProbe::refuseUnlink($path);
 
-            $this->expectException($expectedException);
+            $this->expectException(GateError::class);
             $this->expectExceptionMessage('Cannot unlink ' . $path . ' while removing it.');
 
-            $remove($path);
+            Fs::removeRecursively($path);
         }
 
-        /** @param class-string<Throwable> $expectedException */
         #[Test]
-        #[DataProvider('removers')]
-        public function itRefusesAnInaccessibleEntryInsteadOfCallingItAbsent(Closure $remove, string $expectedException): void
+        public function itKeepsControlsCleanupRefusalsAtTheSharedRemovalBoundary(): void
+        {
+            $path = $this->root . '/file';
+            self::assertNotFalse(file_put_contents($path, 'content'));
+            FsNativeProbe::refuseUnlink($path);
+
+            try {
+                Shell::removeRecursively($path);
+                self::fail('A failed controls cleanup must be refused.');
+            } catch (RuntimeException $error) {
+                self::assertNotInstanceOf(GateError::class, $error);
+                self::assertStringContainsString('Cannot unlink ' . $path . ' while removing it.', $error->getMessage());
+                self::assertStringContainsString('errno=unknown', $error->getMessage());
+                self::assertStringContainsString('native error=', $error->getMessage());
+                self::assertStringContainsString('remaining entries=["."]', $error->getMessage());
+            }
+        }
+
+        #[Test]
+        public function itRefusesAnInaccessibleEntryInsteadOfCallingItAbsent(): void
         {
             $directory = $this->root . '/blocked';
             $path = $directory . '/file';
@@ -132,31 +130,27 @@ namespace QmxFindingGate\Tests {
             self::assertNotFalse(file_put_contents($path, 'content'));
             self::assertTrue(chmod($directory, 0o000));
 
-            $this->expectException($expectedException);
+            $this->expectException(GateError::class);
             $this->expectExceptionMessage('Cannot unlink ' . $path . ' while removing it.');
 
-            $remove($path);
+            Fs::removeRecursively($path);
         }
 
-        /** @param class-string<Throwable> $expectedException */
         #[Test]
-        #[DataProvider('removers')]
-        public function itRefusesAResidualNonemptyDirectory(Closure $remove, string $expectedException): void
+        public function itRefusesAResidualNonemptyDirectory(): void
         {
             $path = $this->root . '/directory';
             self::assertTrue(mkdir($path));
             FsNativeProbe::makeNonemptyDuringRmdir($path);
 
-            $this->expectException($expectedException);
+            $this->expectException(GateError::class);
             $this->expectExceptionMessage('Cannot remove directory ' . $path . '.');
 
-            $remove($path);
+            Fs::removeRecursively($path);
         }
 
-        /** @param class-string<Throwable> $expectedException */
         #[Test]
-        #[DataProvider('removers')]
-        public function itReportsTheNativeFailureResidualEntriesAndProcessesInsideTheTree(Closure $remove, string $expectedException): void
+        public function itReportsTheNativeFailureResidualEntriesAndProcessesInsideTheTree(): void
         {
             $path = $this->root . '/directory';
             $sibling = $this->root . '/directory-sibling';
@@ -167,10 +161,10 @@ namespace QmxFindingGate\Tests {
             FsNativeProbe::makeNonemptyDuringRmdir($path);
 
             try {
-                $remove($path);
+                Fs::removeRecursively($path);
                 self::fail('A residual directory must be refused.');
             } catch (Throwable $error) {
-                self::assertInstanceOf($expectedException, $error);
+                self::assertInstanceOf(GateError::class, $error);
                 self::assertStringContainsString('Cannot remove directory ' . $path . '.', $error->getMessage());
                 self::assertStringContainsString('errno=unknown', $error->getMessage());
                 self::assertStringContainsString('native error=', $error->getMessage());
@@ -272,8 +266,7 @@ namespace QmxFindingGate\Tests {
         }
 
         #[Test]
-        #[DataProvider('removers')]
-        public function itUnlinksASymlinkWithoutWalkingItsTarget(Closure $remove, string $expectedException): void
+        public function itUnlinksASymlinkWithoutWalkingItsTarget(): void
         {
             $target = $this->root . '/target';
             $link = $this->root . '/link';
@@ -281,20 +274,19 @@ namespace QmxFindingGate\Tests {
             self::assertNotFalse(file_put_contents($target . '/kept', 'content'));
             self::assertTrue(symlink($target, $link));
 
-            $remove($link);
+            Fs::removeRecursively($link);
 
             self::assertFalse(is_link($link));
             self::assertFileExists($target . '/kept');
         }
 
         #[Test]
-        #[DataProvider('removers')]
-        public function itRemovesADanglingSymlink(Closure $remove, string $expectedException): void
+        public function itRemovesADanglingSymlink(): void
         {
             $link = $this->root . '/link';
             self::assertTrue(symlink($this->root . '/missing-target', $link));
 
-            $remove($link);
+            Fs::removeRecursively($link);
 
             self::assertFalse(is_link($link));
         }

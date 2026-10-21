@@ -71,6 +71,10 @@ final class GateTest extends TestCase
             foreach ($files as $file) {
                 Fs::write($runtime . '/finding-gate/' . basename($file), Fs::read($file));
             }
+            Fs::write(
+                $runtime . '/subprocess/GitProcessEnvironment.php',
+                Fs::read(\dirname(__DIR__, 2) . '/subprocess/GitProcessEnvironment.php'),
+            );
             $registration = require \dirname(__DIR__) . '/wiring-outcomes.php';
             unset($registration['caseChecks']);
             Fs::write($runtime . '/finding-gate/wiring-outcomes.php', "<?php\nreturn " . var_export($registration, true) . ";\n");

@@ -1,63 +1,15 @@
 --- candidate
 +++ reference (mapped)
 @@ -1,1 +1,1 @@
--visible 5384
-+visible 5460
-@@ -65,6 +65,6 @@
--    Property type coverage is 0.0% (minimum: 50.0%). Add type declarations to properties  [design.type-coverage.property]
--    Recommendation: Property type coverage: 0.0% (threshold: 50.0%) — missing type declarations
--
--  ERROR  Untyped
--    Return type coverage is 0.0% (minimum: 50.0%). Add return type declarations to methods  [design.type-coverage.return]
--    Recommendation: Return type coverage: 0.0% (threshold: 50.0%) — missing type declarations
-+    Return type coverage is 0.0% (minimum: 50.0%). Add return type declarations to methods  [design.type-coverage.return]
-+    Recommendation: Return type coverage: 0.0% (threshold: 50.0%) — missing type declarations
-+
-+  ERROR  Untyped
-+    Property type coverage is 0.0% (minimum: 50.0%). Add type declarations to properties  [design.type-coverage.property]
-+    Recommendation: Property type coverage: 0.0% (threshold: 50.0%) — missing type declarations
-@@ -89,9 +89,9 @@
--  design.type-coverage.property            ~15min    (1 violation)
--  design.type-coverage.return              ~15min    (1 violation)
--
--Qualimetrix dev-main: 7 error(s), 10 warning(s) in 20 file(s)
--Analysis complete: 20 analyzed, 0 generated file(s) excluded.
--Rule population incomplete — declaration: 204 judged, 3 not judged; namespace: 6 judged, 5 not judged.
+-visible 5279
++visible 5384
+@@ -94,3 +94,4 @@
 -Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 -
--invocation-format:text-detail 5384
-+  design.type-coverage.return              ~15min    (1 violation)
-+  design.type-coverage.property            ~15min    (1 violation)
-+
-+Qualimetrix dev-main: 7 error(s), 10 warning(s) in 20 file(s)
-+Analysis complete: 20 analyzed, 0 generated file(s) excluded.
-+Rule population incomplete — callable: 140 judged, 56 not judged; declaration: 204 judged, 144 not judged; invocation: 0 judged, 3 not judged; namespace: 6 judged, 14 not judged.
+-invocation-format:text-detail 5279
++Rule population incomplete — declaration: 204 judged, 3 not judged; namespace: 6 judged, 5 not judged.
 +Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 +
-+invocation-format:text-detail 5460
-@@ -161,6 +161,6 @@
--    Property type coverage is 0.0% (minimum: 50.0%). Add type declarations to properties  [design.type-coverage.property]
--    Recommendation: Property type coverage: 0.0% (threshold: 50.0%) — missing type declarations
--
--  ERROR  Untyped
--    Return type coverage is 0.0% (minimum: 50.0%). Add return type declarations to methods  [design.type-coverage.return]
--    Recommendation: Return type coverage: 0.0% (threshold: 50.0%) — missing type declarations
-+    Return type coverage is 0.0% (minimum: 50.0%). Add return type declarations to methods  [design.type-coverage.return]
-+    Recommendation: Return type coverage: 0.0% (threshold: 50.0%) — missing type declarations
-+
-+  ERROR  Untyped
-+    Property type coverage is 0.0% (minimum: 50.0%). Add type declarations to properties  [design.type-coverage.property]
-+    Recommendation: Property type coverage: 0.0% (threshold: 50.0%) — missing type declarations
-@@ -185,6 +185,6 @@
--  design.type-coverage.property            ~15min    (1 violation)
--  design.type-coverage.return              ~15min    (1 violation)
--
--Qualimetrix dev-main: 7 error(s), 10 warning(s) in 20 file(s)
--Analysis complete: 20 analyzed, 0 generated file(s) excluded.
--Rule population incomplete — declaration: 204 judged, 3 not judged; namespace: 6 judged, 5 not judged.
-+  design.type-coverage.return              ~15min    (1 violation)
-+  design.type-coverage.property            ~15min    (1 violation)
-+
-+Qualimetrix dev-main: 7 error(s), 10 warning(s) in 20 file(s)
-+Analysis complete: 20 analyzed, 0 generated file(s) excluded.
-+Rule population incomplete — callable: 140 judged, 56 not judged; declaration: 204 judged, 144 not judged; invocation: 0 judged, 3 not judged; namespace: 6 judged, 14 not judged.
++invocation-format:text-detail 5384
+@@ -189,0 +190,1 @@
++Rule population incomplete — declaration: 204 judged, 3 not judged; namespace: 6 judged, 5 not judged.

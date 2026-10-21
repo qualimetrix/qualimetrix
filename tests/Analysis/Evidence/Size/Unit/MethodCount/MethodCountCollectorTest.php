@@ -273,6 +273,8 @@ PHP;
         self::assertSame(3, $metrics->get('size.method-count.total:App\MyTrait'));
         self::assertSame(1, $metrics->get('size.method-count.public:App\MyTrait'));
         self::assertSame(1, $metrics->get('size.method-count.protected:App\MyTrait'));
+        self::assertSame(1, $metrics->get('design.is-trait:App\MyTrait'));
+        self::assertSame(0, $metrics->get('design.is-enum:App\MyTrait'));
     }
 
     #[Test]
@@ -308,6 +310,8 @@ PHP;
         self::assertSame(2, $metrics->get('size.method-count:App\Status'));
         self::assertSame(2, $metrics->get('size.method-count.total:App\Status'));
         self::assertSame(0, $metrics->get('size.getter-count:App\Status')); // Neither reads an instance property
+        self::assertSame(0, $metrics->get('design.is-trait:App\Status'));
+        self::assertSame(1, $metrics->get('design.is-enum:App\Status'));
     }
 
     #[Test]
@@ -434,7 +438,7 @@ PHP;
     {
         $definitions = $this->collector->getMetricDefinitions();
 
-        self::assertCount(18, $definitions);
+        self::assertCount(20, $definitions);
 
         $metricNames = array_map(fn($d) => $d->name, $definitions);
         self::assertContains('size.method-count', $metricNames);
@@ -454,6 +458,8 @@ PHP;
         self::assertContains('design.is-data-class', $metricNames);
         self::assertContains('design.is-abstract', $metricNames);
         self::assertContains('design.is-interface', $metricNames);
+        self::assertContains('design.is-trait', $metricNames);
+        self::assertContains('design.is-enum', $metricNames);
         self::assertNotContains('design.is-exception', $metricNames);
         self::assertContains('design.woc', $metricNames);
 

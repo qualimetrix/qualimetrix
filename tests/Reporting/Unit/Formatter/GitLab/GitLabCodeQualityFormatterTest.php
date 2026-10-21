@@ -8,6 +8,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -466,6 +468,19 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     #[Test]
     public function itPublishesEveryFindingWithTruthfulAggregateAnchors(): void
     {
+        $metrics = new InMemoryMetricRepository();
+        $metrics->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\One', 'First'), RelativePath::fromString('src/Domain/First.php'), DeclarationOrdinal::fromRank(0))),
+            new MetricBag(),
+            RelativePath::fromString('src/Domain/First.php'),
+            1,
+        );
+        $metrics->addSubject(
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Nested', 'Second'), RelativePath::fromString('src/Domain/Nested/Second.php'), DeclarationOrdinal::fromRank(0))),
+            new MetricBag(),
+            RelativePath::fromString('src/Domain/Nested/Second.php'),
+            1,
+        );
         $fileless = [];
         foreach ([SymbolPath::forNamespace('App'), SymbolPath::forNamespace(''), SymbolPath::forProject()] as $symbol) {
             $fileless[] = self::finding(
@@ -479,7 +494,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         }
 
         foreach ([true, false] as $includeSource) {
-            $builder = ReportBuilder::create()->addFindings($fileless);
+            $builder = ReportBuilder::create()->addFindings($fileless)->metrics($metrics);
             if ($includeSource) {
                 $builder->addFinding(self::finding(
                     location: new Location(RelativePath::fromString('src/A.php'), 12),
@@ -494,9 +509,9 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             $issues = json_decode($output, true, flags: \JSON_THROW_ON_ERROR);
             self::assertIsList($issues);
             self::assertCount($includeSource ? 4 : 3, $issues);
-            foreach (\array_slice($issues, 0, 3) as $issue) {
-                self::assertSame('.', $issue['location']['path']);
-            }
+            self::assertSame('src/Domain', $issues[0]['location']['path']);
+            self::assertSame('.', $issues[1]['location']['path']);
+            self::assertSame('.', $issues[2]['location']['path']);
             if ($includeSource) {
                 self::assertSame(['description', 'check_name', 'fingerprint', 'severity', 'location'], array_keys($issues[3]));
                 self::assertSame('Source finding', $issues[3]['description']);

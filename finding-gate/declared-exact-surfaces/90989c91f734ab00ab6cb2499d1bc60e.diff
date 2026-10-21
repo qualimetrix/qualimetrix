@@ -1,14 +1,12 @@
 --- candidate
 +++ reference (mapped)
 @@ -1,1 +1,1 @@
--visible 407
-+visible 558
-@@ -8,1 +8,1 @@
--Rule population incomplete — namespace: 1 judged, 1 not judged.
-+Rule population incomplete — callable: 12 judged, 2 not judged; copy-occurrence: 2 judged, 0 not judged; declaration: 20 judged, 16 not judged; invocation: 0 judged, 3 not judged; namespace: 1 judged, 7 not judged.
-@@ -14,1 +14,1 @@
--invocation-format:health 407
-+invocation-format:health 558
-@@ -21,1 +21,1 @@
--Rule population incomplete — namespace: 1 judged, 1 not judged.
-+Rule population incomplete — callable: 12 judged, 2 not judged; copy-occurrence: 2 judged, 0 not judged; declaration: 20 judged, 16 not judged; invocation: 0 judged, 3 not judged; namespace: 1 judged, 7 not judged.
+-visible 341
++visible 407
+@@ -8,0 +8,1 @@
++Rule population incomplete — namespace: 1 judged, 1 not judged.
+@@ -13,1 +14,1 @@
+-invocation-format:health 341
++invocation-format:health 407
+@@ -20,0 +21,1 @@
++Rule population incomplete — namespace: 1 judged, 1 not judged.

@@ -9,7 +9,6 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\LayersValidator;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\LongFormAllowEntryNormalizer;
@@ -150,7 +149,7 @@ final class InertArchitectureDeclarationTest extends TestCase
             'relations' => ['extends'],
         ], 'domain'));
 
-        self::assertSame([DependencyType::Extends], $relations);
+        self::assertSame(['extends'], $relations);
     }
 
     /**

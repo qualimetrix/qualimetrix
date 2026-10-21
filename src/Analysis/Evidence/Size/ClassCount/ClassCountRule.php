@@ -20,6 +20,7 @@ use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Analysis\Finding\Rule\AbstractRule;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
  * Rule that checks number of classes per namespace.
@@ -63,6 +64,7 @@ final class ClassCountRule extends AbstractRule
                 [MetricName::SIZE_CLASS_COUNT],
                 SymbolLevel::Namespace_,
             )->withGates(
+                self::populationGate('own-count-expected', self::NAME, SymbolLevel::Namespace_, 'namespace', self::contextGuard('namespaceOwnCountExpected'), 'The namespace has no direct declaration population.'),
                 self::populationGate('own-count', self::NAME, SymbolLevel::Namespace_, 'namespace', self::keyPresent('own-count', [MetricName::SIZE_CLASS_COUNT]), 'The own class count was not published.'),
                 self::populationGate('nonempty-count', self::NAME, SymbolLevel::Namespace_, 'namespace', self::keyThreshold('nonempty-count', [MetricName::SIZE_CLASS_COUNT], '>', 0, 'zero', true), 'The namespace has no own classes.'),
             ),
@@ -85,6 +87,8 @@ final class ClassCountRule extends AbstractRule
             $subject = $namespaceInfo->subject
                 ?? MetricSubject::aggregate($namespaceInfo->symbolPath);
             $metrics = $context->metrics->get($namespaceInfo->symbolPath);
+            $ownCountExpected = $metrics->has(MetricName::SIZE_CLASS_COUNT)
+                || self::namespaceHasClassDeclaration($context, $namespaceInfo->symbolPath->namespace ?? '');
             if (!$context->admit(
                 self::NAME,
                 new FindingChannel(self::NAME),
@@ -92,6 +96,7 @@ final class ClassCountRule extends AbstractRule
                 PopulationIdentity::aggregate($namespaceInfo->symbolPath),
                 $declaration,
                 [
+                    GateInput::context('namespaceOwnCountExpected', $ownCountExpected),
                     GateInput::metrics('own-count', $metrics), GateInput::metrics('nonempty-count', $metrics),
                 ],
             )) {
@@ -104,7 +109,7 @@ final class ClassCountRule extends AbstractRule
             $severity = $effectiveOptions->getSeverity($classCount);
 
             if ($severity !== null) {
-                $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
+                $threshold = self::thresholdFor($severity, $effectiveOptions);
 
                 $findings[] = new Finding(
                     location: new Location($namespaceInfo->file),
@@ -122,6 +127,22 @@ final class ClassCountRule extends AbstractRule
         }
 
         return $findings;
+    }
+
+    private static function namespaceHasClassDeclaration(AnalysisContext $context, string $namespace): bool
+    {
+        foreach ($context->metrics->forNamespace($namespace) as $info) {
+            if ($info->subject?->declarationPath() !== null && $info->symbolPath->getType() === SymbolType::Class_) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function thresholdFor(Severity $severity, ClassCountOptions $options): int
+    {
+        return $severity === Severity::Error ? $options->error : $options->warning;
     }
 
     /**

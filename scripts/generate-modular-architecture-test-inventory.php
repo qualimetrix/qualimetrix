@@ -236,7 +236,7 @@ const P3_TEST_PATHS = [
     'tests/Analysis/Configuration/Unit/Loader/YamlConfigLoaderTest.php',
     'tests/Analysis/Configuration/Unit/Document/ConfigDataNormalizerTest.php',
     'tests/Analysis/Configuration/Unit/Pipeline/ConfigurationPipelineTest.php',
-    'tests/Analysis/Finding/Unit/Contract/Selection/RuleNameValidatorTest.php',
+    'tests/Analysis/Finding/Unit/RuleConfiguration/Selection/RuleNameValidatorTest.php',
     'tests/Analysis/Configuration/Unit/Pipeline/Stage/CliStageTest.php',
     'tests/Analysis/Configuration/Unit/Pipeline/Stage/ComposerDiscoveryStageTest.php',
     'tests/Analysis/Configuration/Unit/Pipeline/Stage/ConfigFileStageTest.php',
@@ -282,7 +282,7 @@ const P3_TEST_PATHS = [
     'tests/Analysis/Run/Unit/Discovery/AnalysisFileDiscoveryTest.php',
     'tests/Analysis/Run/Unit/Discovery/GeneratedFileFilterTest.php',
     'tests/Analysis/Run/Unit/FileSetInspection/FileSetInspectionCompositeTest.php',
-    'tests/Analysis/Run/Unit/Pipeline/AnalysisCoverageTest.php',
+    'tests/Analysis/Run/Unit/Contract/Coverage/AnalysisCoverageTest.php',
     'tests/Analysis/Run/Unit/Pipeline/AnalysisPipelineTest.php',
     'tests/Analysis/Run/Unit/Pipeline/AnalysisResultTest.php',
     'tests/Analysis/Run/Unit/Pipeline/DependencyGraphAnalyzerTest.php',
@@ -474,7 +474,7 @@ const RETIRED_PATH_ASSERTIONS = [
  */
 const NON_MANIFEST_TEST_OWNERS = [
     'TestSupport/WorkingDirectory' => [
-        'rows' => 5,
+        'rows' => 4,
         'reason' => 'The PHPUnit execution-window lifecycle and its repository-root opt-in share one support owner.',
     ],
     'TestSupport/Logging' => [
@@ -2054,7 +2054,6 @@ function systemSupportContents(string $root): string
 {
     $rows = [
         ['TestSupport/WorkingDirectory', 'tests/bootstrap.php', 'Parent-owned PHPUnit process-root bootstrap and cleanup.', 'support'],
-        ['TestSupport/WorkingDirectory', 'tests/TestSupport/WorkingDirectory/GitProcessEnvironment.php', 'Inherited Git configuration for repository fixtures in the PHPUnit process.', 'support'],
         ['TestSupport/WorkingDirectory', 'tests/TestSupport/WorkingDirectory/SuiteWorkingDirectoryExtension.php', 'PHPUnit execution window and cwd residue judgement.', 'support'],
         ['TestSupport/WorkingDirectory', 'tests/TestSupport/WorkingDirectory/RunsFromRepositoryRoot.php', 'Explicit repository-root opt-in for configuration-dependent tests.', 'support'],
         ['TestSupport/WorkingDirectory', 'tests/TestSupport/WorkingDirectory/declared-residue.tsv', 'Reasoned execution-window residue declarations.', 'support'],

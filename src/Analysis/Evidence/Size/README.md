@@ -231,7 +231,7 @@ class User
 ## Method Count
 
 **Collector:** `MethodCountCollector`
-**Provides:** `size.method-count`, `size.method-count.total`, `size.method-count.public`, `size.method-count.protected`, `size.method-count.private`, `size.getter-count`, `size.setter-count`
+**Provides:** `size.method-count`, `size.method-count.total`, `size.method-count.public`, `size.method-count.protected`, `size.method-count.private`, `size.getter-count`, `size.setter-count`, and exact declaration-kind flags
 **Level:** Class
 
 ### Metrics
@@ -245,6 +245,15 @@ class User
 | `size.method-count.private`   | Private methods (excluding getters/setters)                        |
 | `size.getter-count`           | Simple property-return getters with `get*`, `is*`, or `has*` names |
 | `size.setter-count`           | Simple property-assignment setters with `set*` names               |
+| `design.is-interface`         | Exact declaration is an interface (0 or 1)                         |
+| `design.is-trait`             | Exact declaration is a trait (0 or 1)                              |
+| `design.is-enum`              | Exact declaration is an enum (0 or 1)                              |
+
+The declaration-kind flags let rules distinguish a deliberately ineligible
+class-like declaration from missing evidence. Namespace class-count judgement
+likewise treats a synthesized parent with no direct declarations as outside its
+own-count population, while a direct declaration with no published count remains
+a data gap.
 
 ### Getter/Setter Detection
 

@@ -56,6 +56,8 @@ final class DistanceRuleTest extends TestCase
             'coupling.distance-own' => 0.5,
             'coupling.abstractness-own' => 0.5,
             'coupling.instability-own' => 0.0,
+            'coupling.ca-own' => 1,
+            'coupling.ce-own' => 0,
         ]));
         $rule = self::rule(new DistanceOptions(maxDistanceWarning: $threshold, maxDistanceError: 1.0, includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 0));
         $findings = $rule->analyze(new AnalysisContext($repository));
@@ -805,16 +807,27 @@ final class DistanceRuleTest extends TestCase
     }
 
     #[Test]
-    public function itSkipsExcludedNamespaceBagsAndDefersRequiredCouplingPastOwnDistancePresence(): void
+    public function itDistinguishesZeroCouplingFromMissingCouplingAndDistanceEvidence(): void
     {
         $repository = self::createMock(MetricRepositoryInterface::class);
         $excluded = SymbolPath::forNamespace('Vendor');
-        $missing = SymbolPath::forNamespace('App\\Missing');
+        $missingCoupling = SymbolPath::forNamespace('App\\MissingCoupling');
+        $zeroCoupling = SymbolPath::forNamespace('App\\ZeroCoupling');
+        $missingDistance = SymbolPath::forNamespace('App\\MissingDistance');
         $repository->method('all')->willReturn([
             self::subjectInfo($excluded, RelativePath::fromString('vendor'), null),
-            self::subjectInfo($missing, RelativePath::fromString('src'), null),
+            self::subjectInfo($missingCoupling, RelativePath::fromString('src/MissingCoupling'), null),
+            self::subjectInfo($zeroCoupling, RelativePath::fromString('src/ZeroCoupling'), null),
+            self::subjectInfo($missingDistance, RelativePath::fromString('src/MissingDistance'), null),
         ]);
-        $repository->expects(self::once())->method('get')->with($missing)->willReturn(MetricBag::fromArray(['size.class-count' => 3]));
+        $bags = [
+            $missingCoupling->toCanonical() => MetricBag::fromArray(['size.class-count' => 3]),
+            $zeroCoupling->toCanonical() => MetricBag::fromArray(['size.class-count' => 3, 'coupling.ca-own' => 0, 'coupling.ce-own' => 0]),
+            $missingDistance->toCanonical() => MetricBag::fromArray(['size.class-count' => 3, 'coupling.ca-own' => 1, 'coupling.ce-own' => 0]),
+        ];
+        $repository->expects(self::exactly(3))->method('get')->willReturnCallback(
+            static fn(SymbolPath $path): MetricBag => $bags[$path->toCanonical()],
+        );
         $channel = new FindingChannel(DistanceRule::NAME);
         $publication = new ChannelPublication(new RuleEnablement([new EnablementDecision(
             new SelectionCellAddress(DistanceRule::NAME, $channel, SymbolLevel::Namespace_, ChannelSelectionRole::Selectable),
@@ -823,9 +836,20 @@ final class DistanceRuleTest extends TestCase
         $session = new PopulationSession(($publication)->publishes(...));
         $rule = self::rule(new DistanceOptions(includeNamespaces: [NamespacePatternStub::subtree('App')], minTypeCount: 3));
         self::assertSame([], $rule->analyze((new AnalysisContext($repository))->withPopulationTrace($session)));
-        self::assertSame(0, $session->freeze()->judgedCount());
-        self::assertSame(2, $session->freeze()->unjudgedCount());
-        self::assertSame(['namespace-selected', 'own-distance'], array_map(static fn($absence): string => $absence->gate, $session->freeze()->abstentions()));
+        $population = $session->freeze();
+        self::assertSame(0, $population->judgedCount());
+        self::assertSame(4, $population->unjudgedCount());
+        $outcomes = [];
+        foreach ($population->abstentions() as $abstention) {
+            $outcomes[$abstention->gate . ':' . ($abstention->dataGap ? 'gap' : 'boundary')] = $abstention->count;
+        }
+        ksort($outcomes);
+        self::assertSame([
+            'namespace-selected:boundary' => 1,
+            'own-coupling:boundary' => 1,
+            'own-coupling:gap' => 1,
+            'own-distance:gap' => 1,
+        ], $outcomes);
     }
 
     #[Test]

@@ -48,8 +48,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
  *    forms judged and layers merged as {@see ArchitectureSection} declares.
  * 2. Runs the validators in a deterministic order
  *    ({@see LayersValidator} → {@see AllowValidator} →
- *    {@see ExactAllowCycleValidator} → {@see CoverageValidator} →
- *    {@see WildcardSelfAllowDetector}).
+ *    {@see ExactAllowCycleValidator} → {@see CoverageValidator}).
  * 3. Assembles the typed {@see ArchitectureConfiguration} and returns it
  *    together with the warning values.
  *
@@ -71,20 +70,16 @@ final class ArchitectureConfigurationFactory
 
     private readonly ExactAllowCycleValidator $exactAllowCycleValidator;
 
-    private readonly WildcardSelfAllowDetector $wildcardSelfAllowDetector;
-
     public function __construct(
         ?LayersValidator $layersValidator = null,
         ?AllowValidator $allowValidator = null,
         ?CoverageValidator $coverageValidator = null,
         ?ExactAllowCycleValidator $exactAllowCycleValidator = null,
-        ?WildcardSelfAllowDetector $wildcardSelfAllowDetector = null,
     ) {
         $this->layersValidator = $layersValidator ?? new LayersValidator();
         $this->allowValidator = $allowValidator ?? new AllowValidator();
         $this->coverageValidator = $coverageValidator ?? new CoverageValidator();
         $this->exactAllowCycleValidator = $exactAllowCycleValidator ?? new ExactAllowCycleValidator();
-        $this->wildcardSelfAllowDetector = $wildcardSelfAllowDetector ?? new WildcardSelfAllowDetector();
     }
 
     /**
@@ -133,8 +128,6 @@ final class ArchitectureConfigurationFactory
         $coverage = $this->coverageValidator->validate($coverageGap);
         $this->coverageValidator->rejectModeWithNothingToJudge($coverage, $entries, $coverageGap, $layers);
         $maxExpandedLayers = CarriedValueForm::maxExpandedLayers($section->child('max_expanded_layers'));
-
-        $this->wildcardSelfAllowDetector->detect($allowEntries, $warnings);
 
         return new ArchitectureFactoryResult(
             new ArchitectureConfiguration(

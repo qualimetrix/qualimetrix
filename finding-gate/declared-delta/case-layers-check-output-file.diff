@@ -1,0 +1,10 @@
+--- candidate
++++ reference (mapped)
+@@ -509,2 +509,2 @@
+-            "gate": "own-count-expected",
+-            "reason": "The namespace has no direct declaration population. Required population context was not judged.",
++            "gate": "own-count",
++            "reason": "The own class count was not published. Missing metric \"size.class-count\".",
+@@ -517,1 +517,1 @@
+-            "dataGap": false
++            "dataGap": true

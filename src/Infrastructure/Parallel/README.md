@@ -100,7 +100,10 @@ closed when its startup-log directory cannot be created.
 The pool kills pending workers on cancellation instead of awaiting graceful
 shutdown, so an interrupted coordinator does not wait for another file result.
 Console installs its optional pcntl guard for every claimed run, including
-stdout reports. The Docker image includes pcntl so its PID 1 handles SIGTERM.
+stdout reports. With ext-pcntl and exclusive SIGINT/SIGTERM ownership, signal
+interruption removes claimed staged outputs and parallel-worker startup files.
+Without that guard, direct process termination can leave those temporary paths
+for manual cleanup. The Docker image includes pcntl so its PID 1 handles SIGTERM.
 
 **Collector marker.** A registered collector that does not implement
 `ParallelSafeCollectorInterface` is refused, like a collector class that does not

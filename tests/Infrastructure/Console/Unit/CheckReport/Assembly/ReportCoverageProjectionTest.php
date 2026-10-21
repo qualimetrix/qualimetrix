@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Unit\CheckReport\Assembly;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisCoverage;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Console\CheckReport\Assembly\ReportCoverageProjection;

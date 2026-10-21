@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Size\MethodCount;
 
+use Qualimetrix\Core\Symbol\ClassType;
+
 /**
  * Value object holding method count and property count metrics for a class.
  *
@@ -35,7 +37,6 @@ final class MethodCountMetrics
 
     public bool $isReadonly = false;
     public bool $isAbstract = false;
-    public bool $isInterface = false;
     public bool $hasConstructor = false;
     public bool $hasPublicConstructor = false;
 
@@ -44,6 +45,7 @@ final class MethodCountMetrics
         public readonly string $className = '',
         public readonly int $line = 0,
         public readonly int $startFilePos = 0,
+        public readonly ClassType $classType = ClassType::Class_,
     ) {}
 
     /**

@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowAliasExpander;
+use Qualimetrix\Analysis\Policy\Architecture\Allow\AllowAliasExpander;
 
 /**
  * Split off from `AllowAliasExpanderTest` (which keeps the hand-picked

@@ -1,20 +1,12 @@
 --- candidate
 +++ reference (mapped)
 @@ -1,1 +1,1 @@
--visible 2320
-+visible 2471
-@@ -6,1 +6,1 @@
--Rule population incomplete — namespace: 1 judged, 1 not judged.
-+Rule population incomplete — callable: 35 judged, 14 not judged; declaration: 10 judged, 14 not judged; directive-site: 1 judged, 0 not judged; invocation: 0 judged, 3 not judged; namespace: 1 judged, 7 not judged.
-@@ -20,1 +20,1 @@
--         annotation.unresolved-directive: Suppression "design.type-coverage.propurn" addresses no channel. Addressable names closest to it: design.type-coverage.property, design.type-coverage.return. Prose belongs after "--".
-+         annotation.unresolved-directive: Suppression "design.type-coverage.propurn" addresses no channel. Addressable names closest to it: design.type-coverage.return, design.type-coverage.property. Prose belongs after "--".
-@@ -31,1 +31,1 @@
--invocation-format:summary 2320
-+invocation-format:summary 2471
-@@ -36,1 +36,1 @@
--Rule population incomplete — namespace: 1 judged, 1 not judged.
-+Rule population incomplete — callable: 35 judged, 14 not judged; declaration: 10 judged, 14 not judged; directive-site: 1 judged, 0 not judged; invocation: 0 judged, 3 not judged; namespace: 1 judged, 7 not judged.
-@@ -50,1 +50,1 @@
--         annotation.unresolved-directive: Suppression "design.type-coverage.propurn" addresses no channel. Addressable names closest to it: design.type-coverage.property, design.type-coverage.return. Prose belongs after "--".
-+         annotation.unresolved-directive: Suppression "design.type-coverage.propurn" addresses no channel. Addressable names closest to it: design.type-coverage.return, design.type-coverage.property. Prose belongs after "--".
+-visible 2254
++visible 2320
+@@ -6,0 +6,1 @@
++Rule population incomplete — namespace: 1 judged, 1 not judged.
+@@ -30,1 +31,1 @@
+-invocation-format:summary 2254
++invocation-format:summary 2320
+@@ -35,0 +36,1 @@
++Rule population incomplete — namespace: 1 judged, 1 not judged.

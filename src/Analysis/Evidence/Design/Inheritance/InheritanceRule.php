@@ -191,7 +191,7 @@ final class InheritanceRule extends AbstractRule
                 SymbolLevel::Class_,
             )->withGates(
                 self::populationGate('logical-class-kind', self::NAME, SymbolLevel::Class_, 'declaration', self::kindIn('logicalKind', [SymbolType::Class_]), 'Only class declarations are judged.'),
-                self::populationGate('dit-present', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('dit-present', [MetricName::DESIGN_DIT], absenceBoundaries: [MetricName::DESIGN_IS_INTERFACE => 1]), 'Numeric inheritance depth was not published.'),
+                self::populationGate('dit-present', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('dit-present', [MetricName::DESIGN_DIT], absenceBoundaries: [MetricName::DESIGN_IS_INTERFACE => 1, MetricName::DESIGN_IS_TRAIT => 1, MetricName::DESIGN_IS_ENUM => 1]), 'Numeric inheritance depth was not published.'),
             ),
         ];
     }

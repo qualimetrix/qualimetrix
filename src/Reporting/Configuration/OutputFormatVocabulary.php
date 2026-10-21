@@ -24,6 +24,10 @@ final readonly class OutputFormatVocabulary
             ));
         }
 
+        if ($value === 'text-verbose') {
+            $format->refuse('Output format "text-verbose" was retired; use "--format=text --detail=all".');
+        }
+
         if (!$this->formatters->has($value)) {
             $format->refuse(\sprintf(
                 'Output format "%s" is not one of: %s.',

@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Run\FileSetInspection;
 
 use LogicException;
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailure;
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\FileSetInspectionFailure;
 use Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;

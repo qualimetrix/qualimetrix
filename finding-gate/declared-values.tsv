@@ -1,9 +1,5 @@
 kind	key	level	reason
-metric	cohesion.pure-method-count.avg	*	Aggregate cohesion publishes the purity inputs used by the corrected namespace and project formula.
-metric	cohesion.pure-method-count.count	*	Aggregate cohesion publishes the purity inputs used by the corrected namespace and project formula.
-metric	cohesion.tcc-method-count.avg	*	Aggregate cohesion publishes the purity inputs used by the corrected namespace and project formula.
-metric	cohesion.tcc-method-count.count	*	Aggregate cohesion publishes the purity inputs used by the corrected namespace and project formula.
-field	refusals	*	Directive spelling suggestions break equal-distance ties by exact channel name, placing property before return for the unresolved propurn target.
-metric	design.is-exception	class	Exception classification is a named-class fact; interface declarations no longer publish a false class exception value.
-metric	design.is-exception.sum	namespace	Namespace exception totals aggregate named-class facts without interface placeholder values.
-order	ranking	*	Compiled producer NAME order exchanges the unchanged complexity.ccn and complexity.cognitive findings at score 90 in config-precedence JSON; complete typed physical and unpositioned ranking multisets are identical, and derivation must measure only this proven tie permutation.
+metric	design.is-trait	class	Declaration kind is explicit evidence for rule population boundaries; absent class-only evidence is not a data gap for this kind.
+metric	design.is-trait.sum	*	Kind totals aggregate exact declaration facts without substituting missing class-only metrics.
+metric	design.is-enum	class	Declaration kind is explicit evidence for rule population boundaries; absent class-only evidence is not a data gap for this kind.
+metric	design.is-enum.sum	*	Kind totals aggregate exact declaration facts without substituting missing class-only metrics.

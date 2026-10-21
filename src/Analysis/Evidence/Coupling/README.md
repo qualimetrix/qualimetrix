@@ -420,7 +420,9 @@ their existing `min-class-count` options.
 When `Ca = Ce = 0`, distance is absent in that scope: instability is a
 convention rather than measured edge evidence. `DistanceRule` consequently has
 no distance to judge there. No project sample or health input is fabricated
-from that scope.
+from that scope. Its population records that zero-edge namespace as outside the
+distance population. Missing coupling inputs remain a data gap; when coupling
+is positive, a missing distance remains a separate data gap.
 
 `coupling.distance` stays the subtree value and carries **no project
 aggregation**. The project publisher folds measured `coupling.distance-own`

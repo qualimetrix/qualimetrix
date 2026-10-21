@@ -14,7 +14,7 @@ use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Discovery\EntryInspector;
 use Qualimetrix\Analysis\Run\Discovery\EntryInspectorInterface;
 use Qualimetrix\Analysis\Run\Discovery\EntryKind;

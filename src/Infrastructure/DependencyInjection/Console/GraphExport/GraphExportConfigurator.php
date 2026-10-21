@@ -8,8 +8,8 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilde
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
+use Qualimetrix\Analysis\Run\Contract\DependencyGraph\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Infrastructure\Console\GraphExport\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\RunSetup\Input\AnalysisPreflight;

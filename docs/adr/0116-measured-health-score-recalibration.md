@@ -301,15 +301,15 @@ unchanged.
 
 ### Frozen search and selection
 
-The independent source ranking places CodeIgniter and WordPress below each of
-Flysystem, PHPUnit, Symfony HttpFoundation, HttpKernel, Console, Routing, Monolog,
-Doctrine ORM, DBAL, PHP-Parser, Guzzle and Symfony DependencyInjection. Its 24
-pair terms have weight 1 and margin 0; the objective is their weighted sum and
-ties use ascending declared grid order. The [frozen source ranking](https://github.com/qualimetrix/qualimetrix/blob/420476782939d4113ff949b6cefe72b10d9efc50/docs/internal/plans/health-recalibration/measurement/02-apriori-ranking.md) has SHA-256
-`dff205c1c4774b0e461264f9e7fef3fa72975a9d964386abf92a896d564ecbf5`.
-Its retired plan path was replaced by a byte-identical retained evidence copy;
-only that anchor path changed in the search specification. Parameters, formulas,
-objective terms, aggregation and tie-break remain unchanged.
+The calibration script freezes the independent source ranking directly in
+`FormalRanking::LOWER` and `FormalRanking::HIGHER`: CodeIgniter and WordPress
+must each rank below Flysystem, PHPUnit, Symfony HttpFoundation, HttpKernel,
+Console, Routing, Monolog, Doctrine ORM, DBAL, PHP-Parser, Guzzle and Symfony
+DependencyInjection. Their Cartesian product is 24 pairs, each judged with
+`lower <= higher`. Every pair has weight 1 and margin 0; the objective is their
+weighted sum and ties use ascending declared grid order. The script, invocation
+above and complete grid below are the retained selection evidence. Parameters,
+formulas, objective terms, aggregation and tie-break remain unchanged.
 Composer, Laravel and Qualimetrix are diagnostics, not extra formal pairs.
 
 The unchanged grid is LCOM span `[5, 4, 2]`, distance weight `[6, 9, 12]`

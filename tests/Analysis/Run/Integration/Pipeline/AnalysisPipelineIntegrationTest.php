@@ -72,18 +72,19 @@ use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailure;
+use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\SkippedEntry;
 use Qualimetrix\Analysis\Run\Contract\FileSetInspectionFailure;
 use Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Discovery\ScopeFacts;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
+use Qualimetrix\Analysis\Run\Preparation\DiscoveryResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
@@ -123,7 +124,6 @@ use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Qualimetrix\Tests\Analysis\Run\Support\Pipeline\TestPipelineBuilder;
-use ReflectionMethod;
 use ReflectionProperty;
 use SplFileInfo;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -238,15 +238,19 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             FileProcessingResult::failure($paths[2], 'processing error', FileProcessingFailureKind::Processing),
         ];
 
-        $coverage = (new ReflectionMethod(\Qualimetrix\Analysis\Run\Preparation\RunPreparation::class, 'buildCoverage'))->invoke(
-            null,
-            $paths,
-            [],
-            [],
-            $failures,
-            [],
-            [],
-            [],
+        $scope = self::runConfiguration(AbsolutePath::fromString(__DIR__))->projectScope;
+        $coverage = (new DiscoveryResult(
+            measuredScope: $scope,
+            files: [],
+            eligiblePaths: $paths,
+            generatedExcludedFiles: [],
+            publishedByInput: [],
+            skippedFailures: [],
+            namedExcluded: [],
+        ))->coverage(
+            analyzedFiles: [],
+            collectionFailures: $failures,
+            inspectionFailures: [],
         );
 
         self::assertSame(3, $coverage->failedFilesCount());
@@ -269,15 +273,19 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $lateFailure = RelativePath::fromString('late.php');
         $survivor = RelativePath::fromString('survivor.php');
 
-        $coverage = (new ReflectionMethod(\Qualimetrix\Analysis\Run\Preparation\RunPreparation::class, 'buildCoverage'))->invoke(
-            null,
-            [$collectedFailure, $lateFailure, $survivor],
-            [],
-            [$lateFailure, $survivor],
-            [FileProcessingResult::failure($collectedFailure, 'collection parse', FileProcessingFailureKind::Parse)],
-            [],
-            [],
-            [
+        $scope = self::runConfiguration(AbsolutePath::fromString(__DIR__))->projectScope;
+        $coverage = (new DiscoveryResult(
+            measuredScope: $scope,
+            files: [],
+            eligiblePaths: [$collectedFailure, $lateFailure, $survivor],
+            generatedExcludedFiles: [],
+            publishedByInput: [],
+            skippedFailures: [],
+            namedExcluded: [],
+        ))->coverage(
+            analyzedFiles: [$lateFailure, $survivor],
+            collectionFailures: [FileProcessingResult::failure($collectedFailure, 'collection parse', FileProcessingFailureKind::Parse)],
+            inspectionFailures: [
                 new AnalysisFailure($collectedFailure, AnalysisFailureKind::UnreadableFile, 'later read'),
                 new AnalysisFailure($lateFailure, AnalysisFailureKind::UnreadableFile, 'first read'),
                 new AnalysisFailure($lateFailure, AnalysisFailureKind::UnreadableFile, 'repeated read'),

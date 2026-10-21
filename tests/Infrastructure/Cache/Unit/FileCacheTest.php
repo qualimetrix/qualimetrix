@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\FileTarget\TemporarySibling;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\AstEntryCodec;
 use Qualimetrix\Infrastructure\Cache\FileCache;
@@ -201,20 +202,27 @@ final class FileCacheTest extends TestCase
     public function itSweepsAndClearsTheTemporaryNamesCreatedByPublication(): void
     {
         $this->cache->set(str_repeat('a', 64), []);
-        $orphan = $this->cacheDir . '/ast-v1/aa/.qmx-0123456789ab';
-        $metadata = $this->cacheDir . '/ast-v1/.qmx-abcdef012345';
-        file_put_contents($orphan, 'orphan');
-        file_put_contents($metadata, 'orphan metadata');
+        $orphan = $this->abandonedTemporarySibling($this->cacheDir . '/ast-v1/aa');
+        $metadata = $this->abandonedTemporarySibling($this->cacheDir . '/ast-v1');
         touch($orphan, time() - 3_000_000);
         touch($metadata, time() - 3_000_000);
         file_put_contents($this->cacheDir . '/ast-v1/.sweep', '170');
         self::assertSame(2, $this->cache->sweepStep(time(), SweepPolicy::default())->removed);
         self::assertFileDoesNotExist($orphan);
         self::assertFileDoesNotExist($metadata);
-        file_put_contents($orphan, 'recent orphan');
-        file_put_contents($metadata, 'recent metadata orphan');
+        $this->abandonedTemporarySibling($this->cacheDir . '/ast-v1/aa');
+        $this->abandonedTemporarySibling($this->cacheDir . '/ast-v1');
         self::assertTrue($this->cache->clear()->complete);
         self::assertSame([], glob($this->cacheDir . '/.clearing-*'));
+    }
+
+    private function abandonedTemporarySibling(string $directory): string
+    {
+        $temporary = TemporarySibling::create(AbsolutePath::fromString($directory));
+        $path = $temporary->path()->value();
+        fclose($temporary->takeHandle());
+
+        return $path;
     }
 
     #[Test]

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Policy\Architecture\Allow\AllowListEntry;
 
 /**
  * Rejects directed cycles in the exact-selector projection of architecture.allow.

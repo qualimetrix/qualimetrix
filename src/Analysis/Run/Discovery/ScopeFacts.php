@@ -10,7 +10,7 @@ use Qualimetrix\Core\Path\RelativePath;
 /**
  * Observable file-selection facts; no source file content is read here.
  *
- * @qmx-ignore health.cohesion -- Immutable observations expose independent selection and denominator claims captured during the same run lifecycle.
+ * @qmx-threshold health.cohesion 40.0 -- Immutable observations expose independent selection and denominator claims captured during the same run lifecycle; the finite boundary keeps a further cohesion loss visible.
  */
 final readonly class ScopeFacts
 {

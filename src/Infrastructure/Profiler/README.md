@@ -239,8 +239,8 @@ itself carries `"args": {"stopped": false}`. Captured from a run:
 ## Related Components
 
 - [AnalysisPipeline](../../Analysis/Run/Pipeline/) — main profiler consumer
-- [ProfilePresenter](../Console/ProfilePresenter.php) — summary and export on the command line
-- [CheckCommand](../Console/Command/) — CLI integration
+- [ProfilePresenter](../Console/Profile/ProfilePresenter.php) — summary and export on the command line
+- [CheckCommand](../Console/Check/) — CLI integration
 
 
 ## Locality
