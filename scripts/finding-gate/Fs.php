@@ -22,12 +22,10 @@ final class Fs
     /**
      * Writes a whole file, and never through a hardlink.
      *
-     * The temporary file and the rename are not about crash safety here: a
-     * tree cloned by **hardlinking** its content shares its declaration files'
-     * inodes with the original. `file_put_contents` truncates that inode in
-     * place, so a run inside such a clone that writes a tracked declaration
-     * writes it into the repository the developer is looking at. The rename
-     * replaces the directory entry and leaves the shared inode alone.
+     * The temporary file and the rename replace the directory entry instead of
+     * truncating the inode in place, which `file_put_contents` does: a file
+     * **hardlinked** from another tree keeps its own content, so a run that
+     * writes a declaration in one tree cannot write it into the other.
      *
      * A process killed between the write and the rename leaves the temporary
      * behind. It is not cleaned up here — there is nothing left running to do it

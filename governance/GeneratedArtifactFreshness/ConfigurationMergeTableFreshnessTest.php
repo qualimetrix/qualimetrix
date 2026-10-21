@@ -43,9 +43,6 @@ final class ConfigurationMergeTableFreshnessTest extends TestCase
         }
     }
 
-    // Not in the `live-freshness` group its neighbours use: the generator
-    // measures nothing and takes a fraction of a second, so the check runs
-    // with every suite as well as in `check:artifacts`.
     #[Test]
     public function itMatchesWhatTheSectionDeclarationsGenerate(): void
     {

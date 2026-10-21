@@ -7,9 +7,8 @@ namespace QmxFindingGate;
 /**
  * The gate's failure vocabulary, in one place.
  *
- * These strings are a contract: other packages of the vocabulary pass assert on
- * them, so renaming one is a breaking change to those assertions, not an
- * editorial edit.
+ * These strings are a contract: the gate's report publishes them and its tests
+ * assert on them, so renaming one is a breaking change, not an editorial edit.
  *
  * Unsupported vocabulary is refused.
  */
