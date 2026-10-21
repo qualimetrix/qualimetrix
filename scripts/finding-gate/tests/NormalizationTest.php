@@ -6,6 +6,7 @@ namespace QmxFindingGate\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use QmxFindingGate\Corpus;
 use QmxFindingGate\FailureClass;
 use QmxFindingGate\GateReport;
 use QmxFindingGate\Normalization;
@@ -13,6 +14,7 @@ use QmxFindingGate\NormalizationCheck;
 use QmxFindingGate\NormalizationDeriver;
 use QmxFindingGate\NormalizationRule;
 use QmxFindingGate\Options;
+use QmxFindingGate\SyntheticTree;
 
 /**
  * What a normalization rule of each kind redacts, the bytes it must leave
@@ -107,6 +109,54 @@ final class NormalizationTest extends TestCase
             [[FailureClass::NORMALIZATION_STALE, 'format:json / meta.absent']],
             array_map(static fn(array $failure): array => [$failure['class'], $failure['scope']], $report->raised()),
         );
+    }
+
+    #[Test]
+    public function itRaisesNormalizationOverreachForARowWhoseLocatorNamesATupleField(): void
+    {
+        $root = SyntheticTree::fixture(SyntheticTree::clean());
+        try {
+            $raised = static function (NormalizationRule $rule) use ($root): array {
+                $report = new GateReport();
+                (new NormalizationCheck(Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root), $report, Normalization::fromRules([$rule])))->checkNormalizationScope();
+
+                return array_map(static fn(array $failure): array => [$failure['class'], $failure['scope']], $report->raised());
+            };
+
+            self::assertSame(
+                [[FailureClass::NORMALIZATION_OVERREACH, 'format:metrics / summary.channel']],
+                $raised(new NormalizationRule('format:metrics', 'summary.channel', NormalizationRule::KIND_JSON_PATH, 'test')),
+            );
+            self::assertSame([], $raised(new NormalizationRule('format:metrics', 'summary.duration', NormalizationRule::KIND_JSON_PATH, 'test')));
+        } finally {
+            SyntheticTree::remove($root);
+        }
+    }
+
+    /** A locator need not name a tuple field to reach one: `violations` alone takes every finding with it. */
+    #[Test]
+    public function itRaisesNormalizationOverreachWhenNormalizingTheFindingsSurfaceChangesItsFindings(): void
+    {
+        $tree = SyntheticTree::clean();
+        $root = SyntheticTree::fixture($tree);
+        try {
+            $case = Corpus::load($root)->cases[0];
+            $findings = $tree['findings']['alpha'];
+            $artifact = (string) json_encode(['violations' => $findings, 'meta' => ['clock' => 'now']], \JSON_THROW_ON_ERROR);
+            $raised = static function (string $locator) use ($root, $case, $artifact, $findings): array {
+                $report = new GateReport();
+                $rule = new NormalizationRule('format:json', $locator, NormalizationRule::KIND_JSON_PATH, 'test');
+                (new NormalizationCheck(Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root), $report, Normalization::fromRules([$rule])))
+                    ->checkNormalizationLeavesFindings('candidate', $case, $artifact, $findings);
+
+                return array_map(static fn(array $failure): array => [$failure['class'], $failure['scope']], $report->raised());
+            };
+
+            self::assertSame([[FailureClass::NORMALIZATION_OVERREACH, 'candidate / case:alpha|format:json']], $raised('violations'));
+            self::assertSame([], $raised('meta.clock'));
+        } finally {
+            SyntheticTree::remove($root);
+        }
     }
 
     /**

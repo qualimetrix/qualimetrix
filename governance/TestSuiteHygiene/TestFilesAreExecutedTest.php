@@ -133,6 +133,7 @@ final class TestFilesAreExecutedTest extends TestCase
         'QmxFindingGate\\Tests\\FieldValuesCheckTest::itRaisesAFieldValuesMismatchForAnObservedFieldWhoseMeasuredValuesDiffer',
         'QmxFindingGate\\Tests\\GateModesTest::itExitsThreeWhenTheGateCannotRun',
         'QmxFindingGate\\Tests\\GateTest::itRaisesEnvMismatchAndRunsNoReferenceWhenTheTwoTreesDoNotShareADependencySet',
+        'QmxFindingGate\\Tests\\GateTest::itRaisesRunFailedForTheTreeRunWhoseCaseWorkerRefusedItsCapture',
         'QmxFindingGate\\Tests\\GateTest::itRefusesACaseWhoseOutcomeNoRegisteredCheckVerifies',
         'QmxFindingGate\\Tests\\GateTest::itReportsTheReferenceInputRefusalBeforeReadingAnalysisRecords',
         'QmxFindingGate\\Tests\\RankingCheckTest::itChecksHealthyFullRankingAndZeroSlicesThroughThePublicGate',

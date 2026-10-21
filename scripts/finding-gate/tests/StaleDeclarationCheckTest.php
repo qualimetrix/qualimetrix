@@ -11,6 +11,7 @@ use QmxFindingGate\DeclaredFields;
 use QmxFindingGate\DeclaredRecords;
 use QmxFindingGate\DeclaredStructuralMaps;
 use QmxFindingGate\DeclaredSurfaces;
+use QmxFindingGate\DeclaredValues;
 use QmxFindingGate\FailureClass;
 use QmxFindingGate\Fs;
 use QmxFindingGate\GateReport;
@@ -54,6 +55,20 @@ final class StaleDeclarationCheckTest extends TestCase
         );
         self::assertSame([], $this->staleAfter(static function (Declarations $declarations): void {
             self::assertTrue($declarations->records->claim(DeclaredRecords::INTRODUCED, 'alpha', 'json', 'format:json', DeclaredRecords::canonical(self::RECORD)));
+        }));
+    }
+
+    #[Test]
+    public function itRaisesValueStaleForAnIntentUnderWhichNoValueMoved(): void
+    {
+        $this->write(DeclaredValues::INDEX, DeclaredValues::COLUMNS, [[DeclaredValues::METRIC, 'ccn', DeclaredValues::EVERY_LEVEL, 'A measured value changes.']]);
+
+        self::assertSame(
+            [[FailureClass::VALUE_STALE, DeclaredValues::INDEX]],
+            $this->staleAfter(static fn(Declarations $declarations): null => null),
+        );
+        self::assertSame([], $this->staleAfter(static function (Declarations $declarations): void {
+            $declarations->values->credit(DeclaredValues::METRIC, 'ccn');
         }));
     }
 

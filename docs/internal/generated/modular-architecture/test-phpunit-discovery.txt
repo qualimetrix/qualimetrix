@@ -179,6 +179,7 @@ Available tests:
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itDoesNotHoldAnIncompleteAnalysisToABaselineFileItCannotWrite
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itHoldsAnAnalysisToItsBaselineFile
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itJudgesNormalizationMeasurementsByTheirCanonicalOutcomeSide
+ - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRaisesRunFailedForAJsonPublicationWithNoFindingsSection
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itReadsTheExplicitEnvelopeFromTheRepairingEncoder
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRefusesInvalidCorpusMetadataBeforeEveryCorpusReadingModeWrites
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itRequiresACoherentRefusalEnvelope"a different exit"
@@ -428,6 +429,7 @@ Available tests:
  - QmxFindingGate\Tests\GateReportTest::itPublishesRedDiagnosticsForInvalidSourceBytesWithoutChangingTheComparison
  - QmxFindingGate\Tests\GateReportTest::itRefusesACountNoFormPublishes
  - QmxFindingGate\Tests\GateTest::itRaisesEnvMismatchAndRunsNoReferenceWhenTheTwoTreesDoNotShareADependencySet
+ - QmxFindingGate\Tests\GateTest::itRaisesRunFailedForTheTreeRunWhoseCaseWorkerRefusedItsCapture
  - QmxFindingGate\Tests\GateTest::itRefusesACaseWhoseOutcomeNoRegisteredCheckVerifies
  - QmxFindingGate\Tests\GateTest::itReportsTheReferenceInputRefusalBeforeReadingAnalysisRecords
  - QmxFindingGate\Tests\JsonTextTest::itReplacesOnlyTheValueSpanItAddresses"a key"
@@ -468,6 +470,8 @@ Available tests:
  - QmxFindingGate\Tests\NormalizationDeriverTest::itRefusesSomethingOtherThanAWarningClock"unpadded hour"
  - QmxFindingGate\Tests\NormalizationTest::itChangesOnlyTheMeasuredClockWithTheTrackedNamespaceSummaryRule
  - QmxFindingGate\Tests\NormalizationTest::itPreservesExactJsonByteSpansBesideTheRedactedValue
+ - QmxFindingGate\Tests\NormalizationTest::itRaisesNormalizationOverreachForARowWhoseLocatorNamesATupleField
+ - QmxFindingGate\Tests\NormalizationTest::itRaisesNormalizationOverreachWhenNormalizingTheFindingsSurfaceChangesItsFindings
  - QmxFindingGate\Tests\NormalizationTest::itRaisesNormalizationStaleForARuleThatMatchedNothingInTheWholeRun
  - QmxFindingGate\Tests\NormalizationTest::itReachesIntoTheEmbeddedHtmlReportDataAndLeavesSiblingsAlone
  - QmxFindingGate\Tests\NormalizationTest::itRedactsAJsonPathFieldAndEveryElementAStarSegmentReaches
@@ -513,6 +517,7 @@ Available tests:
  - QmxFindingGate\Tests\RankingCheckTest::itNormalizesOnlyTheClockInInternalCaptureWarnings
  - QmxFindingGate\Tests\RankingCheckTest::itPreservesCompleteRepeatedOccurrenceCountsAcrossCandidatePasses
  - QmxFindingGate\Tests\RankingCheckTest::itPreservesRawRankedNumberSpellingsBeforeAnyNormalization
+ - QmxFindingGate\Tests\RankingCheckTest::itRaisesNondeterminismWhenTwoCandidatePassesDecideBaselineEligibilityDifferently
  - QmxFindingGate\Tests\RankingCheckTest::itRaisesThePlantedRankingFailuresThroughThePublicGate
  - QmxFindingGate\Tests\RankingCheckTest::itRefusesEachBrokenSideLocalRankingFromRecordedReports"ascending"
  - QmxFindingGate\Tests\RankingCheckTest::itRefusesEachBrokenSideLocalRankingFromRecordedReports"declared-score-non-prefix"
@@ -563,6 +568,7 @@ Available tests:
  - QmxFindingGate\Tests\RefusalDeclarationsTest::itReadsTheRefusalPublishersKeysRatherThanAFrozenEnvelope
  - QmxFindingGate\Tests\RefusalDeclarationsTest::itRemovesOnlyTheDeclaredDocumentMemberAndItsOwnLine
  - QmxFindingGate\Tests\RefusalDeclarationsTest::itTreatsOnlyARefusingBaselineWithoutRecordsAsDeltaOverreach
+ - QmxFindingGate\Tests\RenameMapCheckTest::itRaisesSplitUnmappedAgainstTheCaseWhoseSplitRecordTheCandidateNeverPublished
  - QmxFindingGate\Tests\RenameMapsTest::itAllowsACollapseForwardsAndExplainsASplitRecordByRecord
  - QmxFindingGate\Tests\RenameMapsTest::itCreditsAProducerMoveOnlyForARecordOfItsOwnKeyThatMoved
  - QmxFindingGate\Tests\RenameMapsTest::itKeepsALongerInputRowFromBeingShadowedByAShorterPrefixRow
@@ -634,6 +640,7 @@ Available tests:
  - QmxFindingGate\Tests\StaleDeclarationCheckTest::itRaisesRecordStaleForAnIntentAndADerivedRecordNoRecordOfTheRunMatched
  - QmxFindingGate\Tests\StaleDeclarationCheckTest::itRaisesStructuralMapStaleForARowThatMovedNoKeyOfAnyCaseInput
  - QmxFindingGate\Tests\StaleDeclarationCheckTest::itRaisesSurfaceDeclarationStaleForAnIntroducedSurfaceTheRunNeverCaptured
+ - QmxFindingGate\Tests\StaleDeclarationCheckTest::itRaisesValueStaleForAnIntentUnderWhichNoValueMoved
  - QmxFindingGate\Tests\SubjectLevelTest::itLevelsEverySubjectShapeAndRefusesOneItCannotLevel
  - QmxFindingGate\Tests\SubjectLevelTest::itRefusesAClaimNoObservedSetCouldSatisfyWhereTheCaseIsLoaded
  - QmxFindingGate\Tests\SurfaceComparisonRecordsTest::itComparesACleanRecordedTreeWithoutAnyFailure

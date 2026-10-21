@@ -1459,6 +1459,32 @@ final class RankingCheckTest extends TestCase
         }
     }
 
+    #[Test]
+    public function itRaisesNondeterminismWhenTwoCandidatePassesDecideBaselineEligibilityDifferently(): void
+    {
+        $tree = SyntheticTree::clean();
+        $repeat = static fn(\QmxFindingGate\CaptureResult $capture): \QmxFindingGate\CaptureResult => $capture;
+        $flip = static fn(\QmxFindingGate\CaptureResult $capture): \QmxFindingGate\CaptureResult => new \QmxFindingGate\CaptureResult(
+            $capture->artifacts,
+            $capture->rankings,
+            array_map(static fn(array $groups): array => array_map(static fn(bool $eligible): bool => !$eligible, $groups), $capture->baselineEligibility),
+        );
+        foreach (['repeated' => $repeat, 'flipped' => $flip] as $pass => $second) {
+            $root = SyntheticTree::fixture($tree);
+            try {
+                [$report] = RecordedComparison::derive($tree, $root, null, $second);
+            } finally {
+                SyntheticTree::remove($root);
+            }
+            $scopes = array_column(array_filter($report->raised(), static fn(array $failure): bool => $failure['class'] === FailureClass::NONDETERMINISM_UNDECLARED), 'scope');
+            if ($pass === 'repeated') {
+                self::assertSame([], $report->raised(), $report->render());
+            } else {
+                self::assertContains('baseline eligibility', $scopes, $report->render());
+            }
+        }
+    }
+
     /** @return list<array<string,mixed>> */
     private static function records(int $count): array
     {

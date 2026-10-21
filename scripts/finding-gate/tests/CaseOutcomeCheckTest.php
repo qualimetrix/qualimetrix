@@ -282,6 +282,28 @@ PHP;
         }
     }
 
+    #[Test]
+    public function itRaisesRunFailedForAJsonPublicationWithNoFindingsSection(): void
+    {
+        $root = SyntheticTree::fixture(SyntheticTree::clean());
+        try {
+            $corpus = Corpus::load($root);
+            foreach (['{"violations": []}' => [], '{"violationsMeta":{"total":0,"truncated":false,"byRule":{}}}' => null] as $publication => $expected) {
+                $report = new GateReport();
+                $findings = (new CaseOutcomeCheck($report, $corpus))->findingsOf('candidate', $corpus->cases[0], ['case:alpha|format:json' => $publication]);
+
+                self::assertSame($expected, $findings);
+                // The baseline half of the case is judged separately and is absent from both inputs.
+                self::assertSame(
+                    $expected === null ? [FailureClass::RUN_FAILED] : [],
+                    array_column(array_filter($report->raised(), static fn(array $failure): bool => $failure['scope'] === 'candidate / alpha'), 'class'),
+                );
+            }
+        } finally {
+            SyntheticTree::remove($root);
+        }
+    }
+
     /**
      * @param array{kind: string, exit: int}|null $outcome
      *
