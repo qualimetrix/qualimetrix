@@ -229,7 +229,7 @@ NPath = NPath(cond) + NPath(body) + 1   // the +1 is the exit path
 
 **Switch:**
 ```
-NPath = sum of NPath(case_i)
+NPath = NPath(cond) + Σ (NPath(case_cond_i) + max(1, NPath(case_body_i)))   // at least 1
 ```
 
 > **Note:** Nejmeh (1988) predates PHP's `??`, `??=` and `?->`. Coalescing

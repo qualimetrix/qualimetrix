@@ -30,12 +30,12 @@ finding-gate/
 ├── declared-fields.tsv         # added/removed report fields
 ├── declared-fields.derived.tsv
 ├── declared-surfaces.tsv        # introduced JSON publications
-├── declared-surfaces/
+├── declared-surfaces/          # one diff per row; present only while the index has rows
 ├── declared-structural-maps.tsv # translated configuration paths
 ├── declared-delta.tsv           # exact residual diffs, after record/value work
-├── declared-delta/
+├── declared-delta/             # one diff per row; present only while the index has rows
 ├── declared-exact-surfaces.tsv # last-resort exact case/surface intentions
-├── declared-exact-surfaces/
+├── declared-exact-surfaces/    # one diff per row; present only while the index has rows
 ├── declared-field-moves.tsv     # exact field moves permitted inside a diff
 ├── normalization.tsv           # exclusions measured from repeated runs
 ├── equivalence-tuple.tsv       # physical finding fields derived from code

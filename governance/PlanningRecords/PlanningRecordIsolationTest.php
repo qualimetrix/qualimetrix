@@ -294,7 +294,7 @@ final class PlanningRecordIsolationTest extends TestCase
     /**
      * Whether a tracked path is outside this control's subject.
      *
-     * Deferred verification files are exact paths. The three directory names are vendored output, matched
+     * The three directory names are vendored output, matched
      * as whole segments: `str_contains('/vendor/')` misses a `vendor/` at the
      * repository root, which is exactly where it would be.
      */
