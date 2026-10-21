@@ -96,8 +96,7 @@ final class Scratch
      *
      * A failed release is reported to STDERR rather than raised. This runs from
      * the shutdown path, where an exception would replace the failure being
-     * reported with one about tidying up — the rule `Shell::descendants()`
-     * already follows. Reported and not swallowed, because the one failure that
+     * reported with one about tidying up. Reported and not swallowed, because the one failure that
      * matters here is a worktree that stayed registered, and silence about that
      * is what made this class necessary.
      */
