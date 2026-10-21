@@ -119,6 +119,7 @@ final class TestFilesAreExecutedTest extends TestCase
             . '::itChecksEveryGeneratedProjectionWithoutWriting',
         'QmxFindingGate\\Tests\\CaptureTest::itDerivesNormalizationOnlyAfterValidatingFullPhysicalAndRefusalCaptures',
         'QmxFindingGate\\Tests\\CaptureTest::itRefusesAMissingReplayKeyThroughThePublicGateWithoutWriting',
+        'QmxFindingGate\\Tests\\CaptureTest::itRefusesAnOutputPublicationThatDoesNotNameExactlyTheChosenFile',
         'QmxFindingGate\\Tests\\CaptureTest::itRefusesPrivateEvidenceThatChangesOnlyOnTheSecondCandidatePass',
         'QmxFindingGate\\Tests\\CaseInputTranslationTest::itCarriesActualWorkerStructuralCreditsIntoTheParentAndPublicVerdict',
         'QmxFindingGate\\Tests\\CaseOutcomeCheckTest::itJudgesNormalizationMeasurementsByTheirCanonicalOutcomeSide',

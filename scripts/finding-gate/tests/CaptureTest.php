@@ -734,6 +734,7 @@ final class CaptureTest extends TestCase
     }
 
     #[Test]
+    #[Group('finding-gate-e2e')]
     public function itRefusesAnOutputPublicationThatDoesNotNameExactlyTheChosenFile(): void
     {
         $file = SyntheticTree::caseAnswers('alpha', SyntheticTree::clean()['findings']['alpha'], false, [])['case:alpha|format:json']['stdout'] ?? '';
