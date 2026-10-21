@@ -128,7 +128,7 @@ side effect.
   a one-time internal contract change with no external surface effect —
   `bin/qmx check`'s payloads are unchanged for every format that existed
   before this step.
-- A counterfactual audit pass (Ш8) can now compare `$produced` between two
+- A counterfactual audit pass can now compare `$produced` between two
   `RuleExecutionResult`s without needing its own copy of "what would this rule
   have found," because the real run already retains it.
 - The composition itself is a multiset over mechanism × finding, and every

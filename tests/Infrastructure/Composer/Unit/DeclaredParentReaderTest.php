@@ -161,7 +161,7 @@ final class DeclaredParentReaderTest extends TestCase
     }
 
     /**
-     * The claim the campaign is for. The probe counts autoloader queries, which
+     * The claim this reader exists for. The probe counts autoloader queries, which
      * is the only thing that separates "was not asked" from "was asked and
      * threw": both leave the same answer behind.
      */

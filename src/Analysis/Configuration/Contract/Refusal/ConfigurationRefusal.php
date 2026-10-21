@@ -248,8 +248,7 @@ final class ConfigurationRefusal extends RuntimeException implements RefusalInte
 
     /**
      * One sentence, unframed, without an "Configuration error:" prefix and
-     * without a code. Framing belongs to presentation (stage 01) — it must not
-     * happen here.
+     * without a code. Framing belongs to presentation — it must not happen here.
      */
     public function summary(): string
     {

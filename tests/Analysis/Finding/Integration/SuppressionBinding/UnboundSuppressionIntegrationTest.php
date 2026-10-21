@@ -167,7 +167,7 @@ final class UnboundSuppressionIntegrationTest extends TestCase
     }
 
     /**
-     * **The round's own distinction, and the reason `neverMatched` could not
+     * **The distinction this test draws, and the reason `neverMatched` could not
      * simply be reused.**
      *
      * `src/Deep` binds — it names a directory this run really analysed — and

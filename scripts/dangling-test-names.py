@@ -107,7 +107,7 @@ KNOWN = {
         "a P6_RENAMED_TEST_IDS key, as above",
     "Qualimetrix\\Tests\\Infrastructure\\Integration\\RuleExclusionStatsWiringTest":
         "the *value* half of that same record, and stale: the file has not carried this namespace since"
-        " stage 02/03. The owner's call is whether the record survives at all",
+        " the test tree was reorganised. The owner's call is whether the record survives at all",
 }
 
 

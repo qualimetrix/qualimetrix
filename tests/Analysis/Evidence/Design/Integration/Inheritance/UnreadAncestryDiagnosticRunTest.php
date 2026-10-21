@@ -54,7 +54,7 @@ final class UnreadAncestryDiagnosticRunTest extends TestCase
 
     /**
      * An install the run could read, which simply has no entry for the name.
-     * This is the state the campaign had to keep separable from the one above:
+     * This is the state that has to stay separable from the one above:
      * the same source, a different answer about what this run could see.
      */
     #[Test]

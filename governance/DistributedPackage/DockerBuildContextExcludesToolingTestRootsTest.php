@@ -12,12 +12,12 @@ use PHPUnit\Framework\TestCase;
  * build context.
  *
  * `.dockerignore` carries an explicit, hand-maintained list of nested tooling
- * test roots (round 1 of the viewer relocation review found the comment
- * above that list claiming it "mirrors `TOOLING_TEST_ROOT_OWNERS`" while
- * three new keys were absent from it; round 2 found the reworded claim still
- * false, by `governance/`, which is excluded by its own row in an earlier
- * block rather than by the nested-test-root list). Nothing read both files
- * together, so either divergence was silent. This is that read.
+ * test roots (a review of the viewer relocation found the comment above that
+ * list claiming it "mirrors `TOOLING_TEST_ROOT_OWNERS`" while three new keys
+ * were absent from it; a second look found the reworded claim still false, by
+ * `governance/`, which is excluded by its own row in an earlier block rather
+ * than by the nested-test-root list). Nothing read both files together, so
+ * either divergence was silent. This is that read.
  *
  * The judged set is every directory-shaped key of `TOOLING_TEST_ROOT_OWNERS`
  * (every key ending in `/` — `classifyOwner()`'s own reading of that map, see
@@ -36,7 +36,7 @@ use PHPUnit\Framework\TestCase;
  *
  * "Last line matching it" exists because Docker resolves `.dockerignore`
  * patterns last-match-wins: a `!key` line added below a key's exclusion row
- * un-excludes it (round 3 of review measured this against a real build), and
+ * un-excludes it (measured against a real build), and
  * a control that only asked "is the exact line present somewhere" could not
  * see that. This control tracks, per judged key, the last line among exactly
  * `key` and `!key` — nothing more elaborate. A negated double-star pattern

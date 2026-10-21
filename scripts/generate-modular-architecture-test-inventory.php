@@ -81,8 +81,9 @@ const P4_IGNORED_FIXTURE_PATHS = [
 
 /**
  * @var list<string> The Measurement fixtures governed as one closed set. Their six
- *                   test-class siblings left with the stage-04 path parse, which
- *                   precedes this list in all three classifiers.
+ *                   test-class siblings left when the test tree was reorganised
+ *                   by subject; that path parse precedes this list in all three
+ *                   classifiers.
  */
 const P7_MEASUREMENT_PATHS = [
     'tests/Analysis/Evidence/Measurement/Fixtures/AnonymousClassContext.php',
@@ -366,8 +367,9 @@ const P6_B_INLINE_TEST_PATHS = [
 
 /**
  * @var list<string> The Prioritization support class the subject owns. Its five
- *                   test-class siblings left with the stage-04 path parse, which
- *                   precedes this list in all three classifiers.
+ *                   test-class siblings left when the test tree was reorganised
+ *                   by subject; that path parse precedes this list in all three
+ *                   classifiers.
  */
 const P6_D_PRIORITIZATION_TEST_PATHS = [
     'tests/Analysis/Evidence/Prioritization/Support/StubRemediationMinutes.php',
@@ -2273,9 +2275,9 @@ function inventorySummary(array $rows, array $fixtureDirectories, array $discove
  *
  * What they are claims about has narrowed, deliberately and once: the literals
  * naming `tests/Unit/`, `tests/Integration/` and `tests/Functional/` were
- * deleted when the stage-04 campaign emptied those three roots. A probe for a
- * path under one of them no longer resolves to the owner it had before the
- * campaign — it is refused as an unclassified artifact, or, being a test class,
+ * deleted when the test tree was reorganised by subject and those three roots
+ * emptied. A probe for a path under one of them no longer resolves to the owner
+ * it had before that — it is refused as an unclassified artifact, or, being a test class,
  * refused by the parse. That is the intended end state: the classifier answers
  * for the tree the repository has, and one epoch back is the last epoch it
  * still answers for.

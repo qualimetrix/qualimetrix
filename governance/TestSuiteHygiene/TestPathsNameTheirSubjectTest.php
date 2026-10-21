@@ -309,8 +309,8 @@ final class TestPathsNameTheirSubjectTest extends TestCase
         // being scanned without a word; this one leaves fifteen files — the
         // assertion is strict, so 601 is the lowest passing count — and a
         // discovery that quietly stopped walking is the failure it was meant to
-        // be. Lowering it is a hand edit, which is the admission — and stage 05
-        // will owe one if adjudicating list A retires more than fifteen files.
+        // be. Lowering it is a hand edit, which is the admission — and adjudicating
+        // list A will owe one if it retires more than fifteen files.
         self::assertGreaterThan(600, \count($population));
         self::assertSame($population, array_keys($judged));
 
