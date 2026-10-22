@@ -122,7 +122,7 @@ final class OffenderListRenderer
                 $color,
                 $lines,
                 $showClassCount,
-                ($classNameCounts[$offender->symbolPath->toString()] ?? 0) > 1,
+                $this->displayName($offender, $classNameCounts),
             );
         }
 
@@ -151,6 +151,20 @@ final class OffenderListRenderer
         return $topOpt !== '' ? FormatOptionValue::positive('top', $topOpt) : self::MAX_WORST_OFFENDERS;
     }
 
+    /** @param array<string, int> $classNameCounts */
+    private function displayName(WorstOffender $offender, array $classNameCounts): string
+    {
+        $name = $offender->symbolPath->toString();
+        $declaration = $offender->subject->declarationPath();
+        if ($declaration === null || ($classNameCounts[$name] ?? 0) < 2) {
+            return $name;
+        }
+
+        $ordinalSuffix = $declaration->ordinal->isFirst() ? '' : '#' . $declaration->ordinal->value;
+
+        return \sprintf('%s (%s%s)', $name, $declaration->file->value(), $ordinalSuffix);
+    }
+
     /**
      * @param list<string> $lines
      */
@@ -159,14 +173,8 @@ final class OffenderListRenderer
         AnsiColor $color,
         array &$lines,
         bool $showClassCount,
-        bool $showDeclarationFile,
+        string $name,
     ): void {
-        $name = $offender->symbolPath->toString();
-        $declaration = $offender->subject->declarationPath();
-        if ($showDeclarationFile && $declaration !== null) {
-            $ordinalSuffix = $declaration->ordinal->isFirst() ? '' : '#' . $declaration->ordinal->value;
-            $name .= \sprintf(' (%s%s)', $declaration->file->value(), $ordinalSuffix);
-        }
         $scoreText = $this->formatValue($offender->healthOverall);
 
         $meta = [];
