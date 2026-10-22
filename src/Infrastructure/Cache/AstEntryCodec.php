@@ -19,12 +19,19 @@ final class AstEntryCodec
     /** Increase whenever encoding, parser construction/options/lexer or pre-write AST processing changes. */
     public const int FORMAT_VERSION = 1;
 
+    /** Match PHP's default unserialize_max_depth and pass it explicitly on read. */
+    private const int MAX_DEPTH = 4096;
+
     /** @var ?list<class-string> */
     private static ?array $classes = null;
 
     /** @param list<Node> $nodes */
-    public function encode(array $nodes): string
+    public function encode(array $nodes): ?string
     {
+        if (!$this->walk($nodes, false)) {
+            return null;
+        }
+
         $precision = \ini_get('serialize_precision');
         ini_set('serialize_precision', '-1');
         try {
@@ -40,7 +47,7 @@ final class AstEntryCodec
     public function decode(string $bytes): ?array
     {
         try {
-            $nodes = @unserialize($bytes, ['allowed_classes' => self::allowedClasses()]);
+            $nodes = @unserialize($bytes, ['allowed_classes' => self::allowedClasses(), 'max_depth' => self::MAX_DEPTH]);
             if (!\is_array($nodes) || !array_is_list($nodes)) {
                 return null;
             }
@@ -49,7 +56,7 @@ final class AstEntryCodec
                     return null;
                 }
             }
-            if (!$this->validValue($nodes, new SplObjectStorage(), 0)) {
+            if (!$this->walk($nodes, true)) {
                 return null;
             }
 
@@ -93,47 +100,48 @@ final class AstEntryCodec
             && !(new ReflectionClass($class))->isAbstract();
     }
 
-    /** @param SplObjectStorage<object, bool> $visited */
-    private function validValue(mixed $value, SplObjectStorage $visited, int $depth): bool
+    private function walk(mixed $root, bool $validate): bool
     {
-        if ($depth > 512) {
-            return false;
-        }
-        if (\is_object($value)) {
-            return $this->validObject($value, $visited, $depth);
-        }
-        if (\is_array($value)) {
-            foreach ($value as $child) {
-                if (!$this->validValue($child, $visited, $depth + 1)) {
+        $visited = new SplObjectStorage();
+        $stack = [[$root, 0, false]];
+        while ($stack !== []) {
+            [$value, $depth, $leaving] = array_pop($stack);
+            if ($leaving) {
+                $visited->offsetSet($value, true);
+                continue;
+            }
+            if ($depth > self::MAX_DEPTH) {
+                return false;
+            }
+            if (\is_object($value)) {
+                if ($validate && !$value instanceof Node && !$value instanceof Comment) {
                     return false;
                 }
+                if ($visited->offsetExists($value)) {
+                    if ($visited->offsetGet($value) === false) {
+                        return false;
+                    }
+                    continue;
+                }
+                $visited->offsetSet($value, false);
+                if ($validate && ($value instanceof Comment && !$this->initializedComment($value)
+                    || $value instanceof Node && !$this->initializedNode($value))) {
+                    return false;
+                }
+                $stack[] = [$value, $depth, true];
+                $stack[] = [(array) $value, $depth + 1, false];
+                continue;
+            }
+            if (\is_array($value)) {
+                foreach (array_reverse($value) as $child) {
+                    $stack[] = [$child, $depth + 1, false];
+                }
+            } elseif ($validate && \is_resource($value)) {
+                return false;
             }
         }
 
-        return !\is_resource($value);
-    }
-
-    /** @param SplObjectStorage<object, bool> $visited */
-    private function validObject(object $value, SplObjectStorage $visited, int $depth): bool
-    {
-        if (!$value instanceof Node && !$value instanceof Comment) {
-            return false;
-        }
-        if ($visited->offsetExists($value)) {
-            return $visited->offsetGet($value);
-        }
-        $visited->offsetSet($value, false);
-        if ($value instanceof Comment && !$this->initializedComment($value)) {
-            return false;
-        }
-        if ($value instanceof Node && !$this->initializedNode($value)) {
-            return false;
-        }
-
-        $valid = $this->validValue((array) $value, $visited, $depth + 1);
-        $visited->offsetSet($value, $valid);
-
-        return $valid;
+        return true;
     }
 
     private function initializedComment(Comment $comment): bool

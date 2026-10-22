@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Files with deeply nested expressions are cached; warm runs no longer warn about a discarded cache entry on every run.
+
 ## [0.28.0] - 2026-10-21
 
 ### Breaking
