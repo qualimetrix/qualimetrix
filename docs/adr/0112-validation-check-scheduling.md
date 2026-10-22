@@ -35,3 +35,10 @@ Remaining CPU and memory contention can still slow the run or cause resource
 failures. Child progress is buffered until both finish. Cleanup requires POSIX
 process groups and cannot run after a hard kill of the coordinator. These
 limits and the current commands are documented with the scheduling tool.
+
+## Amendment, 2026-10-22: publish completed commands immediately
+
+Publish each command's complete captured streams and exit code as soon as that
+command exits, including during interrupt cleanup. Publication follows
+completion order. The first failing command in declaration order still
+determines the coordinator's result.

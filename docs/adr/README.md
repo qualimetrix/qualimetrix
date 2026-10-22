@@ -158,7 +158,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 
 - [0111 — Resolved RFC Targets and Trait Composition](0111-resolved-rfc-targets-and-trait-composition.md) — exact response membership and neutral PHP trait method composition.
 
-- [0112 — Validation Check Scheduling](0112-validation-check-scheduling.md) — verified code tests finish before PHPStan overlaps the remaining validation groups.
+- [0112 — Validation Check Scheduling](0112-validation-check-scheduling.md) — verified code tests finish before PHPStan overlaps the remaining validation groups; amended 2026-10-22: each command's captured output is published when that command exits.
 
 - [0113 — Producer-Declared Metric Reach](0113-producer-declared-metric-reach.md) — evidence dependency is declared by the producer independently of execution phase.
 

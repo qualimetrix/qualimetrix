@@ -2,7 +2,7 @@
 """Run PHPStan beside documentation, artifact and self-analysis checks.
 
 Each child writes to regular files, so verbose output cannot block either
-process. Output is published in command order after both have completed.
+process. A child's complete output is published as soon as it exits.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import BinaryIO, Sequence
+from typing import BinaryIO, Callable, Sequence
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -36,6 +36,7 @@ class Child:
     stderr_path: Path
     process: subprocess.Popen[bytes] | None = None
     exit_code: int | None = None
+    published: bool = False
 
 
 def signal_group(process: subprocess.Popen[bytes], signum: int) -> None:
@@ -56,7 +57,11 @@ def group_alive(process: subprocess.Popen[bytes]) -> bool:
     return True
 
 
-def stop_groups(children: Sequence[Child], grace_seconds: float) -> str | None:
+def stop_groups(
+    children: Sequence[Child],
+    grace_seconds: float,
+    on_exit: Callable[[Child], None] | None = None,
+) -> str | None:
     """Attempt cleanup of every group and report the first OS refusal."""
     errors: list[str] = []
     reported: set[tuple[str, int, int | None]] = set()
@@ -80,11 +85,17 @@ def stop_groups(children: Sequence[Child], grace_seconds: float) -> str | None:
         for child in children:
             if child.process is None:
                 continue
+            exit_code = child.process.poll()
+            if exit_code is not None:
+                child.exit_code = exit_code
             try:
-                active = group_alive(child.process) or active
+                group_is_alive = group_alive(child.process)
             except OSError as error:
                 remember(error, child.process, "cannot inspect")
-                active = True
+                group_is_alive = True
+            active = group_is_alive or active
+            if not group_is_alive and child.exit_code is not None and on_exit is not None and not child.published:
+                on_exit(child)
         if not active:
             break
         time.sleep(POLL_SECONDS)
@@ -108,6 +119,10 @@ def stop_groups(children: Sequence[Child], grace_seconds: float) -> str | None:
         if child.process is not None:
             try:
                 child.exit_code = child.process.wait(timeout=2)
+                # A refused group inspection leaves capture completeness
+                # unknowable, but cleanup still reports that refusal.
+                if on_exit is not None and not child.published:
+                    on_exit(child)
             except subprocess.TimeoutExpired:
                 errors.append(f"process group {child.process.pid} leader survived SIGKILL")
     return errors[0] if errors else None
@@ -120,16 +135,27 @@ def publish_file(source: Path, destination: BinaryIO) -> None:
     destination.flush()
 
 
-def publish(children: Sequence[Child], stdout: BinaryIO, stderr: BinaryIO) -> None:
+def publish(child: Child, stdout: BinaryIO, stderr: BinaryIO) -> None:
+    stdout.write(f"===== {child.name} stdout =====\n".encode())
+    stdout.flush()
+    publish_file(child.stdout_path, stdout)
+    stderr.write(f"===== {child.name} stderr =====\n".encode())
+    stderr.flush()
+    publish_file(child.stderr_path, stderr)
+    stderr.write(f"[{child.name}] exit {child.exit_code}\n".encode())
+    stderr.flush()
+    child.published = True
+
+
+def publish_exited(children: Sequence[Child], on_exit: Callable[[Child], None] | None) -> None:
     for child in children:
-        stdout.write(f"===== {child.name} stdout =====\n".encode())
-        stdout.flush()
-        publish_file(child.stdout_path, stdout)
-        stderr.write(f"===== {child.name} stderr =====\n".encode())
-        stderr.flush()
-        publish_file(child.stderr_path, stderr)
-        stderr.write(f"[{child.name}] exit {child.exit_code}\n".encode())
-        stderr.flush()
+        if child.process is None or child.published:
+            continue
+        exit_code = child.process.poll()
+        if exit_code is not None:
+            child.exit_code = exit_code
+            if on_exit is not None:
+                on_exit(child)
 
 
 def run_checks(
@@ -169,6 +195,12 @@ def run_checks(
             launch_error: OSError | None = None
             cleanup_error: str | None = None
             cleanup_attempted = False
+            publish_child = lambda child: publish(child, stdout, stderr)
+
+            def publish_unless_interrupted(child: Child) -> None:
+                if interrupted is None:
+                    publish_child(child)
+
             try:
                 for child in children:
                     if interrupted is not None:
@@ -189,25 +221,26 @@ def run_checks(
 
                 if launch_error is not None or interrupted is not None:
                     cleanup_attempted = True
-                    cleanup_error = stop_groups(children, shutdown_grace_seconds)
+                    cleanup_error = stop_groups(children, shutdown_grace_seconds, publish_child)
                 else:
                     while any(child.process is not None and child.process.poll() is None for child in children):
                         if interrupted is not None:
                             break
+                        publish_exited(children, publish_unless_interrupted)
                         time.sleep(POLL_SECONDS)
                     if interrupted is not None:
                         cleanup_attempted = True
-                        cleanup_error = stop_groups(children, shutdown_grace_seconds)
+                        cleanup_error = stop_groups(children, shutdown_grace_seconds, publish_child)
                     else:
-                        for child in children:
-                            if child.process is not None and child.exit_code is None:
-                                child.exit_code = child.process.wait()
+                        publish_exited(children, publish_unless_interrupted)
             finally:
                 # An unexpected Python exception must not orphan the checks.
-                if not cleanup_attempted and any(child.process is not None and child.exit_code is None for child in children):
-                    cleanup_error = stop_groups(children, shutdown_grace_seconds) or cleanup_error
+                if not cleanup_attempted and (
+                    interrupted is not None
+                    or any(child.process is not None and child.exit_code is None for child in children)
+                ):
+                    cleanup_error = stop_groups(children, shutdown_grace_seconds, publish_child) or cleanup_error
 
-            publish([child for child in children if child.process is not None], stdout, stderr)
             if launch_error is not None:
                 stderr.write(f"check-code-parallel: launch failed: {launch_error}\n".encode())
                 stderr.flush()

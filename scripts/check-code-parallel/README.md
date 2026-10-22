@@ -16,9 +16,9 @@ Composer, documentation and report-template dependency installations, after
 setting up their runtimes. It waits for all three and fails if any installation
 fails. The default CLI still runs the two validation commands above.
 
-Each child's stdout and stderr go to separate temporary regular files. Once
-both finish, the coordinator publishes the complete streams in PHPStan then
-remaining-check order, with section labels and each exit code. Regular files
+Each child's stdout and stderr go to separate temporary regular files. As each
+child exits, the coordinator publishes that child's complete streams, with
+section labels and its exit code. Regular files
 avoid a pipe writer blocking while the coordinator waits for the other command. The
 temporary directory is removed after publication. The coordinator does not
 change the process umask, environment, or cache settings.
@@ -28,7 +28,8 @@ process, so the child declares it explicitly; leaf-tool deadlines remain.
 
 On SIGINT or SIGTERM, the coordinator sends TERM to both owned process groups,
 waits up to 30 seconds for the complete groups, sends KILL to any survivors, reaps
-both direct children, and publishes captured output. It exits 130 or 143 when
+both direct children, and publishes each child's captured output when that child
+exits. It exits 130 or 143 when
 cleanup returns without an OS error, or 2 with the OS error when group inspection or
 signalling is refused. On this macOS host, inspection can return EPERM after
 a leader exited even though no running descendant was observed; the
@@ -54,7 +55,6 @@ unit suite does not prove that the real Composer commands pass together.
 PHPStan no longer overlaps the six PHPUnit shards. It can still compete with
 the remaining checks for CPU and memory; contention or resource exhaustion can
 slow the run or produce a false red that a sequential check would not.
-The schedule should be adopted only after a complete same-source green run and a measured budget improvement. Child output is held
-until both commands finish, so an ongoing run does not display their own
-progress. Cancellation requires POSIX process groups; a hard kill of the coordinator
+The schedule should be adopted only after a complete same-source green run and a measured budget improvement. Output from a running child remains buffered until
+that child exits. Cancellation requires POSIX process groups; a hard kill of the coordinator
 cannot run that cleanup.

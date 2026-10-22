@@ -65,16 +65,20 @@ class CheckCodeParallelTest(unittest.TestCase):
             )
 
             self.assertEqual(4, completed.returncode, completed.stderr.decode(errors='replace'))
-            self.assertEqual(
-                b'===== phpstan stdout =====\nphpstan stdout\n'
+            stdout_blocks = (
+                b'===== phpstan stdout =====\nphpstan stdout\n',
                 b'===== check:remaining stdout =====\ncheck:remaining stdout\n',
-                completed.stdout,
             )
-            self.assertEqual(
-                b'===== phpstan stderr =====\nphpstan stderr\n[phpstan] exit 4\n'
+            stderr_blocks = (
+                b'===== phpstan stderr =====\nphpstan stderr\n[phpstan] exit 4\n',
                 b'===== check:remaining stderr =====\ncheck:remaining stderr\n[check:remaining] exit 0\n',
-                completed.stderr,
             )
+            self.assertEqual(sum(map(len, stdout_blocks)), len(completed.stdout))
+            self.assertEqual(sum(map(len, stderr_blocks)), len(completed.stderr))
+            for block in stdout_blocks:
+                self.assertIn(block, completed.stdout)
+            for block in stderr_blocks:
+                self.assertIn(block, completed.stderr)
             expected_context = str(SCRIPT.parents[2]) + '\n' + 'inherited'
             self.assertEqual(expected_context, (root / 'phpstan.context').read_text())
             self.assertEqual(expected_context, (root / 'check:remaining.context').read_text())
@@ -147,7 +151,7 @@ class CheckCodeParallelTest(unittest.TestCase):
             self.assertEqual(0, result)
             self.assertEqual([str(original)] * 2, [path.read_text() for path in paths])
 
-    def test_both_commands_complete_and_publish_full_output_in_fixed_order(self) -> None:
+    def test_both_commands_complete_and_publish_full_output_in_completion_order(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             first = root / "first.started"
@@ -160,17 +164,18 @@ class CheckCodeParallelTest(unittest.TestCase):
                 "while not Path(sys.argv[2]).exists():",
                 "    if time.monotonic() > deadline: sys.exit(9)",
                 "    time.sleep(.01)",
+                "time.sleep(float(sys.argv[6]))",
                 "sys.stdout.write(sys.argv[3] * 200000)",
                 "sys.stderr.write(sys.argv[4] * 200000)",
                 "sys.exit(int(sys.argv[5]))",
             ))
             commands = [
-                ("phpstan", [sys.executable, "-c", program, str(first), str(second), "A", "a", "4"]),
-                ("check:remaining", [sys.executable, "-c", program, str(second), str(first), "B", "b", "7"]),
+                ("phpstan", [sys.executable, "-c", program, str(first), str(second), "A", "a", "4", ".15"]),
+                ("check:remaining", [sys.executable, "-c", program, str(second), str(first), "B", "b", "7", "0"]),
             ]
             for first_exit, second_exit, expected in ((4, 0, 4), (0, 7, 7), (4, 7, 4)):
-                commands[0][1][-1] = str(first_exit)
-                commands[1][1][-1] = str(second_exit)
+                commands[0][1][-2] = str(first_exit)
+                commands[1][1][-2] = str(second_exit)
                 first.unlink(missing_ok=True)
                 second.unlink(missing_ok=True)
                 stdout = io.BytesIO()
@@ -178,16 +183,130 @@ class CheckCodeParallelTest(unittest.TestCase):
                 result = MODULE.run_checks(commands, cwd=root, stdout=stdout, stderr=stderr)
                 self.assertEqual(expected, result)
                 self.assertEqual(
-                    b"===== phpstan stdout =====\n" + b"A" * 200000
-                    + b"===== check:remaining stdout =====\n" + b"B" * 200000,
+                    b"===== check:remaining stdout =====\n" + b"B" * 200000
+                    + b"===== phpstan stdout =====\n" + b"A" * 200000,
                     stdout.getvalue(),
                 )
                 self.assertEqual(
-                    b"===== phpstan stderr =====\n" + b"a" * 200000 + f"[phpstan] exit {first_exit}\n".encode()
-                    + b"===== check:remaining stderr =====\n" + b"b" * 200000
-                    + f"[check:remaining] exit {second_exit}\n".encode(),
+                    b"===== check:remaining stderr =====\n" + b"b" * 200000
+                    + f"[check:remaining] exit {second_exit}\n".encode()
+                    + b"===== phpstan stderr =====\n" + b"a" * 200000 + f"[phpstan] exit {first_exit}\n".encode(),
                     stderr.getvalue(),
                 )
+
+    def test_interrupt_publishes_a_child_that_exits_during_the_grace_period(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            ready_files = [root / "fast.ready", root / "slow.ready"]
+            slow_finished = root / "slow.finished"
+            program = "\n".join((
+                "from pathlib import Path",
+                "import signal, sys, time",
+                "def stop(_signum, _frame):",
+                "    time.sleep(float(sys.argv[2]))",
+                "    if sys.argv[3] != '-': Path(sys.argv[3]).write_text('finished')",
+                "    print(sys.argv[4], flush=True)",
+                "    raise SystemExit(0)",
+                "signal.signal(signal.SIGTERM, stop)",
+                "Path(sys.argv[1]).write_text('ready')",
+                "while True: time.sleep(1)",
+            ))
+            commands = [
+                ("fast", [sys.executable, "-c", program, str(ready_files[0]), "0", "-", "fast output"]),
+                ("slow", [sys.executable, "-c", program, str(ready_files[1]), ".4", str(slow_finished), "slow output"]),
+            ]
+            child = start_harness(root, commands, shutdown_grace_seconds=.6)
+            try:
+                wait_for_files(ready_files)
+                child.send_signal(signal.SIGTERM)
+                assert child.stdout is not None
+                self.assertEqual(b"===== fast stdout =====\n", child.stdout.readline())
+                self.assertEqual(b"fast output\n", child.stdout.readline())
+                self.assertFalse(slow_finished.exists(), "fast output was held until the slow child exited")
+                stdout, stderr = child.communicate(timeout=3)
+                self.assertEqual(143, child.returncode, stderr.decode(errors="replace"))
+                self.assertIn(b"===== slow stdout =====\nslow output\n", stdout)
+            finally:
+                if child.poll() is None:
+                    child.kill()
+                    child.wait()
+                if child.stdout is not None:
+                    child.stdout.close()
+                if child.stderr is not None:
+                    child.stderr.close()
+
+    def test_interrupt_keeps_output_written_by_a_descendant_after_its_leader_exits(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            ready_file = root / "descendant.ready"
+            written_file = root / "descendant.written"
+            descendant = (
+                "import signal,sys,time; "
+                "signal.signal(signal.SIGTERM,signal.SIG_IGN); "
+                "open(sys.argv[1],'w').write('ready'); "
+                "time.sleep(.35); "
+                "print('late stdout',flush=True); "
+                "print('late stderr',file=sys.stderr,flush=True); "
+                "open(sys.argv[2],'w').write('written')"
+            )
+            leader = (
+                "import subprocess,sys,time; "
+                "subprocess.Popen([sys.executable,'-c',sys.argv[1],sys.argv[2],sys.argv[3]]); "
+                "time.sleep(30)"
+            )
+            commands = [
+                ("with-descendant", [sys.executable, "-c", leader, descendant, str(ready_file), str(written_file)]),
+            ]
+            child = start_harness(root, commands, shutdown_grace_seconds=.8)
+            try:
+                wait_for_files([ready_file])
+                child.send_signal(signal.SIGTERM)
+                stdout, stderr = child.communicate(timeout=3)
+                self.assertTrue(written_file.exists(), "descendant did not write during the grace period")
+                self.assertIn(b"===== with-descendant stdout =====\nlate stdout\n", stdout)
+                self.assertIn(b"===== with-descendant stderr =====\nlate stderr\n", stderr)
+                if b"cleanup refusal" in stderr:
+                    self.assertEqual(2, child.returncode, stderr.decode(errors="replace"))
+                else:
+                    self.assertEqual(143, child.returncode, stderr.decode(errors="replace"))
+            finally:
+                if child.poll() is None:
+                    child.kill()
+                    child.wait()
+                if child.stdout is not None:
+                    child.stdout.close()
+                if child.stderr is not None:
+                    child.stderr.close()
+
+    def test_signal_during_final_publication_still_enters_group_cleanup(self) -> None:
+        class CompletedProcess:
+            pid = 123456
+            returncode = 0
+
+            def poll(self) -> int:
+                return self.returncode
+
+        real_publish_exited = MODULE.publish_exited
+
+        def interrupt_before_publication(children: object, on_exit: object) -> None:
+            os.kill(os.getpid(), signal.SIGTERM)
+            real_publish_exited(children, on_exit)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            with (
+                patch.object(MODULE.subprocess, "Popen", return_value=CompletedProcess()),
+                patch.object(MODULE, "publish_exited", side_effect=interrupt_before_publication),
+                patch.object(MODULE, "stop_groups", return_value=None) as stop_groups,
+            ):
+                result = MODULE.run_checks(
+                    [("completed", ["completed"])],
+                    cwd=Path(temporary),
+                    stdout=io.BytesIO(),
+                    stderr=io.BytesIO(),
+                )
+
+        self.assertEqual(143, result)
+        stop_groups.assert_called_once()
 
     def test_launch_failure_stops_a_started_peer(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -307,16 +426,21 @@ class CheckCodeParallelTest(unittest.TestCase):
                     kill_group_if_running(json.loads(pid_file.read_text())[0])
 
 
-def start_harness(root: Path, commands: list[tuple[str, list[str]]]) -> subprocess.Popen[bytes]:
+def start_harness(
+    root: Path,
+    commands: list[tuple[str, list[str]]],
+    *,
+    shutdown_grace_seconds: float = .2,
+) -> subprocess.Popen[bytes]:
     program = (
         "import importlib.util,json,sys; "
         "spec=importlib.util.spec_from_file_location('check_code_parallel',sys.argv[1]); "
         "module=importlib.util.module_from_spec(spec); sys.modules[spec.name]=module; "
         "spec.loader.exec_module(module); "
-        "raise SystemExit(module.run_checks(json.loads(sys.argv[2]),cwd=__import__('pathlib').Path(sys.argv[3]),shutdown_grace_seconds=.2))"
+        "raise SystemExit(module.run_checks(json.loads(sys.argv[2]),cwd=__import__('pathlib').Path(sys.argv[3]),shutdown_grace_seconds=float(sys.argv[4])))"
     )
     return subprocess.Popen(
-        [sys.executable, "-c", program, str(SCRIPT), json.dumps(commands), str(root)],
+        [sys.executable, "-c", program, str(SCRIPT), json.dumps(commands), str(root), str(shutdown_grace_seconds)],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
