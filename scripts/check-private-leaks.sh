@@ -113,16 +113,34 @@ if [ "$MODE" = "message" ]; then
 fi
 
 if [ "$MODE" = "commits" ]; then
-    if [ -z "$ARG" ] || ! git rev-parse "$ARG" >/dev/null 2>&1; then
+    if [ -z "$ARG" ]; then
         echo "ℹ️  Commit range '$ARG' unavailable (shallow clone or first push) — skipped."
         exit 0
     fi
+    if [[ "$ARG" == *...* ]]; then
+        endpoints=("${ARG%%...*}" "${ARG##*...}")
+    elif [[ "$ARG" == *..* ]]; then
+        endpoints=("${ARG%%..*}" "${ARG##*..}")
+    else
+        endpoints=("$ARG")
+    fi
+    for endpoint in "${endpoints[@]}"; do
+        [ -z "$endpoint" ] && endpoint=HEAD
+        if ! git rev-parse -q --verify "$endpoint^{commit}" >/dev/null 2>&1; then
+            echo "ℹ️  Commit range '$ARG' unavailable (shallow clone or first push) — skipped."
+            exit 0
+        fi
+    done
+    revisions=$(git rev-list "$ARG" 2>/dev/null) || {
+        echo "ℹ️  Commit range '$ARG' unavailable (shallow clone or first push) — skipped."
+        exit 0
+    }
     while IFS= read -r sha; do
         [ -z "$sha" ] && continue
         msg=$(git log -1 --format='%B' "$sha")
         scan_text_for_terms "$msg" "Commit message of $sha" || status=1
     done <<EOF
-$(git rev-list "$ARG" 2>/dev/null)
+$revisions
 EOF
     [ $status -eq 0 ] && echo "✅ Commit messages clean"
     exit $status
@@ -138,13 +156,17 @@ else
 fi
 
 TARGETS=()
+file_paths=$(file_list) || {
+    echo "Cannot list tracked files for the private leak scan." >&2
+    exit 2
+}
 while IFS= read -r f; do
     [ -z "$f" ] && continue
     [ "$f" = "$SELF" ] && continue      # necessarily contains the patterns
     [ -f "$f" ] || continue
     TARGETS+=("$f")
 done <<EOF
-$(file_list)
+$file_paths
 EOF
 
 [ ${#TARGETS[@]} -eq 0 ] && exit 0
