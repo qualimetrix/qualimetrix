@@ -5595,6 +5595,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\CallableWithMetricsTest::itRejectsInvalidAnonymousSyntax
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\CallableWithMetricsTest::itRejectsInvalidClassOwnershipAtConstruction
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\CallableWithMetricsTest::itRequiresSyntaxForAnAnonymousCallable
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Contract\FileNamespaceIndexTest::itReadsSerializedFileEntriesWithoutAddingDeclaredNamespaceContributions
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Contract\NamespaceTreeGlobalNamespaceTest::itDoesNotMakeTopLevelNamespacesChildrenOfTheGlobalOne
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Contract\NamespaceTreeGlobalNamespaceTest::itGivesTheGlobalNamespaceNoParentAndNoChildren
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Contract\NamespaceTreeGlobalNamespaceTest::itIsTheOnlyNodeWhenAProjectIsEntirelyGlobal
@@ -5639,6 +5640,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itHandsSourceBytesOnlyToCollectorsThatMeasureSource
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itMergesDuplicateMetricKeys
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itMergesMetricsFromAllCollectors
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itRecordsDistinctLexicalNamespacesWithoutConfiguredCollectors"braced blocks"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itRecordsDistinctLexicalNamespacesWithoutConfiguredCollectors"global block"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itRecordsDistinctLexicalNamespacesWithoutConfiguredCollectors"no namespace statement"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itRecordsDistinctLexicalNamespacesWithoutConfiguredCollectors"repeated namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itRecordsDistinctLexicalNamespacesWithoutConfiguredCollectors"two unbraced statements"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itRecordsDistinctLexicalNamespacesWithoutConfiguredCollectors"unbraced"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itRecordsLexicalNamespacesWithAConfiguredCollector
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itRequiresARelativePathWhenDependencyTraversalIsConfigured
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itResetsAllCollectors
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itReturnsDependenciesFromTheTraversalParticipant
@@ -11176,6 +11184,9 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\AstEntryCodecTest::itPreservesAstPrecisionAndRestoresTheProcessSetting
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\AstEntryCodecTest::itRefusesForeignObjectsAndInvalidRootsIncludingNestedAttributes
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\AstEntryCodecTest::itRetainsSharedNodesWithoutTreatingThemAsAnActiveCycle
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\AstEntryDepthTest::itDoesNotEncodeOrDecodeATreeBeyondTheSharedDepthLimit
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\AstEntryDepthTest::itDoesNotWriteOrCountAnEntryBeyondTheDepthLimit
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\AstEntryDepthTest::itRoundTripsATreeBeyondTheOldDepthLimit
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\AstEntryProducerDigestTest::itRequiresAFormatVersionBumpWhenTheSameParserProducesDifferentEntryBytes
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheConfigurationResolverTest::itDisablesADefaultCacheDirectoryThroughAPlaceableLink
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheConfigurationResolverTest::itRefusesAnExplicitCacheDirectoryThroughAPlaceableLink
@@ -11372,6 +11383,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandBaselineTest::itPromotesAMeasuredBreachToErrorAndFailsTheRun
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandBaselineTest::itPublishesUnusedEntriesInEightFormatsAndGatesAllElevenFormats
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandBaselineTest::itWritesNoEntryForAnAnnotatedFindingAndRefusesToBeAskedTo
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandDrillDownFormatTest::itPublishesAndSelectsLexicalNamespacesOfFileFindings
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandDrillDownFormatTest::itRefusesASelectionTheFormatCannotMarkBeforeAnalysis"checkstyle --class"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandDrillDownFormatTest::itRefusesASelectionTheFormatCannotMarkBeforeAnalysis"checkstyle --namespace"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandDrillDownFormatTest::itRefusesASelectionTheFormatCannotMarkBeforeAnalysis"gitlab --class"
@@ -13539,8 +13551,10 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itReturnsAllFindingsWhenNoFilter
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itReturnsAllWorstOffendersWhenNoFilter
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itReturnsEmptyWhenWorstOffendersByClassNoMatch
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itSelectsADeclarationFreeFileFindingByItsLexicalNamespaceWithoutChangingItsIdentity
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itSelectsAFileFindingByDeclaredAndLexicalNamespacesTogether
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itSelectsAFileWithNoNamespaceStatementAsGlobal
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itSelectsFileFindingsByEveryNamespaceDeclaredInTheirSource
- - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itSelectsUndeclaredFileFindingsAsGlobalWithoutChangingTheirIdentity
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itUsesADeclaredSubjectBeforeTheOtherNamespacesOfItsFile
  - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"a path entry that cannot be a name at all"
  - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"suppress_namespaces as a map"

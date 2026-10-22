@@ -3,7 +3,7 @@ PHPUnit 12.5.25 by Sebastian Bergmann and contributors.
 Worktree test suites (derived from PHPUnit discovery):
  - Functional (21 files, 191 tests)
  - Governance (133 files, 968 tests)
- - Infrastructure (185 files, 2030 tests)
+ - Infrastructure (186 files, 2034 tests)
  - Integration (99 files, 1004 tests)
  - Tooling (61 files, 810 tests)
- - Unit (524 files, 9183 tests)
+ - Unit (525 files, 9193 tests)

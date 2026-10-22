@@ -22455,6 +22455,10 @@
         },
         {
           "owner": "Analysis.Evidence.Measurement",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\FileNamespaceIndex"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\MetricDefinition"
         },
         {
