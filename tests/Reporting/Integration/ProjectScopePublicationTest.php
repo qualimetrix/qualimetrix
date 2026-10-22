@@ -258,6 +258,7 @@ final class ProjectScopePublicationTest extends TestCase
             self::assertStringContainsString('suppression.unmatched-path suppress_paths "subtree:tests/Case' . $index . '"', $output);
         }
         self::assertStringContainsString('and 17 more; the json, metrics and suppressed formats list every value', $output);
+        self::assertStringNotContainsString('subtree:tests/Case04', $output);
         self::assertStringNotContainsString('subtree:tests/Case20', $output);
     }
 

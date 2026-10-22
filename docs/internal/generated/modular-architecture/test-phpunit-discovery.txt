@@ -6946,10 +6946,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationPredicatesTest::itBypassesOnlyTheOppositeDeclaredSuppressionTag
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationPredicatesTest::itDistinguishesMissingFromMeasuredZeroAndAppliesEffectiveOption
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationPredicatesTest::itKeepsExactClassKindSeparateFromLogicalSymbolKind
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationPredicatesTest::itKeepsZeroSubstitutionEligibilityButNamesTheFirstMissingFailedOperand
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationPredicatesTest::itRefusesInvalidCountInsteadOfCallingItHealthy
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationPredicatesTest::itRequiresTheOwningBoundNameAndRuleCount
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationPredicatesTest::itSelectsOnlyTheDeclaredMetricAlternative
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationPredicatesTest::itTreatsAZeroSubstitutedOperandAsMeasuredWhenTheBoundaryFails
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationPredicatesTest::itUsesInverseRawPromotedOptionActivation
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationSelectionTest::itDoesNotAdvanceANotSelectedHostedRoster
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationSelectionTest::itEvaluatesTheSameEligibilityWithAndWithoutSelectedAccounting
@@ -13453,6 +13453,13 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itAddsNothingForACoveredRun"sarif"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itAddsNothingForACoveredRun"summary"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itAddsNothingForACoveredRun"text"
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itBoundsTheSkippedValuesNamedInNotices"github"
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itBoundsTheSkippedValuesNamedInNotices"health"
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itBoundsTheSkippedValuesNamedInNotices"html"
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itBoundsTheSkippedValuesNamedInNotices"sarif"
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itBoundsTheSkippedValuesNamedInNotices"summary"
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itBoundsTheSkippedValuesNamedInNotices"text"
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itKeepsEverySkippedValueInJson
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itKeepsMalformedSourceReasonDataInThePublishedDescription
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itKeepsMalformedSourceReasonInTheHtmlBannerAndCountsItsRepair
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itKeepsValidSourceReasonJsonUnchanged
@@ -14002,7 +14009,9 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\HintRendererTest::itSkipsDrillDownHintInClassScope
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\HintRendererTest::itSkipsDrillDownHintWhenNoHealthScores
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\OffenderListRendererDensityTest::itCountsAllSelectedCandidatesAndRecommendsOnlyTheFullTop
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\OffenderListRendererDensityTest::itDisambiguatesVisibleClassAgainstDuplicatesBeyondTopLimit
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\OffenderListRendererDensityTest::itDisplaysDensityInWorstClassesMeta
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\OffenderListRendererDensityTest::itDistinguishesRepeatedClassNamesByFileAndOrdinal
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\OffenderListRendererDensityTest::itDoesNotDisplayDensityWhenNull
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\OffenderListRendererDensityTest::itDoesNotDisplayDensityWhenZero
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\OffenderListRendererDensityTest::itRanksUnorderedCandidatesByScore
