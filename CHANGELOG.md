@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `--rule-opt` addressing a key inside a map option explains that the map belongs in `qmx.yaml`.
+
 - `--fail-on` with an unknown value no longer mentions `info`.
 
 - An ambiguous `--class` selection names the files that can select one declaration.

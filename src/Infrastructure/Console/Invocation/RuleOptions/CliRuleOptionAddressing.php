@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\FrameworkOptionKey
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionAddress;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionRefusalWording;
+use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleNameJudge;
@@ -101,6 +102,14 @@ final readonly class CliRuleOptionAddressing
             $suggestion = self::similarLevel($surface, $parts[0]);
             if ($suggestion !== null) {
                 return \sprintf('Level "%s" of rule "%s" is not a declared spelling. Write "%s".', $parts[0], $rule, $suggestion);
+            }
+        }
+        $prefix = $option;
+        while (($dot = strrpos($prefix, '.')) !== false) {
+            $prefix = substr($prefix, 0, $dot);
+            $address = $surface->locate($prefix);
+            if ($address !== null && $surface->shapeAt($address)->kind === RuleOptionShape::MAP) {
+                return RuleOptionRefusalWording::mapKeysNotAddressable($address->written(), $rule);
             }
         }
         $wording = $level === null
