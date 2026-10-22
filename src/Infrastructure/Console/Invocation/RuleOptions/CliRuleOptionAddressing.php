@@ -104,13 +104,9 @@ final readonly class CliRuleOptionAddressing
                 return \sprintf('Level "%s" of rule "%s" is not a declared spelling. Write "%s".', $parts[0], $rule, $suggestion);
             }
         }
-        $prefix = $option;
-        while (($dot = strrpos($prefix, '.')) !== false) {
-            $prefix = substr($prefix, 0, $dot);
-            $address = $surface->locate($prefix);
-            if ($address !== null && $surface->shapeAt($address)->kind === RuleOptionShape::MAP) {
-                return RuleOptionRefusalWording::mapKeysNotAddressable($address->written(), $rule);
-            }
+        $mapRefusal = self::mapKeyRefusal($surface, $rule, $option);
+        if ($mapRefusal !== null) {
+            return $mapRefusal;
         }
         $wording = $level === null
             ? RuleOptionRefusalWording::notAnOptionOfRule($option, $rule, $surface->writableAt(null))
@@ -119,6 +115,19 @@ final readonly class CliRuleOptionAddressing
         $suggestion = self::similarOption($surface, $level, $written);
 
         return $suggestion === null ? $wording : $wording . \sprintf(' Write "%s".', $suggestion);
+    }
+
+    private static function mapKeyRefusal(RuleOptionSurface $surface, string $rule, string $option): ?string
+    {
+        $prefix = $option;
+        while (($dot = strrpos($prefix, '.')) !== false) {
+            $prefix = substr($prefix, 0, $dot);
+            $address = $surface->locate($prefix);
+            if ($address !== null && $surface->shapeAt($address)->kind === RuleOptionShape::MAP) {
+                return RuleOptionRefusalWording::mapKeysNotAddressable($address->written(), $rule);
+            }
+        }
+        return null;
     }
 
     private static function similarLevel(RuleOptionSurface $surface, string $written): ?string
