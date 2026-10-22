@@ -31,13 +31,8 @@ final readonly class KeyThreshold implements GatePredicate
         $input->requireVariant('metrics', $this->source);
         $bag = $input->metricBag();
         $sum = 0;
-        $firstMissing = null;
         foreach ($this->keys as $key) {
-            $value = $bag->get($key);
-            if ($value === null) {
-                $firstMissing ??= $key;
-            }
-            $value = $this->readValue($bag, $key, $value);
+            $value = $this->readValue($bag, $key, $bag->get($key));
             if ($value === null) {
                 return 'Missing metric "' . $key . '".';
             }
@@ -50,7 +45,7 @@ final readonly class KeyThreshold implements GatePredicate
         if (self::compare($sum, $this->comparison, $input->effectiveBoundary($this->boundary))) {
             return null;
         }
-        return $firstMissing === null ? 'Metric population boundary was not met.' : 'Missing metric "' . $firstMissing . '".';
+        return 'Metric population boundary was not met.';
     }
 
     private function assertMeasuredCount(int|float $value): void
