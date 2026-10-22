@@ -220,9 +220,10 @@ foreach ($this->resolvers as $resolver) {
 ```
 
 A `try` nested deeper in the loop body, one inside a closure, or one whose only way out is a `continue` with nothing after the `try` (so it skips nothing) is flagged as usual.
-An early guard inside the `try`, after a preparatory call but before useful
-work, can still make the empty `catch` look like a valid chain of attempts:
-`$y = prepare($x); if ($y === null) continue; work($y);`.
+An `if` branch ending in a bare `continue` or `break` before later work in the
+same `try` is an early guard and is flagged, even when a preparatory call
+precedes it. An early `return` guard after a preparatory call remains
+indistinguishable from a successful attempt and is not flagged.
 
 <!-- llms:skip-end -->
 

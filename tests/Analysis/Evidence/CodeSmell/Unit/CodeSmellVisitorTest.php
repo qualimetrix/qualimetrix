@@ -194,6 +194,48 @@ PHP;
     }
 
     #[Test]
+    public function itFlagsGuardedWorkRegardlessOfWhetherTheGuardUsesTheLoopOrAPreparedValue(): void
+    {
+        $code = <<<'PHP'
+<?php
+final class Loop
+{
+    public function guarded(array $items): void
+    {
+        foreach ($items as $x) {
+            try {
+                if ($x === '') {
+                    continue;
+                }
+                $this->work($x);
+            } catch (\Throwable $e) {
+            }
+            $this->log($x);
+        }
+    }
+
+    public function prepared(array $items): void
+    {
+        foreach ($items as $x) {
+            try {
+                $y = $this->prepare($x);
+                if ($y === null) {
+                    continue;
+                }
+                $this->work($y);
+            } catch (\Throwable $e) {
+            }
+            $this->log($x);
+        }
+    }
+}
+PHP;
+        $visitor = $this->analyze($code);
+
+        self::assertCount(2, $visitor->getLocationsByType('empty_catch'));
+    }
+
+    #[Test]
     public function itDoesNotFlagACatchBlockThatHandlesTheException(): void
     {
         $code = <<<'PHP'

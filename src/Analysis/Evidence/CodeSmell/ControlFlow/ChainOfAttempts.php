@@ -37,62 +37,116 @@ final class ChainOfAttempts
     /**
      * @param array<Stmt> $statements
      */
-    private function holdsExit(array $statements, ?Stmt $fallback, ?Node $priorWork = null): bool
-    {
+    private function holdsExit(
+        array $statements,
+        ?Stmt $fallback,
+        ?Node $priorWork = null,
+        ?Node $loopExitWork = null,
+    ): bool {
         $statements = $this->withoutNops($statements);
         $lastStatement = $statements[array_key_last($statements)] ?? null;
-        foreach ($statements as $statement) {
-            if ($this->endsAttemptAfterWork($statement, $fallback, $priorWork)) {
+        $laterWork = $this->laterWorkByStatement($statements);
+        foreach ($statements as $index => $statement) {
+            if ($this->endsAttemptAfterWork($statement, $fallback, $priorWork, $loopExitWork)) {
                 return true;
             }
-            if ($this->ifBranchHoldsExit($statement, $lastStatement, $fallback, $priorWork)) {
+            if ($this->ifBranchHoldsExit(
+                $statement,
+                $lastStatement,
+                $fallback,
+                $priorWork,
+                $loopExitWork,
+                $laterWork[$index],
+            )) {
                 return true;
             }
             if ($statement instanceof Stmt\Expression && $this->work->in($statement->expr)) {
                 $priorWork = $statement;
+                $loopExitWork = $statement;
             }
         }
 
         return false;
     }
 
-    private function ifBranchHoldsExit(Stmt $statement, ?Stmt $lastStatement, ?Stmt $fallback, ?Node $priorWork): bool
-    {
+    private function ifBranchHoldsExit(
+        Stmt $statement,
+        ?Stmt $lastStatement,
+        ?Stmt $fallback,
+        ?Node $priorWork,
+        ?Node $loopExitWork,
+        ?Node $laterWork,
+    ): bool {
         if (!$statement instanceof Stmt\If_) {
             return false;
         }
 
         $branchWork = $priorWork;
-        if ($branchWork === null && $statement === $lastStatement && $this->work->in($statement->cond)) {
-            $branchWork = $statement->cond;
+        $branchLoopExitWork = $loopExitWork;
+        if ($statement === $lastStatement && $this->work->in($statement->cond)) {
+            $branchWork ??= $statement->cond;
+            $branchLoopExitWork = $statement->cond;
         }
 
-        return $this->branchHoldsExit($statement, $fallback, $branchWork);
+        if ($laterWork !== null) {
+            $branchLoopExitWork = null;
+        }
+
+        return $this->branchHoldsExit($statement, $fallback, $branchWork, $branchLoopExitWork);
     }
 
-    private function endsAttemptAfterWork(Stmt $statement, ?Stmt $fallback, ?Node $priorWork): bool
-    {
+    private function endsAttemptAfterWork(
+        Stmt $statement,
+        ?Stmt $fallback,
+        ?Node $priorWork,
+        ?Node $loopExitWork,
+    ): bool {
         if ($statement instanceof Stmt\Return_) {
             return $priorWork !== null || ($statement->expr !== null && $this->work->in($statement->expr));
         }
 
-        return $priorWork !== null && ($statement instanceof Stmt\Break_ || ($fallback !== null && $statement instanceof Stmt\Continue_));
+        return $loopExitWork !== null && ($statement instanceof Stmt\Break_ || ($fallback !== null && $statement instanceof Stmt\Continue_));
     }
 
-    private function branchHoldsExit(Stmt\If_ $if, ?Stmt $fallback, ?Node $priorWork): bool
-    {
+    private function branchHoldsExit(
+        Stmt\If_ $if,
+        ?Stmt $fallback,
+        ?Node $priorWork,
+        ?Node $loopExitWork,
+    ): bool {
         $branches = [$if->stmts, ...array_map(static fn(Stmt\ElseIf_ $elseif): array => $elseif->stmts, $if->elseifs)];
         if ($if->else !== null) {
             $branches[] = $if->else->stmts;
         }
 
         foreach ($branches as $branch) {
-            if ($this->holdsExit($branch, $fallback, $priorWork)) {
+            if ($this->holdsExit($branch, $fallback, $priorWork, $loopExitWork)) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * @param list<Stmt> $statements
+     *
+     * @return list<?Node>
+     */
+    private function laterWorkByStatement(array $statements): array
+    {
+        $laterWork = [];
+        $nextWork = null;
+        for ($index = \count($statements) - 1; $index >= 0; --$index) {
+            $laterWork[$index] = $nextWork;
+            if ($this->work->inNode($statements[$index])) {
+                $nextWork = $statements[$index];
+            }
+        }
+
+        ksort($laterWork);
+
+        return array_values($laterWork);
     }
 
     /**

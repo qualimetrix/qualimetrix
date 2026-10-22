@@ -53,7 +53,12 @@ final class ChainOfAttemptsTest extends TestCase
         yield 'early guard return does not excuse catch' => ['<?php foreach ($a as $x) { try { if (!$x) { return; } work($x); } catch (Throwable) {} }', 0];
         yield 'last condition computes work before continue' => ['<?php foreach ($a as $x) { try { if (work($x)) { continue; } } catch (Throwable) {} fallback($x); }', 1];
         yield 'last condition computes work before return' => ['<?php foreach ($a as $x) { try { if (work($x)) { return; } } catch (Throwable) {} }', 1];
-        yield 'preceded guard remains a known indistinguishable shape' => ['<?php foreach ($a as $x) { try { $y = prepare($x); if ($y === null) { continue; } work($y); } catch (Throwable) {} fallback($x); }', 1];
+        yield 'prepared value guard before work is not an attempt' => ['<?php foreach ($a as $x) { try { $y = prepare($x); if ($y === null) { continue; } work($y); } catch (Throwable) {} fallback($x); }', 0];
+        yield 'prepared value break guard before work is not an attempt' => ['<?php foreach ($a as $x) { try { $y = prepare($x); if ($y === null) { break; } work($y); } catch (Throwable) {} fallback($x); }', 0];
+        yield 'return in a deferred closure does not turn a continue guard into an attempt' => ['<?php foreach ($a as $x) { try { $y = prepare($x); if ($y === null) { $later = static function () { return; }; continue; } work($y); } catch (Throwable) {} fallback($x); }', 0];
+        yield 'nested final work condition restores a continue attempt after an outer guard' => ['<?php foreach ($a as $x) { try { prepare($x); if ($x) { if (work($x)) { continue; } } other(); } catch (Throwable) {} fallback($x); }', 1];
+        yield 'nested final work condition restores a break attempt after an outer guard' => ['<?php foreach ($a as $x) { try { prepare($x); if ($x) { if (work($x)) { break; } } other(); } catch (Throwable) {} fallback($x); }', 1];
+        yield 'prepared value branch ends an attempt when it skips the fallback' => ['<?php foreach ($a as $x) { try { $y = prepare($x); if ($y !== null) { continue; } } catch (Throwable) {} fallback($x); }', 1];
     }
 
     #[Test]

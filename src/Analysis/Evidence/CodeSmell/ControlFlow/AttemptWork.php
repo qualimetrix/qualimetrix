@@ -25,6 +25,11 @@ final class AttemptWork
 {
     public function in(Expr $expression): bool
     {
+        return $this->inNode($expression);
+    }
+
+    public function inNode(Node $node): bool
+    {
         $visitor = new class extends NodeVisitorAbstract {
             public bool $found = false;
 
@@ -57,7 +62,7 @@ final class AttemptWork
             }
         };
 
-        (new NodeTraverser($visitor))->traverse([$expression]);
+        (new NodeTraverser($visitor))->traverse([$node]);
 
         return $visitor->found;
     }

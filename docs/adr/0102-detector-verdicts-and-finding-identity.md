@@ -50,3 +50,15 @@ remain. The credential filter can still miss a lowercase dotted secret phrase,
 and a credential-looking alias-map value can still be flagged. An early guard
 inside a `try`, after a preparatory call but before the useful work, can still
 make an empty `catch` look like a valid chain of attempts.
+
+## Amendment, 2026-10-22: an early continue or break guard is not an attempt
+
+An `if` branch ending in a bare `continue` or `break`, followed by later work
+in the same `try`, is an early guard rather than the successful end of an
+attempt. Its empty `catch` is reported even when a preparatory call precedes
+the guard. A branch that performs work before the exit remains an attempt, as
+does a final branch whose exit skips the fallback after the `try`.
+
+An early `return` guard after a preparatory call remains exempt. It is not
+distinguishable from a successful attempt whose result is expressed by the
+return branch without broader data-flow analysis.

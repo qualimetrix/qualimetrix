@@ -65,9 +65,10 @@ end the search on success after work: it holds a `return` or `break`, or a
 static calls, object construction, include, throw, shell execution and eval.
 Deferred function-like bodies and first-class callable creation do not count as
 executed work; eager receiver or argument evaluation still does.
-An early guard inside the `try`, after a preparatory call but before useful
-work, can still make the empty `catch` look like a valid chain of attempts:
-`$y = prepare($x); if ($y === null) continue; work($y);`.
+An `if` branch ending in a bare `continue` or `break` before later work in the
+same `try` is an early guard and is reported, even when a preparatory call
+precedes it. An early `return` guard after a preparatory call remains
+indistinguishable from a successful attempt and is exempt.
 
 ## Usage
 
