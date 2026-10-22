@@ -13,6 +13,7 @@ use PhpParser\Node\Expr\Closure;
 use PhpParser\Node\Expr\Ternary;
 use PhpParser\Node\PropertyHook;
 use PhpParser\Node\Stmt;
+use PhpParser\Node\Stmt\Case_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Do_;
 use PhpParser\Node\Stmt\For_;
@@ -42,7 +43,7 @@ use Qualimetrix\Core\Path\RelativePath;
  * - if-then: NPath(cond) + NPath(then) + 1 (1 = skip-path)
  * - if-else: NPath(cond) + NPath(then) + NPath(else)
  * - while/for/foreach: NPath(cond) + NPath(body) + 1
- * - switch: NPath(cond) + Σ NPath(case_i)
+ * - switch: NPath(cond) + NPath(default-range) + Σ NPath(case-range_i)
  * - try-catch: NPath(try) + Σ NPath(catch_i) + 1
  * - ternary: NPath(cond) + NPath(true) + NPath(false) + 2
  * - &&/||: NPath(left) + NPath(right) + 1
@@ -348,8 +349,12 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Declar
 
     private function calculateSwitchNpath(Switch_ $switch): int
     {
-        // NPath(switch) = NPath(cond) + Σ NPath(case)
+        // NPath(switch) = NPath(cond) + NPath(default-range) + Σ NPath(case-range)
         $npath = $this->expressionCalculator->calculate($switch->cond);
+
+        if (!array_any($switch->cases, static fn(Case_ $case): bool => $case->cond === null)) {
+            $npath = $this->expressionCalculator->saturatingAdd($npath, 1);
+        }
 
         foreach ($switch->cases as $case) {
             $npath = $this->expressionCalculator->saturatingAdd(

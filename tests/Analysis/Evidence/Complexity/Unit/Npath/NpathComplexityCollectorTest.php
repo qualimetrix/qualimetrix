@@ -514,6 +514,38 @@ PHP;
     }
 
     #[Test]
+    public function itCountsTheNoMatchPathForSwitchWithoutDefault(): void
+    {
+        $oneCase = $this->collectFunctionMetrics(
+            '<?php function f($value) { switch ($value) { case 1: return "one"; } }',
+        );
+        $equivalentIf = $this->collectFunctionMetrics(
+            '<?php function f($value) { if ($value === 1) { return "one"; } }',
+        );
+        $withDefault = $this->collectFunctionMetrics(
+            '<?php function f($value) { switch ($value) { case 1: return "one"; default: return "other"; } }',
+        );
+        $twoCases = $this->collectFunctionMetrics(
+            '<?php function f($value) { switch ($value) { case 1: return "one"; case 2: return "two"; } }',
+        );
+
+        self::assertSame(2, $oneCase->get('complexity.npath:f'));
+        self::assertSame($equivalentIf->get('complexity.npath:f'), $oneCase->get('complexity.npath:f'));
+        self::assertSame(2, $withDefault->get('complexity.npath:f'));
+        self::assertSame(3, $twoCases->get('complexity.npath:f'));
+    }
+
+    #[Test]
+    public function itKeepsMatchWithoutDefaultUnchanged(): void
+    {
+        $metrics = $this->collectFunctionMetrics(
+            '<?php function f($value) { return match ($value) { 1 => "one", 2 => "two" }; }',
+        );
+
+        self::assertSame(2, $metrics->get('complexity.npath:f'));
+    }
+
+    #[Test]
     public function itCalculatesNpathForTryCatch(): void
     {
         $code = <<<'PHP'
