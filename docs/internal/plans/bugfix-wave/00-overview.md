@@ -126,9 +126,15 @@ attempt you abandon), delete what you created outside the tracked tree:
 - build output you produced that is not tracked (for example a scratch
   `vite build --outDir`, `.playwright-cli` if any tool created it).
 
-Never delete tracked files, `vendor/`, `node_modules/` or the worktree itself,
-and never run a recursive delete on a path you did not create in this session.
-List what you removed in the report.
+If the session prompt had you create your own worktree, remove it as the very
+last step, after the branch is pushed, the pull request is open and the report
+is written: `git worktree remove <path>` from the main checkout (it also removes
+that worktree's `vendor/` and `node_modules/`). If `git worktree remove`
+refuses because of uncommitted changes, stop and report instead of forcing it.
+
+Otherwise never delete tracked files, `vendor/`, `node_modules/` or a worktree
+you did not create, and never run a recursive delete on a path you did not
+create in this session. List what you removed in the report.
 
 ## Environment facts
 
