@@ -51,10 +51,10 @@ final class CacheRunLifecycle
             return;
         }
 
-        throw EnvironmentRefusal::aboutFile(
+        throw EnvironmentRefusal::aboutDirectory(
             $outcome->directory,
             'clear cache in',
-            \sprintf('%d cache entries remain: %s', $outcome->remaining, $outcome->reason ?? 'unknown reason'),
+            $outcome->reason ?? 'unknown reason',
         );
     }
 }

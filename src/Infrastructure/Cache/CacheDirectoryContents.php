@@ -29,7 +29,12 @@ final readonly class CacheDirectoryContents
             $reason ??= $failure;
         }
 
-        return new CacheClearOutcome($remaining === 0 && $reason === null && $retained === [], $remaining, $this->directory->value(), $reason ?? ($retained === [] ? null : 'Retained detached cache directories: ' . implode(', ', $retained)));
+        if ($reason === null && $retained !== []) {
+            $count = \count($retained);
+            $reason = \sprintf('Kept %d detached %s that still %s files: %s', $count, $count === 1 ? 'directory' : 'directories', $count === 1 ? 'holds' : 'hold', implode(', ', $retained));
+        }
+
+        return new CacheClearOutcome($remaining === 0 && $reason === null && $retained === [], $remaining, $this->directory->value(), $reason);
     }
 
     /** @return array{int, ?string, ?string} */

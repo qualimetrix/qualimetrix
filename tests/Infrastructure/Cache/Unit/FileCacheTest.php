@@ -237,6 +237,7 @@ final class FileCacheTest extends TestCase
         $outcome = $this->cache->clear();
         self::assertFalse($outcome->complete);
         self::assertSame(0, $outcome->remaining);
+        self::assertStringContainsString('Kept 1 detached directory that still holds files:', $outcome->reason ?? '');
         self::assertStringContainsString('.clearing-', $outcome->reason ?? '');
         self::assertFalse($this->cache->has($key));
         self::assertDirectoryDoesNotExist($this->cacheDir . '/ast-v99');
@@ -250,6 +251,24 @@ final class FileCacheTest extends TestCase
         unlink($foreign[0]);
         self::assertTrue($this->cache->clear()->complete);
         self::assertSame([], glob($this->cacheDir . '/.clearing-*'));
+    }
+
+    #[Test]
+    public function itCountsMultipleRetainedDetachedDirectories(): void
+    {
+        foreach ([1, 99] as $version) {
+            mkdir($this->cacheDir . '/ast-v' . $version, 0700, true);
+            file_put_contents($this->cacheDir . '/ast-v' . $version . '/notes.txt', 'foreign');
+        }
+
+        $outcome = $this->cache->clear();
+
+        self::assertFalse($outcome->complete);
+        self::assertSame(0, $outcome->remaining);
+        self::assertStringContainsString('Kept 2 detached directories that still hold files:', $outcome->reason ?? '');
+        $retained = glob($this->cacheDir . '/.clearing-*');
+        self::assertNotFalse($retained);
+        self::assertCount(2, $retained);
     }
 
     #[Test]
