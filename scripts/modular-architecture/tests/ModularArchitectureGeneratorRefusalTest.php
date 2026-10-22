@@ -19,18 +19,31 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
 {
     private static ?string $projectTemplate = null;
 
+    /** @var array<string, string> */
+    private static array $sourceSnapshot = [];
+
     public static function setUpBeforeClass(): void
     {
         parent::setUpBeforeClass();
+        self::$sourceSnapshot = self::snapshotSourceTree();
         self::$projectTemplate = self::createProjectTemplate();
     }
 
     public static function tearDownAfterClass(): void
     {
-        if (self::$projectTemplate !== null) {
-            self::removeDirectory(self::$projectTemplate);
+        try {
+            $currentSnapshot = self::snapshotSourceTree();
+            self::assertSame(
+                self::$sourceSnapshot,
+                $currentSnapshot,
+                'Refusal probes changed the live src tree: ' . implode(', ', self::changedSnapshotPaths(self::$sourceSnapshot, $currentSnapshot)),
+            );
+        } finally {
+            if (self::$projectTemplate !== null) {
+                self::removeDirectory(self::$projectTemplate);
+            }
+            parent::tearDownAfterClass();
         }
-        parent::tearDownAfterClass();
     }
 
     #[Test]
@@ -588,7 +601,7 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
             // exist here before the inventory script can reach its own refusal.
             self::copyDirectory($sourceRoot . '/governance', $projectRoot . '/governance');
             self::copyDirectory($sourceRoot . '/tools', $projectRoot . '/tools');
-            // These probes mutate test/configuration inputs, never production sources.
+            // The live source link is guarded by the class-level content snapshot.
             self::assertTrue(symlink($sourceRoot . '/src', $projectRoot . '/src'));
             // A root-level, non-PSR-4 npm project, registered as three keys in
             // TOOLING_TEST_ROOT_OWNERS (html-report/tests/, package.json,
@@ -725,6 +738,58 @@ final class ModularArchitectureGeneratorRefusalTest extends TestCase
 
             self::assertTrue(copy($entry->getPathname(), $target));
         }
+    }
+
+    /** @return array<string, string> */
+    private static function snapshotSourceTree(): array
+    {
+        $sourceRoot = realpath(\dirname(__DIR__, 3) . '/src');
+        self::assertIsString($sourceRoot);
+        $snapshot = [];
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($sourceRoot, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST,
+        );
+
+        foreach ($iterator as $entry) {
+            self::assertInstanceOf(SplFileInfo::class, $entry);
+            $relativePath = substr($entry->getPathname(), \strlen($sourceRoot) + 1);
+            if ($entry->isLink()) {
+                $target = readlink($entry->getPathname());
+                self::assertIsString($target);
+                $snapshot[$relativePath] = 'symlink:' . $target;
+            } elseif ($entry->isDir()) {
+                $snapshot[$relativePath] = 'directory';
+            } elseif ($entry->isFile()) {
+                $hash = sha1_file($entry->getPathname());
+                self::assertIsString($hash);
+                $snapshot[$relativePath] = 'file:' . $hash;
+            } else {
+                $snapshot[$relativePath] = 'other';
+            }
+        }
+
+        ksort($snapshot);
+
+        return $snapshot;
+    }
+
+    /**
+     * @param array<string, string> $before
+     * @param array<string, string> $after
+     *
+     * @return list<string>
+     */
+    private static function changedSnapshotPaths(array $before, array $after): array
+    {
+        $paths = array_unique([...array_keys($before), ...array_keys($after)]);
+        $changed = array_values(array_filter(
+            $paths,
+            static fn(string $path): bool => ($before[$path] ?? null) !== ($after[$path] ?? null),
+        ));
+        sort($changed);
+
+        return $changed;
     }
 
     private static function removeDirectory(string $path): void
