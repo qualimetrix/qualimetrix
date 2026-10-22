@@ -199,7 +199,7 @@ Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKey	Analysis
 Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet	Analysis.Finding	40	13
 Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionRefusal	Analysis.Finding	6	2
 Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionRefusalWording	Analysis.Finding	1	1
-Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape	Analysis.Finding	39	12
+Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape	Analysis.Finding	40	13
 Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface	Analysis.Finding	17	9
 Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionWordSet	Analysis.Finding	5	3
 Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ThresholdPair	Analysis.Finding	13	7

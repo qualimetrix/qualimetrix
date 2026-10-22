@@ -12263,7 +12263,7 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeOptions"
         },
         {
-          "owner": "Infrastructure",
+          "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Invocation\\RuleOptions\\CliRuleOptionAddressing"
         }
       ]
