@@ -38,51 +38,72 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
     private function assertFreshnessScriptGraph(array $composer): void
     {
         $scripts = $composer['scripts'];
+        $expectedLeaves = [
+            'check-leaks',
+            'cs-check',
+            'test:aggregate',
+            'dangling-names',
+            'test:js',
+            'test:cross-tool',
+            'phpstan',
+            'docs:check',
+            'architecture:check',
+            'enumeration:directives:check',
+            'suppression-snapshot:check',
+            'html-bundle:check',
+            'configuration:merge-table:check',
+            'selfcheck:analysis',
+            'directives:audit',
+        ];
+        $leafCounts = array_count_values($this->expandedLeafScripts($scripts, 'check'));
+        foreach ($expectedLeaves as $leaf) {
+            self::assertSame(1, $leafCounts[$leaf] ?? 0, \sprintf('%s must run exactly once through aggregate check.', $leaf));
+        }
+        foreach ($leafCounts as $leaf => $count) {
+            self::assertSame(1, $count, \sprintf('%s must not run twice through aggregate check.', $leaf));
+        }
+
+        $checkSteps = $this->scriptSteps($scripts, 'check');
+        self::assertContains('@check:code:tests', $checkSteps);
+        self::assertContains('@check:parallel', $checkSteps);
+        self::assertLessThan(
+            array_search('@check:parallel', $checkSteps, true),
+            array_search('@check:code:tests', $checkSteps, true),
+            'Cheap code tests must precede parallel checks.',
+        );
+
+        foreach ([
+            'test',
+            'test:aggregate',
+            'benchmark:check',
+            'benchmark:update',
+            'gate',
+            'gate:phar',
+            'directives:narrow-control',
+            'check:gate',
+            'check:parallel',
+            'check:remaining',
+        ] as $script) {
+            self::assertSame('Composer\\Config::disableProcessTimeout', $this->scriptSteps($scripts, $script)[0]);
+        }
+
+        $selfcheckSteps = $this->scriptSteps($scripts, 'selfcheck');
+        self::assertContains('@architecture:check', $selfcheckSteps);
+        self::assertContains('@selfcheck:analysis', $selfcheckSteps);
+        self::assertLessThan(
+            array_search('@selfcheck:analysis', $selfcheckSteps, true),
+            array_search('@architecture:check', $selfcheckSteps, true),
+            'Architecture freshness must precede self-analysis.',
+        );
 
         self::assertSame(
             ['Composer\\Config::disableProcessTimeout', 'phpunit --no-coverage --exclude-group=benchmark'],
             $scripts['test'],
-            'Standalone composer test must retain its full freshness coverage.',
         );
-        self::assertSame(
-            [
-                'Composer\\Config::disableProcessTimeout',
-                'python3 scripts/phpunit-aggregate.py',
-            ],
-            $scripts['test:aggregate'],
-        );
-        self::assertSame(['@architecture:check', '@selfcheck:analysis'], $scripts['selfcheck']);
         self::assertSame(
             'php bin/qmx check src/ --baseline=qmx-baseline.json --fail-on=warning --memory-limit=512M',
             $scripts['selfcheck:analysis'],
         );
-        self::assertSame(
-            ['Composer\\Config::disableProcessTimeout', 'python3 scripts/check-code-parallel/check-code-parallel.py'],
-            $scripts['check:parallel'],
-        );
-        self::assertSame(
-            ['@check:code:tests', '@phpstan'],
-            $this->scriptSteps($scripts, 'check:code'),
-        );
-        self::assertSame(
-            ['@cs-check', '@test:aggregate', '@dangling-names', '@test:js', '@test:cross-tool'],
-            $this->scriptSteps($scripts, 'check:code:tests'),
-        );
-        self::assertSame(
-            ['@check-leaks', '@check:code:tests', '@check:parallel'],
-            $this->scriptSteps($scripts, 'check'),
-        );
-        self::assertSame(
-            [
-                'Composer\\Config::disableProcessTimeout',
-                '@check:docs',
-                '@check:artifacts',
-                '@check:self',
-            ],
-            $this->scriptSteps($scripts, 'check:remaining'),
-        );
-        self::assertContains('@architecture:check', $this->scriptSteps($scripts, 'check:artifacts'));
-        self::assertContains('@suppression-snapshot:check', $this->scriptSteps($scripts, 'check:artifacts'));
         self::assertContains(
             "python3 -m unittest discover -s scripts/phpunit-aggregate/tests -p 'test_*.py'",
             $this->scriptSteps($scripts, 'test:cross-tool'),
@@ -91,7 +112,6 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
             "python3 -m unittest discover -s scripts/check-code-parallel/tests -p 'test_*.py'",
             $this->scriptSteps($scripts, 'test:cross-tool'),
         );
-        self::assertSame(['@selfcheck:analysis', '@directives:audit'], $scripts['check:self']);
         self::assertSame(
             [
                 'Composer\\Config::disableProcessTimeout',
@@ -99,6 +119,83 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
             ],
             $scripts['check:gate'],
         );
+    }
+
+    /**
+     * @param array<string, string|list<string>> $scripts
+     * @param list<string> $ancestors
+     *
+     * @return list<string>
+     */
+    private function expandedLeafScripts(array $scripts, string $name, array $ancestors = []): array
+    {
+        self::assertNotContains($name, $ancestors, 'Composer script graph must not cycle.');
+        $ancestors[] = $name;
+        $children = [];
+        foreach ($this->scriptSteps($scripts, $name) as $step) {
+            if (str_starts_with($step, '@')) {
+                $children[] = substr($step, 1);
+            } elseif ($step === 'python3 scripts/check-code-parallel/check-code-parallel.py') {
+                array_push($children, ...$this->coordinatorScripts());
+            }
+        }
+
+        if ($children === []) {
+            return [$name];
+        }
+
+        $leaves = [];
+        foreach ($children as $child) {
+            array_push($leaves, ...$this->expandedLeafScripts($scripts, $child, $ancestors));
+        }
+
+        return $leaves;
+    }
+
+    /** @return list<string> */
+    private function coordinatorScripts(): array
+    {
+        $parser = <<<'PY'
+import ast
+import json
+import sys
+
+with open(sys.argv[1], encoding='utf-8') as source:
+    tree = ast.parse(source.read())
+assignments = [
+    node.value
+    for node in tree.body
+    if isinstance(node, ast.Assign)
+    and any(isinstance(target, ast.Name) and target.id == 'COMMANDS' for target in node.targets)
+]
+if len(assignments) != 1:
+    raise ValueError('Expected one literal COMMANDS assignment')
+commands = ast.literal_eval(assignments[0])
+scripts = []
+for _, command in commands:
+    if len(command) != 2 or command[0] != 'composer':
+        raise ValueError('Expected a composer script command')
+    scripts.append(command[1])
+print(json.dumps(scripts))
+PY;
+        [$exitCode, $output] = $this->runProcess([
+            'python3',
+            '-c',
+            $parser,
+            $this->root() . '/scripts/check-code-parallel/check-code-parallel.py',
+        ]);
+        self::assertSame(0, $exitCode, $output);
+        $decoded = json_decode($output, true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($decoded);
+
+        return array_values(array_map(
+            static function (mixed $script): string {
+                self::assertIsString($script);
+
+                return $script;
+            },
+            $decoded,
+        ));
     }
 
     #[Test]
