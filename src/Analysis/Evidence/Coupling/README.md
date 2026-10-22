@@ -307,8 +307,10 @@ lookup changes; response resolution when target membership changes.
 They share no generic run port, type engine or cross-capability state.
 
 RFC is `|M| + |Ri outside M|`. M contains all declared methods, including
-abstract methods, and effective imported trait methods. Aliases contribute
-separate exposed names; calls to their shared original body remain inside M.
+abstract methods, effective imported trait methods, and an enum's implicit
+members. Every enum contributes `cases`; a backed enum also contributes `from`
+and `tryFrom`. Aliases contribute separate exposed names; calls to their shared
+original body remain inside M.
 Class overrides and trait precedence exclude discarded bodies. Inherited
 methods enter Ri only when invoked; their own bodies are not scanned for the
 consumer. Effective imported trait bodies resolve `this/self/static/parent`

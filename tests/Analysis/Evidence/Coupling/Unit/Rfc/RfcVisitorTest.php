@@ -429,8 +429,8 @@ PHP,
             ],
         ];
 
-        // Enum with concrete methods should count own methods
-        yield 'enum with concrete methods' => [
+        // Backed enums include their three implicit methods in M.
+        yield 'backed enum includes implicit methods' => [
             'code' => <<<'PHP'
 <?php
 namespace App;
@@ -450,10 +450,49 @@ enum Status: string
         return $this === self::Active;
     }
 }
-// M = 2, R = 1, RFC = 3
+// M = 5 (two declared plus cases/from/tryFrom), R = 1, RFC = 6
 PHP,
             'expected' => [
-                'App\Status' => ['coupling.rfc' => 3, 'own' => 2, 'external' => 1],
+                'App\Status' => ['coupling.rfc' => 6, 'own' => 5, 'external' => 1],
+            ],
+        ];
+
+        yield 'enum implicit methods are own responses only for the enum itself' => [
+            'code' => <<<'PHP'
+<?php
+namespace App;
+
+enum Suit: string
+{
+    case H = 'h';
+
+    public function a(): self
+    {
+        return Suit::from('h');
+    }
+
+    public function b(): ?self
+    {
+        return self::tryFrom('x');
+    }
+
+    public function c(): array
+    {
+        return static::cases();
+    }
+}
+
+final class SuitConsumer
+{
+    public function find(): Suit
+    {
+        return Suit::from('h');
+    }
+}
+PHP,
+            'expected' => [
+                'App\Suit' => ['coupling.rfc' => 6, 'own' => 6, 'external' => 0],
+                'App\SuitConsumer' => ['coupling.rfc' => 2, 'own' => 1, 'external' => 1],
             ],
         ];
 

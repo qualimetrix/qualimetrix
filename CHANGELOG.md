@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- RFC counts an enum's built-in `cases()`, `from()` and `tryFrom()` as its own methods, not as external responses.
+
 ## [0.28.0] - 2026-10-21
 
 ### Breaking

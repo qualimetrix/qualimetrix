@@ -15,7 +15,11 @@ final readonly class RfcClassFacts
 
     public static function fromNode(Node\Stmt\ClassLike $node, string $namespace): self
     {
-        $rows = [['tag' => 'declaration', 'kind' => $node->getType()]];
+        $rows = [[
+            'tag' => 'declaration',
+            'kind' => $node->getType(),
+            'backed' => self::isBackedEnum($node),
+        ]];
         foreach ($node->stmts as $statement) {
             if ($statement instanceof Node\Stmt\ClassMethod) {
                 self::method($rows, strtolower($statement->name->toString()), $statement);
@@ -30,6 +34,11 @@ final readonly class RfcClassFacts
         }
 
         return new self($namespace, $node->name?->toString() ?? '', $node->getStartLine(), $node->getStartFilePos(), $rows);
+    }
+
+    private static function isBackedEnum(Node\Stmt\ClassLike $node): bool
+    {
+        return $node->getType() === 'Stmt_Enum' && (get_object_vars($node)['scalarType'] ?? null) !== null;
     }
 
     /** @param list<array<string, scalar>> $rows */

@@ -40,6 +40,10 @@ final class RfcEffectiveMembers
             }
         }
 
+        foreach (array_keys($facts->implicitMembers) as $member) {
+            $methods[$member] = ['source' => $facts, 'member' => $member];
+        }
+
         foreach ($this->hooks($facts, []) as $member => $target) {
             $methods['hook:' . $member] = $target;
         }
