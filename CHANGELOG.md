@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `--fail-on` with an unknown value no longer mentions `info`.
+
 - An ambiguous `--class` selection names the files that can select one declaration.
 
 ## [0.28.0] - 2026-10-21

@@ -50,32 +50,37 @@ final readonly class ExitPolicy
             return $severity;
         }
 
-        $value->refuse(self::rejection(\is_scalar($configured) ? (string) $configured : get_debug_type($configured)));
+        $value->refuse(self::rejection(\is_scalar($configured) ? (string) $configured : get_debug_type($configured), $severity));
     }
 
     private static function refusal(string $value): ConfigurationRefusal
     {
         return ConfigurationRefusal::aboutResolvedInput(
-            self::rejection($value),
+            self::rejection($value, Severity::Info),
             self::CONFIGURATION_KEY,
         );
     }
 
-    private static function rejection(string $value): string
+    private static function rejection(string $value, ?Severity $severity): string
     {
         $accepted = array_map(
             static fn(Severity $severity): string => $severity->value,
             array_filter(Severity::cases(), static fn(Severity $severity): bool => $severity->gatesRun()),
         );
 
-        return \sprintf(
-            'Invalid value "%s" for "%s". Allowed values: none, %s.'
-            . ' Severity "info" is report-only and can no longer be a "%s" threshold:'
-            . ' raise the severity of the rule you want to gate on instead.',
+        $prefix = \sprintf(
+            'Invalid value "%s" for "%s". Allowed values: none, %s.',
             $value,
             self::CONFIGURATION_KEY,
             implode(', ', $accepted),
-            self::CONFIGURATION_KEY,
         );
+
+        return $severity === Severity::Info
+            ? $prefix . \sprintf(
+                ' Severity "info" is report-only and can no longer be a "%s" threshold:'
+                . ' raise the severity of the rule you want to gate on instead.',
+                self::CONFIGURATION_KEY,
+            )
+            : $prefix . ' Use "none" to never fail on findings.';
     }
 }

@@ -102,6 +102,21 @@ final class ExitPolicyTest extends TestCase
     }
 
     #[Test]
+    #[TestWith(['false'])]
+    #[TestWith(['warnin'])]
+    public function itExplainsUnknownThresholdsWithoutInfoAdvice(string $configured): void
+    {
+        try {
+            ExitPolicy::fromResolvedValue(self::resolvedValue($configured));
+            self::fail('An unknown threshold was accepted.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringNotContainsString('info', $refusal->summary());
+            self::assertStringNotContainsString('report-only', $refusal->summary());
+            self::assertStringContainsString('Use "none" to never fail on findings.', $refusal->summary());
+        }
+    }
+
+    #[Test]
     public function itRefusesAuthoredFalseAndNamesItsFile(): void
     {
         try {
