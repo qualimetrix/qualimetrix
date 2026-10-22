@@ -492,10 +492,11 @@ final class HealthBarRendererTest extends TestCase
         $nsInfo = new SymbolInfo($nsPath, RelativePath::fromString('src/Service'), null);
         $childInfo = new SymbolInfo($childPath, RelativePath::fromString('src/Service/Payment'), null);
 
-        $metrics = $this->createMock(MetricRepositoryInterface::class);
+        $metrics = self::createStub(MetricRepositoryInterface::class);
         $metrics->method('all')
-            ->with(SymbolLevel::Namespace_)
-            ->willReturn([$nsInfo, $childInfo]);
+            ->willReturnCallback(static fn(SymbolLevel $level): array => $level === SymbolLevel::Namespace_
+                ? [$nsInfo, $childInfo]
+                : []);
         $metrics->method('get')
             ->willReturnCallback(static fn(SymbolPath $path): MetricBag => match ($path->toCanonical()) {
                 $nsPath->toCanonical() => $parentBag,
