@@ -6,7 +6,7 @@ namespace QmxFindingGate;
 
 use RuntimeException;
 
-/** The exact namespace transitions supported by the product probes. */
+/** Exact namespace transitions may be removed once their rename commit is an ancestor of every compared reference. */
 final class ProductProbeTypes
 {
     private const array PREVIOUS = [
