@@ -663,10 +663,11 @@ can be absent while its skipped values remain named. Reasons retain
 flat named cause fields even on a `covered` run. Namespace location still uses
 accepted PSR-4 facts independently of state. Human wording names unjudged
 channels even when state is `covered`: path coverage alone does not judge every
-channel. `metrics` and `suppressed` share
-this object. SARIF (`QMX-RUN-PROJECT-SCOPE`), GitHub (`run.project-scope`), HTML
-and human formats render the scope explanation; `gitlab` and `checkstyle` have
-no diagnostic entry because their consumers treat every entry as a finding.
+channel. SARIF (`QMX-RUN-PROJECT-SCOPE`), GitHub (`run.project-scope`), HTML
+and human formats name the first three skipped values and count the rest.
+`json`, `metrics` and `suppressed` retain every skipped value in the scope object.
+`gitlab` and `checkstyle` have no diagnostic entry because their consumers
+treat every entry as a finding.
 Auxiliary install issues explain ancestry limits without changing main-project
 coverage. An `omitted-composer-root` reason retains `cause` and `visitedLevels`.
 Its `candidate`, `startDirectory` and `lastDirectory` are published only when

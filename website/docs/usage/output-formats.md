@@ -1357,6 +1357,11 @@ no omitted-root reason.
 | `summary`, `text`, `health`     | A `Project scope …` line                                        |
 | `gitlab`, `checkstyle`          | No scope entry: every entry is a finding to their consumers     |
 
+The scope notice in `sarif`, `github`, `html`, `summary`, `text` and `health`
+names at most the first three skipped values, followed by a count of the
+remaining values. The `projectScope.unjudgedValues` array in `json`, `metrics`
+and `suppressed` lists every skipped value.
+
 The object retains five fields: `state`, `uncoveredAutoloadTargets[]`,
 `unjudgedChannels[]`, `unjudgedValues[]`, `reasons[]`. Each skipped value has
 `{channel, option, pattern}`. `unjudgedChannels` contains only channels with no

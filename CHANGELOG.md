@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The project scope line names at most three skipped selectors instead of all of them.
 - Repeated class names in "Worst classes" show their declaring file and ordinal.
 - A namespace or class that falls short of a population minimum because a count is zero is reported as below the minimum, not as missing a metric.
 

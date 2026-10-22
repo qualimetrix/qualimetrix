@@ -1363,6 +1363,11 @@ Skips называют запись, не ставшую единицей ана
 | `summary`, `text`, `health`     | Строка `Project scope …`                                            |
 | `gitlab`, `checkstyle`          | Записи об охвате нет: их потребители считают каждую запись находкой |
 
+Уведомление об охвате в `sarif`, `github`, `html`, `summary`, `text` и `health`
+называет не более трёх первых пропущенных значений и указывает число остальных.
+Массив `projectScope.unjudgedValues` в `json`, `metrics` и `suppressed`
+содержит все пропущенные значения.
+
 Объект сохраняет пять полей: `state`, `uncoveredAutoloadTargets[]`,
 `unjudgedChannels[]`, `unjudgedValues[]`, `reasons[]`. Пропущенное значение имеет
 `{channel, option, pattern}`. `unjudgedChannels` перечисляет только каналы,

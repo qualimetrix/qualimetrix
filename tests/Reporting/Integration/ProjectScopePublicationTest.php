@@ -241,6 +241,36 @@ final class ProjectScopePublicationTest extends TestCase
     }
 
     #[Test]
+    #[DataProvider('noticeFormats')]
+    public function itBoundsTheSkippedValuesNamedInNotices(string $format): void
+    {
+        $output = $this->format($format, ReportProjectScope::covered()->withUnjudgedValues(self::twentySkippedValues()));
+        if ($format === 'html') {
+            $document = \Dom\HTMLDocument::createFromString($output, \LIBXML_NOERROR);
+            $banner = (new \Dom\XPath($document))->evaluate('string(//*[@data-qmx-project-scope])');
+            self::assertIsString($banner);
+            $output = $banner;
+        } elseif ($format === 'sarif') {
+            $output = self::decode($output)['runs'][0]['invocations'][0]['toolExecutionNotifications'][0]['message']['text'];
+        }
+
+        foreach (['01', '02', '03'] as $index) {
+            self::assertStringContainsString('suppression.unmatched-path suppress_paths "subtree:tests/Case' . $index . '"', $output);
+        }
+        self::assertStringContainsString('and 17 more; the json, metrics and suppressed formats list every value', $output);
+        self::assertStringNotContainsString('subtree:tests/Case20', $output);
+    }
+
+    #[Test]
+    public function itKeepsEverySkippedValueInJson(): void
+    {
+        $values = self::twentySkippedValues();
+        $scope = ReportProjectScope::covered()->withUnjudgedValues($values);
+
+        self::assertSame($values, self::decode($this->format('json', $scope))['projectScope']['unjudgedValues']);
+    }
+
+    #[Test]
     public function itNamesUnjudgedChannelsOfACoveredRun(): void
     {
         $scope = ReportProjectScope::measured(
@@ -314,6 +344,19 @@ final class ProjectScopePublicationTest extends TestCase
         return ReportProjectScope::covered()->withUnjudgedValues([
             self::SKIPPED_VALUES[0],
         ]);
+    }
+
+    /** @return list<array{channel: string, option: string, pattern: string}> */
+    private static function twentySkippedValues(): array
+    {
+        return array_map(
+            static fn(int $index): array => [
+                'channel' => 'suppression.unmatched-path',
+                'option' => 'suppress_paths',
+                'pattern' => \sprintf('subtree:tests/Case%02d', $index),
+            ],
+            range(1, 20),
+        );
     }
 
     private static function narrowed(): ReportProjectScope
