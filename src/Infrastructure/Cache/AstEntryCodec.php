@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Cache;
 
+use Closure;
 use Composer\InstalledVersions;
 use FilesystemIterator;
 use PhpParser\Comment;
@@ -28,7 +29,7 @@ final class AstEntryCodec
     /** @param list<Node> $nodes */
     public function encode(array $nodes): ?string
     {
-        if (!$this->walk($nodes, false)) {
+        if (!$this->walk($nodes, null)) {
             return null;
         }
 
@@ -56,7 +57,7 @@ final class AstEntryCodec
                     return null;
                 }
             }
-            if (!$this->walk($nodes, true)) {
+            if (!$this->walk($nodes, $this->validObject(...))) {
                 return null;
             }
 
@@ -100,7 +101,8 @@ final class AstEntryCodec
             && !(new ReflectionClass($class))->isAbstract();
     }
 
-    private function walk(mixed $root, bool $validate): bool
+    /** @param ?Closure(object): bool $validator */
+    private function walk(mixed $root, ?Closure $validator): bool
     {
         $visited = new SplObjectStorage();
         $stack = [[$root, 0, false]];
@@ -113,35 +115,60 @@ final class AstEntryCodec
             if ($depth > self::MAX_DEPTH) {
                 return false;
             }
-            if (\is_object($value)) {
-                if ($validate && !$value instanceof Node && !$value instanceof Comment) {
-                    return false;
-                }
-                if ($visited->offsetExists($value)) {
-                    if ($visited->offsetGet($value) === false) {
-                        return false;
-                    }
-                    continue;
-                }
-                $visited->offsetSet($value, false);
-                if ($validate && ($value instanceof Comment && !$this->initializedComment($value)
-                    || $value instanceof Node && !$this->initializedNode($value))) {
-                    return false;
-                }
-                $stack[] = [$value, $depth, true];
-                $stack[] = [(array) $value, $depth + 1, false];
-                continue;
+            if (\is_object($value) && !$this->queueObject($value, $depth, $visited, $stack, $validator)) {
+                return false;
             }
             if (\is_array($value)) {
-                foreach (array_reverse($value) as $child) {
-                    $stack[] = [$child, $depth + 1, false];
-                }
-            } elseif ($validate && \is_resource($value)) {
+                self::queueChildren($value, $depth, $stack);
+            } elseif ($validator !== null && \is_resource($value)) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    /**
+     * @param SplObjectStorage<object, bool> $visited
+     * @param list<array{mixed, int, bool}> $stack
+     * @param ?Closure(object): bool $validator
+     */
+    private function queueObject(object $value, int $depth, SplObjectStorage $visited, array &$stack, ?Closure $validator): bool
+    {
+        if ($visited->offsetExists($value)) {
+            return $visited->offsetGet($value) === true;
+        }
+        if ($validator !== null && !$validator($value)) {
+            return false;
+        }
+        $visited->offsetSet($value, false);
+        $stack[] = [$value, $depth, true];
+        $stack[] = [(array) $value, $depth + 1, false];
+
+        return true;
+    }
+
+    /**
+     * @param array<array-key, mixed> $value
+     * @param list<array{mixed, int, bool}> $stack
+     */
+    private static function queueChildren(array $value, int $depth, array &$stack): void
+    {
+        foreach (array_reverse($value) as $child) {
+            $stack[] = [$child, $depth + 1, false];
+        }
+    }
+
+    private function validObject(object $value): bool
+    {
+        if (!$value instanceof Node && !$value instanceof Comment) {
+            return false;
+        }
+        if ($value instanceof Comment) {
+            return $this->initializedComment($value);
+        }
+
+        return $this->initializedNode($value);
     }
 
     private function initializedComment(Comment $comment): bool
