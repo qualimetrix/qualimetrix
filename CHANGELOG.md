@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Files with deeply nested expressions are cached; warm runs no longer warn about a discarded cache entry on every run.
+- File-level findings carry every namespace their file opens, so namespace filters and grouping keep findings in files that declare no class.
 
 ## [0.28.0] - 2026-10-21
 

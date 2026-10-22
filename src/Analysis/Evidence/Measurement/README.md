@@ -22,7 +22,7 @@ Measurement/
 ├── Contract/           # named cross-owner metric and repository promises
 │   ├── ClassKeyScope.php # declaration or logical-name class key scope
 │   ├── MetricDefinitionCatalogInterface.php # measured definitions for composition
-│   └── FileNamespaceIndex.php # declared namespaces of each measured physical file
+│   └── FileNamespaceIndex.php # declared and lexical namespaces of each measured physical file
 ├── FileMeasurement/    # file collectors and derived metrics
 ├── Namespace_/         # project namespace attribution
 ├── Repository/
@@ -40,8 +40,11 @@ Measurement/
 `FileNamespaceIndex::fromRepository()` associates physical files with every
 namespace in their exact declarations and logical classes, deduplicated in
 repository order. Missing declarations or a missing repository produce an empty
-list. Namespace aggregation ignores that empty list; reporting may interpret it
-as the global namespace for file findings.
+list. `CompositeCollector` also records each file's lexical namespace statements
+as structured file-bag entries, including a braced global block. The index
+exposes those entries separately through `lexicalNamespacesOf()`; namespace
+aggregation continues to read only `namespacesOf()`. Reporting combines both
+views for file findings and uses the global fallback only when both are empty.
 
 The `Contract/` namespace is the complete external surface. Important promises
 include `MetricRepositoryInterface`, `MetricRepositoryFactoryInterface`,

@@ -251,7 +251,35 @@ final class FindingFilterTest extends TestCase
     }
 
     #[Test]
-    public function itSelectsUndeclaredFileFindingsAsGlobalWithoutChangingTheirIdentity(): void
+    public function itSelectsAFileFindingByDeclaredAndLexicalNamespacesTogether(): void
+    {
+        $file = RelativePath::fromString('src/Multi.php');
+        $repository = new InMemoryMetricRepository();
+        $repository->add(SymbolPath::forClass('A', 'Holder'), new MetricBag(), $file, 1);
+        $repository->add(SymbolPath::forFile($file), (new MetricBag())->withEntry(
+            FileNamespaceIndex::LEXICAL_NAMESPACE_ENTRY,
+            ['namespace' => 'B'],
+        ), $file, 1);
+        $finding = new Finding(
+            location: new Location($file, 4),
+            subject: MetricSubject::aggregate(SymbolPath::forFile($file)),
+            symbolPath: SymbolPath::forFile($file),
+            ruleName: 'code-smell.eval',
+            code: 'code-smell.eval',
+            message: 'File evidence',
+            severity: Severity::Warning,
+        );
+        $index = FileNamespaceIndex::fromRepository($repository);
+
+        foreach (['A', 'B'] as $namespace) {
+            self::assertSame([$finding], $this->filter->filterFindings([$finding], new FormatterContext(
+                namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::exact($namespace),
+            ), $index));
+        }
+    }
+
+    #[Test]
+    public function itSelectsADeclarationFreeFileFindingByItsLexicalNamespaceWithoutChangingItsIdentity(): void
     {
         $file = RelativePath::fromString('src/Script.php');
         $finding = new Finding(
@@ -263,14 +291,40 @@ final class FindingFilterTest extends TestCase
             message: 'Physical copy',
             severity: Severity::Warning,
         );
-        $global = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::regex('.*'));
         $shop = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('Shop'));
+        $repository = new InMemoryMetricRepository();
+        $repository->add(SymbolPath::forFile($file), (new MetricBag())->withEntry(
+            FileNamespaceIndex::LEXICAL_NAMESPACE_ENTRY,
+            ['namespace' => 'Shop'],
+        ), $file, 1);
+        $index = FileNamespaceIndex::fromRepository($repository);
 
-        foreach ([FileNamespaceIndex::fromRepository(null)] as $index) {
-            self::assertSame([$finding], $this->filter->filterFindings([$finding], $global, $index));
-            self::assertSame([], $this->filter->filterFindings([$finding], $shop, $index));
-            self::assertSame([], $this->filter->filterFindings([$finding], new FormatterContext(class: 'Shop\\Cart'), $index));
-        }
+        self::assertSame([$finding], $this->filter->filterFindings([$finding], $shop, $index));
+        self::assertSame([], $this->filter->filterFindings([$finding], new FormatterContext(class: 'Shop\\Cart'), $index));
+        self::assertSame(SymbolPath::forFile($file)->toString(), $finding->symbolPath->toString());
+    }
+
+    #[Test]
+    public function itSelectsAFileWithNoNamespaceStatementAsGlobal(): void
+    {
+        $file = RelativePath::fromString('src/Script.php');
+        $finding = new Finding(
+            location: new Location($file, 7),
+            subject: MetricSubject::aggregate(SymbolPath::forFile($file)),
+            symbolPath: SymbolPath::forFile($file),
+            ruleName: 'duplication.clone',
+            code: 'duplication.clone',
+            message: 'Physical copy',
+            severity: Severity::Warning,
+        );
+        $index = FileNamespaceIndex::fromRepository(null);
+
+        self::assertSame([$finding], $this->filter->filterFindings([$finding], new FormatterContext(
+            namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::regex('.*'),
+        ), $index));
+        self::assertSame([], $this->filter->filterFindings([$finding], new FormatterContext(
+            namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('Shop'),
+        ), $index));
     }
 
     #[Test]

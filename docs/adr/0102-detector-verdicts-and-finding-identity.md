@@ -50,3 +50,9 @@ remain. The credential filter can still miss a lowercase dotted secret phrase,
 and a credential-looking alias-map value can still be flagged. An early guard
 inside a `try`, after a preparatory call but before the useful work, can still
 make an empty `catch` look like a valid chain of attempts.
+
+## Amendment, 2026-10-22: file-subject namespace selection
+
+The 2026-10-22 amendment to ADR 0105 resolves the file-subject namespace
+selection noted above. The three other namespace fallback readers remain as
+recorded.

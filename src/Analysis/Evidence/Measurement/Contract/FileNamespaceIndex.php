@@ -5,17 +5,23 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Measurement\Contract;
 
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
-/** Declared namespaces associated with each measured physical file. */
+/** Declared and lexical namespaces associated with each measured physical file. */
 final readonly class FileNamespaceIndex
 {
-    /** @param array<string, list<string>> $namespaces */
-    private function __construct(private array $namespaces) {}
+    public const string LEXICAL_NAMESPACE_ENTRY = 'internal.file-lexical-namespace';
+
+    /**
+     * @param array<string, list<string>> $namespaces
+     * @param array<string, list<string>> $lexicalNamespaces
+     */
+    private function __construct(private array $namespaces, private array $lexicalNamespaces) {}
 
     public static function fromRepository(?MetricRepositoryInterface $repository): self
     {
         if ($repository === null) {
-            return new self([]);
+            return new self([], []);
         }
         $map = [];
 
@@ -28,7 +34,23 @@ final readonly class FileNamespaceIndex
             }
         }
 
-        return new self(array_map(static fn(array $namespaces): array => array_values($namespaces), $map));
+        $lexical = [];
+        foreach ($repository->all(SymbolLevel::File) as $file) {
+            if ($file->file === null) {
+                continue;
+            }
+            foreach ($repository->get($file->symbolPath)->entries(self::LEXICAL_NAMESPACE_ENTRY) as $entry) {
+                $namespace = $entry['namespace'] ?? null;
+                if (\is_string($namespace)) {
+                    $lexical[$file->file->value()][$namespace] = $namespace;
+                }
+            }
+        }
+
+        return new self(
+            array_map(static fn(array $namespaces): array => array_values($namespaces), $map),
+            array_map(static fn(array $namespaces): array => array_values($namespaces), $lexical),
+        );
     }
 
     /**
@@ -40,5 +62,11 @@ final readonly class FileNamespaceIndex
     public function namespacesOf(RelativePath $file): array
     {
         return $this->namespaces[$file->value()] ?? [];
+    }
+
+    /** @return list<string> */
+    public function lexicalNamespacesOf(RelativePath $file): array
+    {
+        return $this->lexicalNamespaces[$file->value()] ?? [];
     }
 }
