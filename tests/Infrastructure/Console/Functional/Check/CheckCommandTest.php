@@ -95,7 +95,7 @@ final class CheckCommandTest extends TestCase
             self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
             self::assertStringContainsString('First.php', $tester->getDisplay());
             self::assertStringContainsString('Second.php', $tester->getDisplay());
-            self::assertStringContainsString('Analyse one declaring file', $tester->getDisplay());
+            self::assertStringContainsString('Analyse one of these files alone to select its declaration: `First.php`, `Second.php`.', $tester->getDisplay());
             self::assertStringNotContainsString('Internal error', $tester->getDisplay());
         }
     }
@@ -109,7 +109,7 @@ final class CheckCommandTest extends TestCase
 
         self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
         self::assertStringContainsString('Exact selection is unavailable when one file declares the class more than once; analyse the file without --class or rename one declaration.', $tester->getDisplay());
-        self::assertStringNotContainsString('Analyse one declaring file', $tester->getDisplay());
+        self::assertStringNotContainsString('alone to select', $tester->getDisplay());
     }
 
     #[Test]
@@ -122,7 +122,7 @@ final class CheckCommandTest extends TestCase
 
         self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
         self::assertStringContainsString('Every declaring file contains the class more than once; analyse without --class or rename declarations.', $tester->getDisplay());
-        self::assertStringNotContainsString('Analyse one declaring file', $tester->getDisplay());
+        self::assertStringNotContainsString('alone to select', $tester->getDisplay());
     }
 
     #[Test]
@@ -134,8 +134,36 @@ final class CheckCommandTest extends TestCase
         $tester->execute(['paths' => [$this->tempDir], '--format' => 'summary', '--no-cache' => true, '--workers' => '0', '--class' => 'Repeated']);
 
         self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
-        self::assertStringContainsString('Analyse one declaring file to select an exact declaration.', $tester->getDisplay());
+        self::assertStringContainsString('Analyse `Singleton.php` alone to select its declaration.', $tester->getDisplay());
         self::assertStringNotContainsString('Every declaring file contains the class more than once', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itSuggestsOnlyTheSingletonFileForTheNamespacedDuplicate(): void
+    {
+        file_put_contents($this->tempDir . '/one.php', '<?php namespace App; class Dup {}');
+        file_put_contents($this->tempDir . '/two.php', '<?php namespace App; if (true) { class Dup {} } else { class Dup {} }');
+        $tester = $this->createCommandTester();
+        $tester->execute(['paths' => [$this->tempDir], '--format' => 'summary', '--no-cache' => true, '--workers' => '0', '--class' => 'App\\Dup']);
+
+        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('Analyse `one.php` alone to select its declaration.', $tester->getDisplay());
+        self::assertStringNotContainsString('`two.php`', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itCapsDeclaringFileAdviceAtFiveSortedNames(): void
+    {
+        foreach (['G', 'F', 'E', 'D', 'C', 'B', 'A'] as $name) {
+            file_put_contents($this->tempDir . '/' . $name . '.php', '<?php class Repeated {}');
+        }
+        $tester = $this->createCommandTester();
+        $tester->execute(['paths' => [$this->tempDir], '--format' => 'summary', '--no-cache' => true, '--workers' => '0', '--class' => 'Repeated']);
+
+        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('Analyse one of these files alone to select its declaration: `A.php`, `B.php`, `C.php`, `D.php`, `E.php`, and 2 more.', $tester->getDisplay());
+        self::assertStringNotContainsString('`F.php`', $tester->getDisplay());
+        self::assertStringNotContainsString('`G.php`', $tester->getDisplay());
     }
 
     #[Test]
