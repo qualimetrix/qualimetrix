@@ -9,6 +9,8 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Reporting\FindingProjection\SuppressionMechanism;
 use Qualimetrix\Subprocess\ChildProcess;
 
+require_once \dirname(__DIR__, 3) . '/scripts/subprocess/ChildProcess.php';
+
 /**
  * The pure key/normalization logic of `scripts/generate-suppression-snapshot.php`,
  * exercised directly rather than through the slow self-analysis subprocess.
