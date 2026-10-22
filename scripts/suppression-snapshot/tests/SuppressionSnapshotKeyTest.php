@@ -7,6 +7,7 @@ namespace Qualimetrix\SuppressionSnapshot\Tests;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Reporting\FindingProjection\SuppressionMechanism;
+use Qualimetrix\Subprocess\ChildProcess;
 
 /**
  * The pure key/normalization logic of `scripts/generate-suppression-snapshot.php`,
@@ -204,6 +205,61 @@ final class SuppressionSnapshotKeyTest extends TestCase
         } finally {
             unlink($path);
         }
+    }
+
+    #[Test]
+    public function itRefusesWhenTheSnapshotDirectoryDoesNotExist(): void
+    {
+        $directory = $this->scratchDirectory();
+        $path = $directory . '/missing/composition.tsv';
+
+        try {
+            $this->assertFailedPublication($path);
+            self::assertDirectoryDoesNotExist($directory . '/missing');
+        } finally {
+            rmdir($directory);
+        }
+    }
+
+    #[Test]
+    public function itRefusesWhenTheSnapshotTargetIsANonEmptyDirectory(): void
+    {
+        $directory = $this->scratchDirectory();
+        $path = $directory . '/composition.tsv';
+        mkdir($path);
+        file_put_contents($path . '/keep', 'original');
+
+        try {
+            $this->assertFailedPublication($path);
+            self::assertSame('original', file_get_contents($path . '/keep'));
+            $entries = scandir($path);
+            self::assertNotFalse($entries);
+            self::assertSame(['keep'], array_values(array_diff($entries, ['.', '..'])));
+        } finally {
+            unlink($path . '/keep');
+            rmdir($path);
+            rmdir($directory);
+        }
+    }
+
+    private function scratchDirectory(): string
+    {
+        $directory = sys_get_temp_dir() . '/qmx-suppression-' . bin2hex(random_bytes(8));
+        self::assertTrue(mkdir($directory));
+
+        return $directory;
+    }
+
+    private function assertFailedPublication(string $path): void
+    {
+        $script = \dirname(__DIR__, 3) . '/scripts/generate-suppression-snapshot.php';
+        $code = 'require $argv[1]; exit(finishSuppressionSnapshot($argv[2], "replacement", "mechanism\\tsuppressor\\n", 1, false));';
+        $result = ChildProcess::run([\PHP_BINARY, '-r', $code, $script, $path]);
+
+        self::assertSame(2, $result['exitCode']);
+        self::assertStringContainsString('Cannot write suppression snapshot: ' . $path, $result['stderr']);
+        self::assertStringNotContainsString('Wrote ', $result['stdout']);
+        self::assertSame([], glob($path . '.tmp.*'));
     }
 
     #[Test]

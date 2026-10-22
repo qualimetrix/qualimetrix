@@ -181,7 +181,11 @@ function finishSuppressionSnapshot(
             : reportUpToDate($compositionPath, $rowCount);
     }
 
-    writeSuppressionSnapshotAtomically($compositionPath, $compositionContent);
+    if (!writeSuppressionSnapshotAtomically($compositionPath, $compositionContent)) {
+        fwrite(STDERR, "Cannot write suppression snapshot: {$compositionPath}.\n");
+
+        return 2;
+    }
     fwrite(STDOUT, sprintf(
         "Wrote %s (%d rows).\n",
         $compositionPath,
@@ -501,11 +505,17 @@ function describeSuppressionSnapshotMismatch(string $onDisk, string $fresh, stri
     return $summary . implode("\n", $shown) . "\n";
 }
 
-function writeSuppressionSnapshotAtomically(string $path, string $contents): void
+function writeSuppressionSnapshotAtomically(string $path, string $contents): bool
 {
     $tmpPath = $path . '.tmp.' . getmypid();
-    file_put_contents($tmpPath, $contents);
-    rename($tmpPath, $path);
+    try {
+        return @file_put_contents($tmpPath, $contents) !== false
+            && @rename($tmpPath, $path);
+    } finally {
+        if (is_file($tmpPath) || is_link($tmpPath)) {
+            unlink($tmpPath);
+        }
+    }
 }
 
 // Include-safe: requiring this file from a test only defines the functions
