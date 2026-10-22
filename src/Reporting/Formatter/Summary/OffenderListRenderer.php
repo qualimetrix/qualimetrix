@@ -106,9 +106,24 @@ final class OffenderListRenderer
         $topN = $this->getTopN($context);
 
         $offenders = $this->rankOffenders($offenders, $context);
+        $classNameCounts = [];
+        foreach ($offenders as $offender) {
+            if ($offender->subject->declarationPath() === null) {
+                continue;
+            }
+
+            $name = $offender->symbolPath->toString();
+            $classNameCounts[$name] = ($classNameCounts[$name] ?? 0) + 1;
+        }
 
         foreach (\array_slice($offenders, 0, $topN) as $offender) {
-            $this->renderWorstOffender($offender, $color, $lines, $showClassCount);
+            $this->renderWorstOffender(
+                $offender,
+                $color,
+                $lines,
+                $showClassCount,
+                ($classNameCounts[$offender->symbolPath->toString()] ?? 0) > 1,
+            );
         }
 
         $remaining = \count($offenders) - $topN;
@@ -144,8 +159,14 @@ final class OffenderListRenderer
         AnsiColor $color,
         array &$lines,
         bool $showClassCount,
+        bool $showDeclarationFile,
     ): void {
         $name = $offender->symbolPath->toString();
+        $declaration = $offender->subject->declarationPath();
+        if ($showDeclarationFile && $declaration !== null) {
+            $ordinalSuffix = $declaration->ordinal->isFirst() ? '' : '#' . $declaration->ordinal->value;
+            $name .= \sprintf(' (%s%s)', $declaration->file->value(), $ordinalSuffix);
+        }
         $scoreText = $this->formatValue($offender->healthOverall);
 
         $meta = [];
