@@ -30,6 +30,13 @@ composer build:js     # rebuild dist/report.min.js and dist/d3.min.js
 composer test:js      # vitest — part of composer check:code
 ```
 
+The D3 bundle and Vite's external-module configuration share the import census
+from `scripts/d3-imports.mjs`. It parses every JavaScript file under `src/`,
+keeps named `d3-*` imports, and refuses default or namespace imports because the
+browser IIFE exposes only named exports. Adding a D3 import therefore updates
+both bundles through the normal `composer build:js` command without another
+hand-maintained export list.
+
 ## The two-way tie to the PHP sources
 
 The relationship with `src/` runs in both directions:

@@ -181,6 +181,7 @@ governance/ThresholdKeys/ThresholdValidatorAssignmentTest.php	phpunit-test-class
 governance/ThresholdKeys/WarningBoundaryDeclarationTest.php	phpunit-test-class	Qualimetrix\Governance\ThresholdKeys\WarningBoundaryDeclarationTest	Qualimetrix\Governance\ThresholdKeys\WarningBoundaryDeclarationTest	6	Governance	Governance	Architecture.Governance	governance/ThresholdKeys/WarningBoundaryDeclarationTest.php	"Retain at the materialized subject-owned path."
 html-report/package.json	non-php-test-config			0	none	none	HtmlReport	html-report/package.json	"Retain at the materialized subject-owned path."
 html-report/tests/color.test.js	non-php-test-process			0	none	none	HtmlReport	html-report/tests/color.test.js	"Retain at the materialized subject-owned path."
+html-report/tests/d3-imports.test.js	non-php-test-process			0	none	none	HtmlReport	html-report/tests/d3-imports.test.js	"Retain at the materialized subject-owned path."
 html-report/tests/detail.test.js	non-php-test-process			0	none	none	HtmlReport	html-report/tests/detail.test.js	"Retain at the materialized subject-owned path."
 html-report/tests/fixtures/payload.json	fixture			0	none	none	HtmlReport	html-report/tests/fixtures/payload.json	"Retain at the materialized subject-owned path."
 html-report/tests/hash.test.js	non-php-test-process			0	none	none	HtmlReport	html-report/tests/hash.test.js	"Retain at the materialized subject-owned path."
