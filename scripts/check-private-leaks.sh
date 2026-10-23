@@ -117,20 +117,6 @@ if [ "$MODE" = "commits" ]; then
         echo "ℹ️  Commit range '$ARG' unavailable (shallow clone or first push) — skipped."
         exit 0
     fi
-    if [[ "$ARG" == *...* ]]; then
-        endpoints=("${ARG%%...*}" "${ARG##*...}")
-    elif [[ "$ARG" == *..* ]]; then
-        endpoints=("${ARG%%..*}" "${ARG##*..}")
-    else
-        endpoints=("$ARG")
-    fi
-    for endpoint in "${endpoints[@]}"; do
-        [ -z "$endpoint" ] && endpoint=HEAD
-        if ! git rev-parse -q --verify "$endpoint^{commit}" >/dev/null 2>&1; then
-            echo "ℹ️  Commit range '$ARG' unavailable (shallow clone or first push) — skipped."
-            exit 0
-        fi
-    done
     revisions=$(git rev-list "$ARG" 2>/dev/null) || {
         echo "ℹ️  Commit range '$ARG' unavailable (shallow clone or first push) — skipped."
         exit 0
@@ -151,13 +137,15 @@ fi
 # ---------------------------------------------------------------------------
 if [ "$MODE" = "staged" ]; then
     file_list() { git diff --cached --name-only --diff-filter=ACMR; }
+    file_kind="staged"
 else
     file_list() { git ls-files; }
+    file_kind="tracked"
 fi
 
 TARGETS=()
 file_paths=$(file_list) || {
-    echo "Cannot list tracked files for the private leak scan." >&2
+    echo "Cannot list $file_kind files for the private leak scan." >&2
     exit 2
 }
 while IFS= read -r f; do
