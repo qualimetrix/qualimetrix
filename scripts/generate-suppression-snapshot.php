@@ -181,8 +181,10 @@ function finishSuppressionSnapshot(
             : reportUpToDate($compositionPath, $rowCount);
     }
 
-    if (!writeSuppressionSnapshotAtomically($compositionPath, $compositionContent)) {
-        fwrite(STDERR, "Cannot write suppression snapshot: {$compositionPath}.\n");
+    try {
+        writeSuppressionSnapshotAtomically($compositionPath, $compositionContent);
+    } catch (RuntimeException $error) {
+        fwrite(STDERR, "Cannot write suppression snapshot: {$compositionPath}: {$error->getMessage()}\n");
 
         return 2;
     }
@@ -505,15 +507,24 @@ function describeSuppressionSnapshotMismatch(string $onDisk, string $fresh, stri
     return $summary . implode("\n", $shown) . "\n";
 }
 
-function writeSuppressionSnapshotAtomically(string $path, string $contents): bool
+function writeSuppressionSnapshotAtomically(string $path, string $contents): void
 {
     $tmpPath = $path . '.tmp.' . getmypid();
     try {
-        return @file_put_contents($tmpPath, $contents) !== false
-            && @rename($tmpPath, $path);
+        error_clear_last();
+        if (@file_put_contents($tmpPath, $contents) === false) {
+            throw new RuntimeException(error_get_last()['message'] ?? 'file_put_contents() failed without an error.');
+        }
+
+        error_clear_last();
+        if (!@rename($tmpPath, $path)) {
+            throw new RuntimeException(error_get_last()['message'] ?? 'rename() failed without an error.');
+        }
     } finally {
         if (is_file($tmpPath) || is_link($tmpPath)) {
             unlink($tmpPath);
+        } elseif (is_dir($tmpPath)) {
+            rmdir($tmpPath);
         }
     }
 }
