@@ -32,16 +32,11 @@ use Symfony\Component\Process\Process;
 #[CoversClass(CheckCommand::class)]
 final class CheckCommandBaselineTest extends TestCase
 {
-    private static ?ContainerBuilder $container = null;
+    private ?ContainerBuilder $container = null;
 
-    public static function tearDownAfterClass(): void
+    private function container(): ContainerBuilder
     {
-        self::$container = null;
-    }
-
-    private static function container(): ContainerBuilder
-    {
-        $container = self::$container ??= (new ContainerFactory())->create();
+        $container = $this->container ??= (new ContainerFactory())->create();
         self::beginInvocation($container);
 
         return $container;
@@ -502,7 +497,7 @@ final class CheckCommandBaselineTest extends TestCase
     private function runCheck(array $options, bool $captureErrors = false, ?ContainerBuilder $container = null): CommandTester
     {
         if ($container === null) {
-            $container = self::container();
+            $container = $this->container();
         } else {
             self::beginInvocation($container);
         }
@@ -533,7 +528,7 @@ final class CheckCommandBaselineTest extends TestCase
      */
     private function runGenerate(array $options = []): CommandTester
     {
-        $container = self::container();
+        $container = $this->container();
 
         /** @var BaselineGenerateCommand $command */
         $command = $container->get(BaselineGenerateCommand::class);
