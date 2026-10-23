@@ -56,9 +56,11 @@ final readonly class DrillDownBinding
      *
      * `Project` is excluded deliberately: its symbol path holds a display
      * value, `(project)`, where a namespace would be, which a pattern value
-     * would otherwise bind to. `File` adds no separate name: file findings use the namespaces declared
-     * in their physical file, already counted through the named levels. A
-     * file without declarations uses the global namespace only when filtering.
+     * would otherwise bind to. `File` adds no separate name: file findings use
+     * namespaces their physical file declares or opens, and use the global
+     * fallback when it has neither. Namespace-level records and
+     * `getNamespaces()` already bring lexical-only namespaces into the binding
+     * universe.
      */
     private const array NAMED_LEVELS = [
         SymbolLevel::Callable,

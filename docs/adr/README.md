@@ -142,13 +142,13 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0099 — Rule Option Shape Is a Declaration](0099-rule-option-shape-is-a-declaration.md) — rule option shapes are immutable declaration data projected through the shared configuration schema.
 - [0100 — Core AST Name Resolution and Superglobal Reads](0100-core-ast-name-resolution-and-superglobal-reads.md) — shared, bounded AST evidence for detector consumers.
 - [0101 — Class Count Judges the Own Namespace](0101-class-count-judges-own-namespace.md) — all namespace levels use own count while subtree totals stay published.
-- [0102 — Detector Verdicts and Finding Identity](0102-detector-verdicts-and-finding-identity.md) — credential and smell decisions, declaration identity, and raw threshold wording; amended 2026-10-22: one direct bare-continue guard before later work is not a chain attempt.
+- [0102 — Detector Verdicts and Finding Identity](0102-detector-verdicts-and-finding-identity.md) — credential and smell decisions, declaration identity, and raw threshold wording; amended 2026-10-22: file-subject namespace selection; amended 2026-10-22: one direct bare-continue guard before later work is not a chain attempt.
 
 - [0103 — Layer Policy Declaration Evidence and Selection](0103-layer-policy-declaration-evidence-and-selection.md) — separate declaration facts, source-owned findings, independent diagnostic publication, observed spelling and consumer baseline migration.
 
 - [0104 — Source Bytes and Prose Publication](0104-source-bytes-and-prose-publication.md) — canonical identity, display repairs and the closed prose mode.
-- [0105 — Finding Publication and Drill-down](0105-finding-publication-and-drill-down.md) — shared records, published bags, selection reach and generated-hook revision.
-- [0106 — Declaration Metric Records and Declared Publication](0106-declaration-metric-records-and-declared-publication.md) — exact declaration records separate metric publication from logical dependency identities.
+- [0105 — Finding Publication and Drill-down](0105-finding-publication-and-drill-down.md) — shared records, published bags, selection reach and generated-hook revision; amended 2026-10-22: lexical namespace selection for file findings.
+- [0106 — Declaration Metric Records and Declared Publication](0106-declaration-metric-records-and-declared-publication.md) — exact declaration records separate metric publication from logical dependency identities; amended 2026-10-22: lexical namespace records for file findings.
 
 - [0107 — Inheritance Chain Outcomes](0107-inheritance-chain-outcomes.md) — exact depths, numeric floors, non-numeric loops and independent Throwable knowledge share one Design-owned ancestry result.
 

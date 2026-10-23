@@ -329,4 +329,108 @@ final class OffenderListRendererDensityTest extends TestCase
         self::assertStringNotContainsString('more', implode("\n", $lines));
     }
 
+    #[Test]
+    public function itDistinguishesRepeatedClassNamesByFileAndOrdinal(): void
+    {
+        $offenders = [];
+        foreach ([
+            ['Dup', 'src/one.php', 0, 20.0],
+            ['Dup', 'src/two.php', 0, 30.0],
+            ['Dup', 'src/two.php', 1, 40.0],
+            ['Unique', 'src/unique.php', 0, 50.0],
+        ] as [$name, $file, $ordinal, $score]) {
+            $offenders[] = new WorstOffender(
+                subject: \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass('App', $name), RelativePath::fromString($file), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank($ordinal))),
+                healthOverall: $score,
+                label: 'Poor',
+                reason: '',
+                evidence: new WorstOffenderEvidence(0, 0),
+                overallThresholds: [60.0, 30.0],
+            );
+        }
+
+        $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            findings: [],
+            filesAnalyzed: 4,
+            filesSkipped: 0,
+            duration: 0.0,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(worstClasses: $offenders),
+        );
+        $lines = [];
+
+        $this->renderer->renderWorstClasses($report, new AnsiColor(false), new FormatterContext(options: ['top' => '4']), $lines);
+
+        self::assertSame([
+            'Worst classes',
+            '  20 App\\Dup (src/one.php)',
+            '  30 App\\Dup (src/two.php)',
+            '  40 App\\Dup (src/two.php#1)',
+            '  50 App\\Unique',
+            '',
+        ], $lines);
+    }
+
+    #[Test]
+    public function itDisambiguatesVisibleClassAgainstDuplicatesBeyondTopLimit(): void
+    {
+        $offenders = [];
+        foreach ([['src/one.php', 20.0], ['src/two.php', 30.0]] as [$file, $score]) {
+            $offenders[] = new WorstOffender(
+                subject: \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass('App', 'Dup'), RelativePath::fromString($file), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
+                healthOverall: $score,
+                label: 'Poor',
+                reason: '',
+                evidence: new WorstOffenderEvidence(0, 0),
+                overallThresholds: [60.0, 30.0],
+            );
+        }
+
+        $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            findings: [],
+            filesAnalyzed: 2,
+            filesSkipped: 0,
+            duration: 0.0,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(worstClasses: $offenders),
+        );
+        $lines = [];
+
+        $this->renderer->renderWorstClasses($report, new AnsiColor(false), new FormatterContext(options: ['top' => '1']), $lines);
+
+        self::assertSame('  20 App\\Dup (src/one.php)', $lines[1]);
+        self::assertSame('  +1 more (use --format-opt=top=2)', $lines[2]);
+    }
+
+    #[Test]
+    public function itDistinguishesAHashInTheFileNameFromTheDeclarationOrdinal(): void
+    {
+        $offenders = [];
+        foreach ([['src/x.php#1', 0, 20.0], ['src/x.php', 1, 30.0]] as [$file, $ordinal, $score]) {
+            $offenders[] = new WorstOffender(
+                subject: \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of(SymbolPath::forClass('App', 'Dup'), RelativePath::fromString($file), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank($ordinal))),
+                healthOverall: $score,
+                label: 'Poor',
+                reason: '',
+                evidence: new WorstOffenderEvidence(0, 0),
+                overallThresholds: [60.0, 30.0],
+            );
+        }
+
+        $report = new Report(
+            fileNamespaces: \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            findings: [],
+            filesAnalyzed: 2,
+            filesSkipped: 0,
+            duration: 0.0,
+            health: new \Qualimetrix\Reporting\Contract\Report\ReportHealth(worstClasses: $offenders),
+        );
+        $lines = [];
+
+        $this->renderer->renderWorstClasses($report, new AnsiColor(false), new FormatterContext(options: ['top' => '2']), $lines);
+
+        self::assertSame('  20 App\\Dup (src/x.php%231)', $lines[1]);
+        self::assertSame('  30 App\\Dup (src/x.php#1)', $lines[2]);
+    }
+
 }

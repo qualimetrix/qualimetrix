@@ -120,6 +120,7 @@
             <directory>governance/FormatOptionKeys</directory>
             <directory>governance/DirectiveVocabulary</directory>
             <directory>governance/CommitSubjectPolicy</directory>
+            <directory>governance/PrivateLeakScan</directory>
             <directory>governance/HealthVocabulary</directory>
             <directory>governance/FindingVocabulary</directory>
             <directory>governance/LayerPolicyVocabulary</directory>

@@ -68,7 +68,7 @@ final readonly class Finding
      * **Being the only such place does not make the copy self-maintaining.**
      * A field added to the constructor with a default is copied nowhere and
      * compiles fine, so what actually catches the omission is a test:
-     * `Governance\FindingVocabulary\FindingFieldCensusTest::itCopiesEveryOtherFieldWhenItReportsItselfAsABreach()`
+     * `Governance\FindingVocabulary\FindingFieldCensusTest::itCopiesEveryOtherFieldWhenItReportsItself()`
      * reads the constructor's parameters reflectively and fails on any it
      * has not been told is either copied here or rewritten here.
      */
