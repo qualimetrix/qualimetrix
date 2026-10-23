@@ -42,3 +42,21 @@ Publish each command's complete captured streams and exit code as soon as that
 command exits, including during interrupt cleanup. Publication follows
 completion order. The first failing command in declaration order still
 determines the coordinator's result.
+
+## Amendment, 2026-10-23: group completion precedes publication
+
+This amendment supersedes the 2026-10-22 decision to publish on leader exit and
+during interrupt cleanup. A command's capture is ready only after its leader has
+exited and its whole process group is gone. Normal execution publishes each
+ready command in completion order. Interrupted execution stops and reaps every
+owned group before publishing any capture, so publication failure cannot abort
+cleanup. Output write failures are diagnosed when stderr remains writable and
+do not replace the existing command, signal or cleanup-refusal result.
+
+An OS refusal to inspect a group routes normal execution through the same
+bounded cleanup and refusal used for interruption. During cleanup an unreadable
+group remains unknown for the full grace period; its output is delayed rather
+than declared complete from the leader's exit alone. If cleanup still cannot
+prove the group gone, the coordinator reports the refusal and withholds that
+interrupt publication; publishing the batch as complete would repeat the same
+unsupported claim.

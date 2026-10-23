@@ -16,9 +16,10 @@ Composer, documentation and report-template dependency installations, after
 setting up their runtimes. It waits for all three and fails if any installation
 fails. The default CLI still runs the two validation commands above.
 
-Each child's stdout and stderr go to separate temporary regular files. As each
-child exits, the coordinator publishes that child's complete streams, with
-section labels and its exit code. Regular files
+Each child's stdout and stderr go to separate temporary regular files. During a
+normal run, the coordinator publishes a child's complete streams once its leader
+has exited and its whole process group is gone. Each block has section labels
+and its exit code. Regular files
 avoid a pipe writer blocking while the coordinator waits for the other command. The
 temporary directory is removed after publication. The coordinator does not
 change the process umask, environment, or cache settings.
@@ -26,14 +27,20 @@ The remaining-check Composer process disables its own process timeout, as
 the previous complete check did. That setting is local to each Composer
 process, so the child declares it explicitly; leaf-tool deadlines remain.
 
-On SIGINT or SIGTERM, the coordinator sends TERM to both owned process groups,
-waits up to 30 seconds for the complete groups, sends KILL to any survivors, reaps
-both direct children, and publishes each child's captured output when that child
-exits. It exits 130 or 143 when
+On SIGINT or SIGTERM, the coordinator sends TERM to all owned process groups,
+waits up to 30 seconds for the complete groups, sends KILL to any survivors,
+reaps every direct child, and only then publishes the captures if every group
+is proven gone. If one group remains unreadable, no interrupt capture is
+published as complete. Publication
+cannot interrupt cleanup: a refused stdout or stderr write is diagnosed on
+stderr when possible and does not change the result. It exits 130 or 143 when
 cleanup returns without an OS error, or 2 with the OS error when group inspection or
 signalling is refused. On this macOS host, inspection can return EPERM after
 a leader exited even though no running descendant was observed; the
-coordinator reports that uncertainty instead of declaring cleanup successful. The
+coordinator keeps the group unknown through the grace period and reports that
+uncertainty instead of declaring cleanup successful. The same bounded cleanup
+and refusal applies if normal publication cannot prove that a completed leader's
+group is gone; cleanup refusal withholds the pending captures. The
 PHPUnit aggregate runs before this pair and owns its separate suite process
 groups and cancellation. The coordinator does not replace that lifecycle.
 An unreadable group stays unknown through the full grace period so it cannot
@@ -55,6 +62,6 @@ unit suite does not prove that the real Composer commands pass together.
 PHPStan no longer overlaps the six PHPUnit shards. It can still compete with
 the remaining checks for CPU and memory; contention or resource exhaustion can
 slow the run or produce a false red that a sequential check would not.
-The schedule should be adopted only after a complete same-source green run and a measured budget improvement. Output from a running child remains buffered until
-that child exits. Cancellation requires POSIX process groups; a hard kill of the coordinator
+The schedule should be adopted only after a complete same-source green run and a measured budget improvement. Output from a running process group remains buffered until
+that group exits. Cancellation requires POSIX process groups; a hard kill of the coordinator
 cannot run that cleanup.

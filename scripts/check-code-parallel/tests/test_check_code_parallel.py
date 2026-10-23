@@ -7,6 +7,7 @@ import importlib.util
 import io
 import json
 import os
+import select
 import signal
 import subprocess
 import sys
@@ -17,7 +18,10 @@ from pathlib import Path
 from unittest.mock import patch
 
 
-SCRIPT = Path(__file__).resolve().parents[1] / "check-code-parallel.py"
+SCRIPT = Path(os.environ.get(
+    "QMX_CHECK_CODE_PARALLEL_SCRIPT",
+    Path(__file__).resolve().parents[1] / "check-code-parallel.py",
+))
 SPEC = importlib.util.spec_from_file_location("check_code_parallel", SCRIPT)
 assert SPEC is not None and SPEC.loader is not None
 MODULE = importlib.util.module_from_spec(SPEC)
@@ -26,6 +30,189 @@ SPEC.loader.exec_module(MODULE)
 
 
 class CheckCodeParallelTest(unittest.TestCase):
+    def test_review_broken_stdout_during_interrupt_cannot_abort_group_cleanup(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            pid_files = [root / "fast.pid", root / "slow.pid"]
+            reap_witness = root / "reap.witness"
+            fast = "import os,sys,time; open(sys.argv[1],'w').write(str(os.getpid())); time.sleep(30)"
+            slow = (
+                "import os,signal,sys,time; signal.signal(signal.SIGTERM,signal.SIG_IGN); "
+                "open(sys.argv[1],'w').write(str(os.getpid())); time.sleep(30)"
+            )
+            commands = [
+                ("fast", [sys.executable, "-c", fast, str(pid_files[0])]),
+                ("slow", [sys.executable, "-c", slow, str(pid_files[1])]),
+            ]
+            child = start_harness(
+                root,
+                commands,
+                shutdown_grace_seconds=.2,
+                reap_witness=reap_witness,
+            )
+            try:
+                wait_for_files(pid_files)
+                assert child.stdout is not None
+                child.stdout.close()
+                child.send_signal(signal.SIGINT)
+                child.wait(timeout=3)
+                assert child.stderr is not None
+                stderr = child.stderr.read()
+                if b"cleanup refusal" in stderr:
+                    self.assertEqual(2, child.returncode, stderr.decode(errors="replace"))
+                else:
+                    self.assertEqual(130, child.returncode, stderr.decode(errors="replace"))
+                self.assertEqual("ECHILD", reap_witness.read_text())
+                for pid_file in pid_files:
+                    self.assertFalse(process_is_running(int(pid_file.read_text())))
+            finally:
+                if child.poll() is None:
+                    child.kill()
+                    child.wait()
+                if child.stdout is not None and not child.stdout.closed:
+                    child.stdout.close()
+                if child.stderr is not None:
+                    child.stderr.close()
+                for pid_file in pid_files:
+                    if pid_file.exists():
+                        kill_group_if_running(int(pid_file.read_text()))
+
+    def test_review_normal_run_waits_for_late_descendant_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            group_file = root / "group.pid"
+            ready_file = root / "descendant.ready"
+            written_file = root / "descendant.written"
+            descendant_pid_file = root / "descendant.pid"
+            descendant = (
+                "import os,sys,time; open(sys.argv[1],'w').write('ready'); "
+                "open(sys.argv[3],'w').write(str(os.getpid())); "
+                "time.sleep(.25); print('late stdout',flush=True); "
+                "print('late stderr',file=sys.stderr,flush=True); "
+                "open(sys.argv[2],'w').write('written')"
+            )
+            leader = (
+                "import os,subprocess,sys,time; open(sys.argv[1],'w').write(str(os.getpid())); "
+                "subprocess.Popen([sys.executable,'-c',sys.argv[2],sys.argv[3],sys.argv[4],sys.argv[5]]); "
+                "deadline=time.monotonic()+2; "
+                "exec(\"while not os.path.exists(sys.argv[3]):\\n if time.monotonic()>deadline: raise SystemExit(9)\\n time.sleep(.01)\")"
+            )
+            stdout = io.BytesIO()
+            stderr = io.BytesIO()
+            try:
+                result = MODULE.run_checks(
+                    [("with-descendant", [sys.executable, "-c", leader, str(group_file), descendant, str(ready_file), str(written_file), str(descendant_pid_file)])],
+                    cwd=root,
+                    stdout=stdout,
+                    stderr=stderr,
+                )
+                wait_for_files([written_file])
+                self.assertEqual(0, result)
+                self.assertIn(b"late stdout", stdout.getvalue())
+                self.assertIn(b"late stderr", stderr.getvalue())
+                self.assertFalse(process_is_running(int(descendant_pid_file.read_text())))
+            finally:
+                if group_file.exists():
+                    kill_group_if_running(int(group_file.read_text()))
+
+    def test_review_publication_errors_preserve_command_exit_priority(self) -> None:
+        class RefusingStream(io.BytesIO):
+            def __init__(self, error: OSError) -> None:
+                super().__init__()
+                self.error = error
+
+            def write(self, _data: object) -> int:
+                raise self.error
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for stdout, stderr in (
+                (RefusingStream(BrokenPipeError("synthetic closed stdout")), io.BytesIO()),
+                (io.BytesIO(), RefusingStream(OSError("synthetic stderr refusal"))),
+            ):
+                with self.subTest(stdout=type(stdout).__name__, stderr=type(stderr).__name__):
+                    result = MODULE.run_checks(
+                        [
+                            ("first", [sys.executable, "-c", "raise SystemExit(7)"]),
+                            ("second", [sys.executable, "-c", "raise SystemExit(9)"]),
+                        ],
+                        cwd=root,
+                        stdout=stdout,
+                        stderr=stderr,
+                    )
+                    self.assertEqual(7, result)
+                    if isinstance(stderr, io.BytesIO) and not isinstance(stderr, RefusingStream):
+                        self.assertIn(b"cannot publish first stdout", stderr.getvalue())
+
+    def test_review_closed_standard_fd_does_not_change_process_exit(self) -> None:
+        program = (
+            "import importlib.util,json,os,sys; "
+            "spec=importlib.util.spec_from_file_location('check_code_parallel',sys.argv[1]); "
+            "module=importlib.util.module_from_spec(spec); sys.modules[spec.name]=module; "
+            "spec.loader.exec_module(module); "
+            "os.close(int(sys.argv[2])); "
+            "result=module.run_checks([('failing',(sys.executable,'-c','raise SystemExit(7)'))],cwd=__import__('pathlib').Path(sys.argv[3])); "
+            "__import__('pathlib').Path(sys.argv[4]).write_text(json.dumps({'result':result})); "
+            "raise SystemExit(result)"
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for descriptor in (1, 2):
+                with self.subTest(descriptor=descriptor):
+                    marker = root / f"fd-{descriptor}.json"
+                    completed = subprocess.run(
+                        [sys.executable, "-c", program, str(SCRIPT), str(descriptor), str(root), str(marker)],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        check=False,
+                    )
+                    self.assertEqual({"result": 7}, json.loads(marker.read_text()))
+                    self.assertEqual(7, completed.returncode)
+
+    def test_review_normal_group_inspection_refusal_is_bounded_and_reported(self) -> None:
+        stdout = io.BytesIO()
+        stderr = io.BytesIO()
+        with tempfile.TemporaryDirectory() as temporary:
+            with patch.object(MODULE, "group_alive", side_effect=PermissionError(errno.EPERM, "synthetic refusal")):
+                result = MODULE.run_checks(
+                    [("completed", [sys.executable, "-c", "pass"])],
+                    cwd=Path(temporary),
+                    stdout=stdout,
+                    stderr=stderr,
+                    shutdown_grace_seconds=.01,
+                )
+
+        self.assertEqual(2, result)
+        self.assertIn(b"cleanup refusal", stderr.getvalue())
+        self.assertIn(b"[Errno 1] synthetic refusal", stderr.getvalue())
+
+    def test_review_signal_during_normal_readiness_defers_publication_until_cleanup(self) -> None:
+        stdout = io.BytesIO()
+        stderr = io.BytesIO()
+        real_group_alive = MODULE.group_alive
+        interrupted = False
+
+        def interrupt_at_readiness(process: subprocess.Popen[bytes]) -> bool:
+            nonlocal interrupted
+            if not interrupted and process.poll() is not None:
+                interrupted = True
+                os.kill(os.getpid(), signal.SIGTERM)
+                return False
+            return real_group_alive(process)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            with patch.object(MODULE, "group_alive", side_effect=interrupt_at_readiness):
+                result = MODULE.run_checks(
+                    [("completed", [sys.executable, "-c", "pass"])],
+                    cwd=Path(temporary),
+                    stdout=stdout,
+                    stderr=stderr,
+                    shutdown_grace_seconds=.05,
+                )
+
+        self.assertEqual(143, result, stderr.getvalue().decode(errors="replace"))
+        self.assertEqual(b"===== completed stdout =====\n", stdout.getvalue())
+
     def test_default_cli_runs_both_composer_commands_concurrently(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -194,15 +381,23 @@ class CheckCodeParallelTest(unittest.TestCase):
                     stderr.getvalue(),
                 )
 
-    def test_interrupt_publishes_a_child_that_exits_during_the_grace_period(self) -> None:
+    def test_interrupt_publishes_only_after_all_groups_stop(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             ready_files = [root / "fast.ready", root / "slow.ready"]
             slow_finished = root / "slow.finished"
+            cleanup_ready = root / "slow.cleanup-ready"
+            cleanup_release = root / "slow.cleanup-release"
             program = "\n".join((
                 "from pathlib import Path",
                 "import signal, sys, time",
                 "def stop(_signum, _frame):",
+                "    if sys.argv[5] != '-':",
+                "        Path(sys.argv[5]).write_text('ready')",
+                "        deadline = time.monotonic() + 2",
+                "        while not Path(sys.argv[6]).exists():",
+                "            if time.monotonic() > deadline: raise SystemExit(8)",
+                "            time.sleep(.01)",
                 "    time.sleep(float(sys.argv[2]))",
                 "    if sys.argv[3] != '-': Path(sys.argv[3]).write_text('finished')",
                 "    print(sys.argv[4], flush=True)",
@@ -212,21 +407,27 @@ class CheckCodeParallelTest(unittest.TestCase):
                 "while True: time.sleep(1)",
             ))
             commands = [
-                ("fast", [sys.executable, "-c", program, str(ready_files[0]), "0", "-", "fast output"]),
-                ("slow", [sys.executable, "-c", program, str(ready_files[1]), ".4", str(slow_finished), "slow output"]),
+                ("fast", [sys.executable, "-c", program, str(ready_files[0]), "0", "-", "fast output", "-", "-"]),
+                ("slow", [sys.executable, "-c", program, str(ready_files[1]), "0", str(slow_finished), "slow output", str(cleanup_ready), str(cleanup_release)]),
             ]
-            child = start_harness(root, commands, shutdown_grace_seconds=.6)
+            child = start_harness(root, commands, shutdown_grace_seconds=1.0)
             try:
                 wait_for_files(ready_files)
                 child.send_signal(signal.SIGTERM)
+                wait_for_files([cleanup_ready])
                 assert child.stdout is not None
-                self.assertEqual(b"===== fast stdout =====\n", child.stdout.readline())
-                self.assertEqual(b"fast output\n", child.stdout.readline())
-                self.assertFalse(slow_finished.exists(), "fast output was held until the slow child exited")
+                readable, _, _ = select.select([child.stdout], [], [], .3)
+                self.assertEqual([], readable, "output was published while the slow group was still alive")
+                cleanup_release.write_text("release")
                 stdout, stderr = child.communicate(timeout=3)
                 self.assertEqual(143, child.returncode, stderr.decode(errors="replace"))
-                self.assertIn(b"===== slow stdout =====\nslow output\n", stdout)
+                self.assertTrue(slow_finished.exists(), "publication preceded completion of all groups")
+                self.assertEqual(
+                    b"===== fast stdout =====\nfast output\n===== slow stdout =====\nslow output\n",
+                    stdout,
+                )
             finally:
+                cleanup_release.write_text("release")
                 if child.poll() is None:
                     child.kill()
                     child.wait()
@@ -277,36 +478,6 @@ class CheckCodeParallelTest(unittest.TestCase):
                     child.stdout.close()
                 if child.stderr is not None:
                     child.stderr.close()
-
-    def test_signal_during_final_publication_still_enters_group_cleanup(self) -> None:
-        class CompletedProcess:
-            pid = 123456
-            returncode = 0
-
-            def poll(self) -> int:
-                return self.returncode
-
-        real_publish_exited = MODULE.publish_exited
-
-        def interrupt_before_publication(children: object, on_exit: object) -> None:
-            os.kill(os.getpid(), signal.SIGTERM)
-            real_publish_exited(children, on_exit)
-
-        with tempfile.TemporaryDirectory() as temporary:
-            with (
-                patch.object(MODULE.subprocess, "Popen", return_value=CompletedProcess()),
-                patch.object(MODULE, "publish_exited", side_effect=interrupt_before_publication),
-                patch.object(MODULE, "stop_groups", return_value=None) as stop_groups,
-            ):
-                result = MODULE.run_checks(
-                    [("completed", ["completed"])],
-                    cwd=Path(temporary),
-                    stdout=io.BytesIO(),
-                    stderr=io.BytesIO(),
-                )
-
-        self.assertEqual(143, result)
-        stop_groups.assert_called_once()
 
     def test_launch_failure_stops_a_started_peer(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -431,16 +602,31 @@ def start_harness(
     commands: list[tuple[str, list[str]]],
     *,
     shutdown_grace_seconds: float = .2,
+    reap_witness: Path | None = None,
 ) -> subprocess.Popen[bytes]:
     program = (
-        "import importlib.util,json,sys; "
+        "import importlib.util,json,os,sys; "
         "spec=importlib.util.spec_from_file_location('check_code_parallel',sys.argv[1]); "
         "module=importlib.util.module_from_spec(spec); sys.modules[spec.name]=module; "
         "spec.loader.exec_module(module); "
-        "raise SystemExit(module.run_checks(json.loads(sys.argv[2]),cwd=__import__('pathlib').Path(sys.argv[3]),shutdown_grace_seconds=float(sys.argv[4])))"
+        "result=module.run_checks(json.loads(sys.argv[2]),cwd=__import__('pathlib').Path(sys.argv[3]),shutdown_grace_seconds=float(sys.argv[4])); "
+        "witness=sys.argv[5]; "
+        "outcome=''; "
+        "exec(\"try:\\n pid,status=os.waitpid(-1,os.WNOHANG)\\n outcome=f'{pid}:{status}'\\nexcept ChildProcessError:\\n outcome='ECHILD'\") if witness != '-' else None; "
+        "__import__('pathlib').Path(witness).write_text(outcome) if witness != '-' else None; "
+        "raise SystemExit(result)"
     )
     return subprocess.Popen(
-        [sys.executable, "-c", program, str(SCRIPT), json.dumps(commands), str(root), str(shutdown_grace_seconds)],
+        [
+            sys.executable,
+            "-c",
+            program,
+            str(SCRIPT),
+            json.dumps(commands),
+            str(root),
+            str(shutdown_grace_seconds),
+            str(reap_witness) if reap_witness is not None else "-",
+        ],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
