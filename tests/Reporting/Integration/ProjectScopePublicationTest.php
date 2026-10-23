@@ -260,6 +260,20 @@ final class ProjectScopePublicationTest extends TestCase
         self::assertStringContainsString('and 17 more; the json, metrics and suppressed formats list every value', $output);
         self::assertStringNotContainsString('subtree:tests/Case04', $output);
         self::assertStringNotContainsString('subtree:tests/Case20', $output);
+
+        $firstThree = 'Project scope covered: the analysed paths cover every autoload target.'
+            . ' Channels with no judged value: suppression.unmatched-path. Values not judged:'
+            . ' suppression.unmatched-path suppress_paths "subtree:tests/Case01",'
+            . ' suppression.unmatched-path suppress_paths "subtree:tests/Case02",'
+            . ' suppression.unmatched-path suppress_paths "subtree:tests/Case03"';
+        self::assertSame(
+            $firstThree . '.',
+            ReportProjectScope::covered()->withUnjudgedValues(\array_slice(self::twentySkippedValues(), 0, 3))->describe(),
+        );
+        self::assertSame(
+            $firstThree . ', and 1 more; the json, metrics and suppressed formats list every value.',
+            ReportProjectScope::covered()->withUnjudgedValues(\array_slice(self::twentySkippedValues(), 0, 4))->describe(),
+        );
     }
 
     #[Test]
