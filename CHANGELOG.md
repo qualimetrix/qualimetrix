@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The project scope line names at most three skipped selectors instead of all of them.
+- Repeated class names in "Worst classes" show their declaring file and ordinal. File names in these suffixes use canonical escaping to distinguish literal `#` characters from declaration ordinals.
+- A namespace or class that falls short of a population minimum because a count is zero is reported as below the minimum, not as missing a metric.
 - Files with deeply nested expressions are cached; warm runs no longer warn about a discarded cache entry on every run.
 - File-level findings carry every namespace their file opens, so `--namespace` filters, text report grouping and JSON namespace fields retain findings in files that declare no class.
 

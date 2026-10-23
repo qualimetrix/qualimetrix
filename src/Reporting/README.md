@@ -662,10 +662,11 @@ can be absent while its skipped values remain named. Reasons retain
 flat named cause fields even on a `covered` run. Namespace location still uses
 accepted PSR-4 facts independently of state. Human wording names unjudged
 channels even when state is `covered`: path coverage alone does not judge every
-channel. `metrics` and `suppressed` share
-this object. SARIF (`QMX-RUN-PROJECT-SCOPE`), GitHub (`run.project-scope`), HTML
-and human formats render the scope explanation; `gitlab` and `checkstyle` have
-no diagnostic entry because their consumers treat every entry as a finding.
+channel. SARIF (`QMX-RUN-PROJECT-SCOPE`), GitHub (`run.project-scope`), HTML
+and human formats name the first three skipped values and count the rest.
+`json`, `metrics` and `suppressed` retain every skipped value in the scope object.
+`gitlab` and `checkstyle` have no diagnostic entry because their consumers
+treat every entry as a finding.
 Auxiliary install issues explain ancestry limits without changing main-project
 coverage. An `omitted-composer-root` reason retains `cause` and `visitedLevels`.
 Its `candidate`, `startDirectory` and `lastDirectory` are published only when
@@ -1225,6 +1226,10 @@ intersecting them with a later finding filter.
 
 Offender symbol and file derive from the required exact subject. Namespace
 aggregate records have no file; class records retain their declaration file.
+In summary's `Worst classes` list, a logical name repeated in the full ranked
+list receives a `(<file>)` suffix, or `(<file>#<n>)` for later declarations
+in the same file. The first declaration in each file omits the ordinal. The suffix
+reuses `DeclarationPath::toCanonical()` file and ordinal encoding.
 
 `rank-by=score` is the default; `density` sorts findings per 100 LOC descending.
 `count` refuses with exit 3. Summary colors consume each record's resolved

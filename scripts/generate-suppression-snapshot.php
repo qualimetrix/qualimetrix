@@ -181,7 +181,13 @@ function finishSuppressionSnapshot(
             : reportUpToDate($compositionPath, $rowCount);
     }
 
-    writeSuppressionSnapshotAtomically($compositionPath, $compositionContent);
+    try {
+        writeSuppressionSnapshotAtomically($compositionPath, $compositionContent);
+    } catch (RuntimeException $error) {
+        fwrite(STDERR, "Cannot write suppression snapshot: {$compositionPath}: {$error->getMessage()}\n");
+
+        return 2;
+    }
     fwrite(STDOUT, sprintf(
         "Wrote %s (%d rows).\n",
         $compositionPath,
@@ -504,8 +510,23 @@ function describeSuppressionSnapshotMismatch(string $onDisk, string $fresh, stri
 function writeSuppressionSnapshotAtomically(string $path, string $contents): void
 {
     $tmpPath = $path . '.tmp.' . getmypid();
-    file_put_contents($tmpPath, $contents);
-    rename($tmpPath, $path);
+    try {
+        error_clear_last();
+        if (@file_put_contents($tmpPath, $contents) === false) {
+            throw new RuntimeException(error_get_last()['message'] ?? 'file_put_contents() failed without an error.');
+        }
+
+        error_clear_last();
+        if (!@rename($tmpPath, $path)) {
+            throw new RuntimeException(error_get_last()['message'] ?? 'rename() failed without an error.');
+        }
+    } finally {
+        if (is_file($tmpPath) || is_link($tmpPath)) {
+            unlink($tmpPath);
+        } elseif (is_dir($tmpPath)) {
+            rmdir($tmpPath);
+        }
+    }
 }
 
 // Include-safe: requiring this file from a test only defines the functions
