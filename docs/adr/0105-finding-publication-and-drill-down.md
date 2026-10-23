@@ -117,3 +117,18 @@ views under the new selection semantics. Reinstall old generated hooks with
 qmx hook:install --force and recognize internal exit 5 in external consumers.
 Interface/enum GodClass behaviour with explicit min_criteria: 2 remains a
 separate design-rule concern; the default does not claim missing cohesion.
+
+## Amendment, 2026-10-22: a file's namespace statements select its file findings
+
+Measurement records each measured file's lexical namespace statements in its
+file metric bag. For a file-subject finding, publication and drill-down use the
+sorted union of those namespaces and the namespaces of declarations in the
+physical file. A file with no namespace statement and no declared namespace
+uses the global reporting fallback. A file opening several namespaces carries
+all of them, without attributing an individual finding to its source line's
+particular namespace.
+
+Namespace metric aggregation still uses declared contributions only. The
+namespace fallback readers in NamespaceExclusionFilter,
+SuppressionCompositionBuilder and FindingExclusionLedger retain their existing
+behaviour; this amendment changes reporting selection, grouping and records.

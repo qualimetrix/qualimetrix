@@ -169,3 +169,9 @@ composition binding, so it does not authorize importing the private repository.
 Directory anchors satisfy the structural string-path schema; GitLab documentation
 describes source-file paths, so a directory anchor has no source-line navigation
 in its UI. The finding remains visible with its own identity and severity.
+
+## Amendment, 2026-10-22: lexical namespaces for file findings
+
+The file-finding publication rule now includes lexical namespace statements as
+specified by the 2026-10-22 amendment to ADR 0105. Declared namespace
+contributions to metrics remain unchanged.

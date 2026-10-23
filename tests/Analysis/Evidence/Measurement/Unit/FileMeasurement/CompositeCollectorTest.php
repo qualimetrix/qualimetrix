@@ -10,6 +10,7 @@ use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
@@ -19,6 +20,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInter
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
@@ -37,6 +39,57 @@ use stdClass;
 #[CoversClass(CompositeCollector::class)]
 final class CompositeCollectorTest extends TestCase
 {
+    /** @return iterable<string, array{string, list<string>}> */
+    public static function lexicalNamespaceCases(): iterable
+    {
+        yield 'unbraced' => ['<?php namespace A; eval("1");', ['A']];
+        yield 'braced blocks' => ['<?php namespace A { eval("1"); } namespace B { eval("2"); }', ['A', 'B']];
+        yield 'two unbraced statements' => ['<?php namespace X; eval("1"); namespace Y; eval("2");', ['X', 'Y']];
+        yield 'repeated namespace' => ['<?php namespace X; eval("1"); namespace Y; eval("2"); namespace X; eval("3");', ['X', 'Y']];
+        yield 'global block' => ['<?php namespace { eval("1"); }', ['']];
+        yield 'no namespace statement' => ['<?php eval("1");', []];
+    }
+
+    /** @param list<string> $expected */
+    #[Test]
+    #[DataProvider('lexicalNamespaceCases')]
+    public function itRecordsDistinctLexicalNamespacesWithoutConfiguredCollectors(string $source, array $expected): void
+    {
+        $ast = (new ParserFactory())->createForNewestSupportedVersion()->parse($source);
+        self::assertNotNull($ast);
+        $output = (new CompositeCollector([], new DeclarationRegistrarFactory()))->collect(
+            new SplFileInfo(__FILE__),
+            $ast,
+            RelativePath::fromString('Sample.php'),
+        );
+
+        self::assertSame(
+            array_map(static fn(string $namespace): array => ['namespace' => $namespace], $expected),
+            $output->metrics->entries(FileNamespaceIndex::LEXICAL_NAMESPACE_ENTRY),
+        );
+    }
+
+    #[Test]
+    public function itRecordsLexicalNamespacesWithAConfiguredCollector(): void
+    {
+        $ast = (new ParserFactory())->createForNewestSupportedVersion()->parse('<?php namespace A { } namespace B { }');
+        self::assertNotNull($ast);
+        $collector = self::createStub(MetricCollectorInterface::class);
+        $collector->method('getVisitor')->willReturn(new class extends NodeVisitorAbstract {});
+        $collector->method('collect')->willReturn(new MetricBag());
+
+        $output = (new CompositeCollector([$collector], new DeclarationRegistrarFactory()))->collect(
+            new SplFileInfo(__FILE__),
+            $ast,
+            RelativePath::fromString('Sample.php'),
+        );
+
+        self::assertSame(
+            [['namespace' => 'A'], ['namespace' => 'B']],
+            $output->metrics->entries(FileNamespaceIndex::LEXICAL_NAMESPACE_ENTRY),
+        );
+    }
+
     #[Test]
     public function itHandsSourceBytesOnlyToCollectorsThatMeasureSource(): void
     {

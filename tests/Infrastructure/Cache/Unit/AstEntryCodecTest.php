@@ -25,12 +25,16 @@ final class AstEntryCodecTest extends TestCase
         try {
             $codec = new AstEntryCodec();
             $nodes = [new Float_(0.12345678901234568)];
-            $decoded = $codec->decode($codec->encode($nodes));
+            $bytes = $codec->encode($nodes);
+            self::assertNotNull($bytes);
+            $decoded = $codec->decode($bytes);
             self::assertEquals($nodes, $decoded);
             self::assertSame('5', \ini_get('serialize_precision'));
             $parsed = (new ParserFactory())->createForNewestSupportedVersion()->parse('<?php /** comment */ class Sample { public function f(): int { return 1; } }');
             self::assertNotNull($parsed);
-            self::assertEquals($parsed, $codec->decode($codec->encode(array_values($parsed))));
+            $bytes = $codec->encode(array_values($parsed));
+            self::assertNotNull($bytes);
+            self::assertEquals($parsed, $codec->decode($bytes));
             self::assertGreaterThan(140, \count(AstEntryCodec::allowedClasses()));
         } finally {
             ini_set('serialize_precision', (string) $before);
@@ -62,7 +66,9 @@ final class AstEntryCodecTest extends TestCase
         $shared = new \PhpParser\Node\Scalar\Int_(1);
         $nodes = [new \PhpParser\Node\Expr\BinaryOp\Plus($shared, $shared)];
         $codec = new AstEntryCodec();
-        $decoded = $codec->decode($codec->encode($nodes));
+        $bytes = $codec->encode($nodes);
+        self::assertNotNull($bytes);
+        $decoded = $codec->decode($bytes);
         self::assertNotNull($decoded);
         $sum = $decoded[0];
         self::assertInstanceOf(\PhpParser\Node\Expr\BinaryOp\Plus::class, $sum);

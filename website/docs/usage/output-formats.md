@@ -123,8 +123,8 @@ exit code is resolved over the selection and `outOfScope` together, so a clean
 selection can exit 2.
 
 Namespace selection uses a finding's declared namespace. For a file aggregate
-(`annotation.*`, `duplication.clone`), it matches any namespace declared in
-that file; a file without declarations compares as the global namespace.
+(`annotation.*`, `duplication.clone`), it matches any namespace the file opens
+or declares. A file with neither uses the global namespace.
 `--class` never selects a file aggregate. `suppress_namespaces` deliberately
 does not take this file step; use `suppress_paths` for a file aggregate.
 Overlapping namespace exclusions keep credit for their first match.
