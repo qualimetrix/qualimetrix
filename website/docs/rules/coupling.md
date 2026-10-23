@@ -320,7 +320,9 @@ RFC = |M ∪ R₁ ∪ R₂ ∪ ...|
 methods effectively imported from traits. A trait alias adds its exposed name;
 a visibility-only adaptation does not add another method. Class methods
 override trait methods, and trait conflicts follow `insteadof`. This applies to
-named classes, traits, interfaces and enums. Methods inherited from a parent
+named classes, traits, interfaces and enums. Every enum also contributes its
+implicit `cases()` method; a backed enum contributes `from()` and `tryFrom()`
+as well. Methods inherited from a parent
 do not enter `M`; a direct call to an inherited or parent method enters the
 response set. Calls made inside a method's closure are included. Nested
 anonymous-class methods and expressions outside methods are excluded.

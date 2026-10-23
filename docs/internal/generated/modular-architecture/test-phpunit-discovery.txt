@@ -2373,8 +2373,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\BooleanArgument\BooleanArgumentRuleTest::itReportsItsNameAndDescription
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"assigned nullsafe"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"break after work ends an attempt"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"break can mean a prepared value was found"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"call in early guard still precedes later work"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"comment after the guard continue is not a statement"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"comment after the try skips nothing"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"connectFirst break after valid connection remains an attempt"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"continue in a branch skips a fallback"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"continue in a branch with nothing to skip"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"continue skips a fallback"
@@ -2387,6 +2390,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"eager receiver creation remains work"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"early guard return does not excuse catch"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"eval return"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"extra statements retain the attempt exemption"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"first class function callable before guard is not work"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"first class method callable before guard is not work"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"first class static callable before guard is not work"
@@ -2394,11 +2398,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"invoking a callback is work"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"last condition computes work before continue"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"last condition computes work before return"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"nested final work condition restores a break attempt after an outer guard"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"nested final work condition restores a continue attempt after an outer guard"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"no exit at all"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"nullsafe return"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"outer call with arrow argument is work"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"outer call with closure argument is work"
- - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"preceded guard remains a known indistinguishable shape"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"prepared value branch ends an attempt when it skips the fallback"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"prepared value guard before work is not an attempt"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"resolveFirst assignment and break remain an attempt"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"resolveFirst assignment and continue remain an attempt"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"return ends the try"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"return in a branch, more work after it"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"returned arrow creates a callback without work"
@@ -2486,6 +2495,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itFlagsCountUsedDirectlyInALoopCondition
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itFlagsDebugFunctionsOutsideADebugApiMethod
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itFlagsDebugPrintBacktrace
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itFlagsGuardedWorkRegardlessOfWhetherTheGuardUsesTheLoopOrAPreparedValue
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itFlagsOutputEvenInsideMethodsNamedLikeDebugApis
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itFlagsPrintRCalledWithoutReturnTrue
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itFlagsSizeofUsedInALoopCondition
@@ -3433,6 +3443,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itCalculatesNpathForWhileWithTernaryCondition
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itCalculatesNpathForWhileWithTripleBooleanOrCondition
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itCapsNpathAtMaxValue
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itCountsTheNoMatchPathForSwitchWithoutDefault
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itDetectsCoalesceInAssignmentViaAssignRecursion
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itDetectsTernaryInAssignmentViaAssignRecursion
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itDoesNotAddTheCallableBaseTwiceForRootNullsafeAccesses
@@ -3445,6 +3456,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itIncludesEveryExpressionBearingStatementSlot"foreach iterable key and value expressions"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itIncludesEveryExpressionBearingStatementSlot"switch subject and case conditions"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itIncludesTheCallableStatementBaseForNullsafeAccesses
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itKeepsMatchWithoutDefaultUnchanged
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itKeepsSimpleMatchAndEquivalentSwitchAligned
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itMultipliesNpathForTwoSequentialIfs
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itMultipliesTryCatchByFinallyForNpathCalculation
@@ -4583,7 +4595,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcResponseFormsTest::itResolvesEveryResponseForm"F21"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcResponseFormsTest::itResolvesEveryResponseForm"F22"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcResponseFormsTest::itResolvesEveryResponseForm"F23"
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcResponseFormsTest::itResolvesEveryResponseForm"F24"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcResponseFormsTest::itResolvesEveryResponseForm"F24 pure enum includes implicit cases method"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcResponseFormsTest::itResolvesEveryResponseForm"F25"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcResponseFormsTest::itResolvesEveryResponseForm"F26"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcResponseFormsTest::itResolvesEveryResponseForm"F27"
@@ -4592,12 +4604,15 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcResponseFormsTest::itResolvesEveryResponseForm"external typed case and alias"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"abstract methods"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"anonymous classes ignored"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"another enum's implicit method remains an external response"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"backed enum includes implicit methods"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"complex order processor"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"constructor calls"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"different receivers same method name"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"duplicate external calls"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"empty class"
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"enum with concrete methods"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"enum implicit cases method replaces a trait method body"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"enum implicit methods are own responses only for the enum itself"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"global function calls"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"interface"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"internal method calls"
@@ -4607,6 +4622,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"multiple classes"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"namespaced class"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"order service with external calls"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"pure enum has cases as its only implicit method"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"same receiver same method deduplicates"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"simple calculator"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"static calls"

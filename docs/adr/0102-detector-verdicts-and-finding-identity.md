@@ -56,3 +56,25 @@ make an empty `catch` look like a valid chain of attempts.
 The 2026-10-22 amendment to ADR 0105 resolves the file-subject namespace
 selection noted above. The three other namespace fallback readers remain as
 recorded.
+
+## Amendment, 2026-10-22: one direct bare-continue guard is not an attempt
+
+A direct, top-level `if` in a `try` is an early guard only when its then-branch
+contains exactly one bare `continue` and later executed work follows in the
+same `try`. Preparatory work before that guard does not turn the empty `catch`
+into a chain-of-attempts exemption. Sibling branches keep their ordinary
+attempt semantics.
+
+The decision is deliberately narrow. A `break`, `return`, extra branch
+statement, or guard placed in an `else`/`elseif` or nested `if` retains the
+exemption because the same form can express success: for example, a connection
+attempt can `break` when the connection is valid before closing a miss, and a
+resolver can assign the found value before `break` or `continue`.
+Distinguishing those cases needs broader data-flow knowledge and remains a
+residue.
+
+Accepted cost: a successful bare `continue` followed by miss-handling work in
+the same `try` (for example `if ($conn->isValid()) { continue; } $conn->close();`)
+is now reported. A bare `continue` that skips later work cannot be told apart
+from an early guard without data-flow analysis; `break` stays exempt because it
+more often expresses "found".
