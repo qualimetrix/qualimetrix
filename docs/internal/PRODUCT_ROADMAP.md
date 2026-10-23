@@ -201,14 +201,9 @@ condition. When an issue closes, drop its line here.
 ### Product defects
 
 - [#159](https://github.com/qualimetrix/qualimetrix/issues/159) Namespace CBO changes when a neighbouring namespace is split (metric definition; blocks #175)
-- [#160](https://github.com/qualimetrix/qualimetrix/issues/160) CLI messages that misstate the condition or grow without bound
-- [#161](https://github.com/qualimetrix/qualimetrix/issues/161) Metric results on unusual but legal inputs
-- [#162](https://github.com/qualimetrix/qualimetrix/issues/162) Deep ASTs are refused by the cache on read
-- [#163](https://github.com/qualimetrix/qualimetrix/issues/163) Findings in a namespace-only file lose their namespace
+- [#161](https://github.com/qualimetrix/qualimetrix/issues/161) Health coupling reports zero coverage while publishing a score
 - [#164](https://github.com/qualimetrix/qualimetrix/issues/164) hardcoded-credentials misses lowercase dotted secret phrases
-- [#165](https://github.com/qualimetrix/qualimetrix/issues/165) empty-catch exempts a "prepare, guard, then work" loop
 - [#166](https://github.com/qualimetrix/qualimetrix/issues/166) Duplication can report one copy in two overlapping groups
-- [#167](https://github.com/qualimetrix/qualimetrix/issues/167) `--rule-opt` cannot address an option map key that contains a dot
 
 ### Product improvements
 
@@ -225,8 +220,6 @@ condition. When an issue closes, drop its line here.
 - [#175](https://github.com/qualimetrix/qualimetrix/issues/175) Self-analysis: namespace coupling and namespace cycles
 - [#176](https://github.com/qualimetrix/qualimetrix/issues/176) Self-analysis: method and class complexity and code-smell ceilings
 - [#177](https://github.com/qualimetrix/qualimetrix/issues/177) Testing and validation harness: size and speed
-- [#178](https://github.com/qualimetrix/qualimetrix/issues/178) Repository checks that report green without looking
-- [#179](https://github.com/qualimetrix/qualimetrix/issues/179) Developer tooling leftovers
 
 ### Unscheduled candidates
 
