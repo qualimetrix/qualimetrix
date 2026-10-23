@@ -527,6 +527,26 @@ PHP,
             ],
         ];
 
+        yield 'pure enum has cases as its only implicit method' => [
+            'code' => <<<'PHP'
+<?php
+namespace App;
+
+enum Suit
+{
+    case Hearts;
+
+    public function label(): string
+    {
+        return 'suit';
+    }
+}
+PHP,
+            'expected' => [
+                'App\Suit' => ['coupling.rfc' => 2, 'own' => 2, 'external' => 0],
+            ],
+        ];
+
         yield 'enum implicit cases method replaces a trait method body' => [
             'code' => <<<'PHP'
 <?php
