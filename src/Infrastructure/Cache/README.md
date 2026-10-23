@@ -103,8 +103,8 @@ mandatory node or comment properties and excessively deep/cyclic array structure
 entries are deleted and counted; workers' discards are not added to the coordinator count.
 The codec walks trees iteratively on both write and read. Its shared depth bound
 is 4096 validator levels, matching PHP's default `unserialize_max_depth` and
-passed explicitly on read. Deeper trees are not cached; skipping their write
-does not count as a discarded entry.
+passed explicitly on read. Trees beyond the bound or with an active cycle are
+not cached; skipping their write does not count as a discarded entry.
 
 Writes retain Core's judged full temporary-sibling publication and identity
 checks. There is no serializer marker or cross-version invalidation.

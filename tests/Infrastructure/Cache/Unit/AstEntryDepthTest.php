@@ -35,6 +35,26 @@ final class AstEntryDepthTest extends TestCase
     }
 
     #[Test]
+    public function itDecodesWithinTheCodecBoundRegardlessOfTheUnserializeIniDepth(): void
+    {
+        $original = \ini_get('unserialize_max_depth');
+        self::assertNotFalse($original);
+        $nodes = $this->tree(20);
+        $codec = new AstEntryCodec();
+        $bytes = $codec->encode($nodes);
+        self::assertNotNull($bytes);
+
+        ini_set('unserialize_max_depth', '5');
+        try {
+            $decoded = $codec->decode($bytes);
+            self::assertNotNull($decoded);
+            self::assertSame(serialize($nodes), serialize($decoded));
+        } finally {
+            ini_set('unserialize_max_depth', $original);
+        }
+    }
+
+    #[Test]
     public function itDoesNotEncodeOrDecodeATreeBeyondTheSharedDepthLimit(): void
     {
         $nodes = $this->tree(2050);

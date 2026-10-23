@@ -11184,6 +11184,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\AstEntryCodecTest::itPreservesAstPrecisionAndRestoresTheProcessSetting
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\AstEntryCodecTest::itRefusesForeignObjectsAndInvalidRootsIncludingNestedAttributes
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\AstEntryCodecTest::itRetainsSharedNodesWithoutTreatingThemAsAnActiveCycle
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\AstEntryDepthTest::itDecodesWithinTheCodecBoundRegardlessOfTheUnserializeIniDepth
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\AstEntryDepthTest::itDoesNotEncodeOrDecodeATreeBeyondTheSharedDepthLimit
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\AstEntryDepthTest::itDoesNotWriteOrCountAnEntryBeyondTheDepthLimit
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\AstEntryDepthTest::itRoundTripsATreeBeyondTheOldDepthLimit
@@ -11383,6 +11384,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandBaselineTest::itPromotesAMeasuredBreachToErrorAndFailsTheRun
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandBaselineTest::itPublishesUnusedEntriesInEightFormatsAndGatesAllElevenFormats
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandBaselineTest::itWritesNoEntryForAnAnnotatedFindingAndRefusesToBeAskedTo
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandDrillDownFormatTest::itBindsAndSelectsANamespaceOpenedOnlyByADeclarationFreeFile
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandDrillDownFormatTest::itPublishesAndSelectsLexicalNamespacesOfFileFindings
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandDrillDownFormatTest::itRefusesASelectionTheFormatCannotMarkBeforeAnalysis"checkstyle --class"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandDrillDownFormatTest::itRefusesASelectionTheFormatCannotMarkBeforeAnalysis"checkstyle --namespace"

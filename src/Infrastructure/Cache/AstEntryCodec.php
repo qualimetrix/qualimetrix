@@ -26,7 +26,11 @@ final class AstEntryCodec
     /** @var ?list<class-string> */
     private static ?array $classes = null;
 
-    /** @param list<Node> $nodes */
+    /**
+     * @param list<Node> $nodes
+     *
+     * @return ?string Null for a tree beyond the depth bound or with an active cycle.
+     */
     public function encode(array $nodes): ?string
     {
         if (!$this->walk($nodes, null)) {

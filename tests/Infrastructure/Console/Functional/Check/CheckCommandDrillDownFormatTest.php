@@ -167,6 +167,29 @@ final class CheckCommandDrillDownFormatTest extends TestCase
         self::assertSame(['script.php', 'withclass.php'], $files);
     }
 
+    #[Test]
+    public function itBindsAndSelectsANamespaceOpenedOnlyByADeclarationFreeFile(): void
+    {
+        file_put_contents($this->directory . '/src/script.php', "<?php\nnamespace Only\\Script;\neval('return 1;');\n");
+        [$tester, $pipeline] = $this->tester();
+        $exit = $this->executeInFixture($tester, [
+            'paths' => [$this->directory . '/src'],
+            '--config' => $this->directory . '/qmx.yaml',
+            '--format' => 'json',
+            '--no-cache' => true,
+            '--workers' => '0',
+            '--namespace' => 'exact:Only\\Script',
+        ], ['capture_stderr_separately' => true]);
+
+        self::assertNotSame(3, $exit, $tester->getDisplay() . $tester->getErrorOutput());
+        self::assertSame(1, $pipeline->calls);
+        $records = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR)['violations'];
+        $evalRecords = array_values(array_filter($records, static fn(array $record): bool => $record['rule'] === 'code-smell.eval'));
+        self::assertCount(1, $evalRecords);
+        self::assertSame('src/script.php', $evalRecords[0]['file']);
+        self::assertSame('Only\\Script', $evalRecords[0]['namespace']);
+    }
+
     /** @param array<string, mixed> $input
      * @param array<string, mixed> $options
      */
