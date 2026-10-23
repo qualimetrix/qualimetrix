@@ -38,7 +38,7 @@ final readonly class RfcClassFacts
 
     private static function isBackedEnum(Node\Stmt\ClassLike $node): bool
     {
-        return $node->getType() === 'Stmt_Enum' && (get_object_vars($node)['scalarType'] ?? null) !== null;
+        return $node instanceof Node\Stmt\Enum_ && $node->scalarType !== null;
     }
 
     /** @param list<array<string, scalar>> $rows */

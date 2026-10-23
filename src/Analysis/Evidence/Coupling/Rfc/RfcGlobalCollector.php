@@ -17,9 +17,11 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 /**
  * Publishes RFC = |M| + |Ri outside M| on exact declarations.
  * M counts exposed own and imported methods, including abstract methods and
- * property hooks. Responses resolve declared targets when the run knows them;
- * unknown receivers and unread ancestors retain the method-name fallback.
- * Global functions are a PHP adaptation and use a separate response identity.
+ * property hooks. It also counts an enum's implicit cases() method and a backed
+ * enum's implicit from() and tryFrom() methods. Responses resolve declared targets
+ * when the run knows them; unknown receivers and unread ancestors retain the
+ * method-name fallback. Global functions are a PHP adaptation and use a
+ * separate response identity.
  */
 final class RfcGlobalCollector implements GlobalContextCollectorInterface
 {

@@ -496,6 +496,65 @@ PHP,
             ],
         ];
 
+        yield "another enum's implicit method remains an external response" => [
+            'code' => <<<'PHP'
+<?php
+namespace App;
+
+enum Suit: string
+{
+    case H = 'h';
+
+    public function fromOther(): Rank
+    {
+        return Rank::from(1);
+    }
+}
+
+enum Rank: int
+{
+    case Ace = 1;
+
+    public function fromOther(): Suit
+    {
+        return Suit::from('h');
+    }
+}
+PHP,
+            'expected' => [
+                'App\Suit' => ['coupling.rfc' => 5, 'own' => 4, 'external' => 1],
+                'App\Rank' => ['coupling.rfc' => 5, 'own' => 4, 'external' => 1],
+            ],
+        ];
+
+        yield 'enum implicit cases method replaces a trait method body' => [
+            'code' => <<<'PHP'
+<?php
+namespace App;
+
+trait DeclaresCases
+{
+    public static function cases(): array
+    {
+        External::calledOnlyByTheTraitBody();
+
+        return [];
+    }
+}
+
+enum Suit
+{
+    use DeclaresCases;
+
+    case Hearts;
+}
+PHP,
+            'expected' => [
+                'App\DeclaresCases' => ['coupling.rfc' => 2, 'own' => 1, 'external' => 1],
+                'App\Suit' => ['coupling.rfc' => 1, 'own' => 1, 'external' => 0],
+            ],
+        ];
+
         // Unknown receivers share the method-name fallback.
         yield 'different receivers same method name' => [
             'code' => <<<'PHP'
