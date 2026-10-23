@@ -224,8 +224,10 @@ A direct, top-level `if` in the `try` is treated as an early guard only when
 its then-branch contains exactly one bare `continue` and later executed work
 follows in the same `try`; other branches keep their ordinary attempt
 semantics. A `break`, `return`, extra then-branch statement, or guard placed in
-an `else`/`elseif` or nested `if` is not treated as an early guard: each can be
-the successful exit of a genuine chain of attempts and remains unflagged.
+an `else`/`elseif` or nested `if` is not treated as an early guard by this rule: each can be
+the successful exit of a genuine chain of attempts. The other rules of the
+exemption still apply, so such a branch with no preparatory work before it is
+judged as usual.
 
 <!-- llms:skip-end -->
 

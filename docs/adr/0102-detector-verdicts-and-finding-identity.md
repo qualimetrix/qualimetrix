@@ -66,3 +66,9 @@ attempt can `break` when the connection is valid before closing a miss, and a
 resolver can assign the found value before `break` or `continue`.
 Distinguishing those cases needs broader data-flow knowledge and remains a
 residue.
+
+Accepted cost: a successful bare `continue` followed by miss-handling work in
+the same `try` (for example `if ($conn->isValid()) { continue; } $conn->close();`)
+is now reported. A bare `continue` that skips later work cannot be told apart
+from an early guard without data-flow analysis; `break` stays exempt because it
+more often expresses "found".
