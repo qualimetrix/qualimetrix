@@ -41,7 +41,7 @@ final class FindingFieldCensusTest extends TestCase
     /** @param list<string> $rewritten */
     #[Test]
     #[DataProvider('provideReports')]
-    public function itCopiesEveryOtherFieldWhenItReportsItselfAsABreach(string $method, array $rewritten): void
+    public function itCopiesEveryOtherFieldWhenItReportsItself(string $method, array $rewritten): void
     {
         $original = self::warning();
         $acceptedLevel = new AcceptedLevel([9.0], 1);
