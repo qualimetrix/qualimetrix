@@ -191,6 +191,20 @@ final readonly class RuleOptionSurface
         return $this->addressIn(null, $target);
     }
 
+    /** The longest proper dotted prefix that addresses a map option. */
+    public function mapEnteredBy(string $option): ?RuleOptionAddress
+    {
+        while (($dot = strrpos($option, '.')) !== false) {
+            $option = substr($option, 0, $dot);
+            $address = $this->locate($option);
+            if ($address !== null && $this->shapeAt($address)->kind === RuleOptionShape::MAP) {
+                return $address;
+            }
+        }
+
+        return null;
+    }
+
     private function addressIn(?string $level, string $key): ?RuleOptionAddress
     {
         $keySet = $this->declarationAt($level);

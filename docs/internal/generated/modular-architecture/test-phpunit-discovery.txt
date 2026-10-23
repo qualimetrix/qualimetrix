@@ -7086,6 +7086,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule\OptionLanguage\RuleOptionSurfaceTest::itAnswersToASlotNameUnderAnySpelling
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule\OptionLanguage\RuleOptionSurfaceTest::itCountsASlotNameAmongTheKeysWritableAtTheRulesOwnDepth
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule\OptionLanguage\RuleOptionSurfaceTest::itDoesNotFoldWrongCaseIntoAnAcceptedKeyOrLevel
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule\OptionLanguage\RuleOptionSurfaceTest::itFindsNoMapWithoutAProperDottedMapPrefix
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule\OptionLanguage\RuleOptionSurfaceTest::itFindsTheLongestProperMapPrefix
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule\OptionLanguage\RuleOptionSurfaceTest::itFindsTheMapEnteredByADottedOption
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule\OptionLanguage\RuleOptionSurfaceTest::itHasNoLevelsForARuleThatIsNotHierarchical
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule\OptionLanguage\RuleOptionSurfaceTest::itKeepsTheAuthoredSuppressionSpellingsInStepWithTheOwner
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule\OptionLanguage\RuleOptionSurfaceTest::itLocatesABareTargetAtTheRulesOwnDepth
