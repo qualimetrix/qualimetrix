@@ -1195,14 +1195,6 @@
         ]
       }
     ],
-    "ns:Qualimetrix\\Infrastructure\\Console\\Invocation\\RuleOptions": [
-      {
-        "channel": "health.maintainability",
-        "magnitudes": [
-          47
-        ]
-      }
-    ],
     "ns:Qualimetrix\\Infrastructure\\Console\\LayerAssignment": [
       {
         "channel": "coupling.cbo",

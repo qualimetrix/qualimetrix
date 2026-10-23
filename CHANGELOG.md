@@ -18,11 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - NPath counts the no-match path of a `switch` without `default`, as it does for an `if` without `else`.
 - `code-smell.empty-catch` no longer exempts a prepared-value guard whose direct `if` then-branch is only `continue;` before later work in the same `try`.
 - A failed `--clear-cache` names the directory and what it kept.
-
 - `--rule-opt` addressing a key inside a map option explains that the map belongs in `qmx.yaml`.
-
 - `--fail-on` with an unknown value no longer mentions `info`.
-
 - An ambiguous `--class` selection names the files that can select one declaration.
 
 ## [0.28.0] - 2026-10-21
