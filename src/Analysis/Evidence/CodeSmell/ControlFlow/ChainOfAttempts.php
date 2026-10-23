@@ -135,9 +135,11 @@ final class ChainOfAttempts
             return false;
         }
 
-        return \count($statement->stmts) === 1
-            && $statement->stmts[0] instanceof Stmt\Continue_
-            && $statement->stmts[0]->num === null;
+        $thenStatements = $this->withoutNops($statement->stmts);
+
+        return \count($thenStatements) === 1
+            && $thenStatements[0] instanceof Stmt\Continue_
+            && $thenStatements[0]->num === null;
     }
 
     private function otherBranchesHoldExit(Stmt\If_ $if, ?Stmt $fallback, ?Node $priorWork): bool

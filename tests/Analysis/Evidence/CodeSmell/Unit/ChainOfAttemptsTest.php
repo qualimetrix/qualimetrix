@@ -54,6 +54,8 @@ final class ChainOfAttemptsTest extends TestCase
         yield 'last condition computes work before continue' => ['<?php foreach ($a as $x) { try { if (work($x)) { continue; } } catch (Throwable) {} fallback($x); }', 1];
         yield 'last condition computes work before return' => ['<?php foreach ($a as $x) { try { if (work($x)) { return; } } catch (Throwable) {} }', 1];
         yield 'prepared value guard before work is not an attempt' => ['<?php foreach ($a as $x) { try { $y = prepare($x); if ($y === null) { continue; } work($y); } catch (Throwable) {} fallback($x); }', 0];
+        yield 'comment after the guard continue is not a statement' => ['<?php foreach ($a as $x) { try { $y = prepare($x); if ($y === null) { continue; // why
+ } work($y); } catch (Throwable) {} fallback($x); }', 0];
         yield 'break can mean a prepared value was found' => ['<?php foreach ($a as $x) { try { $y = prepare($x); if ($y === null) { break; } work($y); } catch (Throwable) {} fallback($x); }', 1];
         yield 'extra statements retain the attempt exemption' => ['<?php foreach ($a as $x) { try { $y = prepare($x); if ($y === null) { $later = static function () { return; }; continue; } work($y); } catch (Throwable) {} fallback($x); }', 1];
         yield 'nested final work condition restores a continue attempt after an outer guard' => ['<?php foreach ($a as $x) { try { prepare($x); if ($x) { if (work($x)) { continue; } } other(); } catch (Throwable) {} fallback($x); }', 1];
