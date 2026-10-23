@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - RFC counts an enum's built-in `cases()`, `from()` and `tryFrom()` as its own methods, not as external responses.
 - NPath counts the no-match path of a `switch` without `default`, as it does for an `if` without `else`.
-- `code-smell.empty-catch` reports a loop whose `try` skips with a guard on a prepared value before the work.
+- `code-smell.empty-catch` no longer exempts a prepared-value guard whose direct `if` then-branch is only `continue;` before later work in the same `try`.
 
 ## [0.28.0] - 2026-10-21
 

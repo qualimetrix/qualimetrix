@@ -220,10 +220,12 @@ foreach ($this->resolvers as $resolver) {
 ```
 
 A `try` nested deeper in the loop body, one inside a closure, or one whose only way out is a `continue` with nothing after the `try` (so it skips nothing) is flagged as usual.
-An `if` branch ending in a bare `continue` or `break` before later work in the
-same `try` is an early guard and is flagged, even when a preparatory call
-precedes it. An early `return` guard after a preparatory call remains
-indistinguishable from a successful attempt and is not flagged.
+A direct, top-level `if` in the `try` is treated as an early guard only when
+its then-branch contains exactly one bare `continue` and later executed work
+follows in the same `try`; other branches keep their ordinary attempt
+semantics. A `break`, `return`, extra then-branch statement, or guard placed in
+an `else`/`elseif` or nested `if` is not treated as an early guard: each can be
+the successful exit of a genuine chain of attempts and remains unflagged.
 
 <!-- llms:skip-end -->
 

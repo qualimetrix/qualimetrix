@@ -51,14 +51,18 @@ and a credential-looking alias-map value can still be flagged. An early guard
 inside a `try`, after a preparatory call but before the useful work, can still
 make an empty `catch` look like a valid chain of attempts.
 
-## Amendment, 2026-10-22: an early continue or break guard is not an attempt
+## Amendment, 2026-10-22: one direct bare-continue guard is not an attempt
 
-An `if` branch ending in a bare `continue` or `break`, followed by later work
-in the same `try`, is an early guard rather than the successful end of an
-attempt. Its empty `catch` is reported even when a preparatory call precedes
-the guard. A branch that performs work before the exit remains an attempt, as
-does a final branch whose exit skips the fallback after the `try`.
+A direct, top-level `if` in a `try` is an early guard only when its then-branch
+contains exactly one bare `continue` and later executed work follows in the
+same `try`. Preparatory work before that guard does not turn the empty `catch`
+into a chain-of-attempts exemption. Sibling branches keep their ordinary
+attempt semantics.
 
-An early `return` guard after a preparatory call remains exempt. It is not
-distinguishable from a successful attempt whose result is expressed by the
-return branch without broader data-flow analysis.
+The decision is deliberately narrow. A `break`, `return`, extra branch
+statement, or guard placed in an `else`/`elseif` or nested `if` retains the
+exemption because the same form can express success: for example, a connection
+attempt can `break` when the connection is valid before closing a miss, and a
+resolver can assign the found value before `break` or `continue`.
+Distinguishing those cases needs broader data-flow knowledge and remains a
+residue.

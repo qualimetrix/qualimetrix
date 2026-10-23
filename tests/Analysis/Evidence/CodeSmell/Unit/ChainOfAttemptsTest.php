@@ -54,10 +54,13 @@ final class ChainOfAttemptsTest extends TestCase
         yield 'last condition computes work before continue' => ['<?php foreach ($a as $x) { try { if (work($x)) { continue; } } catch (Throwable) {} fallback($x); }', 1];
         yield 'last condition computes work before return' => ['<?php foreach ($a as $x) { try { if (work($x)) { return; } } catch (Throwable) {} }', 1];
         yield 'prepared value guard before work is not an attempt' => ['<?php foreach ($a as $x) { try { $y = prepare($x); if ($y === null) { continue; } work($y); } catch (Throwable) {} fallback($x); }', 0];
-        yield 'prepared value break guard before work is not an attempt' => ['<?php foreach ($a as $x) { try { $y = prepare($x); if ($y === null) { break; } work($y); } catch (Throwable) {} fallback($x); }', 0];
-        yield 'return in a deferred closure does not turn a continue guard into an attempt' => ['<?php foreach ($a as $x) { try { $y = prepare($x); if ($y === null) { $later = static function () { return; }; continue; } work($y); } catch (Throwable) {} fallback($x); }', 0];
+        yield 'break can mean a prepared value was found' => ['<?php foreach ($a as $x) { try { $y = prepare($x); if ($y === null) { break; } work($y); } catch (Throwable) {} fallback($x); }', 1];
+        yield 'extra statements retain the attempt exemption' => ['<?php foreach ($a as $x) { try { $y = prepare($x); if ($y === null) { $later = static function () { return; }; continue; } work($y); } catch (Throwable) {} fallback($x); }', 1];
         yield 'nested final work condition restores a continue attempt after an outer guard' => ['<?php foreach ($a as $x) { try { prepare($x); if ($x) { if (work($x)) { continue; } } other(); } catch (Throwable) {} fallback($x); }', 1];
         yield 'nested final work condition restores a break attempt after an outer guard' => ['<?php foreach ($a as $x) { try { prepare($x); if ($x) { if (work($x)) { break; } } other(); } catch (Throwable) {} fallback($x); }', 1];
+        yield 'connectFirst break after valid connection remains an attempt' => ['<?php foreach ($drivers as $driver) { try { $conn = $driver->connect(); if ($conn->isValid()) { break; } $conn->close(); } catch (Throwable) {} }', 1];
+        yield 'resolveFirst assignment and break remain an attempt' => ['<?php foreach ($resolvers as $r) { try { $v = $r->resolve($x); if ($v !== null) { $found = $v; break; } miss($r); } catch (Throwable) {} }', 1];
+        yield 'resolveFirst assignment and continue remain an attempt' => ['<?php foreach ($resolvers as $r) { try { $v = $r->resolve($x); if ($v !== null) { $found = $v; continue; } miss($r); } catch (Throwable) {} fallback($r); }', 1];
         yield 'prepared value branch ends an attempt when it skips the fallback' => ['<?php foreach ($a as $x) { try { $y = prepare($x); if ($y !== null) { continue; } } catch (Throwable) {} fallback($x); }', 1];
     }
 
