@@ -58,10 +58,7 @@ class CheckCodeParallelTest(unittest.TestCase):
                 child.wait(timeout=3)
                 assert child.stderr is not None
                 stderr = child.stderr.read()
-                if b"cleanup refusal" in stderr:
-                    self.assertEqual(2, child.returncode, stderr.decode(errors="replace"))
-                else:
-                    self.assertEqual(130, child.returncode, stderr.decode(errors="replace"))
+                self.assertEqual(130, child.returncode, stderr.decode(errors="replace"))
                 self.assertEqual("ECHILD", reap_witness.read_text())
                 for pid_file in pid_files:
                     self.assertFalse(process_is_running(int(pid_file.read_text())))
@@ -226,6 +223,87 @@ class CheckCodeParallelTest(unittest.TestCase):
                     child.wait()
                 if pid_file.exists():
                     kill_group_if_running(json.loads(pid_file.read_text())[0])
+
+    def test_review_transient_group_refusal_on_the_normal_path_is_retried(self) -> None:
+        real_group_alive = MODULE.group_alive
+        refusals: dict[int, int] = {}
+
+        def refuse_briefly(process: subprocess.Popen[bytes]) -> bool:
+            if process.poll() is not None and refusals.setdefault(process.pid, 0) < 3:
+                refusals[process.pid] += 1
+                raise PermissionError(errno.EPERM, "synthetic transient refusal")
+            return real_group_alive(process)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            marker = root / "peer.finished"
+            peer = "import sys,time; time.sleep(.5); open(sys.argv[1],'w').write('complete')"
+            stdout = io.BytesIO()
+            stderr = io.BytesIO()
+            with patch.object(MODULE, "group_alive", side_effect=refuse_briefly):
+                result = MODULE.run_checks(
+                    [
+                        ("transient", [sys.executable, "-c", "pass"]),
+                        ("peer", [sys.executable, "-c", peer, str(marker)]),
+                    ],
+                    cwd=root,
+                    stdout=stdout,
+                    stderr=stderr,
+                )
+            self.assertEqual(0, result, stderr.getvalue().decode(errors="replace"))
+            self.assertNotIn(b"cleanup refusal", stderr.getvalue())
+            self.assertEqual("complete", marker.read_text())
+            self.assertIn(b"[transient] exit 0\n", stderr.getvalue())
+            self.assertIn(b"[peer] exit 0\n", stderr.getvalue())
+
+    def test_review_transient_refusals_during_cleanup_are_dropped_once_the_group_is_gone(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            ready = root / "ready"
+            program = (
+                "import signal,sys,time; signal.signal(signal.SIGTERM,signal.SIG_IGN); "
+                "open(sys.argv[1],'w').write('ready'); time.sleep(30)"
+            )
+            child = MODULE.Child("ignoring", [sys.executable], root / "out", root / "err")
+            child.process = subprocess.Popen(
+                [sys.executable, "-c", program, str(ready)],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+            wait_for_files([ready])
+            real_signal_group = MODULE.signal_group
+            real_group_alive = MODULE.group_alive
+            killed = False
+            inspections_after_kill = 0
+
+            def refuse_kill_after_delivering(process: subprocess.Popen[bytes], signum: int) -> None:
+                nonlocal killed
+                real_signal_group(process, signum)
+                if signum == signal.SIGKILL:
+                    killed = True
+                    raise PermissionError(errno.EPERM, "synthetic transient refusal")
+
+            def refuse_first_inspections_after_kill(process: subprocess.Popen[bytes]) -> bool:
+                nonlocal inspections_after_kill
+                if killed and inspections_after_kill < 2:
+                    inspections_after_kill += 1
+                    raise PermissionError(errno.EPERM, "synthetic transient refusal")
+                return real_group_alive(process)
+
+            try:
+                with patch.object(MODULE, "signal_group", side_effect=refuse_kill_after_delivering), \
+                        patch.object(MODULE, "group_alive", side_effect=refuse_first_inspections_after_kill):
+                    refusal = MODULE.stop_groups([child], .2)
+                self.assertTrue(killed)
+                self.assertIsNone(refusal)
+                self.assertTrue(child.group_stopped)
+            finally:
+                kill_group_if_running(child.process.pid)
+                if child.process.poll() is None:
+                    child.process.kill()
+                child.process.wait(timeout=2)
 
     def test_review_signal_during_normal_readiness_defers_publication_until_cleanup(self) -> None:
         stdout = io.BytesIO()
@@ -507,10 +585,7 @@ class CheckCodeParallelTest(unittest.TestCase):
                 self.assertTrue(written_file.exists(), "descendant did not write during the grace period")
                 self.assertIn(b"===== with-descendant stdout =====\nlate stdout\n", stdout)
                 self.assertIn(b"===== with-descendant stderr =====\nlate stderr\n", stderr)
-                if b"cleanup refusal" in stderr:
-                    self.assertEqual(2, child.returncode, stderr.decode(errors="replace"))
-                else:
-                    self.assertEqual(143, child.returncode, stderr.decode(errors="replace"))
+                self.assertEqual(143, child.returncode, stderr.decode(errors="replace"))
             finally:
                 if child.poll() is None:
                     child.kill()
@@ -574,12 +649,8 @@ class CheckCodeParallelTest(unittest.TestCase):
                     wait_for_files(pid_files)
                     child.send_signal(signum)
                     stdout, stderr = child.communicate(timeout=5)
-                    if b"cleanup refusal" in stderr:
-                        self.assertEqual(2, child.returncode, stderr.decode(errors="replace"))
-                        self.assertIn(b"[Errno 1] Operation not permitted", stderr)
-                    else:
-                        self.assertEqual(128 + signum, child.returncode, stderr.decode(errors="replace"))
-                        self.assertIn(f"interrupted by {signal.Signals(signum).name}".encode(), stderr)
+                    self.assertEqual(128 + signum, child.returncode, stderr.decode(errors="replace"))
+                    self.assertIn(f"interrupted by {signal.Signals(signum).name}".encode(), stderr)
                     self.assertIn(b"===== phpstan stdout =====", stdout)
                     self.assertIn(b"===== check:remaining stdout =====", stdout)
                     for pid_file in pid_files:
@@ -597,45 +668,43 @@ class CheckCodeParallelTest(unittest.TestCase):
                             kill_group_if_running(int(pid_file.read_text()))
 
     def test_term_ignoring_grandchild_is_killed_with_its_group(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            pid_file = root / "descendants.json"
-            ready_file = root / "grandchild.ready"
-            program = (
-                "import json,os,signal,subprocess,sys,time; "
-                "signal.signal(signal.SIGTERM,signal.SIG_IGN); "
-                "grandchild=subprocess.Popen([sys.executable,'-c',"
-                "'import signal,sys,time; signal.signal(signal.SIGTERM,signal.SIG_IGN); open(sys.argv[1],\"w\").write(\"ready\"); time.sleep(30)',sys.argv[2]]); "
-                "open(sys.argv[1],'w').write(json.dumps([os.getpid(),grandchild.pid])); "
-                "time.sleep(30)"
-            )
-            commands = [
-                ("phpstan", [sys.executable, "-c", program, str(pid_file), str(ready_file)]),
-                ("check:remaining", [sys.executable, "-c", "import time; time.sleep(30)"]),
-            ]
-            child = start_harness(root, commands)
-            try:
-                wait_for_files([pid_file, ready_file])
-                pids = json.loads(pid_file.read_text())
-                child.send_signal(signal.SIGTERM)
-                _, stderr = child.communicate(timeout=5)
-                for pid in pids:
-                    self.assertFalse(process_is_running(pid), f"left process {pid} alive")
-                if b"cleanup refusal" in stderr:
-                    self.assertEqual(2, child.returncode, stderr.decode(errors="replace"))
-                    self.assertIn(b"[Errno 1] Operation not permitted", stderr)
-                else:
-                    self.assertEqual(143, child.returncode, stderr.decode(errors="replace"))
-            finally:
-                if child.poll() is None:
-                    child.kill()
-                    child.wait()
-                if child.stdout is not None:
-                    child.stdout.close()
-                if child.stderr is not None:
-                    child.stderr.close()
-                if pid_file.exists():
-                    kill_group_if_running(json.loads(pid_file.read_text())[0])
+        for signum in (signal.SIGINT, signal.SIGTERM):
+            with self.subTest(signum=signum), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                pid_file = root / "descendants.json"
+                ready_file = root / "grandchild.ready"
+                program = (
+                    "import json,os,signal,subprocess,sys,time; "
+                    "signal.signal(signal.SIGTERM,signal.SIG_IGN); "
+                    "grandchild=subprocess.Popen([sys.executable,'-c',"
+                    "'import signal,sys,time; signal.signal(signal.SIGTERM,signal.SIG_IGN); open(sys.argv[1],\"w\").write(\"ready\"); time.sleep(30)',sys.argv[2]]); "
+                    "open(sys.argv[1],'w').write(json.dumps([os.getpid(),grandchild.pid])); "
+                    "time.sleep(30)"
+                )
+                commands = [
+                    ("phpstan", [sys.executable, "-c", program, str(pid_file), str(ready_file)]),
+                    ("check:remaining", [sys.executable, "-c", "import time; time.sleep(30)"]),
+                ]
+                child = start_harness(root, commands)
+                try:
+                    wait_for_files([pid_file, ready_file])
+                    pids = json.loads(pid_file.read_text())
+                    child.send_signal(signum)
+                    _, stderr = child.communicate(timeout=5)
+                    for pid in pids:
+                        self.assertFalse(process_is_running(pid), f"left process {pid} alive")
+                    self.assertEqual(128 + signum, child.returncode, stderr.decode(errors="replace"))
+                    self.assertNotIn(b"cleanup refusal", stderr)
+                finally:
+                    if child.poll() is None:
+                        child.kill()
+                        child.wait()
+                    if child.stdout is not None:
+                        child.stdout.close()
+                    if child.stderr is not None:
+                        child.stderr.close()
+                    if pid_file.exists():
+                        kill_group_if_running(json.loads(pid_file.read_text())[0])
 
 
 def start_harness(

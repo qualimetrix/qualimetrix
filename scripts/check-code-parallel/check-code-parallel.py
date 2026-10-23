@@ -31,6 +31,9 @@ SHUTDOWN_GRACE_SECONDS = 30.0
 # non-reaping container init, delays a minutes-long check's result by seconds
 # instead of forever. Leftovers are not killed: the leader's result is final.
 GROUP_EXIT_GRACE_SECONDS = 2.0
+# On macOS a group made only of zombies answers EPERM for a few milliseconds
+# before ESRCH; a refusal lasting this long is treated as genuine.
+GROUP_REFUSAL_SETTLE_SECONDS = 1.0
 POLL_SECONDS = 0.05
 REFUSAL_EXIT = 2
 
@@ -46,6 +49,7 @@ class Child:
     group_stopped: bool = False
     published: bool = False
     leader_exited_at: float | None = None
+    refused_since: float | None = None
 
 
 def signal_group(process: subprocess.Popen[bytes], signum: int) -> None:
@@ -70,89 +74,85 @@ def stop_groups(
     children: Sequence[Child],
     grace_seconds: float,
 ) -> str | None:
-    """Attempt cleanup of every group and report the first OS refusal."""
+    """Attempt cleanup of every group and report the first OS refusal.
+
+    A refusal is kept only while its group remains unproven: a group later
+    proven gone was only tearing down when it refused.
+    """
+    refusals: dict[int, str] = {}
     errors: list[str] = []
-    reported: set[tuple[str, int, int | None]] = set()
 
-    def remember(error: OSError, process: subprocess.Popen[bytes], action: str) -> None:
-        key = (action, process.pid, error.errno)
-        if key not in reported:
-            reported.add(key)
-            errors.append(f"{action} process group {process.pid}: {error}")
+    def remember(error: OSError, index: int, action: str) -> None:
+        process = children[index].process
+        assert process is not None
+        refusals.setdefault(index, f"{action} process group {process.pid}: {error}")
 
-    for child in children:
-        if child.process is not None:
+    def inspect(index: int) -> bool:
+        child = children[index]
+        assert child.process is not None
+        try:
+            active = group_alive(child.process)
+        except OSError as error:
+            remember(error, index, "cannot inspect")
+            return True
+        if not active:
+            child.group_stopped = True
+            refusals.pop(index, None)
+        return active
+
+    owned = [index for index, child in enumerate(children) if child.process is not None]
+    for index in owned:
+        if not children[index].group_stopped:
             try:
-                signal_group(child.process, signal.SIGTERM)
+                signal_group(children[index].process, signal.SIGTERM)
             except OSError as error:
-                remember(error, child.process, "cannot TERM")
+                remember(error, index, "cannot TERM")
 
     deadline = time.monotonic() + grace_seconds
     while time.monotonic() < deadline:
         active = False
-        for child in children:
-            if child.process is None:
-                continue
+        for index in owned:
+            child = children[index]
             exit_code = child.process.poll()
             if exit_code is not None:
                 child.exit_code = exit_code
-            try:
-                group_is_alive = group_alive(child.process)
-            except OSError as error:
-                remember(error, child.process, "cannot inspect")
-                group_is_alive = True
-            if not group_is_alive:
-                child.group_stopped = True
-            active = group_is_alive or active
+            if not child.group_stopped:
+                active = inspect(index) or active
         if not active:
             break
         time.sleep(POLL_SECONDS)
 
     # A leader may have exited while a descendant ignores TERM. Address the
     # original groups even in that case, then reap every direct child.
-    for child in children:
-        if child.process is None:
+    for index in owned:
+        child = children[index]
+        if child.group_stopped or not inspect(index):
             continue
         try:
-            active = group_alive(child.process)
+            signal_group(child.process, signal.SIGKILL)
         except OSError as error:
-            remember(error, child.process, "cannot inspect")
-            active = True
-        if not active:
-            child.group_stopped = True
-        if active:
-            try:
-                signal_group(child.process, signal.SIGKILL)
-            except OSError as error:
-                remember(error, child.process, "cannot KILL")
-    for child in children:
-        if child.process is not None:
-            try:
-                child.exit_code = child.process.wait(timeout=2)
-            except subprocess.TimeoutExpired:
-                errors.append(f"process group {child.process.pid} leader survived SIGKILL")
+            remember(error, index, "cannot KILL")
+    for index in owned:
+        child = children[index]
+        try:
+            child.exit_code = child.process.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            errors.append(f"process group {child.process.pid} leader survived SIGKILL")
 
-    deadline = time.monotonic() + min(2.0, max(grace_seconds, POLL_SECONDS))
+    deadline = time.monotonic() + max(GROUP_REFUSAL_SETTLE_SECONDS, min(2.0, grace_seconds))
     while time.monotonic() < deadline:
         pending = False
-        for child in children:
-            if child.process is None or child.group_stopped:
-                continue
-            try:
-                active = group_alive(child.process)
-            except OSError as error:
-                remember(error, child.process, "cannot inspect")
-                active = True
-            if active:
+        for index in owned:
+            if not children[index].group_stopped and inspect(index):
                 pending = True
-            else:
-                child.group_stopped = True
         if not pending:
             break
         time.sleep(POLL_SECONDS)
-    for child in children:
-        if child.process is not None and not child.group_stopped:
-            errors.append(f"process group {child.process.pid} completion remains unknown after cleanup")
+    unproven = [index for index in owned if not children[index].group_stopped]
+    errors = [refusals[index] for index in unproven if index in refusals] + errors + [
+        f"process group {children[index].process.pid} completion remains unknown after cleanup"
+        for index in unproven
+    ]
     return errors[0] if errors else None
 
 
@@ -229,8 +229,15 @@ def publish_finished_groups(
             child.leader_exited_at = now
         try:
             group_is_alive = group_alive(child.process)
+        except PermissionError as error:
+            if child.refused_since is None:
+                child.refused_since = now
+            if now - child.refused_since < GROUP_REFUSAL_SETTLE_SECONDS:
+                continue
+            return f"cannot inspect process group {child.process.pid}: {error}"
         except OSError as error:
             return f"cannot inspect process group {child.process.pid}: {error}"
+        child.refused_since = None
         if not group_is_alive:
             child.group_stopped = True
         elif now - child.leader_exited_at < GROUP_EXIT_GRACE_SECONDS:
@@ -331,7 +338,9 @@ def run_checks(
                         time.sleep(POLL_SECONDS)
                     if interrupted is not None or cleanup_error is not None:
                         cleanup_attempted = True
-                        cleanup_error = stop_groups(children, shutdown_grace_seconds) or cleanup_error
+                        # The inspection refusal that started cleanup stays the reported cause.
+                        stop_error = stop_groups(children, shutdown_grace_seconds)
+                        cleanup_error = cleanup_error or stop_error
             finally:
                 # An unexpected Python exception must not orphan the checks.
                 if not cleanup_attempted and (
