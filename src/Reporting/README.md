@@ -1227,6 +1227,10 @@ intersecting them with a later finding filter.
 
 Offender symbol and file derive from the required exact subject. Namespace
 aggregate records have no file; class records retain their declaration file.
+In summary's `Worst classes` list, a logical name repeated in the full ranked
+list receives a `(<file>)` suffix, or `(<file>#<n>)` for later declarations
+in the same file. The first declaration in each file omits the ordinal. The suffix
+reuses `DeclarationPath::toCanonical()` file and ordinal encoding.
 
 `rank-by=score` is the default; `density` sorts findings per 100 LOC descending.
 `count` refuses with exit 3. Summary colors consume each record's resolved

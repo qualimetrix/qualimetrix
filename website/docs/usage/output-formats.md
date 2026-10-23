@@ -18,7 +18,7 @@ Health-oriented overview showing project health scores, worst offenders, and vio
 
 - An overall health bar plus one bar per dimension (complexity, cohesion, coupling, typing, maintainability), each followed by a `↳` decomposition breakdown of the metrics behind that score
 - Scores as percentages, not raw point values
-- One-line `Worst namespaces` / `Worst classes` lists, each entry prefixed by its score, with a trailing `+N more (use ...)` when the list was truncated
+- One-line `Worst namespaces` / `Worst classes` lists, each entry prefixed by its score, with a trailing `+N more (use ...)` when the list was truncated. A repeated class name gets a `(<file>)` suffix, or `(<file>#<n>)` for a later declaration in the same file; the first declaration in each file omits the ordinal.
 - A `Top issues by impact` section: a ranked list of the highest-impact individual violations, each with severity, impact score, file, estimated fix time, rule channel, message, and symbol
 - Violation count with tech debt estimate (including debt density per 1K LOC)
 - Multiple contextual `Hints:` for next steps
