@@ -47,15 +47,28 @@ determines the coordinator's result.
 
 This amendment supersedes the 2026-10-22 decision to publish on leader exit and
 during interrupt cleanup. A command's capture is ready only after its leader has
-exited and its whole process group is gone. Normal execution publishes each
+exited and its whole process group is gone, or, in normal execution, after the
+bounded grace below. Normal execution publishes each
 ready command in completion order. Interrupted execution stops and reaps every
 owned group before publishing any capture, so publication failure cannot abort
 cleanup. Output write failures are diagnosed when stderr remains writable and
 do not replace the existing command, signal or cleanup-refusal result.
 
-An OS refusal to inspect a group routes normal execution through the same
-bounded cleanup and refusal used for interruption. During cleanup an unreadable
-group remains unknown for the full grace period; its output is delayed rather
+Normal execution waits at most 2 seconds after a leader exits for its group to
+empty. A command's published output is what the command and its group wrote
+before the group emptied or that grace ended; later output and output of a
+descendant that left the group are not captured. A group that outlives the
+grace is reported and left running, and the leader's exit code still counts:
+waiting for it without a bound would hang on a lingering in-group worker or on
+an orphaned zombie under a non-reaping container init.
+
+EPERM from a group signal or inspection means the group may still be exiting:
+on macOS a group of zombies answers EPERM briefly before ESRCH. Cleanup
+discards such a refusal once the group is proven gone; normal execution retries
+it for up to 1 second. Only an OS refusal that persists routes normal execution
+through the same bounded cleanup and refusal used for interruption.
+
+During cleanup an unreadable group remains unknown for the full grace period; its output is delayed rather
 than declared complete from the leader's exit alone. If cleanup still cannot
 prove the group gone, the coordinator reports the refusal and withholds that
 interrupt publication; publishing the batch as complete would repeat the same
