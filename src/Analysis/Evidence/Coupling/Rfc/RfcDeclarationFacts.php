@@ -15,6 +15,9 @@ final class RfcDeclarationFacts
     /** @var array<string, TraitMethodSource> */
     public array $methods = [];
 
+    /** @var array<string, true> */
+    public array $implicitMembers = [];
+
     /** @var array<string, TraitMethodSource> */
     public array $hooks = [];
 
@@ -41,7 +44,7 @@ final class RfcDeclarationFacts
         foreach ($rows as $row) {
             switch ($row['tag']) {
                 case 'declaration':
-                    $this->kind = (string) $row['kind'];
+                    $this->declaration($row);
                     break;
                 case 'method':
                     $this->member($row, $members);
@@ -60,6 +63,19 @@ final class RfcDeclarationFacts
         }
         foreach ($groups as $group) {
             $this->uses[] = self::useFacts($group);
+        }
+    }
+
+    /** @param array<string, scalar> $row */
+    private function declaration(array $row): void
+    {
+        $this->kind = (string) $row['kind'];
+        if ($this->kind !== 'Stmt_Enum') {
+            return;
+        }
+        $this->implicitMembers = ['cases' => true];
+        if ($row['backed'] === true) {
+            $this->implicitMembers += ['from' => true, 'tryfrom' => true];
         }
     }
 

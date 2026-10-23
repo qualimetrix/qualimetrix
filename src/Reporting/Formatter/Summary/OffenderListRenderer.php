@@ -106,9 +106,24 @@ final class OffenderListRenderer
         $topN = $this->getTopN($context);
 
         $offenders = $this->rankOffenders($offenders, $context);
+        $classNameCounts = [];
+        foreach ($offenders as $offender) {
+            if ($offender->subject->declarationPath() === null) {
+                continue;
+            }
+
+            $name = $offender->symbolPath->toString();
+            $classNameCounts[$name] = ($classNameCounts[$name] ?? 0) + 1;
+        }
 
         foreach (\array_slice($offenders, 0, $topN) as $offender) {
-            $this->renderWorstOffender($offender, $color, $lines, $showClassCount);
+            $this->renderWorstOffender(
+                $offender,
+                $color,
+                $lines,
+                $showClassCount,
+                $this->displayName($offender, $classNameCounts),
+            );
         }
 
         $remaining = \count($offenders) - $topN;
@@ -136,6 +151,20 @@ final class OffenderListRenderer
         return $topOpt !== '' ? FormatOptionValue::positive('top', $topOpt) : self::MAX_WORST_OFFENDERS;
     }
 
+    /** @param array<string, int> $classNameCounts */
+    private function displayName(WorstOffender $offender, array $classNameCounts): string
+    {
+        $name = $offender->symbolPath->toString();
+        $declaration = $offender->subject->declarationPath();
+        if ($declaration === null || ($classNameCounts[$name] ?? 0) < 2) {
+            return $name;
+        }
+
+        $canonicalPrefix = $declaration::CANONICAL_PREFIX . $declaration->logical->toCanonical() . '@';
+
+        return \sprintf('%s (%s)', $name, substr($declaration->toCanonical(), \strlen($canonicalPrefix)));
+    }
+
     /**
      * @param list<string> $lines
      */
@@ -144,8 +173,8 @@ final class OffenderListRenderer
         AnsiColor $color,
         array &$lines,
         bool $showClassCount,
+        string $name,
     ): void {
-        $name = $offender->symbolPath->toString();
         $scoreText = $this->formatValue($offender->healthOverall);
 
         $meta = [];

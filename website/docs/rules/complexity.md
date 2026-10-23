@@ -400,6 +400,9 @@ Qualimetrix follows Nejmeh (1988) with PHP-specific extensions:
 - **`??` and `??=`:** Contribute 2 ordinary expression paths each, like ternary value selection. `return $x ?? 5` and `$x ??= []` have NPath 2; two chained coalesces have NPath 4.
 - **`?->`:** Each nullsafe hop adds 1 separately from ordinary expression paths. At a callable statement boundary, `max(1, ordinary) + nullsafe` retains exactly one statement base.
 - **PHP-specific extensions:** `match`, `foreach`, `??`, and `?->` are all handled as path-generating constructs. Expression-bearing `for`, `foreach`, `switch`, and `echo` slots are traversed through transparent AST wrappers.
+- **`switch` without `default`:** Contributes one path for "no case matched",
+  just as an `if` without `else` has a skip path. Checkstyle uses the same
+  interpretation; pdepend/PHPMD does not.
 
 Bare `{ ... }` blocks and `declare(...) { ... }` retain the product of their
 child statements. Expressions in `unset`, dynamic `global`, and `static`
@@ -414,7 +417,9 @@ NPath(match) = NPath(subject) + sum(NPath(arm conditions) + max(1, NPath(arm bod
 ```
 
 Every arm contributes at least one path, so a simple `match` agrees with the
-equivalent `switch`. Nullsafe method/property access contributes its conditional
+equivalent `switch` when that switch has a `default`. A `match` without a
+default adds no no-match path because an unmatched `match` throws. Nullsafe
+method/property access contributes its conditional
 short-circuit path, and nested ternaries or boolean operators are retained even
 inside wrapper expressions. Some other tools (notably pdepend) use a
 multiplicative approach for `match`, which can produce extreme values (millions)

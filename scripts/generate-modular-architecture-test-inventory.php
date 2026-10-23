@@ -1281,6 +1281,7 @@ function testSuitePrefixTable(): array
         ['prefix' => 'governance/FormatOptionKeys/', 'suite' => 'Governance'],
         ['prefix' => 'governance/DirectiveVocabulary/', 'suite' => 'Governance'],
         ['prefix' => 'governance/CommitSubjectPolicy/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/PrivateLeakScan/', 'suite' => 'Governance'],
         ['prefix' => 'governance/HealthVocabulary/', 'suite' => 'Governance'],
         ['prefix' => 'governance/FindingVocabulary/', 'suite' => 'Governance'],
         ['prefix' => 'governance/LayerPolicyVocabulary/', 'suite' => 'Governance'],

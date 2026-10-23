@@ -200,6 +200,11 @@ function processItems(array $data): void {
 **Provides:** `complexity.npath`
 **Level:** Callable
 
+The switch recurrence is
+`NPath(condition) + NPath(default range) + Σ NPath(case range)`. When a
+`switch` has no `default`, the empty default range contributes one path for
+"no case matched", like the empty `else` range of an `if` without `else`.
+
 ### Differences from CCN
 
 | Aspect         | CCN                        | NPath                          |
@@ -229,7 +234,11 @@ NPath = NPath(cond) + NPath(body) + 1   // the +1 is the exit path
 
 **Switch:**
 ```
-NPath = NPath(cond) + Σ (NPath(case_cond_i) + max(1, NPath(case_body_i)))   // at least 1
+NPath = NPath(cond)
+      + NPath(default_range)
+      + Σ (NPath(case_cond_i) + max(1, NPath(case_body_i)))
+
+NPath(absent default_range) = 1   // no case matched
 ```
 
 > **Note:** Nejmeh (1988) predates PHP's `??`, `??=` and `?->`. Coalescing

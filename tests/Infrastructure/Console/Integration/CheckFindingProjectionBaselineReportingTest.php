@@ -77,9 +77,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[CoversClass(FindingProjectionResult::class)]
 final class CheckFindingProjectionBaselineReportingTest extends TestCase
 {
-    /** @var list<string> */
-    private array $tempFiles = [];
-
     private string $tempRoot;
 
     protected function setUp(): void
@@ -91,11 +88,6 @@ final class CheckFindingProjectionBaselineReportingTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach ($this->tempFiles as $file) {
-            if (file_exists($file)) {
-                unlink($file);
-            }
-        }
         \Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory::remove($this->tempRoot);
     }
 
@@ -356,8 +348,7 @@ final class CheckFindingProjectionBaselineReportingTest extends TestCase
      */
     private function writeBaseline(array $entries, array $scope = ['src']): string
     {
-        $path = (string) tempnam(sys_get_temp_dir(), 'qmx_orch_reporting_baseline_') . '.json';
-        $this->tempFiles[] = $path;
+        $path = $this->tempRoot . '/baseline-' . bin2hex(random_bytes(8)) . '.json';
 
         file_put_contents($path, json_encode([
             'version' => 14,

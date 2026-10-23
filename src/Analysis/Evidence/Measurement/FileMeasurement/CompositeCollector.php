@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInte
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SourceMeasuringCollectorInterface;
@@ -71,7 +72,7 @@ final class CompositeCollector implements FileMeasurementCollectorInterface
         NameResolution::resolve($ast);
 
         if ($this->collectors === [] && $this->dependencyTraversalParticipant === null) {
-            return new CollectionOutput(new MetricBag(), [], []);
+            return new CollectionOutput($this->withLexicalNamespaces(new MetricBag(), $ast), [], []);
         }
 
         $traverser = new NodeTraverser();
@@ -79,7 +80,7 @@ final class CompositeCollector implements FileMeasurementCollectorInterface
         $traverser->traverse($ast);
 
         return new CollectionOutput(
-            $this->collectMetrics($file, $ast, $filePath),
+            $this->withLexicalNamespaces($this->collectMetrics($file, $ast, $filePath), $ast),
             $this->dependencyTraversalParticipant?->dependencies() ?? [],
             $this->dependencyTraversalParticipant?->classLikeDeclarations() ?? [],
         );
@@ -162,6 +163,25 @@ final class CompositeCollector implements FileMeasurementCollectorInterface
             return $result;
         }
         return $this->derivedCollectorRunner->apply($result, $this->collectors, $filePath);
+    }
+
+    /** @param Node[] $ast */
+    private function withLexicalNamespaces(MetricBag $bag, array $ast): MetricBag
+    {
+        $seen = [];
+        foreach ($ast as $node) {
+            if (!$node instanceof Node\Stmt\Namespace_) {
+                continue;
+            }
+            $namespace = $node->name?->toString() ?? '';
+            if (isset($seen[$namespace])) {
+                continue;
+            }
+            $seen[$namespace] = true;
+            $bag = $bag->withEntry(FileNamespaceIndex::LEXICAL_NAMESPACE_ENTRY, ['namespace' => $namespace]);
+        }
+
+        return $bag;
     }
 
 }

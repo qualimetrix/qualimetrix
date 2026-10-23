@@ -668,8 +668,10 @@ Use `--report=<file>` for the machine-readable outcome.
 The channel probe constructs internal product classes directly: a stage
 changing those constructors also updates the channel probe.
 `ProductProbeTypes` selects the existing current or immediately preceding name
-for seven exact namespace transitions shared by the channel and baseline probes.
+for eight exact namespace transitions shared by the channel and baseline probes.
 The current name wins if both exist; a used API missing both names fails explicitly.
+Remove a pair once its rename commit is an ancestor of every reference the gate
+is still compared against.
 An optional constructor-interface comparison checks those exact names without
 autoloading the unused interface. Other historical Reflection shapes remain
 explicit in the probes; this does not promise support for arbitrary product APIs.

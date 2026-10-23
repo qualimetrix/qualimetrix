@@ -23,7 +23,9 @@ final class AstEntryProducerDigestTest extends TestCase
         $record = json_decode((string) file_get_contents(__DIR__ . '/ast-entry-producer.json'), true, flags: \JSON_THROW_ON_ERROR);
         self::assertSame($record['parserVersion'], InstalledVersions::getVersion('nikic/php-parser'), 'Parser version changed: re-record the AST producer digest.');
         $nodes = (new PhpFileParser())->parseContent(new SplFileInfo(__FILE__), self::SOURCE);
-        $digest = hash('sha256', (new AstEntryCodec())->encode(array_values($nodes)));
+        $bytes = (new AstEntryCodec())->encode(array_values($nodes));
+        self::assertNotNull($bytes);
+        $digest = hash('sha256', $bytes);
         self::assertSame($record['digest'], $digest, 'AST producer bytes changed: bump FORMAT_VERSION and re-record the digest.');
         self::assertSame($record['formatVersion'], AstEntryCodec::FORMAT_VERSION);
     }

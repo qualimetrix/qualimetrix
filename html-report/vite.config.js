@@ -1,5 +1,8 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
+import { d3Imports } from './scripts/d3-imports.mjs';
+
+const d3Modules = Object.keys(d3Imports());
 
 export default defineConfig({
   build: {
@@ -13,29 +16,9 @@ export default defineConfig({
     emptyOutDir: false,
     minify: 'esbuild',
     rollupOptions: {
-      external: [
-        'd3-hierarchy',
-        'd3-selection',
-        'd3-scale',
-        'd3-color',
-        'd3-interpolate',
-        'd3-transition',
-        'd3-axis',
-        'd3-format',
-        'd3-shape',
-      ],
+      external: d3Modules,
       output: {
-        globals: {
-          'd3-hierarchy': 'd3',
-          'd3-selection': 'd3',
-          'd3-scale': 'd3',
-          'd3-color': 'd3',
-          'd3-interpolate': 'd3',
-          'd3-transition': 'd3',
-          'd3-axis': 'd3',
-          'd3-format': 'd3',
-          'd3-shape': 'd3',
-        },
+        globals: Object.fromEntries(d3Modules.map(module => [module, 'd3'])),
       },
     },
   },

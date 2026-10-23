@@ -21,7 +21,10 @@ final readonly class FindingNamespaces
         if ($subject->getType() !== SymbolType::File) {
             return $subject->namespace === null ? [] : [$subject->namespace];
         }
-        $namespaces = $finding->location->file === null ? [] : $index->namespacesOf($finding->location->file);
+        $namespaces = $finding->location->file === null ? [] : array_values(array_unique([
+            ...$index->namespacesOf($finding->location->file),
+            ...$index->lexicalNamespacesOf($finding->location->file),
+        ]));
         sort($namespaces, \SORT_STRING);
 
         return $namespaces !== [] ? $namespaces : [''];
