@@ -95,14 +95,35 @@ final readonly class CliRuleOptionAddressing
 
     private static function unknownOption(RuleOptionSurface $surface, string $rule, string $option): string
     {
+        return self::misspelledLevelRefusal($surface, $rule, $option)
+            ?? self::mapKeyRefusal($surface, $rule, $option)
+            ?? self::notAnOptionRefusal($surface, $rule, $option);
+    }
+
+    private static function misspelledLevelRefusal(RuleOptionSurface $surface, string $rule, string $option): ?string
+    {
+        $parts = explode('.', $option, 2);
+        if (\count($parts) !== 2 || $surface->levelNamed($parts[0]) !== null) {
+            return null;
+        }
+        $suggestion = self::similarLevel($surface, $parts[0]);
+
+        return $suggestion === null
+            ? null
+            : \sprintf('Level "%s" of rule "%s" is not a declared spelling. Write "%s".', $parts[0], $rule, $suggestion);
+    }
+
+    private static function mapKeyRefusal(RuleOptionSurface $surface, string $rule, string $option): ?string
+    {
+        $address = $surface->mapEnteredBy($option);
+
+        return $address === null ? null : RuleOptionRefusalWording::mapKeysNotAddressable($address->written(), $rule);
+    }
+
+    private static function notAnOptionRefusal(RuleOptionSurface $surface, string $rule, string $option): string
+    {
         $parts = explode('.', $option, 2);
         $level = \count($parts) === 2 ? $surface->levelNamed($parts[0]) : null;
-        if ($level === null && \count($parts) === 2) {
-            $suggestion = self::similarLevel($surface, $parts[0]);
-            if ($suggestion !== null) {
-                return \sprintf('Level "%s" of rule "%s" is not a declared spelling. Write "%s".', $parts[0], $rule, $suggestion);
-            }
-        }
         $wording = $level === null
             ? RuleOptionRefusalWording::notAnOptionOfRule($option, $rule, $surface->writableAt(null))
             : RuleOptionRefusalWording::notAnOptionAtLevel($parts[1], $rule, $level, $surface->writableAt($level));

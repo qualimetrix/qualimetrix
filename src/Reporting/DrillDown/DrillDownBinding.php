@@ -104,7 +104,7 @@ final readonly class DrillDownBinding
         return \count($this->namespaceUniverse($metrics, $namespaceTree));
     }
 
-    /** @return array{declarations: list<string>, fileCount: int, singletonFileCount: int} */
+    /** @return array{declarations: list<string>, fileCount: int, singletonFiles: list<string>} */
     public function classDeclarationSelection(string $fqcn, MetricRepositoryInterface $metrics): array
     {
         $declarations = [];
@@ -120,13 +120,15 @@ final readonly class DrillDownBinding
             }
         }
         sort($declarations, \SORT_STRING);
+        $singletonFiles = array_keys(array_filter(
+            $declarationsByFile,
+            static fn(int $count): bool => $count === 1,
+        ));
+        sort($singletonFiles, \SORT_STRING);
         return [
             'declarations' => $declarations,
             'fileCount' => \count($declarationsByFile),
-            'singletonFileCount' => \count(array_filter(
-                $declarationsByFile,
-                static fn(int $count): bool => $count === 1,
-            )),
+            'singletonFiles' => $singletonFiles,
         ];
     }
 

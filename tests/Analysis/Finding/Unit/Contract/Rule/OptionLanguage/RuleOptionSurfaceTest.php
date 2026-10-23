@@ -29,6 +29,39 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 final class RuleOptionSurfaceTest extends TestCase
 {
     #[Test]
+    public function itFindsTheMapEnteredByADottedOption(): void
+    {
+        $surface = RuleOptionSurface::of(FlatOptionsStub::class);
+
+        foreach (['suppress-namespace-channels', 'suppress_namespace_channels'] as $key) {
+            $address = $surface->mapEnteredBy($key . '.coupling.cbo:namespace');
+            self::assertNotNull($address);
+            self::assertNull($address->level);
+            self::assertSame('suppress-namespace-channels', $address->key);
+        }
+    }
+
+    #[Test]
+    public function itFindsNoMapWithoutAProperDottedMapPrefix(): void
+    {
+        $surface = RuleOptionSurface::of(FlatOptionsStub::class);
+
+        foreach (['no-such.key', 'suppress-namespace-channels', 'selector', 'min-lines.key', 'suppress-paths.key'] as $option) {
+            self::assertNull($surface->mapEnteredBy($option), $option);
+        }
+    }
+
+    #[Test]
+    public function itFindsTheLongestProperMapPrefix(): void
+    {
+        $surface = RuleOptionSurface::of(FlatOptionsStub::class);
+
+        self::assertSame('selector.nested', $surface->mapEnteredBy('selector.nested.channel.key')?->written());
+        self::assertSame('selector', $surface->mapEnteredBy('selector.nested')?->written());
+        self::assertSame('class.selectors', RuleOptionSurface::of(HierarchicalOptionsStub::class)->mapEnteredBy('class.selectors.channel.key')?->written());
+    }
+
+    #[Test]
     public function itHasNoLevelsForARuleThatIsNotHierarchical(): void
     {
         $surface = RuleOptionSurface::of(FlatOptionsStub::class);
@@ -235,6 +268,7 @@ final class FlatOptionsStub implements RuleOptionsInterface
         return RuleOptionKeySet::of([
             'min-lines' => RuleOptionShape::text()->orNull(),
             'threshold' => RuleOptionShape::text()->orNull(),
+            'selector.nested' => RuleOptionShape::mapOf(RuleOptionShape::text()),
         ])
             ->alsoAcceptedAndValidatedByTheClass('selector', RuleOptionShape::mapOf(RuleOptionShape::nonEmptyText()))
             ->alsoAnsweredByTheClass('enabled');
@@ -331,6 +365,7 @@ final class ClassLevelOptionsStub implements LevelOptionsInterface
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
         return RuleOptionKeySet::of([
+            'selectors' => RuleOptionShape::mapOf(RuleOptionShape::text()),
             'max-error' => RuleOptionShape::text()->orNull(),
             'max-warning' => RuleOptionShape::text()->orNull(),
         ]);

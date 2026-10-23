@@ -31,6 +31,15 @@ final class RuleOptionRefusalWording
         );
     }
 
+    public static function mapKeysNotAddressable(string $option, string $ruleName): string
+    {
+        return \sprintf(
+            'Option "%s" of rule "%s" is a map; --rule-opt cannot address its keys. Configure it in qmx.yaml.',
+            $option,
+            $ruleName,
+        );
+    }
+
     /**
      * The last clause exists for the measured mistake this refusal answers:
      * one level's vocabulary written into another level's slot. A reader told

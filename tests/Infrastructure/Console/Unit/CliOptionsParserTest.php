@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
@@ -41,6 +42,45 @@ use Symfony\Component\Console\Input\InputOption;
 #[CoversClass(CliRuleOptionAddressing::class)]
 final class CliOptionsParserTest extends TestCase
 {
+    #[Test]
+    #[TestWith(['suppress-namespace-channels.coupling.cbo:namespace'])]
+    #[TestWith(['suppress_namespace_channels.coupling.cbo:namespace'])]
+    public function itExplainsThatMapKeysBelongInYaml(string $option): void
+    {
+        $parser = new CliOptionsParser(new RuleOptionDocumentForms(), new RuleOptionsParser([], ['coupling.cbo' => CboOptions::class]));
+        $definition = new InputDefinition([new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY)]);
+
+        try {
+            $parser->pathWrites(new ArrayInput(['--rule-opt' => ['coupling.cbo:' . $option . '=App']], $definition));
+            self::fail('A map key was accepted as a CLI option.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString('suppress-namespace-channels', $refusal->summary());
+            self::assertStringContainsString('--rule-opt cannot address its keys', $refusal->summary());
+            self::assertStringContainsString('qmx.yaml', $refusal->summary());
+            self::assertStringNotContainsString('is not an option', $refusal->summary());
+        }
+    }
+
+    #[Test]
+    public function itKeepsTheUnknownDottedOptionRefusal(): void
+    {
+        $parser = new CliOptionsParser(new RuleOptionDocumentForms(), new RuleOptionsParser([], ['coupling.cbo' => CboOptions::class]));
+        $definition = new InputDefinition([new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY)]);
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('Option "no-such.key" is not an option of rule "coupling.cbo".');
+        $parser->pathWrites(new ArrayInput(['--rule-opt' => ['coupling.cbo:no-such.key=App']], $definition));
+    }
+
+    #[Test]
+    public function itStillRequiresAMapForTheWholeMapOption(): void
+    {
+        $parser = new CliOptionsParser(new RuleOptionDocumentForms(), new RuleOptionsParser([], ['coupling.cbo' => CboOptions::class]));
+        $definition = new InputDefinition([new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY)]);
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('must be a map');
+        $this->resolvedRuleOptions($parser, new ArrayInput(['--rule-opt' => ['coupling.cbo:suppress-namespace-channels=App']], $definition));
+    }
+
     #[Test]
     public function itRefusesUnregisteredRuleOptionOwnersWithTheirActualCliOrigin(): void
     {

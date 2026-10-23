@@ -22,6 +22,11 @@ final class EnvironmentRefusal extends RuntimeException implements RefusalInterf
         return new self(\sprintf('Cannot %s file "%s": %s', $operation, $path, $reason));
     }
 
+    public static function aboutDirectory(string $path, string $operation, string $detail): self
+    {
+        return new self(\sprintf('Cannot %s directory "%s": %s', $operation, $path, $detail));
+    }
+
     public static function aboutContention(string $path, string $detail): self
     {
         return new self(\sprintf('File target "%s" changed during use: %s', $path, $detail));

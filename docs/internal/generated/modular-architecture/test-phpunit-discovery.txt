@@ -7123,6 +7123,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule\OptionLanguage\RuleOptionSurfaceTest::itAnswersToASlotNameUnderAnySpelling
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule\OptionLanguage\RuleOptionSurfaceTest::itCountsASlotNameAmongTheKeysWritableAtTheRulesOwnDepth
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule\OptionLanguage\RuleOptionSurfaceTest::itDoesNotFoldWrongCaseIntoAnAcceptedKeyOrLevel
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule\OptionLanguage\RuleOptionSurfaceTest::itFindsNoMapWithoutAProperDottedMapPrefix
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule\OptionLanguage\RuleOptionSurfaceTest::itFindsTheLongestProperMapPrefix
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule\OptionLanguage\RuleOptionSurfaceTest::itFindsTheMapEnteredByADottedOption
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule\OptionLanguage\RuleOptionSurfaceTest::itHasNoLevelsForARuleThatIsNotHierarchical
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule\OptionLanguage\RuleOptionSurfaceTest::itKeepsTheAuthoredSuppressionSpellingsInStepWithTheOwner
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule\OptionLanguage\RuleOptionSurfaceTest::itLocatesABareTargetAtTheRulesOwnDepth
@@ -11263,6 +11266,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\DefaultCacheDirectoryTest::itDisablesUnrepresentableNativeDriveAndUncDefaults
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\DefaultCacheDirectoryTest::itUsesOnlyAbsoluteEnvironmentBasesOnEachPlatform
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itClearsVersionsAtomicallyWithoutRemovingForeignContents
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itCountsMultipleRetainedDetachedDirectories
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itDeletesPoisonAndCountsEachDiscard
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itDoesNotClaimCompletionWhenALinkedShardCanHideCacheEntries
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\FileCacheTest::itDoesNotCountForeignResidueAsAnOwnedEntry
@@ -11476,6 +11480,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itAdvertisesTheDocsAddressInItsHelp
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itAnalyzesSimplePhpFile
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itAppliesSymbolHealthSuppressionWithoutHidingSiblingDimensions
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itCapsDeclaringFileAdviceAtFiveSortedNames
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itDetectsComplexityFindings
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itDoesNotSuggestAFileWhenEveryDeclaringFileRemainsAmbiguous
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itExplainsWhenOneFileCannotDisambiguateAClassSelection
@@ -11485,6 +11490,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itRespectsExcludeOption
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itRunsHealthFormatWithComputedMetrics
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itSuggestsADeclaringFileWhenOneFileSelectsASingleDeclaration
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itSuggestsOnlyTheSingletonFileForTheNamespacedDuplicate
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itSupportsBaselineGeneration
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itSupportsCheckstyleFormat
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itSupportsGithubActionsFormat
@@ -12166,6 +12172,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itLeavesEveryMutableOwnerAtDefaultsWhenLateResolutionFails"ComputedMetrics"
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itLeavesEveryMutableOwnerAtDefaultsWhenLateResolutionFails"Coupling"
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itPreservesTheMemoryLimitAuthorAndRuntimeCauseWhenIniSetThrows
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itRefusesACacheClearThatRetainsForeignFiles
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itRefusesAnIncompleteCacheClearWithTheDirectoryAndReason
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itReportsAnUnapplicableMemoryLimitAfterCommittingStoresAndBeforeLaterEffects
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itResetsACustomRunBeforeApplyingDefaultValuesInTheSameProcess
@@ -12286,7 +12293,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CheckScopeResolverTest::itWarnsAboutAutoloadEntriesUnderAPrunedDirectoryOnAWholeProjectRun
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itDecodesPerRuleSuppressionSelectors
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itDecodesTheDistanceNamespaceSelectorAfterRawRuleOptionParsing
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itExplainsThatMapKeysBelongInYaml#0
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itExplainsThatMapKeysBelongInYaml#1
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itKeepsTheCanonicalIndexedSelectorPathAndOriginalCliOriginWhenTheSemanticValueIsInvalid
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itKeepsTheUnknownDottedOptionRefusal
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itNormalizesAliasValuesToBooleans
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itNormalizesAnAliasValueToFloat
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itNormalizesAnAliasValueToInt
@@ -12301,6 +12311,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itSkipsAnAbsentValueNoneAlias
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itSkipsAnAliasThatWasNotPassedOnTheCommandLine
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itStillParsesANonEmptyAliasValueAsBefore
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itStillRequiresAMapForTheWholeMapOption
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itTargetsTheDeclaredSchemaAndKeepsSelectorPayloadPlain
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliOptionsParserTest::itTreatsAPresentValueNoneAliasAsTrue
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CliSelectorDecoderTest::itBuildsANamespaceSubtreePattern
@@ -12355,6 +12366,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itAcceptsTheRemainingThresholds"none"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itAcceptsTheRemainingThresholds"unset"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itAcceptsTheRemainingThresholds"warning"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itExplainsUnknownThresholdsWithoutInfoAdvice#0
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itExplainsUnknownThresholdsWithoutInfoAdvice#1
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itKeepsTheProgrammaticNeverFailValue
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itNamesTheAllowedValuesWhenRejectingAnUnknownWord
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itPreservesTheAuthorWhenTheFactoryRefusesAnInvalidValue"non-scalar array"

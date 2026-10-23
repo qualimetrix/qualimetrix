@@ -234,7 +234,8 @@ final class RuntimeConfiguratorTest extends TestCase
             self::fail('An incomplete cache clear must refuse the run.');
         } catch (EnvironmentRefusal $refusal) {
             self::assertStringContainsString($directory, $refusal->summary());
-            self::assertStringContainsString('1 cache entries remain', $refusal->summary());
+            self::assertStringContainsString('Cannot clear cache in directory "' . $directory . '": Cannot remove cache entries in:', $refusal->summary());
+            self::assertStringNotContainsString('cache entries remain', $refusal->summary());
         } finally {
             $shards = glob($directory . '/.clearing-*/aa');
             foreach ($shards === false ? [] : $shards as $shard) {
@@ -242,6 +243,24 @@ final class RuntimeConfiguratorTest extends TestCase
             }
         }
 
+    }
+
+    #[Test]
+    public function itRefusesACacheClearThatRetainsForeignFiles(): void
+    {
+        $directory = $this->projectRoot . '/cache';
+        $this->cacheFactory->replaceConfiguration(new CacheConfiguration(AbsolutePath::fromString($directory)));
+        $this->cacheFactory->create()->set(str_repeat('a', 64), []);
+        file_put_contents($directory . '/ast-v1/notes.txt', 'foreign');
+
+        try {
+            $this->cacheLifecycle->clearCacheIfRequested($this->input(['--clear-cache' => true]));
+            self::fail('Retained detached directories must refuse the run.');
+        } catch (EnvironmentRefusal $refusal) {
+            self::assertStringContainsString('Cannot clear cache in directory "' . $directory . '": Kept 1 detached directory that still holds files: ' . $directory . '/.clearing-', $refusal->summary());
+            self::assertStringNotContainsString('0 cache', $refusal->summary());
+            self::assertStringNotContainsString('cache entries remain', $refusal->summary());
+        }
     }
 
     #[Test]

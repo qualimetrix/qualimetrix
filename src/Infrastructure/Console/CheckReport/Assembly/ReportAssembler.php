@@ -72,6 +72,22 @@ final readonly class ReportAssembler
         return $analysisResult->population->merge($filterResult->population ?? JudgedPopulation::empty());
     }
 
+    /** @param list<string> $files */
+    private function singletonFileAdvice(array $files): string
+    {
+        if (\count($files) === 1) {
+            return \sprintf('Analyse `%s` alone to select its declaration.', $files[0]);
+        }
+
+        $names = array_map(static fn(string $file): string => '`' . $file . '`', \array_slice($files, 0, 5));
+        $remaining = \count($files) - \count($names);
+        if ($remaining > 0) {
+            $names[] = \sprintf('and %d more', $remaining);
+        }
+
+        return 'Analyse one of these files alone to select its declaration: ' . implode(', ', $names) . '.';
+    }
+
     private function assertDrillDownBinds(FormatterContext $context, AnalysisResult $analysisResult): void
     {
         $binding = new DrillDownBinding();
@@ -93,7 +109,7 @@ final readonly class ReportAssembler
             $declarations = $selection['declarations'];
             if (\count($declarations) > 1) {
                 $advice = match (true) {
-                    $selection['singletonFileCount'] > 0 => 'Analyse one declaring file to select an exact declaration.',
+                    $selection['singletonFiles'] !== [] => $this->singletonFileAdvice($selection['singletonFiles']),
                     $selection['fileCount'] === 1 => 'Exact selection is unavailable when one file declares the class more than once; analyse the file without --class or rename one declaration.',
                     default => 'Every declaring file contains the class more than once; analyse without --class or rename declarations.',
                 };

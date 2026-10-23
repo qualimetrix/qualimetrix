@@ -189,6 +189,7 @@ final class DrillDownBindingTest extends TestCase
             ['src/Same.php', 0],
             ['src/Same.php', 1],
             ['src/Other.php', 0],
+            ['src/Alpha.php', 0],
         ] as [$file, $rank]) {
             $path = RelativePath::fromString($file);
             $repository->addSubject(
@@ -206,12 +207,13 @@ final class DrillDownBindingTest extends TestCase
         self::assertSame(
             [
                 'declarations' => [
+                    'declaration:class:Demo\\Repeated@src/Alpha.php',
                     'declaration:class:Demo\\Repeated@src/Other.php',
                     'declaration:class:Demo\\Repeated@src/Same.php',
                     'declaration:class:Demo\\Repeated@src/Same.php#1',
                 ],
-                'fileCount' => 2,
-                'singletonFileCount' => 1,
+                'fileCount' => 3,
+                'singletonFiles' => ['src/Alpha.php', 'src/Other.php'],
             ],
             (new DrillDownBinding())->classDeclarationSelection('Demo\\Repeated', $repository),
         );
