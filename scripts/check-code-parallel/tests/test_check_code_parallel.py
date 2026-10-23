@@ -186,6 +186,47 @@ class CheckCodeParallelTest(unittest.TestCase):
         self.assertIn(b"cleanup refusal", stderr.getvalue())
         self.assertIn(b"[Errno 1] synthetic refusal", stderr.getvalue())
 
+    def test_review_normal_run_bounds_wait_for_a_descendant_left_in_the_group(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            pid_file = root / "lingering.json"
+            descendant = "import time; print('descendant output',flush=True); time.sleep(30)"
+            leader = (
+                "import json,os,subprocess,sys,time; "
+                "lingering=subprocess.Popen([sys.executable,'-c',sys.argv[2]]); "
+                "open(sys.argv[1],'w').write(json.dumps([os.getpid(),lingering.pid])); "
+                "time.sleep(.2); raise SystemExit(3)"
+            )
+            commands = [
+                ("lingering", [sys.executable, "-c", leader, str(pid_file), descendant]),
+                ("peer", [sys.executable, "-c", "pass"]),
+            ]
+            bound = MODULE.GROUP_EXIT_GRACE_SECONDS
+            started = time.monotonic()
+            child = start_harness(root, commands)
+            try:
+                try:
+                    stdout, stderr = child.communicate(timeout=bound + 3)
+                except subprocess.TimeoutExpired:
+                    self.fail("the coordinator kept waiting for a group its finished leader left behind")
+                elapsed = time.monotonic() - started
+                self.assertEqual(3, child.returncode, stderr.decode(errors="replace"))
+                self.assertLess(elapsed, bound + 1.5)
+                self.assertIn(b"===== lingering stdout =====\ndescendant output\n", stdout)
+                self.assertIn(b"[lingering] exit 3\n", stderr)
+                self.assertIn(b"[peer] exit 0\n", stderr)
+                self.assertIn(b"lingering process group is still running", stderr)
+                self.assertTrue(
+                    process_is_running(json.loads(pid_file.read_text())[1]),
+                    "the normal path stopped a descendant it does not own the result of",
+                )
+            finally:
+                if child.poll() is None:
+                    child.kill()
+                    child.wait()
+                if pid_file.exists():
+                    kill_group_if_running(json.loads(pid_file.read_text())[0])
+
     def test_review_signal_during_normal_readiness_defers_publication_until_cleanup(self) -> None:
         stdout = io.BytesIO()
         stderr = io.BytesIO()

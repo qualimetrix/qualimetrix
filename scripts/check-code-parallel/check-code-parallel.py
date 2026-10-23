@@ -2,8 +2,9 @@
 """Run PHPStan beside documentation, artifact and self-analysis checks.
 
 Each child writes to regular files, so verbose output cannot block either
-process. Normal output is published when the whole child process group is gone;
-interrupted output waits until cleanup has finished for every owned group.
+process. Normal output is published when the whole child process group is gone,
+or a bounded grace after its leader exited; interrupted output waits until
+cleanup has finished for every owned group.
 """
 
 from __future__ import annotations
@@ -25,6 +26,11 @@ COMMANDS = (
     ("check:remaining", ("composer", "check:remaining")),
 )
 SHUTDOWN_GRACE_SECONDS = 30.0
+# Long enough for a descendant that flushes and exits just after its leader;
+# short enough that a lingering in-group worker, or an orphaned zombie under a
+# non-reaping container init, delays a minutes-long check's result by seconds
+# instead of forever. Leftovers are not killed: the leader's result is final.
+GROUP_EXIT_GRACE_SECONDS = 2.0
 POLL_SECONDS = 0.05
 REFUSAL_EXIT = 2
 
@@ -39,6 +45,7 @@ class Child:
     exit_code: int | None = None
     group_stopped: bool = False
     published: bool = False
+    leader_exited_at: float | None = None
 
 
 def signal_group(process: subprocess.Popen[bytes], signum: int) -> None:
@@ -214,16 +221,28 @@ def publish_finished_groups(
         if child.process is None or child.published:
             continue
         exit_code = child.process.poll()
-        if exit_code is not None:
-            child.exit_code = exit_code
-            try:
-                group_is_alive = group_alive(child.process)
-            except OSError as error:
-                return f"cannot inspect process group {child.process.pid}: {error}"
-            if not group_is_alive:
-                child.group_stopped = True
-                if can_publish():
-                    publish(child, stdout, stderr)
+        if exit_code is None:
+            continue
+        now = time.monotonic()
+        child.exit_code = exit_code
+        if child.leader_exited_at is None:
+            child.leader_exited_at = now
+        try:
+            group_is_alive = group_alive(child.process)
+        except OSError as error:
+            return f"cannot inspect process group {child.process.pid}: {error}"
+        if not group_is_alive:
+            child.group_stopped = True
+        elif now - child.leader_exited_at < GROUP_EXIT_GRACE_SECONDS:
+            continue
+        if can_publish():
+            publish(child, stdout, stderr)
+            if not child.group_stopped:
+                write_diagnostic(
+                    stderr,
+                    f"check-code-parallel: {child.name} process group is still running "
+                    f"{GROUP_EXIT_GRACE_SECONDS:g}s after its leader exited; later output is not published\n",
+                )
     return None
 
 
