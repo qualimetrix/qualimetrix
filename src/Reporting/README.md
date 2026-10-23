@@ -190,11 +190,10 @@ and report assembly; enrichment preserves it. A standalone `ReportBuilder`
 creates it once from its own metrics when no prepared index was supplied.
 `FindingFilter`, `FindingSorter`, detail rendering and `FindingRecord` require
 that index explicitly. `FindingNamespaces` gives declarations their own
-namespace, file aggregates the namespaces of measured exact declarations and
-logical classes in their physical file (sorted for publication), and projects
-no namespace. Namespace blocks without such declarations are absent from this
-index. An empty file membership uses the empty string as a global reporting
-fallback; it does not prove that the source has no namespace block. `namespace` is that string
+namespace, file aggregates the sorted union of namespaces from measured exact
+declarations, logical classes and the physical file's lexical namespace
+statements, and projects no namespace. An empty file membership uses the empty
+string as a global reporting fallback. `namespace` is that string
 when exactly one namespace applies (including `''`); it is null for multiple
 namespaces or a project finding. `namespaces` carries the complete captured membership.
 Namespace grouping joins multiple displayed names in one group and keeps each
@@ -635,9 +634,9 @@ Decode a key with `rawurldecode`; `file` remains display text.
 **`outOfScope`:** always present. `null` without `--namespace`/`--class`; under a selection, `{violationCount, errorCount, warningCount, infoCount, identities}` of the run's findings the selection left out, zeroes when it left none. The exit code is resolved over `summary` and `outOfScope` together. `metrics` publishes the same count names and identities; `sarif`, `github` and `html` add one diagnostic entry under `drill-down.out-of-scope` only when something lies outside (see `DrillDown\OutOfScopeFindings`). `gitlab` and `checkstyle` have no entry that is not a finding to their consumer, so `OutOfScopeFindings::FORMATS_WITHOUT_A_PLACE` names them and the command line refuses a selection under them. `suppressed` describes the whole run and refuses either selector before analysis.
 
 Namespace drill-down selects a file finding when any namespace in its captured
-file membership matches the selector. A namespace block without a measured
-exact declaration or logical class does not select that file finding. Empty
-membership and a missing repository use the same global reporting fallback. A declaration
+file membership matches the selector. A namespace block can select the finding
+even without a measured declaration. Empty membership and a missing repository
+use the same global reporting fallback. A declaration
 finding keeps its declared namespace even in a multi-namespace file. Class
 selection never selects a file aggregate. Binding counts retain their existing
 namespace and ranked-offender universe.
@@ -663,10 +662,11 @@ can be absent while its skipped values remain named. Reasons retain
 flat named cause fields even on a `covered` run. Namespace location still uses
 accepted PSR-4 facts independently of state. Human wording names unjudged
 channels even when state is `covered`: path coverage alone does not judge every
-channel. `metrics` and `suppressed` share
-this object. SARIF (`QMX-RUN-PROJECT-SCOPE`), GitHub (`run.project-scope`), HTML
-and human formats render the scope explanation; `gitlab` and `checkstyle` have
-no diagnostic entry because their consumers treat every entry as a finding.
+channel. SARIF (`QMX-RUN-PROJECT-SCOPE`), GitHub (`run.project-scope`), HTML
+and human formats name the first three skipped values and count the rest.
+`json`, `metrics` and `suppressed` retain every skipped value in the scope object.
+`gitlab` and `checkstyle` have no diagnostic entry because their consumers
+treat every entry as a finding.
 Auxiliary install issues explain ancestry limits without changing main-project
 coverage. An `omitted-composer-root` reason retains `cause` and `visitedLevels`.
 Its `candidate`, `startDirectory` and `lastDirectory` are published only when
@@ -1226,6 +1226,10 @@ intersecting them with a later finding filter.
 
 Offender symbol and file derive from the required exact subject. Namespace
 aggregate records have no file; class records retain their declaration file.
+In summary's `Worst classes` list, a logical name repeated in the full ranked
+list receives a `(<file>)` suffix, or `(<file>#<n>)` for later declarations
+in the same file. The first declaration in each file omits the ordinal. The suffix
+reuses `DeclarationPath::toCanonical()` file and ordinal encoding.
 
 `rank-by=score` is the default; `density` sorts findings per 100 LOC descending.
 `count` refuses with exit 3. Summary colors consume each record's resolved

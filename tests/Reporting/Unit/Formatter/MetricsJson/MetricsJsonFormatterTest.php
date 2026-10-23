@@ -189,6 +189,7 @@ final class MetricsJsonFormatterTest extends TestCase
                     default => [],
                 };
             });
+        $repository->method('get')->willReturn(new MetricBag());
         $classSubject = MetricSubject::declaration(DeclarationPath::of($classPath, $file, DeclarationOrdinal::fromRank(0)));
         $methodSubject = MetricSubject::declaration(DeclarationPath::of($methodPath, $file, DeclarationOrdinal::fromRank(0)));
         $functionSubject = MetricSubject::declaration(DeclarationPath::of($functionPath, $file, DeclarationOrdinal::fromRank(0)));
@@ -311,6 +312,7 @@ final class MetricsJsonFormatterTest extends TestCase
 
                 return [];
             });
+        $repository->method('get')->willReturn(new MetricBag());
 
         $repository->method('getSubject')
             ->willReturn(MetricBag::fromArray([

@@ -18,7 +18,7 @@ Health-oriented overview showing project health scores, worst offenders, and vio
 
 - An overall health bar plus one bar per dimension (complexity, cohesion, coupling, typing, maintainability), each followed by a `↳` decomposition breakdown of the metrics behind that score
 - Scores as percentages, not raw point values
-- One-line `Worst namespaces` / `Worst classes` lists, each entry prefixed by its score, with a trailing `+N more (use ...)` when the list was truncated
+- One-line `Worst namespaces` / `Worst classes` lists, each entry prefixed by its score, with a trailing `+N more (use ...)` when the list was truncated. A repeated class name gets a `(<file>)` suffix, or `(<file>#<n>)` for a later declaration in the same file; the first declaration in each file omits the ordinal.
 - A `Top issues by impact` section: a ranked list of the highest-impact individual violations, each with severity, impact score, file, estimated fix time, rule channel, message, and symbol
 - Violation count with tech debt estimate (including debt density per 1K LOC)
 - Multiple contextual `Hints:` for next steps
@@ -123,8 +123,8 @@ exit code is resolved over the selection and `outOfScope` together, so a clean
 selection can exit 2.
 
 Namespace selection uses a finding's declared namespace. For a file aggregate
-(`annotation.*`, `duplication.clone`), it matches any namespace declared in
-that file; a file without declarations compares as the global namespace.
+(`annotation.*`, `duplication.clone`), it matches any namespace the file opens
+or declares. A file with neither uses the global namespace.
 `--class` never selects a file aggregate. `suppress_namespaces` deliberately
 does not take this file step; use `suppress_paths` for a file aggregate.
 Overlapping namespace exclusions keep credit for their first match.
@@ -1356,6 +1356,11 @@ no omitted-root reason.
 | `html`                          | Banner above the report                                         |
 | `summary`, `text`, `health`     | A `Project scope …` line                                        |
 | `gitlab`, `checkstyle`          | No scope entry: every entry is a finding to their consumers     |
+
+The scope notice in `sarif`, `github`, `html`, `summary`, `text` and `health`
+names at most the first three skipped values, followed by a count of the
+remaining values. The `projectScope.unjudgedValues` array in `json`, `metrics`
+and `suppressed` lists every skipped value.
 
 The object retains five fields: `state`, `uncoveredAutoloadTargets[]`,
 `unjudgedChannels[]`, `unjudgedValues[]`, `reasons[]`. Each skipped value has

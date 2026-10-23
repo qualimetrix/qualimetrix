@@ -46,6 +46,8 @@ use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReason;
  */
 final readonly class ReportProjectScope
 {
+    private const int UNJUDGED_VALUES_DESCRIPTION_LIMIT = 3;
+
     /** Check name / descriptor suffix the list formats publish the entry under. */
     public const string CHECK = 'run.project-scope';
 
@@ -251,9 +253,16 @@ final readonly class ReportProjectScope
             return '';
         }
 
-        return ' Values not judged: ' . implode(', ', array_map(
+        $visibleValues = \array_slice($this->unjudgedValues, 0, self::UNJUDGED_VALUES_DESCRIPTION_LIMIT);
+        $description = ' Values not judged: ' . implode(', ', array_map(
             static fn(array $value): string => \sprintf('%s %s "%s"', $value['channel'], $value['option'], $value['pattern']),
-            $this->unjudgedValues,
-        )) . '.';
+            $visibleValues,
+        ));
+        $remaining = \count($this->unjudgedValues) - \count($visibleValues);
+        if ($remaining > 0) {
+            $description .= \sprintf(', and %d more; the json, metrics and suppressed formats list every value', $remaining);
+        }
+
+        return $description . '.';
     }
 }

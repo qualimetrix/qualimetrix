@@ -1031,6 +1031,7 @@ Available tests:
  - Qualimetrix\Governance\DirectiveVocabulary\DirectiveEffectVocabularyAgreementTest::itAsksForEveryVerdictTheProductCanPublishAndNoOther
  - Qualimetrix\Governance\DirectiveVocabulary\DirectiveEffectVocabularyAgreementTest::itKeepsTheMeasuredMeaningOfEveryVerdictKnownToday
  - Qualimetrix\Governance\DirectiveVocabulary\DirectiveEffectVocabularyAgreementTest::itNamesEveryVerdictTheProductCanPublishAndNoOther
+ - Qualimetrix\Governance\DirectiveVocabulary\ExecutionFingerprintFieldCoverageTest::itExercisesEveryDeclaredFingerprintField
  - Qualimetrix\Governance\DirectiveVocabulary\ExecutionFingerprintFieldCoverageTest::itIgnoresTheInternalAddressedProducer
  - Qualimetrix\Governance\DirectiveVocabulary\ExecutionFingerprintFieldCoverageTest::itNamesEveryFieldAFindingCarries
  - Qualimetrix\Governance\DirectiveVocabulary\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"acceptedLevel"
@@ -1076,7 +1077,8 @@ Available tests:
  - Qualimetrix\Governance\DocumentationCensus\LlmsIndexRegisteredSurfaceTest::itRefusesWhenCommandSweepDisagreesWithTheBinaryMap
  - Qualimetrix\Governance\DocumentationCensus\RegisteredFormatterDocumentationTest::itUsesRegisteredFormattersInHealthScoreDocumentation
  - Qualimetrix\Governance\DocumentationCensus\RussianAdmonitionTitlesAreTranslatedTest::itGivesRenderedAdmonitionsRussianOrExplicitlyEmptyTitles
- - Qualimetrix\Governance\FindingVocabulary\FindingFieldCensusTest::itCopiesEveryOtherFieldWhenItReportsItselfAsABreach
+ - Qualimetrix\Governance\FindingVocabulary\FindingFieldCensusTest::itCopiesEveryOtherFieldWhenItReportsItself"breach"
+ - Qualimetrix\Governance\FindingVocabulary\FindingFieldCensusTest::itCopiesEveryOtherFieldWhenItReportsItself"uncompared"
  - Qualimetrix\Governance\FindingVocabulary\FindingFilterStageMembershipCensusTest::itCoversEveryStageInTheMembershipTable
  - Qualimetrix\Governance\FindingVocabulary\SeverityVocabularyTest::itExitCodesAreUniqueAcrossNonInfoSeverities
  - Qualimetrix\Governance\FindingVocabulary\SeverityVocabularyTest::itGivesEveryCaseANonEmptyDisplayName
@@ -1196,6 +1198,14 @@ Available tests:
  - Qualimetrix\Governance\PlanningRecords\PlanningRecordIsolationTest::itKeepsExecutableSourcesIndependentFromPlanningRecords
  - Qualimetrix\Governance\PlanningRecords\PlanningRecordIsolationTest::itReadsCommentSyntaxFromAShebangWhenTheExtensionCannot
  - Qualimetrix\Governance\PlanningRecords\PlanningRecordIsolationTest::itRecognizesPlanningChronologyOnlyInsideComments
+ - Qualimetrix\Governance\PrivateLeakScan\PrivateLeakScanVerdictTest::itFindsAPrivateTermInsideTheCommitRange
+ - Qualimetrix\Governance\PrivateLeakScan\PrivateLeakScanVerdictTest::itJudgesAnAvailableCommitRange
+ - Qualimetrix\Governance\PrivateLeakScan\PrivateLeakScanVerdictTest::itKeepsGitRangeShorthandAvailable
+ - Qualimetrix\Governance\PrivateLeakScan\PrivateLeakScanVerdictTest::itNamesStagedFilesWhenTheirListingFails
+ - Qualimetrix\Governance\PrivateLeakScan\PrivateLeakScanVerdictTest::itRefusesToJudgeFilesWhenTrackedFilesCannotBeListed
+ - Qualimetrix\Governance\PrivateLeakScan\PrivateLeakScanVerdictTest::itReportsADetectedLeakFromThePreCommitHook
+ - Qualimetrix\Governance\PrivateLeakScan\PrivateLeakScanVerdictTest::itReportsAnUnreadableStageFromThePreCommitHook
+ - Qualimetrix\Governance\PrivateLeakScan\PrivateLeakScanVerdictTest::itSkipsAnUnavailableCommitRangeWithoutCallingItClean
  - Qualimetrix\Governance\ProjectScopeCoverage\AnalysisContextScopeArgumentGuardTest::itFindsNoProductionContextBuiltWithoutAMeasuredScopeAnswer
  - Qualimetrix\Governance\ProjectScopeCoverage\ProjectScopeReadersTest::itAccountsForEveryProductionFileThatNamesThePredicate
  - Qualimetrix\Governance\ProjectScopeCoverage\ProjectScopeReadersTest::itListsExactlyTheChannelsTheReadersWithhold
@@ -1771,9 +1781,12 @@ Available tests:
  - Qualimetrix\SuppressionSnapshot\Tests\SuppressionSnapshotKeyTest::itBuildsADifferentKeyWhenOnlySeverityChanges
  - Qualimetrix\SuppressionSnapshot\Tests\SuppressionSnapshotKeyTest::itBuildsTheSameKeyForTwoDirectiveLocatorsAtDifferentLines
  - Qualimetrix\SuppressionSnapshot\Tests\SuppressionSnapshotKeyTest::itDistinguishesANullFileFromTheNoFilePlaceholderString
+ - Qualimetrix\SuppressionSnapshot\Tests\SuppressionSnapshotKeyTest::itDoesNotPublishATemporaryDirectoryAfterTheWriteFails
  - Qualimetrix\SuppressionSnapshot\Tests\SuppressionSnapshotKeyTest::itLeavesASuppressorWithoutAColonUnchanged
  - Qualimetrix\SuppressionSnapshot\Tests\SuppressionSnapshotKeyTest::itLeavesEveryOtherMechanismsSuppressorUnchanged
  - Qualimetrix\SuppressionSnapshot\Tests\SuppressionSnapshotKeyTest::itRefusesInertSelfAnalysisBeforeReplacingTheSnapshot
+ - Qualimetrix\SuppressionSnapshot\Tests\SuppressionSnapshotKeyTest::itRefusesWhenTheSnapshotDirectoryDoesNotExist
+ - Qualimetrix\SuppressionSnapshot\Tests\SuppressionSnapshotKeyTest::itRefusesWhenTheSnapshotTargetIsANonEmptyDirectory
  - Qualimetrix\SuppressionSnapshot\Tests\SuppressionSnapshotKeyTest::itRejectsAParallelMeasurementWithADifferentExitCode
  - Qualimetrix\SuppressionSnapshot\Tests\SuppressionSnapshotKeyTest::itRendersAnEmptyCompositionAsJustTheHeader
  - Qualimetrix\SuppressionSnapshot\Tests\SuppressionSnapshotKeyTest::itRendersAnEmptyInertListAsJustTheHeader
@@ -2360,8 +2373,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\BooleanArgument\BooleanArgumentRuleTest::itReportsItsNameAndDescription
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"assigned nullsafe"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"break after work ends an attempt"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"break can mean a prepared value was found"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"call in early guard still precedes later work"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"comment after the guard continue is not a statement"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"comment after the try skips nothing"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"connectFirst break after valid connection remains an attempt"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"continue in a branch skips a fallback"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"continue in a branch with nothing to skip"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"continue skips a fallback"
@@ -2374,6 +2390,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"eager receiver creation remains work"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"early guard return does not excuse catch"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"eval return"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"extra statements retain the attempt exemption"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"first class function callable before guard is not work"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"first class method callable before guard is not work"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"first class static callable before guard is not work"
@@ -2381,11 +2398,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"invoking a callback is work"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"last condition computes work before continue"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"last condition computes work before return"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"nested final work condition restores a break attempt after an outer guard"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"nested final work condition restores a continue attempt after an outer guard"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"no exit at all"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"nullsafe return"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"outer call with arrow argument is work"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"outer call with closure argument is work"
- - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"preceded guard remains a known indistinguishable shape"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"prepared value branch ends an attempt when it skips the fallback"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"prepared value guard before work is not an attempt"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"resolveFirst assignment and break remain an attempt"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"resolveFirst assignment and continue remain an attempt"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"return ends the try"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"return in a branch, more work after it"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"returned arrow creates a callback without work"
@@ -2473,6 +2495,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itFlagsCountUsedDirectlyInALoopCondition
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itFlagsDebugFunctionsOutsideADebugApiMethod
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itFlagsDebugPrintBacktrace
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itFlagsGuardedWorkRegardlessOfWhetherTheGuardUsesTheLoopOrAPreparedValue
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itFlagsOutputEvenInsideMethodsNamedLikeDebugApis
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itFlagsPrintRCalledWithoutReturnTrue
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itFlagsSizeofUsedInALoopCondition
@@ -3420,6 +3443,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itCalculatesNpathForWhileWithTernaryCondition
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itCalculatesNpathForWhileWithTripleBooleanOrCondition
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itCapsNpathAtMaxValue
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itCountsTheNoMatchPathForSwitchWithoutDefault
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itDetectsCoalesceInAssignmentViaAssignRecursion
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itDetectsTernaryInAssignmentViaAssignRecursion
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itDoesNotAddTheCallableBaseTwiceForRootNullsafeAccesses
@@ -3432,6 +3456,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itIncludesEveryExpressionBearingStatementSlot"foreach iterable key and value expressions"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itIncludesEveryExpressionBearingStatementSlot"switch subject and case conditions"
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itIncludesTheCallableStatementBaseForNullsafeAccesses
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itKeepsMatchWithoutDefaultUnchanged
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itKeepsSimpleMatchAndEquivalentSwitchAligned
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itMultipliesNpathForTwoSequentialIfs
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\Npath\NpathComplexityCollectorTest::itMultipliesTryCatchByFinallyForNpathCalculation
@@ -4570,7 +4595,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcResponseFormsTest::itResolvesEveryResponseForm"F21"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcResponseFormsTest::itResolvesEveryResponseForm"F22"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcResponseFormsTest::itResolvesEveryResponseForm"F23"
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcResponseFormsTest::itResolvesEveryResponseForm"F24"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcResponseFormsTest::itResolvesEveryResponseForm"F24 pure enum includes implicit cases method"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcResponseFormsTest::itResolvesEveryResponseForm"F25"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcResponseFormsTest::itResolvesEveryResponseForm"F26"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcResponseFormsTest::itResolvesEveryResponseForm"F27"
@@ -4579,12 +4604,15 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcResponseFormsTest::itResolvesEveryResponseForm"external typed case and alias"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"abstract methods"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"anonymous classes ignored"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"another enum's implicit method remains an external response"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"backed enum includes implicit methods"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"complex order processor"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"constructor calls"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"different receivers same method name"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"duplicate external calls"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"empty class"
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"enum with concrete methods"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"enum implicit cases method replaces a trait method body"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"enum implicit methods are own responses only for the enum itself"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"global function calls"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"interface"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"internal method calls"
@@ -4594,6 +4622,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"multiple classes"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"namespaced class"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"order service with external calls"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"pure enum has cases as its only implicit method"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"same receiver same method deduplicates"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"simple calculator"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Rfc\RfcVisitorTest::itCalculatesRfcCorrectly"static calls"
@@ -5595,6 +5624,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\CallableWithMetricsTest::itRejectsInvalidAnonymousSyntax
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\CallableWithMetricsTest::itRejectsInvalidClassOwnershipAtConstruction
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\CallableWithMetricsTest::itRequiresSyntaxForAnAnonymousCallable
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Contract\FileNamespaceIndexTest::itReadsSerializedFileEntriesWithoutAddingDeclaredNamespaceContributions
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Contract\NamespaceTreeGlobalNamespaceTest::itDoesNotMakeTopLevelNamespacesChildrenOfTheGlobalOne
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Contract\NamespaceTreeGlobalNamespaceTest::itGivesTheGlobalNamespaceNoParentAndNoChildren
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Contract\NamespaceTreeGlobalNamespaceTest::itIsTheOnlyNodeWhenAProjectIsEntirelyGlobal
@@ -5639,6 +5669,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itHandsSourceBytesOnlyToCollectorsThatMeasureSource
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itMergesDuplicateMetricKeys
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itMergesMetricsFromAllCollectors
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itRecordsDistinctLexicalNamespacesWithoutConfiguredCollectors"braced blocks"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itRecordsDistinctLexicalNamespacesWithoutConfiguredCollectors"global block"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itRecordsDistinctLexicalNamespacesWithoutConfiguredCollectors"no namespace statement"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itRecordsDistinctLexicalNamespacesWithoutConfiguredCollectors"repeated namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itRecordsDistinctLexicalNamespacesWithoutConfiguredCollectors"two unbraced statements"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itRecordsDistinctLexicalNamespacesWithoutConfiguredCollectors"unbraced"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itRecordsLexicalNamespacesWithAConfiguredCollector
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itRequiresARelativePathWhenDependencyTraversalIsConfigured
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itResetsAllCollectors
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement\CompositeCollectorTest::itReturnsDependenciesFromTheTraversalParticipant
@@ -6946,10 +6983,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationPredicatesTest::itBypassesOnlyTheOppositeDeclaredSuppressionTag
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationPredicatesTest::itDistinguishesMissingFromMeasuredZeroAndAppliesEffectiveOption
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationPredicatesTest::itKeepsExactClassKindSeparateFromLogicalSymbolKind
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationPredicatesTest::itKeepsZeroSubstitutionEligibilityButNamesTheFirstMissingFailedOperand
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationPredicatesTest::itRefusesInvalidCountInsteadOfCallingItHealthy
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationPredicatesTest::itRequiresTheOwningBoundNameAndRuleCount
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationPredicatesTest::itSelectsOnlyTheDeclaredMetricAlternative
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationPredicatesTest::itTreatsAZeroSubstitutedOperandAsMeasuredWhenTheBoundaryFails
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationPredicatesTest::itUsesInverseRawPromotedOptionActivation
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationSelectionTest::itDoesNotAdvanceANotSelectedHostedRoster
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationSelectionTest::itEvaluatesTheSameEligibilityWithAndWithoutSelectedAccounting
@@ -11176,6 +11213,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\AstEntryCodecTest::itPreservesAstPrecisionAndRestoresTheProcessSetting
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\AstEntryCodecTest::itRefusesForeignObjectsAndInvalidRootsIncludingNestedAttributes
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\AstEntryCodecTest::itRetainsSharedNodesWithoutTreatingThemAsAnActiveCycle
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\AstEntryDepthTest::itDecodesWithinTheCodecBoundRegardlessOfTheUnserializeIniDepth
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\AstEntryDepthTest::itDoesNotEncodeOrDecodeATreeBeyondTheSharedDepthLimit
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\AstEntryDepthTest::itDoesNotWriteOrCountAnEntryBeyondTheDepthLimit
+ - Qualimetrix\Tests\Infrastructure\Cache\Unit\AstEntryDepthTest::itRoundTripsATreeBeyondTheOldDepthLimit
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\AstEntryProducerDigestTest::itRequiresAFormatVersionBumpWhenTheSameParserProducesDifferentEntryBytes
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheConfigurationResolverTest::itDisablesADefaultCacheDirectoryThroughAPlaceableLink
  - Qualimetrix\Tests\Infrastructure\Cache\Unit\CacheConfigurationResolverTest::itRefusesAnExplicitCacheDirectoryThroughAPlaceableLink
@@ -11372,6 +11413,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandBaselineTest::itPromotesAMeasuredBreachToErrorAndFailsTheRun
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandBaselineTest::itPublishesUnusedEntriesInEightFormatsAndGatesAllElevenFormats
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandBaselineTest::itWritesNoEntryForAnAnnotatedFindingAndRefusesToBeAskedTo
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandDrillDownFormatTest::itBindsAndSelectsANamespaceOpenedOnlyByADeclarationFreeFile
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandDrillDownFormatTest::itPublishesAndSelectsLexicalNamespacesOfFileFindings
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandDrillDownFormatTest::itRefusesASelectionTheFormatCannotMarkBeforeAnalysis"checkstyle --class"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandDrillDownFormatTest::itRefusesASelectionTheFormatCannotMarkBeforeAnalysis"checkstyle --namespace"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandDrillDownFormatTest::itRefusesASelectionTheFormatCannotMarkBeforeAnalysis"gitlab --class"
@@ -13453,6 +13496,13 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itAddsNothingForACoveredRun"sarif"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itAddsNothingForACoveredRun"summary"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itAddsNothingForACoveredRun"text"
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itBoundsTheSkippedValuesNamedInNotices"github"
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itBoundsTheSkippedValuesNamedInNotices"health"
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itBoundsTheSkippedValuesNamedInNotices"html"
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itBoundsTheSkippedValuesNamedInNotices"sarif"
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itBoundsTheSkippedValuesNamedInNotices"summary"
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itBoundsTheSkippedValuesNamedInNotices"text"
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itKeepsEverySkippedValueInJson
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itKeepsMalformedSourceReasonDataInThePublishedDescription
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itKeepsMalformedSourceReasonInTheHtmlBannerAndCountsItsRepair
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itKeepsValidSourceReasonJsonUnchanged
@@ -13539,8 +13589,10 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itReturnsAllFindingsWhenNoFilter
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itReturnsAllWorstOffendersWhenNoFilter
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itReturnsEmptyWhenWorstOffendersByClassNoMatch
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itSelectsADeclarationFreeFileFindingByItsLexicalNamespaceWithoutChangingItsIdentity
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itSelectsAFileFindingByDeclaredAndLexicalNamespacesTogether
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itSelectsAFileWithNoNamespaceStatementAsGlobal
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itSelectsFileFindingsByEveryNamespaceDeclaredInTheirSource
- - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itSelectsUndeclaredFileFindingsAsGlobalWithoutChangingTheirIdentity
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itUsesADeclaredSubjectBeforeTheOtherNamespacesOfItsFile
  - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"a path entry that cannot be a name at all"
  - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"suppress_namespaces as a map"
@@ -14002,7 +14054,10 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\HintRendererTest::itSkipsDrillDownHintInClassScope
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\HintRendererTest::itSkipsDrillDownHintWhenNoHealthScores
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\OffenderListRendererDensityTest::itCountsAllSelectedCandidatesAndRecommendsOnlyTheFullTop
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\OffenderListRendererDensityTest::itDisambiguatesVisibleClassAgainstDuplicatesBeyondTopLimit
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\OffenderListRendererDensityTest::itDisplaysDensityInWorstClassesMeta
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\OffenderListRendererDensityTest::itDistinguishesAHashInTheFileNameFromTheDeclarationOrdinal
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\OffenderListRendererDensityTest::itDistinguishesRepeatedClassNamesByFileAndOrdinal
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\OffenderListRendererDensityTest::itDoesNotDisplayDensityWhenNull
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\OffenderListRendererDensityTest::itDoesNotDisplayDensityWhenZero
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\OffenderListRendererDensityTest::itRanksUnorderedCandidatesByScore

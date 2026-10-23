@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Cache;
 
+use Closure;
 use Composer\InstalledVersions;
 use FilesystemIterator;
 use PhpParser\Comment;
@@ -19,12 +20,23 @@ final class AstEntryCodec
     /** Increase whenever encoding, parser construction/options/lexer or pre-write AST processing changes. */
     public const int FORMAT_VERSION = 1;
 
+    /** Match PHP's default unserialize_max_depth and pass it explicitly on read. */
+    private const int MAX_DEPTH = 4096;
+
     /** @var ?list<class-string> */
     private static ?array $classes = null;
 
-    /** @param list<Node> $nodes */
-    public function encode(array $nodes): string
+    /**
+     * @param list<Node> $nodes
+     *
+     * @return ?string Null for a tree beyond the depth bound or with an active cycle.
+     */
+    public function encode(array $nodes): ?string
     {
+        if (!$this->walk($nodes, null)) {
+            return null;
+        }
+
         $precision = \ini_get('serialize_precision');
         ini_set('serialize_precision', '-1');
         try {
@@ -40,7 +52,7 @@ final class AstEntryCodec
     public function decode(string $bytes): ?array
     {
         try {
-            $nodes = @unserialize($bytes, ['allowed_classes' => self::allowedClasses()]);
+            $nodes = @unserialize($bytes, ['allowed_classes' => self::allowedClasses(), 'max_depth' => self::MAX_DEPTH]);
             if (!\is_array($nodes) || !array_is_list($nodes)) {
                 return null;
             }
@@ -49,7 +61,7 @@ final class AstEntryCodec
                     return null;
                 }
             }
-            if (!$this->validValue($nodes, new SplObjectStorage(), 0)) {
+            if (!$this->walk($nodes, $this->validObject(...))) {
                 return null;
             }
 
@@ -93,47 +105,74 @@ final class AstEntryCodec
             && !(new ReflectionClass($class))->isAbstract();
     }
 
-    /** @param SplObjectStorage<object, bool> $visited */
-    private function validValue(mixed $value, SplObjectStorage $visited, int $depth): bool
+    /** @param ?Closure(object): bool $validator */
+    private function walk(mixed $root, ?Closure $validator): bool
     {
-        if ($depth > 512) {
-            return false;
-        }
-        if (\is_object($value)) {
-            return $this->validObject($value, $visited, $depth);
-        }
-        if (\is_array($value)) {
-            foreach ($value as $child) {
-                if (!$this->validValue($child, $visited, $depth + 1)) {
-                    return false;
-                }
+        $visited = new SplObjectStorage();
+        $stack = [[$root, 0, false]];
+        while ($stack !== []) {
+            [$value, $depth, $leaving] = array_pop($stack);
+            if ($leaving) {
+                $visited->offsetSet($value, true);
+                continue;
+            }
+            if ($depth > self::MAX_DEPTH) {
+                return false;
+            }
+            if (\is_object($value) && !$this->queueObject($value, $depth, $visited, $stack, $validator)) {
+                return false;
+            }
+            if (\is_array($value)) {
+                self::queueChildren($value, $depth, $stack);
+            } elseif ($validator !== null && \is_resource($value)) {
+                return false;
             }
         }
 
-        return !\is_resource($value);
+        return true;
     }
 
-    /** @param SplObjectStorage<object, bool> $visited */
-    private function validObject(object $value, SplObjectStorage $visited, int $depth): bool
+    /**
+     * @param SplObjectStorage<object, bool> $visited
+     * @param list<array{mixed, int, bool}> $stack
+     * @param ?Closure(object): bool $validator
+     */
+    private function queueObject(object $value, int $depth, SplObjectStorage $visited, array &$stack, ?Closure $validator): bool
+    {
+        if ($visited->offsetExists($value)) {
+            return $visited->offsetGet($value) === true;
+        }
+        if ($validator !== null && !$validator($value)) {
+            return false;
+        }
+        $visited->offsetSet($value, false);
+        $stack[] = [$value, $depth, true];
+        $stack[] = [(array) $value, $depth + 1, false];
+
+        return true;
+    }
+
+    /**
+     * @param array<array-key, mixed> $value
+     * @param list<array{mixed, int, bool}> $stack
+     */
+    private static function queueChildren(array $value, int $depth, array &$stack): void
+    {
+        foreach (array_reverse($value) as $child) {
+            $stack[] = [$child, $depth + 1, false];
+        }
+    }
+
+    private function validObject(object $value): bool
     {
         if (!$value instanceof Node && !$value instanceof Comment) {
             return false;
         }
-        if ($visited->offsetExists($value)) {
-            return $visited->offsetGet($value);
-        }
-        $visited->offsetSet($value, false);
-        if ($value instanceof Comment && !$this->initializedComment($value)) {
-            return false;
-        }
-        if ($value instanceof Node && !$this->initializedNode($value)) {
-            return false;
+        if ($value instanceof Comment) {
+            return $this->initializedComment($value);
         }
 
-        $valid = $this->validValue((array) $value, $visited, $depth + 1);
-        $visited->offsetSet($value, $valid);
-
-        return $valid;
+        return $this->initializedNode($value);
     }
 
     private function initializedComment(Comment $comment): bool

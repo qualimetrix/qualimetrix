@@ -29,7 +29,7 @@ final class Guards
             }
         }
     }
-    /** earlier call, then guard, then work: residual (same form as json-schema AnyOf) */
+    /** earlier call, then continue guard, then work: reported as an empty catch */
     public function precededGuard(array $items): void
     {
         foreach ($items as $x) {

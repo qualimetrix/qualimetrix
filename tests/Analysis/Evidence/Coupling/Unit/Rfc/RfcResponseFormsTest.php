@@ -338,7 +338,7 @@ use App\Lib\Tr;
 trait F23 { abstract public function a(): void; public function b(): void {} }
 
 PHP, 'App\\F23', 2, 0];
-        yield 'F24' => [<<<'PHP'
+        yield 'F24 pure enum includes implicit cases method' => [<<<'PHP'
 <?php
 namespace App;
 use App\Lib\Svc;
@@ -349,7 +349,7 @@ use App\Lib\Base;
 use App\Lib\Tr;
 enum F24 { case A; public function m(): int { return Svc::st(); } }
 
-PHP, 'App\\F24', 1, 1];
+PHP, 'App\\F24', 2, 1];
         yield 'F25' => [<<<'PHP'
 <?php
 namespace App;

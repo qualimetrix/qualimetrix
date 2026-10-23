@@ -54,10 +54,14 @@ final class FileCache implements CacheInterface
             }
         }
         $path = $this->getPath($key);
+        $bytes = $this->codec->encode($value);
+        if ($bytes === null) {
+            return;
+        }
         try {
             CacheLayout::ensureDirectory(\dirname($path));
             CacheLayout::ensureVersion($this->directory->value());
-            CacheLayout::write($path, $this->codec->encode($value));
+            CacheLayout::write($path, $bytes);
         } catch (FileTargetFailure $failure) {
             throw new CacheWriteException(\sprintf('Failed to write cache file "%s": %s', $path, $failure->getMessage()), 0, $failure);
         }
