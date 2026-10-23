@@ -61,6 +61,21 @@ final class ExecutionFingerprintFieldCoverageTest extends TestCase
     }
 
     #[Test]
+    public function itExercisesEveryDeclaredFingerprintField(): void
+    {
+        $declared = [...ExecutionFingerprint::IDENTITY_FIELDS, ...ExecutionFingerprint::BOUNDARY_FIELDS];
+        sort($declared);
+
+        $exercised = [];
+        foreach (self::provideMovedFields() as $field => $_case) {
+            $exercised[] = $field;
+        }
+        sort($exercised);
+
+        self::assertSame($declared, $exercised);
+    }
+
+    #[Test]
     public function itIgnoresTheInternalAddressedProducer(): void
     {
         $original = self::finding();
