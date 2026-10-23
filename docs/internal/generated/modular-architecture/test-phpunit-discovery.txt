@@ -14011,6 +14011,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\OffenderListRendererDensityTest::itCountsAllSelectedCandidatesAndRecommendsOnlyTheFullTop
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\OffenderListRendererDensityTest::itDisambiguatesVisibleClassAgainstDuplicatesBeyondTopLimit
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\OffenderListRendererDensityTest::itDisplaysDensityInWorstClassesMeta
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\OffenderListRendererDensityTest::itDistinguishesAHashInTheFileNameFromTheDeclarationOrdinal
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\OffenderListRendererDensityTest::itDistinguishesRepeatedClassNamesByFileAndOrdinal
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\OffenderListRendererDensityTest::itDoesNotDisplayDensityWhenNull
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\OffenderListRendererDensityTest::itDoesNotDisplayDensityWhenZero

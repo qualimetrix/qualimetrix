@@ -160,9 +160,9 @@ final class OffenderListRenderer
             return $name;
         }
 
-        $ordinalSuffix = $declaration->ordinal->isFirst() ? '' : '#' . $declaration->ordinal->value;
+        $canonicalPrefix = $declaration::CANONICAL_PREFIX . $declaration->logical->toCanonical() . '@';
 
-        return \sprintf('%s (%s%s)', $name, $declaration->file->value(), $ordinalSuffix);
+        return \sprintf('%s (%s)', $name, substr($declaration->toCanonical(), \strlen($canonicalPrefix)));
     }
 
     /**
