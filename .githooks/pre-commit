@@ -11,10 +11,17 @@ echo "🔍 Running pre-commit checks..."
 # Cheapest check, so it runs first — a leak must never reach even a local commit.
 echo ""
 echo "🔒 Checking for private paths and terms..."
-if ! bash scripts/check-private-leaks.sh --staged; then
+if bash scripts/check-private-leaks.sh --staged; then
+    :
+else
+    scan_status=$?
     echo ""
+    if [ "$scan_status" -eq 2 ]; then
+        echo "❌ Refusing to commit: private leak scan could not inspect staged files"
+        exit 2
+    fi
     echo "❌ Refusing to commit: private path or term detected"
-    exit 1
+    exit "$scan_status"
 fi
 
 # Format markdown tables in staged .md files
