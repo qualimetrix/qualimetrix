@@ -64,6 +64,7 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
         }
 
         $checkSteps = $this->scriptSteps($scripts, 'check');
+        self::assertSame('@check-leaks', $checkSteps[0], 'Private leak scan must run before other aggregate checks.');
         self::assertContains('@check:code:tests', $checkSteps);
         self::assertContains('@check:parallel', $checkSteps);
         self::assertLessThan(
@@ -122,6 +123,8 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
     }
 
     /**
+     * Models script references and the parallel coordinator; raw-command duplicates and Composer built-ins are outside this census.
+     *
      * @param array<string, string|list<string>> $scripts
      * @param list<string> $ancestors
      *
