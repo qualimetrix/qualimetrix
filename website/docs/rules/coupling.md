@@ -776,6 +776,13 @@ do not inflate it. Both metrics project to each
 exact declaration and provide namespace/project max, average and p95 values.
 The rule judges exact PHP classes, including abstract classes, with positive
 `coupling.ca`; interfaces, traits and enums retain evidence but are not judged.
+Every remedy this rule offers — extract an interface, split the class, depend on
+an abstraction — acts on a concrete class. A central interface is what those
+remedies produce, so judging it would flag the cure. A central enum is a shared
+closed vocabulary with no collaborators to split and nothing to hide behind an
+interface. A trait is copied into its users rather than called, so its rank does
+not describe a runtime hub. Their rank and share stay in `--format=metrics`, and
+the JSON report counts them under `abstentions` with the gate `php-class`.
 
 <!-- llms:skip-begin -->
 ### Thresholds
