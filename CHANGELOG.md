@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.28.1] - 2026-10-25
+
 ### Fixed
 
 - The project scope line names at most three skipped selectors instead of all of them.
@@ -1770,7 +1772,8 @@ Initial release.
 [0.9.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.0...v0.7.1
-[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.28.0...HEAD
+[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.28.1...HEAD
+[0.28.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.28.0...v0.28.1
 [0.28.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.27.0...v0.28.0
 [0.27.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.26.0...v0.27.0
 [0.26.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.25.0...v0.26.0
