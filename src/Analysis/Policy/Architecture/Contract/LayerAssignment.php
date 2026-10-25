@@ -55,7 +55,6 @@ final readonly class LayerAssignment
      *                                                           exemption, if any.
      *
       * @qmx-threshold code-smell.long-parameter-list 11 -- Membership matches, undecidable candidates and precedence verdicts describe the same evaluated declaration and must reach its diagnostic readers together.
-      * @qmx-threshold code-smell.constructor-overinjection 11 -- Membership matches, undecidable candidates and precedence verdicts describe the same evaluated declaration and must reach its diagnostic readers together.
      */
     public function __construct(
         public array $matches,

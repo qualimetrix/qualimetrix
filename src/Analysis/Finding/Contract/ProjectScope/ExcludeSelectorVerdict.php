@@ -18,8 +18,6 @@ final readonly class ExcludeSelectorVerdict
      * @param list<string> $removedEntries
      * @param list<ConfigurationOrigin> $coveredBySources Sources of the chosen hider absent from this selector
      *
-     * @qmx-threshold code-smell.constructor-overinjection warning=9 error=12 -- One immutable selector
-     *                conclusion carries measured observations, not injected collaborators.
      * @qmx-threshold code-smell.long-parameter-list warning=9 error=12 -- These fields describe one
      *                selector conclusion and have no independent lifecycle.
      */

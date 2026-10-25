@@ -19,7 +19,6 @@ final readonly class CurrentMeasurement
      * @param list<string> $declaredLevels
      *
       * @qmx-threshold code-smell.long-parameter-list 9 -- State, declared level and available magnitude describe one measured finding group for one ceiling comparison.
-      * @qmx-threshold code-smell.constructor-overinjection 9 -- State, declared level and available magnitude describe one measured finding group for one ceiling comparison.
      */
     public function __construct(
         public string $state,

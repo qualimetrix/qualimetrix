@@ -13,9 +13,6 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolLevelProjection;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
-/**
- * @qmx-threshold code-smell.constructor-overinjection warning=18 error=18 — Finding is a flat immutable transport VO; its 17 independent published fields do not form a service dependency group. The exclusive boundary allows those 17 fields while keeping the next field visible.
- */
 final readonly class Finding
 {
     /**

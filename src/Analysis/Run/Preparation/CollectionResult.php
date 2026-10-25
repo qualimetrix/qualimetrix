@@ -25,7 +25,6 @@ final readonly class CollectionResult
      * @param array<string, list<ThresholdDiagnostic>> $thresholdDiagnostics
      * @param list<SplFileInfo> $files
      *
-     * @qmx-threshold code-smell.constructor-overinjection warning=10 error=10 -- Independent immutable fields describe one completed collection observation; keeping their names together prevents mismatched phase facts. The finite arity boundary exposes added fields.
      * @qmx-threshold code-smell.long-parameter-list warning=10 error=10 -- Independent immutable fields describe one completed collection observation; keeping their names together prevents mismatched phase facts. The finite arity boundary exposes added fields.
      */
     public function __construct(

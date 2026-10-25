@@ -65,7 +65,6 @@ final readonly class LayerEvidence
      * @param array<string, int> $assignedClassHits Layer name => analysed classes assigned to it, excluding edge ends.
      *
       * @qmx-threshold code-smell.long-parameter-list 11 -- Assignments, coverage, exclusions and shadow evidence must refer to the same completed layer-policy observation.
-      * @qmx-threshold code-smell.constructor-overinjection 11 -- Assignments, coverage, exclusions and shadow evidence must refer to the same completed layer-policy observation.
      */
     public function __construct(
         public ArchitectureConfiguration $architecture,

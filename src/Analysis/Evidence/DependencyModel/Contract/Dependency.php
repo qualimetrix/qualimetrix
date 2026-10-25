@@ -35,7 +35,6 @@ final readonly class Dependency
      *                               apart; DIT, NOC and coupling read both alike.
      *
       * @qmx-threshold code-smell.long-parameter-list 10 -- Source declaration, logical target, dependency kind and source shape identify one attributed graph edge.
-      * @qmx-threshold code-smell.constructor-overinjection 10 -- Source declaration, logical target, dependency kind and source shape identify one attributed graph edge.
      */
     private function __construct(
         public DeclarationPath $source,

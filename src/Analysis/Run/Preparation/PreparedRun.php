@@ -52,7 +52,6 @@ final readonly class PreparedRun
      * not describe the run.
      *
       * @qmx-threshold code-smell.long-parameter-list 12 -- Rule context, measured coverage and authored directives belong to the same prepared run; audit must re-execute rules against that identical observation.
-      * @qmx-threshold code-smell.constructor-overinjection 12 -- Rule context, measured coverage and authored directives belong to the same prepared run; audit must re-execute rules against that identical observation.
      */
     public function __construct(
         public NamespaceTree $namespaceTree,

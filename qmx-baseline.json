@@ -131,12 +131,6 @@
     ],
     "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassOptions::__construct@src/Analysis/Evidence/Design/GodClass/GodClassOptions.php": [
       {
-        "channel": "code-smell.constructor-overinjection",
-        "magnitudes": [
-          8
-        ]
-      },
-      {
         "channel": "code-smell.long-parameter-list",
         "magnitudes": [
           8
@@ -277,12 +271,6 @@
       }
     ],
     "declaration:callable:Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeUniverse::__construct@src/Analysis/Run/Contract/Configuration/ProjectScopeUniverse.php": [
-      {
-        "channel": "code-smell.constructor-overinjection",
-        "magnitudes": [
-          8
-        ]
-      },
       {
         "channel": "code-smell.long-parameter-list",
         "magnitudes": [

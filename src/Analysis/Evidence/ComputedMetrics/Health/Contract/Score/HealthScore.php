@@ -8,7 +8,6 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score;
  * One health dimension with its score, its decomposition and the share of the
  * subject it was computed over.
  *
- * @qmx-threshold code-smell.constructor-overinjection warning=9 error=9 — Eight published facts about one score, not eight injected collaborators: this record has no behaviour to split and every field is read by a formatter.
  * @qmx-threshold code-smell.long-parameter-list warning=9 error=9 — Same reason: the eighth field is what a score covers, which belongs to the score and to nothing else.
  *
  * `$coverage` has no default on purpose: a default would let a new producer

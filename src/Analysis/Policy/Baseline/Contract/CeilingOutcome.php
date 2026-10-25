@@ -46,7 +46,6 @@ final readonly class CeilingOutcome
      * @param array<string, string> $reasons Identity key to exact reason code.
      *
       * @qmx-threshold code-smell.long-parameter-list 9 -- Accepted, stale, unmeasured and refused comparisons belong to one filtering result and its exact baseline identities.
-      * @qmx-threshold code-smell.constructor-overinjection 9 -- Accepted, stale, unmeasured and refused comparisons belong to one filtering result and its exact baseline identities.
      */
     public function __construct(
         public FindingFilterStageResult $result,
