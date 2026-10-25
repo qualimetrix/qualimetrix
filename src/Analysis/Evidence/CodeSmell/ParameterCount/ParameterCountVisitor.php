@@ -4,13 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount;
 
-use PhpParser\Modifiers;
 use PhpParser\Node;
-use PhpParser\Node\Expr\PropertyFetch;
-use PhpParser\Node\Expr\Variable;
-use PhpParser\Node\Identifier;
 use PhpParser\Node\Stmt\ClassMethod;
-use PhpParser\Node\Stmt\Return_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
@@ -40,13 +35,12 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Declara
     /** @var array<string, VisitorCallableScope> */
     private array $scopes = [];
 
-    /**
-     * One frame per open class-like. The VO decision waits for the class to close because the getter that
-     * exposes a private promoted property may follow the constructor.
-     *
-     * @var list<array{readonly: bool, candidate: ?array{key: string, exposedByVisibility: bool, promoted: array<string, true>}, returned: array<string, true>}>
-     */
-    private array $classFrames = [];
+    private ValueObjectClassification $valueObjects;
+
+    public function __construct()
+    {
+        $this->valueObjects = new ValueObjectClassification();
+    }
 
     public function reset(): void
     {
@@ -54,7 +48,7 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Declara
         $this->voConstructors = [];
         $this->scopes = [];
         $this->resetVisitorMethodContext();
-        $this->classFrames = [];
+        $this->valueObjects->reset();
     }
 
     /**
@@ -71,11 +65,7 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Declara
     /**
      * Returns FQNs of methods detected as VO constructors.
      *
-     * A VO constructor is a __construct in a readonly class where all parameters
-     * are promoted properties, the body is empty (no statements), and the class
-     * exposes at least one of those properties: it is publicly readable, or a
-     * method of the class returns it as `return $this->name;`. A readonly class
-     * whose promoted state is all hidden is a service, not a data carrier.
+     * See {@see ValueObjectClassification} for the criteria.
      *
      * @return array<string, bool>
      */
@@ -119,7 +109,7 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Declara
 
     public function enterNode(Node $node): ?int
     {
-        $this->trackClassFrame($node);
+        $this->valueObjects->enter($node);
         $scope = $this->enterVisitorMethodContext($node);
         if ($scope === null) {
             return null;
@@ -132,12 +122,8 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Declara
         $this->scopes[$fqn] = $scope;
         $this->parameterCounts[$fqn] = \count($node->getParams());
 
-        if ($node instanceof ClassMethod
-            && strtolower($scope->member) === '__construct'
-            && $this->isCurrentClassReadonly()
-            && $this->isVoConstructor($node)
-        ) {
-            $this->recordVoCandidate($fqn, $node);
+        if ($node instanceof ClassMethod && strtolower($scope->member) === '__construct') {
+            $this->valueObjects->proposeConstructor($fqn, $node);
         }
 
         return null;
@@ -146,110 +132,11 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Declara
     public function leaveNode(Node $node): ?int
     {
         $this->leaveVisitorMethodContext($node);
-        if ($node instanceof Node\Stmt\ClassLike) {
-            $this->closeClassFrame();
+        $voConstructor = $this->valueObjects->leave($node);
+        if ($voConstructor !== null) {
+            $this->voConstructors[$voConstructor] = true;
         }
 
         return null;
-    }
-
-    /**
-     * Checks if the current class scope has the readonly modifier.
-     */
-    private function isCurrentClassReadonly(): bool
-    {
-        return $this->classFrames !== [] && $this->classFrames[array_key_last($this->classFrames)]['readonly'];
-    }
-
-    private function trackClassFrame(Node $node): void
-    {
-        if ($node instanceof Node\Stmt\ClassLike) {
-            $this->classFrames[] = ['readonly' => $node instanceof Node\Stmt\Class_ && $node->isReadonly(), 'candidate' => null, 'returned' => []];
-        } elseif ($node instanceof Return_) {
-            $this->recordReturnedProperty($node);
-        }
-    }
-
-    private function recordVoCandidate(string $fqn, ClassMethod $node): void
-    {
-        $exposedByVisibility = false;
-        $promoted = [];
-        foreach ($node->params as $param) {
-            $exposedByVisibility = $exposedByVisibility || $this->isPubliclyReadable($param->flags);
-            if ($param->var instanceof Variable && \is_string($param->var->name)) {
-                $promoted[$param->var->name] = true;
-            }
-        }
-
-        $top = array_key_last($this->classFrames);
-        if ($top !== null) {
-            $this->classFrames[$top]['candidate'] = ['key' => $fqn, 'exposedByVisibility' => $exposedByVisibility, 'promoted' => $promoted];
-        }
-    }
-
-    /**
-     * Read visibility only: `private(set)` and its siblings restrict writes, so `private(set) $x` reads publicly.
-     */
-    private function isPubliclyReadable(int $flags): bool
-    {
-        $visibility = $flags & Modifiers::VISIBILITY_MASK;
-
-        return $visibility === 0 || ($visibility & Modifiers::PUBLIC) !== 0;
-    }
-
-    /**
-     * Only the exact `return $this->name;` counts. A wider reading (any property inside the returned expression)
-     * was measured to re-admit services that return `new Result($this->dependency)`.
-     */
-    private function recordReturnedProperty(Return_ $node): void
-    {
-        $expr = $node->expr;
-        if ($this->classFrames === []
-            || !$expr instanceof PropertyFetch
-            || !$expr->var instanceof Variable
-            || $expr->var->name !== 'this'
-            || !$expr->name instanceof Identifier
-        ) {
-            return;
-        }
-
-        $this->classFrames[array_key_last($this->classFrames)]['returned'][$expr->name->name] = true;
-    }
-
-    private function closeClassFrame(): void
-    {
-        $frame = array_pop($this->classFrames);
-        $candidate = $frame['candidate'] ?? null;
-        if ($frame === null || $candidate === null) {
-            return;
-        }
-
-        if ($candidate['exposedByVisibility'] || array_intersect_key($candidate['promoted'], $frame['returned']) !== []) {
-            $this->voConstructors[$candidate['key']] = true;
-        }
-    }
-
-    /**
-     * Detects a VO constructor: all parameters must be promoted properties and body must be empty.
-     *
-     * Promoted parameters have a visibility modifier (public/protected/private).
-     * Empty body means no statements (property promotion is not a statement).
-     */
-    private function isVoConstructor(ClassMethod $node): bool
-    {
-        // Must have at least one parameter to be a meaningful VO constructor
-        if ($node->params === []) {
-            return false;
-        }
-
-        // All parameters must be promoted (have visibility flags)
-        foreach ($node->params as $param) {
-            if ($param->flags === 0) {
-                return false;
-            }
-        }
-
-        // Body must be empty or absent (no statements)
-        return $node->stmts === null || $node->stmts === [];
     }
 }

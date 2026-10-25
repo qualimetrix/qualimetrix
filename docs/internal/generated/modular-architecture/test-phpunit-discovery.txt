@@ -2727,6 +2727,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\LongParameterListRuleTest::itVoThresholdBoundaries"vo below warning"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\LongParameterListRuleTest::itVoThresholdShorthand
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itAppliesVoDetectionOnlyToConstructMethod
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"a getter from a used trait is not seen"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"a nested readonly value object does not expose its host"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"a sibling class getter does not expose this class"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"a top-level closure returning a property does not disturb the class"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"getter declared before the constructor"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"hidden injected dependencies with behaviour"
@@ -2738,6 +2741,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"readonly modifier alone reads publicly"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"returned from a closure inside a method"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"returned only by a nested anonymous class"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"yielded by an arrow function inside a method"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClearsStateOnReset
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itCountsParametersForAbstractMethod
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itCountsParametersForGlobalFunction

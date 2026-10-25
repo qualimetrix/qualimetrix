@@ -119,6 +119,7 @@ src/Analysis/Evidence/CodeSmell/ParameterCount/LongParameterListOptions.php	Qual
 src/Analysis/Evidence/CodeSmell/ParameterCount/LongParameterListRule.php	Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\LongParameterListRule	class	Analysis.Evidence.CodeSmell	internal	[]
 src/Analysis/Evidence/CodeSmell/ParameterCount/ParameterCountCollector.php	Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ParameterCountCollector	class	Analysis.Evidence.CodeSmell	internal	[]
 src/Analysis/Evidence/CodeSmell/ParameterCount/ParameterCountVisitor.php	Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ParameterCountVisitor	class	Analysis.Evidence.CodeSmell	internal	[]
+src/Analysis/Evidence/CodeSmell/ParameterCount/ValueObjectClassification.php	Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ValueObjectClassification	class	Analysis.Evidence.CodeSmell	internal	[]
 src/Analysis/Evidence/CodeSmell/RepeatedExpression/IdenticalSubExpressionCollector.php	Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionCollector	class	Analysis.Evidence.CodeSmell	internal	[]
 src/Analysis/Evidence/CodeSmell/RepeatedExpression/IdenticalSubExpressionFinding.php	Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionFinding	class	Analysis.Evidence.CodeSmell	internal	[]
 src/Analysis/Evidence/CodeSmell/RepeatedExpression/IdenticalSubExpressionOptions.php	Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionOptions	class	Analysis.Evidence.CodeSmell	internal	[]

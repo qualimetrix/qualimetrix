@@ -13,6 +13,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ParameterCountCollector;
 use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ParameterCountVisitor;
+use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ValueObjectClassification;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
@@ -33,6 +34,7 @@ use SplFileInfo;
  */
 #[CoversClass(ParameterCountCollector::class)]
 #[CoversClass(ParameterCountVisitor::class)]
+#[CoversClass(ValueObjectClassification::class)]
 final class ParameterCountCollectorTest extends TestCase
 {
     private ParameterCountCollector $collector;
@@ -468,6 +470,39 @@ final readonly class Subject
     public function reader(): \Closure { return function (): string { return $this->name; }; }
 }
 PHP, true];
+        yield 'yielded by an arrow function inside a method' => [<<<'PHP'
+final readonly class Subject
+{
+    public function __construct(private string $name) {}
+    public function reader(): \Closure { return fn(): string => $this->name; }
+}
+PHP, true];
+        yield 'a getter from a used trait is not seen' => [<<<'PHP'
+trait NameAccess { public function name(): string { return $this->name; } }
+final readonly class Subject
+{
+    use NameAccess;
+    public function __construct(private string $name) {}
+}
+PHP, false];
+        yield 'a sibling class getter does not expose this class' => [<<<'PHP'
+final readonly class Other
+{
+    public function __construct(private string $name) {}
+    public function name(): string { return $this->name; }
+}
+final readonly class Subject
+{
+    public function __construct(private string $name) {}
+}
+PHP, false];
+        yield 'a nested readonly value object does not expose its host' => [<<<'PHP'
+final readonly class Subject
+{
+    public function __construct(private string $name) {}
+    public function inner(): object { return new readonly class ('x') { public function __construct(public string $label) {} }; }
+}
+PHP, false];
         yield 'returned only by a nested anonymous class' => [<<<'PHP'
 final readonly class Subject
 {
