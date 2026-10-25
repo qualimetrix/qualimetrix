@@ -124,7 +124,11 @@ the visitor evaluates the chain once, at its head.
 - `UnusedPrivate/LiteralCallableUse.php` — recognizes literal array and string callables targeting that class
 - `UnusedPrivate/` — declaration facts, collector, visitor, rule, options, trait usage resolver, and usage tracking
 - `UnreachableCode/` — collector, visitor, rule, and options for unreachable statements
-- `ParameterCount/` — parameter collector and visitor, long parameter list rule, constructor overinjection rule, and their options
+- `ParameterCount/` — parameter collector and visitor, value-object constructor classification, long parameter list rule, constructor overinjection rule, and their options
+
+`ParameterCountVisitor` publishes `code-smell.is-vo-constructor` as decided by `ValueObjectClassification`: for a readonly class whose constructor promotes every parameter, has an empty body, and whose class exposes at least one promoted property (publicly readable, or returned as exactly `return $this->name;` directly by a method of the class itself). The decision is taken when the class closes, because the exposing getter may follow the constructor; a nested class-like keeps its own frame. `LongParameterListRule` reads the flag to choose VO thresholds, and `ConstructorOverinjectionRule` abstains from flagged constructors through its `value-object-constructor` gate, so a VO constructor is judged by one rule only.
+
+> **Note:** a getter returning a derived value (`$this->name->value`, an array built from properties) is not exposure, nor is a return inside a closure or arrow function (services pass `fn() => $this->dependency` to lazy factories), and a getter in a used trait is not seen: the trait's body is its own class-like frame, separate from the classes that use it. Widening the reading to any property inside a returned expression was measured to re-admit services returning `new Result($this->dependency)` (see ADR 0131).
 
 `CodeSmellVisitor` owns AST traversal/delegation and only three residual one-node projections: `eval`, error suppression (including its direct function-name payload), and direct superglobal access. `ControlFlowSmells` owns only empty catches (including the foreach chain-of-attempts exception), `goto`, `exit`/`die`, and `count`/`sizeof` calls in `for`, `while`, and `do` conditions. Debug and boolean-argument policy stay in their named child subjects.
 

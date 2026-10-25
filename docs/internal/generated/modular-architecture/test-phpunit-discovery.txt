@@ -2310,6 +2310,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\CodeSmellLinePrecisionTest::itStoresPerOccurrenceLineDataInTheCollector
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\LongParameterListVoPropagationTest::itReportsNoFindingForVoConstructorBelowVoThresholds
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\LongParameterListVoPropagationTest::itReportsVoWarningWhenVoThresholdIsExceeded
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\LongParameterListVoPropagationTest::itUsesRegularThresholdsForAReadonlyServiceWithHiddenDependencies
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\LongParameterListVoPropagationTest::itUsesRegularThresholdsForNonVoConstructorEvenWithRelaxedVoThresholds
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\BooleanArgumentSelectionTest::itPublishesBooleanArgumentsFromAnonymousAndNamedMethods"anonymous class method"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\BooleanArgumentSelectionTest::itPublishesBooleanArgumentsFromAnonymousAndNamedMethods"named method"
@@ -2666,6 +2667,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ConstructorOverinjectionRuleTest::itGetName
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ConstructorOverinjectionRuleTest::itGetOptionsClass
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ConstructorOverinjectionRuleTest::itGlobalFunctionConstructSkipped
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ConstructorOverinjectionRuleTest::itLeavesAValueObjectConstructorToTheLongParameterListRule
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ConstructorOverinjectionRuleTest::itNonConstructorMethodsSkipped
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ConstructorOverinjectionRuleTest::itNullParameterCountSkipped
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ConstructorOverinjectionRuleTest::itOptionsFromArrayCustomValues
@@ -2725,6 +2727,23 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\LongParameterListRuleTest::itVoThresholdBoundaries"vo below warning"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\LongParameterListRuleTest::itVoThresholdShorthand
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itAppliesVoDetectionOnlyToConstructMethod
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"a getter from a used trait is not seen"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"a method return after a closure still counts"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"a nested readonly value object does not expose its host"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"a sibling class getter does not expose this class"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"a top-level closure returning a property does not disturb the class"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"an arrow function handed to a cache by a service"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"getter declared before the constructor"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"hidden injected dependencies with behaviour"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"one public field among private ones"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"only derived values returned"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"private fields read through getters"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"private set alone reads publicly"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"protected read with private set stays hidden"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"readonly modifier alone reads publicly"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"returned from a closure inside a method"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"returned only by a nested anonymous class"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClassifiesAVoConstructorByExposedState"yielded by an arrow function inside a method"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itClearsStateOnReset
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itCountsParametersForAbstractMethod
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itCountsParametersForGlobalFunction

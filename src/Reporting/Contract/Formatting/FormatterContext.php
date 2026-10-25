@@ -28,7 +28,6 @@ final readonly class FormatterContext
      * @param int $topIssuesLimit Number of top impact issues to show (0 = disabled)
      *
       * @qmx-threshold code-smell.long-parameter-list 13 -- Selection, grouping, detail and terminal presentation are resolved once for one output; formatters must see the same presentation decision.
-      * @qmx-threshold code-smell.constructor-overinjection 13 -- Selection, grouping, detail and terminal presentation are resolved once for one output; formatters must see the same presentation decision.
      */
     public function __construct(
         public bool $useColor = true,

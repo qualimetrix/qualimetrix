@@ -2220,6 +2220,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCount\\ValueObjectClassification": {
+      "path": "src/Analysis/Evidence/CodeSmell/ParameterCount/ValueObjectClassification.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.CodeSmell",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\RepeatedExpression\\IdenticalSubExpressionCollector": {
       "path": "src/Analysis/Evidence/CodeSmell/RepeatedExpression/IdenticalSubExpressionCollector.php",
       "kind": "class",

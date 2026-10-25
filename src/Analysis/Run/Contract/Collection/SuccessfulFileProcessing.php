@@ -28,7 +28,6 @@ final readonly class SuccessfulFileProcessing
      * @param list<ThresholdDiagnostic> $thresholdDiagnostics
      *
       * @qmx-threshold code-smell.long-parameter-list 10 -- Metrics, declaration identities and directives originate in one successful file collection and must be attributed to that same file.
-      * @qmx-threshold code-smell.constructor-overinjection 10 -- Metrics, declaration identities and directives originate in one successful file collection and must be attributed to that same file.
      */
     public function __construct(
         public MetricBag $fileBag,

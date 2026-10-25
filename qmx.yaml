@@ -167,6 +167,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\LongParameterListRule'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ParameterCountCollector'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ParameterCountVisitor'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ValueObjectClassification'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionCollector'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionFinding'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionOptions'

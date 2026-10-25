@@ -2506,6 +2506,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0128-subject-boundaries-with-one-way-operations.md' => 'Architecture.Governance',
         'docs/adr/0129-public-report-and-baseline-values-with-subject-owned-delivery.md' => 'Architecture.Governance',
         'docs/adr/0130-the-finding-gate-keeps-behaviour-tests-not-a-witness-registry.md' => 'Architecture.Governance',
+        'docs/adr/0131-a-value-object-exposes-its-state.md' => 'Analysis.Evidence.CodeSmell',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/ProjectManifest/README.md' => 'Analysis.ProjectManifest',

@@ -26,6 +26,9 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  *
  * Too many constructor parameters indicate a class has too many dependencies
  * and likely violates the Single Responsibility Principle.
+ *
+ * A value-object constructor (`code-smell.is-vo-constructor`) carries fields,
+ * not dependencies; `code-smell.long-parameter-list` judges it instead.
  */
 #[CliAlias('constructor-overinjection-warning', 'warning')]
 #[CliAlias('constructor-overinjection-error', 'error')]
@@ -67,6 +70,7 @@ final class ConstructorOverinjectionRule extends AbstractRule
                 self::populationGate('constructor-name', self::NAME, SymbolLevel::Callable, 'callable', self::nameMatches('constructor-name'), 'Only constructors are judged.'),
                 self::populationGate('class-context', self::NAME, SymbolLevel::Callable, 'callable', self::contextGuard('callableHasClassContext'), 'The callable has no class context.'),
                 self::populationGate('parameter-count', self::NAME, SymbolLevel::Callable, 'callable', self::keyPresent('parameter-count', [MetricName::CODE_SMELL_PARAMETER_COUNT]), 'Parameter count was not published.'),
+                self::populationGate('value-object-constructor', self::NAME, SymbolLevel::Callable, 'callable', self::flagExcludes('value-object-constructor', MetricName::CODE_SMELL_IS_VO_CONSTRUCTOR), 'A value-object constructor carries fields, not injected dependencies; code-smell.long-parameter-list judges it.'),
             ),
         ];
     }
@@ -107,6 +111,7 @@ final class ConstructorOverinjectionRule extends AbstractRule
             yield GateInput::context('callableHasClassContext', $declaration->logical->type !== null);
             $metrics = $context->metrics->getSubject($subject);
             yield GateInput::metrics('parameter-count', $metrics);
+            yield GateInput::metrics('value-object-constructor', $metrics);
         })())) {
             return null;
         }

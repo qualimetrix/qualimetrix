@@ -60,6 +60,43 @@ final class ConstructorOverinjectionRuleTest extends TestCase
     }
 
     #[Test]
+    public function itLeavesAValueObjectConstructorToTheLongParameterListRule(): void
+    {
+        $infos = [];
+        foreach (['Fields', 'Service'] as $name) {
+            $file = RelativePath::fromString('src/' . $name . '.php');
+            $subject = MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('Population', $name, '__construct'), $file, DeclarationOrdinal::fromRank(0)));
+            $infos[] = new SymbolInfo($subject, $file, 1, \Qualimetrix\Core\Symbol\CallableKind::Method, DeclarationPath::of(SymbolPath::forClass('Population', $name), $file, DeclarationOrdinal::fromRank(0)));
+        }
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allCallables')->willReturn($infos);
+        $repository->method('getSubject')->willReturnCallback(static function (MetricSubject $subject): MetricBag {
+            $metrics = (new MetricBag())->with(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName::CODE_SMELL_PARAMETER_COUNT, 9);
+
+            return $subject->toSymbolPath()->type === 'Fields'
+                ? $metrics->with(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName::CODE_SMELL_IS_VO_CONSTRUCTOR, 1)
+                : $metrics;
+        });
+        $decisions = [];
+        foreach (ConstructorOverinjectionRule::channelDeclarations() as $channel => $declaration) {
+            foreach ($declaration->levels as $level) {
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(ConstructorOverinjectionRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
+            }
+        }
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
+        $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions());
+
+        $findings = $rule->analyze((new AnalysisContext($repository))->withPopulationTrace($session));
+
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('Constructor of Service has 9 parameters', $findings[0]->message);
+        $abstentions = $session->freeze()->abstentions();
+        self::assertCount(1, $abstentions);
+        self::assertSame('value-object-constructor', $abstentions[0]->gate);
+        self::assertStringContainsString('Fields', $abstentions[0]->examples[0]);
+    }
+
+    #[Test]
     public function itGetName(): void
     {
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions());

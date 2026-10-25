@@ -11,7 +11,6 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 final readonly class VisitorCallableScope
 {
     /**
-     * @qmx-threshold code-smell.constructor-overinjection warning=14 error=14 -- Exact immutable callable scope exposes thirteen independent identity fields, in-run join position beside durable ordinal; bundling them would recreate the prohibited array record. One field of headroom, as before.
      * @qmx-threshold code-smell.long-parameter-list warning=14 error=14 -- Exact immutable callable scope constructor mirrors thirteen readonly identity fields, in-run join position beside durable ordinal; bundling them would recreate the prohibited array record. One field of headroom, as before.
      */
     public function __construct(

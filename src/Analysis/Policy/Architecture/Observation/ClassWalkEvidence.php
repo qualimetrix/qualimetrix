@@ -26,7 +26,6 @@ final readonly class ClassWalkEvidence
      * @param array<string, array<string, array<string, ShadowedClass>>> $precedenceEvidence Later layer => earlier layer => canonical class => firing pair.
      *
       * @qmx-threshold code-smell.long-parameter-list 10 -- One class-universe walk produces assignment, uncertainty and precedence evidence together; splitting the result would lose that shared observation boundary.
-      * @qmx-threshold code-smell.constructor-overinjection 10 -- One class-universe walk produces assignment, uncertainty and precedence evidence together; splitting the result would lose that shared observation boundary.
      */
     public function __construct(
         public array $assignedHits,

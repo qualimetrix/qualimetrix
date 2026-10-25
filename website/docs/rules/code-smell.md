@@ -565,6 +565,8 @@ Common request abstractions:
 
 Detects constructors with too many dependencies injected. A long constructor parameter list in DI-heavy codebases is a direct signal of Single Responsibility Principle violation -- the class has too many collaborators.
 
+A [value-object constructor](#value-object-constructor-exemption) carries fields, not dependencies, and is not judged by this rule: `code-smell.long-parameter-list` judges it with its VO thresholds. The JSON report lists such constructors under `abstentions` with the gate `value-object-constructor`.
+
 <!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
@@ -661,7 +663,7 @@ Detects methods and functions with too many parameters. A long parameter list ma
 | 4     | Warning  | Consider grouping parameters         |
 | 6+    | Error    | Too many parameters, refactor needed |
 
-**VO constructor thresholds** (readonly class, all promoted, empty body):
+**VO constructor thresholds** (readonly class, all promoted, empty body, state exposed):
 
 | Value | Severity | Meaning                                 |
 | ----- | -------- | --------------------------------------- |
@@ -680,10 +682,21 @@ data container, not a sign of poor decomposition. These constructors use separat
 **VO detection criteria** (all must be true):
 
 1. Class has the `readonly` modifier
-2. All constructor parameters are promoted properties (have visibility modifier)
+2. All constructor parameters are promoted properties (carry a visibility, `readonly` or asymmetric set modifier)
 3. Constructor body is empty (no statements)
+4. The class exposes at least one of those properties: it is publicly readable (`public`, or only
+   `readonly` / `private(set)`), or a method of the class itself returns it exactly as
+   `return $this->name;`
 
 When **any** condition is not met, standard thresholds apply.
+
+The fourth criterion separates a data carrier from a readonly service. A `final readonly class` whose
+promoted properties are all private and never returned holds injected dependencies, not data, and is
+judged like any other constructor. A getter that returns a derived value (`$this->name->value`,
+`['name' => $this->name]`) does not count as exposure; neither does a return inside a closure or arrow
+function, which is how services hand `fn() => $this->dependency` to lazy factories, nor a getter declared
+in a used trait. A value object whose state is reachable only that way also gets standard thresholds. A `@qmx-threshold code-smell.long-parameter-list` on such a
+constructor tunes the standard thresholds.
 
 ### Example
 

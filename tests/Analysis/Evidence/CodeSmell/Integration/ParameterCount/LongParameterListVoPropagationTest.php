@@ -164,6 +164,40 @@ PHP;
         self::assertSame('Method has 10 parameters, exceeds threshold of 6. Consider introducing a parameter object', $findings[0]->message);
     }
 
+    #[Test]
+    public function itUsesRegularThresholdsForAReadonlyServiceWithHiddenDependencies(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App\Service;
+
+interface Sink { public function write(string $value): void; }
+
+final readonly class Fanout
+{
+    public function __construct(private Sink $a, private Sink $b, private Sink $c, private Sink $d, private Sink $e, private Sink $f, private Sink $g) {}
+
+    public function deliver(string $value): void
+    {
+        $this->a->write($value);
+        $this->g->write($value);
+    }
+}
+PHP;
+
+        $findings = $this->analyzeConstruct(
+            $code,
+            'App\Service',
+            'Fanout',
+            new LongParameterListOptions(warning: 6, error: 8),
+        );
+
+        self::assertCount(1, $findings);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame('Method has 7 parameters, exceeds threshold of 6. Consider introducing a parameter object', $findings[0]->message);
+    }
+
     /**
      * @return list<\Qualimetrix\Analysis\Finding\Contract\Finding>
      */

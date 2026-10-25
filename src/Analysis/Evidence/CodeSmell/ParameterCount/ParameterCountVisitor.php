@@ -35,8 +35,12 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Declara
     /** @var array<string, VisitorCallableScope> */
     private array $scopes = [];
 
-    /** @var list<bool> Stack of readonly flags matching classStack */
-    private array $readonlyStack = [];
+    private ValueObjectClassification $valueObjects;
+
+    public function __construct()
+    {
+        $this->valueObjects = new ValueObjectClassification();
+    }
 
     public function reset(): void
     {
@@ -44,7 +48,7 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Declara
         $this->voConstructors = [];
         $this->scopes = [];
         $this->resetVisitorMethodContext();
-        $this->readonlyStack = [];
+        $this->valueObjects->reset();
     }
 
     /**
@@ -61,8 +65,7 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Declara
     /**
      * Returns FQNs of methods detected as VO constructors.
      *
-     * A VO constructor is a __construct in a readonly class where all parameters
-     * are promoted properties and the body is empty (no statements).
+     * See {@see ValueObjectClassification} for the criteria.
      *
      * @return array<string, bool>
      */
@@ -106,9 +109,7 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Declara
 
     public function enterNode(Node $node): ?int
     {
-        if ($node instanceof Node\Stmt\ClassLike) {
-            $this->readonlyStack[] = $node instanceof Node\Stmt\Class_ && $node->isReadonly();
-        }
+        $this->valueObjects->enter($node);
         $scope = $this->enterVisitorMethodContext($node);
         if ($scope === null) {
             return null;
@@ -121,12 +122,8 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Declara
         $this->scopes[$fqn] = $scope;
         $this->parameterCounts[$fqn] = \count($node->getParams());
 
-        if ($node instanceof ClassMethod
-            && strtolower($scope->member) === '__construct'
-            && $this->isCurrentClassReadonly()
-            && $this->isVoConstructor($node)
-        ) {
-            $this->voConstructors[$fqn] = true;
+        if ($node instanceof ClassMethod && strtolower($scope->member) === '__construct') {
+            $this->valueObjects->proposeConstructor($fqn, $node);
         }
 
         return null;
@@ -135,42 +132,11 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Declara
     public function leaveNode(Node $node): ?int
     {
         $this->leaveVisitorMethodContext($node);
-        if ($node instanceof Node\Stmt\ClassLike) {
-            array_pop($this->readonlyStack);
+        $voConstructor = $this->valueObjects->leave($node);
+        if ($voConstructor !== null) {
+            $this->voConstructors[$voConstructor] = true;
         }
 
         return null;
-    }
-
-    /**
-     * Checks if the current class scope has the readonly modifier.
-     */
-    private function isCurrentClassReadonly(): bool
-    {
-        return $this->readonlyStack !== [] && $this->readonlyStack[array_key_last($this->readonlyStack)];
-    }
-
-    /**
-     * Detects a VO constructor: all parameters must be promoted properties and body must be empty.
-     *
-     * Promoted parameters have a visibility modifier (public/protected/private).
-     * Empty body means no statements (property promotion is not a statement).
-     */
-    private function isVoConstructor(ClassMethod $node): bool
-    {
-        // Must have at least one parameter to be a meaningful VO constructor
-        if ($node->params === []) {
-            return false;
-        }
-
-        // All parameters must be promoted (have visibility flags)
-        foreach ($node->params as $param) {
-            if ($param->flags === 0) {
-                return false;
-            }
-        }
-
-        // Body must be empty or absent (no statements)
-        return $node->stmts === null || $node->stmts === [];
     }
 }

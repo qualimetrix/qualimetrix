@@ -8,10 +8,12 @@ use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ParameterCountCollector;
 use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ParameterCountVisitor;
+use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ValueObjectClassification;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
@@ -32,6 +34,7 @@ use SplFileInfo;
  */
 #[CoversClass(ParameterCountCollector::class)]
 #[CoversClass(ParameterCountVisitor::class)]
+#[CoversClass(ValueObjectClassification::class)]
 final class ParameterCountCollectorTest extends TestCase
 {
     private ParameterCountCollector $collector;
@@ -395,6 +398,150 @@ PHP;
         self::assertSame(1, $metrics->get('code-smell.is-vo-constructor:App\Dto\Point::__construct'));
     }
 
+    /**
+     * A readonly class with all-promoted, empty-body construction is a value object only when it exposes some
+     * of that state; with every promoted property hidden it is a service holding its dependencies.
+     */
+    #[Test]
+    #[DataProvider('provideExposureCases')]
+    public function itClassifiesAVoConstructorByExposedState(string $body, bool $expectedVo): void
+    {
+        $metrics = $this->collectMetrics("<?php\n\nnamespace App;\n\n" . $body);
+
+        self::assertSame($expectedVo ? 1 : null, $metrics->get('code-smell.is-vo-constructor:App\\Subject::__construct'));
+    }
+
+    /**
+     * @return iterable<string, array{string, bool}>
+     */
+    public static function provideExposureCases(): iterable
+    {
+        yield 'hidden injected dependencies with behaviour' => [<<<'PHP'
+interface Sink { public function write(string $value): void; }
+final readonly class Subject
+{
+    public function __construct(private Sink $a, private Sink $b, private Sink $c, private Sink $d, private Sink $e, private Sink $f, private Sink $g) {}
+    public function deliver(string $value): void { $this->a->write($value); $this->g->write($value); }
+}
+PHP, false];
+        yield 'private fields read through getters' => [<<<'PHP'
+final readonly class Subject
+{
+    public function __construct(private string $table, private int $position) {}
+    public function getTable(): string { return $this->table; }
+    public function getPosition(): int { return $this->position; }
+}
+PHP, true];
+        yield 'getter declared before the constructor' => [<<<'PHP'
+final readonly class Subject
+{
+    public function table(): string { return $this->table; }
+    public function __construct(private string $table, private int $position) {}
+}
+PHP, true];
+        yield 'one public field among private ones' => [<<<'PHP'
+final readonly class Subject
+{
+    public function __construct(public string $name, private string $cache, private int $hits) {}
+}
+PHP, true];
+        yield 'readonly modifier alone reads publicly' => [<<<'PHP'
+final readonly class Subject
+{
+    public function __construct(readonly string $name, private int $hits) {}
+}
+PHP, true];
+        yield 'private set alone reads publicly' => [<<<'PHP'
+final readonly class Subject
+{
+    public function __construct(private(set) string $name) {}
+}
+PHP, true];
+        yield 'protected read with private set stays hidden' => [<<<'PHP'
+final readonly class Subject
+{
+    public function __construct(protected private(set) string $name) {}
+}
+PHP, false];
+        yield 'returned from a closure inside a method' => [<<<'PHP'
+final readonly class Subject
+{
+    public function __construct(private string $name) {}
+    public function reader(): \Closure { return function (): string { return $this->name; }; }
+}
+PHP, false];
+        yield 'an arrow function handed to a cache by a service' => [<<<'PHP'
+interface Cache { public function get(string $key, \Closure $load): object; }
+final readonly class Subject
+{
+    public function __construct(private Cache $cache, private object $loader) {}
+    public function run(string $key): object { return $this->cache->get($key, fn() => $this->loader); }
+}
+PHP, false];
+        yield 'a method return after a closure still counts' => [<<<'PHP'
+final readonly class Subject
+{
+    public function __construct(private string $name) {}
+    public function name(): string { $trim = static fn(string $v): string => trim($v); return $this->name; }
+}
+PHP, true];
+        yield 'yielded by an arrow function inside a method' => [<<<'PHP'
+final readonly class Subject
+{
+    public function __construct(private string $name) {}
+    public function reader(): \Closure { return fn(): string => $this->name; }
+}
+PHP, false];
+        yield 'a getter from a used trait is not seen' => [<<<'PHP'
+trait NameAccess { public function name(): string { return $this->name; } }
+final readonly class Subject
+{
+    use NameAccess;
+    public function __construct(private string $name) {}
+}
+PHP, false];
+        yield 'a sibling class getter does not expose this class' => [<<<'PHP'
+final readonly class Other
+{
+    public function __construct(private string $name) {}
+    public function name(): string { return $this->name; }
+}
+final readonly class Subject
+{
+    public function __construct(private string $name) {}
+}
+PHP, false];
+        yield 'a nested readonly value object does not expose its host' => [<<<'PHP'
+final readonly class Subject
+{
+    public function __construct(private string $name) {}
+    public function inner(): object { return new readonly class ('x') { public function __construct(public string $label) {} }; }
+}
+PHP, false];
+        yield 'returned only by a nested anonymous class' => [<<<'PHP'
+final readonly class Subject
+{
+    public function __construct(private string $name) {}
+    public function inner(): object { return new class { private string $name = 'x'; public function name(): string { return $this->name; } }; }
+}
+PHP, false];
+        yield 'only derived values returned' => [<<<'PHP'
+final readonly class Subject
+{
+    public function __construct(private Name $name, private string $table) {}
+    public function name(): string { return $this->name->value; }
+    public function toArray(): array { return ['table' => $this->table]; }
+}
+PHP, false];
+        yield 'a top-level closure returning a property does not disturb the class' => [<<<'PHP'
+$reader = function () { return $this->name; };
+final readonly class Subject
+{
+    public function __construct(private string $name) {}
+}
+PHP, false];
+    }
+
     #[Test]
     public function itDoesNotDetectVoConstructorForNonReadonlyClass(): void
     {
@@ -406,8 +553,8 @@ namespace App\Service;
 class UserService
 {
     public function __construct(
-        private readonly string $name,
-        private readonly int $age,
+        public readonly string $name,
+        public readonly int $age,
     ) {}
 }
 PHP;
@@ -676,8 +823,8 @@ namespace App\Service;
 class UserService
 {
     public function __construct(
-        private readonly string $name,
-        private readonly int $age,
+        public readonly string $name,
+        public readonly int $age,
     ) {}
 }
 PHP;
