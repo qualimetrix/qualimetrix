@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.28.2] - 2026-10-25
+
 ### Fixed
 
 - `code-smell.long-parameter-list` no longer gives value-object thresholds to a readonly service: a readonly class counts as a value object only when it exposes some promoted property (publicly readable, or returned by a method as `return $this->name;`). A readonly class whose injected dependencies are all private now gets the standard thresholds (4/6 by default); expect new findings on readonly services, and give an intentional one a `@qmx-threshold code-smell.long-parameter-list` ceiling.
@@ -1777,7 +1779,8 @@ Initial release.
 [0.9.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.0...v0.7.1
-[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.28.1...HEAD
+[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.28.2...HEAD
+[0.28.2]: https://github.com/qualimetrix/qualimetrix/compare/v0.28.1...v0.28.2
 [0.28.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.28.0...v0.28.1
 [0.28.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.27.0...v0.28.0
 [0.27.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.26.0...v0.27.0
