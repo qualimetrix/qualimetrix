@@ -469,6 +469,21 @@ final readonly class Subject
     public function __construct(private string $name) {}
     public function reader(): \Closure { return function (): string { return $this->name; }; }
 }
+PHP, false];
+        yield 'an arrow function handed to a cache by a service' => [<<<'PHP'
+interface Cache { public function get(string $key, \Closure $load): object; }
+final readonly class Subject
+{
+    public function __construct(private Cache $cache, private object $loader) {}
+    public function run(string $key): object { return $this->cache->get($key, fn() => $this->loader); }
+}
+PHP, false];
+        yield 'a method return after a closure still counts' => [<<<'PHP'
+final readonly class Subject
+{
+    public function __construct(private string $name) {}
+    public function name(): string { $trim = static fn(string $v): string => trim($v); return $this->name; }
+}
 PHP, true];
         yield 'yielded by an arrow function inside a method' => [<<<'PHP'
 final readonly class Subject
@@ -476,7 +491,7 @@ final readonly class Subject
     public function __construct(private string $name) {}
     public function reader(): \Closure { return fn(): string => $this->name; }
 }
-PHP, true];
+PHP, false];
         yield 'a getter from a used trait is not seen' => [<<<'PHP'
 trait NameAccess { public function name(): string { return $this->name; } }
 final readonly class Subject

@@ -685,16 +685,17 @@ data container, not a sign of poor decomposition. These constructors use separat
 2. All constructor parameters are promoted properties (carry a visibility, `readonly` or asymmetric set modifier)
 3. Constructor body is empty (no statements)
 4. The class exposes at least one of those properties: it is publicly readable (`public`, or only
-   `readonly` / `private(set)`), or a function body of the class itself — a method, or a closure or
-   arrow function inside one — returns it exactly as `return $this->name;` (`fn() => $this->name`)
+   `readonly` / `private(set)`), or a method of the class itself returns it exactly as
+   `return $this->name;`
 
 When **any** condition is not met, standard thresholds apply.
 
 The fourth criterion separates a data carrier from a readonly service. A `final readonly class` whose
 promoted properties are all private and never returned holds injected dependencies, not data, and is
 judged like any other constructor. A getter that returns a derived value (`$this->name->value`,
-`['name' => $this->name]`) does not count as exposure, and neither does a getter declared in a used
-trait, so a value object whose state is reachable only that way also gets standard thresholds. A `@qmx-threshold code-smell.long-parameter-list` on such a
+`['name' => $this->name]`) does not count as exposure; neither does a return inside a closure or arrow
+function, which is how services hand `fn() => $this->dependency` to lazy factories, nor a getter declared
+in a used trait. A value object whose state is reachable only that way also gets standard thresholds. A `@qmx-threshold code-smell.long-parameter-list` on such a
 constructor tunes the standard thresholds.
 
 ### Example

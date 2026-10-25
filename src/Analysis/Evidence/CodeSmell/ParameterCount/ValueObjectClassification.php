@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount;
 use PhpParser\Modifiers;
 use PhpParser\Node;
 use PhpParser\Node\Expr\ArrowFunction;
+use PhpParser\Node\Expr\Closure;
 use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Identifier;
@@ -20,9 +21,10 @@ use PhpParser\Node\Stmt\Return_;
  *
  * A VO constructor is a __construct in a readonly class where all parameters are promoted properties,
  * the body is empty, and the class exposes at least one of those properties: it is publicly readable,
- * or a function body of the class itself (a method, or a closure or arrow function inside one; not a
- * used trait) returns it as `return $this->name;`. A readonly class whose promoted state is all hidden
- * is a service, not a data carrier.
+ * or a method of the class itself returns it as `return $this->name;`. A return inside a closure or
+ * arrow function does not count: services hand `fn() => $this->dependency` to lazy factories and
+ * caches. Nor does a getter in a used trait, which is a class-like of its own. A readonly class whose
+ * promoted state is all hidden is a service, not a data carrier.
  */
 final class ValueObjectClassification
 {
@@ -30,7 +32,7 @@ final class ValueObjectClassification
      * One frame per open class-like. The decision waits for the class to close because the getter that
      * exposes a private promoted property may follow the constructor.
      *
-     * @var list<array{readonly: bool, candidate: ?array{key: string, exposedByVisibility: bool, promoted: array<string, true>}, returned: array<string, true>}>
+     * @var list<array{readonly: bool, candidate: ?array{key: string, exposedByVisibility: bool, promoted: array<string, true>}, returned: array<string, true>, nestedFunctions: int}>
      */
     private array $frames = [];
 
@@ -42,10 +44,10 @@ final class ValueObjectClassification
     public function enter(Node $node): void
     {
         if ($node instanceof ClassLike) {
-            $this->frames[] = ['readonly' => $node instanceof Class_ && $node->isReadonly(), 'candidate' => null, 'returned' => []];
+            $this->frames[] = ['readonly' => $node instanceof Class_ && $node->isReadonly(), 'candidate' => null, 'returned' => [], 'nestedFunctions' => 0];
+        } elseif ($node instanceof Closure || $node instanceof ArrowFunction) {
+            $this->countNestedFunction(1);
         } elseif ($node instanceof Return_) {
-            $this->recordReturnedProperty($node->expr);
-        } elseif ($node instanceof ArrowFunction) {
             $this->recordReturnedProperty($node->expr);
         }
     }
@@ -79,6 +81,9 @@ final class ValueObjectClassification
      */
     public function leave(Node $node): ?string
     {
+        if ($node instanceof Closure || $node instanceof ArrowFunction) {
+            $this->countNestedFunction(-1);
+        }
         if (!$node instanceof ClassLike) {
             return null;
         }
@@ -125,6 +130,14 @@ final class ValueObjectClassification
         return $visibility === 0 || ($visibility & Modifiers::PUBLIC) !== 0;
     }
 
+    private function countNestedFunction(int $step): void
+    {
+        $top = array_key_last($this->frames);
+        if ($top !== null) {
+            $this->frames[$top]['nestedFunctions'] += $step;
+        }
+    }
+
     /**
      * Only the exact `$this->name` as the returned expression counts. A wider reading (any property inside the
      * returned expression) was measured to re-admit services that return `new Result($this->dependency)`.
@@ -133,6 +146,7 @@ final class ValueObjectClassification
     {
         $top = array_key_last($this->frames);
         if ($top === null
+            || $this->frames[$top]['nestedFunctions'] > 0
             || !$expr instanceof PropertyFetch
             || !$expr->var instanceof Variable
             || $expr->var->name !== 'this'

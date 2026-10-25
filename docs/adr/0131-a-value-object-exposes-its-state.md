@@ -42,10 +42,12 @@ one in Doctrine DBAL); the decision rests on the application sources.
 
 A VO constructor also requires that its class exposes at least one promoted
 property: the parameter is publicly readable (read visibility `public` or
-absent, so `readonly $x` and `private(set) $x` count), or some function body
-of the same class — a method, or a closure or arrow function inside one, not
-a nested class-like — returns exactly `$this->name`. The visitor decides when
-the class closes.
+absent, so `readonly $x` and `private(set) $x` count), or a method of the
+same class — not a closure or arrow function inside it, not a nested
+class-like — contains exactly `return $this->name;`. The visitor decides when
+the class closes. Also counting returns inside closures and arrow functions
+changed one classification across all three corpora: an application
+resolver, a service, became a VO.
 
 `code-smell.constructor-overinjection` declares a `value-object-constructor`
 population gate on `code-smell.is-vo-constructor`. A VO constructor is judged
