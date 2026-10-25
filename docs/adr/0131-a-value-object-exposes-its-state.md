@@ -42,9 +42,10 @@ one in Doctrine DBAL); the decision rests on the application sources.
 
 A VO constructor also requires that its class exposes at least one promoted
 property: the parameter is publicly readable (read visibility `public` or
-absent, so `readonly $x` and `private(set) $x` count), or some function-like
-of the same class, not of a nested class-like, contains exactly
-`return $this->name;`. The visitor decides when the class closes.
+absent, so `readonly $x` and `private(set) $x` count), or some function body
+of the same class — a method, or a closure or arrow function inside one, not
+a nested class-like — returns exactly `$this->name`. The visitor decides when
+the class closes.
 
 `code-smell.constructor-overinjection` declares a `value-object-constructor`
 population gate on `code-smell.is-vo-constructor`. A VO constructor is judged
@@ -55,8 +56,10 @@ sharpened.
 
 ## Consequences
 
-- A VO reachable only through derived getters or `toArray()` gets the standard
-  thresholds: more findings, never fewer. Measured at four or more parameters,
+- A VO reachable only through derived getters, `toArray()` or getters of a
+  used trait gets the standard thresholds: more findings, never fewer. A trait
+  is a separate declaration the single per-file pass cannot attribute to its
+  users. Measured at four or more parameters,
   that population is empty in all three corpora.
 - A readonly service that also returns one dependency from a getter stays a
   VO. Measured at four or more parameters, the service-named population of
