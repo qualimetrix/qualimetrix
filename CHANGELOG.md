@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `code-smell.long-parameter-list` no longer gives value-object thresholds to a readonly service: a readonly class counts as a value object only when it exposes some promoted property (publicly readable, or returned by a method as `return $this->name;`). A readonly class whose injected dependencies are all private now gets the standard thresholds.
+- `code-smell.constructor-overinjection` no longer judges value-object constructors, whose parameters are fields rather than injected dependencies; `code-smell.long-parameter-list` judges them, and the JSON report lists them under `abstentions` with the gate `value-object-constructor`.
+
 ## [0.28.1] - 2026-10-25
 
 ### Fixed
