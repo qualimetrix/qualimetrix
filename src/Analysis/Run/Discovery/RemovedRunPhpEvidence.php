@@ -42,7 +42,7 @@ final readonly class RemovedRunPhpEvidence
             EntryKind::RegularFile => $this->file($path),
             EntryKind::Directory, EntryKind::DirectoryLink => $this->directory($path, $settled),
             EntryKind::StatFailed => $this->unlistable(),
-            default => null,
+            default => $this->nonRegular($path),
         };
     }
 
@@ -71,12 +71,25 @@ final readonly class RemovedRunPhpEvidence
             $child = AbsolutePath::fromString($path->value() . '/' . $name);
             $this->survey->visit();
             $childKind = $this->inspector->inspect($child->value());
-            if ($childKind !== EntryKind::DirectoryLink) {
+            if ($childKind === EntryKind::DirectoryLink) {
+                // The walk records a traversed directory link as a skipped entry; its code is neither analysed nor read here.
+                $this->survey->close();
+            } else {
                 $evidence = self::stronger($evidence, $this->descend($child, $childKind, $settled));
             }
         }
 
         return $evidence;
+    }
+
+    /** The walk records a non-regular PHP entry as a skipped entry and ignores any other, so only the former hides namespaces. */
+    private function nonRegular(AbsolutePath $path): null
+    {
+        if (str_ends_with($path->value(), '.php')) {
+            $this->survey->close();
+        }
+
+        return null;
     }
 
     private function unlistable(): string

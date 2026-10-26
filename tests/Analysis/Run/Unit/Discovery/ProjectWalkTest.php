@@ -959,20 +959,51 @@ final class ProjectWalkTest extends TestCase
         self::assertTrue($removed->mayDeclare('Unrelated'));
     }
 
-    #[Test]
-    public function itNeitherFollowsDirectoryLinksNorReadsFileLinksInsideARemovedDirectory(): void
+    /** @return iterable<string, array{string, bool}> */
+    public static function provideLinksInsideARemovedDirectory(): iterable
     {
-        mkdir($this->root . '/src/Linked');
-        file_put_contents($this->root . '/src/Linked/L.php', '<?php namespace ViaDirectoryLink;');
-        file_put_contents($this->root . '/src/Target.php', '<?php namespace ViaFileLink;');
-        symlink($this->root . '/src/Linked', $this->root . '/src/Legacy/DirLink');
-        symlink($this->root . '/src/Target.php', $this->root . '/src/Legacy/FileLink.php');
+        yield 'php file link' => ['FileLink.php', false];
+        yield 'directory link' => ['DirLink', true];
+    }
+
+    /** The walk would record either link as a skipped entry, so excluding it must not let its namespaces be judged. */
+    #[Test]
+    #[DataProvider('provideLinksInsideARemovedDirectory')]
+    public function itMakesRemovedNamespacesUnknownForALinkInsideARemovedDirectory(string $link, bool $directory): void
+    {
+        mkdir($this->root . '/elsewhere/Linked', 0o777, true);
+        file_put_contents($this->root . '/elsewhere/Linked/L.php', '<?php namespace App\\Linked;');
+        symlink($this->root . '/elsewhere/Linked' . ($directory ? '' : '/L.php'), $this->root . '/src/Legacy/' . $link);
+        $selectors = [$this->selector(SelectorKind::Subtree, 'src/Legacy', ConfigurationSource::ConfigFile)];
+        [$walked, $removed] = $this->walkSurveying([$this->root . '/src'], $selectors);
+        [$closed] = $this->walkSurveying([$this->root . '/src'], $selectors, new RemovedNamespaceSurvey(0, 0, 0));
+
+        self::assertFalse($removed->isKnown());
+        self::assertEquals($closed->verdicts, $walked->verdicts);
+        self::assertSame('php-file', $walked->verdicts[0]->phpEvidence);
+    }
+
+    #[Test]
+    public function itIgnoresANonPhpFileLinkInsideARemovedDirectoryAsTheWalkDoes(): void
+    {
+        file_put_contents($this->root . '/src/Target.txt', 'namespace ViaFileLink;');
+        symlink($this->root . '/src/Target.txt', $this->root . '/src/Legacy/notes.txt');
         [, $removed] = $this->walkSurveying([$this->root . '/src'], [$this->selector(SelectorKind::Subtree, 'src/Legacy', ConfigurationSource::ConfigFile)]);
 
         self::assertTrue($removed->isKnown());
-        self::assertFalse($removed->mayDeclare('ViaDirectoryLink'));
         self::assertFalse($removed->mayDeclare('ViaFileLink'));
         self::assertTrue($removed->mayDeclare(''), 'the real file still declares global code');
+    }
+
+    #[Test]
+    public function itJudgesNoNamespaceLiteralALinkedFileInsideAnExcludedTreeMayDeclare(): void
+    {
+        mkdir($this->root . '/elsewhere');
+        file_put_contents($this->root . '/elsewhere/L.php', '<?php namespace App\\Linked;');
+        symlink($this->root . '/elsewhere/L.php', $this->root . '/src/Legacy/Link.php');
+        $judgement = $this->judgement([$this->root . '/src'], [$this->selector(SelectorKind::Subtree, 'src/Legacy', ConfigurationSource::ConfigFile)]);
+
+        self::assertFalse($judgement->judgesExactNamespace('App\\Linked'));
     }
 
     #[Test]
