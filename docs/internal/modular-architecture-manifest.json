@@ -1789,6 +1789,69 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Configuration\\EditorSchema\\DefinitionPool": {
+      "path": "src/Analysis/Configuration/EditorSchema/DefinitionPool.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\EditorSchema\\EditorSchemaJson": {
+      "path": "src/Analysis/Configuration/EditorSchema/EditorSchemaJson.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\EditorSchema\\EditorSchemaProjection": {
+      "path": "src/Analysis/Configuration/EditorSchema/EditorSchemaProjection.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\EditorSchema\\NodeProjection": {
+      "path": "src/Analysis/Configuration/EditorSchema/NodeProjection.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\EditorSchema\\NullAdmission": {
+      "path": "src/Analysis/Configuration/EditorSchema/NullAdmission.php",
+      "kind": "enum",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\EditorSchema\\PooledNode": {
+      "path": "src/Analysis/Configuration/EditorSchema/PooledNode.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\EditorSchema\\PortableRegex": {
+      "path": "src/Analysis/Configuration/EditorSchema/PortableRegex.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\EditorSchema\\ScalarProjection": {
+      "path": "src/Analysis/Configuration/EditorSchema/ScalarProjection.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\EditorSchema\\ShorthandProjection": {
+      "path": "src/Analysis/Configuration/EditorSchema/ShorthandProjection.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Configuration\\Loader\\CommandLineLayer": {
       "path": "src/Analysis/Configuration/Loader/CommandLineLayer.php",
       "kind": "class",
