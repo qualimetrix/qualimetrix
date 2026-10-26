@@ -1212,9 +1212,9 @@ final class LegacyAdminController
 rules:
   architecture.layer-violation:
     suppress_namespaces:
-      - App\Legacy
+      - subtree: App\Legacy
     suppress_paths:
-      - src/Legacy
+      - subtree: src/Legacy
 ```
 
 Фреймворк (`RuleOptionsBuild`) извлекает `suppress_namespaces` / `suppress_paths` для любого producer до построения его Options. Такие per-rule исключения учитываются и показываются как исключения других правил; см. [«Видимость»](../getting-started/configuration.ru.md#правила-rules).

@@ -615,10 +615,10 @@ Configure framework namespace prefixes for the CBO (Coupling Between Objects) me
 ```yaml
 coupling:
   framework-namespaces:
-    - Symfony
-    - Doctrine
-    - Psr
-    - Illuminate
+    - subtree: Symfony
+    - subtree: Doctrine
+    - subtree: Psr
+    - subtree: Illuminate
 ```
 
 When no `framework-namespaces` are configured, `coupling.cbo-app` equals `coupling.cbo` (no effect).
@@ -1728,14 +1728,14 @@ rules:
 
 An **element of a list** is the one place this does not apply, and for a reason:
 an element is a value, not a key that was left unwritten, so there is nothing for
-it to mean. A `~` element is refused in every list outside `rules:`, with its
-index, and in the `rules:` lists declared to hold non-empty strings:
+it to mean. A `~` element is refused, with its index, in every list outside
+`rules:` and in every list a rule's options declare:
 
 ```yaml
 rules:
   complexity.ccn:
     suppress_namespaces:
-      - App\Legacy
+      - subtree: App\Legacy
       - ~              # refused: exit 3
 ```
 

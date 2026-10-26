@@ -623,10 +623,10 @@ Qualimetrix определяет неймспейсы проекта по `compo
 ```yaml
 coupling:
   framework-namespaces:
-    - Symfony
-    - Doctrine
-    - Psr
-    - Illuminate
+    - subtree: Symfony
+    - subtree: Doctrine
+    - subtree: Psr
+    - subtree: Illuminate
 ```
 
 Если `framework-namespaces` не указаны, `coupling.cbo-app` равен `coupling.cbo` (без эффекта).
@@ -1743,13 +1743,13 @@ rules:
 **Элемент списка** — единственное место, где это не действует, и по причине:
 элемент является значением, а не оставленным без значения ключом, поэтому
 означать ему нечего. Элемент `~` отклоняется с его индексом в любом списке вне
-`rules:`, а в `rules:` — в списках, объявленных как списки непустых строк:
+`rules:` и в любом списке, который объявляют опции правила:
 
 ```yaml
 rules:
   complexity.ccn:
     suppress_namespaces:
-      - App\Legacy
+      - subtree: App\Legacy
       - ~              # отказ: exit 3
 ```
 
