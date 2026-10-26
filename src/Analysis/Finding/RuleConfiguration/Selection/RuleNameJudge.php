@@ -20,9 +20,12 @@ final readonly class RuleNameJudge
 
     public function judge(string $written): ?RefusedName
     {
-        if (\in_array($written, $this->producers, true)) {
-            return null;
-        }
+        return \in_array($written, $this->producers, true) ? null : $this->refusalFor($written);
+    }
+
+    /** The refusal of a name that is not a registered producer. */
+    public function refusalFor(string $written): RefusedName
+    {
         $summary = \sprintf('Rule option owner "%s" does not match any registered producer rule.', $written);
         $replacement = RetiredRuleNames::replacementFor($written) ?? $this->closestTo($written);
         if ($replacement !== null) {

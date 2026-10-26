@@ -35,12 +35,13 @@ final readonly class RulesSection implements DocumentSectionSchemaInterface
         }
         $entries = [];
         foreach ($this->execution->allRules() as $producer) {
-            $entries[$producer->name] = (new RuleOptionDocumentForms())->schema(RuleOptionSurface::of($producer->optionsClass));
+            $entries[$producer->name] = (new RuleOptionDocumentForms())->schema(RuleOptionSurface::of($producer->optionsClass))
+                ->describedAs($producer->description);
         }
         $judge = new RuleNameJudge(array_keys($entries));
         return new SectionDeclaration('rules', NodeSchema::namedMapOf(
             static fn(string $name): ?NodeSchema => $entries[$name] ?? null,
-            NameVocabulary::predicate($judge->judge(...)),
+            NameVocabulary::closed(array_keys($entries), $judge->refusalFor(...)),
         ));
     }
 }

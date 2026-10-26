@@ -21,6 +21,16 @@ use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 final class RuleNameJudgeTest extends TestCase
 {
     #[Test]
+    public function itWordsTheRefusalOfAnUnregisteredProducerAsJudgeDoes(): void
+    {
+        $judge = new RuleNameJudge(['complexity.ccn', 'size.loc']);
+        self::assertNull($judge->judge('size.loc'));
+        $refusal = $judge->refusalFor('complexity.CCN');
+        self::assertEquals($judge->judge('complexity.CCN'), $refusal);
+        self::assertSame('Rule option owner "complexity.CCN" does not match any registered producer rule. Did you mean "complexity.ccn"?', $refusal->summary);
+    }
+
+    #[Test]
     public function itDistinguishesTheComputedProducerFromItsDeclaredDescendants(): void
     {
         $empty = self::universe();
