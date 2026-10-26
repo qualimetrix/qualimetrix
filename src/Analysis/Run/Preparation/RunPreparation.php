@@ -46,7 +46,6 @@ final class RunPreparation
     private readonly DependencyGraphBuilderInterface $graphBuilder;
 
     /**
-     * @qmx-threshold code-smell.long-parameter-list 12 -- Preparation participants must share this run and its measured context; report and audit publication are owned by the outer pipeline.
      * @qmx-threshold code-smell.constructor-overinjection 12 -- Preparation participants must share this run and its measured context; report and audit publication are owned by the outer pipeline.
      */
     public function __construct(

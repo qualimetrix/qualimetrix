@@ -64,7 +64,6 @@ final readonly class MembershipSpec
      * @throws InvalidArgumentException If every criterion list is empty or any
      *                                  entry is a non-string / empty-string.
      *
-      * @qmx-threshold code-smell.long-parameter-list 10 -- All authored criterion lists and their matching mode form one membership predicate; separate carriers would divide its validation boundary.
       * @qmx-threshold code-smell.constructor-overinjection 10 -- All authored criterion lists and their matching mode form one membership predicate; separate carriers would divide its validation boundary.
      */
     public function __construct(

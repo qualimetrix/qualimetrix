@@ -23,7 +23,6 @@ final readonly class CallableWithMetrics
 {
     /**
      * @qmx-threshold code-smell.constructor-overinjection warning=10 error=10 -- Typed declaration metadata and collected payload are retained together; lexical context is independent of exact named-class ownership.
-     * @qmx-threshold code-smell.long-parameter-list warning=10 error=10 -- Typed declaration metadata and collected payload are retained together; lexical context is independent of exact named-class ownership.
      */
     public function __construct(
         public DeclarationPath $declarationPath,

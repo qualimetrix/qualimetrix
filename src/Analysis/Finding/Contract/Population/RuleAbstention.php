@@ -14,7 +14,6 @@ final readonly class RuleAbstention
      * @param list<string> $examples
      *
      * @qmx-threshold code-smell.constructor-overinjection warning=10 error=10 -- Independent immutable observations describe one compact abstention group. Splitting them would relocate the same transport record; the exclusive boundary keeps the next field visible.
-     * @qmx-threshold code-smell.long-parameter-list warning=10 error=10 -- Independent immutable observations describe one compact abstention group. Splitting them would relocate the same transport record; the exclusive boundary keeps the next field visible.
      */
     public function __construct(
         public string $producer,

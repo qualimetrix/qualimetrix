@@ -94,7 +94,6 @@ final readonly class ChannelDeclaration
      * @param array<SymbolLevel> $levels non-empty, in any order; both factories
      *                                   guarantee non-emptiness by arity
      *
-      * @qmx-threshold code-smell.long-parameter-list 10 -- Population gates, admitted levels and judgement direction declare one channel contract and are validated as one rule-language statement.
       * @qmx-threshold code-smell.constructor-overinjection 10 -- Population gates, admitted levels and judgement direction declare one channel contract and are validated as one rule-language statement.
      */
     private function __construct(

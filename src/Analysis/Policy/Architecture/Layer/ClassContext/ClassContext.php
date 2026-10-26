@@ -126,7 +126,6 @@ final readonly class ClassContext
      *
      * @qmx-ignore code-smell.boolean-argument -- declarationAnalysed is a measured completeness fact in this immutable context, not a behavior option.
      *
-      * @qmx-threshold code-smell.long-parameter-list 11 -- Names, ancestry and attributes describe one declaration for all membership criteria; splitting those facts would duplicate declaration identity.
       * @qmx-threshold code-smell.constructor-overinjection 11 -- Names, ancestry and attributes describe one declaration for all membership criteria; splitting those facts would duplicate declaration identity.
      */
     public function __construct(
