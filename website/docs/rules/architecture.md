@@ -112,7 +112,7 @@ rules:
 `ignoreRelations` takes the same tokens as layer `relations:` — a dependency kind (`attribute_argument`, `new`, ...) or an alias (`inheritance`, `static_access`, `type_reference`, `runtime_check`). Edges of the listed kinds are left out when cycles are searched. The YAML keys `ignore_relations` and `ignore-relations` are accepted as well; on the command line:
 
 ```bash
-vendor/bin/qmx check src/ --rule-opt=architecture.circular-dependency:ignore-relations=[attribute_argument]
+vendor/bin/qmx check src/ --rule-opt='architecture.circular-dependency:ignore-relations=[attribute_argument]'
 ```
 
 The typical use is an entity that names its repository in an attribute (`#[ORM\Entity(repositoryClass: UserRepository::class)]`) while the repository depends on the entity: that loop is a mapping, not runtime coupling, and `attribute_argument` removes it from the cycle report.

@@ -112,7 +112,7 @@ rules:
 `ignoreRelations` принимает те же токены, что и `relations:` слоёв: вид зависимости (`attribute_argument`, `new`, ...) или алиас (`inheritance`, `static_access`, `type_reference`, `runtime_check`). Рёбра перечисленных видов не участвуют в поиске циклов. Ключи YAML `ignore_relations` и `ignore-relations` тоже принимаются; в командной строке:
 
 ```bash
-vendor/bin/qmx check src/ --rule-opt=architecture.circular-dependency:ignore-relations=[attribute_argument]
+vendor/bin/qmx check src/ --rule-opt='architecture.circular-dependency:ignore-relations=[attribute_argument]'
 ```
 
 Типичный случай: сущность называет свой репозиторий в атрибуте (`#[ORM\Entity(repositoryClass: UserRepository::class)]`), а репозиторий зависит от сущности. Такая петля — маппинг, а не связанность времени выполнения, и `attribute_argument` убирает её из отчёта о циклах.

@@ -22,8 +22,10 @@ signature and body of a closure or arrow function there (PHP 8.5) — has the
 kind `attribute_argument` (description "uses in attribute argument"). The
 attribute's own name keeps `attribute`, an anonymous class's `extends`,
 `implements` and `trait_use` keep theirs, and type edges inside arguments carry
-no `shape`. `DependencyVisitor` keeps a depth counter of attributes entered,
-and `DependencyRecorder` reads it when it records, so no handler knows the kind.
+no `shape`. `DependencyVisitor` keeps a depth counter of attributes entered and raises a
+per-dispatch flag around each handler call while the counter is positive;
+`DependencyRecorder` reads only that flag when it records, so no handler knows
+the kind.
 
 **Vocabulary.** `attribute_argument` is a standalone `relations:` token and
 joins no alias. The aliases and token parsing moved to

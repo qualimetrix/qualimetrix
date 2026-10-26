@@ -12,13 +12,16 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyRelationTok
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 
 /**
- * Split off from `DependencyRelationTokensTest` (which keeps the hand-picked
- * alias/token cases): every existing {@see DependencyType} case must
+ * Originally split from the Policy-owned `AllowAliasExpanderTest`; the
+ * hand-picked alias/token cases live in `DependencyRelationTokensTest`. Every existing {@see DependencyType} case must
  * round-trip through the expander unchanged. This is the mechanism that
  * keeps the user-facing surface in sync with the collector: when a new case
  * is added to the enum, this data-provider grows automatically and the test
  * will fail loudly if the expander accidentally hard-codes the accepted
  * list instead of consulting {@see DependencyType::cases()}.
+ *
+ * The group still fits: it guards the `relations:` vocabulary, whichever
+ * module owns the class that implements it.
  */
 #[CoversClass(DependencyRelationTokens::class)]
 final class DependencyTypeAliasCensusTest extends TestCase

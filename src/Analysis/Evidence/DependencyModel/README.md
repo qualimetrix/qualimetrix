@@ -24,6 +24,7 @@ DependencyModel/
 │   ├── DependencyGraphBuilderInterface.php
 │   ├── DependencyGraphInterface.php
 │   ├── DependencyLocationInterface.php
+│   ├── DependencyRelationTokens.php
 │   ├── DependencyTraversalParticipantInterface.php
 │   ├── DependencyType.php
 │   ├── ExternalClassSpellingInterface.php
@@ -103,6 +104,11 @@ named declaration, and brackets each handler dispatch with that state, so no
 handler knows the kind. Coupling counts distinct targets, so the kind moves no
 coupling value; it does move layer `relations:` matching, layer-violation
 identity and graph-export `types`.
+
+`DependencyRelationTokens` owns the vocabulary users write to name dependency
+kinds in `relations:` and `ignore-relations`: every `DependencyType` value plus
+the aliases `inheritance`, `static_access`, `type_reference` and
+`runtime_check`. `attribute` and `attribute_argument` belong to no alias.
 
 `ClassCouplings` carries each class's outgoing occurrences, incoming occurrences,
 Ce and Ca in one canonical-key row. The graph builds that row from the supplied
@@ -246,8 +252,8 @@ The module owns these Unit test classes under
 
 - `DependencyTest`, `DependencyGraphTest`, `DependencyGraphBuilderTest`,
   `NamespaceCouplingsTest`, and `StringSetTest` at the root
-- `AttributeSiteTest`, `ClassLikeDeclarationTest`, and `TypeShapeTest` in
-  `Contract/`
+- `AttributeSiteTest`, `ClassLikeDeclarationTest`, `DependencyRelationTokensTest`,
+  and `TypeShapeTest` in `Contract/`
 - `DependencyResolverTest`, `DependencyVisitorTest`, and
   `DuplicateDeclarationEdgeSourceTest` in `Extraction/`
 - `TypeDependencyHelperTest` in `Extraction/Handler/`
