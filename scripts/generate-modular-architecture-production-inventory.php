@@ -2510,6 +2510,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0132-removed-code-namespaces-narrow-the-suppression-namespace-audit.md' => 'Analysis.Run',
         'docs/adr/0133-attribute-argument-edges-are-their-own-kind.md' => 'Analysis.Evidence.DependencyModel',
         'docs/adr/0134-namespace-instability-judges-its-own-declarations.md' => 'Analysis.Evidence.Coupling',
+        'docs/adr/0135-a-constructor-has-one-parameter-count-owner.md' => 'Analysis.Evidence.CodeSmell',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/ProjectManifest/README.md' => 'Analysis.ProjectManifest',

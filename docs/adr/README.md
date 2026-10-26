@@ -183,6 +183,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0132 — Removed Code's Namespaces Narrow the Suppression Namespace Audit](0132-removed-code-namespaces-narrow-the-suppression-namespace-audit.md) — literal namespace suppression selectors are judged against the namespaces excluded and generated code declares, within bounded read limits; supplements ADR 0093.
 - [0133 — References in Attribute Arguments Are Their Own Edge Kind](0133-attribute-argument-edges-are-their-own-kind.md) — `attribute_argument` is a standalone relations kind outside every alias, the vocabulary lives in DependencyModel, and `architecture.circular-dependency` gains `ignore-relations`; answers ADR 0071.
 - [0134 — Namespace Instability Judges Its Own Declarations](0134-namespace-instability-judges-its-own-declarations.md) — namespace `coupling.instability` judges `coupling.instability-own` over the namespace's own types (`min_type_count`, as distance); the own value is absent without a declared type; the Martin diagram and `health.coupling` stay on the subtree; supplements ADR 0080.
+- [0135 — A Constructor Has One Parameter-Count Owner](0135-a-constructor-has-one-parameter-count-owner.md) — a value-object constructor belongs to `long-parameter-list`, any other constructor to `constructor-overinjection`; the shared `code-smell.is-injection-constructor` flag drives `long-parameter-list`'s abstention; supplements ADR 0131.
 
 ## Superseded history
 
