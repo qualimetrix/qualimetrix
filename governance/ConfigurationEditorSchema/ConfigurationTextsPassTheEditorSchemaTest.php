@@ -28,8 +28,9 @@ require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
  * receive, not a projection made in this process.
  *
  * Only a text the engine accepts is judged: the schema promises nothing about
- * one the engine refuses. Website blocks the engine refuses are outside that
- * promise; most of them are outdated examples, not deliberate ones.
+ * one the engine refuses. A website block the engine refuses must be one the
+ * page shows refusing on purpose, for the listed reason: a contract change
+ * otherwise leaves copied examples failing with exit 3 under a green build.
  */
 final class ConfigurationTextsPassTheEditorSchemaTest extends TestCase
 {
@@ -42,10 +43,20 @@ final class ConfigurationTextsPassTheEditorSchemaTest extends TestCase
         'src/Analysis/Configuration/Preset/strict.yaml',
     ];
 
+    /**
+     * Website blocks shown refusing on purpose: per page, one fragment of the
+     * refusal each such block must produce. Keyed by reason, not line, so an
+     * edit above a block does not move it.
+     */
+    private const array INTENDED_REFUSALS = [
+        'website/docs/getting-started/configuration.md' => ['writes both "threshold" and "warning"', 'is null (`~`)'],
+        'website/docs/getting-started/configuration.ru.md' => ['writes both "threshold" and "warning"', 'is null (`~`)'],
+    ];
+
     /** Measured when the control was added; a selection that silently narrows falls below them. */
     private const int MINIMUM_ACCEPTED_FILES = 57;
 
-    private const int MINIMUM_ACCEPTED_BLOCKS = 234;
+    private const int MINIMUM_ACCEPTED_BLOCKS = 242;
 
     private const string BUILT_IN_PRESETS = 'src/Analysis/Configuration/Preset/';
 
@@ -54,6 +65,9 @@ final class ConfigurationTextsPassTheEditorSchemaTest extends TestCase
 
     /** @var array{files: array<string, string>, blocks: array<string, string>}|null */
     private static ?array $accepted = null;
+
+    /** @var array<string, array<string, string>> refusal message by block source, per page */
+    private static array $refusedBlocks = [];
 
     #[Test]
     public function itPassesEveryTextTheEngineAccepts(): void
@@ -72,6 +86,36 @@ final class ConfigurationTextsPassTheEditorSchemaTest extends TestCase
         }
 
         self::assertSame([], $offenders, 'The editor schema refuses configuration the engine accepts.');
+    }
+
+    #[Test]
+    public function itRefusesNoWebsiteBlockButTheIntendedOnes(): void
+    {
+        self::accepted();
+
+        $unintended = [];
+        $unproduced = [];
+        foreach (array_keys(self::$refusedBlocks + self::INTENDED_REFUSALS) as $page) {
+            $expected = self::INTENDED_REFUSALS[$page] ?? [];
+            foreach (self::$refusedBlocks[$page] ?? [] as $source => $message) {
+                $match = array_find_key($expected, static fn(string $fragment): bool => str_contains($message, $fragment));
+                if ($match === null) {
+                    $unintended[$source] = $message;
+                } else {
+                    unset($expected[$match]);
+                }
+            }
+
+            foreach ($expected as $fragment) {
+                $unproduced[] = $page . ': ' . $fragment;
+            }
+        }
+
+        self::assertSame(
+            ['refused but not listed' => [], 'listed but not produced' => []],
+            ['refused but not listed' => $unintended, 'listed but not produced' => $unproduced],
+            'Website examples the engine refuses must be exactly the listed intended refusals.',
+        );
     }
 
     #[Test]
@@ -98,8 +142,11 @@ final class ConfigurationTextsPassTheEditorSchemaTest extends TestCase
         $accepted = ['files' => [], 'blocks' => []];
         foreach (['files' => self::files($tracked), 'blocks' => self::blocks($tracked)] as $kind => $texts) {
             foreach ($texts as $source => $text) {
-                if (EngineReading::refusal($text) === null) {
+                $refusal = EngineReading::refusal($text);
+                if ($refusal === null) {
                     $accepted[$kind][$source] = $text;
+                } elseif ($kind === 'blocks') {
+                    self::$refusedBlocks[explode(':', $source)[0]][$source] = $refusal->getMessage();
                 }
             }
         }
