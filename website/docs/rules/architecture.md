@@ -1203,9 +1203,9 @@ To suppress a layer violation, address the exact channel: `@qmx-ignore architect
 rules:
   architecture.layer-violation:
     suppress_namespaces:
-      - App\Legacy
+      - subtree: App\Legacy
     suppress_paths:
-      - src/Legacy
+      - subtree: src/Legacy
 ```
 
 The framework (`RuleOptionsBuild`) extracts `suppress_namespaces` / `suppress_paths` for any producer before building its Options. Per-rule exclusions are counted and reported like those of other rules; see [Visibility](../getting-started/configuration.md#rules).

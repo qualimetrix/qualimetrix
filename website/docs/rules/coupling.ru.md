@@ -128,7 +128,7 @@ Qualimetrix реализует **двунаправленную связанно
 rules:
   coupling.cbo:
     suppress_namespaces:
-      - App\Core\ValueObject
+      - subtree: App\Core\ValueObject
     scope: application  # 'all' (по умолчанию) или 'application' (использует CBO_APP)
     class:
       warning: 18
@@ -506,7 +506,7 @@ class DailyReportJob
 rules:
   coupling.instability:
     suppress_namespaces:
-      - App\Core\ValueObject
+      - subtree: App\Core\ValueObject
     class:
       max_warning: 0.9
       max_error: 1.0
