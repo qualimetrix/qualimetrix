@@ -26,7 +26,11 @@ use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReason;
  * claims were judged. Namespace absence (Q1) closes for missing paths,
  * unknown universe, generated files or excluded PHP; exclude selectors (Q2)
  * close only for missing paths or unknown universe. Excluded and generated
- * code cannot by themselves close Q2.
+ * code cannot by themselves close Q2. Generated files and excluded PHP close
+ * Q1 for every namespace-claim channel except `suppression.unmatched-namespace`,
+ * which names itself unjudged only when none of its configured values was
+ * judged: a literal selector the removed code cannot have declared still is.
+ * A caller that computes no values names the channel unjudged.
  *
  * **A run can judge one configured value while withholding another in the
  * same channel.** A literal path under removed code or a namespace with no
@@ -89,7 +93,15 @@ final readonly class ReportProjectScope
         $judgement = $measurement->judgement();
         $withheld = [];
         if (!$judgement->judgesNamespaceClaims()) {
-            $withheld = ProjectScopeChannels::NAMESPACE_CLAIM_CHANNELS;
+            foreach (ProjectScopeChannels::NAMESPACE_CLAIM_CHANNELS as $channel) {
+                // Only this channel narrows to its literal values under removed
+                // code; a caller that computed no values has no evidence of a
+                // judged one and so still names it.
+                if ($channel === ProjectScopeChannels::UNMATCHED_NAMESPACE_SUPPRESSION && \in_array($channel, $judgedValueChannels, true)) {
+                    continue;
+                }
+                $withheld[] = $channel;
+            }
         }
         foreach ($unjudgedValues as $value) {
             if (!\in_array($value['channel'], $judgedValueChannels, true)) {

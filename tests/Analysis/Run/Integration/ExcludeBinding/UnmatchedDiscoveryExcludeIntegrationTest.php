@@ -357,7 +357,7 @@ final class UnmatchedDiscoveryExcludeIntegrationTest extends TestCase
         $findings = $this->findingsOnChannel($tester);
         self::assertCount(1, $findings);
         self::assertStringContainsString('NoSuchPath', $findings[0]['message']);
-        self::assertContains('suppression.unmatched-namespace', $payload['projectScope']['unjudgedChannels']);
+        self::assertNotContains('suppression.unmatched-namespace', $payload['projectScope']['unjudgedChannels']);
         self::assertContains(
             ['channel' => 'suppression.unmatched-namespace', 'option' => 'suppress_namespaces', 'pattern' => 'subtree:Sample\\Legacy'],
             $payload['projectScope']['unjudgedValues'],

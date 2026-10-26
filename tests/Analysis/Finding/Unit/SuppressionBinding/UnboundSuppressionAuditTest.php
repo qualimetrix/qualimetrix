@@ -35,6 +35,24 @@ use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
 #[CoversClass(UnboundSuppressionAudit::class)]
 final class UnboundSuppressionAuditTest extends TestCase
 {
+    /** @return iterable<string, array{array{channel: string, option: string, pattern: string}, bool}> */
+    public static function provideValues(): iterable
+    {
+        yield 'global namespace' => [['channel' => 'suppression.unmatched-namespace', 'option' => 'suppress_namespaces', 'pattern' => 'exact:A'], true];
+        yield 'ledger namespace' => [['channel' => 'suppression.unmatched-rule-ledger', 'option' => 'rules.complexity.ccn.suppress_namespaces', 'pattern' => 'exact:A'], true];
+        yield 'ledger namespace channel' => [['channel' => 'suppression.unmatched-rule-ledger', 'option' => 'rules.complexity.ccn.suppress_namespace_channels.x', 'pattern' => 'exact:A'], true];
+        yield 'ledger path' => [['channel' => 'suppression.unmatched-rule-ledger', 'option' => 'rules.complexity.ccn.suppress_paths', 'pattern' => 'exact:a'], false];
+        yield 'global path' => [['channel' => 'suppression.unmatched-path', 'option' => 'suppress_paths', 'pattern' => 'exact:a'], false];
+    }
+
+    /** @param array{channel: string, option: string, pattern: string} $value */
+    #[Test]
+    #[\PHPUnit\Framework\Attributes\DataProvider('provideValues')]
+    public function itTellsNamespaceValuesFromPathValues(array $value, bool $expected): void
+    {
+        self::assertSame($expected, UnboundSuppressionAudit::isNamespaceValue($value));
+    }
+
     /**
      * A run that built no namespace tree has no universe to judge namespaces
      * against, and "no universe" is not "nothing bound": reporting every

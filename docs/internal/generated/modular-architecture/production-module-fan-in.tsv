@@ -161,7 +161,7 @@ Qualimetrix\Analysis\Finding\Contract\Population\RuleAbstention	Analysis.Finding
 Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorOutcome	Analysis.Finding	3	2
 Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorVerdict	Analysis.Finding	3	1
 Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels	Analysis.Finding	3	3
-Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor	Analysis.Finding	1	1
+Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement	Analysis.Finding	8	2
 Qualimetrix\Analysis\Finding\Contract\ProjectScope\RemovedCodeNamespaces	Analysis.Finding	6	1
 Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts	Analysis.Finding	9	3

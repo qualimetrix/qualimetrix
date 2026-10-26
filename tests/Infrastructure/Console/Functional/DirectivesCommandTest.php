@@ -1084,6 +1084,22 @@ final class DirectivesCommandTest extends TestCase
         self::assertStringNotContainsString('every named path', $payload['scope']['note']);
     }
 
+    /** The audit computes no configured values, so it cannot claim the judgement `check` makes under an exclude. */
+    #[Test]
+    public function itKeepsNamingTheNamespaceChannelUnjudgedUnderAnExclude(): void
+    {
+        $this->writeSource('Kept.php', "<?php\nnamespace Fixture;\nclass Kept {}\n");
+        $this->writeSource('Removed.php', "<?php\nnamespace Fixture\\Removed;\nclass Removed {}\n");
+        file_put_contents($this->tempDir . '/composer.json', '{"autoload":{"psr-4":{"Fixture\\\\":"src/"}}}');
+        $config = $this->writeConfig("exclude: [{exact: src/Removed.php}]\nsuppress_namespaces: [{exact: 'Fixture\\Gone'}]\n");
+
+        $tester = $this->audit(['paths' => [$this->tempDir . '/src'], '--config' => $config, '--format' => 'json']);
+        $payload = self::decode($tester->getDisplay());
+
+        self::assertContains('suppression.unmatched-namespace', $payload['scope']['project_scope']['unjudgedChannels']);
+        self::assertSame([], $payload['scope']['project_scope']['unjudgedValues']);
+    }
+
     /** A run that measured nothing has no standing to call a tree clean. */
     #[Test]
     public function itRefusesAScopeThatAnalysedNoFiles(): void

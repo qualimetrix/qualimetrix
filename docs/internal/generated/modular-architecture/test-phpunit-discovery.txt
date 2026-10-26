@@ -7731,6 +7731,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itReplacesTheTypedSuppressionUniverseBetweenInvocations
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itStaysSilentOnAChannelSuppressionPatternThatBinds
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itStillNamesAnAnchoredNamespaceValueOnThatSameRun
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itTellsNamespaceValuesFromPathValues"global namespace"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itTellsNamespaceValuesFromPathValues"global path"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itTellsNamespaceValuesFromPathValues"ledger namespace channel"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itTellsNamespaceValuesFromPathValues"ledger namespace"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itTellsNamespaceValuesFromPathValues"ledger path"
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itAnchorsAValueOnACharacterOnlyTheJudgeUsedToCallAGlob
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itAnswersTheSameForRegexPathValue
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itJudgesALiteralNamespaceTheRemovedCodeCannotHaveDeclared
@@ -11470,6 +11475,13 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Baseline\BaselineGenerateProjectScopeFlagsTest::itConsumesSharedRuntimeFlagsAtEveryMeasuringBaselineCommand"update"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Baseline\BaselineGenerateProjectScopeFlagsTest::itLeavesTestCodeOutOfACaptureTakenWithoutTheFlag
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CacheDiscardLogLifecycleTest::itPublishesOneCompleteReportAndLogsDiscardBeforeClosingTheTarget
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itDoesNotJudgeASelectorOfTheNamespaceTheExcludedFileDeclares
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itDoesNotJudgeWhenTheExcludedFileCannotBeRead
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itJudgesAStaleGlobalSelectorUnderAnUnrelatedExclude
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itJudgesAStalePerRuleSelectorUnderAnUnrelatedExclude
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itJudgesAroundAGeneratedFileAndWithholdsWhatItCouldDeclare
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itSilencesTheWarningUnderQuiet
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itStaysQuietWhenEveryNamespaceValueWasJudged
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandAutoloadDevScopeTest::itDoesNotWidenPathsTheAuthorNamed
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandAutoloadDevScopeTest::itLeavesTestCodeOutOfBothHalvesByDefault
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandAutoloadDevScopeTest::itTakesTestCodeIntoBothHalvesWhenTheFlagIsGiven
@@ -11706,6 +11718,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itJudgesADeadNocDirectiveInsideTheSelectedUniverse"excluded"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itJudgesADeadNocDirectiveInsideTheSelectedUniverse"generated"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itKeepsFileOwnedUnusedDirectivesUnderBroadNamespaceExclusions
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itKeepsNamingTheNamespaceChannelUnjudgedUnderAnExclude
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff"every level of it"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff"the level the directive sits on"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff"the whole rule"
@@ -13598,6 +13611,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesARunWhosePathsWereTakenAsTheProject"sarif"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesARunWhosePathsWereTakenAsTheProject"summary"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesARunWhosePathsWereTakenAsTheProject"text"
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesTheNamespaceChannelWhenNoValueOfItWasJudged
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesTheValuesACoveredRunSkipped"github"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesTheValuesACoveredRunSkipped"health"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesTheValuesACoveredRunSkipped"html"
@@ -13605,6 +13619,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesTheValuesACoveredRunSkipped"summary"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesTheValuesACoveredRunSkipped"text"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesUnjudgedChannelsOfACoveredRun
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itOmitsTheNamespaceChannelWhenARemovedFileLeftOneOfItsValuesJudged
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itPreservesSourceReasonsWhenPublishingSkippedValues"json"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itPreservesSourceReasonsWhenPublishingSkippedValues"metrics"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itPreservesSourceReasonsWhenPublishingSkippedValues"suppressed"
@@ -13615,6 +13630,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itPublishesTheStateUnderOneKeyOfOneShape"suppressed"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itPublishesUnderTheProjectScopeName
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itRefusesSkippedValuesOnANarrowedRun
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itStillNamesTheNamespaceChannelWhenTheCallerComputedNoValues
  - Qualimetrix\Tests\Reporting\Unit\Contract\Formatting\FormatterContextTest::itDisablesDetailWhenLimitIsNull
  - Qualimetrix\Tests\Reporting\Unit\Contract\Formatting\FormatterContextTest::itEnablesDetailWhenLimitIsPositive
  - Qualimetrix\Tests\Reporting\Unit\Contract\Formatting\FormatterContextTest::itEnablesDetailWhenLimitIsZero

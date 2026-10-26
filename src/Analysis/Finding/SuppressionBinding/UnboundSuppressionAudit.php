@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
 
 use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
 use Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression;
@@ -171,6 +172,22 @@ final readonly class UnboundSuppressionAudit
         }
 
         return $unjudged;
+    }
+
+    /**
+     * Whether a value from {@see unjudgedValues()} is a namespace selector:
+     * the audit builds the `option` strings, so it alone says what they mean.
+     *
+     * @param array{channel: string, option: string, pattern: string} $value
+     */
+    public static function isNamespaceValue(array $value): bool
+    {
+        if ($value['channel'] === ProjectScopeChannels::UNMATCHED_NAMESPACE_SUPPRESSION) {
+            return true;
+        }
+
+        return $value['channel'] === ProjectScopeChannels::UNMATCHED_RULE_LEDGER
+            && (str_contains($value['option'], ConfiguredSuppression::NAMESPACES) || str_contains($value['option'], ConfiguredSuppression::NAMESPACE_CHANNELS));
     }
 
     /**

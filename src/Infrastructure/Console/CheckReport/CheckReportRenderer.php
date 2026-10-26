@@ -18,13 +18,14 @@ use Qualimetrix\Infrastructure\Console\Terminal\ReportPublication\RenderedCheckR
 use Qualimetrix\Reporting\Contract\OutputFormat;
 use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionResult;
+use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /** @qmx-threshold coupling.instability 0.842107 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies. */
 final readonly class CheckReportRenderer
 {
-    public function __construct(private ReportAssembler $assembler, private ReportFormatter $formatter, private ExitCodeResolver $exitCodeResolver, private ProfilerInterface $profiler, private \Qualimetrix\Infrastructure\Console\CheckScope\ProjectScopePresenter $scopePresenter) {}
+    public function __construct(private ReportAssembler $assembler, private ReportFormatter $formatter, private ExitCodeResolver $exitCodeResolver, private ProfilerInterface $profiler, private \Qualimetrix\Infrastructure\Console\CheckScope\ProjectScopePresenter $scopePresenter, private \Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream $errorStream) {}
 
     /**
      * @param list<array{message: string, source: list<array<string, mixed>>}> $configurationDiagnostics
@@ -45,6 +46,10 @@ final readonly class CheckReportRenderer
         ?NamespacePattern $namespace = null,
     ): RenderedCheckReport {
         $projectScope = $this->scopePresenter->project($result, $options);
+        $removedCodeWarning = $this->scopePresenter->removedCodeWarning($projectScope, $result);
+        if ($removedCodeWarning !== null) {
+            $this->errorStream->write($output, \sprintf('<comment>Warning: %s</comment>', OutputFormatter::escape($removedCodeWarning)));
+        }
         $suppressionOptions = ($format->value === 'suppressed' || $input->getOption('show-suppressed') === true)
             ? $options
             : null;
