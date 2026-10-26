@@ -1,1 +1,2 @@
 kind	key	level	reason
+metric	code-smell.is-injection-constructor	callable	The new metric marks with 1 every constructor that code-smell.constructor-overinjection judges and is absent on every other callable.

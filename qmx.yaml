@@ -2300,7 +2300,10 @@ rules:
       - igbinary_unserialize
       - unserialize
 
-  # Immutable records carry independent authored and measured facts as arguments.
+  # Applies to methods and functions only: constructors belong to
+  # constructor-overinjection, value-object constructors to the vo-* thresholds.
+  # Many methods here pass independent authored and measured facts as arguments;
+  # the default 4/6 would report about 480 of them.
   code-smell.long-parameter-list:
     warning: 8
     error: 12
