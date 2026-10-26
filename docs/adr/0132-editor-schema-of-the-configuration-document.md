@@ -37,8 +37,9 @@ what is malformed whatever the other layers say. It is narrowed explicitly:
   regular expressions, paths, references to declared architecture layers,
   constraints between fields), whatever depends on merged layers, and opaque
   nodes, whose form only their owner reads — they project to a description
-  and admit anything. Words that an owner's judge checks rather than a
-  declared word set, such as `format` and `fail_on`, are plain strings.
+  and admit anything. A word an owner's judge checks rather than a
+  declared word set is a plain string; `format`, `fail_on` and
+  `architecture.coverage-gap` are declared word sets.
 - Outside it as a named limitation, not a defect: scalars that YAML parsers
   type differently. The product reads Symfony YAML; editors use their own
   parser, YAML 1.2 for the Red Hat extension. `1_000`, `0755` and dates can
@@ -105,6 +106,30 @@ the editor.
 
 A node may also carry a description, documentation for editors only; the rule
 entries carry each rule's description.
+
+### A word set refuses as informatively as the owner it replaces
+
+A value set reaches the editor only when it is declared with
+`NodeSchema::words()`. Owners kept `format`, `fail_on` and
+`architecture.coverage-gap` in their own judges because the engine's word-set
+refusal said less: it published an open position whose `written` was the key,
+and it could carry no advice, while the owners named a retired spelling
+(`text-verbose`, `info`) or what `none` means, and `coverage-gap` published a
+closed position. The engine now refuses a word outside the set at a closed
+position — `written` is the value, `accepted` the declared words — and appends
+the node's advice to every refusal of a value written there, form and
+constraint alike: the hint declared for exactly that scalar
+(`withWording(literalHints:)`), otherwise the node's general hint. The three
+nodes moved; their owners still convert the accepted word and treat any other
+value as an internal error.
+
+- Hints keyed by literal replaced the hint restricted to a list of literals:
+  `fail_on` needs a hint for `false`, another for `info`, and a general one
+  for every other refused value, which one restricted hint cannot hold.
+- A hint for a word the set accepts is refused at declaration, because it
+  could never be read. `~` has no hint: the engine never refuses it.
+- Literal hints compare strictly. `fail_on: Info` gets the general hint, as it
+  did from the owner.
 
 ### The projection lives in Configuration
 
@@ -173,3 +198,6 @@ The file is committed at the repository root and generated, never edited.
   tests: no test reads YAML the way an editor's parser does.
 - A word set hidden in an owner's judge stays a plain string until its owner
   declares it as words.
+- Every word-set refusal changed its JSON position from open to closed, with
+  the written value and the declared words in declaration order; rule option
+  words and computed-metric levels included.

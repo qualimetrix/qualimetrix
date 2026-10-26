@@ -64,6 +64,23 @@ final class CoverageValidatorTest extends TestCase
     }
 
     #[Test]
+    public function itRefusesAnUnknownCoverageValueAtAClosedPosition(): void
+    {
+        try {
+            $this->validator->validate(ArchitectureDocument::spot(['coverage-gap' => 'Verbose'], 'coverage-gap'));
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
+            self::assertStringContainsString('must be one of ignore, warn, error, got "Verbose".', $e->summary());
+            $position = $e->position();
+            self::assertNotNull($position);
+            self::assertSame(['architecture', 'coverage-gap'], $position->segments);
+            self::assertSame('Verbose', $position->written);
+            self::assertSame(['ignore', 'warn', 'error'], $position->accepted);
+            self::assertTrue($position->closed);
+        }
+    }
+
+    #[Test]
     public function itRejectsACoverageValueOfTheWrongType(): void
     {
         $this->expectException(ConfigurationRefusal::class);

@@ -13,7 +13,8 @@ use LogicException;
  *
  * Accepts a key not written (defaults to {@see CoverageMode::Ignore}) or a
  * case-insensitive string of {@code 'ignore'}, {@code 'warn'}, {@code 'error'};
- * the configuration engine has already refused any other form.
+ * the configuration engine has already refused any other value against the
+ * word set {@see ArchitectureSection} declares.
  *
  * The mode is also checked against the layers it would judge, because the two
  * halves are one contract: a mode that names a policy and a declaration that
@@ -22,8 +23,6 @@ use LogicException;
  */
 final class CoverageValidator
 {
-    private const array ACCEPTED = ['error', 'ignore', 'warn'];
-
     public function validate(SectionSpot $coverage): CoverageMode
     {
         $value = $coverage->value();
@@ -37,12 +36,8 @@ final class CoverageValidator
 
         try {
             return CoverageMode::fromString($value);
-        } catch (InvalidArgumentException) {
-            throw $coverage->refusal(
-                \sprintf("architecture.coverage-gap: must be one of 'ignore', 'warn', 'error' (got '%s').", $value),
-                self::ACCEPTED,
-                $value,
-            );
+        } catch (InvalidArgumentException $e) {
+            throw new LogicException('The configuration engine admits only a coverage mode as architecture.coverage-gap.', 0, $e);
         }
     }
 

@@ -13,11 +13,13 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\BareElementPolicy;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\IntegerJudgement;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\KeyDictionary;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\LiteralHint;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeCollectionFacts;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeMapFacts;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeScalarFacts;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeWording;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SchemaWordSet;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\Shorthand;
@@ -33,6 +35,8 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\WordComparison;
 #[CoversClass(NodeCollectionFacts::class)]
 #[CoversClass(BareElementPolicy::class)]
 #[CoversClass(KeyDictionary::class)]
+#[CoversClass(NodeWording::class)]
+#[CoversClass(LiteralHint::class)]
 final class NodeSchemaTest extends TestCase
 {
     #[Test]
@@ -104,23 +108,73 @@ final class NodeSchemaTest extends TestCase
     }
 
     #[Test]
-    public function itRefusesAHintRestrictionWithoutAHint(): void
+    public function itRefusesTwoHintsForOneLiteral(): void
     {
         $this->expectException(LogicException::class);
 
-        NodeSchema::scalar(ScalarForm::String)->withWording(hintOnlyFor: ['x']);
+        NodeSchema::scalar(ScalarForm::String)->withWording(literalHints: [new LiteralHint('x', 'One.'), new LiteralHint('x', 'Two.')]);
+    }
+
+    #[Test]
+    public function itKeepsHintsForLiteralsThatDifferOnlyInType(): void
+    {
+        $hints = [new LiteralHint(false, 'False.'), new LiteralHint('', 'Empty.'), new LiteralHint(0, 'Zero.')];
+
+        self::assertSame($hints, NodeSchema::scalar(ScalarForm::String)->withWording(literalHints: $hints)->wording->literalHints);
+    }
+
+    /** @return iterable<string, array{Closure(): NodeSchema}> */
+    public static function provideHintsForAcceptedWords(): iterable
+    {
+        $hint = [new LiteralHint('WARN', 'Never read.')];
+
+        yield 'words, then the hint' => [static fn(): NodeSchema => NodeSchema::scalar(ScalarForm::String)->words(SchemaWordSet::foldingCase('warn'))->withWording(literalHints: $hint)];
+        yield 'the hint, then words' => [static fn(): NodeSchema => NodeSchema::scalar(ScalarForm::String)->withWording(literalHints: $hint)->words(SchemaWordSet::foldingCase('warn'))];
+    }
+
+    /** @param Closure(): NodeSchema $declare */
+    #[Test]
+    #[DataProvider('provideHintsForAcceptedWords')]
+    public function itRefusesAHintForAWordTheNodeAccepts(Closure $declare): void
+    {
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('the node accepts that word');
+
+        $declare();
+    }
+
+    #[Test]
+    public function itKeepsAHintForAWordOutsideACaseSensitiveVocabulary(): void
+    {
+        $schema = NodeSchema::scalar(ScalarForm::String)->words(SchemaWordSet::of('warn'))->withWording(literalHints: [new LiteralHint('WARN', 'Lowercase.')]);
+
+        self::assertSame('Lowercase.', $schema->wording->adviceFor('WARN'));
+    }
+
+    #[Test]
+    public function itAdvisesTheExactLiteralBeforeTheGeneralHint(): void
+    {
+        $wording = NodeSchema::scalar(ScalarForm::String)->withWording(hint: 'General.', literalHints: [new LiteralHint(false, 'Retired.'), new LiteralHint('1', 'Text one.')])->wording;
+
+        self::assertSame('Retired.', $wording->adviceFor(false));
+        self::assertSame('Text one.', $wording->adviceFor('1'));
+        self::assertSame('General.', $wording->adviceFor(1));
+        self::assertSame('General.', $wording->adviceFor(true));
+        self::assertSame('General.', $wording->adviceFor(null));
+        self::assertNull(NodeSchema::scalar(ScalarForm::String)->withWording(literalHints: [new LiteralHint(false, 'Retired.')])->wording->adviceFor(true));
     }
 
     #[Test]
     public function itKeepsEveryDeclarationWhenAHintAndAnEmptyOverrideNoticeAreAdded(): void
     {
         $element = NodeSchema::scalar(ScalarForm::String);
-        $hintedThenAnnounced = NodeSchema::list($element)->withWording(hint: 'Quote it.', hintOnlyFor: [false, null])->withWording(emptyOverrideNotice: 'Lifted.');
-        $announcedThenHinted = NodeSchema::list($element)->withWording(emptyOverrideNotice: 'Lifted.')->withWording(hint: 'Quote it.', hintOnlyFor: [false, null]);
+        $literalHints = [new LiteralHint(false, 'Retired.')];
+        $hintedThenAnnounced = NodeSchema::list($element)->withWording(hint: 'Quote it.', literalHints: $literalHints)->withWording(emptyOverrideNotice: 'Lifted.');
+        $announcedThenHinted = NodeSchema::list($element)->withWording(emptyOverrideNotice: 'Lifted.')->withWording(hint: 'Quote it.', literalHints: $literalHints);
 
         foreach ([$hintedThenAnnounced, $announcedThenHinted] as $schema) {
             self::assertSame('Quote it.', $schema->wording->hint);
-            self::assertSame([false, null], $schema->wording->hintOnlyFor);
+            self::assertSame($literalHints, $schema->wording->literalHints);
             self::assertSame('Lifted.', $schema->wording->emptyOverrideNotice);
             self::assertSame($element, $schema->collection?->element);
             self::assertSame(MergePolicy::Replace, $schema->policy);
@@ -131,7 +185,8 @@ final class NodeSchemaTest extends TestCase
         self::assertCount(1, $map->map->keys->shorthands());
         self::assertSame([ScalarForm::String], $element->withWording(hint: 'x')->scalar->forms);
         self::assertNull($element->wording->hint);
-        self::assertNull($hintedThenAnnounced->withWording(hint: 'Another hint.')->wording->hintOnlyFor);
+        self::assertSame($literalHints, $hintedThenAnnounced->withWording(hint: 'Another hint.')->wording->literalHints);
+        self::assertSame('Quote it.', $hintedThenAnnounced->withWording(literalHints: [])->wording->hint);
     }
 
     #[Test]
@@ -159,11 +214,12 @@ final class NodeSchemaTest extends TestCase
     #[Test]
     public function itDescribesANodeWithoutTouchingItsOtherWording(): void
     {
-        $schema = NodeSchema::scalar(ScalarForm::String)->withWording(hint: 'Quote it.', hintOnlyFor: ['x'])->withWording(description: 'A name.');
+        $literalHints = [new LiteralHint('x', 'Not x.')];
+        $schema = NodeSchema::scalar(ScalarForm::String)->withWording(hint: 'Quote it.', literalHints: $literalHints)->withWording(description: 'A name.');
 
         self::assertSame('A name.', $schema->wording->description);
         self::assertSame('Quote it.', $schema->wording->hint);
-        self::assertSame(['x'], $schema->wording->hintOnlyFor);
+        self::assertSame($literalHints, $schema->wording->literalHints);
         self::assertNull(NodeSchema::scalar()->wording->description);
     }
 

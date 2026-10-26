@@ -4,42 +4,46 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration\Document;
 
-use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeScalarFacts;
-
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\TextRequirement;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 
-/** Value constraints applied after a written scalar passes its declared form. */
+/**
+ * Value constraints applied after a written scalar passes its declared form,
+ * each refusal carrying the node's advice for the refused value. A value
+ * outside a word set is refused at a closed position naming the value and the
+ * words.
+ */
 final class ScalarConstraints
 {
-    /** @qmx-ignore code-smell.boolean-argument -- The boolean is a scalar value under validation, not a behavior switch. */
-    public static function judge(NodeScalarFacts $facts, int|float|string|bool $value, ReadingContext $at): void
+    /**
+     * @qmx-ignore code-smell.boolean-argument -- The boolean is a scalar value under validation, not a behavior switch.
+     *
+     * @throws ConfigurationRefusal
+     */
+    public static function judge(NodeSchema $schema, int|float|string|bool $value, ReadingContext $at): void
     {
-        self::minimum($facts, $value, $at);
-        self::nonBlank($facts, $value, $at);
-        self::vocabulary($facts, $value, $at);
-    }
+        $facts = $schema->scalar;
+        $advised = static function (string $summary) use ($schema, $value): string {
+            $advice = $schema->wording->adviceFor($value);
 
-    /** @qmx-ignore code-smell.boolean-argument -- The boolean belongs to the admitted scalar union; only numeric values have a minimum. */
-    private static function minimum(NodeScalarFacts $facts, int|float|string|bool $value, ReadingContext $at): void
-    {
+            return $advice === null ? $summary : $summary . ' ' . $advice;
+        };
+
         if ($facts->minimum !== null && (\is_int($value) || \is_float($value)) && $value < $facts->minimum) {
-            throw $at->refusal(\sprintf('%s must be at least %s, got %s.', ucfirst($at->where()), $facts->minimum, $value));
+            throw $at->refusal($advised(\sprintf('%s must be at least %s, got %s.', ucfirst($at->where()), $facts->minimum, $value)));
         }
-    }
 
-    /** @qmx-ignore code-smell.boolean-argument -- The boolean belongs to the admitted scalar union; only text values have a blankness constraint. */
-    private static function nonBlank(NodeScalarFacts $facts, int|float|string|bool $value, ReadingContext $at): void
-    {
         if ($facts->textRequirement === TextRequirement::NonBlank && \is_string($value) && trim($value) === '') {
-            throw $at->refusal(\sprintf('%s must be non-empty text.', ucfirst($at->where())));
+            throw $at->refusal($advised(\sprintf('%s must be non-empty text.', ucfirst($at->where()))));
         }
-    }
 
-    /** @qmx-ignore code-smell.boolean-argument -- The boolean belongs to the admitted scalar union; only text values have a word constraint. */
-    private static function vocabulary(NodeScalarFacts $facts, int|float|string|bool $value, ReadingContext $at): void
-    {
         if ($facts->words !== null && \is_string($value) && !$facts->words->contains($value)) {
-            throw $at->refusal(\sprintf('%s must be one of %s, got "%s".', ucfirst($at->where()), implode(', ', $facts->words->words), $value));
+            throw $at->refusal(
+                $advised(\sprintf('%s must be one of %s, got "%s".', ucfirst($at->where()), implode(', ', $facts->words->words), $value)),
+                $value,
+                $facts->words->words,
+            );
         }
     }
 }

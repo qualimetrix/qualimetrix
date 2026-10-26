@@ -256,14 +256,17 @@ precedence index within this composed document).
   `{}` or nothing but `~` stays in the document as a
   `ResolvedBareNameInterface`, which a body any layer wrote stands over. Its
   owner says what naming it alone means.
-- A node may carry a hint (`NodeSchema::withWording(hint:)`): the engine adds it to its
-  refusal of the form written at that node — `paths: [2024]` is told to quote
-  the name, a bare string in `exclude` is shown the selector kinds. Its optional
-  `hintOnlyFor` list restricts the hint to exact scalar values and types; `null`
-  leaves it unrestricted, while `[]` matches nothing. Collection shapes never
-  match a scalar literal, including `[null]`. Console declares `[false]` for
-  the retired `fail_on: false` hint, so it names `none` only for boolean `false`,
-  preserving other malformed-value refusals.
+- A node may carry advice (`NodeSchema::withWording(hint:, literalHints:)`): the
+  engine adds it to every refusal of a value written at that node, of its form
+  or of a constraint (minimum, non-blank text, word set) — `paths: [2024]` is
+  told to quote the name, a bare string in `exclude` is shown the selector
+  kinds. A `LiteralHint` replaces the general hint for exactly one scalar,
+  compared strictly; a collection matches no literal. `fail_on` declares one
+  for `false` and one for `info` beside a general hint, and `format` one for
+  the retired `text-verbose`. Two hints for one literal, or a hint for a word
+  the node's set accepts, are refused at declaration.
+- A value outside a word set is refused at a closed position: `written` is the
+  value and `accepted` the declared words, in declaration order.
 - A node may carry a description (`NodeSchema::withWording(description:)`). The engine
   never reads it; it is what an editor shows for the node. Finding describes
   each rule entry with the rule's own description.

@@ -9,7 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `qmx.schema.json` — a JSON Schema of `qmx.yaml` for completion, rule descriptions and form validation in PhpStorm and VS Code; shipped in the Composer package and attached to every release. An unsupported `computed_metrics.<name>.levels` value is now refused with the accepted levels named.
+- `qmx.schema.json` — a JSON Schema of `qmx.yaml` for completion, rule descriptions and form validation in PhpStorm and VS Code; shipped in the Composer package and attached to every release. It offers the values of `format`, `fail_on`, `architecture.coverage-gap` and `computed_metrics.<name>.levels`. An unsupported `computed_metrics.<name>.levels` value is now refused with the accepted levels named.
+
+### Breaking
+
+- A configuration value outside a fixed list (`format`, `fail_on`, `architecture.coverage-gap`, `computed_metrics.<name>.levels`, a rule option's words) is refused with one sentence shape — `"fail_on" in configuration file "qmx.yaml" must be one of none, warning, error, got "info".` followed by any advice — instead of `Invalid value "info" for "fail_on". Allowed values: …`, `Output format "x" is not one of: …` and `architecture.coverage-gap: must be one of …`. In a JSON refusal its `position` is now closed: `written` is the value (it was the key), `accepted` lists the words in their documented order (`coverage-gap` was alphabetical). Match on `position`, not on the sentence.
 
 ## [0.28.2] - 2026-10-25
 
