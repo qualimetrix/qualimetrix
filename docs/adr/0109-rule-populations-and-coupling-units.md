@@ -62,7 +62,12 @@ probability and share one. This changes no PageRank formula.
 The ClassRank rule joins measured declarations with exact graph PHP-kind facts,
 judges classes including abstract classes, and requires positive afferent
 coupling. Other PHP kinds retain graph evidence without entering this rule's
-class population. Missing or conflicting exact kind facts are invariants, not
+class population. The rule's remedies act on a concrete class: a central
+interface is the result of extracting one, a central enum is a closed shared
+vocabulary with nothing to split or abstract, and a trait is copied into its
+users rather than depended on at runtime. Judging them would report the cure
+or a vocabulary as a hub. (Rationale recorded 2026-10-25; the original change
+stated the scope without it.) Missing or conflicting exact kind facts are invariants, not
 invented healthy classes. Rule defaults are fixed shares 5 and 10; equality
 crosses the boundary. The two values were chosen without a recorded measurement:
 no distribution of the share over the benchmark corpus or any other population
