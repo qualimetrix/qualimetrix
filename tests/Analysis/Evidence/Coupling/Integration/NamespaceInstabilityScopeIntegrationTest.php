@@ -139,6 +139,35 @@ final class NamespaceInstabilityScopeIntegrationTest extends TestCase
     }
 
     /**
+     * Without a type minimum a namespace of one class is judged, while
+     * `App\Bare`, which declares only bare enums, is not: it has no own
+     * abstractness and no distance, so it is no package for instability
+     * either.
+     */
+    #[Test]
+    public function itJudgesNoNamespaceDeclaringOnlyBareEnumsEvenWithoutATypeMinimum(): void
+    {
+        file_put_contents($this->fixture . '/src/Bare.php', <<<'PHP'
+            <?php
+            namespace App\Single { final class One { public function a(\App\Ext\E1 $e): void {} } }
+            namespace App\Bare {
+                enum Status { case A; public function one(\App\Single\One $o): void {} }
+                enum Kind { case B; }
+            }
+            namespace App\Uses { final class U { public function a(\App\Bare\Status $s, \App\Bare\Kind $k): void {} } }
+            PHP);
+
+        [, $payload] = $this->runCheck([
+            'paths' => ['src'],
+            '--fail-on' => 'none',
+            '--only-rule' => [InstabilityRule::NAME],
+            '--rule-opt' => ['coupling.instability:namespace.min_type_count=0', 'coupling.instability:namespace.max_warning=0.3'],
+        ]);
+
+        self::assertSame(['App\Single' => 0.5], self::namespaceFindings($payload));
+    }
+
+    /**
      * @param array<string, mixed> $input
      */
     #[Test]

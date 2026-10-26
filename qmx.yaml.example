@@ -239,7 +239,8 @@
   #   namespace:
   #     max_warning: 0.8
   #     max_error: 0.95
-  #     min_afferent: 1          # skip namespaces with Ca < N (default: 1)
+  #     min_afferent: 1          # skip namespaces with Ca-own < N (default: 1)
+  #     min_type_count: 3        # skip namespaces declaring fewer own types (default: 3)
 
   # Distance from Main Sequence. Range 0.0–1.0.
   # coupling.distance:

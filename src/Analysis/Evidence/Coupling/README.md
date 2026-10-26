@@ -156,7 +156,7 @@ a type the run analysed)
 > ordering; colliding short names expand to the shortest distinguishing
 > namespace suffix, with full names as the final fallback.
 
-> **Note:** Robert C. Martin (1994) originally defined Instability only at the **package** (namespace) level. Qualimetrix extends it to the class level for finer-grained analysis. The namespace-level instability is the canonical metric per Martin's specification.
+> **Note:** Robert C. Martin (1994) originally defined Instability only at the **package** (namespace) level. Qualimetrix extends it to the class level for finer-grained analysis. The namespace-level instability is Martin's package metric, but the rule judges it over the namespace's own declarations (`coupling.instability-own`), not the subtree, as described in the note below.
 
 > **Note:** `InstabilityRule` judges a namespace on `coupling.instability-own`,
 > for the reason `CboRule` judges `coupling.cbo-own`: the subtree value folds

@@ -457,7 +457,7 @@ The result is a number between 0.0 and 1.0:
 | Warning | >= 0.8    | Warning  |
 | Error   | >= 0.95   | Error    |
 
-**Namespace level** (enabled by default, requires at least 3 classes):
+**Namespace level** (enabled by default, requires at least `min_type_count` (default 3) types declared in the namespace itself):
 
 | Level   | Threshold | Severity |
 | ------- | --------- | -------- |
@@ -522,7 +522,7 @@ rules:
 
 **`min_afferent`** -- minimum afferent coupling (Ca) required for a class or namespace to be checked; for a namespace it is the own afferent coupling, `coupling.ca-own`. Default: `1` (symbols with Ca = 0 are skipped). Set to `0` to check all symbols, or to `2` to also skip symbols with only one dependent. Symbols with very few dependents have high instability by definition, which is architecturally expected for concrete implementation classes.
 
-**`namespace.min_type_count`** -- minimum number of types a namespace declares directly: classes, traits, interfaces and enums that implement an interface, as for [Distance](#distance-from-main-sequence). Default: `3` (equality is admitted); `0` disables the floor. Instability and distance are both package metrics of Martin's (D = |A + I - 1|) and judge one population. The earlier `min_class_count` counted classes of the whole subtree and is refused by name -- in YAML, as `min-class-count` and `minClassCount`, and in `--rule-opt` -- with exit code 3; rename the key and mind the new count.
+**`namespace.min_type_count`** -- minimum number of types a namespace declares directly: classes, traits, interfaces and enums that implement an interface, as for [Distance](#distance-from-main-sequence). Default: `3` (equality is admitted); `0` disables the floor, but a namespace is judged only if it declares at least one counted type, whatever the floor -- the same condition under which `coupling.distance-own` exists. Instability and distance are both package metrics of Martin's (D = |A + I - 1|) and judge one population. The earlier `min_class_count` counted classes of the whole subtree and is refused by name -- in YAML, as `min-class-count` and `minClassCount`, and in `--rule-opt` -- with exit code 3; rename the key and mind the new count.
 
 For a simple pass/fail threshold on a single level:
 

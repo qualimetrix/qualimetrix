@@ -4213,6 +4213,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceCboScopeIntegrationTest::itReachesTheSameVerdictWhenTheSubNamespaceIsLeftOutOfTheRun
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceInstabilityScopeIntegrationTest::itDoesNotJudgeAContextRootThatDeclaresNoTypeOfItsOwn
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceInstabilityScopeIntegrationTest::itJudgesEveryNamespaceOnTheCouplingOfItsOwnTypes
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceInstabilityScopeIntegrationTest::itJudgesNoNamespaceDeclaringOnlyBareEnumsEvenWithoutATypeMinimum
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceInstabilityScopeIntegrationTest::itLeavesAFormulaOverOwnInstabilityWithoutValueOnANamespaceDeclaringNoType
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceInstabilityScopeIntegrationTest::itPublishesNoOwnInstabilityForANamespaceDeclaringNoType
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceInstabilityScopeIntegrationTest::itRefusesTheRetiredClassCountKeyByName"configuration file"
@@ -4520,6 +4521,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDefaultsNamespaceMinTypeCountToThree
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDistinguishesRoundedInstabilityFromItsThreshold"class"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDistinguishesRoundedInstabilityFromItsThreshold"namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDoesNotJudgeANamespaceDeclaringOnlyBareEnumsWithoutATypeMinimum
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDoesNotJudgeAnUnstableSubtreeWhoseOwnScopeIsStable
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDoesNotSkipClassWhenCaTwoMeetsMinAfferentTwo
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDoesNotSkipClassWhenMinAfferentIsZero

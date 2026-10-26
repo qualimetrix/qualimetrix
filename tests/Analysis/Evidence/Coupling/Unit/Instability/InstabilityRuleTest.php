@@ -696,7 +696,7 @@ final class InstabilityRuleTest extends TestCase
     /**
      * A namespace declaring no type publishes only its subtree values: with
      * the default minimum it is below the own-type boundary, and without one
-     * its own instability is missing evidence, not a measured 0.
+     * it is still no package.
      *
      * @param array{gate: string, dataGap: bool} $abstention
      */
@@ -721,7 +721,7 @@ final class InstabilityRuleTest extends TestCase
     public static function typelessNamespaces(): iterable
     {
         yield 'default minimum' => [3, ['gate' => 'own-types', 'dataGap' => false]];
-        yield 'no minimum' => [0, ['gate' => 'own-instability', 'dataGap' => true]];
+        yield 'no minimum' => [0, ['gate' => 'own-package', 'dataGap' => false]];
     }
 
     #[Test]
@@ -734,6 +734,25 @@ final class InstabilityRuleTest extends TestCase
 
         self::assertCount(1, self::namespaceFindings(MetricBag::fromArray($bag), new NamespaceInstabilityOptions()));
         self::assertSame([], self::namespaceFindings(MetricBag::fromArray([...$bag, 'size.implementing-enum-count' => 0, 'size.enum-count' => 5]), new NamespaceInstabilityOptions()));
+    }
+
+    /**
+     * Bare enums are not counted towards own types, so a namespace holding
+     * only them has no own abstractness and no distance; it is no package for
+     * instability either, even without a type minimum.
+     */
+    #[Test]
+    public function itDoesNotJudgeANamespaceDeclaringOnlyBareEnumsWithoutATypeMinimum(): void
+    {
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(static fn(): bool => true);
+        $findings = self::namespaceFindings(MetricBag::fromArray([
+            'coupling.instability-own' => 0.9, 'coupling.ca-own' => 1, 'coupling.ce-own' => 9,
+            'size.enum-count' => 2, 'size.class-count' => 0, 'size.trait-count' => 0, 'size.interface-count' => 0, 'size.implementing-enum-count' => 0,
+        ]), new NamespaceInstabilityOptions(minTypeCount: 0), $session);
+
+        self::assertSame([], $findings);
+        self::assertSame('own-package', $session->freeze()->abstentions()[0]->gate);
+        self::assertFalse($session->freeze()->abstentions()[0]->dataGap);
     }
 
     #[Test]

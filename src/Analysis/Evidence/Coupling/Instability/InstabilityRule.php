@@ -132,6 +132,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
                 self::populationGate('class-instability', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('class-instability', [MetricName::COUPLING_INSTABILITY]), 'Class instability was not published.'),
                 self::populationGate('class-afferent', self::NAME, SymbolLevel::Class_, 'declaration', self::keyThreshold('class-afferent', [MetricName::COUPLING_CA], '>=', 'class-afferent', 'zero', true), 'Class afferent coupling is below its minimum.'),
                 self::populationGate('own-types', self::NAME, SymbolLevel::Namespace_, 'namespace', self::keyThreshold('own-types', [MetricName::SIZE_CLASS_COUNT, MetricName::SIZE_TRAIT_COUNT, MetricName::SIZE_INTERFACE_COUNT, MetricName::SIZE_IMPLEMENTING_ENUM_COUNT], '>=', 'own-types', 'zero', true), 'The own type population is below its minimum.'),
+                self::populationGate('own-package', self::NAME, SymbolLevel::Namespace_, 'namespace', self::keyThreshold('own-package', [MetricName::SIZE_CLASS_COUNT, MetricName::SIZE_TRAIT_COUNT, MetricName::SIZE_INTERFACE_COUNT, MetricName::SIZE_IMPLEMENTING_ENUM_COUNT], '>', 0, 'zero', true), 'The namespace declares no class, trait, interface or implementing enum of its own.'),
                 self::populationGate('own-instability', self::NAME, SymbolLevel::Namespace_, 'namespace', self::keyPresent('own-instability', [MetricName::COUPLING_INSTABILITY_OWN]), 'Own instability was not published.'),
                 self::populationGate('own-afferent', self::NAME, SymbolLevel::Namespace_, 'namespace', self::keyThreshold('own-afferent', [MetricName::COUPLING_CA_OWN], '>=', 'own-afferent', 'zero', true), 'Own afferent coupling is below its minimum.'),
             ),
@@ -223,7 +224,10 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
      * sub-namespaces while few dependents reach the parent itself, so a
      * context root that declares nothing reads close to 1 by construction; it
      * stays published and is not judged. A namespace declaring no type has no
-     * own instability and is never judged.
+     * own instability and is never judged. Nor is one declaring only bare
+     * enums, whatever `min_type_count` says: it has no own abstractness and
+     * so no distance, and a namespace is a package for both rules or for
+     * neither.
      *
      * @return list<Finding>
      */
@@ -244,6 +248,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
             $populationOptions = $this->getEffectiveOptions($context, $namespaceOptions, $subject);
             if (!$this->admitSubject($context, MetricSubject::aggregate($nsInfo->symbolPath), $declaration, (static function () use ($metrics, $populationOptions): iterable {
                 yield GateInput::metrics('own-types', $metrics, $populationOptions->minTypeCount);
+                yield GateInput::metrics('own-package', $metrics);
                 yield GateInput::metrics('own-instability', $metrics);
                 yield GateInput::metrics('own-afferent', $metrics, $populationOptions->minAfferent);
             })(), SymbolLevel::Namespace_, 'namespace')) {

@@ -33,7 +33,9 @@ distance stays absent without Ca/Ce.
    enums declared directly in the namespace, exactly as distance does.
    Instability and distance are the package metrics of Martin's main sequence
    (D = |A + I - 1|); a namespace is either a package for both or for neither,
-   and an interface-only contract namespace is a package too. `min_class_count`
+   and an interface-only contract namespace is a package too. Like distance,
+   the population requires at least one counted own type even when
+   `min_type_count` is 0. `min_class_count`
    is removed from namespace instability with no alias, per the backward
    compatibility policy: the old key is refused by name (exit code 3) in YAML
    and in `--rule-opt`. CBO keeps `min_class_count` over own classes.
