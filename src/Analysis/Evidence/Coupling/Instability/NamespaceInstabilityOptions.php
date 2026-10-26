@@ -22,6 +22,9 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOptionQueries;
  * Instability range: [0, 1]
  * - 0: maximally stable (only incoming dependencies)
  * - 1: maximally unstable (only outgoing dependencies)
+ *
+ * `min_type_count` counts the classes, traits, interfaces and implementing
+ * enums declared directly in the namespace — the own scope the rule judges.
  */
 final readonly class NamespaceInstabilityOptions implements LevelOptionsInterface, ThresholdAwareOptionsInterface
 {
@@ -33,7 +36,7 @@ final readonly class NamespaceInstabilityOptions implements LevelOptionsInterfac
         public bool $enabled = true,
         public float $maxWarning = 0.8,
         public float $maxError = 0.95,
-        public int $minClassCount = 3,
+        public int $minTypeCount = 3,
         public int $minAfferent = 1,
     ) {}
 
@@ -44,7 +47,7 @@ final readonly class NamespaceInstabilityOptions implements LevelOptionsInterfac
             enabled: $config->boolean('enabled', true),
             maxWarning: $thresholds->warning,
             maxError: $thresholds->error,
-            minClassCount: $config->integer('min-class-count', 3),
+            minTypeCount: $config->integer('min-type-count', 3),
             minAfferent: $config->integer('min-afferent', 1),
         );
     }
@@ -61,7 +64,7 @@ final readonly class NamespaceInstabilityOptions implements LevelOptionsInterfac
             'max-error' => RuleOptionShape::number()->orNull(),
             'max-warning' => RuleOptionShape::number()->orNull(),
             'min-afferent' => RuleOptionShape::integer()->orNull(),
-            'min-class-count' => RuleOptionShape::integer()->orNull(),
+            'min-type-count' => RuleOptionShape::integer()->orNull(),
             'threshold' => RuleOptionShape::number()->orNull(),
         ])->band('threshold', 'max-warning', 'max-error', BandDirection::Rising);
     }
@@ -72,7 +75,7 @@ final readonly class NamespaceInstabilityOptions implements LevelOptionsInterfac
             enabled: $this->enabled,
             maxWarning: $warning !== null ? (float) $warning : $this->maxWarning,
             maxError: $error !== null ? (float) $error : $this->maxError,
-            minClassCount: $this->minClassCount,
+            minTypeCount: $this->minTypeCount,
             minAfferent: $this->minAfferent,
         );
     }

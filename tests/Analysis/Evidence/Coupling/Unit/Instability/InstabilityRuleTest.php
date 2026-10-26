@@ -41,7 +41,8 @@ final class InstabilityRuleTest extends TestCase
         $bags = [];
         foreach ($paths as $index => $path) {
             $bags[$path->toCanonical()] = MetricBag::fromArray([
-                'coupling.instability' => 0, 'coupling.ca' => 2, 'coupling.ce' => 0, 'size.class-count.sum' => 2,
+                'coupling.instability' => 0, 'coupling.ca' => 2, 'coupling.ce' => 0,
+                'coupling.instability-own' => 0, 'coupling.ca-own' => 2, 'coupling.ce-own' => 0, 'size.class-count' => 2,
                 ...[$key => $index + 1],
             ]);
         }
@@ -53,7 +54,7 @@ final class InstabilityRuleTest extends TestCase
         $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(static fn(): bool => true);
         $rule = new InstabilityRule(new InstabilityOptions(
             class: new ClassInstabilityOptions(minAfferent: 2),
-            namespace: new NamespaceInstabilityOptions(minAfferent: 2, minClassCount: 2),
+            namespace: new NamespaceInstabilityOptions(minAfferent: 2, minTypeCount: 2),
         ));
         self::assertSame([], $rule->analyzeLevel($level, (new AnalysisContext($repository))->withPopulationTrace($session)));
         $population = $session->freeze();
@@ -68,8 +69,8 @@ final class InstabilityRuleTest extends TestCase
     public static function populationBoundaries(): iterable
     {
         yield 'class-afferent' => [SymbolLevel::Class_, 'coupling.ca', 'class-afferent', 'declaration'];
-        yield 'namespace-afferent' => [SymbolLevel::Namespace_, 'coupling.ca', 'namespace-afferent', 'namespace'];
-        yield 'namespace-classes' => [SymbolLevel::Namespace_, 'size.class-count.sum', 'namespace-classes', 'namespace'];
+        yield 'own-afferent' => [SymbolLevel::Namespace_, 'coupling.ca-own', 'own-afferent', 'namespace'];
+        yield 'own-types' => [SymbolLevel::Namespace_, 'size.class-count', 'own-types', 'namespace'];
     }
 
     #[Test]
@@ -105,7 +106,10 @@ final class InstabilityRuleTest extends TestCase
         $info = self::subjectInfo($path, RelativePath::fromString('Sample.php'), 1);
         $repository->method('allClassDeclarations')->willReturn([$info]);
         $repository->method('all')->willReturn([$info]);
-        $bag = MetricBag::fromArray(['coupling.instability' => 0.5, 'coupling.ca' => 2, 'coupling.ce' => 2, 'size.class-count.sum' => 3]);
+        $bag = MetricBag::fromArray([
+            'coupling.instability' => 0.5, 'coupling.ca' => 2, 'coupling.ce' => 2,
+            'coupling.instability-own' => 0.5, 'coupling.ca-own' => 2, 'coupling.ce-own' => 2, 'size.class-count' => 3,
+        ]);
         $repository->method('getSubject')->willReturn($bag);
         $repository->method('get')->willReturn($bag);
         $rule = new InstabilityRule(new InstabilityOptions(
@@ -466,10 +470,10 @@ final class InstabilityRuleTest extends TestCase
 
         // 0.80 reaches warning, below error (0.95)
         $metricBag = (new MetricBag())
-            ->with('coupling.instability', 0.8)
-            ->with('coupling.ca', 3)
-            ->with('coupling.ce', 22)
-            ->with('size.class-count.sum', 5);
+            ->with('coupling.instability-own', 0.8)
+            ->with('coupling.ca-own', 3)
+            ->with('coupling.ce-own', 22)
+            ->with('size.class-count', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -496,10 +500,10 @@ final class InstabilityRuleTest extends TestCase
 
         // 0.98 is above error (0.95)
         $metricBag = (new MetricBag())
-            ->with('coupling.instability', 0.98)
-            ->with('coupling.ca', 1)
-            ->with('coupling.ce', 49)
-            ->with('size.class-count.sum', 5);
+            ->with('coupling.instability-own', 0.98)
+            ->with('coupling.ca-own', 1)
+            ->with('coupling.ce-own', 49)
+            ->with('size.class-count', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -524,12 +528,12 @@ final class InstabilityRuleTest extends TestCase
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
-        // Ca=0, below default minAfferent=1, should be skipped
+        // own Ca=0, below default minAfferent=1, should be skipped
         $metricBag = (new MetricBag())
-            ->with('coupling.instability', 1.0)
-            ->with('coupling.ca', 0)
-            ->with('coupling.ce', 10)
-            ->with('size.class-count.sum', 5);
+            ->with('coupling.instability-own', 1.0)
+            ->with('coupling.ca-own', 0)
+            ->with('coupling.ce-own', 10)
+            ->with('size.class-count', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -557,10 +561,10 @@ final class InstabilityRuleTest extends TestCase
 
         // Ca=0, but minAfferent=0 means check all namespaces
         $metricBag = (new MetricBag())
-            ->with('coupling.instability', 1.0)
-            ->with('coupling.ca', 0)
-            ->with('coupling.ce', 10)
-            ->with('size.class-count.sum', 5);
+            ->with('coupling.instability-own', 1.0)
+            ->with('coupling.ca-own', 0)
+            ->with('coupling.ce-own', 10)
+            ->with('size.class-count', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -587,12 +591,12 @@ final class InstabilityRuleTest extends TestCase
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
-        // Ca=1, below minAfferent=2, should be skipped
+        // own Ca=1, below minAfferent=2, should be skipped
         $metricBag = (new MetricBag())
-            ->with('coupling.instability', 0.92)
-            ->with('coupling.ca', 1)
-            ->with('coupling.ce', 11)
-            ->with('size.class-count.sum', 5);
+            ->with('coupling.instability-own', 0.92)
+            ->with('coupling.ca-own', 1)
+            ->with('coupling.ce-own', 11)
+            ->with('size.class-count', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -606,22 +610,22 @@ final class InstabilityRuleTest extends TestCase
         self::assertCount(0, $findings);
     }
 
-    // Namespace minClassCount tests
+    // Namespace minTypeCount tests
 
     #[Test]
-    public function itSkipsNamespaceBelowMinClassCount(): void
+    public function itSkipsNamespaceBelowMinTypeCount(): void
     {
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
-        // classCount.sum = 1, below default minClassCount (3)
+        // one own class, below the default minTypeCount (3)
         $metricBag = (new MetricBag())
-            ->with('coupling.instability', 0.98)
-            ->with('coupling.ca', 1)
-            ->with('coupling.ce', 49)
-            ->with('size.class-count.sum', 1);
+            ->with('coupling.instability-own', 0.98)
+            ->with('coupling.ca-own', 1)
+            ->with('coupling.ce-own', 49)
+            ->with('size.class-count', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -636,19 +640,19 @@ final class InstabilityRuleTest extends TestCase
     }
 
     #[Test]
-    public function itChecksNamespaceWhenAboveMinClassCount(): void
+    public function itChecksNamespaceWhenAboveMinTypeCount(): void
     {
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
-        // classCount.sum = 5, above default minClassCount (3)
+        // five own classes, above the default minTypeCount (3)
         $metricBag = (new MetricBag())
-            ->with('coupling.instability', 0.98)
-            ->with('coupling.ca', 1)
-            ->with('coupling.ce', 49)
-            ->with('size.class-count.sum', 5);
+            ->with('coupling.instability-own', 0.98)
+            ->with('coupling.ca-own', 1)
+            ->with('coupling.ce-own', 49)
+            ->with('size.class-count', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -661,6 +665,103 @@ final class InstabilityRuleTest extends TestCase
 
         self::assertCount(1, $findings);
         self::assertSame(Severity::Error, $findings[0]->severity);
+    }
+
+    // Own scope
+
+    #[Test]
+    public function itJudgesANamespaceOnItsOwnInstabilityAndNotOnItsSubtree(): void
+    {
+        $findings = self::namespaceFindings(MetricBag::fromArray([
+            'coupling.instability' => 0.1, 'coupling.ca' => 9, 'coupling.ce' => 1,
+            'coupling.instability-own' => 0.9, 'coupling.ca-own' => 1, 'coupling.ce-own' => 9,
+            'size.class-count' => 3,
+        ]), new NamespaceInstabilityOptions());
+
+        self::assertCount(1, $findings);
+        self::assertSame(0.9, $findings[0]->metricValue);
+        self::assertStringContainsString('Instability is 0.90 (Ca=1, Ce=9)', $findings[0]->message);
+    }
+
+    #[Test]
+    public function itDoesNotJudgeAnUnstableSubtreeWhoseOwnScopeIsStable(): void
+    {
+        self::assertSame([], self::namespaceFindings(MetricBag::fromArray([
+            'coupling.instability' => 0.99, 'coupling.ca' => 1, 'coupling.ce' => 99,
+            'coupling.instability-own' => 0.5, 'coupling.ca-own' => 2, 'coupling.ce-own' => 2,
+            'size.class-count' => 3,
+        ]), new NamespaceInstabilityOptions()));
+    }
+
+    /**
+     * A namespace declaring no type publishes only its subtree values: with
+     * the default minimum it is below the own-type boundary, and without one
+     * its own instability is missing evidence, not a measured 0.
+     *
+     * @param array{gate: string, dataGap: bool} $abstention
+     */
+    #[Test]
+    #[DataProvider('typelessNamespaces')]
+    public function itNeverJudgesANamespaceThatDeclaresNoTypeOfItsOwn(int $minTypeCount, array $abstention): void
+    {
+        $session = new \Qualimetrix\Analysis\Finding\Population\PopulationSession(static fn(): bool => true);
+        $findings = self::namespaceFindings(MetricBag::fromArray([
+            'coupling.instability' => 0.857, 'coupling.ca' => 1, 'coupling.ce' => 6,
+            'coupling.ca-own' => 0, 'coupling.ce-own' => 0, 'size.class-count.sum' => 3, 'size.interface-count.sum' => 3,
+        ]), new NamespaceInstabilityOptions(minTypeCount: $minTypeCount, minAfferent: 0), $session);
+
+        self::assertSame([], $findings);
+        $population = $session->freeze();
+        self::assertSame(0, $population->judgedCount());
+        self::assertSame($abstention['gate'], $population->abstentions()[0]->gate);
+        self::assertSame($abstention['dataGap'], $population->abstentions()[0]->dataGap);
+    }
+
+    /** @return iterable<string, array{int, array{gate: string, dataGap: bool}}> */
+    public static function typelessNamespaces(): iterable
+    {
+        yield 'default minimum' => [3, ['gate' => 'own-types', 'dataGap' => false]];
+        yield 'no minimum' => [0, ['gate' => 'own-instability', 'dataGap' => true]];
+    }
+
+    #[Test]
+    public function itCountsOwnInterfacesTraitsAndImplementingEnumsTowardsTheMinimum(): void
+    {
+        $bag = [
+            'coupling.instability-own' => 0.9, 'coupling.ca-own' => 1, 'coupling.ce-own' => 9,
+            'size.interface-count' => 1, 'size.trait-count' => 1, 'size.implementing-enum-count' => 1,
+        ];
+
+        self::assertCount(1, self::namespaceFindings(MetricBag::fromArray($bag), new NamespaceInstabilityOptions()));
+        self::assertSame([], self::namespaceFindings(MetricBag::fromArray([...$bag, 'size.implementing-enum-count' => 0, 'size.enum-count' => 5]), new NamespaceInstabilityOptions()));
+    }
+
+    #[Test]
+    public function itGatesTheAfferentMinimumOnOwnCa(): void
+    {
+        $bag = [
+            'coupling.instability' => 0.9, 'coupling.ca' => 5, 'coupling.ce' => 45,
+            'coupling.instability-own' => 1.0, 'coupling.ca-own' => 0, 'coupling.ce-own' => 10,
+            'size.class-count' => 3,
+        ];
+
+        self::assertSame([], self::namespaceFindings(MetricBag::fromArray($bag), new NamespaceInstabilityOptions()));
+        self::assertCount(1, self::namespaceFindings(MetricBag::fromArray($bag), new NamespaceInstabilityOptions(minAfferent: 0)));
+    }
+
+    /** @return list<\Qualimetrix\Analysis\Finding\Contract\Finding> */
+    private static function namespaceFindings(MetricBag $bag, NamespaceInstabilityOptions $options, ?\Qualimetrix\Analysis\Finding\Population\PopulationSession $session = null): array
+    {
+        $info = self::subjectInfo(SymbolPath::forNamespace('App\\Ctx'), RelativePath::fromString('src/Ctx'), null);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')->willReturn([$info]);
+        $repository->method('get')->willReturn($bag);
+        $context = new AnalysisContext($repository);
+
+        return (new InstabilityRule(new InstabilityOptions(namespace: $options)))->analyzeLevel(
+            SymbolLevel::Namespace_,
+            $session === null ? $context : $context->withPopulationTrace($session),
+        );
     }
 
     // Legacy analyze() tests
@@ -681,10 +782,10 @@ final class InstabilityRuleTest extends TestCase
             ->with('coupling.ca', 2)
             ->with('coupling.ce', 12);
         $nsBag = (new MetricBag())
-            ->with('coupling.instability', 0.88)
-            ->with('coupling.ca', 3)
-            ->with('coupling.ce', 22)
-            ->with('size.class-count.sum', 5);
+            ->with('coupling.instability-own', 0.88)
+            ->with('coupling.ca-own', 3)
+            ->with('coupling.ce-own', 22)
+            ->with('size.class-count', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -805,33 +906,50 @@ final class InstabilityRuleTest extends TestCase
     }
 
     #[Test]
-    public function itParsesNamespaceMinClassCountFromArray(): void
+    public function itParsesNamespaceMinTypeCountFromArray(): void
     {
         $options = NamespaceInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(NamespaceInstabilityOptions::class, [
-            'min_class_count' => 5,
+            'min_type_count' => 5,
         ]));
 
-        self::assertSame(5, $options->minClassCount);
+        self::assertSame(5, $options->minTypeCount);
     }
 
     #[Test]
-    public function itDefaultsNamespaceMinClassCountToThree(): void
+    public function itDefaultsNamespaceMinTypeCountToThree(): void
     {
         $options = NamespaceInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(NamespaceInstabilityOptions::class, [
             'enabled' => true,
         ]));
 
-        self::assertSame(3, $options->minClassCount);
+        self::assertSame(3, $options->minTypeCount);
     }
 
     #[Test]
-    public function itParsesNamespaceMinClassCountCamelCaseAlias(): void
+    public function itParsesNamespaceMinTypeCountCamelCaseAlias(): void
     {
         $options = NamespaceInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(NamespaceInstabilityOptions::class, [
-            'minClassCount' => 7,
+            'minTypeCount' => 7,
         ]));
 
-        self::assertSame(7, $options->minClassCount);
+        self::assertSame(7, $options->minTypeCount);
+    }
+
+    #[Test]
+    #[DataProvider('retiredClassCountKeys')]
+    public function itRefusesEveryRetiredClassCountSpelling(string $key): void
+    {
+        self::expectException(\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal::class);
+        self::expectExceptionMessage($key);
+        ResolvedOptionsFixture::values(NamespaceInstabilityOptions::class, [$key => 3]);
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function retiredClassCountKeys(): iterable
+    {
+        yield 'kebab' => ['min-class-count'];
+        yield 'snake' => ['min_class_count'];
+        yield 'camel' => ['minClassCount'];
     }
 
     #[Test]
@@ -959,7 +1077,7 @@ final class InstabilityRuleTest extends TestCase
 
         self::assertSame(4, $overridden->minAfferent);
         self::assertSame(0.9, $overridden->maxWarning);
-        self::assertSame(3, $overridden->minClassCount);
+        self::assertSame(3, $overridden->minTypeCount);
     }
 
     #[Test]

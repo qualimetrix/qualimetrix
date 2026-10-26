@@ -4211,6 +4211,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceCboScopeIntegrationTest::itJudgesANamespaceWithASubNamespaceOnItsOwnClasses
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceCboScopeIntegrationTest::itJudgesTheSameNamespaceOnFewerCouplingsWhenADependentIsLeftOutOfTheRun
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceCboScopeIntegrationTest::itReachesTheSameVerdictWhenTheSubNamespaceIsLeftOutOfTheRun
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceInstabilityScopeIntegrationTest::itDoesNotJudgeAContextRootThatDeclaresNoTypeOfItsOwn
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceInstabilityScopeIntegrationTest::itJudgesEveryNamespaceOnTheCouplingOfItsOwnTypes
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceInstabilityScopeIntegrationTest::itLeavesAFormulaOverOwnInstabilityWithoutValueOnANamespaceDeclaringNoType
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceInstabilityScopeIntegrationTest::itPublishesNoOwnInstabilityForANamespaceDeclaringNoType
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceInstabilityScopeIntegrationTest::itRefusesTheRetiredClassCountKeyByName"configuration file"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceInstabilityScopeIntegrationTest::itRefusesTheRetiredClassCountKeyByName"rule option"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\Rfc\RfcResolvedRunTest::itPreservesExactResolvedMetricsAcrossWorkersAndWarmAstCache
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\UnmatchedFrameworkNamespaceIntegrationTest::itFailsTheRunUnderFailOnWarning
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\UnmatchedFrameworkNamespaceIntegrationTest::itIsSilencedByDisablingTheProducingRule
@@ -4405,6 +4411,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itPartitionsCeIntoCeAppAndCeFrameworkWithoutOverlap
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itProvidesTheCouplingMetricNames
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itPublishesAnOwnCboThatCountsTheSubNamespaceAsAnotherNamespace
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itPublishesOwnInstabilityOnlyOnANamespaceDeclaringATypeOfItsOwn
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itPublishesTheOwnScopeOfANamespaceBesideItsSubtreeRollup
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itPublishesTheSameOwnCboWhenTheSubNamespaceIsLeftOutOfTheRun
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itRegistersAGlobalNamespaceClassUnderAnEmptyNamespace
@@ -4503,39 +4510,48 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityOptionsTest::itThrowsWhenTheFlatThresholdIsMixedWithBareMaxWarningInTheSameConfigArray
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itAccountsMeasuredZeroAndMissingSelectedPublicationBeforeSeverity
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itAnalyzesBothLevels
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itChecksNamespaceWhenAboveMinClassCount
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itChecksNamespaceWhenAboveMinTypeCount
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itChecksWhetherLevelIsEnabled
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itCountsOwnInterfacesTraitsAndImplementingEnumsTowardsTheMinimum
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDeclaresCorrectCliAliases
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDefaultsClassMinAfferentToOne
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDefaultsMissingClassEfferentCouplingToZeroInTheExactMessage
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDefaultsNamespaceMinAfferentToOne
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDefaultsNamespaceMinClassCountToThree
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDefaultsNamespaceMinTypeCountToThree
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDistinguishesRoundedInstabilityFromItsThreshold"class"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDistinguishesRoundedInstabilityFromItsThreshold"namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDoesNotJudgeAnUnstableSubtreeWhoseOwnScopeIsStable
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDoesNotSkipClassWhenCaTwoMeetsMinAfferentTwo
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDoesNotSkipClassWhenMinAfferentIsZero
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDoesNotSkipNamespaceWhenMinAfferentIsZero
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itGatesTheAfferentMinimumOnOwnCa
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itGeneratesClassInstabilityError
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itGeneratesClassInstabilityWarning
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itGeneratesNamespaceInstabilityError
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itGeneratesNamespaceInstabilityWarning
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itGetsSupportedLevels
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itJudgesANamespaceOnItsOwnInstabilityAndNotOnItsSubtree
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itNeverJudgesANamespaceThatDeclaresNoTypeOfItsOwn"default minimum"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itNeverJudgesANamespaceThatDeclaresNoTypeOfItsOwn"no minimum"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itParsesClassMinAfferentCamelCaseAlias
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itParsesClassMinAfferentFromArray
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itParsesClassOptionsFromArray
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itParsesClassOptionsFromArrayWithCamelCase
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itParsesInstabilityOptionsFromHierarchicalArray
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itParsesNamespaceMinAfferentFromArray
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itParsesNamespaceMinClassCountCamelCaseAlias
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itParsesNamespaceMinClassCountFromArray
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itParsesNamespaceMinTypeCountCamelCaseAlias
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itParsesNamespaceMinTypeCountFromArray
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itParsesNamespaceOptionsFromArray
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itParsesNamespaceOptionsFromArrayWithCamelCase
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itPreservesClassMinAfferentOnOverride
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itPreservesNamespaceMinAfferentOnOverride
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itRecordsConfiguredPopulationBoundaries"class-afferent"
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itRecordsConfiguredPopulationBoundaries"namespace-afferent"
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itRecordsConfiguredPopulationBoundaries"namespace-classes"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itRecordsConfiguredPopulationBoundaries"own-afferent"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itRecordsConfiguredPopulationBoundaries"own-types"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itRefusesEveryRetiredClassCountSpelling"camel"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itRefusesEveryRetiredClassCountSpelling"kebab"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itRefusesEveryRetiredClassCountSpelling"snake"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itRespectsInstabilityThresholdBoundaries"above error threshold"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itRespectsInstabilityThresholdBoundaries"above warning, below error"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itRespectsInstabilityThresholdBoundaries"at error threshold"
@@ -4554,7 +4570,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itSkipsClassWhenCaOneBelowMinAfferentTwo
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itSkipsClassesWithoutInstabilityMetric
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itSkipsNamespaceBelowDefaultMinAfferent
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itSkipsNamespaceBelowMinClassCount
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itSkipsNamespaceBelowMinTypeCount
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itSkipsNamespaceWhenCaOneBelowMinAfferentTwo
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itThrowsForInvalidOptionsType
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itThrowsForUnsupportedLevel

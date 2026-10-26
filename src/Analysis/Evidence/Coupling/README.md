@@ -93,7 +93,9 @@ views once each; the logical graph record is not an extra sample.
 **Type:** `GlobalContextCollectorInterface`
 **Provides:** `coupling.ca`, `coupling.ce`, `coupling.cbo`, `coupling.instability`, `coupling.ce-packages`, `coupling.cbo-app`, `coupling.ce-framework`, `coupling.ca-own`, `coupling.ce-own`, `coupling.cbo-own`, `coupling.instability-own`
 **Level:** Class and Namespace (`coupling.ca`, `coupling.ce`, `coupling.cbo` and
-`coupling.instability` are published on both; the `-own` keys on namespaces only)
+`coupling.instability` are published on both; the `-own` keys on namespaces only,
+and `coupling.cbo-own`/`coupling.instability-own` only on a namespace declaring
+a type the run analysed)
 
 ### Metrics
 
@@ -155,6 +157,20 @@ views once each; the logical graph record is not an extra sample.
 > namespace suffix, with full names as the final fallback.
 
 > **Note:** Robert C. Martin (1994) originally defined Instability only at the **package** (namespace) level. Qualimetrix extends it to the class level for finer-grained analysis. The namespace-level instability is the canonical metric per Martin's specification.
+
+> **Note:** `InstabilityRule` judges a namespace on `coupling.instability-own`,
+> for the reason `CboRule` judges `coupling.cbo-own`: the subtree value folds
+> in every outward dependency of the sub-namespaces while few dependents reach
+> the parent itself, so the root of a context that declares nothing of its own
+> reads close to 1 by construction. Like `coupling.cbo-own`, the own
+> instability is absent on a namespace declaring no type, so such a namespace
+> is never judged; a declaring namespace without own edges carries 0 by the
+> convention below. The namespace `min-type-count` option (default 3) counts
+> own classes, traits, interfaces and explicitly implementing enums, as
+> `DistanceRule`'s does; the `min-afferent` gate and the message's Ca/Ce read
+> `coupling.ca-own`/`coupling.ce-own`. The retired `min-class-count` spellings
+> are refused. The subtree `coupling.instability` stays published and feeds
+> subtree distance, `health.coupling` and the HTML report's Martin diagram.
 
 > **Note:** The dependency graph is seeded with every named project class,
 > interface, trait, and enum, including degree-zero declarations. CBO/Ca/Ce
@@ -416,8 +432,8 @@ that as 0 used to publish D = 1.0 for it.
 `coupling.abstractness-own`, `coupling.instability-own`, `coupling.ca-own` and
 `coupling.ce-own`. Its `min-type-count` option (default 3) counts own classes,
 traits, interfaces and explicitly implementing enums; bare enums do not count.
-The retired `min-class-count` spellings are refused. CBO and Instability keep
-their existing `min-class-count` options.
+The retired `min-class-count` spellings are refused. CBO keeps its existing
+`min-class-count` option over own classes.
 
 When `Ca = Ce = 0`, distance is absent in that scope: instability is a
 convention rather than measured edge evidence. `DistanceRule` consequently has
@@ -607,8 +623,8 @@ malformed refusal, distinct-level writes and coherent effective bands.
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
 
 CBO and instability reuse their full source declarations at each native
-class or namespace invocation. Missing publications, own class minima and
-afferent minima are eligibility gates before severity selection. CBO
+class or namespace invocation. Missing publications, own class or type minima
+and afferent minima are eligibility gates before severity selection. CBO
 retains its scope-specific metric choice; instability keeps publication
 presence before its afferent check. Framework-selector accounting first
 judges whole-project scope, then graph availability, then the actual names

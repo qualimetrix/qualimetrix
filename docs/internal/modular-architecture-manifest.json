@@ -5395,10 +5395,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Distance\\DistanceCollector"
         },
         {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Instability\\InstabilityRule"
-        },
-        {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\DitGlobalCollector"
         },

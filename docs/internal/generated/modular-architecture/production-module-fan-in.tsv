@@ -78,7 +78,7 @@ Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ExternalClassSpellingInte
 Qualimetrix\Analysis\Evidence\Design\Inheritance\Contract\ExternalParentSourceInterface	Analysis.Evidence.Design	2	2
 Qualimetrix\Analysis\Evidence\Design\Inheritance\Contract\ParentLookup	Analysis.Evidence.Design	1	1
 Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector	Analysis.Evidence.Measurement	20	8
-Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy	Analysis.Evidence.Measurement	27	9
+Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy	Analysis.Evidence.Measurement	26	9
 Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface	Analysis.Evidence.Measurement	8	5
 Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics	Analysis.Evidence.Measurement	2	2
 Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassKeyScope	Analysis.Evidence.Measurement	4	3

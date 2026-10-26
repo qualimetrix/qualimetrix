@@ -118,7 +118,7 @@ complexity.wmc higher class judges:complexity.wmc
 coupling.cbo higher class,namespace judges:coupling.cbo,coupling.cbo-app,coupling.cbo-own
 coupling.class-rank - class
 coupling.distance higher namespace judges:coupling.distance-own
-coupling.instability higher class,namespace judges:coupling.instability
+coupling.instability higher class,namespace judges:coupling.instability,coupling.instability-own
 coupling.unmatched-framework-namespace - project
 design.data-class lower class judges:design.woc
 design.dit higher class judges:design.dit

@@ -663,7 +663,6 @@
                     "coupling.instability": 0,
                     "coupling.ca-own": 0,
                     "coupling.ce-own": 0,
-                    "coupling.instability-own": 0,
                     "cohesion.lcom.avg": 1.5,
                     "cohesion.lcom.max": 2,
                     "cohesion.lcom.p95": 1.95,

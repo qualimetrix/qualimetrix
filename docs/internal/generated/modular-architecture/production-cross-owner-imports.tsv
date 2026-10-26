@@ -837,7 +837,6 @@ Qualimetrix\Analysis\Evidence\Coupling\Instability\InstabilityOptions	Analysis.E
 Qualimetrix\Analysis\Evidence\Coupling\Instability\InstabilityOptions	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionRefusal	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\Instability\InstabilityOptions	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\Instability\InstabilityOptions	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
-Qualimetrix\Analysis\Evidence\Coupling\Instability\InstabilityRule	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\Instability\InstabilityRule	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\Instability\InstabilityRule	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\Instability\InstabilityRule	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape	Analysis.Finding	contract

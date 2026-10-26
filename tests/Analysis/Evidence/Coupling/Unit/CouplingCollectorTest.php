@@ -768,6 +768,39 @@ final class CouplingCollectorTest extends TestCase
     }
 
     /**
+     * Own instability follows own CBO: a namespace declaring nothing of its
+     * own publishes none, while its subtree value stays. A namespace declaring
+     * types whose edges all stay inside it publishes 0 by convention.
+     */
+    #[Test]
+    public function itPublishesOwnInstabilityOnlyOnANamespaceDeclaringATypeOfItsOwn(): void
+    {
+        $deps = [
+            $this->dep('App\\Svc\\S', 'Ext\\Z'),
+            $this->dep('Ext\\P', 'App\\Svc\\S'),
+            $this->dep('App\\Closed\\A', 'App\\Closed\\B'),
+        ];
+
+        $graph = $this->realGraph($deps);
+        $repository = new InMemoryMetricRepository($this->collector->getMetricDefinitions());
+        foreach (['App\\Svc\\S', 'App\\Closed\\A', 'App\\Closed\\B'] as $class) {
+            $this->registerClass($repository, $class);
+        }
+        foreach (['App', 'App\\Svc', 'App\\Closed'] as $namespace) {
+            $this->registerNamespace($repository, $namespace);
+        }
+
+        $this->collector->calculate($graph, $repository);
+
+        $app = $this->metricView($repository, SymbolPath::forNamespace('App'));
+        self::assertNull($app->get('coupling.instability-own'));
+        self::assertEqualsWithDelta(0.5, $app->get('coupling.instability'), 0.0001);
+        self::assertSame(0, $app->get('coupling.ca-own'));
+        self::assertEqualsWithDelta(0.5, $this->metricView($repository, SymbolPath::forNamespace('App\\Svc'))->get('coupling.instability-own'), 0.0001);
+        self::assertSame(0.0, $this->metricView($repository, SymbolPath::forNamespace('App\\Closed'))->get('coupling.instability-own'));
+    }
+
+    /**
      * Left out of the run, the sub-namespace is still the far end of an edge,
      * so the own CBO is the one the whole run publishes, while the subtree
      * value moves.

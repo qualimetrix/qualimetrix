@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Coupling\Instability;
 
 use LogicException;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape;
@@ -33,9 +32,10 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * Classes/namespaces with high instability are fragile — they depend on many
  * other components, so changes in dependencies may break them.
  *
- * Besides the published `coupling.instability` value, also reads
- * `coupling.ca` and `coupling.ce` to report the underlying counts in the
- * finding's message/recommendation.
+ * A class is judged on `coupling.instability`, a namespace on
+ * `coupling.instability-own`. Besides it the rule reads the matching Ca and
+ * Ce (`coupling.ca`/`coupling.ce`, or their `-own` pair) to report the
+ * underlying counts in the finding's message.
  */
 #[CliAlias('instability-class-warning', 'class.max_warning')]
 #[CliAlias('instability-class-error', 'class.max_error')]
@@ -124,16 +124,16 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
     {
         return [
             self::NAME => self::judgingHigher(
-                [MetricName::COUPLING_INSTABILITY],
+                [MetricName::COUPLING_INSTABILITY, MetricName::COUPLING_INSTABILITY_OWN],
                 SymbolLevel::Class_,
                 SymbolLevel::Namespace_,
             )->withGates(
                 self::populationGate('class-coordinate', self::NAME, SymbolLevel::Class_, 'declaration', self::kindIn('class-coordinate', [SymbolType::Class_]), 'The subject is outside the class coordinate.'),
                 self::populationGate('class-instability', self::NAME, SymbolLevel::Class_, 'declaration', self::keyPresent('class-instability', [MetricName::COUPLING_INSTABILITY]), 'Class instability was not published.'),
                 self::populationGate('class-afferent', self::NAME, SymbolLevel::Class_, 'declaration', self::keyThreshold('class-afferent', [MetricName::COUPLING_CA], '>=', 'class-afferent', 'zero', true), 'Class afferent coupling is below its minimum.'),
-                self::populationGate('namespace-classes', self::NAME, SymbolLevel::Namespace_, 'namespace', self::keyThreshold('namespace-classes', [MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)], '>=', 'namespace-classes', 'zero', true), 'Subtree classes are below the configured minimum.'),
-                self::populationGate('namespace-instability', self::NAME, SymbolLevel::Namespace_, 'namespace', self::keyPresent('namespace-instability', [MetricName::COUPLING_INSTABILITY]), 'Namespace instability was not published.'),
-                self::populationGate('namespace-afferent', self::NAME, SymbolLevel::Namespace_, 'namespace', self::keyThreshold('namespace-afferent', [MetricName::COUPLING_CA], '>=', 'namespace-afferent', 'zero', true), 'Namespace afferent coupling is below its minimum.'),
+                self::populationGate('own-types', self::NAME, SymbolLevel::Namespace_, 'namespace', self::keyThreshold('own-types', [MetricName::SIZE_CLASS_COUNT, MetricName::SIZE_TRAIT_COUNT, MetricName::SIZE_INTERFACE_COUNT, MetricName::SIZE_IMPLEMENTING_ENUM_COUNT], '>=', 'own-types', 'zero', true), 'The own type population is below its minimum.'),
+                self::populationGate('own-instability', self::NAME, SymbolLevel::Namespace_, 'namespace', self::keyPresent('own-instability', [MetricName::COUPLING_INSTABILITY_OWN]), 'Own instability was not published.'),
+                self::populationGate('own-afferent', self::NAME, SymbolLevel::Namespace_, 'namespace', self::keyThreshold('own-afferent', [MetricName::COUPLING_CA_OWN], '>=', 'own-afferent', 'zero', true), 'Own afferent coupling is below its minimum.'),
             ),
         ];
     }
@@ -216,6 +216,15 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
     }
 
     /**
+     * Judges every namespace on the instability of its own declarations,
+     * `coupling.instability-own`, with the population counted over the types
+     * it declares itself, as CBO and distance do. The subtree value
+     * `coupling.instability` folds in every outward dependency of the
+     * sub-namespaces while few dependents reach the parent itself, so a
+     * context root that declares nothing reads close to 1 by construction; it
+     * stays published and is not judged. A namespace declaring no type has no
+     * own instability and is never judged.
+     *
      * @return list<Finding>
      */
     private function analyzeNamespaceLevel(AnalysisContext $context): array
@@ -234,23 +243,21 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
 
             $populationOptions = $this->getEffectiveOptions($context, $namespaceOptions, $subject);
             if (!$this->admitSubject($context, MetricSubject::aggregate($nsInfo->symbolPath), $declaration, (static function () use ($metrics, $populationOptions): iterable {
-                yield GateInput::metrics('namespace-classes', $metrics, $populationOptions->minClassCount);
-                yield GateInput::metrics('namespace-instability', $metrics);
-                yield GateInput::metrics('namespace-afferent', $metrics, $populationOptions->minAfferent);
+                yield GateInput::metrics('own-types', $metrics, $populationOptions->minTypeCount);
+                yield GateInput::metrics('own-instability', $metrics);
+                yield GateInput::metrics('own-afferent', $metrics, $populationOptions->minAfferent);
             })(), SymbolLevel::Namespace_, 'namespace')) {
                 continue;
             }
-            $instability = $metrics->get(MetricName::COUPLING_INSTABILITY);
-            $ca = (int) ($metrics->get(MetricName::COUPLING_CA) ?? 0);
-
-            $instabilityValue = (float) $instability;
+            $instabilityValue = (float) $metrics->require(MetricName::COUPLING_INSTABILITY_OWN);
 
             /** @var NamespaceInstabilityOptions $effectiveNsOptions */
             $effectiveNsOptions = $this->getEffectiveOptions($context, $namespaceOptions, $subject);
             $severity = $effectiveNsOptions->getSeverity($instabilityValue);
 
             if ($severity !== null) {
-                $ce = (int) ($metrics->get(MetricName::COUPLING_CE) ?? 0);
+                $ca = (int) $metrics->require(MetricName::COUPLING_CA_OWN);
+                $ce = (int) $metrics->require(MetricName::COUPLING_CE_OWN);
 
                 $threshold = $severity === Severity::Error ? $effectiveNsOptions->maxError : $effectiveNsOptions->maxWarning;
                 [$valueText, $thresholdText, $rounded] = ThresholdCrossing::display($instabilityValue, $threshold);
