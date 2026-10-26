@@ -1,7 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -135,2 +135,2 @@
--            "gate": "own-types",
--            "reason": "The own type population is below its minimum. Metric population boundary was not met.",
-+            "gate": "namespace-classes",
-+            "reason": "Subtree classes are below the configured minimum. Metric population boundary was not met.",

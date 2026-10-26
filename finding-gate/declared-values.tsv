@@ -1,2 +1,1 @@
 kind	key	level	reason
-metric	coupling.instability-own	namespace	Namespace coupling.instability-own is published only for a namespace declaring a type the run analysed; a namespace declaring nothing of its own (e.g. the corpus root Corpus) no longer carries a placeholder 0.
