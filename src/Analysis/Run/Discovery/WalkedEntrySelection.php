@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Run\Discovery;
 
 use Closure;
 use LogicException;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\RemovedCodeNamespaces;
 use Qualimetrix\Analysis\Run\ExcludeBinding\ExcludeSelectorLedger;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
@@ -27,8 +28,9 @@ final class WalkedEntrySelection
         private readonly Closure $inUniverse,
         private readonly Closure $builtInFloor,
         private readonly Closure $coveredByRun,
+        private readonly RemovedNamespaceBudget $budget,
     ) {
-        $this->evidence = new RemovedRunPhpEvidence($inspector);
+        $this->evidence = new RemovedRunPhpEvidence($inspector, $budget);
     }
 
     public function namedBase(AbsolutePath $path, EntryKind $kind): ?RelativePath
@@ -99,8 +101,13 @@ final class WalkedEntrySelection
         if ($zone !== 'run' || !($this->inUniverse)($path)) {
             return;
         }
-        $evidence = $this->ledger->needsPhpEvidence($matching) ? $this->evidence->search($path, $kind) : null;
-        $this->ledger->removedFromRun($relative, $matching, $evidence);
+        if ($this->budget->exhausted() && !$this->ledger->needsPhpEvidence($matching)) {
+            $this->ledger->removedFromRun($relative, $matching, null, RemovedCodeNamespaces::unknown());
+
+            return;
+        }
+        [$evidence, $declared] = $this->evidence->search($path, $kind);
+        $this->ledger->removedFromRun($relative, $matching, $evidence, $declared);
     }
 
     private function scanDirectory(AbsolutePath $path, ?RelativePath $relative, string $zone, ?RelativePath $runBase): void

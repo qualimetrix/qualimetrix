@@ -29,6 +29,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepositor
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\Channel\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\RemovedCodeNamespaces;
 use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
@@ -315,7 +316,7 @@ final class AnalysisPipelineTest extends TestCase
     /** @param list<SplFileInfo> $files */
     private static function discovered(array $files): DiscoveredProjectFiles
     {
-        return new DiscoveredProjectFiles($files, [], [], [], [], new ScopeFacts([], [], [], false), \count($files));
+        return new DiscoveredProjectFiles($files, [], [], [], [], new ScopeFacts([], [], [], false), \count($files), RemovedCodeNamespaces::none());
     }
 
     private function pipeline(

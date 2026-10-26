@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\Discovery;
 
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\RemovedCodeNamespaces;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailureKind;
@@ -29,7 +30,7 @@ final readonly class ProjectFiles implements ProjectFilesInterface
         $walked = $this->walk->walk(new WalkRequest($run));
         $root = $run->projectScope->universe->projectRoot;
         $files = self::selectCandidates($walked->candidates, $root);
-        [$eligible, $generated, $skipped] = $this->applyGeneratedPolicy($files, $walked->skipped, $run->generatedFilePolicy);
+        [$eligible, $generated, $skipped, $generatedNamespaces] = $this->applyGeneratedPolicy($files, $walked->skipped, $run->generatedFilePolicy, $walked->removedCode, $walked->namespaceBudget);
 
         $facts = new ScopeFacts(
             $walked->facts->missingByPaths,
@@ -48,6 +49,7 @@ final readonly class ProjectFiles implements ProjectFilesInterface
             $walked->verdicts,
             $facts,
             \count($files),
+            $generatedNamespaces,
         );
     }
 
@@ -103,9 +105,9 @@ final readonly class ProjectFiles implements ProjectFilesInterface
      * @param array<string, SplFileInfo> $files
      * @param list<SkippedEntry> $skipped
      *
-     * @return array{list<SplFileInfo>, list<RelativePath>, list<SkippedEntry>}
+     * @return array{list<SplFileInfo>, list<RelativePath>, list<SkippedEntry>, RemovedCodeNamespaces}
      */
-    private function applyGeneratedPolicy(array $files, array $skipped, GeneratedFilePolicy $policy): array
+    private function applyGeneratedPolicy(array $files, array $skipped, GeneratedFilePolicy $policy, RemovedCodeNamespaces $namespaces, RemovedNamespaceBudget $budget): array
     {
         $eligible = [];
         $generated = [];
@@ -123,12 +125,24 @@ final readonly class ProjectFiles implements ProjectFilesInterface
                 );
             } elseif ($classification) {
                 $generated[] = RelativePath::fromString($relative);
+                $namespaces = $namespaces->isKnown() ? $namespaces->merge($this->declaredByGenerated($file, $budget)) : $namespaces;
             } else {
                 $eligible[] = $file;
             }
         }
 
-        return [$eligible, $generated, $skipped];
+        return [$eligible, $generated, $skipped, $namespaces];
+    }
+
+    /** The header filter sees 2 KB; the `namespace` statement may lie anywhere in the file. */
+    private function declaredByGenerated(SplFileInfo $file, RemovedNamespaceBudget $budget): RemovedCodeNamespaces
+    {
+        if (!$budget->take()) {
+            return RemovedCodeNamespaces::unknown();
+        }
+        $declared = RemovedNamespaceScan::declaredIn($file->getPathname());
+
+        return $declared === null ? RemovedCodeNamespaces::unknown() : RemovedCodeNamespaces::known($declared);
     }
 
     private static function relative(SplFileInfo $file, AbsolutePath $root): RelativePath

@@ -25,8 +25,10 @@ use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
 use Qualimetrix\Analysis\Run\Discovery\EntryInspector;
 use Qualimetrix\Analysis\Run\Discovery\EntryInspectorInterface;
 use Qualimetrix\Analysis\Run\Discovery\EntryKind;
+use Qualimetrix\Analysis\Run\Discovery\GeneratedFileFilter;
 use Qualimetrix\Analysis\Run\Discovery\ProjectFiles;
 use Qualimetrix\Analysis\Run\Discovery\ProjectWalk;
+use Qualimetrix\Analysis\Run\Discovery\WalkedProject;
 use Qualimetrix\Analysis\Run\Discovery\WalkRequest;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\PathPattern;
@@ -903,6 +905,242 @@ final class ProjectWalkTest extends TestCase
                 $walked->candidates,
             ));
         }
+    }
+
+    #[Test]
+    public function itCollectsEveryNamespaceOfARemovedDirectory(): void
+    {
+        file_put_contents($this->root . '/src/Legacy/Old/O.php', '<?php namespace Legacy\\Old;');
+        file_put_contents($this->root . '/src/Legacy/Top.php', '<?php namespace Legacy\\Top; namespace Legacy\\Other;');
+        file_put_contents($this->root . '/src/Legacy/Plain.php', '<?php class Plain {}');
+        $walked = $this->walkExcluding(SelectorKind::Subtree, 'src/Legacy');
+
+        $removed = $walked->removedCode;
+        self::assertTrue($removed->isKnown());
+        foreach (['Legacy\\Old', 'Legacy\\Top', 'Legacy\\Other', ''] as $declared) {
+            self::assertTrue($removed->mayDeclareWithin($declared, false), $declared);
+        }
+        self::assertFalse($removed->mayDeclareWithin('Unrelated', false));
+        self::assertFalse($removed->mayDeclareWithin('Legacy\\Missing', false));
+    }
+
+    #[Test]
+    public function itCollectsNamespacesOfEveryEntryASingleSelectorRemoves(): void
+    {
+        mkdir($this->root . '/src/Alpha');
+        mkdir($this->root . '/src/Beta');
+        file_put_contents($this->root . '/src/Alpha/A.php', '<?php namespace Alpha;');
+        file_put_contents($this->root . '/src/Beta/B.php', '<?php namespace Beta;');
+        $walked = $this->walkExcluding(SelectorKind::Regex, 'src/(?:Alpha|Beta)');
+
+        self::assertSame('php-file', $walked->verdicts[0]->phpEvidence);
+        self::assertSame(['src/Alpha', 'src/Beta'], $walked->verdicts[0]->removedEntries);
+        self::assertTrue($walked->removedCode->mayDeclareWithin('Alpha', false));
+        self::assertTrue($walked->removedCode->mayDeclareWithin('Beta', false));
+        self::assertFalse($walked->removedCode->mayDeclareWithin('Gamma', false));
+    }
+
+    #[Test]
+    public function itMakesRemovedNamespacesUnknownWhenADeeperChildIsUnlistableAfterPhpWasFound(): void
+    {
+        file_put_contents($this->root . '/src/Legacy/A.php', '<?php namespace Legacy;');
+        $inspector = new class implements EntryInspectorInterface {
+            private EntryInspector $delegate;
+
+            public function __construct()
+            {
+                $this->delegate = new EntryInspector();
+            }
+
+            public function inspect(string $path): EntryKind
+            {
+                return $this->delegate->inspect($path);
+            }
+
+            public function list(string $directory): ?array
+            {
+                return str_ends_with($directory, '/Legacy/Old') ? null : $this->delegate->list($directory);
+            }
+        };
+        $walked = (new ProjectWalk($inspector))->walk(new WalkRequest($this->configuration(
+            [$this->root . '/src'],
+            [$this->selector(SelectorKind::Subtree, 'src/Legacy', ConfigurationSource::ConfigFile)],
+        )));
+
+        self::assertSame('php-file', $walked->verdicts[0]->phpEvidence);
+        self::assertFalse($walked->removedCode->isKnown());
+        self::assertTrue($walked->removedCode->mayDeclareWithin('Unrelated', false));
+    }
+
+    #[Test]
+    public function itNeitherFollowsDirectoryLinksNorReadsFileLinksInsideARemovedDirectory(): void
+    {
+        mkdir($this->root . '/src/Linked');
+        file_put_contents($this->root . '/src/Linked/L.php', '<?php namespace ViaDirectoryLink;');
+        file_put_contents($this->root . '/src/Target.php', '<?php namespace ViaFileLink;');
+        symlink($this->root . '/src/Linked', $this->root . '/src/Legacy/DirLink');
+        symlink($this->root . '/src/Target.php', $this->root . '/src/Legacy/FileLink.php');
+        $walked = $this->walkExcluding(SelectorKind::Subtree, 'src/Legacy');
+
+        self::assertTrue($walked->removedCode->isKnown());
+        self::assertFalse($walked->removedCode->mayDeclareWithin('ViaDirectoryLink', false));
+        self::assertFalse($walked->removedCode->mayDeclareWithin('ViaFileLink', false));
+        self::assertTrue($walked->removedCode->mayDeclareWithin('', false), 'the real file still declares global code');
+    }
+
+    #[Test]
+    public function itRemovesNothingFromTheNamespacesWhenNoEntryIsExcluded(): void
+    {
+        $walked = (new ProjectWalk(new EntryInspector()))->walk(new WalkRequest($this->configuration([$this->root . '/src'], [])));
+
+        self::assertTrue($walked->removedCode->isKnown());
+        self::assertFalse($walked->removedCode->mayDeclareWithin('', true));
+    }
+
+    #[Test]
+    public function itReadsTheNamespaceOfAGeneratedFileBeyondTheHeaderWindow(): void
+    {
+        file_put_contents(
+            $this->root . '/src/Gen.php',
+            "<?php\n// @generated\n/* " . str_repeat('x', 4000) . " */\nnamespace Gen\\Late;\n",
+        );
+        $result = (new ProjectFiles(new ProjectWalk(new EntryInspector()), new GeneratedFileFilter()))
+            ->discover($this->configuration([$this->root . '/src'], []));
+
+        self::assertCount(1, $result->generatedExcludedFiles);
+        self::assertTrue($result->removedCode->isKnown());
+        self::assertTrue($result->removedCode->mayDeclareWithin('Gen\\Late', false));
+        self::assertFalse($result->removedCode->mayDeclareWithin('Unrelated', false));
+    }
+
+    #[Test]
+    public function itMakesRemovedNamespacesUnknownWhenAGeneratedFileCannotBeRead(): void
+    {
+        $locked = $this->root . '/src/Locked.php';
+        file_put_contents($locked, '<?php namespace Locked;');
+        $filter = new class implements GeneratedFileFilterInterface {
+            public function isGenerated(SplFileInfo $file): bool
+            {
+                return $file->getFilename() === 'Locked.php';
+            }
+        };
+        chmod($locked, 0o000);
+        try {
+            if (is_readable($locked)) {
+                self::markTestSkipped('Permissions are not enforced for this user');
+            }
+            $result = (new ProjectFiles(new ProjectWalk(new EntryInspector()), $filter))
+                ->discover($this->configuration([$this->root . '/src'], []));
+        } finally {
+            chmod($locked, 0o644);
+        }
+
+        self::assertFalse($result->removedCode->isKnown());
+    }
+
+    #[Test]
+    public function itJudgesAnUnrelatedNamespaceLiteralBehindAnExcludedPhpTree(): void
+    {
+        file_put_contents($this->root . '/src/Legacy/Old/O.php', '<?php namespace Legacy\\Old;');
+        $configuration = $this->configuration(
+            [$this->root . '/src'],
+            [$this->selector(SelectorKind::Subtree, 'src/Legacy', ConfigurationSource::ConfigFile)],
+        );
+        $files = (new ProjectFiles(new ProjectWalk(new EntryInspector()), new GeneratedFileFilter()))->discover($configuration);
+        $judgement = $configuration->projectScope->withDiscoveredFiles($files)->judgement();
+
+        self::assertTrue($judgement->judgesNamespaceLiteral('Unrelated\\Ns', false));
+        self::assertTrue($judgement->judgesNamespaceLiteral('Unrelated', true));
+        self::assertFalse($judgement->judgesNamespaceLiteral('Legacy\\Old', false));
+        self::assertFalse($judgement->judgesNamespaceLiteral('Legacy', true));
+    }
+
+    #[Test]
+    public function itMakesRemovedNamespacesUnknownPastTheReadBudgetWithoutChangingVerdicts(): void
+    {
+        foreach (['A', 'B', 'C'] as $name) {
+            file_put_contents($this->root . '/src/Legacy/' . $name . '.php', '<?php namespace Legacy;');
+        }
+        $selectors = [$this->selector(SelectorKind::Subtree, 'src/Legacy', ConfigurationSource::ConfigFile)];
+        $request = new WalkRequest($this->configuration([$this->root . '/src'], $selectors));
+        $unbounded = (new ProjectWalk(new EntryInspector()))->walk($request);
+        $atLimit = (new ProjectWalk(new EntryInspector(), 4))->walk($request);
+        $bounded = (new ProjectWalk(new EntryInspector(), 2))->walk($request);
+
+        self::assertTrue($unbounded->removedCode->isKnown());
+        self::assertTrue($atLimit->removedCode->isKnown(), 'a walk that spends exactly the budget stays known');
+        self::assertFalse($bounded->removedCode->isKnown());
+        self::assertEquals($unbounded->verdicts, $bounded->verdicts);
+    }
+
+    #[Test]
+    public function itStopsDescendingAnEvidencedSelectorsLaterEntriesOnceTheBudgetIsSpent(): void
+    {
+        mkdir($this->root . '/src/Alpha');
+        mkdir($this->root . '/src/Beta');
+        file_put_contents($this->root . '/src/Alpha/A.php', '<?php namespace Alpha;');
+        file_put_contents($this->root . '/src/Alpha/B.php', '<?php namespace Alpha;');
+        file_put_contents($this->root . '/src/Beta/B.php', '<?php namespace Beta;');
+        $inspector = new class implements EntryInspectorInterface {
+            /** @var list<string> */
+            public array $listed = [];
+            private EntryInspector $delegate;
+
+            public function __construct()
+            {
+                $this->delegate = new EntryInspector();
+            }
+
+            public function inspect(string $path): EntryKind
+            {
+                return $this->delegate->inspect($path);
+            }
+
+            public function list(string $directory): ?array
+            {
+                $this->listed[] = $directory;
+
+                return $this->delegate->list($directory);
+            }
+        };
+        $request = new WalkRequest($this->configuration(
+            [$this->root . '/src'],
+            [$this->selector(SelectorKind::Regex, 'src/(?:Alpha|Beta)', ConfigurationSource::ConfigFile)],
+        ));
+        $walked = (new ProjectWalk($inspector, 1))->walk($request);
+
+        self::assertSame('php-file', $walked->verdicts[0]->phpEvidence);
+        self::assertSame(['src/Alpha', 'src/Beta'], $walked->verdicts[0]->removedEntries);
+        self::assertFalse($walked->removedCode->isKnown());
+        self::assertContains($this->root . '/src/Alpha', $inspector->listed);
+        self::assertNotContains($this->root . '/src/Beta', $inspector->listed);
+    }
+
+    #[Test]
+    public function itSpendsOneBudgetOnRemovedAndGeneratedFiles(): void
+    {
+        foreach (['G1', 'G2'] as $name) {
+            file_put_contents($this->root . '/src/' . $name . '.php', "<?php\n// @generated\nnamespace Gen;");
+        }
+        $request = $this->configuration(
+            [$this->root . '/src'],
+            [$this->selector(SelectorKind::Subtree, 'src/Legacy', ConfigurationSource::ConfigFile)],
+        );
+        $files = new GeneratedFileFilter();
+        $roomy = (new ProjectFiles(new ProjectWalk(new EntryInspector(), 3), $files))->discover($request);
+        $tight = (new ProjectFiles(new ProjectWalk(new EntryInspector(), 2), $files))->discover($request);
+
+        self::assertTrue($roomy->removedCode->isKnown());
+        self::assertFalse($tight->removedCode->isKnown());
+        self::assertCount(2, $tight->generatedExcludedFiles);
+    }
+
+    private function walkExcluding(SelectorKind $kind, string $value): WalkedProject
+    {
+        return (new ProjectWalk(new EntryInspector()))->walk(new WalkRequest($this->configuration(
+            [$this->root . '/src'],
+            [$this->selector($kind, $value, ConfigurationSource::ConfigFile)],
+        )));
     }
 
     /** @param list<string> $paths

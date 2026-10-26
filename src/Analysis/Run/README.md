@@ -81,9 +81,12 @@ path IO and universe construction; defaults retain their refusal contract.
 Private `RunPathSelection` chooses authored or inferred paths from the captured
 document without rereading Composer. `WalkedEntrySelection` owns admission and
 recursive metadata descent; `WalkedEntryOutcome` accumulates passed facts with
-no IO. `RemovedRunPhpEvidence` searches metadata only for actual removed run
-entries that require PHP evidence. These types share the same inspector and
-ledger, without another classifier or walk.
+no IO. `RemovedRunPhpEvidence` descends every actual removed run entry once and
+returns the selector evidence together with the namespaces its PHP files declare,
+read by `RemovedNamespaceScan` (token-based, whole file). One `RemovedNamespaceBudget` (2,000 file reads per walk) bounds both reads; past it the namespaces become unknown and the descent returns to stopping at the first PHP file. The ledger folds them,
+and the generated-file policy adds those of `@generated` files, into one
+`RemovedCodeNamespaces` carried beside the verdicts to `ProjectScopeJudgement`.
+These types share the same inspector and ledger, without another classifier or walk.
 
 ## Phase order
 

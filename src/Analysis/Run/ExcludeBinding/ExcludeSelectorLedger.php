@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Run\ExcludeBinding;
 
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorVerdict;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\RemovedCodeNamespaces;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AuthoredExclude;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Pattern\SelectorKind;
@@ -27,8 +28,19 @@ final class ExcludeSelectorLedger
     /** @var array<string, string> */
     private array $unjudgeable = [];
 
+    private RemovedCodeNamespaces $removedCode;
+
     /** @param list<AuthoredExclude> $selectors */
-    public function __construct(private readonly array $selectors) {}
+    public function __construct(private readonly array $selectors)
+    {
+        $this->removedCode = RemovedCodeNamespaces::none();
+    }
+
+    /** Namespaces declared by everything removed from the run so far, whatever the number of selectors that matched it. */
+    public function removedCode(): RemovedCodeNamespaces
+    {
+        return $this->removedCode;
+    }
 
     /** @return list<string> */
     public function matching(RelativePath $relative): array
@@ -64,8 +76,9 @@ final class ExcludeSelectorLedger
     }
 
     /** @param list<string> $selectors */
-    public function removedFromRun(RelativePath $relative, array $selectors, ?string $phpEvidence): void
+    public function removedFromRun(RelativePath $relative, array $selectors, ?string $phpEvidence, RemovedCodeNamespaces $declared): void
     {
+        $this->removedCode = $this->removedCode->merge($declared);
         foreach ($selectors as $selector) {
             $this->removed[$selector][] = $relative->value();
             if (($this->phpEvidence[$selector] ?? null) !== 'php-file') {

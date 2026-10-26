@@ -46,6 +46,7 @@ use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\RemovedCodeNamespaces;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
@@ -175,6 +176,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             [],
             new ScopeFacts([], [], [], false),
             1,
+            RemovedCodeNamespaces::none(),
         ));
         $orchestrator = self::createStub(CollectionOrchestratorInterface::class);
         $orchestrator->method('collect')->willReturnCallback(static function () use ($state, $path, $source): CollectionPhaseOutput {
@@ -329,6 +331,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
                 [],
                 new ScopeFacts([], [], [], false),
                 $state->removeAfterCollection ? 3 : 2,
+                RemovedCodeNamespaces::none(),
             ),
         );
         $orchestrator = self::createStub(CollectionOrchestratorInterface::class);
@@ -1143,6 +1146,7 @@ PHP);
             [],
             new ScopeFacts([], [], [], false),
             1,
+            RemovedCodeNamespaces::none(),
         ));
 
         $orchestrator = self::createStub(CollectionOrchestratorInterface::class);
@@ -1208,6 +1212,7 @@ PHP);
             [],
             new ScopeFacts([], [], [], false),
             1,
+            RemovedCodeNamespaces::none(),
         ));
 
         $orchestrator = self::createStub(CollectionOrchestratorInterface::class);

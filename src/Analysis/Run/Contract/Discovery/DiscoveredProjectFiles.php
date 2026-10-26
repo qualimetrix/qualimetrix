@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Run\Contract\Discovery;
 
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorVerdict;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\RemovedCodeNamespaces;
 use Qualimetrix\Analysis\Run\Discovery\ScopeFacts;
 use Qualimetrix\Core\Path\RelativePath;
 use SplFileInfo;
@@ -27,5 +28,6 @@ final readonly class DiscoveredProjectFiles
         public array $selectorVerdicts,
         public ScopeFacts $scopeFacts,
         public int $discoveredCount,
+        public RemovedCodeNamespaces $removedCode,
     ) {}
 }

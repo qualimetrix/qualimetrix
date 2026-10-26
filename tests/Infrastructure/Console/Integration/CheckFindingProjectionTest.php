@@ -102,7 +102,7 @@ final class CheckFindingProjectionTest extends TestCase
             $anchor->pointAt($root, ['/qmx-missing-' . bin2hex(random_bytes(6)) . '/src']);
             $measurement = (new \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage($reader))->measure(AbsolutePath::fromString($root), [AbsolutePath::fromString($root . '/dependency')], \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude, \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored);
             $reader->read(AbsolutePath::fromString($root . '/dependency'));
-            $measured = $measurement->withDiscoveredFiles(new \Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles([], [], [], [], [], new \Qualimetrix\Analysis\Run\Discovery\ScopeFacts([RelativePath::fromString('src/A.php')], [], [], false), 0));
+            $measured = $measurement->withDiscoveredFiles(new \Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles([], [], [], [], [], new \Qualimetrix\Analysis\Run\Discovery\ScopeFacts([RelativePath::fromString('src/A.php')], [], [], false), 0, \Qualimetrix\Analysis\Finding\Contract\ProjectScope\RemovedCodeNamespaces::none()));
             $report = (new \Qualimetrix\Infrastructure\Console\CheckScope\ProjectScopePresenter(self::silentSuppressionAudit(), new \Qualimetrix\Infrastructure\Console\CheckScope\ObservedProjectScopeReasons($reader, $anchor)))->project($this->createAnalysisResult(projectScope: $measured), new FindingProjectionOptions());
             self::assertSame('narrowed', $report->state);
             self::assertCount(10, $report->unjudgedChannels);

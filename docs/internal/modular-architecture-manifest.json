@@ -10368,6 +10368,38 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\ProjectScope\\RemovedCodeNamespaces": {
+      "path": "src/Analysis/Finding/Contract/ProjectScope/RemovedCodeNamespaces.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Discovery\\DiscoveredProjectFiles"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Discovery\\ProjectFiles"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Discovery\\RemovedRunPhpEvidence"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Discovery\\WalkedEntrySelection"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Discovery\\WalkedProject"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\ExcludeSelectorLedger"
+        }
+      ]
+    },
     "Qualimetrix\\Analysis\\Finding\\Contract\\ProjectScope\\SubjectCoverageFacts": {
       "path": "src/Analysis/Finding/Contract/ProjectScope/SubjectCoverageFacts.php",
       "kind": "class",
@@ -18682,6 +18714,20 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Run\\Discovery\\RemovedNamespaceBudget": {
+      "path": "src/Analysis/Run/Discovery/RemovedNamespaceBudget.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Run\\Discovery\\RemovedNamespaceScan": {
+      "path": "src/Analysis/Run/Discovery/RemovedNamespaceScan.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Run\\Discovery\\RemovedRunPhpEvidence": {
       "path": "src/Analysis/Run/Discovery/RemovedRunPhpEvidence.php",
       "kind": "class",
@@ -20049,6 +20095,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Preparation\\RunPreparation"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Discovery\\RemovedNamespaceScan"
         }
       ]
     },

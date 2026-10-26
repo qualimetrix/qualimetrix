@@ -39,7 +39,7 @@ final class WalkedEntryOutcome
 
     private ?AbsolutePath $unlistableOutsideRoot = null;
 
-    public function __construct(private readonly ExcludeSelectorLedger $ledger) {}
+    public function __construct(private readonly ExcludeSelectorLedger $ledger, private readonly RemovedNamespaceBudget $budget) {}
 
     public function namedExcluded(RelativePath $relative): void
     {
@@ -163,6 +163,8 @@ final class WalkedEntryOutcome
             array_values($this->namedExcluded),
             $this->ledger->verdicts($knownUniverse),
             $facts,
+            $this->ledger->removedCode(),
+            $this->budget,
         );
     }
 }
