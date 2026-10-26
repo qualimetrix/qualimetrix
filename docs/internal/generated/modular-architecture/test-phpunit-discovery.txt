@@ -2320,6 +2320,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CycleTest::itReturnsSmallSizeCategory
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CycleTest::itReturnsSmallSizeCategoryAtBoundary
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CycleTest::itTruncatesShortStringForLargeCycle
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\IgnoreRelationsCheckTest::itDropsTheCycleWhenAttributeArgumentsAreIgnoredInTheConfigurationFile
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\IgnoreRelationsCheckTest::itDropsTheCycleWhenAttributeArgumentsAreIgnoredOnTheCommandLine
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\IgnoreRelationsCheckTest::itKeepsTheCycleWhenOnlyUnrelatedKindsAreIgnored
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\IgnoreRelationsCheckTest::itRefusesAnUnknownRelationInTheConfigurationFileByName
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\IgnoreRelationsCheckTest::itRefusesAnUnknownRelationOnTheCommandLineByName
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\IgnoreRelationsCheckTest::itReportsAnEmptyListExactlyAsAnAbsentOne
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\IgnoreRelationsCheckTest::itReportsTheAttributeMappedCycleWithoutTheOption
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\CodeSmellLinePrecisionTest::itCreatesPerOccurrenceFindingsWithCorrectLines
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\CodeSmellLinePrecisionTest::itEmitsNoFindingsWhenTheMetricBagHasNoEntriesForTheSmellType
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\CodeSmellLinePrecisionTest::itPropagatesVisitorLineDataThroughTheCollector
@@ -11693,13 +11700,6 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itSupportsSarifFormat
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itSupportsSummaryFormat
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandTest::itUsesBaseline
- - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CircularDependencyIgnoreRelationsTest::itDropsTheCycleWhenAttributeArgumentsAreIgnoredInTheConfigurationFile
- - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CircularDependencyIgnoreRelationsTest::itDropsTheCycleWhenAttributeArgumentsAreIgnoredOnTheCommandLine
- - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CircularDependencyIgnoreRelationsTest::itKeepsTheCycleWhenOnlyUnrelatedKindsAreIgnored
- - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CircularDependencyIgnoreRelationsTest::itRefusesAnUnknownRelationInTheConfigurationFileByName
- - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CircularDependencyIgnoreRelationsTest::itRefusesAnUnknownRelationOnTheCommandLineByName
- - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CircularDependencyIgnoreRelationsTest::itReportsAnEmptyListExactlyAsAnAbsentOne
- - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CircularDependencyIgnoreRelationsTest::itReportsTheAttributeMappedCycleWithoutTheOption
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\ManifestScopeRefusalTest::itPublishesTheMeasuredVerdictOrRefusesUnusableDefaults"all records rejected defaults refuse"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\ManifestScopeRefusalTest::itPublishesTheMeasuredVerdictOrRefusesUnusableDefaults"array root defaults refuse"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\ManifestScopeRefusalTest::itPublishesTheMeasuredVerdictOrRefusesUnusableDefaults"invalid authored root judges"

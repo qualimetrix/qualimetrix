@@ -2,14 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Infrastructure\Console\Functional\Check;
+namespace Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyAnalysis;
 use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
-use Qualimetrix\Infrastructure\DependencyInjection\CircularDependency\CircularDependencyConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -19,8 +18,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * preparation, not handed to it by the run.
  */
 #[CoversClass(CircularDependencyAnalysis::class)]
-#[CoversClass(CircularDependencyConfigurator::class)]
-final class CircularDependencyIgnoreRelationsTest extends TestCase
+final class IgnoreRelationsCheckTest extends TestCase
 {
     /** The entity names its repository only inside a mapping attribute. */
     private const string ATTRIBUTE_MAPPED_REPOSITORY = <<<'PHP'
