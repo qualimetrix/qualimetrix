@@ -17,7 +17,9 @@ use Qualimetrix\Core\Pattern\SelectorKind;
  * namespace claims and a declared production autoload. A complete named PHP
  * roster can provide the same measured completeness as a directory selection.
  * Generated removal closes namespace claims while leaving selector completeness
- * open, so it does not by itself withhold path regex judgement.
+ * open, so it does not by itself withhold path regex judgement. Literal
+ * namespaces ask the narrower literal question instead: removal of PHP files
+ * withholds only a value the removed code could have declared.
  *
  * Literal paths use their deepest existing ancestor: `tests/Gone/Deep` anchors
  * at `tests/`. A run that did not analyse that location cannot distinguish
@@ -83,17 +85,24 @@ final readonly class ValueScopeJudgement
      */
     public function judgesNamespaceValue(NamespacePattern $pattern): bool
     {
-        // Before the regex branch: a whole-tree run would otherwise judge a
-        // regex namespace value here while refusing every literal one.
-        if (!$this->projectDeclared || !$this->scope->judgesNamespaceClaims()) {
+        if (!$this->projectDeclared) {
             return false;
         }
 
+        // Before the regex branch: a whole-tree run would otherwise judge a
+        // regex namespace value here while refusing every literal one.
         if ($pattern->definition->kind === SelectorKind::Regex) {
-            return $this->scope->judgesExcludeSelectors() && !$this->hasAuthoredRemoval();
+            return $this->scope->judgesNamespaceClaims()
+                && $this->scope->judgesExcludeSelectors()
+                && !$this->hasAuthoredRemoval();
         }
 
-        return !$this->hasUnanalysedNamespaceRoot(trim($pattern->definition->value, '\\'), $this->projectRoot, $this->psr4Roots);
+        $head = trim($pattern->definition->value, '\\');
+        if (!$this->scope->judgesNamespaceLiteral($head, $pattern->definition->kind === SelectorKind::Subtree)) {
+            return false;
+        }
+
+        return !$this->hasUnanalysedNamespaceRoot($head, $this->projectRoot, $this->psr4Roots);
     }
 
     /** @param array<string, list<string>> $psr4Roots */

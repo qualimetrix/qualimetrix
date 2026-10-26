@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorVerdict;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\RemovedCodeNamespaces;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Pattern\PathPattern;
@@ -131,6 +132,59 @@ final class ValueScopeJudgementTest extends TestCase
         self::assertTrue($judgement->judgesPathValue($this->subtreePath('src/Gone')));
         self::assertFalse($judgement->judgesPathValue($this->regexPath('.*Gone')));
         self::assertFalse($judgement->judgesNamespaceValue($this->regexNamespace('Acme\\.*')));
+    }
+
+    /**
+     * Code removed from the run narrows the literal question to what that code
+     * declared: the stale neighbour stays judged, what the code could have
+     * declared does not.
+     */
+    #[Test]
+    public function itJudgesALiteralNamespaceTheRemovedCodeCannotHaveDeclared(): void
+    {
+        $judgement = $this->removedPhp(RemovedCodeNamespaces::known(['App\\Foo\\Bar']));
+
+        self::assertTrue($judgement->judgesNamespaceValue($this->exactNamespace('Acme\\Does\\Not\\Exist')));
+        self::assertTrue($judgement->judgesNamespaceValue($this->exactNamespace('App\\Baz')));
+        self::assertTrue($judgement->judgesNamespaceValue($this->subtreeNamespace('App\\Baz')));
+        self::assertFalse($judgement->judgesNamespaceValue($this->subtreeNamespace('App')));
+        self::assertFalse($judgement->judgesNamespaceValue($this->exactNamespace('App')));
+        self::assertFalse($judgement->judgesNamespaceValue($this->subtreeNamespace('App\\Foo')));
+        self::assertFalse($judgement->judgesNamespaceValue($this->exactNamespace('App\\Foo')));
+        self::assertFalse($judgement->judgesNamespaceValue($this->exactNamespace('app\\foo')));
+        self::assertFalse($judgement->judgesNamespaceValue($this->regexNamespace('Acme\\.*')));
+    }
+
+    #[Test]
+    public function itWithholdsEveryNamespaceValueWhenTheRemovedNamespacesAreUnknownOrAPathsDoorIsOpen(): void
+    {
+        $unknown = $this->removedPhp(RemovedCodeNamespaces::unknown());
+        $paths = $this->judgement(['src'], new ProjectScopeJudgement([ProjectScopeDoor::Paths, ProjectScopeDoor::Exclude], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::known(['Other'])));
+
+        self::assertFalse($unknown->judgesNamespaceValue($this->exactNamespace('Acme\\Gone')));
+        self::assertFalse($paths->judgesNamespaceValue($this->exactNamespace('Acme\\Gone')));
+        self::assertFalse($paths->judgesNamespaceValue($this->subtreeNamespace('Acme\\Gone')));
+    }
+
+    private function removedPhp(RemovedCodeNamespaces $removed): ValueScopeJudgement
+    {
+        $removedSelector = ExcludeSelectorVerdict::fromMeasuredFacts(
+            $this->subtreePath('src/Legacy'),
+            [ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml')],
+            ['src/Legacy'],
+            ['src/Legacy'],
+            'php-file',
+            null,
+            [],
+            true,
+        );
+
+        return $this->judgement(['src', 'tests'], new ProjectScopeJudgement([ProjectScopeDoor::Exclude], [], [$removedSelector], $removed));
+    }
+
+    private function exactNamespace(string $value): NamespacePattern
+    {
+        return new NamespacePattern(new SelectorDefinition(SelectorKind::Exact, $value));
     }
 
     /**

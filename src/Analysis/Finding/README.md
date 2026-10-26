@@ -198,6 +198,9 @@ its authored `kind:value` identity rather than the rendered PCRE.
 The audit consumes the pipeline's single measured `ProjectScopeJudgement`.
 Namespace/declaration absence asks `judgesNamespaceClaims()`; path values ask
 `judgesExcludeSelectors()`, and rule-ledger namespace values also ask the former.
+Literal (`exact`/`subtree`) namespace values ask `judgesNamespaceLiteral()`
+instead: excluded PHP files and generated removal withhold only a value the
+removed code could have declared, as `RemovedCodeNamespaces` records.
 Report state and a second Console boolean do not substitute for those facts.
 Accepted PSR-4 records still locate values independently of report state;
 without a usable map namespace values remain unjudged.
