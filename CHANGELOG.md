@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
-- References inside attribute arguments (`Foo::class`, `Foo::BAR`, enum cases, `new Foo()`, closures) are recorded as the new dependency kind `attribute_argument` instead of `class_const_fetch`, `new` and the like; it joins no `relations:` alias, and graph export `types` shows it; coupling values do not change. A layer policy that admitted such references through `static_access`, `new` or another kind now reports `architecture.layer-violation` ("uses in attribute argument"): add `attribute_argument` to its `relations:` list. Baseline `architecture.layer-violation` entries for these edges change identity (stale plus new): accept the new ones with `baseline:update --accept-new=architecture.layer-violation` and remove the stale ones with `baseline:cleanup` (#196).
+- References inside attribute arguments (`Foo::class`, `Foo::BAR`, enum cases, `new Foo()`, closures) are recorded as the new dependency kind `attribute_argument` instead of `class_const_fetch`, `new` and the like; it joins no `relations:` alias, and graph export `types` shows it; coupling values do not change. A layer policy that admitted such references through `static_access`, `new` or another kind now reports `architecture.layer-violation` ("uses in attribute argument"): add `attribute_argument` to its `relations:` list. Baseline `architecture.layer-violation` entries for these edges change identity (stale plus new): review the new violations first, then accept them with `baseline:update --accept-new=architecture.layer-violation`; `baseline:cleanup` lists the stale entries and `baseline:cleanup --remove=<selector>` removes them (#196).
 
 ### Changed
 
