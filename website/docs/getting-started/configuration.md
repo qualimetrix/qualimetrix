@@ -1677,9 +1677,9 @@ unnoticed:
   each key's own declared shape, not of its rule or family as a whole: keys
   living right beside an accepting one stay whole numbers and refuse a
   fraction, because they count something instead of measuring it —
-  `coupling.distance.min-class-count`, `coupling.instability.min-afferent`
-  (at every level slot) and `coupling.instability.namespace.min-class-count`
-  are each a class or file count, not a ratio.
+  `coupling.distance.min-type-count`, `coupling.instability.min-afferent`
+  (at every level slot) and `coupling.instability.namespace.min-type-count`
+  are each a type or file count, not a ratio.
 - **A threshold or a count is never negative.** Every numeric option under
   `rules:` is a count or a boundary on a measurement that cannot be negative,
   and a negative boundary does not tighten a rule, it inverts it: `warning: -1`

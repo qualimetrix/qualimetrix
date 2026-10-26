@@ -409,7 +409,7 @@ responsibilities when one class reaches too many unrelated operations.
 
 **Rule ID:** `coupling.instability`
 
-**Judged metric:** `coupling.instability`
+**Judged metric:** `coupling.instability` on a class; `coupling.instability-own` on a namespace
 
 <!-- llms:skip-begin -->
 ### What it measures
@@ -495,7 +495,11 @@ class DailyReportJob
 - **Accept instability when it makes sense.** Entry points like console commands, controllers, and cron jobs are naturally unstable (high Ce, low Ca). Consider disabling the rule for these or raising the threshold.
 
 !!! info "Deviation from original spec"
-    Robert C. Martin (1994) originally defined Instability only at the **package** (namespace) level. Qualimetrix extends it to the class level for finer-grained analysis. The namespace-level instability is the canonical metric per Martin's specification; the class-level metric is an Qualimetrix extension.
+    Robert C. Martin (1994) originally defined Instability only at the **package** (namespace) level. Qualimetrix extends it to the class level for finer-grained analysis; the class-level metric is a Qualimetrix extension.
+
+    A namespace is not a package in Martin's sense once it has sub-namespaces, so Qualimetrix publishes two values and judges one. The rule judges `coupling.instability-own`, taken over the types declared directly in the namespace (Ca-own and Ce-own), the scope CBO and distance judge too. The subtree value `coupling.instability` folds in every outward dependency of the sub-namespaces while few dependents reach a parent that declares nothing itself, so the root of a bounded context reads close to 1 by construction. It stays published as aggregate evidence and feeds subtree distance, `health.coupling` and the HTML report's Martin diagram, but is not judged.
+
+    A namespace declaring no type of its own is no package: it publishes no `coupling.instability-own` and is never judged. A namespace that declares a type but has no own edge (Ca-own = Ce-own = 0) carries 0 by the convention above.
 
 <!-- llms:skip-end -->
 
@@ -512,11 +516,13 @@ rules:
       max_error: 1.0
       min_afferent: 1    # default: 1
     namespace:
-      min_class_count: 5
+      min_type_count: 5
       min_afferent: 1    # default: 1
 ```
 
-**`min_afferent`** -- minimum afferent coupling (Ca) required for a class or namespace to be checked. Default: `1` (symbols with Ca = 0 are skipped). Set to `0` to check all symbols, or to `2` to also skip symbols with only one dependent. Symbols with very few dependents have high instability by definition, which is architecturally expected for concrete implementation classes.
+**`min_afferent`** -- minimum afferent coupling (Ca) required for a class or namespace to be checked; for a namespace it is the own afferent coupling, `coupling.ca-own`. Default: `1` (symbols with Ca = 0 are skipped). Set to `0` to check all symbols, or to `2` to also skip symbols with only one dependent. Symbols with very few dependents have high instability by definition, which is architecturally expected for concrete implementation classes.
+
+**`namespace.min_type_count`** -- minimum number of types a namespace declares directly: classes, traits, interfaces and enums that implement an interface, as for [Distance](#distance-from-main-sequence). Default: `3` (equality is admitted); `0` disables the floor. Instability and distance are both package metrics of Martin's (D = |A + I - 1|) and judge one population. The earlier `min_class_count` counted classes of the whole subtree and is refused by name -- in YAML, as `min-class-count` and `minClassCount`, and in `--rule-opt` -- with exit code 3; rename the key and mind the new count.
 
 For a simple pass/fail threshold on a single level:
 
@@ -531,7 +537,7 @@ rules:
 bin/qmx check src/ --rule-opt="coupling.instability:class.max_warning=0.9"
 bin/qmx check src/ --rule-opt="coupling.instability:class.max_error=1.0"
 bin/qmx check src/ --rule-opt="coupling.instability:class.min_afferent=0"
-bin/qmx check src/ --rule-opt="coupling.instability:namespace.min_class_count=5"
+bin/qmx check src/ --rule-opt="coupling.instability:namespace.min_type_count=5"
 bin/qmx check src/ --rule-opt="coupling.instability:namespace.min_afferent=2"
 ```
 
@@ -646,12 +652,15 @@ has two coupling scopes, and both are published:
 
 `coupling.cbo` and `coupling.cbo-own` split the same way, and there the rule
 also judges the own scope: see [CBO](#cbo----coupling-between-objects).
+Instability is judged on the own scope too (`coupling.instability-own`): see
+[Instability](#instability).
 
 When the measured populations and required inputs coincide, both scopes
 have the same value. The absence of sub-namespaces alone does not establish
 that their inputs are applicable. A namespace that
 declares no type of its own carries no own-scope abstractness at all and gets no
-`-own` key for abstractness or distance: how far a package sits from the main
+`-own` key for abstractness, instability or distance (`coupling.cbo-own` is absent
+there too): how far a package sits from the main
 sequence is undefined where there is no package, and silence says that where
 `0.0` would not.
 
@@ -745,8 +754,9 @@ enums declared directly in the namespace. Default `3` admits equality; `0`
 disables this floor. Missing count inputs contribute zero. The rule still
 requires published own distance; scopes without coupling publish none. Selected population
 accounting distinguishes these exclusions from healthy judgements.
-`min_class_count`, `min-class-count` and `minClassCount` are refused for Distance;
-CBO and Instability retain their existing class-count options.
+`min_class_count`, `min-class-count` and `minClassCount` are refused for Distance
+and for namespace Instability, which counts the same population under the same
+`min_type_count`; CBO retains its class-count option over own classes.
 
 By default, project namespaces are auto-detected from `composer.json` (`autoload.psr-4`).
 

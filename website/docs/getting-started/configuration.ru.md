@@ -1686,9 +1686,9 @@ https://qualimetrix.dev/llms.txt`); здесь она опущена, чтобы
   TCC на `design.god-class.tcc-threshold`. Это свойство объявленной формы
   КОНКРЕТНОГО ключа, а не его правила или семейства целиком: ключи,
   стоящие рядом с принимающим, остаются целыми и отклоняют дробь, потому что
-  считают что-то, а не измеряют, — `coupling.distance.min-class-count`,
+  считают что-то, а не измеряют, — `coupling.distance.min-type-count`,
   `coupling.instability.min-afferent` (на каждом слоте уровня) и
-  `coupling.instability.namespace.min-class-count` каждый раз считают классы
+  `coupling.instability.namespace.min-type-count` каждый раз считают типы
   или файлы, а не отношение.
 - **Порог или счётчик не бывает отрицательным.** Каждая числовая опция под
   `rules:` — это счётчик или граница измерения, которое не может быть

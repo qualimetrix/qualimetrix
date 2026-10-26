@@ -2509,6 +2509,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0131-a-value-object-exposes-its-state.md' => 'Analysis.Evidence.CodeSmell',
         'docs/adr/0132-removed-code-namespaces-narrow-the-suppression-namespace-audit.md' => 'Analysis.Run',
         'docs/adr/0133-attribute-argument-edges-are-their-own-kind.md' => 'Analysis.Evidence.DependencyModel',
+        'docs/adr/0134-namespace-instability-judges-its-own-declarations.md' => 'Analysis.Evidence.Coupling',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/ProjectManifest/README.md' => 'Analysis.ProjectManifest',
