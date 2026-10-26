@@ -27,11 +27,14 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterfac
  * For each class, tracks:
  * - List of methods (instance and static)
  * - For each method: set of properties accessed via $this->property
- * - For each method: set of methods called via $this->method()
+ * - For each method: set of methods called via $this->method(), self:: or static::,
+ *   with calls from closures, arrow functions and first-class callables kept apart
+ *   as deferred calls
  * - Static method markers (excluded from LCOM graph)
  *
- * Lifecycle bodies remain available to trait aliases; the effective method
- * population excludes constructor and destructor names.
+ * Lifecycle bodies remain available to trait aliases, so every method records its
+ * deferred calls alike; the effective method population excludes constructor and
+ * destructor names and interprets deferred calls after trait composition.
  *
  * Anonymous classes are ignored.
  */
@@ -49,11 +52,23 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
      */
     private array $methodStack = [];
 
+    /** Nesting depth of closures, arrow functions and nested functions inside the current method. */
+    private int $closureDepth = 0;
+
+    /**
+     * Closure depths of the enclosing methods, restored when a nested method ends.
+     *
+     * @var list<int>
+     */
+    private array $enclosingClosureDepths = [];
+
     public function reset(): void
     {
         $this->classData = [];
         $this->resetClassVisitorStack();
         $this->methodStack = [];
+        $this->closureDepth = 0;
+        $this->enclosingClosureDepths = [];
     }
 
     /**
@@ -110,7 +125,15 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
         }
 
         $currentMethod = $this->getCurrentMethod();
-        if ($currentMethod === null || $currentClass === null) {
+        if ($currentMethod === null) {
+            return null;
+        }
+        if ($node instanceof Node\FunctionLike) {
+            ++$this->closureDepth;
+
+            return null;
+        }
+        if ($currentClass === null) {
             return null;
         }
 
@@ -132,7 +155,11 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
             return null;
         }
 
-        CohesionAstFacts::captureCall($node, $this->classData[$position], $currentMethod);
+        if ($this->closureDepth > 0) {
+            CohesionAstFacts::captureDeferredCall($node, $this->classData[$position], $currentMethod);
+        } else {
+            CohesionAstFacts::captureCall($node, $this->classData[$position], $currentMethod);
+        }
 
         return null;
     }
@@ -141,6 +168,8 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
     {
         $methodName = $node->name->toString();
         $this->methodStack[] = $methodName;
+        $this->enclosingClosureDepths[] = $this->closureDepth;
+        $this->closureDepth = 0;
 
         $position = $this->getCurrentClassPosition();
         CohesionAstFacts::captureMethod($node, $position === null ? null : ($this->classData[$position] ?? null));
@@ -164,6 +193,11 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
 
     public function leaveNode(Node $node): ?int
     {
+        if ($node instanceof ClassMethod) {
+            $this->closureDepth = array_pop($this->enclosingClosureDepths) ?? 0;
+        } elseif ($node instanceof Node\FunctionLike && $this->methodStack !== []) {
+            --$this->closureDepth;
+        }
         $this->leaveClassVisitorNode($node);
 
         return null;
@@ -197,7 +231,7 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
      * - No property access or instance method calls will be detected by AST traversal
      *
      * The classification is based purely on the method body shape. The actual absence
-     * of property/method-call edges is verified in LcomClassData::isEffectivelyStateless().
+     * of property/method-call edges is verified in LcomMethodPopulation::partitionByStatelessness().
      *
      * Abstract/static methods are excluded here
      * because they are already handled separately in the LCOM graph.

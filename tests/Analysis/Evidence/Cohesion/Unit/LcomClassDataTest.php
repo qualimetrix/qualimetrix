@@ -69,6 +69,43 @@ final class LcomClassDataTest extends TestCase
     }
 
     #[Test]
+    public function itKeepsDirectAndDeferredCallsApartAcrossTheCollectionWire(): void
+    {
+        $data = new LcomClassData('App', 'Service', 3, 5);
+        $data->addMethod('__construct');
+        $data->addMethodCall('__construct', 'handle');
+        $data->addDeferredMethodCall('__construct', 'Handle');
+
+        $rows = CohesionFactWire::lcomRows($data);
+        $decoded = CohesionFactWire::lcomFromRows(unserialize(serialize($rows)));
+
+        self::assertContains(['tag' => 'call', 'caller' => '__construct', 'callee' => 'handle'], $rows);
+        self::assertContains(['tag' => 'deferredCall', 'caller' => '__construct', 'callee' => 'handle'], $rows);
+        self::assertSame($rows, CohesionFactWire::lcomRows($decoded));
+        self::assertSame(['__construct' => ['handle' => true]], $decoded->factState()['methodCalls']);
+        self::assertSame(['__construct' => ['handle' => true]], $decoded->factState()['deferredMethodCalls']);
+        self::assertSame(['handle'], $decoded->callsFrom('__construct'));
+    }
+
+    #[Test]
+    public function itRemovesInitializationHelpersBeforeMergingStatelessMethods(): void
+    {
+        $data = new LcomClassData('App', 'Service');
+        foreach (['__construct' => 'public', 'defaults' => 'private', 'read' => 'public', 'write' => 'public'] as $method => $visibility) {
+            $data->declaration()->declareMethod($method, $visibility, false);
+            $data->addMethod($method);
+        }
+        $data->markStatelessConstant('defaults');
+        $data->addMethodCall('__construct', 'defaults');
+        $data->addPropertyAccess('read', 'state');
+        $data->addPropertyAccess('write', 'state');
+
+        // A phantom virtual stateless node would make this 2 components over 3 counted methods.
+        self::assertSame(1, $data->calculateLcom());
+        self::assertSame(2, $data->lcomMethodCount());
+    }
+
+    #[Test]
     public function itMatchesConfiguredMethodExclusionsWithoutCase(): void
     {
         $data = new LcomClassData();

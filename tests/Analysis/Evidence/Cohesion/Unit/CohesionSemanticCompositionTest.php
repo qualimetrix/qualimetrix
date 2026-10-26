@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Evidence\Cohesion\CohesionCompositionCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\CohesionFactWire;
 use Qualimetrix\Analysis\Evidence\Cohesion\CohesionMethodReachability;
 use Qualimetrix\Analysis\Evidence\Cohesion\CohesionTraitComposition;
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomClassData;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomVisitor;
@@ -302,23 +303,7 @@ PHP;
     #[DataProvider('lifecycleAdaptations')]
     public function itSelectsEffectiveLifecycleNamesAfterTraitComposition(string $members, int $lcomCount, int $lcomValue, int $tccCount, ?float $tccValue, ?int $pureCount): void
     {
-        $ast = (new ParserFactory())->createForHostVersion()->parse('<?php namespace App; ' . $members) ?? [];
-        NameResolution::resolve($ast);
-        $lcomVisitor = new LcomVisitor();
-        $tccVisitor = new TccLccVisitor();
-        $traverser = new NodeTraverser($lcomVisitor, $tccVisitor);
-        $traverser->traverse($ast);
-        $lcom = $lcomVisitor->getClassData();
-        $tcc = $tccVisitor->getClassData();
-        $classes = $traits = [];
-        foreach ($lcom as $position => $data) {
-            if ($data->className === 'Candidate') {
-                $classes['Candidate'] = [$data, $tcc[$position]];
-            } else {
-                $traits[$data->className] = $data;
-            }
-        }
-        $metrics = self::calculate($classes, $traits)['Candidate'];
+        $metrics = self::measureCandidate($members);
 
         self::assertSame($lcomCount, $metrics->get('cohesion.lcom-method-count'));
         self::assertSame($lcomValue, $metrics->get('cohesion.lcom'));
@@ -375,14 +360,212 @@ PHP;
         ];
     }
 
+    /** @param list<string> $excludedMethods */
+    #[Test]
+    #[DataProvider('initializationHelpers')]
+    public function itRemovesInitializationHelpersWithTheirLifecycleBody(string $members, int $lcomCount, ?int $lcomValue, array $excludedMethods = []): void
+    {
+        $metrics = self::measureCandidate($members, $excludedMethods);
+
+        self::assertSame($lcomCount, $metrics->get('cohesion.lcom-method-count'));
+        self::assertSame($lcomValue, $metrics->get('cohesion.lcom'));
+    }
+
+    /** @return iterable<string, array{0: string, 1: int, 2: ?int, 3?: list<string>}> */
+    public static function initializationHelpers(): iterable
+    {
+        $throws = '{ if ($c === 0) { throw new \\RuntimeException(); } }';
+        $readers = 'private int $p = 0; public function x(): int { return $this->p; } public function y(): int { return $this->p + 1; }';
+        $handler = 'private $callback; private array $listeners = []; private int $seen = 0; private function handle(int $e = 1): void { $this->seen += $e; } public function seen(): int { return $this->seen; }';
+
+        yield 'issue fixture: four validators called only by the constructor' => [
+            'final class Candidate { private array $a; private array $b;
+                public function __construct(array $cfg) { $this->v1($cfg); $this->v2($cfg); $this->v3($cfg); $this->v4($cfg); $this->a = $cfg["a"]; $this->b = $cfg["b"]; }
+                private function v1(array $c): void { if (!isset($c["a"])) { throw new \\RuntimeException("a"); } }
+                private function v2(array $c): void { if (!isset($c["b"])) { throw new \\RuntimeException("b"); } }
+                private function v3(array $c): void { if (!isset($c["c"])) { throw new \\RuntimeException("c"); } }
+                private function v4(array $c): void { if (!isset($c["d"])) { throw new \\RuntimeException("d"); } }
+                public function x(): array { return $this->a; } public function y(): array { return $this->b; }
+                public function z(): int { return \\count($this->a) + \\count($this->b); } }',
+            3, 1,
+        ];
+        yield 'helper also called by an ordinary method stays' => [
+            'class Candidate { public function __construct() { $this->v(1); } private function v(int $c): void ' . $throws . ' public function check(): void { $this->v($this->p); } ' . $readers . ' }',
+            4, 1,
+        ];
+        yield 'chain from the constructor leaves entirely' => [
+            'class Candidate { public function __construct() { $this->a(1); } private function a(int $c): void { $this->b($c); } private function b(int $c): void ' . $throws . ' ' . $readers . ' }',
+            2, 1,
+        ];
+        yield 'chain tail also called by an ordinary method stays' => [
+            'class Candidate { public function __construct() { $this->a(1); } private function a(int $c): void { $this->b($c); } private function b(int $c): void ' . $throws . ' public function check(): void { $this->b($this->p); } ' . $readers . ' }',
+            4, 1,
+        ];
+        yield 'cycle reached only from the constructor leaves' => [
+            'class Candidate { public function __construct() { $this->r(1); } private function r(int $c): void { if ($c > 0) { $this->s($c - 1); } } private function s(int $c): void { $this->r($c); } ' . $readers . ' }',
+            2, 1,
+        ];
+        yield 'cycle entered by an ordinary method stays' => [
+            'class Candidate { public function __construct() { $this->r(1); } private function r(int $c): void { if ($c > 0) { $this->s($c - 1); } } private function s(int $c): void { $this->r($c); } public function check(): void { $this->s($this->p); } ' . $readers . ' }',
+            5, 1,
+        ];
+        yield 'self and static calls from the constructor' => [
+            'class Candidate { public function __construct() { self::h(1); static::g(1); } private function h(int $c): void ' . $throws . ' private function g(int $c): void ' . $throws . ' ' . $readers . ' }',
+            2, 1,
+        ];
+        yield 'static helpers were already outside the graph' => [
+            'class Candidate { public function __construct() { self::h(1); } private static function h(int $c): void ' . $throws . ' ' . $readers . ' }',
+            2, 1,
+        ];
+        yield 'destructor helper leaves' => [
+            'class Candidate { public function __destruct() { $this->close(1); } private function close(int $c): void ' . $throws . ' ' . $readers . ' }',
+            2, 1,
+        ];
+        yield 'helper shared by constructor and destructor leaves' => [
+            'class Candidate { public function __construct() { $this->h(1); } public function __destruct() { $this->h(2); } private function h(int $c): void ' . $throws . ' ' . $readers . ' }',
+            2, 1,
+        ];
+        yield 'class of initialization helpers only has no value' => [
+            'class Candidate { private int $p = 0; public function __construct() { $this->h1(1); $this->h2(2); } private function h1(int $c): void { $this->p = $c; } private function h2(int $c): void ' . $throws . ' }',
+            0, null,
+        ];
+        yield 'helper writing a property an ordinary method reads leaves' => [
+            'class Candidate { private int $a = 0; private int $b = 0; public function __construct() { $this->init(); } private function init(): void { $this->a = 1; } public function x(): int { return $this->a; } public function y(): int { return $this->b; } }',
+            2, 2,
+        ];
+        yield 'bridging helper leaves and LCOM rises' => [
+            'class Candidate { private int $a = 0; private int $b = 0; public function __construct() { $this->init(); } private function init(): void { $this->a = 1; $this->b = 1; } public function x(): int { return $this->a; } public function y(): int { return $this->b; } }',
+            2, 2,
+        ];
+        yield 'parent constructor call does not keep the helper' => [
+            'class Candidate extends Base { public function __construct() { parent::__construct(); $this->v(1); } private function v(int $c): void ' . $throws . ' ' . $readers . ' }',
+            2, 1,
+        ];
+        yield 'private trait helper called by the constructor leaves' => [
+            'trait Checks { private function v(int $c): void ' . $throws . ' } class Candidate { use Checks; public function __construct() { $this->v(1); } ' . $readers . ' }',
+            2, 1,
+        ];
+        yield 'constructor from a trait drops its helper' => [
+            'trait Builds { public function __construct() { $this->v(1); } } class Candidate { use Builds; private function v(int $c): void ' . $throws . ' ' . $readers . ' }',
+            2, 1,
+        ];
+        yield 'constructor aliased to an ordinary method keeps its helper' => [
+            'trait Builds { public function __construct() { $this->v(1); } } class Candidate { use Builds { __construct as init; } private function v(int $c): void ' . $throws . ' ' . $readers . ' }',
+            4, 2,
+        ];
+        yield 'lifecycle and helper names fold case' => [
+            'class Candidate { public function __CONSTRUCT() { $this->HELPER(1); } private function helper(int $c): void ' . $throws . ' ' . $readers . ' }',
+            2, 1,
+        ];
+        yield 'static caller keeps the helper' => [
+            'class Candidate { public function __construct() { $this->v(1); } public static function make(): void { self::v(1); } private function v(int $c): void ' . $throws . ' ' . $readers . ' }',
+            3, 2,
+        ];
+        yield 'ordinary self caller keeps the helper' => [
+            'class Candidate { public function __construct() { $this->v(1); } public function check(): void { self::v($this->p); } private function v(int $c): void ' . $throws . ' ' . $readers . ' }',
+            4, 1,
+        ];
+        yield 'call on another instance is not recorded' => [
+            'class Candidate { public function __construct() { $this->v(1); } public static function make(): self { $o = new self(); $o->v(1); return $o; } private function v(int $c): void ' . $throws . ' ' . $readers . ' }',
+            2, 1,
+        ];
+        yield 'excluded caller keeps the helper' => [
+            'class Candidate { public function __construct() { $this->v(1); } public function skipMe(): void { $this->v(2); } private function v(int $c): void ' . $throws . ' ' . $readers . ' }',
+            3, 2, ['skipMe'],
+        ];
+        yield 'constructor reaching state through a public reset keeps both' => [
+            'class Candidate { private array $items = []; public function __construct() { $this->reset(); } public function reset(): void { $this->clear(); } private function clear(): void { $this->items = []; } public function add(int $i): void { $this->items[] = $i; } public function size(): int { return \\count($this->items); } }',
+            4, 1,
+        ];
+        yield 'public method called only by the constructor stays' => [
+            'class Candidate { private int $q = 0; public function __construct() { $this->setup(); } public function setup(): void { $this->q = 1; } ' . $readers . ' }',
+            3, 2,
+        ];
+        yield 'arrow function registered by the constructor keeps its handler' => [
+            'class Candidate { ' . $handler . ' public function __construct() { $this->listeners[] = fn(int $e) => $this->handle($e); } public function dispatch(int $e): void { foreach ($this->listeners as $l) { $l($e); } } }',
+            3, 2,
+        ];
+        yield 'closure registered by a private helper keeps the handler, not the helper' => [
+            'class Candidate { ' . $handler . ' public function __construct() { $this->registerListeners(); } private function registerListeners(): void { $this->listeners[] = function (int $e): void { $this->handle($e); }; } public function dispatch(int $e): void { foreach ($this->listeners as $l) { $l($e); } } }',
+            3, 2,
+        ];
+        yield 'first-class callable passed by the constructor keeps its handler' => [
+            'class Candidate { ' . $handler . ' public function __construct() { $this->callback = $this->handle(...); } }',
+            2, 1,
+        ];
+        yield 'handler called directly and from a closure keeps its deferred reach' => [
+            'class Candidate { ' . $handler . ' public function __construct() { $this->handle(0); $this->callback = fn() => $this->handle(); } }',
+            2, 1,
+        ];
+        yield 'ordinary method aliased to the constructor defers its closure calls' => [
+            'trait Boot { public function boot(): void { $this->prepare(1); $this->callback = fn() => $this->handle(); } }
+             class Candidate { use Boot { boot as __construct; } ' . $handler . ' private bool $ready = false;
+                public function boot(): void { $this->ready = true; } public function isReady(): bool { return $this->ready; }
+                private function prepare(int $c): void ' . $throws . ' }',
+            4, 2,
+        ];
+        yield 'stateless constant helper leaves before the virtual node forms' => [
+            'class Candidate { private array $d = []; public function __construct() { $this->d = $this->defaults(); } private function defaults(): array { return []; } ' . $readers . ' }',
+            2, 1,
+        ];
+        yield 'trait method adapted to private leaves' => [
+            'trait Checks { public function v(int $c): void ' . $throws . ' } class Candidate { use Checks { v as private; } public function __construct() { $this->v(1); } ' . $readers . ' }',
+            2, 1,
+        ];
+        yield 'trait method kept public stays' => [
+            'trait Checks { public function v(int $c): void ' . $throws . ' } class Candidate { use Checks; public function __construct() { $this->v(1); } ' . $readers . ' }',
+            3, 2,
+        ];
+    }
+
+    #[Test]
+    public function itKeepsClosureEdgesOfAConstructorAliasedToAnOrdinaryMethod(): void
+    {
+        $metrics = self::measureCandidate('trait Builds { public function __construct() { $this->callback = fn() => $this->handle(); } }
+            class Candidate { use Builds { __construct as init; } private $callback; private int $seen = 0;
+                private function handle(): void { $this->seen++; } public function seen(): int { return $this->seen; } }');
+
+        self::assertSame(3, $metrics->get('cohesion.lcom-method-count'));
+        self::assertSame(1, $metrics->get('cohesion.lcom'));
+        self::assertSame(2, $metrics->get('cohesion.tcc-method-count'));
+        self::assertSame(1.0, $metrics->get('cohesion.tcc'));
+        self::assertSame(1.0, $metrics->get('cohesion.lcc'));
+    }
+
+    /** @param list<string> $excludedMethods */
+    private static function measureCandidate(string $members, array $excludedMethods = []): MetricBag
+    {
+        $ast = (new ParserFactory())->createForHostVersion()->parse('<?php namespace App; ' . $members) ?? [];
+        NameResolution::resolve($ast);
+        $lcomVisitor = new LcomVisitor();
+        $tccVisitor = new TccLccVisitor();
+        $traverser = new NodeTraverser($lcomVisitor, $tccVisitor);
+        $traverser->traverse($ast);
+        $lcom = $lcomVisitor->getClassData();
+        $tcc = $tccVisitor->getClassData();
+        $classes = $traits = [];
+        foreach ($lcom as $position => $data) {
+            if ($data->className === 'Candidate') {
+                $classes['Candidate'] = [$data, $tcc[$position]];
+            } else {
+                $traits[$data->className] = $data;
+            }
+        }
+
+        return self::calculate($classes, $traits, new LcomCollectionConfiguration($excludedMethods))['Candidate'];
+    }
+
     /** @param array<string, array{LcomClassData, TccLccClassData}> $classes
      * @param array<string, LcomClassData> $traits
      *
      * @return array<string, MetricBag>
      */
-    private static function calculate(array $classes, array $traits): array
+    private static function calculate(array $classes, array $traits, ?LcomCollectionConfiguration $configuration = null): array
     {
         $collector = new CohesionCompositionCollector();
+        if ($configuration !== null) {
+            $collector->applyLcomCollectionConfiguration($configuration);
+        }
         $repository = new InMemoryMetricRepository($collector->getMetricDefinitions());
         $declarations = [];
         foreach ($traits as $name => $data) {

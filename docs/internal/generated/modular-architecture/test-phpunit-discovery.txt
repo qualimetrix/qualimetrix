@@ -3090,9 +3090,42 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itCountsAmbiguousDuplicateTraitNamesAsUnread
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itDeclaresRunReachForEveryComposedMetric
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itFollowsPrivateHelpersForTccAndPureMethodCount
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itKeepsClosureEdgesOfAConstructorAliasedToAnOrdinaryMethod
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itOmitsLcomWithoutVerticesAndPublishesCompleteness
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itPreservesOwnFactsAndRetainsUnusedTraitPropertiesForTcc
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itReachesInstancePropertiesThroughMixedCaseCyclesWithoutFollowingOtherCalls
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"arrow function registered by the constructor keeps its handler"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"bridging helper leaves and LCOM rises"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"call on another instance is not recorded"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"chain from the constructor leaves entirely"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"chain tail also called by an ordinary method stays"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"class of initialization helpers only has no value"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"closure registered by a private helper keeps the handler, not the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"constructor aliased to an ordinary method keeps its helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"constructor from a trait drops its helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"constructor reaching state through a public reset keeps both"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"cycle entered by an ordinary method stays"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"cycle reached only from the constructor leaves"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"destructor helper leaves"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"excluded caller keeps the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"first-class callable passed by the constructor keeps its handler"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"handler called directly and from a closure keeps its deferred reach"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"helper also called by an ordinary method stays"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"helper shared by constructor and destructor leaves"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"helper writing a property an ordinary method reads leaves"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"issue fixture: four validators called only by the constructor"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"lifecycle and helper names fold case"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"ordinary method aliased to the constructor defers its closure calls"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"ordinary self caller keeps the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"parent constructor call does not keep the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"private trait helper called by the constructor leaves"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"public method called only by the constructor stays"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"self and static calls from the constructor"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"stateless constant helper leaves before the virtual node forms"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"static caller keeps the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"static helpers were already outside the graph"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"trait method adapted to private leaves"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"trait method kept public stays"
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRetainsCalledStatelessMethodsAsVertices
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itSelectsEffectiveLifecycleNamesAfterTraitComposition"abstract constructor alias remains excluded"
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itSelectsEffectiveLifecycleNamesAfterTraitComposition"authored equivalent"
@@ -3110,8 +3143,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomClassDataTest::itCalculatesLcomWhenExcludingAllMethods
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomClassDataTest::itCalculatesLcomWhenExcludingNonexistentMethod
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomClassDataTest::itCalculatesLcomWithExcludedMethods
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomClassDataTest::itKeepsDirectAndDeferredCallsApartAcrossTheCollectionWire
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomClassDataTest::itMatchesConfiguredMethodExclusionsWithoutCase
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomClassDataTest::itPreservesExactFactRowsAcrossTheCollectionWire
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomClassDataTest::itRemovesInitializationHelpersBeforeMergingStatelessMethods
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectionConfigurationTest::itDefaultsToNoExcludedMethods
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectionConfigurationTest::itRejectsAListContainingNonStrings
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itCalculatesHighLcomForGodClass
@@ -3135,6 +3170,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itDoesNotTreatMatchReturningDifferentConstantsAsStateless
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itDoesNotTreatMethodAccessingPropertyViaCallAsStateless
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itDoesNotTreatMethodCallingInstanceMethodAsStateless
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itDropsValidatorsOnlyTheConstructorCallsFromLcom
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itExcludesAbstractMethodsFromLcom
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itExcludesConstructorWithExplicitPropertyAssignmentFromLcom
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itExcludesDestructorFromLcom
@@ -3148,6 +3184,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itIgnoresDynamicPropertyAccess
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itIgnoresEnum
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itIgnoresInterface
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itKeepsAConstructorValidatorThatAnotherMethodAlsoCalls
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itKeepsDistinctCohesionGraphsForSameFileDeclarations
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itKeepsStandardLcomCalculationWhenNoStatelessMethods
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itMergesStatelessMethodCallingAnotherStatelessInternally

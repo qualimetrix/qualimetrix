@@ -14,7 +14,7 @@ use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Property;
 use PhpParser\Node\Stmt\TraitUse;
 
-/** Captures declaration and direct instance-call facts for class cohesion. */
+/** Captures declaration and own instance-call facts for class cohesion, keeping deferred calls apart. */
 final class CohesionAstFacts
 {
     public static function captureMember(TraitUse|Property $node, ?LcomClassData $data): void
@@ -50,23 +50,47 @@ final class CohesionAstFacts
         }
     }
 
+    /** A first-class callable is a deferred call: it only names the method for later invocation. */
     public static function captureCall(Node $node, LcomClassData $data, string $caller): void
+    {
+        $callee = self::calleeName($node);
+        if ($callee === null) {
+            return;
+        }
+        if (($node instanceof MethodCall || $node instanceof StaticCall) && $node->isFirstClassCallable()) {
+            $data->addDeferredMethodCall($caller, $callee);
+
+            return;
+        }
+        $data->addMethodCall($caller, $callee);
+    }
+
+    /** Records a call from a closure or arrow function in the caller's body. */
+    public static function captureDeferredCall(Node $node, LcomClassData $data, string $caller): void
+    {
+        $callee = self::calleeName($node);
+        if ($callee !== null) {
+            $data->addDeferredMethodCall($caller, $callee);
+        }
+    }
+
+    private static function calleeName(Node $node): ?string
     {
         if ($node instanceof MethodCall
             && $node->var instanceof Variable
             && $node->var->name === 'this'
             && $node->name instanceof Identifier
         ) {
-            $data->addMethodCall($caller, $node->name->toString());
-
-            return;
+            return $node->name->toString();
         }
         if ($node instanceof StaticCall
             && $node->class instanceof Name
             && \in_array($node->class->toLowerString(), ['self', 'static'], true)
             && $node->name instanceof Identifier
         ) {
-            $data->addMethodCall($caller, $node->name->toString());
+            return $node->name->toString();
         }
+
+        return null;
     }
 }

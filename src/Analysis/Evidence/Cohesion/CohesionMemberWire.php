@@ -8,9 +8,11 @@ use LogicException;
 use Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitMethodSource;
 use Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitUseFacts;
 
-/** Encodes declared members and trait composition inputs for a class or trait. */
+/** Encodes declared members, trait composition inputs and deferred-call rows for a class or trait. */
 final class CohesionMemberWire
 {
+    public const string DEFERRED_CALL = 'deferredCall';
+
     /**
      * @param array<string, TraitMethodSource> $declaredMethods
      * @param list<TraitUseFacts> $traitUses
@@ -40,6 +42,9 @@ final class CohesionMemberWire
                 break;
             case 'instancePropertyCount':
                 self::addInstancePropertyCount($data, $row);
+                break;
+            case self::DEFERRED_CALL:
+                $data->addDeferredMethodCall((string) $row['caller'], (string) $row['callee']);
                 break;
             default:
                 throw new LogicException('Unknown LCOM fact row');

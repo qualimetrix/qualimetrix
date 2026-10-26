@@ -683,24 +683,6 @@
         ]
       }
     ],
-    "file:src/Analysis/Evidence/Cohesion/LcomVisitor.php": [
-      {
-        "channel": "duplication.clone",
-        "occurrence": "32b57d5adfade308",
-        "magnitudes": [
-          22
-        ]
-      }
-    ],
-    "file:src/Analysis/Evidence/Cohesion/TccLccVisitor.php": [
-      {
-        "channel": "duplication.clone",
-        "occurrence": "32b57d5adfade308",
-        "magnitudes": [
-          22
-        ]
-      }
-    ],
     "file:src/Analysis/Evidence/Coupling/Distance/DistanceRule.php": [
       {
         "channel": "duplication.clone",

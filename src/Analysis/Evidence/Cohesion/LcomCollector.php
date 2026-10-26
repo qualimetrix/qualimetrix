@@ -20,8 +20,12 @@ use SplFileInfo;
  * Captures exact declaration facts for later LCOM4 calculation.
  *
  * LCOM4 measures class cohesion by counting connected components in the graph where:
- * - Vertices = instance methods in the class (static methods are excluded)
+ * - Vertices = instance methods in the class; static methods, constructors, destructors
+ *   and the private helpers only they reach through direct calls are excluded
  * - Edges = (m1, m2) if m1 and m2 share a property OR one calls the other via $this->
+ *
+ * The facts keep calls from closures, arrow functions and first-class callables apart
+ * from direct calls, so a handler a constructor registers is not taken for initialization.
  *
  * Interpretation:
  * - LCOM = 1: perfectly cohesive class (all methods share properties)

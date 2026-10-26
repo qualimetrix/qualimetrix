@@ -7,9 +7,11 @@ collectors, their AST visitors and per-class calculation data, the
 `cohesion.lcom` rule with its options, and the LCOM collection configuration
 needed by its named sequential and parallel consumers.
 `ClassVisitorStackTrait` is private scaffolding shared only by the two Cohesion
-visitors. `CohesionAstFacts` captures class and trait member facts;
-`CohesionTraitUses` preserves resolved trait adaptations across the worker
-boundary. `CohesionMemberWire` encodes declaration member facts, and
+visitors. `CohesionAstFacts` captures class and trait member facts and own
+instance calls, keeping deferred calls (from closures, arrow functions and
+first-class callables) apart from direct ones; `CohesionTraitUses` preserves
+resolved trait adaptations across the worker boundary. `CohesionMemberWire`
+encodes declaration member facts and deferred-call rows, and
 `CohesionFactWire` owns the exact serializable row format, while
 `CohesionFactProjectionTrait` publishes those rows under declaration subjects.
 `CohesionDeclarationData` keeps declared members separate from the LCOM graph;
@@ -96,9 +98,11 @@ nonempty one- and two-vertex graphs, independently of the LCOM rule's minimum.
 The pure-method and tracked TCC-method counts also publish namespace/project
 averages for the same health correction at those levels; the academic LCOM4,
 TCC and LCC values are unchanged.
-`LcomMethodPopulation` owns effective-name lifecycle and static/configured
-exclusion and the virtual stateless vertex decision shared by LCOM and its
-graph-method count.
+`LcomMethodPopulation` owns effective-name lifecycle, initialization-helper,
+static and configured exclusion and the virtual stateless vertex decision
+shared by LCOM and its graph-method count. Initialization helpers leave before
+the stateless partition, so a removed constant helper never holds the virtual
+vertex open.
 
 `cohesion.lcom` is the stable rule ID — its `cohesion` family, and so the
 heading `qmx rules` lists it under, is now read off that name rather than
@@ -118,7 +122,22 @@ access or calls to instance methods through `$this`, `self`, or `static`.
 Method names follow PHP's case-insensitive matching. Constructors and destructors are excluded
 from the graph by their effective names after trait composition (see the
 scope-adaptation note below). Raw lifecycle bodies and method flags remain
-available when a trait adaptation exposes an ordinary alias. Uncalled stateless
+available when a trait adaptation exposes an ordinary alias.
+
+Initialization helpers leave with them. Candidates are private instance
+methods that a constructor or destructor body reaches through direct calls,
+transitively. Every other method — public and protected ones (even when the
+constructor calls them), static methods and `exclude_methods` entries — is a
+root of ordinary use, and so are the callees of deferred calls made by
+lifecycle bodies and candidates: a closure, arrow function or first-class
+callable registered during construction runs after it. A candidate that no
+root reaches over call edges, never passing through a lifecycle body, is an
+initialization helper and leaves the graph. Every method records its deferred
+calls the same way, because trait aliases decide lifecycle only after
+composition; for ordinary methods a deferred call is an edge like any other,
+and TCC/LCC reachability reads both kinds alike. Calls on another instance,
+array callables and `parent::` calls are not recorded, so a helper reached only
+through them is taken for an initialization helper. Uncalled stateless
 constant methods are merged into a virtual node to avoid false positives from protocol metadata; a called stateless method
 stays in the graph. TCC and LCC measure direct and transitive property-sharing
 connections among public methods, including reads through own-method calls.
@@ -132,7 +151,10 @@ connections among public methods, including reads through own-method calls.
 > each imply a disconnected responsibility. Empty graphs publish no value.
 > These scope choices are a semantic interpretation of LCOM4, rather than
 > literal original-spec compliance. Constructors and destructors are excluded
-> from the method set entirely, matching the treatment TCC/LCC already applies.
+> from the method set entirely, matching the treatment TCC/LCC already applies,
+> and the private helpers only they reach leave with them. Removing such a
+> helper can raise LCOM, when it was the only bridge between two property
+> groups, and can empty the graph, which then publishes no value.
 
 > [Bieman and Kang (1995)](https://www.cs.colostate.edu/~bieman/Pubs/bieman-kang-ssr95.pdf),
 > sections 2–3, define property access through directly or transitively called
