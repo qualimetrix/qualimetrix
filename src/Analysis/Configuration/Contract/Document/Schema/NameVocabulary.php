@@ -26,6 +26,7 @@ final readonly class NameVocabulary
      * @param ?Closure(mixed): list<string> $extract
      * @param ?Closure(string, list<string>): bool $admits
      * @param ?Closure(string): ?RefusedName $predicate
+     * @param ?list<string> $closed
      */
     private function __construct(
         private array $fixed,
@@ -33,6 +34,7 @@ final readonly class NameVocabulary
         private ?Closure $extract,
         private ?Closure $admits,
         private ?Closure $predicate,
+        private ?array $closed = null,
     ) {}
 
     /** @param list<string> $names canonical names */
@@ -60,6 +62,26 @@ final readonly class NameVocabulary
         return new self([], null, null, null, $judge);
     }
 
+    /**
+     * A closed set of names; the owner only words the refusal of a name outside it.
+     *
+     * Judged as a predicate, so the engine reads it exactly as it reads any open grammar.
+     *
+     * @param list<string> $names
+     * @param Closure(string): RefusedName $refusal
+     */
+    public static function closed(array $names, Closure $refusal): self
+    {
+        return new self(
+            [],
+            null,
+            null,
+            null,
+            static fn(string $name): ?RefusedName => \in_array($name, $names, true) ? null : $refusal($name),
+            $names,
+        );
+    }
+
     public function isFixed(): bool
     {
         return $this->siblingKey === null && $this->predicate === null;
@@ -79,6 +101,12 @@ final readonly class NameVocabulary
     public function fixedNames(): array
     {
         return $this->fixed;
+    }
+
+    /** @return ?list<string> the names a closed vocabulary admits; null for every other vocabulary */
+    public function closedNames(): ?array
+    {
+        return $this->closed;
     }
 
     /** @return list<string> */

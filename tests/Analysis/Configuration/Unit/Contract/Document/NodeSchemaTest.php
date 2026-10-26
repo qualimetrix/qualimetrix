@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document;
 
+use Closure;
 use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\BareElementPolicy;
@@ -144,5 +146,41 @@ final class NodeSchemaTest extends TestCase
         self::assertTrue($words->contains(''));
         self::assertSame('string (one of )', NodeSchema::scalar(ScalarForm::String)->words($words)->describe());
         self::assertTrue(SchemaWordSet::foldingCase(' ')->contains(' '));
+    }
+
+    #[Test]
+    public function itDescribesANodeWithoutTouchingItsOtherWording(): void
+    {
+        $schema = NodeSchema::scalar(ScalarForm::String)->withHint('Quote it.', onlyFor: ['x'])->describedAs('A name.');
+
+        self::assertSame('A name.', $schema->wording->description);
+        self::assertSame('Quote it.', $schema->wording->hint);
+        self::assertSame(['x'], $schema->wording->hintOnlyFor);
+        self::assertNull(NodeSchema::scalar()->wording->description);
+    }
+
+    /** @return iterable<string, array{Closure(NodeSchema): NodeSchema, NodeSchema}> */
+    public static function provideModifiersThatRecomposeTheSchema(): iterable
+    {
+        $string = NodeSchema::scalar(ScalarForm::String);
+
+        yield 'withHint' => [static fn(NodeSchema $s): NodeSchema => $s->withHint('h'), $string];
+        yield 'judgedInEachLayer' => [static fn(NodeSchema $s): NodeSchema => $s->judgedInEachLayer(static function (): void {}), $string];
+        yield 'atLeast' => [static fn(NodeSchema $s): NodeSchema => $s->atLeast(1), NodeSchema::scalar(ScalarForm::Integer)];
+        yield 'words' => [static fn(NodeSchema $s): NodeSchema => $s->words(SchemaWordSet::foldingCase('a')), $string];
+        yield 'nonEmpty' => [static fn(NodeSchema $s): NodeSchema => $s->nonEmpty(), $string];
+        yield 'bareFor' => [static fn(NodeSchema $s): NodeSchema => $s->bareFor('enabled'), NodeSchema::map(['enabled' => NodeSchema::scalar(ScalarForm::Boolean)])];
+        yield 'retiring' => [static fn(NodeSchema $s): NodeSchema => $s->retiring(['old' => 'Use new.']), NodeSchema::map(['new' => $string])];
+        yield 'admittingBareElement' => [static fn(NodeSchema $s): NodeSchema => $s->admittingBareElement(), NodeSchema::list($string)];
+        yield 'announcingEmptyOverride' => [static fn(NodeSchema $s): NodeSchema => $s->announcingEmptyOverride('n'), NodeSchema::list($string)];
+    }
+
+    /** @param Closure(NodeSchema): NodeSchema $modify */
+    #[Test]
+    #[DataProvider('provideModifiersThatRecomposeTheSchema')]
+    public function itRetainsTheDescriptionAcrossEveryModifier(Closure $modify, NodeSchema $schema): void
+    {
+        self::assertSame('Described.', $modify($schema->describedAs('Described.'))->wording->description);
+        self::assertSame('Described.', $modify($schema)->describedAs('Described.')->wording->description);
     }
 }

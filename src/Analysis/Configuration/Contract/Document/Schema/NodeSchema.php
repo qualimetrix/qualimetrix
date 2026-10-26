@@ -86,6 +86,11 @@ final readonly class NodeSchema
         return $this->recompose(wording: $this->wording->with(hint: $hint, hintOnlyFor: $onlyFor));
     }
 
+    public function describedAs(string $description): self
+    {
+        return $this->recompose(wording: $this->wording->with(description: $description));
+    }
+
     /** @param Closure(ResolvedValueInterface, list<string>): void|IntegerJudgement $judge */
     public function judgedInEachLayer(Closure|IntegerJudgement $judge): self
     {
