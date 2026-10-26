@@ -12,8 +12,10 @@ use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineAuditChannels;
 
 /**
  * The one place that knows **which capabilities declare project-scoped
- * channels**, assembled into the {@see ChannelFileScope} the exclusion filters
- * consult.
+ * channels**, assembled into the {@see ChannelFileScope} that the exclusion
+ * filters and the configuration load consult: the latter refuses a per-rule
+ * `suppress_paths` / `suppress_namespaces` on a producer whose every channel
+ * is declared here.
  *
  * Each capability owns the fact itself: the channel keys live on the contract
  * that already publishes that capability's producer rule name, and nothing

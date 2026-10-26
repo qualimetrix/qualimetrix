@@ -47,7 +47,7 @@ final class ProjectScopedSuppressionRefusalTest extends TestCase
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString(\sprintf('Option "%s" for rule "demo.cycle"', $option), $refusal->summary());
             self::assertStringContainsString('findings of this rule are project-level and cannot be addressed by path or namespace', $refusal->summary());
-            self::assertStringContainsString('use a baseline', $refusal->summary());
+            self::assertStringNotContainsString('baseline', $refusal->summary());
             self::assertStringContainsString('See https://qualimetrix.dev/rules/demo/.', $refusal->summary());
             self::assertSame(['rules', 'demo.cycle', $option], $refusal->position()?->segments);
         }
@@ -87,6 +87,14 @@ final class ProjectScopedSuppressionRefusalTest extends TestCase
     public function itAcceptsAProjectLevelChannelThatNoCapabilityDeclaresProjectScoped(string $option): void
     {
         self::assertSame([], self::decide('demo.metric', [$option => [['subtree' => 'App']]])->diagnostics());
+    }
+
+    /** A producer with no channel in this run (a computed family without definitions) has nothing project-level to refuse. */
+    #[Test]
+    #[DataProvider('suppressionOptions')]
+    public function itAcceptsAProducerThatHasNoChannels(string $option): void
+    {
+        self::assertSame([], self::decide('demo.empty', [$option => [['subtree' => 'App']]])->diagnostics());
     }
 
     #[Test]
@@ -147,7 +155,7 @@ final class ProjectScopedSuppressionRefusalTest extends TestCase
     {
         return array_map(
             static fn(string $name): RuleMetadata => new RuleMetadata($name, CodeSmellOptions::class, '', [], false),
-            ['demo.cycle', 'demo.mixed', 'demo.metric'],
+            ['demo.cycle', 'demo.mixed', 'demo.metric', 'demo.empty'],
         );
     }
 
@@ -164,8 +172,9 @@ final class ProjectScopedSuppressionRefusalTest extends TestCase
                 'demo.cycle' => ['demo.cycle'],
                 'demo.mixed' => ['demo.mixed-class', 'demo.mixed-project'],
                 'demo.metric' => ['demo.metric'],
+                'demo.empty' => [],
             ],
-            ['demo.cycle' => false, 'demo.mixed' => false, 'demo.metric' => false],
+            ['demo.cycle' => false, 'demo.mixed' => false, 'demo.metric' => false, 'demo.empty' => false],
             new ResolvedComputedMetricDefinitions([]),
             ...ResolvedOptionsFixture::unusedReachPorts(),
         );

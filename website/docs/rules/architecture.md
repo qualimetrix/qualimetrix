@@ -1232,7 +1232,7 @@ rules:
       - src/Legacy
 ```
 
-The framework (`RuleOptionsBuild`) extracts `suppress_namespaces` / `suppress_paths` for producers that report on code before building their Options. The exception is a producer whose every channel is project-scoped, such as `architecture.circular-dependency`, `architecture.layer-declaration` and `architecture.unassigned-class`: a non-empty list on it is refused at load (exit 3), because its findings are about the project and cannot be addressed by path or namespace. Accept known findings with a [baseline](../usage/baseline.md); for cycles, narrow what counts as an edge with `ignore-relations` (see above). Per-rule exclusions are counted and reported like those of other rules; see [Visibility](../getting-started/configuration.md#rules).
+The framework (`RuleOptionsBuild`) extracts `suppress_namespaces` / `suppress_paths` for producers that report on code before building their Options. The exception is a producer whose every channel is project-scoped, such as `architecture.circular-dependency`, `architecture.layer-declaration` and `architecture.unassigned-class`: a non-empty list on it is refused at load (exit 3), because its findings are about the project and cannot be addressed by path or namespace. For cycles, narrow what counts as an edge with `ignore-relations` (see above); the rule's page says what else applies. Per-rule exclusions are counted and reported like those of other rules; see [Visibility](../getting-started/configuration.md#rules).
 
 <!-- llms:skip-end -->
 

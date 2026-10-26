@@ -403,7 +403,7 @@ Namespace. Нарушения уровня класса `health.cohesion` в т�
 Отказ происходит в каждой команде, разрешающей опции правил: `check`, `directives`,
 `debug:layer-assignment`, `rules`, `baseline:generate`, `baseline:update`,
 `baseline:cleanup`, `baseline:explain`. `graph:export` опции правил не интерпретирует,
-поэтому не отказывает. Принять известные находки такого producer можно через
+поэтому не отказывает. Какие находки может принять baseline — см. страницу
 [baseline](../usage/baseline.ru.md); для циклов зависимостей — сузить, что считается
 ребром, опцией `ignore-relations` правила
 [`architecture.circular-dependency`](../rules/architecture.ru.md).
@@ -971,7 +971,7 @@ Warning: "only_rules" is written empty in configuration file "qmx.yaml" and repl
 которого `layers` не объявляет.
 
 Таблица перечисляет `suppress-namespaces` и `suppress-paths` под каждым правилом, но у
-семи producer только с project-scoped находками они принимают лишь пустой список или
+producer только с project-scoped находками они принимают лишь пустой список или
 `null`; см. [Producer только с project-scoped находками](#per-rule-project-scoped-producers).
 То же верно для `suppress-namespace-channels`: его записи должны называть канал,
 который отчитывается на уровне неймспейса.

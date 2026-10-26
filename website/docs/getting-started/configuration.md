@@ -401,9 +401,9 @@ The refusal happens in every command that resolves rule options: `check`,
 `directives`, `debug:layer-assignment`, `rules` and `baseline:generate`,
 `baseline:update`, `baseline:cleanup`, `baseline:explain`. `graph:export` does not
 interpret rule options, so it does not refuse them. To accept known findings of
-such a producer, use a [baseline](../usage/baseline.md); for dependency cycles,
-narrow what counts as an edge with `ignore-relations` of
-[`architecture.circular-dependency`](../rules/architecture.md).
+such a producer, see the [baseline](../usage/baseline.md) page for which findings a
+baseline can accept; for dependency cycles, narrow what counts as an edge with
+`ignore-relations` of [`architecture.circular-dependency`](../rules/architecture.md).
 
 **Suppress paths for a rule:**
 
@@ -961,7 +961,7 @@ formula referencing an unknown computed metric, or a layer that allows a layer
 `layers` does not declare.
 
 The table lists `suppress-namespaces` and `suppress-paths` under every rule, but for
-the seven producers with project-scoped findings only they accept just an empty list or
+producers with project-scoped findings only they accept just an empty list or
 `null`; see [Producers with project-scoped findings only](#per-rule-project-scoped-producers).
 The same holds for `suppress-namespace-channels`, whose entries must name a channel that
 reports at the namespace level.

@@ -140,7 +140,7 @@ final class AuthoredSelectionDiagnostics
                 $page = $projectOnlyProducerDocsPages[$producer];
                 throw Provenance::refusalOf($selectors->contributors(), \sprintf(
                     'Option "%s" for rule "%s" can never apply: findings of this rule are project-level and cannot be addressed by path or namespace.'
-                    . ' Remove the option; to accept known findings, use a baseline.%s',
+                    . ' Remove the option.%s',
                     str_replace('-', '_', $key),
                     $producer,
                     $page === null ? '' : ' See ' . ProductIdentity::docsPageUrl($page) . '.',

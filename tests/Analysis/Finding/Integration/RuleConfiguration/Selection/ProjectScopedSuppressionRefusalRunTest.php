@@ -8,10 +8,13 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleEnablementResolver;
 use Qualimetrix\Infrastructure\Console\Baseline\Generation\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Directives\DirectivesCommand;
+use Qualimetrix\Infrastructure\Console\GraphExport\GraphExportCommand;
+use Qualimetrix\Infrastructure\Console\RuleListing\RulesCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -72,8 +75,33 @@ final class ProjectScopedSuppressionRefusalRunTest extends TestCase
         self::assertSame(3, $tester->getStatusCode(), $output);
         self::assertStringContainsString('Option "suppress_namespaces" for rule "architecture.circular-dependency"', $output);
         self::assertStringContainsString('project-level', $output);
-        self::assertStringContainsString('baseline', $output);
         self::assertFileDoesNotExist($this->fixture . '/baseline.json');
+    }
+
+    /**
+     * `rules` judges the document from its own call site and lets the refusal
+     * reach the application's exit-code ladder instead of returning a status.
+     */
+    #[Test]
+    public function itRefusesTheCycleRuleSuppressionInTheRuleListing(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('Option "suppress_namespaces" for rule "architecture.circular-dependency"');
+
+        $this->execute(RulesCommand::class, [], "rules:\n  architecture.circular-dependency:\n    suppress_namespaces:\n      - {subtree: Sample}\n");
+    }
+
+    /** The graph export never interprets rule options, so the same file is accepted there. */
+    #[Test]
+    public function itLeavesGraphExportUnaffected(): void
+    {
+        $tester = $this->execute(
+            GraphExportCommand::class,
+            ['paths' => ['src'], '--workers' => '0', '--no-cache' => true],
+            "rules:\n  architecture.circular-dependency:\n    suppress_namespaces:\n      - {subtree: Sample}\n",
+        );
+
+        self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
     }
 
     /** @return iterable<string, array{string, string}> */

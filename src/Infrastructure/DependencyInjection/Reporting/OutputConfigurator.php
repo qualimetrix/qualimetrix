@@ -132,6 +132,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $gitScopeQuery = 'Qualimetrix\\Infrastructure\\Git\\ReportingGitScopeQuery';
         $findingProjector = 'Qualimetrix\\Reporting\\FindingProjection\\FindingProjector';
 
+        // Also read by the Finding enablement resolver at configuration load.
         $container->register(ChannelFileScope::class)
             ->setFactory([DeclaredChannelFileScope::class, 'create']);
 
