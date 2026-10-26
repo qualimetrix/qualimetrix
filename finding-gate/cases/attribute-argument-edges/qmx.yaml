@@ -1,0 +1,29 @@
+suppress_paths: []
+only_rules: [architecture.layer-violation]
+computed_metrics:
+  health.complexity: { enabled: false }
+  health.cohesion: { enabled: false }
+  health.coupling: { enabled: false }
+  health.typing: { enabled: false }
+  health.maintainability: { enabled: false }
+  health.overall: { enabled: false }
+architecture:
+  coverage-gap: error
+  layers:
+    - name: domain
+      patterns: ['Corpus\AttributeArgumentEdges\Domain\**']
+    - name: mapping
+      patterns: ['Corpus\AttributeArgumentEdges\Mapping\**']
+    - name: persistence
+      patterns: ['Corpus\AttributeArgumentEdges\Persistence\**']
+  allow:
+    domain:
+      - target: mapping
+        relations: [attribute]
+      # Deliberately omits attribute_argument: the reference binary does not
+      # know that token, and the whitelist is what makes the attribute
+      # arguments' dependency kind observable as a finding.
+      - target: persistence
+        relations: [static_access, attribute]
+    mapping: []
+    persistence: []

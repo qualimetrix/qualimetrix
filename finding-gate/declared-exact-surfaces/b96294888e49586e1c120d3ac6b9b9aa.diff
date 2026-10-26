@@ -1,0 +1,76 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 4592
++visible 3169
+@@ -39,29 +39,4 @@
+-                        "text": "Layer \"domain\" must not depend on layer \"persistence\" (Corpus\\AttributeArgumentEdges\\Domain\\Order \u2192 Corpus\\AttributeArgumentEdges\\Persistence\\OrderRepository, uses in attribute argument)"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "architecture.layer-violation:declaration:class:Corpus\\AttributeArgumentEdges\\Domain\\Order@src/Domain/Order.php:d092baee6c19027f:attribute_argument:class:Corpus\\AttributeArgumentEdges\\Persistence\\OrderRepository"
+-                    },
+-                    "locations": [
+-                        {
+-                            "physicalLocation": {
+-                                "artifactLocation": {
+-                                    "uri": "src/Domain/Order.php",
+-                                    "uriBaseId": "%SRCROOT%"
+-                                },
+-                                "region": {
+-                                    "startLine": 9,
+-                                    "startColumn": 1
+-                                }
+-                            }
+-                        }
+-                    ]
+-                },
+-                {
+-                    "ruleId": "architecture.layer-violation",
+-                    "ruleIndex": 0,
+-                    "level": "warning",
+-                    "message": {
+-                        "text": "Layer \"domain\" must not depend on layer \"persistence\" (Corpus\\AttributeArgumentEdges\\Domain\\Order \u2192 Corpus\\AttributeArgumentEdges\\Persistence\\AuditListener, uses in attribute argument)"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "architecture.layer-violation:declaration:class:Corpus\\AttributeArgumentEdges\\Domain\\Order@src/Domain/Order.php:18f963e9099c8d7e:attribute_argument:class:Corpus\\AttributeArgumentEdges\\Persistence\\AuditListener"
++                        "text": "Layer \"domain\" must not depend on layer \"persistence\" (Corpus\\AttributeArgumentEdges\\Domain\\Order \u2192 Corpus\\AttributeArgumentEdges\\Persistence\\AuditListener, instantiates)"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "architecture.layer-violation:declaration:class:Corpus\\AttributeArgumentEdges\\Domain\\Order@src/Domain/Order.php:e4fa399bfe531f30:new:class:Corpus\\AttributeArgumentEdges\\Persistence\\AuditListener"
+@@ -99,1 +74,1 @@
+-invocation-format:sarif 4592
++invocation-format:sarif 3169
+@@ -137,29 +112,4 @@
+-                        "text": "Layer \"domain\" must not depend on layer \"persistence\" (Corpus\\AttributeArgumentEdges\\Domain\\Order \u2192 Corpus\\AttributeArgumentEdges\\Persistence\\OrderRepository, uses in attribute argument)"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "architecture.layer-violation:declaration:class:Corpus\\AttributeArgumentEdges\\Domain\\Order@src/Domain/Order.php:d092baee6c19027f:attribute_argument:class:Corpus\\AttributeArgumentEdges\\Persistence\\OrderRepository"
+-                    },
+-                    "locations": [
+-                        {
+-                            "physicalLocation": {
+-                                "artifactLocation": {
+-                                    "uri": "src/Domain/Order.php",
+-                                    "uriBaseId": "%SRCROOT%"
+-                                },
+-                                "region": {
+-                                    "startLine": 9,
+-                                    "startColumn": 1
+-                                }
+-                            }
+-                        }
+-                    ]
+-                },
+-                {
+-                    "ruleId": "architecture.layer-violation",
+-                    "ruleIndex": 0,
+-                    "level": "warning",
+-                    "message": {
+-                        "text": "Layer \"domain\" must not depend on layer \"persistence\" (Corpus\\AttributeArgumentEdges\\Domain\\Order \u2192 Corpus\\AttributeArgumentEdges\\Persistence\\AuditListener, uses in attribute argument)"
+-                    },
+-                    "partialFingerprints": {
+-                        "primaryLocationLineHash": "architecture.layer-violation:declaration:class:Corpus\\AttributeArgumentEdges\\Domain\\Order@src/Domain/Order.php:18f963e9099c8d7e:attribute_argument:class:Corpus\\AttributeArgumentEdges\\Persistence\\AuditListener"
++                        "text": "Layer \"domain\" must not depend on layer \"persistence\" (Corpus\\AttributeArgumentEdges\\Domain\\Order \u2192 Corpus\\AttributeArgumentEdges\\Persistence\\AuditListener, instantiates)"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "architecture.layer-violation:declaration:class:Corpus\\AttributeArgumentEdges\\Domain\\Order@src/Domain/Order.php:e4fa399bfe531f30:new:class:Corpus\\AttributeArgumentEdges\\Persistence\\AuditListener"

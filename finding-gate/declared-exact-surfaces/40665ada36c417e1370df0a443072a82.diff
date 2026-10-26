@@ -1,0 +1,52 @@
+--- candidate
++++ reference (mapped)
+@@ -1,18 +1,6 @@
+-visible 1046
+-[
+-    {
+-        "description": "Layer \"domain\" must not depend on layer \"persistence\" (Corpus\\AttributeArgumentEdges\\Domain\\Order \u2192 Corpus\\AttributeArgumentEdges\\Persistence\\OrderRepository, uses in attribute argument)",
+-        "check_name": "architecture.layer-violation",
+-        "fingerprint": "5bb9601dbb6208bd4f0b53cf9647214a",
+-        "severity": "major",
+-        "location": {
+-            "path": "src/Domain/Order.php",
+-            "lines": {
+-                "begin": 9
+-            }
+-        }
+-    },
+-    {
+-        "description": "Layer \"domain\" must not depend on layer \"persistence\" (Corpus\\AttributeArgumentEdges\\Domain\\Order \u2192 Corpus\\AttributeArgumentEdges\\Persistence\\AuditListener, uses in attribute argument)",
+-        "check_name": "architecture.layer-violation",
+-        "fingerprint": "abe991d37bd9d9eccd8319faf6c44af2",
++visible 509
++[
++    {
++        "description": "Layer \"domain\" must not depend on layer \"persistence\" (Corpus\\AttributeArgumentEdges\\Domain\\Order \u2192 Corpus\\AttributeArgumentEdges\\Persistence\\AuditListener, instantiates)",
++        "check_name": "architecture.layer-violation",
++        "fingerprint": "bbaf80b6f7ea40873653d50cd480f0d3",
+@@ -28,18 +16,6 @@
+-invocation-format:gitlab 1046
+-[
+-    {
+-        "description": "Layer \"domain\" must not depend on layer \"persistence\" (Corpus\\AttributeArgumentEdges\\Domain\\Order \u2192 Corpus\\AttributeArgumentEdges\\Persistence\\OrderRepository, uses in attribute argument)",
+-        "check_name": "architecture.layer-violation",
+-        "fingerprint": "5bb9601dbb6208bd4f0b53cf9647214a",
+-        "severity": "major",
+-        "location": {
+-            "path": "src/Domain/Order.php",
+-            "lines": {
+-                "begin": 9
+-            }
+-        }
+-    },
+-    {
+-        "description": "Layer \"domain\" must not depend on layer \"persistence\" (Corpus\\AttributeArgumentEdges\\Domain\\Order \u2192 Corpus\\AttributeArgumentEdges\\Persistence\\AuditListener, uses in attribute argument)",
+-        "check_name": "architecture.layer-violation",
+-        "fingerprint": "abe991d37bd9d9eccd8319faf6c44af2",
++invocation-format:gitlab 509
++[
++    {
++        "description": "Layer \"domain\" must not depend on layer \"persistence\" (Corpus\\AttributeArgumentEdges\\Domain\\Order \u2192 Corpus\\AttributeArgumentEdges\\Persistence\\AuditListener, instantiates)",
++        "check_name": "architecture.layer-violation",
++        "fingerprint": "bbaf80b6f7ea40873653d50cd480f0d3",

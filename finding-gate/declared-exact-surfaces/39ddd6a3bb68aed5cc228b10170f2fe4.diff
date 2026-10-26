@@ -1,0 +1,8 @@
+--- candidate
++++ reference (mapped)
+@@ -4,1 +4,1 @@
+-Findings: 0 error(s), 2 warning(s), 0 info
++Findings: 0 error(s), 1 warning(s), 0 info
+@@ -16,1 +16,1 @@
+-Findings: 0 error(s), 2 warning(s), 0 info
++Findings: 0 error(s), 1 warning(s), 0 info

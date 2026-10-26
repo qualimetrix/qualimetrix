@@ -1,0 +1,15 @@
+--- candidate
++++ reference (mapped)
+@@ -1,7 +1,5 @@
+-visible 534
+-::warning file=src/Domain/Order.php,line=9,title=architecture.layer-violation::Layer "domain" must not depend on layer "persistence" (Corpus\AttributeArgumentEdges\Domain\Order → Corpus\AttributeArgumentEdges\Persistence\OrderRepository, uses in attribute argument)
+-::warning file=src/Domain/Order.php,line=9,title=architecture.layer-violation::Layer "domain" must not depend on layer "persistence" (Corpus\AttributeArgumentEdges\Domain\Order → Corpus\AttributeArgumentEdges\Persistence\AuditListener, uses in attribute argument)
+-
+-invocation-format:github 534
+-::warning file=src/Domain/Order.php,line=9,title=architecture.layer-violation::Layer "domain" must not depend on layer "persistence" (Corpus\AttributeArgumentEdges\Domain\Order → Corpus\AttributeArgumentEdges\Persistence\OrderRepository, uses in attribute argument)
+-::warning file=src/Domain/Order.php,line=9,title=architecture.layer-violation::Layer "domain" must not depend on layer "persistence" (Corpus\AttributeArgumentEdges\Domain\Order → Corpus\AttributeArgumentEdges\Persistence\AuditListener, uses in attribute argument)
++visible 252
++::warning file=src/Domain/Order.php,line=9,title=architecture.layer-violation::Layer "domain" must not depend on layer "persistence" (Corpus\AttributeArgumentEdges\Domain\Order → Corpus\AttributeArgumentEdges\Persistence\AuditListener, instantiates)
++
++invocation-format:github 252
++::warning file=src/Domain/Order.php,line=9,title=architecture.layer-violation::Layer "domain" must not depend on layer "persistence" (Corpus\AttributeArgumentEdges\Domain\Order → Corpus\AttributeArgumentEdges\Persistence\AuditListener, instantiates)

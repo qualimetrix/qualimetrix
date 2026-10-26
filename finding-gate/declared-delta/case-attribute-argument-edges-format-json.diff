@@ -1,0 +1,28 @@
+--- candidate
++++ reference (mapped)
+@@ -13,6 +13,6 @@
+-        "violationCount": 2,
+-        "errorCount": 0,
+-        "warningCount": 2,
+-        "infoCount": 0,
+-        "techDebtMinutes": 30,
+-        "debtPer1kLoc": 517.2
++        "violationCount": 1,
++        "errorCount": 0,
++        "warningCount": 1,
++        "infoCount": 0,
++        "techDebtMinutes": 15,
++        "debtPer1kLoc": 258.6
+@@ -49,6 +49,6 @@
+-        "total": 2,
+-        "shown": 2,
+-        "limit": null,
+-        "truncated": false,
+-        "byRule": {
+-            "architecture.layer-violation": 2
++        "total": 1,
++        "shown": 1,
++        "limit": null,
++        "truncated": false,
++        "byRule": {
++            "architecture.layer-violation": 1

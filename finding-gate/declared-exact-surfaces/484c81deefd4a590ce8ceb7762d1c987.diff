@@ -1,0 +1,33 @@
+--- candidate
++++ reference (mapped)
+@@ -1,16 +1,14 @@
+-visible 735
+-src/Domain/Order.php: warning[architecture.layer-violation]: Layer "domain" must not depend on layer "persistence" (Corpus\AttributeArgumentEdges\Domain\Order → Corpus\AttributeArgumentEdges\Persistence\OrderRepository, uses in attribute argument) (Order)
+-src/Domain/Order.php: warning[architecture.layer-violation]: Layer "domain" must not depend on layer "persistence" (Corpus\AttributeArgumentEdges\Domain\Order → Corpus\AttributeArgumentEdges\Persistence\AuditListener, uses in attribute argument) (Order)
+-
+-Qualimetrix dev-main: 0 error(s), 2 warning(s) in 6 file(s)
+-Analysis complete: 6 analyzed, 0 generated file(s) excluded.
+-Technical debt: 30min
+-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
+-
+-invocation-show-suppressed 735
+-src/Domain/Order.php: warning[architecture.layer-violation]: Layer "domain" must not depend on layer "persistence" (Corpus\AttributeArgumentEdges\Domain\Order → Corpus\AttributeArgumentEdges\Persistence\OrderRepository, uses in attribute argument) (Order)
+-src/Domain/Order.php: warning[architecture.layer-violation]: Layer "domain" must not depend on layer "persistence" (Corpus\AttributeArgumentEdges\Domain\Order → Corpus\AttributeArgumentEdges\Persistence\AuditListener, uses in attribute argument) (Order)
+-
+-Qualimetrix dev-main: 0 error(s), 2 warning(s) in 6 file(s)
+-Analysis complete: 6 analyzed, 0 generated file(s) excluded.
+-Technical debt: 30min
++visible 463
++src/Domain/Order.php: warning[architecture.layer-violation]: Layer "domain" must not depend on layer "persistence" (Corpus\AttributeArgumentEdges\Domain\Order → Corpus\AttributeArgumentEdges\Persistence\AuditListener, instantiates) (Order)
++
++Qualimetrix dev-main: 0 error(s), 1 warning(s) in 6 file(s)
++Analysis complete: 6 analyzed, 0 generated file(s) excluded.
++Technical debt: 15min
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-show-suppressed 463
++src/Domain/Order.php: warning[architecture.layer-violation]: Layer "domain" must not depend on layer "persistence" (Corpus\AttributeArgumentEdges\Domain\Order → Corpus\AttributeArgumentEdges\Persistence\AuditListener, instantiates) (Order)
++
++Qualimetrix dev-main: 0 error(s), 1 warning(s) in 6 file(s)
++Analysis complete: 6 analyzed, 0 generated file(s) excluded.
++Technical debt: 15min

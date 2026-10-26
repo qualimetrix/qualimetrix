@@ -1,0 +1,31 @@
+--- candidate
++++ reference (mapped)
+@@ -1,15 +1,13 @@
+-visible 729
+-<?xml version="1.0" encoding="UTF-8"?>
+-<checkstyle version="3.0">
+-  <file name="src/Domain/Order.php">
+-    <error line="9" severity="warning" message="Layer &quot;domain&quot; must not depend on layer &quot;persistence&quot; (Corpus\AttributeArgumentEdges\Domain\Order → Corpus\AttributeArgumentEdges\Persistence\OrderRepository, uses in attribute argument)" source="qmx.architecture.layer-violation"/>
+-    <error line="9" severity="warning" message="Layer &quot;domain&quot; must not depend on layer &quot;persistence&quot; (Corpus\AttributeArgumentEdges\Domain\Order → Corpus\AttributeArgumentEdges\Persistence\AuditListener, uses in attribute argument)" source="qmx.architecture.layer-violation"/>
+-  </file>
+-</checkstyle>
+-
+-invocation-format:checkstyle 729
+-<?xml version="1.0" encoding="UTF-8"?>
+-<checkstyle version="3.0">
+-  <file name="src/Domain/Order.php">
+-    <error line="9" severity="warning" message="Layer &quot;domain&quot; must not depend on layer &quot;persistence&quot; (Corpus\AttributeArgumentEdges\Domain\Order → Corpus\AttributeArgumentEdges\Persistence\OrderRepository, uses in attribute argument)" source="qmx.architecture.layer-violation"/>
+-    <error line="9" severity="warning" message="Layer &quot;domain&quot; must not depend on layer &quot;persistence&quot; (Corpus\AttributeArgumentEdges\Domain\Order → Corpus\AttributeArgumentEdges\Persistence\AuditListener, uses in attribute argument)" source="qmx.architecture.layer-violation"/>
++visible 413
++<?xml version="1.0" encoding="UTF-8"?>
++<checkstyle version="3.0">
++  <file name="src/Domain/Order.php">
++    <error line="9" severity="warning" message="Layer &quot;domain&quot; must not depend on layer &quot;persistence&quot; (Corpus\AttributeArgumentEdges\Domain\Order → Corpus\AttributeArgumentEdges\Persistence\AuditListener, instantiates)" source="qmx.architecture.layer-violation"/>
++  </file>
++</checkstyle>
++
++invocation-format:checkstyle 413
++<?xml version="1.0" encoding="UTF-8"?>
++<checkstyle version="3.0">
++  <file name="src/Domain/Order.php">
++    <error line="9" severity="warning" message="Layer &quot;domain&quot; must not depend on layer &quot;persistence&quot; (Corpus\AttributeArgumentEdges\Domain\Order → Corpus\AttributeArgumentEdges\Persistence\AuditListener, instantiates)" source="qmx.architecture.layer-violation"/>

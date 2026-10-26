@@ -1,0 +1,28 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 1430
++visible 917
+@@ -11,6 +11,3 @@
+-         architecture.layer-violation: Layer "domain" must not depend on layer "persistence" (Corpus\AttributeArgumentEdges\Domain\Order → Corpus\AttributeArgumentEdges\Persistence\OrderRepository, uses in attribute argument)
+-         Recommendation: Allowed targets for layer "domain": mapping (relations: attribute), persistence (relations: static_call, static_property_fetch, class_const_fetch, attribute). Consider routing through one of them.
+-  2. [WRN] 11.7  src/Domain/Order.php  [15min]
+-         architecture.layer-violation: Layer "domain" must not depend on layer "persistence" (Corpus\AttributeArgumentEdges\Domain\Order → Corpus\AttributeArgumentEdges\Persistence\AuditListener, uses in attribute argument)
+-         Recommendation: Allowed targets for layer "domain": mapping (relations: attribute), persistence (relations: static_call, static_property_fetch, class_const_fetch, attribute). Consider routing through one of them.
+-2 violations (2 warnings) | Tech debt: 30min (517.2 min/kLOC to fix)
++         architecture.layer-violation: Layer "domain" must not depend on layer "persistence" (Corpus\AttributeArgumentEdges\Domain\Order → Corpus\AttributeArgumentEdges\Persistence\AuditListener, instantiates)
++         Recommendation: Allowed targets for layer "domain": mapping (relations: attribute), persistence (relations: static_call, static_property_fetch, class_const_fetch, attribute). Consider routing through one of them.
++1 violation (1 warning) | Tech debt: 15min (258.6 min/kLOC to fix)
+@@ -21,1 +18,1 @@
+-invocation-format:summary 1430
++invocation-format:summary 917
+@@ -31,6 +28,3 @@
+-         architecture.layer-violation: Layer "domain" must not depend on layer "persistence" (Corpus\AttributeArgumentEdges\Domain\Order → Corpus\AttributeArgumentEdges\Persistence\OrderRepository, uses in attribute argument)
+-         Recommendation: Allowed targets for layer "domain": mapping (relations: attribute), persistence (relations: static_call, static_property_fetch, class_const_fetch, attribute). Consider routing through one of them.
+-  2. [WRN] 11.7  src/Domain/Order.php  [15min]
+-         architecture.layer-violation: Layer "domain" must not depend on layer "persistence" (Corpus\AttributeArgumentEdges\Domain\Order → Corpus\AttributeArgumentEdges\Persistence\AuditListener, uses in attribute argument)
+-         Recommendation: Allowed targets for layer "domain": mapping (relations: attribute), persistence (relations: static_call, static_property_fetch, class_const_fetch, attribute). Consider routing through one of them.
+-2 violations (2 warnings) | Tech debt: 30min (517.2 min/kLOC to fix)
++         architecture.layer-violation: Layer "domain" must not depend on layer "persistence" (Corpus\AttributeArgumentEdges\Domain\Order → Corpus\AttributeArgumentEdges\Persistence\AuditListener, instantiates)
++         Recommendation: Allowed targets for layer "domain": mapping (relations: attribute), persistence (relations: static_call, static_property_fetch, class_const_fetch, attribute). Consider routing through one of them.
++1 violation (1 warning) | Tech debt: 15min (258.6 min/kLOC to fix)

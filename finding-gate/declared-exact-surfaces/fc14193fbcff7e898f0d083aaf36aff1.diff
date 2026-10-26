@@ -1,0 +1,14 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 16086
++visible 16068
+@@ -9,1 +9,1 @@
+-    options: direct-as-error, ignore-relations, max-cycle-size
++    options: direct-as-error, max-cycle-size
+@@ -230,1 +230,1 @@
+-invocation-rules 16086
++invocation-rules 16068
+@@ -238,1 +238,1 @@
+-    options: direct-as-error, ignore-relations, max-cycle-size
++    options: direct-as-error, max-cycle-size

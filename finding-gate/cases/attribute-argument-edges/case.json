@@ -1,0 +1,12 @@
+{
+    "id": "attribute-argument-edges",
+    "description": "Auxiliary: a class whose attribute arguments name another layer's class twice, once as a class-constant fetch and once as an instantiation, under a relations: whitelist that allows static access and attributes but not attribute arguments. A sibling class fetches a class constant of the same layer from a method body, outside any attribute, so the unchanged kind of an ordinary reference stays visible next to the re-typed one.",
+    "coverage": "auxiliary",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "channels": [
+        "architecture.layer-violation@class"
+    ]
+}
