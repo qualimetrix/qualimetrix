@@ -2244,6 +2244,7 @@ Qualimetrix\Analysis\Run\Configuration\ProjectScopeDefaults	Analysis.Run	Qualime
 Qualimetrix\Analysis\Run\Configuration\ProjectScopePaths	Analysis.Run	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
 Qualimetrix\Analysis\Run\Configuration\ProjectScopePaths	Analysis.Run	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Analysis\Run\Configuration\ProjectScopePaths	Analysis.Run	Qualimetrix\Core\Path\PathFactory	Core.Path	contract
+Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver	Analysis.Run	Qualimetrix\Analysis\Configuration\ConfigSchema	Analysis.Configuration	contract
 Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver	Analysis.Run	Qualimetrix\Analysis\Configuration\ConfigurationRoot	Analysis.Configuration	contract
 Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver	Analysis.Run	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	contract
 Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver	Analysis.Run	Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface	Analysis.Configuration	contract

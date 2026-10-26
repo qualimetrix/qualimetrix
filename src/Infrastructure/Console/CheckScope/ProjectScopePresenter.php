@@ -79,40 +79,70 @@ final readonly class ProjectScopePresenter
             return null;
         }
 
+        $excludes = self::removingExcludes($result);
+        $causes = [...$excludes, ...($result->measured->coverage->generatedExcludedFiles !== [] ? ['the generated-file policy'] : [])];
+
+        return \sprintf(
+            'Code removed by %s %s %s. %s to judge %s.',
+            $causes === [] ? 'an exclude entry' : implode(' and ', $causes),
+            $measurement->judgement()->removedCodeIsKnown() ? 'may declare' : 'could not be read in full (too many files, an unreadable file or a link) and may declare',
+            self::withheldValues($withheld),
+            self::remedy($result, $excludes),
+            \count($withheld) === 1 ? 'it' : 'them',
+        );
+    }
+
+    /** @param non-empty-list<array{channel: string, option: string, pattern: string}> $withheld */
+    private static function withheldValues(array $withheld): string
+    {
         $channels = array_values(array_unique(array_column($withheld, 'channel')));
         sort($channels);
         $one = \count($withheld) === 1;
 
         return \sprintf(
-            'Code removed by %s may declare the namespaces of %d suppression %s, so %s not judged (%s). Narrow the exclusion to judge %s.',
-            implode(' and ', self::removalCauses($result)),
+            'the namespaces of %d suppression %s, so %s not judged (%s)',
             \count($withheld),
             $one ? 'value' : 'values',
             $one ? 'it was' : 'they were',
             implode(', ', $channels),
-            $one ? 'it' : 'them',
         );
     }
 
     /**
      * Every selector that removed an entry is named, because the removed
-     * namespaces are known only for the run as a whole; a removal no selector
-     * verdict records is still named, generically.
+     * namespaces are known only for the run as a whole.
      *
      * @return list<string>
      */
-    private static function removalCauses(AnalysisResult $result): array
+    private static function removingExcludes(AnalysisResult $result): array
     {
-        $causes = [];
+        $excludes = [];
         foreach ($result->measured->projectScope?->judgement()->excludeSelectors() ?? [] as $selector) {
             if ($selector->removedEntries !== []) {
-                $causes[] = 'exclude "' . $selector->display . '"';
+                $excludes[] = 'exclude "' . $selector->display . '"';
             }
         }
-        if ($result->measured->coverage->generatedExcludedFiles !== []) {
-            $causes[] = 'generated-file filtering';
-        }
 
-        return $causes === [] ? ['an exclude entry'] : $causes;
+        return $excludes;
+    }
+
+    /**
+     * What would judge the withheld values: narrowing the exclusion, judging
+     * generated files, or both.
+     *
+     * @param list<string> $excludes
+     */
+    private static function remedy(AnalysisResult $result, array $excludes): string
+    {
+        $generated = $result->measured->coverage->generatedExcludedFiles !== [];
+        $exclusion = ($result->measured->projectScope?->judgement()->removedCodeIsKnown() ?? false)
+            ? 'Narrow the exclusion'
+            : 'Exclude fewer files, and no unreadable file or link,';
+
+        return match (true) {
+            $generated && $excludes === [] => 'Pass --include-generated',
+            $generated => $exclusion . ' or pass --include-generated',
+            default => $exclusion,
+        };
     }
 }

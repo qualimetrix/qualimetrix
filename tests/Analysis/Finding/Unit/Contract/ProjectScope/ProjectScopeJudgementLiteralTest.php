@@ -22,12 +22,29 @@ use Qualimetrix\Core\Pattern\SelectorKind;
 final class ProjectScopeJudgementLiteralTest extends TestCase
 {
     #[Test]
-    public function itJudgesEveryLiteralWhenNoDoorWithholds(): void
+    public function itJudgesEveryLiteralWhenNoDoorWithholdsAndNothingWasRemoved(): void
     {
-        $scope = new ProjectScopeJudgement();
+        $scope = new ProjectScopeJudgement(removedCode: RemovedCodeNamespaces::none());
 
         self::assertTrue($scope->judgesNamespaceSubtree('App'));
         self::assertTrue($scope->judgesExactNamespace('App'));
+        self::assertTrue($scope->removedCodeIsKnown());
+    }
+
+    /**
+     * A judgement built without the removed code's namespaces knows nothing
+     * of them, door or no door: reading that absence as "nothing removed"
+     * would judge a literal the uncounted code declares.
+     */
+    #[Test]
+    public function itReadsAbsentRemovedNamespacesAsUnknownWithoutADoor(): void
+    {
+        $scope = new ProjectScopeJudgement();
+
+        self::assertFalse($scope->judgesExactNamespace('App'));
+        self::assertFalse($scope->judgesNamespaceSubtree('App'));
+        self::assertFalse($scope->removedCodeIsKnown());
+        self::assertTrue($scope->judgesNamespaceClaims());
     }
 
     /**

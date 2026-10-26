@@ -13,7 +13,9 @@ final readonly class ProjectScopeJudgement
      * @param list<ProjectScopeDoor> $namespaceWithheldBy
      * @param list<ProjectScopeDoor> $selectorsWithheldBy
      * @param list<ExcludeSelectorVerdict> $excludeSelectors
-     * @param RemovedCodeNamespaces|null $removedCode null means the removed code's namespaces were not established
+     * @param RemovedCodeNamespaces|null $removedCode null means the removed code's namespaces were not
+     *                                                established, which counts as unknown: a caller that
+     *                                                knows nothing was removed passes `none()`
      */
     public function __construct(
         private array $namespaceWithheldBy = [],
@@ -125,15 +127,20 @@ final readonly class ProjectScopeJudgement
         return !\in_array(ProjectScopeDoor::Exclude, $this->namespaceWithheldBy, true) || $this->excludeEvidenceIsPhpFilesOnly();
     }
 
+    /** Whether what removed code declares was established in full; when not, it may declare anything. */
+    public function removedCodeIsKnown(): bool
+    {
+        return $this->removedCode()->isKnown();
+    }
+
     /**
      * Removed code is consulted even when no door is open: code removed
      * outside the measured universe opens none, yet still leaves the
-     * namespace tree. Without evidence, an open door means nothing is known
-     * of the removed code, and no door means nothing was removed.
+     * namespace tree.
      */
     private function removedCode(): RemovedCodeNamespaces
     {
-        return $this->removedCode ?? ($this->namespaceWithheldBy === [] ? RemovedCodeNamespaces::none() : RemovedCodeNamespaces::unknown());
+        return $this->removedCode ?? RemovedCodeNamespaces::unknown();
     }
 
     private function excludeEvidenceIsPhpFilesOnly(): bool

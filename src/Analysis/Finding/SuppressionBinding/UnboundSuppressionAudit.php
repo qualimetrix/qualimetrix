@@ -181,7 +181,8 @@ final readonly class UnboundSuppressionAudit
      * A value withheld for any other reason as well — an unanalysed PSR-4
      * root, no production autoload, no complete namespace tree, a regex with
      * no literal anchor — is not named, because narrowing the removal would
-     * not judge it.
+     * not judge it. Nor is one the analysed tree already binds: removed code
+     * can only add namespaces, so that value is judged and bound.
      *
      * @param list<PathPattern> $suppressPaths
      * @param list<NamespacePattern> $suppressNamespaces
@@ -202,7 +203,8 @@ final readonly class UnboundSuppressionAudit
 
         $withheld = [];
         foreach ($this->configuredValues($suppressPaths, $suppressNamespaces) as $value) {
-            if ($value['pattern'] instanceof NamespacePattern && $scope->withholdsOnlyForRemovedCode($value['pattern'])) {
+            $pattern = $value['pattern'];
+            if ($pattern instanceof NamespacePattern && $scope->withholdsOnlyForRemovedCode($pattern) && !self::bindsNamespace($pattern, $declaredNamespaces)) {
                 $withheld[] = self::published($value);
             }
         }
@@ -320,7 +322,14 @@ final readonly class UnboundSuppressionAudit
             return $scope->judgesPathValue($pattern);
         }
 
-        return self::namespaceUniverseComplete($declaredNamespaces, $failedFiles) && $scope->judgesNamespaceValue($pattern);
+        if (!self::namespaceUniverseComplete($declaredNamespaces, $failedFiles)) {
+            return false;
+        }
+
+        // Removed code can only add namespaces, so a value the analysed tree
+        // already binds stays bound whatever that code declares.
+        return $scope->judgesNamespaceValue($pattern)
+            || ($scope->withholdsOnlyForRemovedCode($pattern) && self::bindsNamespace($pattern, $declaredNamespaces));
     }
 
     /** @param ?list<string> $declaredNamespaces */
@@ -348,24 +357,19 @@ final readonly class UnboundSuppressionAudit
             return false;
         }
 
-        foreach ($declaredNamespaces ?? [] as $namespace) {
-            if ($pattern->matches($namespace)) {
-                return true;
-            }
-        }
+        return self::bindsNamespace($pattern, $declaredNamespaces);
+    }
 
-        return false;
+    /** @param ?list<string> $declaredNamespaces */
+    private static function bindsNamespace(NamespacePattern $pattern, ?array $declaredNamespaces): bool
+    {
+        return array_any($declaredNamespaces ?? [], static fn(string $namespace): bool => $pattern->matches($namespace));
     }
 
     /** @param array<string, ChannelDeclaration> $declarations */
     private static function hasSelectedChannel(ChannelPublication $publication, array $declarations): bool
     {
-        foreach ($declarations as $code => $declaration) {
-            if ($publication->publishes(UnboundSuppressionRule::NAME, new FindingChannel($code), SymbolLevel::Project)) {
-                return true;
-            }
-        }
-        return false;
+        return array_any(array_keys($declarations), static fn(string $code): bool => $publication->publishes(UnboundSuppressionRule::NAME, new FindingChannel($code), SymbolLevel::Project));
     }
 
     private static function record(PopulationSession $session, FindingChannel $channel, ChannelDeclaration $declaration, PopulationIdentity $identity, GateInput $input): void

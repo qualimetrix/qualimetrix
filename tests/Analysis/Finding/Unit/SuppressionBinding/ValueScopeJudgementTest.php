@@ -58,11 +58,11 @@ final class ValueScopeJudgementTest extends TestCase
     #[Test]
     public function itJudgesRegexOnlyWhenTheWholeProjectIsAnalysed(): void
     {
-        $judgement = $this->judgement(['src'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths]));
+        $judgement = $this->judgement(['src'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::none()));
 
         self::assertFalse($judgement->judgesNamespaceValue($this->regexNamespace('Acme\\.*')));
-        self::assertTrue($this->judgement(['src', 'tests'], new ProjectScopeJudgement())->judgesNamespaceValue($this->regexNamespace('Acme\\.*')));
-        self::assertTrue($this->judgement([''], new ProjectScopeJudgement())->judgesNamespaceValue($this->regexNamespace('Acme\\.*')));
+        self::assertTrue($this->judgement(['src', 'tests'], new ProjectScopeJudgement(removedCode: RemovedCodeNamespaces::none()))->judgesNamespaceValue($this->regexNamespace('Acme\\.*')));
+        self::assertTrue($this->judgement([''], new ProjectScopeJudgement(removedCode: RemovedCodeNamespaces::none()))->judgesNamespaceValue($this->regexNamespace('Acme\\.*')));
     }
 
     /**
@@ -73,7 +73,7 @@ final class ValueScopeJudgementTest extends TestCase
     #[Test]
     public function itStillJudgesAnAnchoredNamespaceValueOnAWholeProjectRun(): void
     {
-        $judgement = $this->judgement(['src', 'tests'], new ProjectScopeJudgement());
+        $judgement = $this->judgement(['src', 'tests'], new ProjectScopeJudgement(removedCode: RemovedCodeNamespaces::none()));
 
         self::assertTrue($judgement->judgesNamespaceValue($this->subtreeNamespace('Acme\\Gone')));
     }
@@ -82,7 +82,7 @@ final class ValueScopeJudgementTest extends TestCase
     #[Test]
     public function itStillDeclinesToJudgeAValueServedFromAnUnanalysedRoot(): void
     {
-        $judgement = $this->judgement(['src'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths]));
+        $judgement = $this->judgement(['src'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::none()));
 
         self::assertFalse($judgement->judgesNamespaceValue($this->subtreeNamespace('Acme\\Tests\\Unit')));
         self::assertTrue($judgement->judgesNamespaceValue($this->subtreeNamespace('Acme\\Gone')));
@@ -92,10 +92,10 @@ final class ValueScopeJudgementTest extends TestCase
     #[Test]
     public function itAnswersTheSameForRegexPathValue(): void
     {
-        $judgement = $this->judgement(['src'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths]));
+        $judgement = $this->judgement(['src'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::none()));
 
         self::assertFalse($judgement->judgesPathValue($this->regexPath('.*Gone\\.php')));
-        self::assertTrue($this->judgement(['src', 'tests'], new ProjectScopeJudgement())->judgesPathValue($this->regexPath('.*Gone\\.php')));
+        self::assertTrue($this->judgement(['src', 'tests'], new ProjectScopeJudgement(removedCode: RemovedCodeNamespaces::none()))->judgesPathValue($this->regexPath('.*Gone\\.php')));
         self::assertTrue($judgement->judgesPathValue($this->subtreePath('src/Gone')));
     }
 
@@ -107,8 +107,8 @@ final class ValueScopeJudgementTest extends TestCase
 
         $value = $this->subtreePath('src/dir/Gone');
 
-        self::assertFalse($this->judgement(['src\\dir'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths]))->judgesPathValue($value));
-        self::assertTrue($this->judgement(['src/dir'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths]))->judgesPathValue($value));
+        self::assertFalse($this->judgement(['src\\dir'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::none()))->judgesPathValue($value));
+        self::assertTrue($this->judgement(['src/dir'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::none()))->judgesPathValue($value));
     }
 
     #[Test]
@@ -242,8 +242,8 @@ final class ValueScopeJudgementTest extends TestCase
     #[Test]
     public function itAnchorsAValueOnACharacterOnlyTheJudgeUsedToCallAGlob(): void
     {
-        self::assertTrue($this->judgement(['{legacy}'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths]))->judgesPathValue($this->subtreePath('{legacy}/Gone')));
-        self::assertFalse($this->judgement(['src'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths]))->judgesPathValue($this->subtreePath('{legacy}/Gone')));
+        self::assertTrue($this->judgement(['{legacy}'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::none()))->judgesPathValue($this->subtreePath('{legacy}/Gone')));
+        self::assertFalse($this->judgement(['src'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::none()))->judgesPathValue($this->subtreePath('{legacy}/Gone')));
     }
 
     /**
@@ -256,8 +256,8 @@ final class ValueScopeJudgementTest extends TestCase
     public function itJudgesNoNamespaceValueWhereTheProjectDeclaresNoAutoload(): void
     {
         foreach ([
-            [['src'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths])],
-            [[''], new ProjectScopeJudgement()],
+            [['src'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::none())],
+            [[''], new ProjectScopeJudgement(removedCode: RemovedCodeNamespaces::none())],
         ] as [$paths, $scope]) {
             $undeclared = $this->judgement($paths, $scope, projectDeclared: false);
 
@@ -266,7 +266,7 @@ final class ValueScopeJudgementTest extends TestCase
             self::assertTrue($undeclared->judgesPathValue($this->subtreePath('src/Gone')));
         }
 
-        self::assertTrue($this->judgement(['src'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths]))->judgesNamespaceValue($this->subtreeNamespace('Acme\\Gone')));
+        self::assertTrue($this->judgement(['src'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::none()))->judgesNamespaceValue($this->subtreeNamespace('Acme\\Gone')));
     }
 
     #[Test]
@@ -280,7 +280,7 @@ final class ValueScopeJudgementTest extends TestCase
             ['App\\' => ['src']],
             [$this->root . '/src/A.php'],
             true,
-            new ProjectScopeJudgement(),
+            new ProjectScopeJudgement(removedCode: RemovedCodeNamespaces::none()),
         );
 
         self::assertTrue($judgement->judgesPathValue($path));

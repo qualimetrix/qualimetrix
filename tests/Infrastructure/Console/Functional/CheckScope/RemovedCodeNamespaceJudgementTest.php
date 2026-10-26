@@ -107,6 +107,10 @@ final class RemovedCodeNamespaceJudgementTest extends TestCase
 
         self::assertSame(0, $this->staleFindings($run['report']));
         self::assertContains(self::CHANNEL, $run['report']['projectScope']['unjudgedChannels']);
+        self::assertStringContainsString(
+            'Code removed by exclude "exact:src/Removed.php" could not be read in full (too many files, an unreadable file or a link) and may declare the namespaces of 1 suppression value, so it was not judged (' . self::CHANNEL . '). Exclude fewer files, and no unreadable file or link, to judge it.',
+            $run['stderr'],
+        );
     }
 
     #[Test]
@@ -120,7 +124,51 @@ final class RemovedCodeNamespaceJudgementTest extends TestCase
             [['channel' => self::CHANNEL, 'option' => 'suppress_namespaces', 'pattern' => 'exact:App\\Gen']],
             $this->unjudgedNamespaceValues($run['report']),
         );
-        self::assertStringContainsString('generated-file filtering', $run['stderr']);
+        self::assertStringContainsString(
+            'Warning: Code removed by the generated-file policy may declare the namespaces of 1 suppression value, so it was not judged (' . self::CHANNEL . '). Pass --include-generated to judge it.',
+            $run['stderr'],
+        );
+    }
+
+    #[Test]
+    public function itOffersBothRemediesWhenAnExclusionAndTheGeneratedPolicyRemovedCode(): void
+    {
+        file_put_contents($this->root . '/src/Gen.php', "<?php\n// @generated\nnamespace App\\Gen;\nfinal class Gen {}\n");
+        $run = $this->check("exclude:\n  - {exact: src/Removed.php}\nsuppress_namespaces:\n  - {exact: 'App\\Gen'}\n");
+
+        self::assertStringContainsString(
+            'Code removed by exclude "exact:src/Removed.php" and the generated-file policy may declare the namespaces of 1 suppression value, so it was not judged (' . self::CHANNEL . '). Narrow the exclusion or pass --include-generated to judge it.',
+            $run['stderr'],
+        );
+    }
+
+    /**
+     * Removed code can only add namespaces, so a value the analysed tree
+     * already binds is judged and bound beside an excluded sub-tree, in both
+     * channels: neither unjudged nor counted by the warning. Only the value
+     * the excluded sub-tree alone may declare stays unjudged.
+     */
+    #[Test]
+    public function itJudgesAValueTheAnalysedTreeBindsBesideAnExcludedSubTree(): void
+    {
+        mkdir($this->root . '/src/Legacy/Old', 0o777, true);
+        file_put_contents($this->root . '/src/Legacy/A.php', "<?php\nnamespace App\\Legacy;\nfinal class A {}\n");
+        file_put_contents($this->root . '/src/Legacy/Old/B.php', "<?php\nnamespace App\\Legacy\\Old;\nfinal class B {}\n");
+
+        $run = $this->check(
+            "exclude:\n  - {subtree: src/Legacy/Old}\n"
+            . "suppress_namespaces:\n  - {subtree: 'App\\Legacy'}\n  - {exact: 'App\\Legacy'}\n  - {exact: 'App\\Legacy\\Old'}\n"
+            . "rules:\n  complexity.ccn:\n    suppress_namespaces: [{subtree: 'App\\Legacy'}]\n",
+        );
+
+        self::assertSame(0, $this->staleFindings($run['report']));
+        self::assertSame(0, $this->staleFindings($run['report'], 'suppression.unmatched-rule-ledger'));
+        self::assertSame(
+            [['channel' => self::CHANNEL, 'option' => 'suppress_namespaces', 'pattern' => 'exact:App\\Legacy\\Old']],
+            $this->unjudgedNamespaceValues($run['report']),
+        );
+        self::assertNotContains('suppression.unmatched-rule-ledger', $run['report']['projectScope']['unjudgedChannels']);
+        self::assertStringContainsString('may declare the namespaces of 1 suppression value, so it was not judged', $run['stderr']);
     }
 
     /**

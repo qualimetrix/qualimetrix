@@ -7023,7 +7023,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationSelectionTest::itUsesTheFailedGateUnitAfterAPassingOrdinaryPrefix
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itConsultsRemovedCodeWhenNoDoorWithholds
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itJudgesALiteralTheRemovedCodeCannotReach
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itJudgesEveryLiteralWhenNoDoorWithholds
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itJudgesEveryLiteralWhenNoDoorWithholdsAndNothingWasRemoved
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itReadsAbsentRemovedNamespacesAsUnknownWithoutADoor
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itSetsGeneratedRemovalAsideLikeExcludedPhpFiles
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itTreatsAbsentRemovedNamespacesAsUnknown
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itWithholdsALiteralTheRemovedCodeCouldHaveDeclared
@@ -7720,6 +7721,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itExplainsTheExplicitSelectorKindInUnmatchedRecommendations
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itHonoursTheRegexAndSubtreeModesTheSuppressionFiltersUse
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesAChannelSuppressionPatternTheLedgerApplies
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesALiteralTheAnalysedTreeAlreadyBindsBesideRemovedCode
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesAnUnmatchedNamespaceRegexOnAWholeProjectRun
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesBinarySuppressionSelectorsWithoutCollapsingLiteralEscapes
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNamespacesAgainstAnEmptyTree
@@ -10208,6 +10210,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopePathsTest::itNamesTheOutermostPrunedDirectoryAWalkWouldStopAt
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopePathsTest::itProvidesBuiltInsThatMatchReservedDirectoriesAtAnyDepth
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itKeepsRelativePathsRootedAtIngressWhenTheProcessDirectoryChanges
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itRecordsWhetherALiteralNamespaceSuppressionValueIsConfigured"global exact"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itRecordsWhetherALiteralNamespaceSuppressionValueIsConfigured"global regex only"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itRecordsWhetherALiteralNamespaceSuppressionValueIsConfigured"none"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itRecordsWhetherALiteralNamespaceSuppressionValueIsConfigured"rule channel exact"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itRecordsWhetherALiteralNamespaceSuppressionValueIsConfigured"rule channel regex only"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itRecordsWhetherALiteralNamespaceSuppressionValueIsConfigured"rule paths only"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itRecordsWhetherALiteralNamespaceSuppressionValueIsConfigured"rule subtree"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itRecordsWhetherALiteralNamespaceSuppressionValueIsConfigured"rule thresholds only"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itRefusesAnOutsideComposerTargetWithoutInventingAPathsPosition
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itRefusesTheSpecificOutsidePathAuthor"command line"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itRefusesTheSpecificOutsidePathAuthor"configuration file"
@@ -10351,6 +10361,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsSameSourceWhenHiderAndHiddenSelectorShareMixedHistory
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsSiblingPrefixesSeparate
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsTheFirstNamedLinkWithoutASelectedRegularTargetAndKeepsHardlinksDistinct
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKnowsNothingIsRemovedWithoutReadingWhenNoLiteralIsConfigured
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itMakesRemovedNamespacesUnknownForALinkInsideARemovedDirectory"directory link"
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itMakesRemovedNamespacesUnknownForALinkInsideARemovedDirectory"php file link"
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itMakesRemovedNamespacesUnknownForAnExcludedNamedFileLink
@@ -10362,6 +10373,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itPrefersOtherSourceForPossibleHiddenRegexMatch
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itPrefersOtherSourceWhenTheHiddenSelectorHasMixedHistory
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itPublishesWalkedDirectoryLinksToTheRootAndOutsideByTheirWrittenNames
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itReadsNoRemovedFileWhenNoLiteralNamespaceSuppressionIsConfigured
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itReadsTheNamespaceOfAGeneratedFileBeyondTheHeaderWindow
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itRecordsAChildStatFailureAndKeepsItsSiblingsAndBlockedSelector
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itRecordsANamedDirectoryAliasRemovedByAnExcludeAsHidden
@@ -10393,6 +10405,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itCannotReadAFileWithANamespaceStatementItDoesNotRecognise"no name"
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itFindsANameThatStraddlesTwoChunks
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itListsEveryNamespaceAWordCouldDeclareInALargeFile"a comment longer than the lookahead is undecided"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itListsEveryNamespaceAWordCouldDeclareInALargeFile"a line comment ends at a carriage return"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itListsEveryNamespaceAWordCouldDeclareInALargeFile"a line comment ends at a closing tag"
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itListsEveryNamespaceAWordCouldDeclareInALargeFile"an unterminated comment at the end of the file ends it"
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itListsEveryNamespaceAWordCouldDeclareInALargeFile"braced global block"
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itListsEveryNamespaceAWordCouldDeclareInALargeFile"keyword name"
@@ -11522,7 +11536,9 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itDoesNotJudgeWhenTheExcludedFileCannotBeRead
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itJudgesAStaleGlobalSelectorUnderAnUnrelatedExclude
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itJudgesAStalePerRuleSelectorUnderAnUnrelatedExclude
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itJudgesAValueTheAnalysedTreeBindsBesideAnExcludedSubTree
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itJudgesAroundAGeneratedFileAndWithholdsWhatItCouldDeclare
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itOffersBothRemediesWhenAnExclusionAndTheGeneratedPolicyRemovedCode
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itSilencesTheWarningUnderQuiet
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itStaysQuietWhenEveryNamespaceValueWasJudged
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandAutoloadDevScopeTest::itDoesNotWidenPathsTheAuthorNamed

@@ -124,6 +124,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimePolicy\\RuntimeEffects"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\RunConfigurationResolver"
         }
       ]
     },
