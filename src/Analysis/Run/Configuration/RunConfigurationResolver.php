@@ -143,8 +143,8 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
      * value other than under `suppress_paths`: the only reader of what removed
      * code declares is a literal namespace suppression value, global or under
      * a rule. Another rule option shaped like a selector only costs the survey.
-     * Values given with `--suppress-namespace` are not in the document; they
-     * find the removed namespaces unknown and stay withheld under removal.
+     * Values given with `--suppress-namespace` are not in the document; the
+     * command adds them through `RunConfiguration::withNamespaceSuppressionValues()`.
      */
     private static function hasLiteralNamespaceSelector(mixed $value): bool
     {

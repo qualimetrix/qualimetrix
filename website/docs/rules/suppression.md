@@ -65,9 +65,6 @@ What is still withheld:
   name that does not end within 1 KiB, a declaration-shaped `namespace` statement
   the scan does not recognise, or a run that exceeds a limit (2,000 file reads,
   8 MiB read, 20,000 inspected entries inside removed directories).
-- A value given only as `--suppress-namespace` on the command line: the scan is
-  started only when the configuration holds a literal namespace suppression, so
-  such a value stays withheld under removal.
 - `regex` values, as before.
 - Every namespace value, when a file failed analysis: the run did not see all
   declared namespaces.
@@ -81,8 +78,8 @@ What is still withheld:
 
 `check` prints a warning on stderr when removed code (an exclusion or generated
 filtering) alone kept literal namespace suppression values from being judged. It
-names every exclusion that removed something (declarations cannot be attributed
-per selector), the number of values and their channels, and `-q` silences it.
+names every exclusion with PHP evidence (declarations cannot be attributed per
+selector) and mentions other removal unnamed as "an exclude entry", the number of values and their channels, and `-q` silences it.
 Regex values, values unjudged for another reason and literals the analysed
 namespaces already bind are not counted. A literal that a namespace of the analysed
 code already matches is judged even beside removed code. The advice depends on the
@@ -90,13 +87,16 @@ cause:
 
 ```text
 Warning: Code removed by exclude "exact:src/Kernel.php" may declare the namespaces of 1 suppression value, so it was not judged (suppression.unmatched-namespace). Narrow the exclusion to judge it.
-Warning: Code removed by exclude "exact:src/Kernel.php" could not be read in full (too many files, an unreadable file or a link) and may declare the namespaces of 1 suppression value, so it was not judged (suppression.unmatched-namespace). Exclude fewer files, and no unreadable file or link, to judge it.
+Warning: Code removed by exclude "exact:src/Kernel.php" could not be read in full (too many files, an unreadable file or a link) and may declare the namespaces of 1 suppression value, so it was not judged (suppression.unmatched-namespace). Exclude fewer files (and no unreadable file or link) to judge it.
 Warning: Code removed by the generated-file policy may declare the namespaces of 1 suppression value, so it was not judged (suppression.unmatched-namespace). Pass --include-generated to judge it.
 ```
 
 With both an exclusion and generated files the subject reads "exclude "…" and the
-generated-file policy" and the advice "Narrow the exclusion or pass
---include-generated". Several values read "N suppression values, so they were not
+generated-file policy" and the advice "Narrow the exclusion and/or pass
+--include-generated to judge it". An exclusion that removed no PHP, or removed code
+outside the measured universe, is not named: it reads "an exclude entry" (or
+"another exclude entry" beside a named one). A `--suppress-namespace` value given
+to `check` counts like a configured one. Several values read "N suppression values, so they were not
 judged" and "to judge them".
 
 `directives` and `baseline:*` print no such warning; `directives` still names

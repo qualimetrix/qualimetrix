@@ -94,9 +94,10 @@ unknown and the descent returns to stopping at the first PHP file. The survey ru
 only when `RunConfiguration::$hasLiteralNamespaceSuppression` is true (computed by
 `RunConfigurationResolver`: a literal global `suppress_namespaces` value or any rule
 option other than `suppress_paths`); otherwise it stays known-empty until a PHP file
-is removed, then unknown, and discovery keeps its metadata-only cost. A
-`--suppress-namespace` CLI value is not seen, so under removal it stays withheld.
-Removed run
+is removed, then unknown (entries without PHP do not close it), and discovery keeps
+its metadata-only cost. `check` adds its `--suppress-namespace` values through
+`RunConfiguration::withNamespaceSuppressionValues()`, so a literal CLI value funds
+the survey too. Removed run
 entries outside the measured universe are surveyed for namespaces only. The
 generated-file policy adds the namespaces of `@generated` files (a full read; the
 generated filter itself reads a header only). The result is one

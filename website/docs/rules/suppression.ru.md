@@ -65,9 +65,6 @@ Path/ledger regex не судится при неполноте путей ил�
   оператор `namespace`, который скан не распознаёт, или прогон, превысивший лимит
   (2000 чтений файлов, 8 МиБ прочитанного, 20 000 просмотренных записей в удалённых
   каталогах).
-- Значение, заданное только как `--suppress-namespace` в командной строке: скан
-  запускается, лишь когда конфигурация содержит литеральное namespace-подавление,
-  поэтому такое значение при удалении остаётся удержанным.
 - `regex`-значения, как раньше.
 - Все namespace-значения, когда файл не прошёл анализ: прогон не увидел все
   объявленные неймспейсы.
@@ -80,22 +77,25 @@ Path/ledger regex не судится при неполноте путей ил�
 
 `check` печатает предупреждение в stderr, когда удалённый код (исключение или
 фильтрация generated-файлов) один не дал судить литеральные namespace-значения
-подавлений. Оно называет каждое исключение, что-либо удалившее, число значений и их
-каналы; `-q` его гасит. Объявления нельзя отнести к отдельному селектору, поэтому
-называется каждое исключение, что-либо удалившее. Regex-значения, значения, не
+подавлений. Оно называет число значений и их каналы; `-q` его гасит. Объявления нельзя
+отнести к отдельному селектору, поэтому называется каждое исключение с
+PHP-свидетельством; прочее удаление упоминается безымянно как «an exclude entry». Regex-значения, значения, не
 осуждённые по другой причине, и литералы, уже связанные анализируемыми
 неймспейсами, не считаются: литерал, совпавший с неймспейсом анализируемого кода,
 судится даже рядом с удалённым кодом. Совет зависит от причины:
 
 ```text
 Warning: Code removed by exclude "exact:src/Kernel.php" may declare the namespaces of 1 suppression value, so it was not judged (suppression.unmatched-namespace). Narrow the exclusion to judge it.
-Warning: Code removed by exclude "exact:src/Kernel.php" could not be read in full (too many files, an unreadable file or a link) and may declare the namespaces of 1 suppression value, so it was not judged (suppression.unmatched-namespace). Exclude fewer files, and no unreadable file or link, to judge it.
+Warning: Code removed by exclude "exact:src/Kernel.php" could not be read in full (too many files, an unreadable file or a link) and may declare the namespaces of 1 suppression value, so it was not judged (suppression.unmatched-namespace). Exclude fewer files (and no unreadable file or link) to judge it.
 Warning: Code removed by the generated-file policy may declare the namespaces of 1 suppression value, so it was not judged (suppression.unmatched-namespace). Pass --include-generated to judge it.
 ```
 
 Если удалили и исключение, и generated-файлы, подлежащее читается «exclude "…" and
-the generated-file policy», а совет — «Narrow the exclusion or pass
---include-generated». Для нескольких значений: «N suppression values, so they were
+the generated-file policy», а совет — «Narrow the exclusion and/or pass
+--include-generated to judge it». Исключение без PHP или удалившее код вне измеренного
+состава не называется: оно читается «an exclude entry» («another exclude entry» рядом
+с названным). Значение `--suppress-namespace`, переданное `check`, считается как
+настроенное. Для нескольких значений: «N suppression values, so they were
 not judged» и «to judge them».
 
 `directives` и `baseline:*` такого предупреждения не печатают; `directives` по-прежнему

@@ -58,9 +58,11 @@ class FQNs, method names, references, attributes, ancestors.
    passes `none()`. The survey is funded only when the configuration holds a literal
    namespace suppression value (global `suppress_namespaces`, or any rule option
    other than `suppress_paths`). Otherwise it stays known-empty until a PHP file is
-   removed and then becomes unknown, so discovery keeps its metadata-only cost.
-   A `--suppress-namespace` CLI value is not seen by that test, so under removal it
-   stays withheld (fail-closed).
+   removed and then becomes unknown, so discovery keeps its metadata-only cost;
+   entries without PHP do not close it, because a removed tree without PHP declares
+   nothing. `check` adds its `--suppress-namespace` values to the configuration
+   (`RunConfiguration::withNamespaceSuppressionValues()`), so a literal CLI value
+   funds the survey like a configured one; `baseline:*` take no such flag.
 5. **The scan never builds an AST.** A file up to 64 KiB is tokenized: block and
    semicolon namespaces, several per file, the global block, `namespace\foo()`
    not counted, comments and strings ignored. A larger file is read as text in
@@ -105,15 +107,16 @@ class FQNs, method names, references, attributes, ancestors.
    exclusions of unlistable directories are never counted; neither is a literal
    the namespace tree already binds. `check` writes a plain stderr warning (prefix
    `Warning: `, added at publication; `-q` silences it) that names every exclude
-   selector that removed an entry (declarations cannot be attributed per selector),
-   the generated-file policy when it removed files, or "an exclude entry" when
-   nothing is recorded, the count of unjudged values and their channels. The wording
+   selector with PHP evidence (declarations cannot be attributed per selector), the
+   generated-file policy when it removed files, and mentions other removal (an
+   entry without PHP evidence, or code outside the measured universe, where none is
+   recorded) unnamed as "an exclude entry" or "another exclude entry", the count of unjudged values and their channels. The wording
    follows the cause: when the removed namespaces are known it says the code "may
    declare" them and advises narrowing the exclusion; when they are unknown it says
    the code "could not be read in full (too many files, an unreadable file or a
-   link)" and advises excluding fewer files and no unreadable file or link; when
+   link)" and advises excluding fewer files (and no unreadable file or link); when
    only generated files removed code it advises `--include-generated`, and with both
-   causes it advises either. `directives` and `baseline:*` print none. The `exclude`
+   causes it advises narrowing the exclusion and/or passing `--include-generated`. `directives` and `baseline:*` print none. The `exclude`
    reason stays in `projectScope.reasons`.
 
 Rejected:
