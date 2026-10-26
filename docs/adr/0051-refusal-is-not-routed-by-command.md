@@ -304,3 +304,5 @@ A position names the key in `written` only where the refusal is about the key.
 A value outside a declared word set is refused at a closed position whose
 `written` is the value and whose `accepted` lists the declared words, as
 [ADR 0132](0132-editor-schema-of-the-configuration-document.md) records.
+An unknown `format:` is such a value now, refused in the layer that wrote it,
+so it no longer serves as the example of a merged value without a position.

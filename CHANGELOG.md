@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
-- A configuration value outside a fixed list (`format`, `fail_on`, `architecture.coverage-gap`, `computed_metrics.<name>.levels`, a rule option's words) is refused with one sentence shape — `"fail_on" in configuration file "qmx.yaml" must be one of none, warning, error, got "info".` followed by any advice — instead of `Invalid value "info" for "fail_on". Allowed values: …`, `Output format "x" is not one of: …` and `architecture.coverage-gap: must be one of …`. In a JSON refusal its `position` is now closed: `written` is the value (it was the key), `accepted` lists the words in their documented order (`coverage-gap` was alphabetical). Match on `position`, not on the sentence.
+- A configuration value outside a fixed list (`format`, `fail_on`, `architecture.coverage-gap`, `computed_metrics.<name>.levels`, a rule option's words) is refused with one sentence shape — `"fail_on" in configuration file "qmx.yaml" must be one of none, warning, error, got "info".` followed by any advice — instead of `Invalid value "info" for "fail_on". Allowed values: …`, `Output format "x" is not one of: …` and `architecture.coverage-gap: must be one of …`. In a JSON refusal its `position` is now closed, with the value in `written` (it was the key) and the words in `accepted`; `coverage-gap` was already closed and now lists its words in their documented order rather than alphabetically. Match on `position`, not on the sentence.
 
 ## [0.28.2] - 2026-10-25
 

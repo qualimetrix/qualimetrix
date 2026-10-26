@@ -8357,6 +8357,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\CoverageValidatorTest::itRejectsABooleanCoverageValue
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\CoverageValidatorTest::itRejectsACoverageValueOfTheWrongType
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\CoverageValidatorTest::itRejectsAnUnknownCoverageValue
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\CoverageValidatorTest::itTreatsAValueTheEngineDidNotAdmitAsAnInternalError#0
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\CoverageValidatorTest::itTreatsAValueTheEngineDidNotAdmitAsAnInternalError#1
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ExactAllowCycleValidatorTest::itAcceptsEmptyAndAcyclicExactGraphs
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ExactAllowCycleValidatorTest::itDoesNotProjectGlobOrCapturedSelectorsAsConcreteNodes
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ExactAllowCycleValidatorTest::itNamesEveryLayerThatWroteAnEdgeOfTheCycle
