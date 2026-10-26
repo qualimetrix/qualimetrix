@@ -1277,6 +1277,7 @@ function testSuitePrefixTable(): array
         ['prefix' => 'governance/MeasurementVocabulary/', 'suite' => 'Governance'],
         ['prefix' => 'governance/MeasurementIdentity/', 'suite' => 'Governance'],
         ['prefix' => 'governance/GeneratedArtifactFreshness/', 'suite' => 'Governance'],
+        ['prefix' => 'governance/ConfigurationEditorSchema/', 'suite' => 'Governance'],
         ['prefix' => 'governance/PublishedText/', 'suite' => 'Governance'],
         ['prefix' => 'governance/FormatOptionKeys/', 'suite' => 'Governance'],
         ['prefix' => 'governance/DirectiveVocabulary/', 'suite' => 'Governance'],

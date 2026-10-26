@@ -66,6 +66,10 @@ examples/
 # the baselines above; without this line the blanket *.json swallows it, the
 # guard reports a file it wrote, and nothing outside one machine is guarded.
 !/docs/internal/benchmark-namespace-class-distribution.json
+# The editor schema of qmx.yaml. Swallowed by the blanket *.json, a fresh
+# clone has no schema to ship, and its freshness check judges a file only one
+# machine has.
+!/qmx.schema.json
 # The phar's include list. The blanket *.json above swallows it, and an
 # unshipped box.json is silent twice over: the build has no configuration to
 # read, and the control that holds this list against the dist's judges a file

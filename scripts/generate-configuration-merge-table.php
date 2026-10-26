@@ -30,7 +30,6 @@ declare(strict_types=1);
 namespace Qualimetrix\ConfigurationMergeTable;
 
 use LogicException;
-use Qualimetrix\Analysis\Configuration\ConfigurationRoot;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
@@ -38,15 +37,11 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\Shorthand;
-use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
-use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
-use Qualimetrix\Infrastructure\DependencyInjection\Configuration\ConfigurationConfigurator;
-use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
-use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
-use Symfony\Component\DependencyInjection\Compiler\PassConfig;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
+use RuntimeException;
 
-require __DIR__ . '/../vendor/autoload.php';
+use function Qualimetrix\ConfigurationDeclarations\configurationSections;
+
+require_once __DIR__ . '/configuration-declarations.php';
 
 const PAGES = [
     'en' => 'website/docs/getting-started/configuration.md',
@@ -81,50 +76,21 @@ function fail(string $message): never
  * Every root of the document the pipeline composes against, sorted by key: the
  * owner sections the container tags and Configuration-owned roots.
  *
- * @return array{declarations: list<SectionDeclaration>, ruleNames: list<string>}
+ * @return list<SectionDeclaration>
  */
 function sections(): array
 {
-    $container = (new ContainerFactory())->configure();
-    $container->addCompilerPass(new class implements CompilerPassInterface {
-        public function process(ContainerBuilder $container): void
-        {
-            foreach (array_keys($container->findTaggedServiceIds(ConfigurationConfigurator::SECTION_TAG)) as $id) {
-                $container->getDefinition($id)->setPublic(true);
-            }
-        }
-    }, PassConfig::TYPE_BEFORE_REMOVING, 150);
-    $container->compile();
-    $owners = [];
-
-    foreach (array_keys($container->findTaggedServiceIds(ConfigurationConfigurator::SECTION_TAG)) as $id) {
-        $section = $container->get($id);
-
-        if (!$section instanceof DocumentSectionSchemaInterface) {
-            fail(\sprintf('service "%s" carries the section tag but declares no section', $id));
-        }
-
-        $owners[] = $section;
+    try {
+        $sections = array_map(
+            static fn(DocumentSectionSchemaInterface $section): SectionDeclaration => $section->declaration(),
+            configurationSections(),
+        );
+    } catch (RuntimeException $error) {
+        fail($error->getMessage());
     }
-
-    if ($owners === []) {
-        fail('the container tags no configuration section; the table would describe Configuration alone');
-    }
-
-    $sections = array_map(
-        static fn(DocumentSectionSchemaInterface $section): SectionDeclaration => $section->declaration(),
-        [...ConfigurationRoot::cases(), ...$owners],
-    );
     usort($sections, static fn(SectionDeclaration $a, SectionDeclaration $b): int => strcmp($a->key, $b->key));
 
-    $execution = $container->get(RuleExecutionInterface::class);
-    if (!$execution instanceof RuleExecutionInterface) {
-        fail('the container has no rule metadata registry');
-    }
-    $ruleNames = array_map(static fn(RuleMetadata $rule): string => $rule->name, $execution->allRules());
-    sort($ruleNames, \SORT_STRING);
-
-    return ['declarations' => $sections, 'ruleNames' => $ruleNames];
+    return $sections;
 }
 
 /**
@@ -134,15 +100,14 @@ function sections(): array
  * wrote it — so their rows say what `~` and an empty value mean inside the item.
  *
  * @param list<array{path: string, node: NodeSchema, kind: string, shorthand: ?Shorthand, parent: string, inItem: bool}> $rows
- * @param list<string> $ruleNames
  *
  * @return list<array{path: string, node: NodeSchema, kind: string, shorthand: ?Shorthand, parent: string, inItem: bool}>
  */
-function walk(NodeSchema $node, string $path, string $kind, string $parent, array $rows, array $ruleNames, bool $inItem = false): array
+function walk(NodeSchema $node, string $path, string $kind, string $parent, array $rows, bool $inItem = false): array
 {
     $rows[] = ['path' => $path, 'node' => $node, 'kind' => $kind, 'shorthand' => null, 'parent' => $parent, 'inItem' => $inItem];
 
-    return below($node, $path, $rows, $ruleNames, $inItem);
+    return below($node, $path, $rows, $inItem);
 }
 
 /**
@@ -188,17 +153,16 @@ function shorthandTargetSchema(NodeSchema $map, string $target, array $visiting 
  * of its list items.
  *
  * @param list<array{path: string, node: NodeSchema, kind: string, shorthand: ?Shorthand, parent: string, inItem: bool}> $rows
- * @param list<string> $ruleNames
  *
  * @return list<array{path: string, node: NodeSchema, kind: string, shorthand: ?Shorthand, parent: string, inItem: bool}>
  */
-function below(NodeSchema $node, string $path, array $rows, array $ruleNames, bool $inItem): array
+function below(NodeSchema $node, string $path, array $rows, bool $inItem): array
 {
     if ($node->policy === MergePolicy::DeepMerge) {
         $fields = $node->map->keys->fields();
 
         foreach ($fields as $key => $child) {
-            $rows = walk($child, $path . '.' . $key, KEY, $path, $rows, $ruleNames, $inItem);
+            $rows = walk($child, $path . '.' . $key, KEY, $path, $rows, $inItem);
         }
 
         foreach ($node->map->keys->shorthands() as $shorthand) {
@@ -214,22 +178,28 @@ function below(NodeSchema $node, string $path, array $rows, array $ruleNames, bo
     }
 
     if ($node->policy === MergePolicy::ByName) {
-        if ($path === 'rules') {
-            foreach ($ruleNames as $name) {
+        $closed = $node->map->names?->closedNames();
+        if ($node->map->namedEntrySchema !== null) {
+            if ($closed === null) {
+                fail(\sprintf('the named map "%s" derives its entries from names but declares no closed vocabulary', $path));
+            }
+            $names = $closed;
+            sort($names, \SORT_STRING);
+            foreach ($names as $name) {
                 $entry = $node->map->entryForName($name);
                 if ($entry === null) {
-                    fail(\sprintf('rule "%s" has no declared document schema', $name));
+                    fail(\sprintf('name "%s" under "%s" has no declared document schema', $name, $path));
                 }
-                $rows = walk($entry, $path . '.' . $name, ENTRY, $path, $rows, $ruleNames, $inItem);
+                $rows = walk($entry, $path . '.' . $name, ENTRY, $path, $rows, $inItem);
             }
         } else {
-            $rows = walk($node->map->entry ?? throw new LogicException('A named map needs an entry schema.'), $path . '.<name>', ENTRY, $path, $rows, $ruleNames, $inItem);
+            $rows = walk($node->map->entry ?? throw new LogicException('A named map needs an entry schema.'), $path . '.<name>', ENTRY, $path, $rows, $inItem);
         }
     }
 
     $isList = $node->policy === MergePolicy::Replace || $node->policy === MergePolicy::Accumulate;
     if ($isList && ($node->collection ?? throw new LogicException('A list needs an element schema.'))->element->policy === MergePolicy::DeepMerge) {
-        $rows = below(($node->collection ?? throw new LogicException('A list needs an element schema.'))->element, $path . '[]', $rows, $ruleNames, true);
+        $rows = below(($node->collection ?? throw new LogicException('A list needs an element schema.'))->element, $path . '[]', $rows, true);
     }
 
     return $rows;
@@ -500,9 +470,8 @@ function main(array $arguments): int
     }
 
     $rows = [];
-    $source = sections();
-    foreach ($source['declarations'] as $declaration) {
-        $rows = walk($declaration->schema, $declaration->key, KEY, '', $rows, $source['ruleNames']);
+    foreach (sections() as $declaration) {
+        $rows = walk($declaration->schema, $declaration->key, KEY, '', $rows);
     }
 
     // Every page is read and embedded before any is written, so a page that

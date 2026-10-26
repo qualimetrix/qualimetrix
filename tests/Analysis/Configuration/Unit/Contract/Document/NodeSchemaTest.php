@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document;
 
+use Closure;
 use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\BareElementPolicy;
@@ -94,19 +96,27 @@ final class NodeSchemaTest extends TestCase
     #[Test]
     public function itAnnouncesAnEmptyOverrideOnlyOnAReplacedList(): void
     {
-        self::assertSame('All rules run.', NodeSchema::list(NodeSchema::scalar(ScalarForm::String))->announcingEmptyOverride('All rules run.')->wording->emptyOverrideNotice);
+        self::assertSame('All rules run.', NodeSchema::list(NodeSchema::scalar(ScalarForm::String))->withWording(emptyOverrideNotice: 'All rules run.')->wording->emptyOverrideNotice);
 
         $this->expectException(LogicException::class);
 
-        NodeSchema::set(NodeSchema::scalar())->announcingEmptyOverride('never');
+        NodeSchema::set(NodeSchema::scalar())->withWording(emptyOverrideNotice: 'never');
+    }
+
+    #[Test]
+    public function itRefusesAHintRestrictionWithoutAHint(): void
+    {
+        $this->expectException(LogicException::class);
+
+        NodeSchema::scalar(ScalarForm::String)->withWording(hintOnlyFor: ['x']);
     }
 
     #[Test]
     public function itKeepsEveryDeclarationWhenAHintAndAnEmptyOverrideNoticeAreAdded(): void
     {
         $element = NodeSchema::scalar(ScalarForm::String);
-        $hintedThenAnnounced = NodeSchema::list($element)->withHint('Quote it.', onlyFor: [false, null])->announcingEmptyOverride('Lifted.');
-        $announcedThenHinted = NodeSchema::list($element)->announcingEmptyOverride('Lifted.')->withHint('Quote it.', onlyFor: [false, null]);
+        $hintedThenAnnounced = NodeSchema::list($element)->withWording(hint: 'Quote it.', hintOnlyFor: [false, null])->withWording(emptyOverrideNotice: 'Lifted.');
+        $announcedThenHinted = NodeSchema::list($element)->withWording(emptyOverrideNotice: 'Lifted.')->withWording(hint: 'Quote it.', hintOnlyFor: [false, null]);
 
         foreach ([$hintedThenAnnounced, $announcedThenHinted] as $schema) {
             self::assertSame('Quote it.', $schema->wording->hint);
@@ -116,12 +126,12 @@ final class NodeSchemaTest extends TestCase
             self::assertSame(MergePolicy::Replace, $schema->policy);
         }
 
-        $map = NodeSchema::map(['dir' => $element], Shorthand::spreading('all', ['dir']))->withHint('Name a kind.');
+        $map = NodeSchema::map(['dir' => $element], Shorthand::spreading('all', ['dir']))->withWording(hint: 'Name a kind.');
         self::assertSame(['dir' => $element], $map->map->keys->fields());
         self::assertCount(1, $map->map->keys->shorthands());
-        self::assertSame([ScalarForm::String], $element->withHint('x')->scalar->forms);
+        self::assertSame([ScalarForm::String], $element->withWording(hint: 'x')->scalar->forms);
         self::assertNull($element->wording->hint);
-        self::assertNull($hintedThenAnnounced->withHint('Another hint.')->wording->hintOnlyFor);
+        self::assertNull($hintedThenAnnounced->withWording(hint: 'Another hint.')->wording->hintOnlyFor);
     }
 
     #[Test]
@@ -129,7 +139,7 @@ final class NodeSchemaTest extends TestCase
     {
         $word = NodeSchema::scalar(ScalarForm::String)->words(SchemaWordSet::foldingCase('warn', 'error'))->nonEmpty();
         self::assertSame('non-empty string (one of warn, error, case-insensitive)', $word->describe());
-        self::assertSame($word->describe(), $word->withHint('Choose one.')->describe());
+        self::assertSame($word->describe(), $word->withWording(hint: 'Choose one.')->describe());
         self::assertSame('integer at least 1', NodeSchema::scalar(ScalarForm::Integer)->atLeast(1)->describe());
         self::assertSame('a list or one element', NodeSchema::list(NodeSchema::scalar(ScalarForm::String))->admittingBareElement()->describe());
         self::assertSame('a map or a boolean for "enabled"', NodeSchema::map([
@@ -144,5 +154,41 @@ final class NodeSchemaTest extends TestCase
         self::assertTrue($words->contains(''));
         self::assertSame('string (one of )', NodeSchema::scalar(ScalarForm::String)->words($words)->describe());
         self::assertTrue(SchemaWordSet::foldingCase(' ')->contains(' '));
+    }
+
+    #[Test]
+    public function itDescribesANodeWithoutTouchingItsOtherWording(): void
+    {
+        $schema = NodeSchema::scalar(ScalarForm::String)->withWording(hint: 'Quote it.', hintOnlyFor: ['x'])->withWording(description: 'A name.');
+
+        self::assertSame('A name.', $schema->wording->description);
+        self::assertSame('Quote it.', $schema->wording->hint);
+        self::assertSame(['x'], $schema->wording->hintOnlyFor);
+        self::assertNull(NodeSchema::scalar()->wording->description);
+    }
+
+    /** @return iterable<string, array{Closure(NodeSchema): NodeSchema, NodeSchema}> */
+    public static function provideModifiersThatRecomposeTheSchema(): iterable
+    {
+        $string = NodeSchema::scalar(ScalarForm::String);
+
+        yield 'withWording(hint)' => [static fn(NodeSchema $s): NodeSchema => $s->withWording(hint: 'h'), $string];
+        yield 'judgedInEachLayer' => [static fn(NodeSchema $s): NodeSchema => $s->judgedInEachLayer(static function (): void {}), $string];
+        yield 'atLeast' => [static fn(NodeSchema $s): NodeSchema => $s->atLeast(1), NodeSchema::scalar(ScalarForm::Integer)];
+        yield 'words' => [static fn(NodeSchema $s): NodeSchema => $s->words(SchemaWordSet::foldingCase('a')), $string];
+        yield 'nonEmpty' => [static fn(NodeSchema $s): NodeSchema => $s->nonEmpty(), $string];
+        yield 'bareFor' => [static fn(NodeSchema $s): NodeSchema => $s->bareFor('enabled'), NodeSchema::map(['enabled' => NodeSchema::scalar(ScalarForm::Boolean)])];
+        yield 'retiring' => [static fn(NodeSchema $s): NodeSchema => $s->retiring(['old' => 'Use new.']), NodeSchema::map(['new' => $string])];
+        yield 'admittingBareElement' => [static fn(NodeSchema $s): NodeSchema => $s->admittingBareElement(), NodeSchema::list($string)];
+        yield 'withWording(emptyOverrideNotice)' => [static fn(NodeSchema $s): NodeSchema => $s->withWording(emptyOverrideNotice: 'n'), NodeSchema::list($string)];
+    }
+
+    /** @param Closure(NodeSchema): NodeSchema $modify */
+    #[Test]
+    #[DataProvider('provideModifiersThatRecomposeTheSchema')]
+    public function itRetainsTheDescriptionAcrossEveryModifier(Closure $modify, NodeSchema $schema): void
+    {
+        self::assertSame('Described.', $modify($schema->withWording(description: 'Described.'))->wording->description);
+        self::assertSame('Described.', $modify($schema)->withWording(description: 'Described.')->wording->description);
     }
 }

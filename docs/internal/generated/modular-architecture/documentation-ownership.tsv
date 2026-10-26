@@ -123,6 +123,7 @@ docs/adr/0128-subject-boundaries-with-one-way-operations.md	Architecture.Governa
 docs/adr/0129-public-report-and-baseline-values-with-subject-owned-delivery.md	Architecture.Governance	"Move or update atomically with the named subject owner."
 docs/adr/0130-the-finding-gate-keeps-behaviour-tests-not-a-witness-registry.md	Architecture.Governance	"Move or update atomically with the named subject owner."
 docs/adr/0131-a-value-object-exposes-its-state.md	Analysis.Evidence.CodeSmell	"Move or update atomically with the named subject owner."
+docs/adr/0132-editor-schema-of-the-configuration-document.md	Analysis.Configuration	"Move or update atomically with the named subject owner."
 docs/adr/README.md	Architecture.Governance	"Repository-wide governance documentation; review with the manifest and generated topology."
 docs/internal/CLI_CONVENTIONS.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/COMPETITOR_COMPARISON.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."

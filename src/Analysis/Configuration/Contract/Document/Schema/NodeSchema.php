@@ -72,18 +72,20 @@ final readonly class NodeSchema
         return new self(MergePolicy::PerLayer, new NodeScalarFacts(), new NodeMapFacts(KeyDictionary::none()), null, new NodeWording(), null);
     }
 
-    public function announcingEmptyOverride(string $notice): self
+    /**
+     * Replaces the sentences given; one not given stays. An empty-override notice is for a replaced list only.
+     *
+     * @param list<int|float|string|bool|null>|null $hintOnlyFor Exact scalar literals; null leaves the hint unrestricted, and it counts only beside a hint.
+     */
+    public function withWording(?string $hint = null, ?array $hintOnlyFor = null, ?string $emptyOverrideNotice = null, ?string $description = null): self
     {
-        if ($this->policy !== MergePolicy::Replace) {
+        if ($hintOnlyFor !== null && $hint === null) {
+            throw new LogicException('A hint restriction requires the hint it restricts.');
+        }
+        if ($emptyOverrideNotice !== null && $this->policy !== MergePolicy::Replace) {
             throw new LogicException('Only a replaced list can announce an empty override.');
         }
-        return $this->recompose(wording: $this->wording->with(emptyOverrideNotice: $notice));
-    }
-
-    /** @param list<int|float|string|bool|null>|null $onlyFor Exact scalar literals; null leaves the hint unrestricted. */
-    public function withHint(string $hint, ?array $onlyFor = null): self
-    {
-        return $this->recompose(wording: $this->wording->with(hint: $hint, hintOnlyFor: $onlyFor));
+        return $this->recompose(wording: $this->wording->with($hint, $emptyOverrideNotice, $hintOnlyFor, $description));
     }
 
     /** @param Closure(ResolvedValueInterface, list<string>): void|IntegerJudgement $judge */

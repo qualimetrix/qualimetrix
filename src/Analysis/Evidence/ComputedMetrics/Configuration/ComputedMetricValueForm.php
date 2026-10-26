@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration;
 
+use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
@@ -23,16 +24,9 @@ final class ComputedMetricValueForm
     {
         $levels = [];
         foreach ($value->items() as $item) {
-            $word = (string) $item->plain();
-            $level = SymbolLevel::tryFrom($word);
-            if ($level === null) {
-                $item->refuse(ComputedMetricRefusalWording::levelWordNotALevelAtAll($word));
-            }
-            if (!\in_array($level, $reportingLevels, true)) {
-                $item->refuse(ComputedMetricRefusalWording::levelWordNotAReportingLevel($word, array_map(
-                    static fn(SymbolLevel $accepted): string => $accepted->value,
-                    $reportingLevels,
-                )));
+            $level = SymbolLevel::tryFrom((string) $item->plain());
+            if ($level === null || !\in_array($level, $reportingLevels, true)) {
+                throw new LogicException('The configuration engine admits only a reporting level in a computed metric\'s levels.');
             }
             $levels[] = $level;
         }

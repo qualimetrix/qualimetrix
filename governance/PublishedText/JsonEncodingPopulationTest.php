@@ -26,6 +26,8 @@ final class JsonEncodingPopulationTest extends TestCase
     /** @var array<class-string, string> */
     private const array OWNERS = [
         \Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder::class => 'Only finite positive float weights from native ConstantNode values checked by WeightedHealthFormula::weightOf are encoded, preserving the JSON fraction.',
+        \Qualimetrix\Analysis\Configuration\EditorSchema\DefinitionPool::class => 'Encodes declaration-derived schema subtrees only to fingerprint them; no analysed source reaches it and invalid bytes throw.',
+        \Qualimetrix\Analysis\Configuration\EditorSchema\EditorSchemaJson::class => 'Encodes the editor schema from section declarations at generation time, never during an analysis; invalid bytes throw.',
         \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule::class => 'Native copy ordinals and content hashes identify the copy; its existing canonical file subject escapes invalid source bytes.',
         \Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity::class => 'Source authority, cycle member and edge endpoint strings are framed; symbol canonicals already escape invalid source bytes.',
         \Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit::class => 'Source selector displays are byte-framed before the inner JSON tuple; rule, option and channel names are validated vocabulary, and native ordinals preserve duplicate positions.',

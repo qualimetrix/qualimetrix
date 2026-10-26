@@ -55,8 +55,8 @@ enum ConfigurationRoot: string implements DocumentSectionSchemaInterface
 
         $last = array_pop($forms);
 
-        return NodeSchema::set(NodeSchema::map($kinds)->withHint(
-            \sprintf('A selector names its kind: %s, or %s.', implode(', ', $forms), $last),
+        return NodeSchema::set(NodeSchema::map($kinds)->withWording(
+            hint: \sprintf('A selector names its kind: %s, or %s.', implode(', ', $forms), $last),
         ));
     }
 }

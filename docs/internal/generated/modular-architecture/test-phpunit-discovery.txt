@@ -842,6 +842,8 @@ Available tests:
  - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itDecidesBySequencerMarkerRatherThanBySubjectWording"revert subject while git is reverting is exempt"
  - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itDecidesBySequencerMarkerRatherThanBySubjectWording"revert-shaped prose is refused"
  - Qualimetrix\Governance\CommitSubjectPolicy\CommitSubjectVerdictTest::itFindsTheMarkerFromInsideALinkedWorktree
+ - Qualimetrix\Governance\ConfigurationEditorSchema\ConfigurationTextsPassTheEditorSchemaTest::itJudgesAtLeastTheMeasuredPopulation
+ - Qualimetrix\Governance\ConfigurationEditorSchema\ConfigurationTextsPassTheEditorSchemaTest::itPassesEveryTextTheEngineAccepts
  - Qualimetrix\Governance\ConfigurationVocabulary\ConfigSchemaEntryClosureTest::itAcceptsAConfigCoveringEverySchemaEntry
  - Qualimetrix\Governance\ConfigurationVocabulary\ConfigSchemaEntryClosureTest::itGivesEveryConstantAnEntryOrMarksItInternal
  - Qualimetrix\Governance\ConfigurationVocabulary\ConfigSchemaEntryClosureTest::itGivesEveryEntryAMatchingConstant
@@ -1115,6 +1117,7 @@ Available tests:
  - Qualimetrix\Governance\FrameworkClassification\FrameworkClassificationSiteCountTest::itPinsTheNumberOfClassificationSitesTheUniverseMirrors
  - Qualimetrix\Governance\GeneratedArtifactFreshness\ConfigurationMergeTableFreshnessTest::itDescribesTheKeysInsideAListItem
  - Qualimetrix\Governance\GeneratedArtifactFreshness\ConfigurationMergeTableFreshnessTest::itMatchesWhatTheSectionDeclarationsGenerate
+ - Qualimetrix\Governance\GeneratedArtifactFreshness\ConfigurationSchemaFreshnessTest::itMatchesWhatTheSectionDeclarationsGenerate
  - Qualimetrix\Governance\GeneratedArtifactFreshness\HtmlPayloadFixtureFreshnessTest::itMatchesTheNativeCliPayload
  - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itDefinesEveryDefaultAtClassNamespaceAndProjectLevel
  - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itDefinesExactEffectivePolicyInputsAndValidatesEverySuppliedOperand
@@ -1829,6 +1832,77 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Integration\DocumentRootsIntegrationTest::itTellsTheLikelyIntentBehindAMalformedRootValue"suppress_namespaces, a list"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\DocumentRootsIntegrationTest::itTellsTheLikelyIntentBehindAMalformedRootValue"suppress_paths, a bare string"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\DocumentRootsIntegrationTest::itTellsWhenAnEmptyOnlyRulesLiftsALowerLayersFilter
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"[] on a map"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"[] on a rule"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"[] on an open named map"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"[] on the rules"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a block merge key beside a plain one"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a camel-case root spelling"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a canonical word"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a closed root refuses an unknown key"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a form feed is not blank"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a fraction where integers are allowed"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a fraction where numbers are allowed"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a level a computed metric cannot report at"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a list where a single element is allowed"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a map keyed 0..n for a list"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a map keyed 1 for a list"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a nested alternative spelling"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a no-break space is not blank"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a reporting level in another case"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a reporting level"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a retired key, camelCase"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a retired key, kebab-case"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a retired key, snake_case"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a rule given a bare number"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a rule switched off by a bare boolean"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a scalar of the wrong type"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a shorthand beside a dotted target"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a shorthand beside a ~ dotted target"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a shorthand beside a ~ target"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a shorthand beside an empty intermediate map"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a shorthand beside its target"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a single element where one is allowed"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a spelling no rule accepts"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a string where both forms are allowed"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a value below the minimum"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a word in another case where case matters"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a word in another case"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a word outside the vocabulary"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a ~ item of an owner-judged list"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a ~ item where a single element is allowed"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a ~ rule"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a ~ shorthand beside a dotted target"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a ~ shorthand beside its target"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an alternative root spelling"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an empty file"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an empty list for the whole document"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an empty list its owner refuses"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an inline merge key"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an integer where both forms are allowed"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an owner-judged value"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an unknown computed metric"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an unknown key of a computed metric"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an unknown key of a map"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an unknown rule"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"spaces are blank"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"text with a space inside is not blank"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"the minimum itself"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"two shorthands into one leaf"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"{} on a list"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"{} on a scalar"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"~ as a list item"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"~ as a map item of a list"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"~ on an entry of an open named map"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"~ on an open named map"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"~ on the rules"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"~ under a list key"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"~ under a map key"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"~ under a root key"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"~ where case matters"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itRefusesARetiredKeyAsRetiredInEverySpelling"exclude-paths"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itRefusesARetiredKeyAsRetiredInEverySpelling"excludePaths"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itRefusesARetiredKeyAsRetiredInEverySpelling"exclude_paths"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\FullPipelineIntegrationTest::itLetsEachOwnerFoldTheSameOrderedDocumentWithItsOwnSemantics
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Pipeline\ContainerConfigurationStagesTest::itComposesTheDocumentAgainstEveryAutoconfiguredSection
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Pipeline\ContainerConfigurationStagesTest::itRegistersAllStagesWithTheCorrectPriorities
@@ -1844,16 +1918,31 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\ConfigSchemaTest::itReturnsOnlyListTypeKeys
  - Qualimetrix\Tests\Analysis\Configuration\Unit\ConfigurationHolderTest::itDoesNotProvideMutableReplacementOperations
  - Qualimetrix\Tests\Analysis\Configuration\Unit\ConfigurationHolderTest::itTracksAppliedSourcesInPrecedenceOrder
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NameVocabularyTest::itAdmitsEveryMemberOfAClosedVocabulary
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NameVocabularyTest::itExposesTheNamesOfAClosedVocabularyOnly
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NameVocabularyTest::itKeepsAClosedVocabularyAPredicateForTheEngine
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NameVocabularyTest::itRefusesANonMemberWithTheRefusalTheOwnerWorded
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itAnnouncesAnEmptyOverrideOnlyOnAReplacedList
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itDeclaresOnePolicyPerFactory
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itDescribesANodeWithoutTouchingItsOtherWording
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itDescribesTheDeclaredFormAndRetainsItAcrossModifiers
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itKeepsEveryDeclarationWhenAHintAndAnEmptyOverrideNoticeAreAdded
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesAHintRestrictionWithoutAHint
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesAShorthandSpreadingToAnUndeclaredKey
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesAShorthandThatIsAlsoAKey
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesAnIntegerJudgementOnANonIntegerScalar
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesToDeclareANonCanonicalKey
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesTwoShorthandsSpreadingToOneKey
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRetainsBlankWordsInAScalarVocabulary
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRetainsTheDescriptionAcrossEveryModifier"admittingBareElement"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRetainsTheDescriptionAcrossEveryModifier"atLeast"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRetainsTheDescriptionAcrossEveryModifier"bareFor"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRetainsTheDescriptionAcrossEveryModifier"judgedInEachLayer"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRetainsTheDescriptionAcrossEveryModifier"nonEmpty"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRetainsTheDescriptionAcrossEveryModifier"retiring"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRetainsTheDescriptionAcrossEveryModifier"withWording(emptyOverrideNotice)"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRetainsTheDescriptionAcrossEveryModifier"withWording(hint)"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRetainsTheDescriptionAcrossEveryModifier"words"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itCarriesTheSourceAndLocatorItWasBuiltWith
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDefaultsTheLocatorToNull
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDescribesEverySourceKind
@@ -2048,6 +2137,98 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShorthandPathTest::itRefusesLeafOverlapAcrossTwoDictionariesInOneLayer
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShorthandPathTest::itRefusesMalformedShortcutInTheLayerThatWroteIt
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShorthandPathTest::itRejectsACycleAtDeclaration
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\CollectionNodeTest::itAcceptsEveryFormTheLoaderReadsAsAList"empty list"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\CollectionNodeTest::itAcceptsEveryFormTheLoaderReadsAsAList"empty map"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\CollectionNodeTest::itAcceptsEveryFormTheLoaderReadsAsAList"list"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\CollectionNodeTest::itAcceptsEveryFormTheLoaderReadsAsAList"map keyed 0..n, read as a list"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\CollectionNodeTest::itAcceptsEveryFormTheLoaderReadsAsAList"map keyed by other integers, wider than the engine"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\CollectionNodeTest::itAcceptsEveryFormTheLoaderReadsAsAList"unwritten"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\CollectionNodeTest::itAcceptsOneBareElementWhereTheListAdmitsIt
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\CollectionNodeTest::itAcceptsTildeAsAnItemWhoseFormItsOwnerJudges
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\CollectionNodeTest::itRefusesTildeAsAMapItem
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\CollectionNodeTest::itRefusesTildeAsAnItem"accumulated set"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\CollectionNodeTest::itRefusesTildeAsAnItem"replaced list"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\CollectionNodeTest::itRefusesWhatIsNotAList"accumulated set"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\CollectionNodeTest::itRefusesWhatIsNotAList"replaced list"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\EditorSchemaOutputTest::itAdmitsTheYamlMergeKeyOnEveryObjectNode
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\EditorSchemaOutputTest::itDeclaresDraft07WithoutAnIdentityOrAVersion
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\EditorSchemaOutputTest::itDescribesAScalarInPlace
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\EditorSchemaOutputTest::itDescribesASharedSubtreeBesideItsReference
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\EditorSchemaOutputTest::itEncodesTheSameDeclarationsToTheSameBytes
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\EditorSchemaOutputTest::itKeepsADefinitionNameWhenAnUnrelatedSectionIsAdded
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\EditorSchemaOutputTest::itLeavesAValueItsOwnerJudgesToItsOwner
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\EditorSchemaOutputTest::itNamesDefinitionsByContentWhateverTheOrderOfSections
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\EditorSchemaOutputTest::itRefusesToProjectADocumentWhoseRootIsNotAMap
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\EditorSchemaOutputTest::itWritesASubtreeUsedOnceInPlace
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\EditorSchemaOutputTest::itWritesOnlyPatternsThatEcmaScriptAndPcreReadAlike
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\MapNodeTest::itAcceptsAMapWrittenEmptyOrUnwritten"empty collection"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\MapNodeTest::itAcceptsAMapWrittenEmptyOrUnwritten"empty map"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\MapNodeTest::itAcceptsAMapWrittenEmptyOrUnwritten"unwritten key"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\MapNodeTest::itAcceptsAMapWrittenEmptyOrUnwritten"unwritten"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\MapNodeTest::itAcceptsAnEmptyDocument"empty file"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\MapNodeTest::itAcceptsAnEmptyDocument"empty list"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\MapNodeTest::itAcceptsAnEmptyDocument"empty map"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\MapNodeTest::itAcceptsEveryAcceptedSpellingOfARootKey
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\MapNodeTest::itAcceptsTheBareValueOfABareField
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\MapNodeTest::itAdmitsTheYamlMergeKeyBesideTheKeysOfAMap
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\MapNodeTest::itClosesTheDocumentToItsDeclaredRootsListedAlphabetically
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\MapNodeTest::itOffersTheCanonicalSpellingAndAcceptsTheOtherTwo
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\MapNodeTest::itRefusesARetiredKeyInEverySpellingAndSaysWhy
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\MapNodeTest::itRefusesAnUnknownKeyWhateverItsValue
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\NamedMapNodeTest::itAcceptsAMapOfNamedEntriesWrittenEmpty
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\NamedMapNodeTest::itAcceptsAnEntryBareOrWithoutABody"bare boolean"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\NamedMapNodeTest::itAcceptsAnEntryBareOrWithoutABody"empty collection"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\NamedMapNodeTest::itAcceptsAnEntryBareOrWithoutABody"empty map"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\NamedMapNodeTest::itAcceptsAnEntryBareOrWithoutABody"unwritten"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\NamedMapNodeTest::itGivesEveryClosedNameItsOwnEntry
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\NamedMapNodeTest::itLeavesAnOpenVocabularyToTheEngineAndJudgesEveryEntry"a predicate"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\NamedMapNodeTest::itLeavesAnOpenVocabularyToTheEngineAndJudgesEveryEntry"a sibling"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\NamedMapNodeTest::itLeavesAnOpenVocabularyToTheEngineAndJudgesEveryEntry"any name"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\NamedMapNodeTest::itListsTheNamesOfAClosedVocabularyAndRefusesEveryOther
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\NamedMapNodeTest::itRecognisesAFixedNameInEveryAcceptedSpelling
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\NamedMapNodeTest::itRefusesAnEntryOfAnotherForm
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\NamedMapNodeTest::itRefusesToProjectAClosedNameWithoutAnEntry
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\NamedMapNodeTest::itRefusesToProjectEntriesDerivedFromAnOpenVocabulary
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ScalarNodeTest::itAcceptsAsNonBlankWhatTrimKeeps"form feed"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ScalarNodeTest::itAcceptsAsNonBlankWhatTrimKeeps"no-break space"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ScalarNodeTest::itAcceptsAsNonBlankWhatTrimKeeps"text inside blanks"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ScalarNodeTest::itAcceptsEveryScalarWhereNoFormIsDeclared
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ScalarNodeTest::itJudgesWordsOnlyWhenTheValueIsText
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ScalarNodeTest::itProjectsADeclaredFormAsItsJsonType"boolean"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ScalarNodeTest::itProjectsADeclaredFormAsItsJsonType"integer is not a fraction"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ScalarNodeTest::itProjectsADeclaredFormAsItsJsonType"integer"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ScalarNodeTest::itProjectsADeclaredFormAsItsJsonType"number"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ScalarNodeTest::itProjectsADeclaredFormAsItsJsonType"string"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ScalarNodeTest::itProjectsANumericFloor
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ScalarNodeTest::itProjectsCaseFoldingWordsAsAnEnumAndALetterCasePattern
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ScalarNodeTest::itProjectsCaseSensitiveWordsAsAnEnum
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ScalarNodeTest::itProjectsSeveralFormsAsATypeUnion
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ScalarNodeTest::itRefusesAsBlankWhatTrimEmpties"empty"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ScalarNodeTest::itRefusesAsBlankWhatTrimEmpties"nul and vertical tab"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ScalarNodeTest::itRefusesAsBlankWhatTrimEmpties"spaces"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ScalarNodeTest::itRefusesAsBlankWhatTrimEmpties"tab and newline"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ScalarNodeTest::itWritesTheBlankCharactersOfTheNonBlankPatternAsJsonEscapes
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ShorthandNodeTest::itFollowsADottedTargetThroughMapsOnly"both written"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ShorthandNodeTest::itFollowsADottedTargetThroughMapsOnly"intermediate map unwritten"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ShorthandNodeTest::itFollowsADottedTargetThroughMapsOnly"intermediate map written []"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ShorthandNodeTest::itFollowsADottedTargetThroughMapsOnly"intermediate map written {}"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ShorthandNodeTest::itFollowsADottedTargetThroughMapsOnly"shorthand unwritten"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ShorthandNodeTest::itFollowsADottedTargetThroughMapsOnly"target unwritten"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ShorthandNodeTest::itGivesTheShorthandTheFormOfItsFirstTarget
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ShorthandNodeTest::itLeavesAShorthandToAMapOutOfTheConflicts
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ShorthandNodeTest::itRefusesAShorthandBesideItsTargetOnlyWhenNeitherIsTilde"an unrelated key"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ShorthandNodeTest::itRefusesAShorthandBesideItsTargetOnlyWhenNeitherIsTilde"another spelling of each"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ShorthandNodeTest::itRefusesAShorthandBesideItsTargetOnlyWhenNeitherIsTilde"both written"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ShorthandNodeTest::itRefusesAShorthandBesideItsTargetOnlyWhenNeitherIsTilde"shorthand unwritten"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ShorthandNodeTest::itRefusesAShorthandBesideItsTargetOnlyWhenNeitherIsTilde"target unwritten"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ShorthandNodeTest::itRefusesEveryKeyThatWritesALeafOfAChainedShorthand"a leaf unwritten"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ShorthandNodeTest::itRefusesEveryKeyThatWritesALeafOfAChainedShorthand"an empty intermediate"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ShorthandNodeTest::itRefusesEveryKeyThatWritesALeafOfAChainedShorthand"one of its leaves"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ShorthandNodeTest::itRefusesEveryKeyThatWritesALeafOfAChainedShorthand"the chained shorthand"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ShorthandNodeTest::itRefusesShorthandsWhoseLeavesOverlap"a leaf it does not reach"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ShorthandNodeTest::itRefusesShorthandsWhoseLeavesOverlap"a nested leaf of the outer one"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ShorthandNodeTest::itRefusesShorthandsWhoseLeavesOverlap"a nested shorthand reaching its leaf"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\EditorSchema\ShorthandNodeTest::itRefusesShorthandsWhoseLeavesOverlap"two shorthands reaching one leaf"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\CommandLineLayerTest::itPlacesIndependentRuleWritesAtTheirCanonicalPaths
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\CommandLineLayerTest::itRefusesRepeatedAndPrefixOverlapsBeforeMerge
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\CommandLineValueTest::itAdmitsQuotedCommaAsOneBareElementOnlyWhereTheSchemaAllowsIt
@@ -7319,6 +7500,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\LevelActivityReadsBothDisablingSpellingsTest::itReportsEveryDeclaredLevelAsNotRun"the explicit key"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\LevelActivityReadsBothDisablingSpellingsTest::itReportsEveryDeclaredLevelAsNotRun"the scalar shorthand"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\LevelActivityReadsBothDisablingSpellingsTest::itReportsTheLevelAsRunWhenNothingSwitchedItOff
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RulesSectionTest::itDeclaresTheRuleNamesAsAClosedVocabularyWithDescribedEntries
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RulesSectionTest::itExpandsNestedShorthandsBeforeMergingOnlyTheWrittenHalf
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RulesSectionTest::itJudgesAMalformedLowerLayerBeforeAValidOverlay
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RulesSectionTest::itPreservesBareSwitchAndIndependentSelectionMergePolicies
@@ -7365,6 +7547,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleNameJudgeTest::itDistinguishesTheComputedProducerFromItsDeclaredDescendants
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleNameJudgeTest::itRefusesBareGroupsAndDifferentlyNamedProducerLevelAliases
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleNameJudgeTest::itRequiresANamespaceWitnessInTheInvocationDefinitions
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleNameJudgeTest::itWordsTheRefusalOfAnUnregisteredProducerAsJudgeDoes
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleNameValidatorTest::itAcceptsARuleNameThatExactlyMatchesAKnownRule
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleNameValidatorTest::itAcceptsAnEmptyRulesSection
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleNameValidatorTest::itAcceptsConfigWithoutARulesSection

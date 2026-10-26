@@ -90,6 +90,26 @@ final class RulesSectionTest extends TestCase
     }
 
     #[Test]
+    public function itDeclaresTheRuleNamesAsAClosedVocabularyWithDescribedEntries(): void
+    {
+        $rules = [
+            new RuleMetadata(ComplexityRule::NAME, ComplexityOptions::class, 'Cyclomatic complexity.', [], false),
+            new RuleMetadata('coupling.cbo', \Qualimetrix\Analysis\Evidence\Coupling\Cbo\CboOptions::class, 'Coupling between objects.', [], false),
+        ];
+        $facts = (new RulesSection(ResolvedOptionsFixture::execution($rules), 'rules'))->declaration()->schema->map;
+        self::assertSame([ComplexityRule::NAME, 'coupling.cbo'], $facts->names?->closedNames());
+        foreach ($rules as $rule) {
+            self::assertSame($rule->description, $facts->entryForName($rule->name)?->wording->description);
+        }
+        self::assertNull($facts->entryForName('nosuch.rule'));
+        self::assertNull($facts->names->refuse(ComplexityRule::NAME));
+        self::assertSame(
+            'Rule option owner "nosuch.rule" does not match any registered producer rule.',
+            $facts->names->refuse('nosuch.rule')?->summary,
+        );
+    }
+
+    #[Test]
     public function itRefusesAnUnsupportedSectionRoot(): void
     {
         self::expectException(LogicException::class);
