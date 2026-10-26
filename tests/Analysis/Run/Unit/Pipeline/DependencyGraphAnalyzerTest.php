@@ -16,7 +16,6 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Analysis\Evidence\DependencyModel\UnplacedExternalClassSpelling;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
-use Qualimetrix\Analysis\Finding\Contract\ProjectScope\RemovedCodeNamespaces;
 use Qualimetrix\Analysis\Run\Contract\Configuration\{AutoloadDevPolicy, GeneratedFilePolicy, ProjectScopeMeasurement, ProjectScopeState, RunConfiguration};
 use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\DependencyGraph\DependencyGraphAnalysisResult;
@@ -267,7 +266,6 @@ PHP);
             [],
             new ScopeFacts([], [], [], false),
             1,
-            RemovedCodeNamespaces::none(),
         ));
         $parser = $this->createMock(FileParserInterface::class);
         $parser->expects(self::never())->method('parseContent');

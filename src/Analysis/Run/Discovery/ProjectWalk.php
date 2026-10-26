@@ -17,18 +17,14 @@ use Qualimetrix\Core\Path\RelativePath;
  */
 final class ProjectWalk
 {
-    public function __construct(
-        private readonly EntryInspectorInterface $inspector,
-        private readonly int $namespaceReadLimit = RemovedNamespaceBudget::LIMIT,
-    ) {}
+    public function __construct(private readonly EntryInspectorInterface $inspector) {}
 
     public function walk(WalkRequest $request): WalkedProject
     {
         $run = $request->run;
         $root = $run->projectScope->universe->projectRoot;
         $ledger = new ExcludeSelectorLedger($run->authoredPathExcludes);
-        $budget = new RemovedNamespaceBudget($this->namespaceReadLimit);
-        $outcome = new WalkedEntryOutcome($ledger, $budget);
+        $outcome = new WalkedEntryOutcome($ledger);
         $runDirectories = [];
         $runFiles = [];
         $selection = new WalkedEntrySelection(
@@ -41,7 +37,6 @@ final class ProjectWalk
             function (AbsolutePath $path) use (&$runDirectories, &$runFiles): bool {
                 return $this->coveredByRun($path, $runDirectories, $runFiles);
             },
-            $budget,
         );
         $roots = $this->namedRoots($request, $selection);
         $namedFilesOnly = $this->scanRunRoots($roots, $selection, $runDirectories, $runFiles);

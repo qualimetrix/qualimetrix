@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\Discovery;
 
-use Qualimetrix\Analysis\Finding\Contract\ProjectScope\RemovedCodeNamespaces;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles;
 use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
@@ -25,12 +23,13 @@ final readonly class ProjectFiles implements ProjectFilesInterface
         private GeneratedFileFilterInterface $generatedFilter,
     ) {}
 
-    public function discover(RunConfiguration $run): DiscoveredProjectFiles
+    /** @param RemovedNamespaceSurvey $removedNamespaces a fresh survey; its budget bounds what removed code is read */
+    public function discover(RunConfiguration $run, RemovedNamespaceSurvey $removedNamespaces = new RemovedNamespaceSurvey()): DiscoveredProjectFiles
     {
-        $walked = $this->walk->walk(new WalkRequest($run));
+        $walked = $this->walk->walk(new WalkRequest($run, $removedNamespaces));
         $root = $run->projectScope->universe->projectRoot;
         $files = self::selectCandidates($walked->candidates, $root);
-        [$eligible, $generated, $skipped, $generatedNamespaces] = $this->applyGeneratedPolicy($files, $walked->skipped, $run->generatedFilePolicy, $walked->removedCode, $walked->namespaceBudget);
+        [$eligible, $generated, $skipped] = $this->applyGeneratedPolicy($files, $walked->skipped, $run->generatedFilePolicy, $removedNamespaces);
 
         $facts = new ScopeFacts(
             $walked->facts->missingByPaths,
@@ -39,6 +38,7 @@ final readonly class ProjectFiles implements ProjectFilesInterface
             $walked->facts->namedFilesOnly,
             \count($generated),
             $walked->facts->unlistableOutsideRoot,
+            $removedNamespaces->namespaces(),
         );
 
         return new DiscoveredProjectFiles(
@@ -49,7 +49,6 @@ final readonly class ProjectFiles implements ProjectFilesInterface
             $walked->verdicts,
             $facts,
             \count($files),
-            $generatedNamespaces,
         );
     }
 
@@ -105,9 +104,9 @@ final readonly class ProjectFiles implements ProjectFilesInterface
      * @param array<string, SplFileInfo> $files
      * @param list<SkippedEntry> $skipped
      *
-     * @return array{list<SplFileInfo>, list<RelativePath>, list<SkippedEntry>, RemovedCodeNamespaces}
+     * @return array{list<SplFileInfo>, list<RelativePath>, list<SkippedEntry>}
      */
-    private function applyGeneratedPolicy(array $files, array $skipped, GeneratedFilePolicy $policy, RemovedCodeNamespaces $namespaces, RemovedNamespaceBudget $budget): array
+    private function applyGeneratedPolicy(array $files, array $skipped, GeneratedFilePolicy $policy, RemovedNamespaceSurvey $removedNamespaces): array
     {
         $eligible = [];
         $generated = [];
@@ -118,31 +117,17 @@ final readonly class ProjectFiles implements ProjectFilesInterface
             }
             $classification = $this->generatedFilter->isGenerated($file);
             if ($classification === null) {
-                $skipped[] = new SkippedEntry(
-                    AbsolutePath::fromString($file->getPathname()),
-                    AnalysisFailureKind::UnreadableFile,
-                    'File header cannot be read',
-                );
+                $skipped[] = SkippedEntry::unreadableFile(AbsolutePath::fromString($file->getPathname()), 'File header cannot be read');
             } elseif ($classification) {
                 $generated[] = RelativePath::fromString($relative);
-                $namespaces = $namespaces->isKnown() ? $namespaces->merge($this->declaredByGenerated($file, $budget)) : $namespaces;
+                // The header filter saw 2 KB; the `namespace` statement may lie anywhere in the file.
+                $removedNamespaces->read($file->getPathname());
             } else {
                 $eligible[] = $file;
             }
         }
 
-        return [$eligible, $generated, $skipped, $namespaces];
-    }
-
-    /** The header filter sees 2 KB; the `namespace` statement may lie anywhere in the file. */
-    private function declaredByGenerated(SplFileInfo $file, RemovedNamespaceBudget $budget): RemovedCodeNamespaces
-    {
-        if (!$budget->take()) {
-            return RemovedCodeNamespaces::unknown();
-        }
-        $declared = RemovedNamespaceScan::declaredIn($file->getPathname());
-
-        return $declared === null ? RemovedCodeNamespaces::unknown() : RemovedCodeNamespaces::known($declared);
+        return [$eligible, $generated, $skipped];
     }
 
     private static function relative(SplFileInfo $file, AbsolutePath $root): RelativePath

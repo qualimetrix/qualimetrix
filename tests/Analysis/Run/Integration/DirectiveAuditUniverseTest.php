@@ -25,7 +25,6 @@ use Qualimetrix\Analysis\Finding\Contract\Channel\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Finding\Contract\ProjectScope\RemovedCodeNamespaces;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
@@ -131,7 +130,6 @@ final class DirectiveAuditUniverseTest extends TestCase
             [],
             new ScopeFacts([], [], [], false),
             1,
-            RemovedCodeNamespaces::none(),
         ));
 
         $collection = self::createStub(CollectionOrchestratorInterface::class);

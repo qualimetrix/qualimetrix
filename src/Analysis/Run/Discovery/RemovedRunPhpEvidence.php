@@ -4,75 +4,96 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\Discovery;
 
-use Qualimetrix\Analysis\Finding\Contract\ProjectScope\RemovedCodeNamespaces;
+use Closure;
 use Qualimetrix\Core\Path\AbsolutePath;
 
 /**
- * What a real authored removal of a selected run entry took out of the run: the
- * selector evidence (metadata only) and the namespaces its PHP files declare.
+ * What a real authored removal of a selected run entry took out of the run:
+ * the selector evidence, from metadata only, and the namespaces its PHP files
+ * declare, which go to the survey.
  *
- * The descent visits every regular `.php` file under the entry, because the
- * selector verdict needs one witness while the namespaces need all of them,
- * until the walk's read budget is spent; from then on it stops at the first
- * PHP file, as the verdict needs no more.
+ * While the survey is open the descent visits every entry, because the
+ * selector verdict needs one witness while the namespaces need all of them.
+ * Once it is closed the descent stops at the first PHP file, as the verdict
+ * needs no more.
  */
 final readonly class RemovedRunPhpEvidence
 {
-    public function __construct(private EntryInspectorInterface $inspector, private RemovedNamespaceBudget $budget) {}
+    public function __construct(private EntryInspectorInterface $inspector, private RemovedNamespaceSurvey $survey) {}
 
-    /** @return array{?string, RemovedCodeNamespaces} selector evidence (`php-file`, `unlistable` or null) and declared namespaces */
-    public function search(AbsolutePath $path, EntryKind $kind): array
+    /** @return string|null `php-file`, `unlistable` or null */
+    public function search(AbsolutePath $path, EntryKind $kind): ?string
     {
-        if ($kind === EntryKind::RegularFile) {
-            return $this->isPhp($path) ? ['php-file', $this->scanned($path)] : [null, RemovedCodeNamespaces::none()];
-        }
-        if ($kind !== EntryKind::Directory && $kind !== EntryKind::DirectoryLink) {
-            return $kind === EntryKind::StatFailed ? ['unlistable', RemovedCodeNamespaces::unknown()] : [null, RemovedCodeNamespaces::none()];
-        }
-
-        return $this->searchDirectory($path);
+        return $this->descend($path, $kind, static fn(?string $evidence): bool => $evidence === 'php-file');
     }
 
-    /** @return array{?string, RemovedCodeNamespaces} */
-    private function searchDirectory(AbsolutePath $path): array
+    /** Surveys an entry whose removal judges no selector: only its namespaces are wanted. */
+    public function surveyOnly(AbsolutePath $path, EntryKind $kind): void
+    {
+        if ($this->survey->isOpen()) {
+            $this->descend($path, $kind, static fn(): bool => true);
+        }
+    }
+
+    /** @param Closure(?string): bool $settled whether the evidence found so far ends a descent the survey no longer needs */
+    private function descend(AbsolutePath $path, EntryKind $kind, Closure $settled): ?string
+    {
+        return match ($kind) {
+            EntryKind::RegularFile => $this->file($path),
+            EntryKind::Directory, EntryKind::DirectoryLink => $this->directory($path, $settled),
+            EntryKind::StatFailed => $this->unlistable(),
+            default => null,
+        };
+    }
+
+    private function file(AbsolutePath $path): ?string
+    {
+        if (!str_ends_with($path->value(), '.php')) {
+            return null;
+        }
+        $this->survey->read($path);
+
+        return 'php-file';
+    }
+
+    /** @param Closure(?string): bool $settled */
+    private function directory(AbsolutePath $path, Closure $settled): ?string
     {
         $children = $this->inspector->list($path->value());
         if ($children === null) {
-            return ['unlistable', RemovedCodeNamespaces::unknown()];
+            return $this->unlistable();
         }
-        $phpFile = false;
-        $unlistable = false;
-        $namespaces = RemovedCodeNamespaces::none();
+        $evidence = null;
         foreach ($children as $name) {
-            $child = AbsolutePath::fromString($path->value() . '/' . $name);
-            $childKind = $this->inspector->inspect($child->value());
-            if ($childKind === EntryKind::DirectoryLink) {
-                continue;
-            }
-            [$result, $declared] = $this->search($child, $childKind);
-            $phpFile = $phpFile || $result === 'php-file';
-            $unlistable = $unlistable || $result === 'unlistable';
-            $namespaces = $namespaces->merge($declared);
-            if ($phpFile && $this->budget->exhausted()) {
+            if (!$this->survey->isOpen() && $settled($evidence)) {
                 break;
             }
+            $child = AbsolutePath::fromString($path->value() . '/' . $name);
+            $this->survey->visit();
+            $childKind = $this->inspector->inspect($child->value());
+            if ($childKind !== EntryKind::DirectoryLink) {
+                $evidence = self::stronger($evidence, $this->descend($child, $childKind, $settled));
+            }
         }
 
-        return [$phpFile ? 'php-file' : ($unlistable ? 'unlistable' : null), $namespaces];
+        return $evidence;
     }
 
-    private function scanned(AbsolutePath $path): RemovedCodeNamespaces
+    private function unlistable(): string
     {
-        if (!$this->budget->take()) {
-            return RemovedCodeNamespaces::unknown();
+        $this->survey->close();
+
+        return 'unlistable';
+    }
+
+    private static function stronger(?string $current, ?string $found): ?string
+    {
+        foreach (['php-file', 'unlistable'] as $evidence) {
+            if ($current === $evidence || $found === $evidence) {
+                return $evidence;
+            }
         }
-        $declared = RemovedNamespaceScan::declaredIn($path);
 
-        return $declared === null ? RemovedCodeNamespaces::unknown() : RemovedCodeNamespaces::known($declared);
-    }
-
-    private function isPhp(AbsolutePath $path): bool
-    {
-        return str_ends_with($path->value(), '.php');
+        return null;
     }
 }

@@ -12,7 +12,6 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorOutcome;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorVerdict;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor;
-use Qualimetrix\Analysis\Finding\Contract\ProjectScope\RemovedCodeNamespaces;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse;
@@ -84,7 +83,7 @@ final class ProjectScopeDoorsTest extends TestCase
     /** @param list<ExcludeSelectorVerdict> $verdicts */
     private static function files(ScopeFacts $facts, array $verdicts = []): DiscoveredProjectFiles
     {
-        return new DiscoveredProjectFiles([], [], [], [], $verdicts, $facts, 0, RemovedCodeNamespaces::none());
+        return new DiscoveredProjectFiles([], [], [], [], $verdicts, $facts, 0);
     }
 
     private static function initial(): ProjectScopeMeasurement

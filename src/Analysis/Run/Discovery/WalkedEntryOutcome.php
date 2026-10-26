@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\Discovery;
 
-use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Discovery\SkippedEntry;
 use Qualimetrix\Analysis\Run\ExcludeBinding\ExcludeSelectorLedger;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -12,11 +11,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use RuntimeException;
 use SplFileInfo;
 
-/**
- * Accumulated consequences of already inspected and admitted entries.
- *
- * @qmx-threshold coupling.instability 0.800001 -- Callers publish this private walk outcome; its measured values share one lifecycle, and this finite boundary keeps another dependency visible.
- */
+/** Accumulated consequences of already inspected and admitted entries. */
 final class WalkedEntryOutcome
 {
     /** @var array<string, SplFileInfo> */
@@ -39,7 +34,7 @@ final class WalkedEntryOutcome
 
     private ?AbsolutePath $unlistableOutsideRoot = null;
 
-    public function __construct(private readonly ExcludeSelectorLedger $ledger, private readonly RemovedNamespaceBudget $budget) {}
+    public function __construct(private readonly ExcludeSelectorLedger $ledger) {}
 
     public function namedExcluded(RelativePath $relative): void
     {
@@ -102,7 +97,7 @@ final class WalkedEntryOutcome
     private function skippedLeaf(AbsolutePath $path, EntryKind $kind): SkippedEntry
     {
         if ($kind === EntryKind::FileLink) {
-            return new SkippedEntry($path, AnalysisFailureKind::FileSymlink, 'Symbolic link to a file is not analysed during directory traversal');
+            return SkippedEntry::fileSymlink($path, 'Symbolic link to a file is not analysed during directory traversal');
         }
 
         return SkippedEntry::nonRegular($path, 'Discovered entry is not a regular file');
@@ -118,10 +113,9 @@ final class WalkedEntryOutcome
         if ($zone === 'outside') {
             $this->unlistableOutside[$relative->value()] = $relative;
         } elseif ($zone === 'run') {
-            $reason = $kind === EntryKind::StatFailed
-                ? AnalysisFailureKind::UnreadableEntry
-                : AnalysisFailureKind::UnreadableDirectory;
-            $this->skip($relative, new SkippedEntry($path, $reason, 'Entry cannot be inspected or listed'));
+            $this->skip($relative, $kind === EntryKind::StatFailed
+                ? SkippedEntry::unreadableEntry($path, 'Entry cannot be inspected or listed')
+                : SkippedEntry::unreadableDirectory($path, 'Entry cannot be inspected or listed'));
         }
     }
 
@@ -163,8 +157,6 @@ final class WalkedEntryOutcome
             array_values($this->namedExcluded),
             $this->ledger->verdicts($knownUniverse),
             $facts,
-            $this->ledger->removedCode(),
-            $this->budget,
         );
     }
 }

@@ -34,6 +34,26 @@ final readonly class SkippedEntry
         return new self($path, AnalysisFailureKind::DirectorySymlink, $detail);
     }
 
+    public static function fileSymlink(AbsolutePath $path, string $detail): self
+    {
+        return new self($path, AnalysisFailureKind::FileSymlink, $detail);
+    }
+
+    public static function unreadableEntry(AbsolutePath $path, string $detail): self
+    {
+        return new self($path, AnalysisFailureKind::UnreadableEntry, $detail);
+    }
+
+    public static function unreadableDirectory(AbsolutePath $path, string $detail): self
+    {
+        return new self($path, AnalysisFailureKind::UnreadableDirectory, $detail);
+    }
+
+    public static function unreadableFile(AbsolutePath $path, string $detail): self
+    {
+        return new self($path, AnalysisFailureKind::UnreadableFile, $detail);
+    }
+
     /** The entry's written name is retained even when it is a symlink. */
     public function relativeTo(AbsolutePath $projectRoot): RelativePath
     {

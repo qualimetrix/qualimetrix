@@ -8,7 +8,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\ProjectScope\RemovedCodeNamespaces;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeDefaults;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopePaths;
@@ -135,7 +134,7 @@ final class ProjectScopeCoverageTest extends TestCase
             (new ComposerManifestReader())->read($root)->state,
         );
         $measured = $initial->narrowTo([$source])->withDiscoveredFiles(
-            new DiscoveredProjectFiles([], [], [], [], [], new ScopeFacts([], [], [], false), 0, RemovedCodeNamespaces::none()),
+            new DiscoveredProjectFiles([], [], [], [], [], new ScopeFacts([], [], [], false), 0),
         );
         $valueScope = $measured->valueScopeJudgement();
 
@@ -163,7 +162,7 @@ final class ProjectScopeCoverageTest extends TestCase
         for ($index = 0; $index < 300; ++$index) {
             $missing[] = RelativePath::fromString('src/Other/Class' . $index . '.php');
         }
-        $measured = $measurement->withDiscoveredFiles(new DiscoveredProjectFiles([], [], [], [], [], new ScopeFacts($missing, [], [], false), 0, RemovedCodeNamespaces::none()));
+        $measured = $measurement->withDiscoveredFiles(new DiscoveredProjectFiles([], [], [], [], [], new ScopeFacts($missing, [], [], false), 0));
         self::assertSame(ProjectScopeState::Narrowed, $measured->state());
         self::assertSame(['src'], $measured->uncoveredRoots);
     }
