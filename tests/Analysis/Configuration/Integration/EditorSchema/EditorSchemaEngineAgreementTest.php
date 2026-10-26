@@ -157,6 +157,9 @@ final class EditorSchemaEngineAgreementTest extends TestCase
         yield '~ where case matters' => ['words, sensitive', "rules:\n  coupling.cbo: {class: {scope: ~}}", self::ACCEPTS, self::SCHEMA_ACCEPTS];
         yield 'a word in another case' => ['words, folding', "rules:\n  architecture.layer-violation: {severity: ERROR}", self::ACCEPTS, self::SCHEMA_ACCEPTS];
         yield 'a word outside the vocabulary' => ['words, folding', "rules:\n  architecture.layer-violation: {severity: errors}", self::REFUSES, '/rules/architecture.layer-violation/severity'];
+        yield 'a reporting level' => ['words, sensitive, list item', "computed_metrics:\n  computed.code-density: {formula: '1', levels: [class, project]}", self::ACCEPTS, self::SCHEMA_ACCEPTS];
+        yield 'a reporting level in another case' => ['words, sensitive, list item', "computed_metrics:\n  computed.code-density: {formula: '1', levels: [Class]}", self::REFUSES, '/computed_metrics/computed.code-density/levels/0'];
+        yield 'a level a computed metric cannot report at' => ['words, sensitive, list item', "computed_metrics:\n  computed.code-density: {formula: '1', levels: [class, callable]}", self::REFUSES, '/computed_metrics/computed.code-density/levels/1'];
 
         yield 'a form feed is not blank' => ['NonBlank', "disabled_rules: [\"\\f\"]", self::ACCEPTS, self::SCHEMA_ACCEPTS];
         yield 'a no-break space is not blank' => ['NonBlank', "disabled_rules: [\"\u{00A0}\"]", self::ACCEPTS, self::SCHEMA_ACCEPTS];

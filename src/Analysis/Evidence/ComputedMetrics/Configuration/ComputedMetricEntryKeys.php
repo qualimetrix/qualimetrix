@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SchemaWordSet;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\Shorthand;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -61,7 +62,10 @@ final class ComputedMetricEntryKeys
                 self::FORMULA => NodeSchema::scalar(ScalarForm::String)->judgedInEachLayer(ComputedMetricValueForm::ofFormula(...)),
                 self::FORMULAS => NodeSchema::map($formulas),
                 self::INVERTED => NodeSchema::scalar(ScalarForm::Boolean),
-                self::LEVELS => NodeSchema::list(NodeSchema::scalar(ScalarForm::String))->judgedInEachLayer(self::ofLevels(...)),
+                self::LEVELS => NodeSchema::list(NodeSchema::scalar(ScalarForm::String)->words(SchemaWordSet::of(...array_map(
+                    static fn(SymbolLevel $level): string => $level->value,
+                    self::REPORTING_LEVELS,
+                ))))->judgedInEachLayer(self::ofLevels(...)),
                 self::WARNING => NodeSchema::scalar(ScalarForm::Number),
             ],
             Shorthand::spreading(self::THRESHOLD, [self::WARNING, self::ERROR]),

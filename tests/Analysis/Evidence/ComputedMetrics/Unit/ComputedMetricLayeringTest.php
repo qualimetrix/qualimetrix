@@ -451,7 +451,7 @@ final class ComputedMetricLayeringTest extends TestCase
     {
         $refusal = $this->refusal(self::file(['computed_metrics' => ['computed.x' => ['formula' => '4', 'levels' => ['project', 'callable']]]]));
 
-        self::assertStringContainsString('"callable" is not supported', $refusal->summary());
+        self::assertStringContainsString('must be one of class, namespace, project, got "callable".', $refusal->summary());
         self::assertSame(['computed_metrics', 'computed.x', 'levels', '1'], $refusal->position()?->segments);
     }
 

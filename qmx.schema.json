@@ -115,7 +115,7 @@
             "additionalProperties": false
         },
         "computed_metrics": {
-            "$ref": "#/definitions/6852bed2532e"
+            "$ref": "#/definitions/cbed5cb328c4"
         },
         "coupling": {
             "type": [
@@ -4506,7 +4506,7 @@
     },
     "patternProperties": {
         "^(?:computed-metrics|computedMetrics)$": {
-            "$ref": "#/definitions/6852bed2532e"
+            "$ref": "#/definitions/cbed5cb328c4"
         },
         "^(?:disabled-rules|disabledRules)$": {
             "$ref": "#/definitions/7a60024335a3"
@@ -5084,152 +5084,6 @@
                 }
             ]
         },
-        "6852bed2532e": {
-            "type": [
-                "object",
-                "array",
-                "null"
-            ],
-            "maxItems": 0,
-            "patternProperties": {
-                "^<<$": true
-            },
-            "additionalProperties": {
-                "type": [
-                    "object",
-                    "array",
-                    "null"
-                ],
-                "maxItems": 0,
-                "properties": {
-                    "description": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "enabled": {
-                        "type": [
-                            "boolean",
-                            "null"
-                        ]
-                    },
-                    "error": {
-                        "type": [
-                            "number",
-                            "null"
-                        ]
-                    },
-                    "formula": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "formulas": {
-                        "type": [
-                            "object",
-                            "array",
-                            "null"
-                        ],
-                        "maxItems": 0,
-                        "properties": {
-                            "class": {
-                                "type": [
-                                    "string",
-                                    "null"
-                                ]
-                            },
-                            "namespace": {
-                                "type": [
-                                    "string",
-                                    "null"
-                                ]
-                            },
-                            "project": {
-                                "type": [
-                                    "string",
-                                    "null"
-                                ]
-                            }
-                        },
-                        "patternProperties": {
-                            "^<<$": true
-                        },
-                        "additionalProperties": false
-                    },
-                    "inverted": {
-                        "type": [
-                            "boolean",
-                            "null"
-                        ]
-                    },
-                    "levels": {
-                        "$ref": "#/definitions/5d660e7a63ce"
-                    },
-                    "warning": {
-                        "type": [
-                            "number",
-                            "null"
-                        ]
-                    },
-                    "threshold": {
-                        "type": [
-                            "number",
-                            "null"
-                        ]
-                    }
-                },
-                "patternProperties": {
-                    "^<<$": true
-                },
-                "additionalProperties": false,
-                "allOf": [
-                    {
-                        "if": {
-                            "required": [
-                                "warning"
-                            ],
-                            "properties": {
-                                "warning": {
-                                    "not": {
-                                        "type": "null"
-                                    }
-                                }
-                            }
-                        },
-                        "then": {
-                            "properties": {
-                                "threshold": {
-                                    "type": "null"
-                                }
-                            }
-                        }
-                    },
-                    {
-                        "if": {
-                            "required": [
-                                "error"
-                            ],
-                            "properties": {
-                                "error": {
-                                    "not": {
-                                        "type": "null"
-                                    }
-                                }
-                            }
-                        },
-                        "then": {
-                            "properties": {
-                                "threshold": {
-                                    "type": "null"
-                                }
-                            }
-                        }
-                    }
-                ]
-            }
-        },
         "7a60024335a3": {
             "type": [
                 "array",
@@ -5479,6 +5333,175 @@
                     }
                 }
             ]
+        },
+        "cbed5cb328c4": {
+            "type": [
+                "object",
+                "array",
+                "null"
+            ],
+            "maxItems": 0,
+            "patternProperties": {
+                "^<<$": true
+            },
+            "additionalProperties": {
+                "type": [
+                    "object",
+                    "array",
+                    "null"
+                ],
+                "maxItems": 0,
+                "properties": {
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "enabled": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    },
+                    "error": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "formula": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "formulas": {
+                        "type": [
+                            "object",
+                            "array",
+                            "null"
+                        ],
+                        "maxItems": 0,
+                        "properties": {
+                            "class": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "namespace": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "project": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "patternProperties": {
+                            "^<<$": true
+                        },
+                        "additionalProperties": false
+                    },
+                    "inverted": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
+                    },
+                    "levels": {
+                        "type": [
+                            "array",
+                            "object",
+                            "null"
+                        ],
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "class",
+                                "namespace",
+                                "project"
+                            ]
+                        },
+                        "patternProperties": {
+                            "^(?:0|-?[1-9][0-9]*)$": {
+                                "type": "string",
+                                "enum": [
+                                    "class",
+                                    "namespace",
+                                    "project"
+                                ]
+                            }
+                        },
+                        "additionalProperties": false
+                    },
+                    "warning": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    },
+                    "threshold": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    }
+                },
+                "patternProperties": {
+                    "^<<$": true
+                },
+                "additionalProperties": false,
+                "allOf": [
+                    {
+                        "if": {
+                            "required": [
+                                "warning"
+                            ],
+                            "properties": {
+                                "warning": {
+                                    "not": {
+                                        "type": "null"
+                                    }
+                                }
+                            }
+                        },
+                        "then": {
+                            "properties": {
+                                "threshold": {
+                                    "type": "null"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "if": {
+                            "required": [
+                                "error"
+                            ],
+                            "properties": {
+                                "error": {
+                                    "not": {
+                                        "type": "null"
+                                    }
+                                }
+                            }
+                        },
+                        "then": {
+                            "properties": {
+                                "threshold": {
+                                    "type": "null"
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
         },
         "d31a87e7c17c": {
             "type": [

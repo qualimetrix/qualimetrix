@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `qmx.schema.json` — a JSON Schema of `qmx.yaml` for completion, rule descriptions and form validation in PhpStorm and VS Code; shipped in the Composer package and attached to every release.
+- `qmx.schema.json` — a JSON Schema of `qmx.yaml` for completion, rule descriptions and form validation in PhpStorm and VS Code; shipped in the Composer package and attached to every release. An unsupported `computed_metrics.<name>.levels` value is now refused with the accepted levels named.
 
 ## [0.28.2] - 2026-10-25
 

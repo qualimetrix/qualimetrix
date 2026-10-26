@@ -815,9 +815,9 @@ final class ComputedMetricsConfigResolverTest extends TestCase
      * `callable` and `file` are real words in the level vocabulary
      * ({@see \Qualimetrix\Core\Symbol\SymbolLevel}) that a
      * computed metric cannot report at — {@see ComputedMetricDefinition}'s
-     * `formulas` keys are class/namespace/project only. Both the old private
-     * word list and the vocabulary-backed replacement refuse them; this pins
-     * that the replacement did not accidentally widen the accepted spellings.
+     * `formulas` keys are class/namespace/project only. The declared level
+     * word set refuses them; this pins that it was not widened to the whole
+     * level vocabulary.
      */
     /** @return array<string, array{string}> */
     public static function provideLevelWordsAComputedMetricCannotReportAt(): array
@@ -836,10 +836,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     public function itStillRefusesLevelsAComputedMetricCannotReportAt(string $spelling): void
     {
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage(\sprintf(
-            'Computed metric level "%s" is not supported; computed metrics report at "class", "namespace" or "project" only.',
-            $spelling,
-        ));
+        self::expectExceptionMessage(\sprintf('must be one of class, namespace, project, got "%s".', $spelling));
 
         $this->resolve([
             'computed.unsupported' => [
@@ -853,7 +850,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
     public function itThrowsForAWordThatIsNotALevelAtAll(): void
     {
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Invalid computed metric level: "bogus"');
+        self::expectExceptionMessage('"computed_metrics.computed.bogus.levels[0]" in configuration file "qmx.yaml" must be one of class, namespace, project, got "bogus".');
 
         $this->resolve([
             'computed.bogus' => [
@@ -1030,7 +1027,7 @@ final class ComputedMetricsConfigResolverTest extends TestCase
         yield 'formulas not a map' => [['computed.x' => ['formulas' => '1+1']], '"computed_metrics.computed.x.formulas" in configuration file "qmx.yaml" must be a map, got string.'];
         yield 'levels a scalar' => [['computed.x' => ['formula' => '1', 'levels' => 'class']], '"computed_metrics.computed.x.levels" in configuration file "qmx.yaml" must be a list, got string.'];
         yield 'levels a map' => [['computed.x' => ['formula' => '1', 'levels' => ['class' => 'x']]], '"computed_metrics.computed.x.levels" in configuration file "qmx.yaml" must be a list, got a map.'];
-        yield 'levels item not a string' => [['computed.x' => ['formula' => '1', 'levels' => [5]]], '"computed_metrics.computed.x.levels[0]" in configuration file "qmx.yaml" must be string, got int.'];
+        yield 'levels item not a string' => [['computed.x' => ['formula' => '1', 'levels' => [5]]], '"computed_metrics.computed.x.levels[0]" in configuration file "qmx.yaml" must be string (one of class, namespace, project), got int.'];
     }
 
     /**
