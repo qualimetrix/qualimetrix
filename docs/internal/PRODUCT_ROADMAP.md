@@ -216,7 +216,6 @@ condition. When an issue closes, drop its line here.
 - [#172](https://github.com/qualimetrix/qualimetrix/issues/172) Dependency graph: global functions as nodes
 - [#173](https://github.com/qualimetrix/qualimetrix/issues/173) New-findings-only CI gate against a base revision
 - [#174](https://github.com/qualimetrix/qualimetrix/issues/174) Phar as a required check and the Docker image built from it
-- [#196](https://github.com/qualimetrix/qualimetrix/issues/196) Dependency graph: attribute-argument edge kind and a kind filter for circular-dependency
 - [#197](https://github.com/qualimetrix/qualimetrix/issues/197) `directives` runtime options (cache, workers, memory)
 - [#198](https://github.com/qualimetrix/qualimetrix/issues/198) LCOM4: constructor-only private helpers become isolated components
 - [#199](https://github.com/qualimetrix/qualimetrix/issues/199) Namespace instability judges the subtree while CBO and distance judge own scope
