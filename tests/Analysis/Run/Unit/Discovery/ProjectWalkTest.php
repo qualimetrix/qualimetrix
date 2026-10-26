@@ -1024,6 +1024,22 @@ final class ProjectWalkTest extends TestCase
     }
 
     #[Test]
+    public function itKeepsAnUnfundedSurveyKnownBesideAnExcludedTreeWithoutPhp(): void
+    {
+        mkdir($this->root . '/src/Resources/views', 0o777, true);
+        file_put_contents($this->root . '/src/Resources/a.yaml', 'namespace: App\\Yaml');
+        file_put_contents($this->root . '/src/Resources/views/b.twig', '{{ namespace }}');
+        $selectors = [$this->selector(SelectorKind::Subtree, 'src/Resources', ConfigurationSource::ConfigFile)];
+        $files = (new ProjectFiles(new ProjectWalk(new EntryInspector()), new GeneratedFileFilter()))
+            ->discover($this->configuration([$this->root . '/src'], $selectors, false));
+        $judgement = $this->judgement([$this->root . '/src'], $selectors, false);
+
+        self::assertTrue($files->scopeFacts->removedCode?->isKnown(), 'a removed tree without PHP declares nothing');
+        self::assertFalse($files->scopeFacts->removedCode->mayDeclareWithin(''));
+        self::assertTrue($judgement->judgesExactNamespace('App\\Gone'));
+    }
+
+    #[Test]
     public function itKnowsNothingIsRemovedWithoutReadingWhenNoLiteralIsConfigured(): void
     {
         $files = (new ProjectFiles(new ProjectWalk(new EntryInspector()), new GeneratedFileFilter()))
@@ -1288,9 +1304,9 @@ final class ProjectWalkTest extends TestCase
      * @param list<string> $paths
      * @param list<AuthoredExclude> $selectors
      */
-    private function judgement(array $paths, array $selectors): ProjectScopeJudgement
+    private function judgement(array $paths, array $selectors, bool $literalNamespaceSuppression = true): ProjectScopeJudgement
     {
-        $configuration = $this->configuration($paths, $selectors);
+        $configuration = $this->configuration($paths, $selectors, $literalNamespaceSuppression);
         $files = (new ProjectFiles(new ProjectWalk(new EntryInspector()), new GeneratedFileFilter()))->discover($configuration);
 
         return $configuration->projectScope->withDiscoveredFiles($files)->judgement();

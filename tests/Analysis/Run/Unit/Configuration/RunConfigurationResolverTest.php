@@ -20,6 +20,8 @@ use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
@@ -228,5 +230,25 @@ final class RunConfigurationResolverTest extends TestCase
 
         self::assertSame($expected, $configuration->hasLiteralNamespaceSuppression);
         self::assertSame($expected, $configuration->withProjectScope($configuration->projectScope)->hasLiteralNamespaceSuppression);
+    }
+
+    #[Test]
+    public function itCountsALiteralNamespaceSuppressionValueTheInvocationAdds(): void
+    {
+        $configuration = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerManifestReader())))->resolve(LayeredDocument::of(
+            [['source' => 'qmx.yaml', 'values' => [ConfigSchema::PATHS => ['src'], 'exclude' => [['subtree' => 'src/Legacy']]]]],
+            AbsolutePath::fromString(sys_get_temp_dir()),
+        ));
+        $regex = $configuration->withNamespaceSuppressionValues([new SelectorDefinition(SelectorKind::Regex, '/^App/')]);
+        $literal = $configuration->withNamespaceSuppressionValues([
+            new SelectorDefinition(SelectorKind::Regex, '/^App/'),
+            new SelectorDefinition(SelectorKind::Exact, 'App\\Gone'),
+        ]);
+
+        self::assertFalse($configuration->hasLiteralNamespaceSuppression);
+        self::assertSame($configuration, $regex);
+        self::assertTrue($literal->hasLiteralNamespaceSuppression);
+        self::assertEquals($configuration->authoredPathExcludes, $literal->authoredPathExcludes);
+        self::assertSame($configuration->projectScope, $literal->projectScope);
     }
 }

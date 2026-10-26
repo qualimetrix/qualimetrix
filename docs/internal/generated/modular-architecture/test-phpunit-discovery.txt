@@ -10209,6 +10209,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itWithholdsSubsetJudgementWhenTheManifestDeclaresNoUsableUniverse"production sections that are all empty"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopePathsTest::itNamesTheOutermostPrunedDirectoryAWalkWouldStopAt
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopePathsTest::itProvidesBuiltInsThatMatchReservedDirectoriesAtAnyDepth
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itCountsALiteralNamespaceSuppressionValueTheInvocationAdds
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itKeepsRelativePathsRootedAtIngressWhenTheProcessDirectoryChanges
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itRecordsWhetherALiteralNamespaceSuppressionValueIsConfigured"global exact"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itRecordsWhetherALiteralNamespaceSuppressionValueIsConfigured"global regex only"
@@ -10353,6 +10354,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itJudgesNoNamespaceLiteralALinkedFileInsideAnExcludedTreeMayDeclare
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsASelectorBelowAnUnlistableNamedRootUnjudgeable
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsAnOutsideExcludedDirectoryUnknownWithoutDescendingIntoIt
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsAnUnfundedSurveyKnownBesideAnExcludedTreeWithoutPhp
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsAnUnlistableOutsideProjectRootUnknown
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsAnUnlistableOutsideTargetUnknownWithoutCurrentRunFailure
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsAnUnreadableRemovedRunSubtreeAsUncertainPhpEvidence
@@ -11534,10 +11536,12 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itDoesNotJudgeASelectorOfTheNamespaceTheExcludedFileDeclares
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itDoesNotJudgeTheNamespaceOfAFileThatFailedToParse
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itDoesNotJudgeWhenTheExcludedFileCannotBeRead
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itDoesNotNameAnExclusionThatRemovedNoPhp
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itJudgesAStaleGlobalSelectorUnderAnUnrelatedExclude
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itJudgesAStalePerRuleSelectorUnderAnUnrelatedExclude
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itJudgesAValueTheAnalysedTreeBindsBesideAnExcludedSubTree
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itJudgesAroundAGeneratedFileAndWithholdsWhatItCouldDeclare
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itNamesTheExclusionThatRemovedPhpBesideOneThatRemovedNone
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itOffersBothRemediesWhenAnExclusionAndTheGeneratedPolicyRemovedCode
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itSilencesTheWarningUnderQuiet
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itStaysQuietWhenEveryNamespaceValueWasJudged

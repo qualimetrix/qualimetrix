@@ -109,26 +109,36 @@ final readonly class ProjectScopePresenter
     }
 
     /**
-     * Every selector that removed an entry is named, because the removed
-     * namespaces are known only for the run as a whole.
+     * The exclusions that may have removed PHP. A selector with PHP evidence
+     * is named. One that removed entries without it either removed no PHP or
+     * removed code outside the measured universe, where no evidence is
+     * recorded; the two cannot be told apart, so such removal is mentioned
+     * without a name rather than dropped.
      *
      * @return list<string>
      */
     private static function removingExcludes(AnalysisResult $result): array
     {
-        $excludes = [];
+        $named = [];
+        $unattributed = false;
         foreach ($result->measured->projectScope?->judgement()->excludeSelectors() ?? [] as $selector) {
-            if ($selector->removedEntries !== []) {
-                $excludes[] = 'exclude "' . $selector->display . '"';
+            if ($selector->phpEvidence !== null) {
+                $named[] = 'exclude "' . $selector->display . '"';
+            } elseif ($selector->removedEntries !== []) {
+                $unattributed = true;
             }
         }
+        if ($unattributed) {
+            $named[] = $named === [] ? 'an exclude entry' : 'another exclude entry';
+        }
 
-        return $excludes;
+        return $named;
     }
 
     /**
-     * What would judge the withheld values: narrowing the exclusion, judging
-     * generated files, or both.
+     * What would judge the withheld values. Removed namespaces are known for
+     * the run as a whole, so with both causes neither remedy alone is
+     * promised to suffice.
      *
      * @param list<string> $excludes
      */
@@ -137,11 +147,11 @@ final readonly class ProjectScopePresenter
         $generated = $result->measured->coverage->generatedExcludedFiles !== [];
         $exclusion = ($result->measured->projectScope?->judgement()->removedCodeIsKnown() ?? false)
             ? 'Narrow the exclusion'
-            : 'Exclude fewer files, and no unreadable file or link,';
+            : 'Exclude fewer files (and no unreadable file or link)';
 
         return match (true) {
             $generated && $excludes === [] => 'Pass --include-generated',
-            $generated => $exclusion . ' or pass --include-generated',
+            $generated => $exclusion . ' and/or pass --include-generated',
             default => $exclusion,
         };
     }

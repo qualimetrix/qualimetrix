@@ -7,6 +7,8 @@ namespace Qualimetrix\Analysis\Run\Contract\Configuration;
 use LogicException;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
 
 /** Immutable execution input; the coverage verdict is derived from the measured paths. */
 final readonly class RunConfiguration
@@ -40,6 +42,32 @@ final readonly class RunConfiguration
 
         $this->paths = $projectScope->paths;
         $this->coversProjectScope = $projectScope->state()->coversProjectScope();
+    }
+
+    /**
+     * Counts namespace suppression values the invocation adds beside the
+     * document, such as `--suppress-namespace`, so that a literal one funds
+     * the removed-code survey as a configured one does.
+     *
+     * @param list<SelectorDefinition> $namespaceSelectors
+     */
+    public function withNamespaceSuppressionValues(array $namespaceSelectors): self
+    {
+        foreach ($namespaceSelectors as $selector) {
+            if ($selector->kind !== SelectorKind::Regex) {
+                return new self(
+                    pathExcludes: $this->pathExcludes,
+                    projectRoot: $this->projectRoot,
+                    generatedFilePolicy: $this->generatedFilePolicy,
+                    projectScope: $this->projectScope,
+                    authoredPathExcludes: $this->authoredPathExcludes,
+                    autoloadDevPolicy: $this->autoloadDevPolicy,
+                    hasLiteralNamespaceSuppression: true,
+                );
+            }
+        }
+
+        return $this;
     }
 
     public function withProjectScope(ProjectScopeMeasurement $measurement): self

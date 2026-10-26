@@ -2280,6 +2280,7 @@ Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReason	Analysis.Run	
 Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse	Analysis.Run	Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts	Analysis.ProjectManifest	contract
 Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse	Analysis.Run	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
+Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	contract
 Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface	Analysis.Run	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	contract
 Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisCoverage	Analysis.Run	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
 Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailure	Analysis.Run	Qualimetrix\Core\Path\RelativePath	Core.Path	contract

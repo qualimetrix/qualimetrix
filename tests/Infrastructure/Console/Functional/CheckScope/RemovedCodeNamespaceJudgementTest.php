@@ -108,7 +108,7 @@ final class RemovedCodeNamespaceJudgementTest extends TestCase
         self::assertSame(0, $this->staleFindings($run['report']));
         self::assertContains(self::CHANNEL, $run['report']['projectScope']['unjudgedChannels']);
         self::assertStringContainsString(
-            'Code removed by exclude "exact:src/Removed.php" could not be read in full (too many files, an unreadable file or a link) and may declare the namespaces of 1 suppression value, so it was not judged (' . self::CHANNEL . '). Exclude fewer files, and no unreadable file or link, to judge it.',
+            'Code removed by exclude "exact:src/Removed.php" could not be read in full (too many files, an unreadable file or a link) and may declare the namespaces of 1 suppression value, so it was not judged (' . self::CHANNEL . '). Exclude fewer files (and no unreadable file or link) to judge it.',
             $run['stderr'],
         );
     }
@@ -137,9 +137,41 @@ final class RemovedCodeNamespaceJudgementTest extends TestCase
         $run = $this->check("exclude:\n  - {exact: src/Removed.php}\nsuppress_namespaces:\n  - {exact: 'App\\Gen'}\n");
 
         self::assertStringContainsString(
-            'Code removed by exclude "exact:src/Removed.php" and the generated-file policy may declare the namespaces of 1 suppression value, so it was not judged (' . self::CHANNEL . '). Narrow the exclusion or pass --include-generated to judge it.',
+            'Code removed by exclude "exact:src/Removed.php" and the generated-file policy may declare the namespaces of 1 suppression value, so it was not judged (' . self::CHANNEL . '). Narrow the exclusion and/or pass --include-generated to judge it.',
             $run['stderr'],
         );
+    }
+
+    /**
+     * An exclusion that removed no PHP is not named as a cause: the stale
+     * candidate is the generated file. Removal without PHP evidence cannot be
+     * told from removal outside the measured universe, so it is still
+     * mentioned, without a name, and neither remedy is promised alone.
+     */
+    #[Test]
+    public function itDoesNotNameAnExclusionThatRemovedNoPhp(): void
+    {
+        mkdir($this->root . '/src/Docs');
+        file_put_contents($this->root . '/src/Docs/notes.md', "# notes\n");
+        file_put_contents($this->root . '/src/Gen.php', "<?php\n// @generated\nnamespace App\\Gen;\nfinal class Gen {}\n");
+        $run = $this->check("exclude:\n  - {subtree: src/Docs}\nsuppress_namespaces:\n  - {exact: 'App\\Gen'}\n");
+
+        self::assertStringNotContainsString('src/Docs', $run['stderr']);
+        self::assertStringContainsString(
+            'Code removed by an exclude entry and the generated-file policy may declare the namespaces of 1 suppression value, so it was not judged (' . self::CHANNEL . '). Narrow the exclusion and/or pass --include-generated to judge it.',
+            $run['stderr'],
+        );
+    }
+
+    #[Test]
+    public function itNamesTheExclusionThatRemovedPhpBesideOneThatRemovedNone(): void
+    {
+        mkdir($this->root . '/src/Docs');
+        file_put_contents($this->root . '/src/Docs/notes.md', "# notes\n");
+        $run = $this->check("exclude:\n  - {exact: src/Removed.php}\n  - {subtree: src/Docs}\nsuppress_namespaces:\n  - {exact: 'App\\Removed'}\n");
+
+        self::assertStringNotContainsString('src/Docs', $run['stderr']);
+        self::assertStringContainsString('Code removed by exclude "exact:src/Removed.php" and another exclude entry may declare the namespaces of 1 suppression value', $run['stderr']);
     }
 
     /**
@@ -241,7 +273,7 @@ final class RemovedCodeNamespaceJudgementTest extends TestCase
             $this->unjudgedNamespaceValues($run['report']),
         );
         self::assertNotContains(self::CHANNEL, $run['report']['projectScope']['unjudgedChannels']);
-        self::assertStringContainsString('Code removed by exclude "subtree:tests/Legacy" may declare the namespaces of 1 suppression value', $run['stderr']);
+        self::assertStringContainsString('Code removed by an exclude entry may declare the namespaces of 1 suppression value, so it was not judged (' . self::CHANNEL . '). Narrow the exclusion to judge it.', $run['stderr']);
     }
 
     #[Test]

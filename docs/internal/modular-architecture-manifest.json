@@ -20957,6 +20957,10 @@
         {
           "owner": "Reporting.GraphProjection",
           "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\NamespaceSelection"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\RunConfiguration"
         }
       ]
     },

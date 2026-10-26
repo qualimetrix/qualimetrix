@@ -372,7 +372,7 @@ Qualimetrix\Core\Pattern\NamespacePattern	Core.Neutral	20	7
 Qualimetrix\Core\Pattern\PathMatcher	Core.Neutral	4	2
 Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	13	6
 Qualimetrix\Core\Pattern\SelectorDefinition	Core.Neutral	11	7
-Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	8	5
+Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	9	5
 Qualimetrix\Core\ProductIdentity	Core.Neutral	25	3
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	23	8
 Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	13	7

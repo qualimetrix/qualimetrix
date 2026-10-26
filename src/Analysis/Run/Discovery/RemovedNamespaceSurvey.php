@@ -43,13 +43,15 @@ final class RemovedNamespaceSurvey
     }
 
     /**
-     * A survey that reads nothing: it stays known only while nothing PHP is
-     * removed, and otherwise closes at once, leaving the walk its metadata-only
-     * cost when no namespace selector will consult the result.
+     * A survey that reads nothing: it stays known until removed PHP is met and
+     * then closes, so the descent stops where the selector-evidence search
+     * stops and the walk keeps its metadata-only cost when no namespace
+     * selector consults the result. Entries do not count, because a removed
+     * tree without PHP declares nothing.
      */
     public static function unfunded(): self
     {
-        return new self(0, 0, 0);
+        return new self(0, 0, \PHP_INT_MAX);
     }
 
     /** Whether reading on can still change the namespaces; a closed survey has none to offer. */

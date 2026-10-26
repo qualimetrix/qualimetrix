@@ -2810,6 +2810,7 @@ Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Analysis\Configur
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorVerdict	Analysis.Finding	src/Analysis/Finding/Contract/ProjectScope/ExcludeSelectorVerdict.php	ast-name
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement	Analysis.Finding	src/Analysis/Finding/SuppressionBinding/ValueScopeJudgement.php	ast-name
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver	Analysis.Run	src/Analysis/Run/Configuration/RunConfigurationResolver.php	ast-name
+Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	src/Analysis/Run/Contract/Configuration/RunConfiguration.php	ast-name
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Analysis\Run\ExcludeBinding\ExcludeSelectorLedger	Analysis.Run	src/Analysis/Run/ExcludeBinding/ExcludeSelectorLedger.php	ast-name
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Reporting\Formatter\Json\JsonHealthSection	Reporting	src/Reporting/Formatter/Json/JsonHealthSection.php	ast-name
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Reporting\Formatter\Summary\HealthBarRenderer	Reporting	src/Reporting/Formatter/Summary/HealthBarRenderer.php	ast-name
