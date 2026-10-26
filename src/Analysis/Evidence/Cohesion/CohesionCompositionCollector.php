@@ -150,16 +150,16 @@ final class CohesionCompositionCollector implements GlobalContextCollectorInterf
     {
         [$effective, $tcc, $unreadCount] = $composed;
         $repository->addSubjectScalar($subject, MetricName::COHESION_UNREAD_TRAIT_COUNT, $unreadCount);
-        $this->publishLcom($subject, $effective, $repository);
+        $this->publishLcom($subject, $effective, $unreadCount, $repository);
         $this->publishTccLcc($subject, $tcc, $repository);
     }
 
-    private function publishLcom(MetricSubject $subject, LcomClassData $effective, MetricRepositoryInterface $repository): void
+    private function publishLcom(MetricSubject $subject, LcomClassData $effective, int $unreadCount, MetricRepositoryInterface $repository): void
     {
-        $methodCount = $effective->lcomMethodCount($this->configuration->excludedMethods);
+        $methodCount = $effective->lcomMethodCount($this->configuration->excludedMethods, $unreadCount);
         $repository->addSubjectScalar($subject, MetricName::COHESION_LCOM_METHOD_COUNT, $methodCount);
         if ($methodCount > 0) {
-            $repository->addSubjectScalar($subject, MetricName::COHESION_LCOM, $effective->calculateLcom($this->configuration->excludedMethods));
+            $repository->addSubjectScalar($subject, MetricName::COHESION_LCOM, $effective->calculateLcom($this->configuration->excludedMethods, $unreadCount));
         }
     }
 

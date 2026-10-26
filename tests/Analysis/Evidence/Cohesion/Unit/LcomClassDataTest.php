@@ -49,12 +49,11 @@ final class LcomClassDataTest extends TestCase
         $data->addMethod('metadata');
         $data->markStatic('metadata');
         $data->markStatelessConstant('metadata');
-        $data->markNonTrivial();
         $data->addPropertyAccess('work', 'state');
         $data->addMethodCall('work', 'metadata');
 
         $rows = [
-            ['tag' => 'declaration', 'namespace' => 'App', 'name' => 'Service', 'line' => 7, 'position' => 19, 'nonTrivial' => true, 'rowCount' => 8],
+            ['tag' => 'declaration', 'namespace' => 'App', 'name' => 'Service', 'line' => 7, 'position' => 19, 'rowCount' => 8],
             ['tag' => 'method', 'name' => 'work', 'static' => false, 'stateless' => false],
             ['tag' => 'method', 'name' => 'metadata', 'static' => true, 'stateless' => true],
             ['tag' => 'declaredMethod', 'name' => 'work', 'visibility' => 'public', 'abstract' => false],
@@ -69,22 +68,28 @@ final class LcomClassDataTest extends TestCase
     }
 
     #[Test]
-    public function itKeepsDirectAndDeferredCallsApartAcrossTheCollectionWire(): void
+    public function itKeepsDirectAndDeferredFactsApartAcrossTheCollectionWire(): void
     {
         $data = new LcomClassData('App', 'Service', 3, 5);
         $data->addMethod('__construct');
         $data->addMethodCall('__construct', 'handle');
         $data->addDeferredMethodCall('__construct', 'Handle');
+        $data->addPropertyAccess('__construct', 'state');
+        $data->addDeferredPropertyAccess('__construct', 'state');
 
         $rows = CohesionFactWire::lcomRows($data);
         $decoded = CohesionFactWire::lcomFromRows(unserialize(serialize($rows)));
 
         self::assertContains(['tag' => 'call', 'caller' => '__construct', 'callee' => 'handle'], $rows);
         self::assertContains(['tag' => 'deferredCall', 'caller' => '__construct', 'callee' => 'handle'], $rows);
+        self::assertContains(['tag' => 'property', 'method' => '__construct', 'name' => 'state'], $rows);
+        self::assertContains(['tag' => 'deferredProperty', 'method' => '__construct', 'name' => 'state'], $rows);
         self::assertSame($rows, CohesionFactWire::lcomRows($decoded));
         self::assertSame(['__construct' => ['handle' => true]], $decoded->factState()['methodCalls']);
         self::assertSame(['__construct' => ['handle' => true]], $decoded->factState()['deferredMethodCalls']);
         self::assertSame(['handle'], $decoded->callsFrom('__construct'));
+        self::assertSame(['__construct' => ['state' => true]], $decoded->factState()['deferredPropertyAccesses']);
+        self::assertSame(['state'], $decoded->getPropertiesAccessedBy('__construct'));
     }
 
     #[Test]

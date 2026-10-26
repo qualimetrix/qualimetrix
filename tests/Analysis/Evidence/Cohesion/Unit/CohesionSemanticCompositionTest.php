@@ -516,6 +516,75 @@ PHP;
             'trait Checks { public function v(int $c): void ' . $throws . ' } class Candidate { use Checks; public function __construct() { $this->v(1); } ' . $readers . ' }',
             3, 2,
         ];
+        yield 'helper whose closure touches state registers behaviour and stays' => [
+            'class Candidate { private array $listeners = []; private int $count = 0; private array $log = [];
+                public function __construct() { $this->register(); }
+                private function register(): void { $this->listeners[] = function (): void { $this->count++; $this->log[] = "x"; }; }
+                public function total(): int { return $this->count; } public function entries(): array { return $this->log; } }',
+            3, 1,
+        ];
+        yield 'helper binding properties by reference stays' => [
+            'class Candidate { private $callback; private int $seen = 0; private array $stats = [];
+                public function __construct() { $this->wire(); }
+                private function wire(): void { $seen = &$this->seen; $hits = &$this->stats["hits"]; $this->callback = static function () use (&$seen, &$hits): void { $seen++; $hits++; }; }
+                public function seen(): int { return $this->seen; } public function hits(): int { return $this->stats["hits"] ?? 0; } }',
+            3, 1,
+        ];
+        yield 'helper binding a property element by reference stays' => [
+            'class Candidate { private $callback; private array $stats = [];
+                public function __construct() { $this->wire(); }
+                private function wire(): void { $hits = &$this->stats["hits"]; $this->callback = static function () use (&$hits): void { $hits++; }; }
+                public function hits(): int { return $this->stats["hits"] ?? 0; } }',
+            2, 1,
+        ];
+        yield 'unread trait keeps every helper' => [
+            'class Candidate { use \\Vendor\\Unread; private int $a = 0; private int $b = 0;
+                public function __construct() { $this->reset(); } private function reset(): void { $this->a = 0; $this->b = 0; }
+                public function x(): int { return $this->a; } public function y(): int { return $this->b; } }',
+            3, 1,
+        ];
+        foreach ([
+            'dynamic method name' => '$this->$name()',
+            'dynamic method expression' => '$this->{"lo" . "ad"}()',
+            'dynamic self call' => 'self::$name()',
+            'dynamic static call' => 'static::{$name}()',
+            'callable array on this' => 'array_map([$this, $name], [])',
+            'callable array on self class' => 'array_map([self::class, $name], [])',
+            'callable array on static class' => 'array_map([static::class, $name], [])',
+            'call_user_func on this' => '\\call_user_func($this)',
+            'call_user_func_array on this' => 'call_user_func_array($this, [])',
+        ] as $form => $call) {
+            yield 'unresolvable own call keeps every helper: ' . $form => [
+                'class Candidate { private int $a = 0; private int $b = 0;
+                    public function __construct() { $this->load(); } private function load(): void { $this->a = 1; $this->b = 1; }
+                    public function dispatch(string $name): void { ' . $call . '; }
+                    public function x(): int { return $this->a; } public function y(): int { return $this->b; } }',
+                4, 2,
+            ];
+        }
+        yield 'static first-class callable passed by the constructor keeps its handler' => [
+            'class Candidate { ' . $handler . ' public function __construct() { $this->callback = self::handle(...); } }',
+            2, 1,
+        ];
+        yield 'closure of a removed helper keeps a helper the constructor also calls' => [
+            'class Candidate { ' . $handler . ' public function __construct() { $this->handle(1); $this->registerListeners(); }
+                private function registerListeners(): void { $this->listeners[] = fn() => $this->handle(2); }
+                public function dispatch(): int { return \\count($this->listeners); } }',
+            3, 2,
+        ];
+        yield 'public method re-entering the constructor does not keep its helpers' => [
+            'class Candidate { private int $a = 0; public function __construct() { $this->init(); } private function init(): void { $this->a = 1; }
+                public function reset(): void { $this->__construct(); } public function x(): int { return $this->a; } }',
+            2, 2,
+        ];
+        yield 'protected method called only by the constructor stays' => [
+            'class Candidate { private int $q = 0; public function __construct() { $this->setup(); } protected function setup(): void { $this->q = 1; } ' . $readers . ' }',
+            3, 2,
+        ];
+        yield 'closure depth resumes after a method nested in a closure' => [
+            'class Candidate { ' . $handler . ' public function __construct() { $this->callback = function (): void { $o = new class { public function m(): void {} }; $this->handle(); }; } }',
+            2, 1,
+        ];
     }
 
     #[Test]

@@ -59,7 +59,6 @@ final class CohesionCompositionCollectorTest extends TestCase
     /** @return iterable<string, array{int, string, int|string}> */
     public static function invalidBooleanFacts(): iterable
     {
-        yield 'nonTrivial' => [0, 'nonTrivial', 'true'];
         yield 'static' => [1, 'static', 1];
         yield 'stateless' => [1, 'stateless', 'false'];
         yield 'abstract' => [2, 'abstract', 'false'];

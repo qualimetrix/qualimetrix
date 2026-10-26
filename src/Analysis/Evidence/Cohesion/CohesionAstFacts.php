@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Cohesion;
 
 use PhpParser\Node;
+use PhpParser\Node\Expr\Array_;
+use PhpParser\Node\Expr\ClassConstFetch;
+use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Expr\Variable;
@@ -76,21 +79,56 @@ final class CohesionAstFacts
 
     private static function calleeName(Node $node): ?string
     {
-        if ($node instanceof MethodCall
-            && $node->var instanceof Variable
-            && $node->var->name === 'this'
-            && $node->name instanceof Identifier
-        ) {
-            return $node->name->toString();
-        }
-        if ($node instanceof StaticCall
-            && $node->class instanceof Name
-            && \in_array($node->class->toLowerString(), ['self', 'static'], true)
-            && $node->name instanceof Identifier
-        ) {
-            return $node->name->toString();
+        if ($node instanceof MethodCall && self::isThis($node->var) || $node instanceof StaticCall && self::isOwnClass($node->class)) {
+            return $node->name instanceof Identifier ? $node->name->toString() : LcomMethodPopulation::ANY_METHOD;
         }
 
-        return null;
+        return self::isOwnCallable($node) ? LcomMethodPopulation::ANY_METHOD : null;
+    }
+
+    /**
+     * Own-method references whose target the facts cannot name: `[$this, ...]`,
+     * `[self::class, ...]`, `[static::class, ...]` and `call_user_func`/`call_user_func_array`
+     * applied to `$this`.
+     */
+    private static function isOwnCallable(Node $node): bool
+    {
+        return $node instanceof Array_ && self::isOwnCallableArray($node)
+            || $node instanceof FuncCall && self::callsUserFunctionOnThis($node);
+    }
+
+    private static function isOwnCallableArray(Array_ $node): bool
+    {
+        $first = $node->items[0] ?? null;
+
+        return \count($node->items) === 2 && $first !== null && (self::isThis($first->value) || self::isOwnClassName($first->value));
+    }
+
+    private static function callsUserFunctionOnThis(FuncCall $node): bool
+    {
+        $first = $node->getRawArgs()[0] ?? null;
+
+        return $node->name instanceof Name
+            && \in_array(strtolower($node->name->getLast()), ['call_user_func', 'call_user_func_array'], true)
+            && $first instanceof Node\Arg
+            && self::isThis($first->value);
+    }
+
+    private static function isThis(Node $node): bool
+    {
+        return $node instanceof Variable && $node->name === 'this';
+    }
+
+    private static function isOwnClass(Node $node): bool
+    {
+        return $node instanceof Name && \in_array($node->toLowerString(), ['self', 'static'], true);
+    }
+
+    private static function isOwnClassName(Node $node): bool
+    {
+        return $node instanceof ClassConstFetch
+            && self::isOwnClass($node->class)
+            && $node->name instanceof Identifier
+            && $node->name->toLowerString() === 'class';
     }
 }

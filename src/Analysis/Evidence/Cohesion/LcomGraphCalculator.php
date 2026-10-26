@@ -192,4 +192,30 @@ final class LcomGraphCalculator
             }
         }
     }
+
+    /**
+     * Folded names reached from the seeds over the given calls, never entering a blocked name.
+     * A blocked seed is expanded but is not itself reached.
+     *
+     * @param list<string> $seeds
+     * @param array<string, array<string, true>> $calls
+     * @param array<string, true> $blocked
+     *
+     * @return array<string, true>
+     */
+    public static function reachable(array $seeds, array $calls, array $blocked): array
+    {
+        $reached = array_diff_key(array_fill_keys($seeds, true), $blocked);
+        $pending = $seeds;
+        while ($pending !== []) {
+            foreach ($calls[array_pop($pending)] ?? [] as $callee => $_) {
+                if (!isset($reached[$callee]) && !isset($blocked[$callee])) {
+                    $reached[$callee] = true;
+                    $pending[] = $callee;
+                }
+            }
+        }
+
+        return $reached;
+    }
 }

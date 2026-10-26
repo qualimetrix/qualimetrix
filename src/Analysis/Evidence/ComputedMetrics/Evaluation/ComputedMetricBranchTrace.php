@@ -24,8 +24,6 @@ use Throwable;
  * nodes retain sole ownership of branch selection. Callbacks capture run state
  * rather than this per-subject owner, and eager recovery points only forward,
  * so a completed trace does not wait for cyclic garbage collection.
- *
- * @qmx-threshold health.cohesion 40.0 -- The constructor builds the traced copy eagerly through private helpers, which LCOM4 leaves out of the graph with it; the two queries then share no field directly, and the finite boundary keeps a further cohesion loss visible.
  */
 final class ComputedMetricBranchTrace
 {

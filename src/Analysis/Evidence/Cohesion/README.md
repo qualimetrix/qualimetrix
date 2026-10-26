@@ -9,9 +9,10 @@ needed by its named sequential and parallel consumers.
 `ClassVisitorStackTrait` is private scaffolding shared only by the two Cohesion
 visitors. `CohesionAstFacts` captures class and trait member facts and own
 instance calls, keeping deferred calls (from closures, arrow functions and
-first-class callables) apart from direct ones; `CohesionTraitUses` preserves
+first-class callables) apart from direct ones and recording a dynamically named
+own call as a call to any method; `CohesionTraitUses` preserves
 resolved trait adaptations across the worker boundary. `CohesionMemberWire`
-encodes declaration member facts and deferred-call rows, and
+encodes declaration member facts and deferred-access rows, and
 `CohesionFactWire` owns the exact serializable row format, while
 `CohesionFactProjectionTrait` publishes those rows under declaration subjects.
 `CohesionDeclarationData` keeps declared members separate from the LCOM graph;
@@ -126,18 +127,31 @@ available when a trait adaptation exposes an ordinary alias.
 
 Initialization helpers leave with them. Candidates are private instance
 methods that a constructor or destructor body reaches through direct calls,
-transitively. Every other method — public and protected ones (even when the
-constructor calls them), static methods and `exclude_methods` entries — is a
-root of ordinary use, and so are the callees of deferred calls made by
-lifecycle bodies and candidates: a closure, arrow function or first-class
-callable registered during construction runs after it. A candidate that no
-root reaches over call edges, never passing through a lifecycle body, is an
-initialization helper and leaves the graph. Every method records its deferred
-calls the same way, because trait aliases decide lifecycle only after
-composition; for ordinary methods a deferred call is an edge like any other,
-and TCC/LCC reachability reads both kinds alike. Calls on another instance,
-array callables and `parent::` calls are not recorded, so a helper reached only
-through them is taken for an initialization helper. Uncalled stateless
+transitively, and that hand no instance state to later code: a method that
+touches a property inside a closure, arrow function or nested function, or
+binds a property (or an element or member of one) by reference, registers
+behaviour and is never a candidate. Every other method — public and protected
+ones (even when the constructor calls them), static methods and
+`exclude_methods` entries — is a root of ordinary use, and so are the callees
+of deferred calls made by lifecycle bodies and candidates. Every closure, arrow
+function and first-class callable counts as deferred, including one the
+constructor invokes at once (`array_map(fn ($i) => $this->wrap($i), ...)`):
+the approximation keeps such callees in the graph rather than telling
+registration from immediate use. A candidate that no root reaches over call
+edges, never passing through a lifecycle body, is an initialization helper and
+leaves the graph. Every method records its deferred calls and accesses the same
+way, because trait aliases decide lifecycle only after composition; for
+ordinary methods they are edges and accesses like any other, and TCC/LCC
+reachability reads both kinds alike.
+
+No method leaves when the call map may be incomplete: when a used trait was not
+read (`cohesion.unread-trait-count` above zero), or when any method names an own
+call dynamically — `$this->$name()` or `$this->{...}()`, `self::$name()` or
+`static::$name()` (and their `{...}` forms), a two-element array whose first
+element is `$this`, `self::class` or `static::class`, or `call_user_func` /
+`call_user_func_array` with `$this` as the callable. Calls on another instance
+and `parent::` calls are not recorded, so a helper reached only through them is
+taken for an initialization helper. Uncalled stateless
 constant methods are merged into a virtual node to avoid false positives from protocol metadata; a called stateless method
 stays in the graph. TCC and LCC measure direct and transitive property-sharing
 connections among public methods, including reads through own-method calls.
