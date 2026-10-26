@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\EditorSchema\EditorSchemaProjection;
 use Qualimetrix\Tests\Analysis\Configuration\Support\EditorSchemaValidator;
 
 /**
@@ -22,6 +24,7 @@ use Qualimetrix\Tests\Analysis\Configuration\Support\EditorSchemaValidator;
  * Scalars YAML parsers type differently (`1_000`, `0755`, dates) are outside
  * the promise and stay out of the table.
  */
+#[CoversClass(EditorSchemaProjection::class)]
 final class EditorSchemaEngineAgreementTest extends TestCase
 {
     private const bool ACCEPTS = true;
