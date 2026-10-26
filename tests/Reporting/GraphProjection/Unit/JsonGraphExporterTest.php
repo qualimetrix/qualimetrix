@@ -355,6 +355,23 @@ final class JsonGraphExporterTest extends TestCase
         self::assertSame(3, $edge['count']);
     }
 
+    #[Test]
+    public function itPublishesAnAttributeArgumentKindBesideTheSameTargetsCodeKind(): void
+    {
+        $source = DeclarationPath::of(SymbolPath::fromClassFqn('App\\Entity'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
+        $target = new LogicalClassPath(SymbolPath::fromClassFqn('App\\Repository'));
+        $graph = $this->createGraph([
+            Dependency::ofKind($source, $target, DependencyType::AttributeArgument, new Location(RelativePath::fromString('test.php'), 3)),
+            Dependency::ofKind($source, $target, DependencyType::New_, new Location(RelativePath::fromString('test.php'), 7)),
+        ]);
+
+        $edge = $this->decode((new JsonGraphExporter())->export($graph))['edges'][0];
+
+        self::assertSame(['attribute_argument', 'new'], $edge['types']);
+        self::assertSame([], $edge['shape']);
+        self::assertSame(2, $edge['count']);
+    }
+
     /**
      * `nikic/php-parser` accepts a byte like 0xFF inside an identifier, so a
      * symbol name reaching this exporter need not be valid UTF-8. Before this

@@ -585,9 +585,10 @@ Available tests:
  - QmxFindingGate\Tests\ReportRecordsTest::itDoesNotLicenseVariantResidualsWithAMainViewIntent
  - QmxFindingGate\Tests\ReportRecordsTest::itEditsOnlyLicensedValueSpansAndPreservesUnrelatedJsonBytes
  - QmxFindingGate\Tests\ReportRecordsTest::itJoinsBaselineEdgesByExactNamedFieldsAndPreservesTheirPublishedBytes
- - QmxFindingGate\Tests\ReportRecordsTest::itKeepsCurrentAndHistoricalTypePositionEdgesInRecordIdentity"current constant type position"
- - QmxFindingGate\Tests\ReportRecordsTest::itKeepsCurrentAndHistoricalTypePositionEdgesInRecordIdentity"historical intersection type position"
- - QmxFindingGate\Tests\ReportRecordsTest::itKeepsCurrentAndHistoricalTypePositionEdgesInRecordIdentity"historical union type position"
+ - QmxFindingGate\Tests\ReportRecordsTest::itKeepsCurrentAndHistoricalDependencyKindEdgesInRecordIdentity"current attribute argument kind"
+ - QmxFindingGate\Tests\ReportRecordsTest::itKeepsCurrentAndHistoricalDependencyKindEdgesInRecordIdentity"current constant type position"
+ - QmxFindingGate\Tests\ReportRecordsTest::itKeepsCurrentAndHistoricalDependencyKindEdgesInRecordIdentity"historical intersection type position"
+ - QmxFindingGate\Tests\ReportRecordsTest::itKeepsCurrentAndHistoricalDependencyKindEdgesInRecordIdentity"historical union type position"
  - QmxFindingGate\Tests\ReportRecordsTest::itKeepsFieldValueMeasurementsDistinctAcrossMainAndVariantInvocations
  - QmxFindingGate\Tests\ReportRecordsTest::itKeepsMissingIdentityLoudWithoutAbortingPreparation
  - QmxFindingGate\Tests\ReportRecordsTest::itPairsAValidNeighbourWithoutCreditingOrDerivingTheFailedIdentityView
@@ -1136,6 +1137,7 @@ Available tests:
  - Qualimetrix\Governance\HealthVocabulary\HealthDecompositionAgreesWithFormulasTest::itShowsOnlyInputsTheFormulaAtThatLevelReads
  - Qualimetrix\Governance\HealthVocabulary\RankedOffenderLevelsAgreeWithTheBuilderTest::itRanksOffendersForExactlyTheLevelsTheUniverseTrustsWithACanonicalName
  - Qualimetrix\Governance\LayerPolicyVocabulary\DependencyTypeAliasCensusTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"attribute"
+ - Qualimetrix\Governance\LayerPolicyVocabulary\DependencyTypeAliasCensusTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"attribute_argument"
  - Qualimetrix\Governance\LayerPolicyVocabulary\DependencyTypeAliasCensusTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"catch"
  - Qualimetrix\Governance\LayerPolicyVocabulary\DependencyTypeAliasCensusTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"class_const_fetch"
  - Qualimetrix\Governance\LayerPolicyVocabulary\DependencyTypeAliasCensusTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"constant_type"
@@ -4183,6 +4185,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\WeightedHealthFormulaTest::itReadsNoWeightedSumOutOfAFormulaThatIsNotOne
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\WeightedHealthFormulaTest::itReadsTheCompleteOrderedMeanOnTheNativeAst
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\WeightedHealthFormulaTest::itRefusesPartialDuplicateOrInvalidCanonicalTerms
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\AttributeArgumentCouplingIntegrationTest::itMeasuresAnAttributeArgumentReferenceAsTheSameReferenceInCode
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceCboScopeIntegrationTest::itJudgesANamespaceWithASubNamespaceOnItsOwnClasses
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceCboScopeIntegrationTest::itJudgesTheSameNamespaceOnFewerCouplingsWhenADependentIsLeftOutOfTheRun
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceCboScopeIntegrationTest::itReachesTheSameVerdictWhenTheSubNamespaceIsLeftOutOfTheRun
@@ -4716,6 +4719,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::itTreatsAGlobalNamespaceClassAsAValidMember
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::itTreatsDependenciesBetweenSiblingChildrenAsInternalToTheParent
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itConstructorWithAllProperties
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itIsStrongCoupling"attribute argument is not strong"
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itIsStrongCoupling"attribute is not strong"
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itIsStrongCoupling"extends is strong"
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itIsStrongCoupling"implements is strong"
@@ -4725,6 +4729,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itIsStrongCoupling"type hint is not strong"
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itRefusesAWriteToAConstructedDependency
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itRewritesLogicalEndpointsWithoutChangingTheExactSource
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itToString"attribute argument dependency"
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itToString"dependency without line"
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itToString"extends dependency"
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itToString"implements dependency"
@@ -4758,6 +4763,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itIgnoresBuiltinScalarAndArrayTypes
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itIgnoresClosureSignatureOutsideAnyEnclosingClass
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itIgnoresSelfStaticAndParentReferences
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itKeepsBothKindsWhenATargetIsReferencedInAnAttributeArgumentAndInCode
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itKeepsImportsScopedToTheirOwnNamespaceBlock
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itKeepsTypePositionSeparateFromUnionAndPromotedPropertyShape
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itLeavesUsageDependenciesFromInsideAnAnonymousClassBodyUnflagged
@@ -4776,11 +4782,27 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itPublishesNamedClassLikeFactsWithoutSyntheticStringableEdges
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsACatchDependency
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAClassConstFetchDependency
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAClosureInAnAttributeArgumentAsAttributeArgumentsExceptForAttributeNames
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsADependencyForEachImplementedInterface
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsADependencyForEachIntersectionTypeMember
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsADependencyForEachUnionTypeMember
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsANewInstantiationDependency
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAPropertyTypeDependency
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"anonymous class"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"arrow function"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"class"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"closure"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"constant"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"enum case"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"enum"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"interface"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"method"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"nested named class"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"parameter"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"promoted parameter"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"property hook"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"property"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"trait"
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAStaticCallDependency
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAStaticPropertyFetchDependency
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsATraitUseDependency
@@ -4792,8 +4814,15 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAnImplementsDependencyForAnEnum
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAnInstanceofDependency
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsConstantAndEnumCaseTypesAndAttributeSites
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsEveryExpressionShapeInAnAttributeArgumentAsAnAttributeArgument"array element"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsEveryExpressionShapeInAnAttributeArgumentAsAnAttributeArgument"class constant"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsEveryExpressionShapeInAnAttributeArgumentAsAnAttributeArgument"class name"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsEveryExpressionShapeInAnAttributeArgumentAsAnAttributeArgument"enum case"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsEveryExpressionShapeInAnAttributeArgumentAsAnAttributeArgument"instantiation"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsEveryExpressionShapeInAnAttributeArgumentAsAnAttributeArgument"named argument"
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsNamedClassSelfExtendsWithoutOrdinarySelfReferences
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsNestedFunctionSignatureAndItsAttributeSites
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsNoEdgeForAnAttributeArgumentOfATopLevelFunction
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsPropertyHookAndHookParameterFacts
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsTheInterfacesPhpGivesAClassLikeUnwritten"backed enum"
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsTheInterfacesPhpGivesAClassLikeUnwritten"class declaring __toString"
@@ -4804,6 +4833,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsTheInterfacesPhpGivesAClassLikeUnwritten"trait declaring __toString"
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itResetsDependenciesAndImportsWhenReusedForAnotherFile
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itReturnsDependencyModelOwnedLocationsForExtractedDependencies
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itStartsANamedClassDeclaredInsideAnAttributeArgumentOutsideAnyAttribute
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itStillDetectsInstantiationInsideClosureBody
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DuplicateDeclarationEdgeSourceTest::itNumbersTheSecondDeclarationOfOneClassIdentityInItsEdges
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\Handler\TypeDependencyHelperTest::itDoesNotProduceADependencyForSelfInAParameterTypeHint
@@ -13415,6 +13445,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itOutputsPrettyPrintedJson
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itPreservesAllDependencyTypes
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itPreservesTypeAndShapeAssociationsOnAggregatedEdges
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itPublishesAnAttributeArgumentKindBesideTheSameTargetsCodeKind
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itRepairsInvalidUtf8InAClassNameInsteadOfFailing
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itSortsEdgesByFromThenTo
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itCombinesIncludesWithOrAndLetsARegexExclusionWin

@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Evidence\DependencyModel\Extraction;
 
 use LogicException;
 use PhpParser\Node;
+use PhpParser\Node\Attribute;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\Namespace_;
@@ -31,6 +32,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * - TypeHint, PropertyType and ConstantType, each with its type shape
  * - Catch, Instanceof
  * - Attribute, with the declaration site and nesting preserved
+ * - AttributeArgument, for every other edge recorded inside an attribute's arguments
  *
  * Named class-like declarations travel beside edges so declarations without
  * dependencies retain their kind and direct-body Stringable facts.
@@ -58,13 +60,23 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
      */
     private int $anonymousClassDepth = 0;
 
+    /**
+     * Counts the attributes whose arguments the traversal is currently inside
+     * for the current named declaration. A counter, not a flag: a closure in
+     * an argument can carry attributes of its own, and leaving the inner one
+     * must not end the outer span. A named class declared inside an argument
+     * starts its own count — its edges are not the outer declaration's
+     * attribute arguments.
+     */
+    private int $attributeArgumentDepth = 0;
+
     /** @var list<Dependency> */
     private array $dependencies = [];
 
     /** @var list<ClassLikeDeclaration> */
     private array $classLikeDeclarations = [];
 
-    /** @var list<array{?string, ?DependencyContext}> */
+    /** @var list<array{?string, ?DependencyContext, int}> */
     private array $classStack = [];
 
     private readonly DependencyHandlerTable $handlers;
@@ -110,6 +122,7 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
         $this->currentClass = null;
         $this->currentContext = null;
         $this->anonymousClassDepth = 0;
+        $this->attributeArgumentDepth = 0;
     }
 
     /**
@@ -132,6 +145,12 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
 
     public function enterNode(Node $node): ?int
     {
+        if ($node instanceof Attribute) {
+            // The attribute's name edge is recorded by its declaration's
+            // handler before the traversal descends; only arguments follow.
+            ++$this->attributeArgumentDepth;
+        }
+
         if ($this->consumeNamespace($node)) {
             return null;
         }
@@ -151,6 +170,12 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
 
     public function leaveNode(Node $node): ?int
     {
+        if ($node instanceof Attribute) {
+            --$this->attributeArgumentDepth;
+
+            return null;
+        }
+
         if (!$node instanceof ClassLike) {
             return null;
         }
@@ -174,7 +199,7 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
                 $this->classLikeDeclarations[] = $declaration;
             }
         }
-        [$this->currentClass, $this->currentContext] = array_pop($this->classStack) ?? [null, null];
+        [$this->currentClass, $this->currentContext, $this->attributeArgumentDepth] = array_pop($this->classStack) ?? [null, null, 0];
 
         return null;
     }
@@ -197,7 +222,8 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
         }
 
         $nestedNamedClass = $this->currentContext !== null;
-        $this->classStack[] = [$this->currentClass, $this->currentContext];
+        $this->classStack[] = [$this->currentClass, $this->currentContext, $this->attributeArgumentDepth];
+        $this->attributeArgumentDepth = 0;
         $className = $node->name->toString();
         $this->currentClass = $this->currentNamespace !== null
             ? $this->currentNamespace . '\\' . $className
@@ -255,7 +281,11 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
         if ($this->anonymousClassDepth > 0) {
             $this->currentContext->startDescribingNestedAnonymousClass();
         }
+        if ($this->attributeArgumentDepth > 0) {
+            $this->currentContext->startRecordingAttributeArguments();
+        }
         $this->handlers->dispatch($node, $this->currentContext);
         $this->currentContext->stopDescribingNestedAnonymousClass();
+        $this->currentContext->stopRecordingAttributeArguments();
     }
 }

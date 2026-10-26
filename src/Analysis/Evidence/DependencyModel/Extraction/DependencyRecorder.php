@@ -24,6 +24,7 @@ final class DependencyRecorder
 
     private ?ClassLikeDeclaration $classLikeDeclaration = null;
     private bool $describesNestedAnonymousClass = false;
+    private bool $recordsAttributeArguments = false;
 
     public function __construct(
         private readonly RelativePath $file,
@@ -32,6 +33,7 @@ final class DependencyRecorder
 
     public function addDependency(string $target, DependencyType $type, int $line): void
     {
+        $type = $this->recordsAttributeArguments ? DependencyType::AttributeArgument : $type;
         $this->add($target, static fn(DeclarationPath $source, LogicalClassPath $logical, DependencyLocation $location): Dependency => Dependency::ofKind(
             $source,
             $logical,
@@ -40,8 +42,18 @@ final class DependencyRecorder
         ), $line);
     }
 
+    /**
+     * Inside attribute arguments the edge no longer names a type position, so
+     * the position's syntax shape is not carried onto it.
+     */
     public function addTypeDependency(string $target, DependencyType $position, TypeShape $shape, int $line): void
     {
+        if ($this->recordsAttributeArguments) {
+            $this->addDependency($target, $position, $line);
+
+            return;
+        }
+
         $this->add($target, static fn(DeclarationPath $source, LogicalClassPath $logical, DependencyLocation $location): Dependency => Dependency::ofType(
             $source,
             $logical,
@@ -101,6 +113,21 @@ final class DependencyRecorder
     public function stopDescribingNestedAnonymousClass(): void
     {
         $this->describesNestedAnonymousClass = false;
+    }
+
+    /**
+     * Ordinary and type edges recorded until {@see stopRecordingAttributeArguments()}
+     * become {@see DependencyType::AttributeArgument}; the attribute-name and
+     * class-like declaration edges keep their kind.
+     */
+    public function startRecordingAttributeArguments(): void
+    {
+        $this->recordsAttributeArguments = true;
+    }
+
+    public function stopRecordingAttributeArguments(): void
+    {
+        $this->recordsAttributeArguments = false;
     }
 
     /** @return list<Dependency> */

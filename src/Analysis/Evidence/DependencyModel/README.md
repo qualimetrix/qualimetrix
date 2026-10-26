@@ -92,6 +92,18 @@ position (`type_hint`, `property_type`, or `constant_type`) and carry a separate
 edges carry an `AttributeSite`; member, promoted-parameter, hook, nested-callable
 and nested-class sites remain distinguishable without inventing relation kinds.
 
+A reference recorded while the traversal is inside an attribute's arguments —
+`Foo::class`, a constant or enum case, `new Foo()`, or a closure's signature and
+body there — has the kind `attribute_argument`, not the kind the same expression
+has in code. The attribute's own name keeps `attribute`, including an attribute
+on a closure inside an argument, and an anonymous class's `extends`,
+`implements` and `trait_use` keep theirs. The edge carries no `AttributeSite`
+and no `TypeShape`. `DependencyVisitor` counts the attributes it is inside, per
+named declaration, and brackets each handler dispatch with that state, so no
+handler knows the kind. Coupling counts distinct targets, so the kind moves no
+coupling value; it does move layer `relations:` matching, layer-violation
+identity and graph-export `types`.
+
 `ClassCouplings` carries each class's outgoing occurrences, incoming occurrences,
 Ce and Ca in one canonical-key row. The graph builds that row from the supplied
 views without changing occurrence order, duplicates or precomputed degrees.

@@ -1217,8 +1217,8 @@ final class ReportRecordsTest extends TestCase
     }
 
     #[Test]
-    #[DataProvider('currentAndHistoricalTypePositionEdges')]
-    public function itKeepsCurrentAndHistoricalTypePositionEdgesInRecordIdentity(string $type): void
+    #[DataProvider('currentAndHistoricalDependencyKindEdges')]
+    public function itKeepsCurrentAndHistoricalDependencyKindEdgesInRecordIdentity(string $type): void
     {
         $record = array_replace(self::finding(), [
             'edge' => ['target' => 'class:App\\B', 'type' => $type],
@@ -1228,9 +1228,10 @@ final class ReportRecordsTest extends TestCase
     }
 
     /** @return iterable<string, array{string}> */
-    public static function currentAndHistoricalTypePositionEdges(): iterable
+    public static function currentAndHistoricalDependencyKindEdges(): iterable
     {
         yield 'current constant type position' => ['constant_type'];
+        yield 'current attribute argument kind' => ['attribute_argument'];
         yield 'historical union type position' => ['union_type'];
         yield 'historical intersection type position' => ['intersection_type'];
     }

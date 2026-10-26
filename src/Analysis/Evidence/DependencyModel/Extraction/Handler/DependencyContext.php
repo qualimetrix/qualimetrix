@@ -79,6 +79,20 @@ final class DependencyContext
         $this->recorder->stopDescribingNestedAnonymousClass();
     }
 
+    /**
+     * Called by the visitor around a dispatch it makes inside an attribute's
+     * arguments. Pair with {@see stopRecordingAttributeArguments()}.
+     */
+    public function startRecordingAttributeArguments(): void
+    {
+        $this->recorder->startRecordingAttributeArguments();
+    }
+
+    public function stopRecordingAttributeArguments(): void
+    {
+        $this->recorder->stopRecordingAttributeArguments();
+    }
+
     public function recorder(): DependencyRecorder
     {
         return $this->recorder;
