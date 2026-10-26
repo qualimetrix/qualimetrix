@@ -1,9 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -1961,3 +1961,3 @@
--        "violations": 2,
--        "errors": 0,
--        "warnings": 2,
-+        "violations": 1,
-+        "errors": 0,
-+        "warnings": 1,
