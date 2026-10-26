@@ -30,9 +30,8 @@ use LogicException;
  * `severity`, `architecture.unassigned-class`'s `mode`, and
  * `annotation.directive`'s `unused-directive-severity`. `coupling.cbo`'s
  * `scope` compares strictly through a plain `in_array()` and stays declared
- * with {@see self::of()}. `fail_on` also compares strictly, through
- * `Severity::tryFrom()`, but declares no word set here at all — its accepted
- * values are read off the enum, not written a second time in this class.
+ * with {@see self::of()}. `fail_on` is not a rule option: Console declares its
+ * words with the configuration engine directly, read off the enum.
  */
 final readonly class RuleOptionWordSet
 {

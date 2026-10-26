@@ -201,8 +201,11 @@ Console/
 ```
 
 `ExitPolicySection` and `MemoryLimitSection` declare the Console-owned
-`fail_on` and `memory_limit` roots. Their context-free forms are judged in every
-writing layer through the same validators the resolved runtime values use.
+`fail_on` and `memory_limit` roots. `fail_on` is a declared word set with
+hints for the retired `false` and the report-only `info`, so the engine refuses
+any other value in every writing layer and `ExitPolicy` only converts the
+accepted word. `memory_limit`'s context-free form is judged in every writing
+layer through the same validator the resolved runtime value uses.
 `ExitPolicy::CONFIGURATION_KEY` and `RuntimeLimits::MEMORY_LIMIT_KEY` name
 those owner roots; `ConfigSchema` retains the flat ingress mappings.
 Whether PHP can apply a valid memory limit depends on the running process and

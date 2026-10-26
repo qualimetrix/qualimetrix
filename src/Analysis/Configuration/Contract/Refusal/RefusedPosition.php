@@ -18,9 +18,10 @@ final readonly class RefusedPosition
     /**
      * @param list<string> $segments path of the key, top to bottom
      * @param string $written what was rejected, as the throw site holds it: the
-     *                        last segment as written for anything the document
-     *                        engine refuses, the required key's name when that
-     *                        key is missing
+     *                        value for a value outside a closed word set, the
+     *                        required key's name when that key is missing, and
+     *                        the last segment as written for anything else the
+     *                        document engine refuses
      * @param list<string> $accepted spellings accepted at this position, in the
      *                               order and spelling the throw site gave them;
      *                               empty for {@see self::open()}
@@ -41,7 +42,7 @@ final readonly class RefusedPosition
      * is accepted here; that is still the author's input to fix.
      *
      * @param list<string> $segments path of the key, top to bottom
-     * @param string $written the last segment as the throw site received it
+     * @param string $written the refused value or the last segment, as the throw site received it
      * @param list<string> $accepted
      */
     public static function closed(array $segments, string $written, array $accepted): self

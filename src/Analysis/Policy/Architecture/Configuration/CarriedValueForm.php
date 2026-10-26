@@ -26,12 +26,6 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
 final class CarriedValueForm
 {
     /** @param list<string> $path */
-    public static function ofCoverageMode(ResolvedValueInterface $value, array $path): void
-    {
-        (new CoverageValidator())->validate(SectionSpot::node($path, $value));
-    }
-
-    /** @param list<string> $path */
     public static function ofExpansionCeiling(ResolvedValueInterface $value, array $path): void
     {
         self::maxExpandedLayers(SectionSpot::node($path, $value));

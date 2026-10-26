@@ -13,7 +13,8 @@ use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedScalar;
 /**
  * The form of one written value against the node declared for it: a value of
  * the wrong shape, or a scalar of none of the declared forms, is refused with
- * the node's hint. `~` is not a form: it is the value left unwritten.
+ * the node's advice for what was written. `~` is not a form: it is the value
+ * left unwritten.
  */
 final class WrittenForm
 {
@@ -35,7 +36,7 @@ final class WrittenForm
 
         foreach ($forms as $form) {
             if ($form->accepts($node->scalar)) {
-                ScalarConstraints::judge($schema->scalar, $node->scalar, $at);
+                ScalarConstraints::judge($schema, $node->scalar, $at);
 
                 return new ResolvedScalar($node->scalar, $at->provenance($node));
             }
@@ -53,7 +54,7 @@ final class WrittenForm
             throw $at->refusal(self::hinted($refusal, $schema, $node));
         }
 
-        ScalarConstraints::judge($schema->scalar, $node->scalar, $at);
+        ScalarConstraints::judge($schema, $node->scalar, $at);
 
         return new ResolvedScalar($node->scalar, $at->provenance($node));
     }
@@ -96,15 +97,9 @@ final class WrittenForm
 
     private static function hinted(string $refusal, NodeSchema $schema, AuthoredNode $node): string
     {
-        $hint = $schema->wording->hint;
+        $advice = $schema->wording->adviceFor($node->shape === AuthoredShape::Scalar ? $node->scalar : null);
 
-        if ($schema->wording->hintOnlyFor !== null
-            && ($node->shape !== AuthoredShape::Scalar || !\in_array($node->scalar, $schema->wording->hintOnlyFor, true))
-        ) {
-            return $refusal;
-        }
-
-        return $hint === null ? $refusal : $refusal . ' ' . $hint;
+        return $advice === null ? $refusal : $refusal . ' ' . $advice;
     }
 
     private static function shapeName(AuthoredNode $node): string

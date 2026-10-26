@@ -160,6 +160,12 @@ final class EditorSchemaEngineAgreementTest extends TestCase
         yield 'a reporting level' => ['words, sensitive, list item', "computed_metrics:\n  computed.code-density: {formula: '1', levels: [class, project]}", self::ACCEPTS, self::SCHEMA_ACCEPTS];
         yield 'a reporting level in another case' => ['words, sensitive, list item', "computed_metrics:\n  computed.code-density: {formula: '1', levels: [Class]}", self::REFUSES, '/computed_metrics/computed.code-density/levels/0'];
         yield 'a level a computed metric cannot report at' => ['words, sensitive, list item', "computed_metrics:\n  computed.code-density: {formula: '1', levels: [class, callable]}", self::REFUSES, '/computed_metrics/computed.code-density/levels/1'];
+        yield 'a registered output format' => ['words, sensitive', 'format: sarif', self::ACCEPTS, self::SCHEMA_ACCEPTS];
+        yield 'a retired output format' => ['words, sensitive', 'format: text-verbose', self::REFUSES, '/format'];
+        yield 'a fail_on threshold' => ['words, sensitive', 'fail_on: none', self::ACCEPTS, self::SCHEMA_ACCEPTS];
+        yield 'a report-only severity as fail_on' => ['words, sensitive', 'fail_on: info', self::REFUSES, '/fail_on'];
+        yield 'a coverage mode in another case' => ['words, folding', "architecture:\n  layers:\n    - {name: domain, patterns: ['App\\Domain\\**']}\n  coverage-gap: WARN", self::ACCEPTS, self::SCHEMA_ACCEPTS];
+        yield 'a coverage mode outside the vocabulary' => ['words, folding', "architecture:\n  coverage-gap: warning", self::REFUSES, '/architecture/coverage-gap'];
 
         yield 'a form feed is not blank' => ['NonBlank', "disabled_rules: [\"\\f\"]", self::ACCEPTS, self::SCHEMA_ACCEPTS];
         yield 'a no-break space is not blank' => ['NonBlank', "disabled_rules: [\"\u{00A0}\"]", self::ACCEPTS, self::SCHEMA_ACCEPTS];

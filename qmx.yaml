@@ -60,6 +60,7 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\IntegerJudgement'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\KeyDictionary'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\LiteralHint'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeCollectionFacts'

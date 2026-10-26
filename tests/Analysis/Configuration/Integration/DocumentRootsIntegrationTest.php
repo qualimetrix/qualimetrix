@@ -236,7 +236,7 @@ fail_on: error
     {
         $refusal = $this->refusal('', ['fail_on' => 5], ['fail_on' => '--fail-on']);
 
-        self::assertSame('Option --fail-on must be string, got int.', $refusal->summary());
+        self::assertSame('Option --fail-on must be string (one of none, warning, error), got int. Use "none" to never fail on findings.', $refusal->summary());
         self::assertNull($refusal->position());
         self::assertCount(1, $refusal->sources());
         self::assertSame('--fail-on', $refusal->sources()[0]->locator());

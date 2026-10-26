@@ -1033,7 +1033,7 @@ final class OutputFormatSchemaConsistencyTest extends TestCase
         );
 
         $output = OutputFormatObservation::refusal($scenario, 'nosuchformat');
-        $found = preg_match('/is not one of:(?<formats>[^.]*)\./', $output, $matches);
+        $found = preg_match('/must be one of (?<formats>[^"]*), got "nosuchformat"\./', $output, $matches);
 
         self::assertSame(1, $found, \sprintf('The product no longer enumerates formats when refusing one: %s', $output));
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -16,9 +17,11 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Console\RuntimePolicy\ExitPolicy;
+use Qualimetrix\Infrastructure\Console\RuntimePolicy\ExitPolicySection;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 #[CoversClass(ExitPolicy::class)]
+#[CoversClass(ExitPolicySection::class)]
 final class ExitPolicyTest extends TestCase
 {
     /**
@@ -59,60 +62,54 @@ final class ExitPolicyTest extends TestCase
     }
 
     #[Test]
-    #[DataProvider('provideProgrammaticValues')]
-    public function itAcceptsProgrammaticResolvedValues(mixed $configured, Severity|false $expected): void
+    #[DataProvider('provideValuesTheEngineRefuses')]
+    public function itTrustsTheEngineToHaveRefusedEveryOtherValue(mixed $configured): void
     {
-        self::assertSame($expected, ExitPolicy::fromResolvedValue(self::resolvedValue($configured))->failOn);
+        $value = self::createStub(ResolvedValueInterface::class);
+        $value->method('plain')->willReturn($configured);
+
+        $this->expectException(LogicException::class);
+
+        ExitPolicy::fromResolvedValue($value);
     }
 
-    /** @return iterable<string, array{mixed, Severity|false}> */
-    public static function provideProgrammaticValues(): iterable
+    /** @return iterable<string, array{mixed}> */
+    public static function provideValuesTheEngineRefuses(): iterable
     {
-        yield 'warning severity' => [Severity::Warning, Severity::Warning];
+        yield 'a severity instance' => [Severity::Warning];
+        yield 'info' => ['info'];
+        yield 'an unknown word' => ['warnin'];
+        yield 'false' => [false];
     }
 
     #[Test]
-    #[DataProvider('provideInvalidValues')]
-    public function itPreservesTheAuthorWhenTheFactoryRefusesAnInvalidValue(mixed $configured, string $rejected): void
+    public function itNamesTheAllowedValuesAtAClosedPosition(): void
     {
         try {
-            ExitPolicy::fromResolvedValue(self::resolvedValue($configured));
-            self::fail('Invalid fail_on values must be refused.');
+            self::document('warnin');
+            self::fail('An unknown threshold was accepted.');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertSame('qmx.yaml', $refusal->sources()[0]->locator());
-            self::assertStringContainsString($rejected, $refusal->getMessage());
+            self::assertStringContainsString('must be one of none, warning, error, got "warnin".', $refusal->summary());
+            $position = $refusal->position();
+            self::assertNotNull($position);
+            self::assertSame('warnin', $position->written);
+            self::assertSame(ExitPolicy::acceptedWords(), $position->accepted);
+            self::assertTrue($position->closed);
         }
     }
 
-    /** @return iterable<string, array{mixed, string}> */
-    public static function provideInvalidValues(): iterable
-    {
-        yield 'scalar false' => [false, 'Invalid value'];
-        yield 'scalar true' => [true, '"1"'];
-        yield 'non-scalar array' => [[], 'array'];
-    }
-
     #[Test]
-    public function itNamesTheAllowedValuesWhenRejectingAnUnknownWord(): void
-    {
-        $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage('Allowed values: none, warning, error');
-
-        ExitPolicy::fromResolvedValue(self::document('warnin')->resolved()->get(ConfigSchema::FAIL_ON));
-    }
-
-    #[Test]
-    #[TestWith(['false'])]
     #[TestWith(['warnin'])]
-    public function itExplainsUnknownThresholdsWithoutInfoAdvice(string $configured): void
+    #[TestWith(['Info'])]
+    #[TestWith([true])]
+    public function itExplainsUnknownThresholdsWithoutInfoAdvice(string|bool $configured): void
     {
         try {
-            ExitPolicy::fromResolvedValue(self::resolvedValue($configured));
+            self::document($configured);
             self::fail('An unknown threshold was accepted.');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertStringNotContainsString('info', $refusal->summary());
             self::assertStringNotContainsString('report-only', $refusal->summary());
-            self::assertStringContainsString('Use "none" to never fail on findings.', $refusal->summary());
+            self::assertStringEndsWith('Use "none" to never fail on findings.', $refusal->summary());
         }
     }
 
@@ -125,7 +122,7 @@ final class ExitPolicyTest extends TestCase
         } catch (ConfigurationRefusal $refusal) {
             self::assertSame('qmx.yaml', $refusal->sources()[0]->locator());
             self::assertSame(['fail_on'], $refusal->position()?->segments);
-            self::assertStringContainsString('must be string, got bool', $refusal->summary());
+            self::assertStringContainsString('must be string (one of none, warning, error), got bool', $refusal->summary());
             self::assertStringContainsString('use "none"', $refusal->summary());
         }
     }
@@ -161,7 +158,7 @@ final class ExitPolicyTest extends TestCase
         } catch (ConfigurationRefusal $refusal) {
             self::assertSame('qmx.yaml', $refusal->sources()[0]->locator());
             self::assertSame(['fail_on'], $refusal->position()?->segments);
-            self::assertStringContainsString('Allowed values: none, warning, error', $refusal->summary());
+            self::assertStringContainsString('must be one of none, warning, error', $refusal->summary());
         }
     }
 
@@ -170,16 +167,5 @@ final class ExitPolicyTest extends TestCase
         return LayeredDocument::of([
             ['source' => 'qmx.yaml', 'values' => [ConfigSchema::FAIL_ON => $value]],
         ], AbsolutePath::fromString('/project'));
-    }
-
-    private static function resolvedValue(mixed $plain): ResolvedValueInterface
-    {
-        $value = self::createStub(ResolvedValueInterface::class);
-        $value->method('plain')->willReturn($plain);
-        $value->method('refuse')->willReturnCallback(
-            static fn(string $summary): never => throw ConfigurationRefusal::aboutConfigFileDocument('qmx.yaml', $summary),
-        );
-
-        return $value;
     }
 }

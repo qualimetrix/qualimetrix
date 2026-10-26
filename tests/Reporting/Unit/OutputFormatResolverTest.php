@@ -74,8 +74,12 @@ final class OutputFormatResolverTest extends TestCase
         } catch (ConfigurationRefusal $refusal) {
             self::assertSame('qmx.yaml', $refusal->sources()[0]->locator());
             self::assertSame(ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
-            self::assertSame(['format'], $refusal->position()?->segments);
-            self::assertStringContainsString('Output format "nope" is not one of', $refusal->summary());
+            $position = $refusal->position();
+            self::assertNotNull($position);
+            self::assertSame(['format'], $position->segments);
+            self::assertStringContainsString('must be one of json, summary, text, got "nope".', $refusal->summary());
+            self::assertSame('nope', $position->written);
+            self::assertSame(['json', 'summary', 'text'], $position->accepted);
         }
     }
 
@@ -101,7 +105,7 @@ final class OutputFormatResolverTest extends TestCase
     }
 
     #[Test]
-    public function itValidatesTheWinningFormatAgainstTheRegistryWhenTheSectionHasNoDictionaryJudge(): void
+    public function itTrustsTheSectionsWordsToHaveRefusedAnUnregisteredFormat(): void
     {
         $vocabulary = new OutputFormatVocabulary($this->formatters());
         $resolver = new OutputFormatResolver($vocabulary);
@@ -114,18 +118,10 @@ final class OutputFormatResolverTest extends TestCase
 
         try {
             $resolver->resolve(LayeredDocument::of([
-                ['source' => 'preset', 'values' => ['format' => 'json']],
                 ['source' => 'qmx.yaml', 'values' => ['format' => 'nope']],
             ], AbsolutePath::fromString('/project'), $plainStringSection));
-            self::fail('An unknown winning output format was accepted without a per-layer dictionary judge.');
-        } catch (ConfigurationRefusal $refusal) {
-            self::assertSame([ConfigurationSource::ConfigFile], array_map(
-                static fn(ConfigurationOrigin $origin): ConfigurationSource => $origin->source(),
-                $refusal->sources(),
-            ));
-            self::assertSame('qmx.yaml', $refusal->sources()[0]->locator());
-            self::assertSame(['format'], $refusal->position()?->segments);
-            self::assertSame('Output format "nope" is not one of: json, summary, text.', $refusal->summary());
+            self::fail('An unregistered output format was resolved.');
+        } catch (LogicException) {
         }
 
         $document = LayeredDocument::of([
