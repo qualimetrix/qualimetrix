@@ -36,7 +36,10 @@ class FQNs, method names, references, attributes, ancestors.
    A value is consulted against the removed code's namespaces whenever one exists,
    even with no withholding door open: an exclude entry outside the measured
    universe (autoload-dev `tests/` on `check src tests`) opens no door yet may
-   declare a namespace the value names.
+   declare a namespace the value names. A literal value the analysed namespace
+   tree already binds is judged and bound beside removed code (removed code can
+   only add namespaces), in the global and the rule-ledger channel alike; it is
+   never reported as unjudged. With an analysis failure it stays unjudged.
 2. **`regex` selectors are unchanged.** Case semantics of a regex over a removed
    namespace are ambiguous, so a stale regex stays withheld under removal, and
    removal outside the universe does not withhold it.
@@ -50,7 +53,14 @@ class FQNs, method names, references, attributes, ancestors.
    (`none`, `known`, `unknown`) in the scope facts into `ProjectScopeMeasurement`.
    Anything unreadable, or any spent limit, makes it `unknown`, which withholds
    every literal as before. The selector ledger and `ExcludeSelectorVerdict` carry
-   no namespaces and are unchanged.
+   no namespaces and are unchanged. A judgement built without removed-code
+   namespaces treats them as unknown; a caller that knows nothing was removed
+   passes `none()`. The survey is funded only when the configuration holds a literal
+   namespace suppression value (global `suppress_namespaces`, or any rule option
+   other than `suppress_paths`). Otherwise it stays known-empty until a PHP file is
+   removed and then becomes unknown, so discovery keeps its metadata-only cost.
+   A `--suppress-namespace` CLI value is not seen by that test, so under removal it
+   stays withheld (fail-closed).
 5. **The scan never builds an AST.** A file up to 64 KiB is tokenized: block and
    semicolon namespaces, several per file, the global block, `namespace\foo()`
    not counted, comments and strings ignored. A larger file is read as text in
@@ -75,7 +85,7 @@ class FQNs, method names, references, attributes, ancestors.
    reads only a 2,048-byte header. Removed run entries outside the measured universe
    are surveyed for namespaces only; their selector verdicts do not change.
 7. **Three limits bound the cost.** One survey per walk allows 2,000 file reads,
-   32 MiB of bytes read and 20,000 entries inspected inside removed directories,
+   8 MiB of bytes read and 20,000 entries inspected inside removed directories,
    shared by excluded and generated files. When any is spent the namespaces are
    unknown and the descent returns to the old cost profile (stop at the first PHP
    file; no reads outside the universe). A large excluded data or fixture tree
@@ -92,12 +102,19 @@ class FQNs, method names, references, attributes, ancestors.
    being judged: literal values that would have been judged had the removed code
    declared nothing. Regex values, values from an unanalysed PSR-4 root, runs
    without production autoload or a namespace tree, runs with analysis failures and
-   exclusions of unlistable directories are never counted. `check` writes a plain
-   stderr warning at report publication naming every exclude selector that removed
-   an entry (plus generated-file filtering, or "an exclude entry" when none is
-   recorded), the count of unjudged values and their channels; `-q` silences it.
-   `directives` and `baseline:*` print none. The `exclude` reason stays in
-   `projectScope.reasons`.
+   exclusions of unlistable directories are never counted; neither is a literal
+   the namespace tree already binds. `check` writes a plain stderr warning (prefix
+   `Warning: `, added at publication; `-q` silences it) that names every exclude
+   selector that removed an entry (declarations cannot be attributed per selector),
+   the generated-file policy when it removed files, or "an exclude entry" when
+   nothing is recorded, the count of unjudged values and their channels. The wording
+   follows the cause: when the removed namespaces are known it says the code "may
+   declare" them and advises narrowing the exclusion; when they are unknown it says
+   the code "could not be read in full (too many files, an unreadable file or a
+   link)" and advises excluding fewer files and no unreadable file or link; when
+   only generated files removed code it advises `--include-generated`, and with both
+   causes it advises either. `directives` and `baseline:*` print none. The `exclude`
+   reason stays in `projectScope.reasons`.
 
 Rejected:
 
@@ -128,18 +145,24 @@ Rejected:
 - The text path's superset can withhold a value that a comment or string
   containing `namespace Foo` only appeared to declare.
 
-Measured cost, median of 7 runs of `ProjectFiles::discover` on synthetic
-projects (read limit only, before the byte and entry limits):
+Measured cost. Median of 7 runs of `ProjectFiles::discover` on synthetic
+projects, with the read limit only (before the byte and entry limits and before the
+survey was made conditional):
 
 | Project                                                         | Before     | After      |
 | --------------------------------------------------------------- | ---------- | ---------- |
 | 6,500 files, 3,000 excluded and 3,000 `@generated` (over limit) | 361-383 ms | 629-649 ms |
 | 2,000 files, 1,500 excluded (under limit)                       | 39-50 ms   | 253-303 ms |
 
-A read costs roughly 130-170 us, so the read limit bounds the addition at about
-2,000 reads (+250-300 ms). After the memory fix, end to end at `memory_limit=128M`:
-a 2 MB excluded file and a 10 MB `@generated` file both exit 0 at 64 MB RSS (before:
-out of memory, exit 4). The text path takes 0.5 ms for 2 MB and 1.8 ms for 10 MB;
-an adversarial 9 MB file with 500,000 `namespace` words takes 800 ms. With 50,000
-assets in an excluded directory discovery takes 0.41-0.45 s against 0.33 s without
-them (0.63-0.66 s before the entry limit).
+Current limits, CPU time (`getrusage`): a read costs about 105 us for this
+repository's class files (3.7 KiB on average) and about 520 us for 16 KiB class
+files, so 2,000 reads of 16 KiB cost about 1.0 s. The worst case at the 8 MiB byte
+limit is 421 ms for the densest 64 KiB files (8.1 MB peak memory) and 691 ms for
+adversarial text (0.3 MB peak). With no literal namespace suppression configured
+nothing is read: 2,000 excluded 16 KiB files cost 0.38 s of user CPU for the whole
+run against 1.5 s with a literal value configured.
+
+End to end at `memory_limit=128M`, a 2 MB excluded file and a 10 MB `@generated`
+file both exit 0 at 64 MB RSS (before the chunked text path: out of memory, exit 4).
+With 50,000 assets in an excluded directory discovery takes 0.41-0.45 s against
+0.33 s without them (0.63-0.66 s before the entry limit).

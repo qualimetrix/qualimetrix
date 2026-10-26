@@ -87,10 +87,16 @@ walk's `RemovedNamespaceSurvey` (ledger and verdicts carry none). Files up to
 64 KiB are tokenized by `RemovedNamespaceScan`; larger ones are read as text in
 64 KiB chunks by `RemovedNamespaceText`, counting every `namespace` word followed
 by a name or `{` (a superset, so it errs toward withholding). The survey is bounded
-by 2,000 reads, 32 MiB and 20,000 inspected entries per walk; when a limit is
+by 2,000 reads, 8 MiB and 20,000 inspected entries per walk; when a limit is
 spent, something is unreadable (a directory link or non-regular `.php` entry inside
 a removed directory, an excluded file link, an unlistable child) the namespaces are
-unknown and the descent returns to stopping at the first PHP file. Removed run
+unknown and the descent returns to stopping at the first PHP file. The survey runs
+only when `RunConfiguration::$hasLiteralNamespaceSuppression` is true (computed by
+`RunConfigurationResolver`: a literal global `suppress_namespaces` value or any rule
+option other than `suppress_paths`); otherwise it stays known-empty until a PHP file
+is removed, then unknown, and discovery keeps its metadata-only cost. A
+`--suppress-namespace` CLI value is not seen, so under removal it stays withheld.
+Removed run
 entries outside the measured universe are surveyed for namespaces only. The
 generated-file policy adds the namespaces of `@generated` files (a full read; the
 generated filter itself reads a header only). The result is one

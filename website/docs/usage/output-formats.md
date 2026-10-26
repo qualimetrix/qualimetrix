@@ -1338,7 +1338,7 @@ last also ask the first. There are ten channels in total.
 For `suppression.unmatched-namespace` and namespace values under
 `suppression.unmatched-rule-ledger`, a literal (`exact`/`subtree`) value is judged
 despite excluded PHP or generated removal when the namespaces those files declare
-(read by a token scan of their `namespace` statements) cannot match it. Everything
+(read by a token scan of their `namespace` statements, or by a text scan that may withhold more for files over 64 KiB) cannot match it. Everything
 else about the first question is unchanged, and the other six channels remain
 all-or-nothing. See
 [Excluded and generated code](../rules/suppression.md#excluded-and-generated-code).

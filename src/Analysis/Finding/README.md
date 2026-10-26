@@ -205,7 +205,11 @@ withhold only a value the removed code could have declared, as
 are consulted even when no door is open. `ValueScopeJudgement::withholdsOnlyForRemovedCode()`
 and `UnboundSuppressionAudit::withheldForRemovedCode()` name the values removed
 code alone kept unjudged; any file that failed analysis (`$failedFiles`, taken by
-every public audit method) leaves every namespace value unjudged.
+every public audit method) leaves every namespace value unjudged. A literal value
+the analysed namespace tree already binds is judged and bound beside removed code,
+since removed code can only add namespaces. A `ProjectScopeJudgement` without
+removed-code namespaces treats them as unknown (`removedCodeIsKnown()` is false);
+a caller that knows nothing was removed passes `RemovedCodeNamespaces::none()`.
 `RemovedCodeNamespaces` (`none`/`known`/`unknown`, ASCII case-folded, ancestors of
 a declared namespace count as declared) lives in `Contract/ProjectScope`; Run
 produces it. Regex namespace values and the six other namespace-claim channels
