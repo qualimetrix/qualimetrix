@@ -53,14 +53,19 @@ a literal `exact` or `subtree` `suppress_namespaces` value, global or under
 A stale `exact: App\Does\Not\Exist` is therefore reported although `src/Kernel.php`
 is excluded; `exact: App` is not judged while the excluded file declares `App`. A
 declared namespace also makes its ancestors undecidable: a file in `App\Foo\Bar`
-withholds `exact: App\Foo`. Matching ignores ASCII case.
+withholds `exact: App\Foo`. Deciding whether removed code could declare a namespace
+ignores ASCII case; the value itself is still matched case-sensitively, as
+configured.
 
 What is still withheld:
 
 - Every value whose removed code is unknown: an unreadable excluded file, an
-  excluded directory that cannot be listed, or more than 2,000 removed or generated
-  files read in one run (the read budget).
+  excluded directory that cannot be listed or holds a directory link or a
+  non-regular `.php` entry, or a run that exceeds a read limit (2,000 files, 32 MiB
+  or 20,000 inspected entries inside removed directories).
 - `regex` values, as before.
+- Every namespace value, when a file failed analysis: the run did not see all
+  declared namespaces.
 - Every other withholding cause (omitted PHP paths, an unknown project universe, a
   missing PSR-4 map) withholds all values, as before.
 - The architecture and cohesion/coupling namespace audits
@@ -69,12 +74,14 @@ What is still withheld:
   still withholds them, because they need class and method names, not only
   namespaces.
 
-`check` prints a warning on stderr when exclusion or generated filtering is the
-only reason namespace suppression values stayed unjudged. It names the exclusion,
-the number of values and their channels, and `-q` silences it:
+`check` prints a warning on stderr when removed code (an exclusion or generated
+filtering) alone kept literal namespace suppression values from being judged. It
+names every exclusion that removed something, the number of values and their
+channels, and `-q` silences it. Regex values and values unjudged for another reason
+are not counted:
 
 ```text
-Code removed by exclude "exact:src/Kernel.php" may declare the namespaces of 1 suppression value, so it was not judged (suppression.unmatched-namespace). Narrow the exclusion to judge them.
+Warning: Code removed by exclude "exact:src/Kernel.php" may declare the namespaces of 1 suppression value, so it was not judged (suppression.unmatched-namespace). Narrow the exclusion to judge it.
 ```
 
 `directives` and `baseline:*` print no such warning; `directives` still names

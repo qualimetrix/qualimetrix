@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- An unrelated `exclude` entry or `@generated` file no longer withholds every literal namespace suppression: a stale `exact:`/`subtree:` selector in `suppress_namespaces` (global or per-rule) is reported unless the removed code declares a namespace it could bind, and `check` warns on stderr about values it still could not judge (#200).
+- An unrelated `exclude` entry or `@generated` file no longer withholds every literal namespace suppression: a stale `exact:`/`subtree:` selector in `suppress_namespaces` (global or per-rule) is reported unless the removed code may declare a namespace it binds, and `check` warns on stderr about values only the removed code left unjudged (#200).
+- A namespace suppression is no longer reported stale when its code was excluded outside the analysed autoload roots or failed to parse; any analysis failure now leaves namespace suppression values unjudged.
 
 ## [0.28.2] - 2026-10-25
 

@@ -198,9 +198,14 @@ its authored `kind:value` identity rather than the rendered PCRE.
 The audit consumes the pipeline's single measured `ProjectScopeJudgement`.
 Namespace/declaration absence asks `judgesNamespaceClaims()`; path values ask
 `judgesExcludeSelectors()`, and rule-ledger namespace values also ask the former.
-Literal (`exact`/`subtree`) namespace values ask `judgesNamespaceLiteral()`
-instead: excluded PHP files and generated removal withhold only a value the
-removed code could have declared, as `RemovedCodeNamespaces` records.
+Literal (`exact`/`subtree`) namespace values ask `judgesExactNamespace()` or
+`judgesNamespaceSubtree()` instead: excluded PHP files and generated removal
+withhold only a value the removed code could have declared, as
+`RemovedCodeNamespaces` (`mayDeclare()` / `mayDeclareWithin()`) records, and they
+are consulted even when no door is open. `ValueScopeJudgement::withholdsOnlyForRemovedCode()`
+and `UnboundSuppressionAudit::withheldForRemovedCode()` name the values removed
+code alone kept unjudged; any file that failed analysis (`$failedFiles`, taken by
+every public audit method) leaves every namespace value unjudged.
 `RemovedCodeNamespaces` (`none`/`known`/`unknown`, ASCII case-folded, ancestors of
 a declared namespace count as declared) lives in `Contract/ProjectScope`; Run
 produces it. Regex namespace values and the six other namespace-claim channels

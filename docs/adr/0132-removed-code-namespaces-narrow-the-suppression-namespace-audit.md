@@ -30,47 +30,74 @@ class FQNs, method names, references, attributes, ancestors.
 1. **Only literal namespace suppression selectors narrow.** An `exact` or
    `subtree` namespace value, global or under `rules.<name>`, is judged when the
    removed code cannot have declared a namespace it binds. `judgesNamespaceClaims()`
-   is unchanged and stays strict for its other readers; a new Finding question,
-   `ProjectScopeJudgement::judgesNamespaceLiteral()`, answers for these values.
+   is unchanged and stays strict for its other readers; Finding answers for these
+   values with two narrower questions, one per selector form
+   (`ProjectScopeJudgement::judgesExactNamespace()` and `judgesNamespaceSubtree()`).
+   A value is consulted against the removed code's namespaces whenever one exists,
+   even with no withholding door open: an exclude entry outside the measured
+   universe (autoload-dev `tests/` on `check src tests`) opens no door yet may
+   declare a namespace the value names.
 2. **`regex` selectors are unchanged.** Case semantics of a regex over a removed
-   namespace are ambiguous, so a stale regex stays withheld under removal.
+   namespace are ambiguous, so a stale regex stays withheld under removal, and
+   removal outside the universe does not withhold it.
 3. **Only two doors narrow:** `Exclude` with `php-file` evidence, and
    `Generated`. Omitted PHP paths, an unknown universe, an unlistable excluded
-   directory, a missing PSR-4 map and unmeasured scope withhold as before.
-4. **Run measures, Finding judges.** Discovery reads the removed code once and
-   carries one aggregate, Finding's `RemovedCodeNamespaces` (`none`, `known`,
-   `unknown`), beside the selector verdicts into `ProjectScopeMeasurement`. A
-   file that cannot be read, a directory that cannot be listed, or an exhausted
-   budget makes the aggregate `unknown`, which withholds every literal as before.
-   `ExcludeSelectorVerdict` is not widened.
-5. **The scan is a token scan.** `RemovedNamespaceScan` reads a whole file and
-   tokenizes it: block and semicolon namespaces, several per file, the global
-   block, `namespace\foo()` not counted, comments and strings ignored. No AST, no
-   rules. Comparison is ASCII case-folded like the namespace index, and the
-   ancestors of a declared namespace count as declared (as in `NamespaceTree`), so
-   a file in `App\Foo\Bar` also withholds `exact:App\Foo`. Global code declares
-   the empty namespace.
-6. **Descent is complete.** The early exit at the first PHP file of a removed
-   entry is gone, and so is the second short circuit that skipped further entries
-   of a selector that already had `php-file` evidence: the aggregate needs every
-   removed entry. An unlistable child makes the aggregate `unknown` even after a
-   PHP file was found. `@generated` files get a separate full read, because the
-   generated-file filter reads only a 2,048-byte header.
-7. **A read budget bounds the cost.** One `RemovedNamespaceBudget` per walk allows
-   2,000 file reads, shared by excluded and generated files. Past it the aggregate
-   is `unknown` and the descent returns to stopping at the first PHP file, so
-   `check .` with `exclude: [vendor]` does not read a dependency tree.
+   directory, a missing PSR-4 map and unmeasured scope withhold as before. A file
+   that failed analysis leaves every namespace value, literal or regex, unjudged:
+   the namespace universe is incomplete.
+4. **Run measures, Finding judges.** Discovery reads the removed code once per walk
+   into one `RemovedNamespaceSurvey` and carries its `RemovedCodeNamespaces`
+   (`none`, `known`, `unknown`) in the scope facts into `ProjectScopeMeasurement`.
+   Anything unreadable, or any spent limit, makes it `unknown`, which withholds
+   every literal as before. The selector ledger and `ExcludeSelectorVerdict` carry
+   no namespaces and are unchanged.
+5. **The scan never builds an AST.** A file up to 64 KiB is tokenized: block and
+   semicolon namespaces, several per file, the global block, `namespace\foo()`
+   not counted, comments and strings ignored. A larger file is read as text in
+   64 KiB chunks and every `namespace` word followed by a name or `{` counts. That
+   is a superset of the real declarations, so it errs toward withholding; a name
+   that does not end within 1 KiB makes the namespaces unknown. A declaration-shaped
+   statement the scan does not recognise makes the file unreadable, hence unknown.
+   Comparison folds ASCII case in the withholding comparison only (the binding of
+   the configured value stays case-sensitive), and the ancestors of a declared
+   namespace count as declared, so a file in `App\Foo\Bar` also withholds
+   `exact:App\Foo`. Global code declares the empty namespace.
+6. **Descent is complete, and what it cannot read it does not trust.** The early
+   exit at the first PHP file of a removed entry is gone, and so is the second
+   short circuit that skipped further entries of a selector that already had
+   `php-file` evidence: the survey needs every removed entry. An unlistable child
+   makes the namespaces unknown even after a PHP file was found. Inside a removed
+   directory a directory link, or a non-regular `.php` entry (file link, dangling
+   link, special file), also makes them unknown, because the main walk would record
+   that entry as skipped coverage; other non-regular entries are ignored, as the
+   main walk ignores them. An excluded named file symlink is unknown too.
+   `@generated` files get a separate full read, because the generated-file filter
+   reads only a 2,048-byte header. Removed run entries outside the measured universe
+   are surveyed for namespaces only; their selector verdicts do not change.
+7. **Three limits bound the cost.** One survey per walk allows 2,000 file reads,
+   32 MiB of bytes read and 20,000 entries inspected inside removed directories,
+   shared by excluded and generated files. When any is spent the namespaces are
+   unknown and the descent returns to the old cost profile (stop at the first PHP
+   file; no reads outside the universe). A large excluded data or fixture tree
+   inside a PSR-4 root would otherwise be read in full. (`vendor` is a built-in
+   floor and never part of a run, so it is not that case.)
 8. **Publication follows judgement.** `ReportProjectScope::measured()` omits
    `suppression.unmatched-namespace` from `unjudgedChannels` when at least one of
    its values was judged. The directive audit computes no values and still names
    the channel. The other six namespace-claim channels (`architecture.*`,
    `cohesion.unmatched-exclude-method`, `coupling.unmatched-framework-namespace`)
    stay all-or-nothing.
-9. **`check` says what remained.** When exclusion or generated filtering is the
-   only reason namespace suppression values stayed unjudged, `check` writes a
-   stderr warning naming the exclusion, the count of unjudged values and their
-   channels; `-q` silences it. `directives` and `baseline:*` print none. The
-   `exclude` reason stays in `projectScope.reasons`.
+9. **`check` says what remained, and only what removed code alone caused.** The
+   audit, not the presenter, decides which values removed code alone kept from
+   being judged: literal values that would have been judged had the removed code
+   declared nothing. Regex values, values from an unanalysed PSR-4 root, runs
+   without production autoload or a namespace tree, runs with analysis failures and
+   exclusions of unlistable directories are never counted. `check` writes a plain
+   stderr warning at report publication naming every exclude selector that removed
+   an entry (plus generated-file filtering, or "an exclude entry" when none is
+   recorded), the count of unjudged values and their channels; `-q` silences it.
+   `directives` and `baseline:*` print none. The `exclude` reason stays in
+   `projectScope.reasons`.
 
 Rejected:
 
@@ -78,8 +105,10 @@ Rejected:
   breaks "Run measures, Finding judges".
 - **Scanning FQNs, methods and references to narrow the other six channels.**
   That is a second analyser without an AST.
-- **Making the scan unbudgeted.** A project excluding `vendor` would read every
-  file of it; see the measurement.
+- **Reading removed code without limits.** An excluded tree inside the universe
+  would be read and tokenized in full; the first version, with a read count only,
+  still ran out of memory on a single 2 MB excluded file or a 10 MB `@generated`
+  file, which is why large files take the chunked text path.
 
 ## Consequences
 
@@ -87,22 +116,30 @@ Rejected:
   excluded; a selector the removed code could have declared stays withheld and
   is named.
 - Regex selectors and six channels keep the old all-or-nothing behaviour; the
-  website names this as a limitation. The warning is a `check` surface only.
+  website names this as a limitation. The warning is a `check` surface only, and
+  of the commands that publish scope only `directives` also prints a
+  `projectScope` object.
 - `unjudgedChannels` no longer proves that every value of an absent channel was
   judged; that was already true of value channels (ADR 0093) and now holds for
   `suppression.unmatched-namespace`. `unjudgedValues` stays the complete list.
-- Project scope reads removed source, bounded by the budget. Reading is
-  best-effort: every failure degrades to the previous withholding, never to a
-  judgement.
+- Project scope reads removed source beyond the generated-file header, bounded by
+  the limits. Reading is best-effort: every failure degrades to the previous
+  withholding, never to a judgement.
+- The text path's superset can withhold a value that a comment or string
+  containing `namespace Foo` only appeared to declare.
 
 Measured cost, median of 7 runs of `ProjectFiles::discover` on synthetic
-projects:
+projects (read limit only, before the byte and entry limits):
 
-| Project                                                          | Before     | After      |
-| ---------------------------------------------------------------- | ---------- | ---------- |
-| 6,500 files, 3,000 excluded and 3,000 `@generated` (over budget) | 361–383 ms | 629–649 ms |
-| 2,000 files, 1,500 excluded (under budget)                       | 39–50 ms   | 253–303 ms |
+| Project                                                         | Before     | After      |
+| --------------------------------------------------------------- | ---------- | ---------- |
+| 6,500 files, 3,000 excluded and 3,000 `@generated` (over limit) | 361-383 ms | 629-649 ms |
+| 2,000 files, 1,500 excluded (under limit)                       | 39-50 ms   | 253-303 ms |
 
-A read costs roughly 130–170 µs, so the budget bounds the addition at about
-2,000 reads (+250–300 ms). Without it the 6,500-file case cost about three times
-its discovery time.
+A read costs roughly 130-170 us, so the read limit bounds the addition at about
+2,000 reads (+250-300 ms). After the memory fix, end to end at `memory_limit=128M`:
+a 2 MB excluded file and a 10 MB `@generated` file both exit 0 at 64 MB RSS (before:
+out of memory, exit 4). The text path takes 0.5 ms for 2 MB and 1.8 ms for 10 MB;
+an adversarial 9 MB file with 500,000 `namespace` words takes 800 ms. With 50,000
+assets in an excluded directory discovery takes 0.41-0.45 s against 0.33 s without
+them (0.63-0.66 s before the entry limit).

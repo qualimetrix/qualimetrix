@@ -1382,10 +1382,11 @@ ancestry limits without closing main-project coverage. Accepted PSR-4 facts stil
 place namespace values independently of the enum.
 See [Suppression rules](../rules/suppression.md#scope-and-severity).
 
-When exclusion or generated filtering leaves namespace suppression values
-unjudged, `check` also warns on stderr (silenced by `-q`), naming the exclusion,
-the number of values and their channels. `directives` and `baseline:*` print no
-such warning; the `projectScope` object is the record in those commands.
+When removed code (an exclusion or generated filtering) alone leaves literal
+namespace suppression values unjudged, `check` also warns on stderr (silenced by
+`-q`), naming the exclusions, the number of values and their channels. `directives`
+and `baseline:*` print no such warning. Of those two only `directives` publishes a
+`projectScope` object; `baseline:*` publish none.
 
 
 For a selector hidden by another source, the skipped value keeps its three keys.
