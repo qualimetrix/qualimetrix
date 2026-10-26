@@ -49,6 +49,8 @@ final readonly class NodeWording
      * The advice for a refused value: the hint declared for exactly that
      * scalar, otherwise the general hint.
      *
+     * @qmx-ignore code-smell.boolean-argument -- The boolean is the refused scalar a hint may be declared for, not a behavior switch.
+     *
      * @param int|float|string|bool|null $written the refused scalar; null when what was written is not a scalar
      */
     public function adviceFor(int|float|string|bool|null $written): ?string

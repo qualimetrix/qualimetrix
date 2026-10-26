@@ -23,27 +23,44 @@ final class ScalarConstraints
      */
     public static function judge(NodeSchema $schema, int|float|string|bool $value, ReadingContext $at): void
     {
-        $facts = $schema->scalar;
-        $advised = static function (string $summary) use ($schema, $value): string {
-            $advice = $schema->wording->adviceFor($value);
-
-            return $advice === null ? $summary : $summary . ' ' . $advice;
-        };
-
-        if ($facts->minimum !== null && (\is_int($value) || \is_float($value)) && $value < $facts->minimum) {
-            throw $at->refusal($advised(\sprintf('%s must be at least %s, got %s.', ucfirst($at->where()), $facts->minimum, $value)));
+        $summary = self::belowMinimum($schema, $value, $at) ?? self::blank($schema, $value, $at);
+        if ($summary !== null) {
+            throw $at->refusal(self::advised($schema, $value, $summary));
         }
 
-        if ($facts->textRequirement === TextRequirement::NonBlank && \is_string($value) && trim($value) === '') {
-            throw $at->refusal($advised(\sprintf('%s must be non-empty text.', ucfirst($at->where()))));
-        }
-
-        if ($facts->words !== null && \is_string($value) && !$facts->words->contains($value)) {
+        $words = $schema->scalar->words;
+        if ($words !== null && \is_string($value) && !$words->contains($value)) {
             throw $at->refusal(
-                $advised(\sprintf('%s must be one of %s, got "%s".', ucfirst($at->where()), implode(', ', $facts->words->words), $value)),
+                self::advised($schema, $value, \sprintf('%s must be one of %s, got "%s".', ucfirst($at->where()), implode(', ', $words->words), $value)),
                 $value,
-                $facts->words->words,
+                $words->words,
             );
         }
+    }
+
+    /** @qmx-ignore code-smell.boolean-argument -- The boolean belongs to the admitted scalar union; only numeric values have a minimum. */
+    private static function belowMinimum(NodeSchema $schema, int|float|string|bool $value, ReadingContext $at): ?string
+    {
+        $minimum = $schema->scalar->minimum;
+
+        return $minimum !== null && (\is_int($value) || \is_float($value)) && $value < $minimum
+            ? \sprintf('%s must be at least %s, got %s.', ucfirst($at->where()), $minimum, $value)
+            : null;
+    }
+
+    /** @qmx-ignore code-smell.boolean-argument -- The boolean belongs to the admitted scalar union; only text values have a blankness constraint. */
+    private static function blank(NodeSchema $schema, int|float|string|bool $value, ReadingContext $at): ?string
+    {
+        return $schema->scalar->textRequirement === TextRequirement::NonBlank && \is_string($value) && trim($value) === ''
+            ? \sprintf('%s must be non-empty text.', ucfirst($at->where()))
+            : null;
+    }
+
+    /** @qmx-ignore code-smell.boolean-argument -- The boolean is the refused scalar a hint may be declared for. */
+    private static function advised(NodeSchema $schema, int|float|string|bool $value, string $summary): string
+    {
+        $advice = $schema->wording->adviceFor($value);
+
+        return $advice === null ? $summary : $summary . ' ' . $advice;
     }
 }

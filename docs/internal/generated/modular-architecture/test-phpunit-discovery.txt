@@ -8353,6 +8353,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\CoverageValidatorTest::itParsesError
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\CoverageValidatorTest::itParsesIgnore
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\CoverageValidatorTest::itParsesWarn
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\CoverageValidatorTest::itRefusesAnUnknownCoverageValueAtAClosedPosition
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\CoverageValidatorTest::itRejectsABooleanCoverageValue
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\CoverageValidatorTest::itRejectsACoverageValueOfTheWrongType
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\CoverageValidatorTest::itRejectsAnUnknownCoverageValue
@@ -14462,8 +14463,8 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itStillDefaultsWhenNobodyNamedAFormat
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatResolverTest::itRefusesAnUnknownFormatInTheFileEvenWhenTheCommandLineOverridesIt
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatResolverTest::itRefusesAnUnknownWinningFormatAtItsAuthoredPath
+ - Qualimetrix\Tests\Reporting\Unit\OutputFormatResolverTest::itTrustsTheSectionsWordsToHaveRefusedAnUnregisteredFormat
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatResolverTest::itUsesSummaryByDefaultAndTheLastExplicitFormat
- - Qualimetrix\Tests\Reporting\Unit\OutputFormatResolverTest::itValidatesTheWinningFormatAgainstTheRegistryWhenTheSectionHasNoDictionaryJudge
  - Qualimetrix\Tests\Reporting\Unit\ReportBuilderTest::itAddsFinding
  - Qualimetrix\Tests\Reporting\Unit\ReportBuilderTest::itAddsFindings
  - Qualimetrix\Tests\Reporting\Unit\ReportBuilderTest::itAddsFindingsFromIterator
