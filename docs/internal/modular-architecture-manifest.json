@@ -2014,6 +2014,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CycleEdgeFilter": {
+      "path": "src/Analysis/Evidence/CircularDependency/CycleEdgeFilter.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.CircularDependency",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CycleFinding": {
       "path": "src/Analysis/Evidence/CircularDependency/CycleFinding.php",
       "kind": "class",
@@ -3920,7 +3927,7 @@
         {
           "owner": "Analysis.Evidence.CircularDependency",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyDetector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CycleEdgeFilter",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\Dependency"
         },
         {
@@ -4186,10 +4193,6 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Analysis.Evidence.CircularDependency",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyDetector"
-        },
-        {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationFinding"
         },
@@ -4204,6 +4207,10 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Observation\\EdgeEvidenceWalk"
+        },
+        {
+          "owner": "Analysis.Evidence.CircularDependency",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CycleEdgeFilter"
         }
       ]
     },
@@ -4448,6 +4455,10 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Allow\\AllowAliasExpander"
+        },
+        {
+          "owner": "Analysis.Evidence.CircularDependency",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyOptions"
         }
       ]
     },
@@ -4552,7 +4563,7 @@
         {
           "owner": "Analysis.Evidence.CircularDependency",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyDetector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CycleEdgeFilter",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\Dependency"
         },
         {
@@ -10569,6 +10580,10 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Inline\\InlineConfigurator"
+        },
+        {
+          "owner": "Analysis.Evidence.CircularDependency",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyAnalysis"
         }
       ]
     },
@@ -12411,6 +12426,10 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveOptions"
+        },
+        {
+          "owner": "Analysis.Evidence.CircularDependency",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyOptions"
         }
       ]
     },

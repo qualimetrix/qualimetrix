@@ -212,7 +212,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             ->withRepositoryFactory($factory)
             ->withRuleExecution($execution)
             ->withComputedMetricEvaluation($computed)
-            ->withCircularDependencyPreparation(new CircularDependencyAnalysis(new CircularDependencyDetector()))
+            ->withCircularDependencyPreparation(new CircularDependencyAnalysis(new CircularDependencyDetector(), $configuration))
             ->withFileSetInspection($this->emptyFileSetInspection($configuration))
             ->withProfiler($this->profiler)
             ->build();
@@ -401,7 +401,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
                 $this->profiler,
             ))
             ->withComputedMetricEvaluation($computed)
-            ->withCircularDependencyPreparation(new CircularDependencyAnalysis(new CircularDependencyDetector()))
+            ->withCircularDependencyPreparation(new CircularDependencyAnalysis(new CircularDependencyDetector(), $registry))
             ->withFileSetInspection(new FileSetInspectionComposite([$participant], $producerGate, $this->profiler), $producerGate)
             ->withProfiler($this->profiler)
             ->build();
@@ -538,9 +538,9 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         self::assertNotEmpty($cycles, 'Sanity check: CircularDependencyDetector should find cycles');
 
         // Now run via the full pipeline with CircularDependencyRule.
-        $analysis = new CircularDependencyAnalysis($detector);
-        $rule = new CircularDependencyRule(new CircularDependencyOptions(enabled: true), $analysis);
         $registry = new RuleOptionsRegistry();
+        $analysis = new CircularDependencyAnalysis($detector, $registry);
+        $rule = new CircularDependencyRule(new CircularDependencyOptions(enabled: true), $analysis);
         $lookup = ResolvedOptionsFixture::lookup($rule);
         $configuration = FindingConfiguration::none();
         $registry->replace(ResolvedOptionsFixture::ready($configuration, [$lookup['metadata']]));
@@ -1179,7 +1179,7 @@ PHP);
             ->withMeasurementAggregation(new MeasurementAggregationService([], $fileCollector, $this->profiler))
             ->withComputedMetricEvaluation($computed)
             ->withCircularDependencyPreparation(
-                $circularDependencyAnalysis ?? new CircularDependencyAnalysis(new CircularDependencyDetector()),
+                $circularDependencyAnalysis ?? new CircularDependencyAnalysis(new CircularDependencyDetector(), $configuration),
             )
             ->withFileSetInspection($this->emptyFileSetInspection($configuration))
             ->withProfiler($this->profiler)
@@ -1241,7 +1241,7 @@ PHP);
             ->withRuleConfiguration($configuration)
             ->withMeasurementAggregation($globalCollectorRunner)
             ->withComputedMetricEvaluation($computed)
-            ->withCircularDependencyPreparation(new CircularDependencyAnalysis(new CircularDependencyDetector()))
+            ->withCircularDependencyPreparation(new CircularDependencyAnalysis(new CircularDependencyDetector(), $configuration))
             ->withFileSetInspection($this->emptyFileSetInspection($configuration))
             ->withProfiler($this->profiler)
             ->build();

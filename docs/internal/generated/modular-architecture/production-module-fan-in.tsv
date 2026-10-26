@@ -71,7 +71,7 @@ Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency	Analysis.Evide
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface	Analysis.Evidence.DependencyModel	7	3
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	Analysis.Evidence.DependencyModel	36	9
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyLocationInterface	Analysis.Evidence.DependencyModel	1	1
-Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyRelationTokens	Analysis.Evidence.DependencyModel	1	1
+Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyRelationTokens	Analysis.Evidence.DependencyModel	2	2
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface	Analysis.Evidence.DependencyModel	7	4
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType	Analysis.Evidence.DependencyModel	8	5
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ExternalClassSpellingInterface	Analysis.Evidence.DependencyModel	2	2
@@ -167,7 +167,7 @@ Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement	Analysi
 Qualimetrix\Analysis\Finding\Contract\ProjectScope\RemovedCodeNamespaces	Analysis.Finding	2	1
 Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts	Analysis.Finding	9	3
 Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageObservation	Analysis.Finding	4	2
-Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface	Analysis.Finding	16	6
+Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface	Analysis.Finding	17	7
 Qualimetrix\Analysis\Finding\Contract\RuleEnablement	Analysis.Finding	3	2
 Qualimetrix\Analysis\Finding\Contract\RuleExclusionAttribution	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats	Analysis.Finding	1	1
@@ -203,7 +203,7 @@ Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionRefusal	Anal
 Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionRefusalWording	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape	Analysis.Finding	39	12
 Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface	Analysis.Finding	17	9
-Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionWordSet	Analysis.Finding	5	3
+Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionWordSet	Analysis.Finding	6	4
 Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ThresholdPair	Analysis.Finding	13	7
 Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ThresholdParser	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Rule\Override\IndependentAxisValidator	Analysis.Finding	1	1

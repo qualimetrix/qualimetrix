@@ -135,6 +135,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule'
         - 'Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface'
         - 'Qualimetrix\Analysis\Evidence\CircularDependency\Cycle'
+        - 'Qualimetrix\Analysis\Evidence\CircularDependency\CycleEdgeFilter'
         - 'Qualimetrix\Analysis\Evidence\CircularDependency\CycleFinding'
         - 'Qualimetrix\Analysis\Evidence\CircularDependency\CycleMemberLabels'
     - name: analysis-evidence-codesmell

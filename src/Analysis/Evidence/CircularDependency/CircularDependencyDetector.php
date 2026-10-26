@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\CircularDependency;
 
 use LogicException;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -30,9 +29,19 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  *
  * The result is a pure function of the graph structure: adding an unrelated
  * file cannot change the identity of an existing cycle.
+ *
+ * ## Edge filter
+ *
+ * {@see self::admitting()} narrows which dependency records count as edges.
+ * Both the SCC partition and the displayed path read the same admitted set,
+ * so a filtered-out record neither joins a component nor shortens its path.
+ * Identity still depends on members only: the filter decides which cycles
+ * exist, not how a remaining one is keyed.
  */
 class CircularDependencyDetector
 {
+    private ?CycleEdgeFilter $edgeFilter = null;
+
     private int $index = 0;
 
     /** @var array<string> */
@@ -52,6 +61,21 @@ class CircularDependencyDetector
 
     /** @var array<string, SymbolPath> */
     private array $symbolPathMap = [];
+
+    /**
+     * A copy of this detector that counts only the records `$filter` admits.
+     *
+     * A copy rather than a `detect()` parameter: the shared detector keeps no
+     * per-run filter, and `detect()` keeps the one-argument signature its
+     * subclasses override.
+     */
+    public function admitting(CycleEdgeFilter $filter): static
+    {
+        $copy = clone $this;
+        $copy->edgeFilter = $filter;
+
+        return $copy;
+    }
 
     /**
      * Detects all circular dependencies in the graph.
@@ -169,16 +193,26 @@ class CircularDependencyDetector
     }
 
     /**
-     * The node's dependency targets in edge order, one per edge.
+     * The node's dependency targets in edge order, one per admitted record.
      *
      * @return list<string>
      */
     private function successors(string $nodeKey, DependencyGraphInterface $graph): array
     {
-        return array_map(
-            static fn(Dependency $dependency): string => $dependency->targetLogical()->toCanonical(),
-            array_values($graph->getClassDependencies($this->symbolPathMap[$nodeKey])),
-        );
+        $filter = $this->filter();
+        $successors = [];
+        foreach ($graph->getClassDependencies($this->symbolPathMap[$nodeKey]) as $dependency) {
+            if ($filter->admits($dependency)) {
+                $successors[] = $dependency->targetLogical()->toCanonical();
+            }
+        }
+
+        return $successors;
+    }
+
+    private function filter(): CycleEdgeFilter
+    {
+        return $this->edgeFilter ?? CycleEdgeFilter::none();
     }
 
     /**
@@ -290,7 +324,7 @@ class CircularDependencyDetector
      *
      * The graph stores one dependency per use site, so the same target can occur
      * several times with different types and locations; only the distinct target
-     * set matters for path finding.
+     * set of admitted records matters for path finding.
      *
      * @param array<string, int> $sccSet Canonical keys of the SCC members, as a lookup set
      *
@@ -298,11 +332,12 @@ class CircularDependencyDetector
      */
     private function sortedNeighbours(string $nodeKey, array $sccSet, DependencyGraphInterface $graph): array
     {
+        $filter = $this->filter();
         $targets = [];
         foreach ($graph->getClassDependencies($this->symbolPathMap[$nodeKey]) as $dependency) {
             $targetKey = $dependency->targetLogical()->toCanonical();
 
-            if (isset($sccSet[$targetKey])) {
+            if (isset($sccSet[$targetKey]) && $filter->admits($dependency)) {
                 $targets[$targetKey] = true;
             }
         }

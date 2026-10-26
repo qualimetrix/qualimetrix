@@ -27,6 +27,17 @@ search that keeps each node's predecessor rather than a copy of its path, so a
 long cycle is found in linear rather than quadratic time. Neither change moves
 the output: members, representative, path and order are what they were.
 
+`ignore-relations` lists dependency kinds, or the aliases layer `relations:`
+accepts, whose records do not form cycles. The preparation reads it from the
+run's resolved rule options (`RuleConfigurationInterface`) and hands the
+detector a `CycleEdgeFilter`; the preparation contract still takes the graph
+alone. The graph keeps
+one record per use site, so a class pair stays a cycle edge while any of its
+records is admitted. The SCC partition and the displayed path read the same
+admitted records. Cycle identity depends on members only: the filter decides
+which cycles exist, not how a remaining one is keyed. An empty list is no
+filter. `max-cycle-size` and `direct-as-error` judge the filtered cycles.
+
 The positive `max-cycle-size` ceiling declares which prepared cycles can be
 judged. A cycle at the ceiling remains eligible; a larger one is unjudged,
 before severity selection. Zero or a negative ceiling leaves the population
@@ -40,6 +51,7 @@ CircularDependency/
 ├── CircularDependencyAnalysis.php
 ├── CircularDependencyDetector.php
 ├── Cycle.php
+├── CycleEdgeFilter.php          # Which dependency records may form a cycle
 ├── CycleFinding.php             # Cycle message, recommendation and occurrence projection
 ├── CycleMemberLabels.php
 ├── CircularDependencyOptions.php

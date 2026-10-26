@@ -19,6 +19,7 @@ use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\BaselineIdentity;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
+use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\CycleRuleConfiguration;
 
 /**
  * Regression tests: a cycle's identity must be a function of the graph structure only.
@@ -282,7 +283,7 @@ final class CycleIdentityStabilityTest extends TestCase
      */
     private function findingFor(array $adjacencyList): Finding
     {
-        $analysis = new CircularDependencyAnalysis(new CircularDependencyDetector());
+        $analysis = new CircularDependencyAnalysis(new CircularDependencyDetector(), CycleRuleConfiguration::authored());
         $analysis->prepare($this->buildGraph($adjacencyList));
         $rule = new CircularDependencyRule(new CircularDependencyOptions(), $analysis);
         $findings = $rule->analyze(new AnalysisContext(
