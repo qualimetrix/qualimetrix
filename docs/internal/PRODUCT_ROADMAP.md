@@ -205,6 +205,8 @@ condition. When an issue closes, drop its line here.
 - [#164](https://github.com/qualimetrix/qualimetrix/issues/164) hardcoded-credentials misses lowercase dotted secret phrases
 - [#166](https://github.com/qualimetrix/qualimetrix/issues/166) Duplication can report one copy in two overlapping groups
 - [#190](https://github.com/qualimetrix/qualimetrix/issues/190) HTML report shows file findings of class-free files on the project root
+- [#200](https://github.com/qualimetrix/qualimetrix/issues/200) An unrelated `exclude` entry withholds every namespace-absence audit channel
+- [#202](https://github.com/qualimetrix/qualimetrix/issues/202) Per-rule suppression on project-scoped producers is accepted and inert
 
 ### Product improvements
 
@@ -215,6 +217,11 @@ condition. When an issue closes, drop its line here.
 - [#172](https://github.com/qualimetrix/qualimetrix/issues/172) Dependency graph: global functions as nodes
 - [#173](https://github.com/qualimetrix/qualimetrix/issues/173) New-findings-only CI gate against a base revision
 - [#174](https://github.com/qualimetrix/qualimetrix/issues/174) Phar as a required check and the Docker image built from it
+- [#196](https://github.com/qualimetrix/qualimetrix/issues/196) Dependency graph: attribute-argument edge kind and a kind filter for circular-dependency
+- [#197](https://github.com/qualimetrix/qualimetrix/issues/197) `directives` runtime options (cache, workers, memory)
+- [#198](https://github.com/qualimetrix/qualimetrix/issues/198) LCOM4: constructor-only private helpers become isolated components
+- [#199](https://github.com/qualimetrix/qualimetrix/issues/199) Namespace instability judges the subtree while CBO and distance judge own scope
+- [#201](https://github.com/qualimetrix/qualimetrix/issues/201) Closure identity without its enclosing class or method
 
 ### Internal debt
 
