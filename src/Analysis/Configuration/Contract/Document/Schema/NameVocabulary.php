@@ -26,7 +26,6 @@ final readonly class NameVocabulary
      * @param ?Closure(mixed): list<string> $extract
      * @param ?Closure(string, list<string>): bool $admits
      * @param ?Closure(string): ?RefusedName $predicate
-     * @param ?list<string> $closed
      */
     private function __construct(
         private array $fixed,
@@ -34,7 +33,6 @@ final readonly class NameVocabulary
         private ?Closure $extract,
         private ?Closure $admits,
         private ?Closure $predicate,
-        private ?array $closed = null,
     ) {}
 
     /** @param list<string> $names canonical names */
@@ -73,12 +71,11 @@ final readonly class NameVocabulary
     public static function closed(array $names, Closure $refusal): self
     {
         return new self(
-            [],
+            $names,
             null,
             null,
             null,
             static fn(string $name): ?RefusedName => \in_array($name, $names, true) ? null : $refusal($name),
-            $names,
         );
     }
 
@@ -103,10 +100,10 @@ final readonly class NameVocabulary
         return $this->fixed;
     }
 
-    /** @return ?list<string> the names a closed vocabulary admits; null for every other vocabulary */
+    /** @return ?list<string> the names a closed vocabulary admits; null for every other vocabulary, and for a closed one that admits none */
     public function closedNames(): ?array
     {
-        return $this->closed;
+        return $this->predicate !== null && $this->fixed !== [] ? $this->fixed : null;
     }
 
     /** @return list<string> */

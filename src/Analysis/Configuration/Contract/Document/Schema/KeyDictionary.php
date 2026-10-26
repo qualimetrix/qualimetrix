@@ -160,9 +160,19 @@ final readonly class KeyDictionary
         }
     }
 
+    /**
+     * The spellings of a declared key an author may write.
+     *
+     * @return non-empty-list<string>
+     */
+    public static function acceptedSpellings(string $key): array
+    {
+        return ConfigKeySpelling::acceptedSpellings($key);
+    }
+
     public static function assertCanonical(string $key): void
     {
-        if (!\in_array($key, ConfigKeySpelling::acceptedSpellings($key), true) || strtolower($key) !== $key) {
+        if (!\in_array($key, self::acceptedSpellings($key), true) || strtolower($key) !== $key) {
             throw new LogicException(\sprintf('Schema key "%s" is not canonical: lowercase words joined by "_" or "-".', $key));
         }
     }

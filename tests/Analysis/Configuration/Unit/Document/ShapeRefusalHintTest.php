@@ -73,7 +73,7 @@ final class ShapeRefusalHintTest extends TestCase
     {
         $schema = new DocumentSchema([self::section(
             'name',
-            NodeSchema::scalar(ScalarForm::String)->withHint('Null hint.', onlyFor: [null]),
+            NodeSchema::scalar(ScalarForm::String)->withWording(hint: 'Null hint.', hintOnlyFor: [null]),
         )]);
 
         try {
@@ -184,9 +184,9 @@ final class ShapeRefusalHintTest extends TestCase
     private static function refusal(array $document): ConfigurationRefusal
     {
         $schema = new DocumentSchema([
-            self::section('name', NodeSchema::scalar(ScalarForm::String)->withHint('Scalar hint.')),
-            self::section('cache', NodeSchema::map(['dir' => NodeSchema::scalar(ScalarForm::String)])->withHint('Map hint.')),
-            self::section('paths', NodeSchema::list(NodeSchema::scalar(ScalarForm::String)->withHint('Element hint.'))->withHint('List hint.')),
+            self::section('name', NodeSchema::scalar(ScalarForm::String)->withWording(hint: 'Scalar hint.')),
+            self::section('cache', NodeSchema::map(['dir' => NodeSchema::scalar(ScalarForm::String)])->withWording(hint: 'Map hint.')),
+            self::section('paths', NodeSchema::list(NodeSchema::scalar(ScalarForm::String)->withWording(hint: 'Element hint.'))->withWording(hint: 'List hint.')),
         ]);
 
         try {

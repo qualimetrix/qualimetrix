@@ -70,7 +70,7 @@ final class EditorSchemaOutputTest extends TestCase
     #[Test]
     public function itWritesASubtreeUsedOnceInPlace(): void
     {
-        $schema = self::documentWith(NodeSchema::map(['dir' => NodeSchema::scalar(ScalarForm::String)])->describedAs('Where the cache lives.'));
+        $schema = self::documentWith(NodeSchema::map(['dir' => NodeSchema::scalar(ScalarForm::String)])->withWording(description: 'Where the cache lives.'));
 
         self::assertArrayNotHasKey('definitions', $schema);
         self::assertSame('Where the cache lives.', $schema['properties']['key']['description']);
@@ -82,7 +82,7 @@ final class EditorSchemaOutputTest extends TestCase
     {
         $paths = NodeSchema::list(NodeSchema::scalar(ScalarForm::String));
         $schema = EditorSchemaProjection::project(NodeSchema::map([
-            'include' => $paths->describedAs('Paths to analyse.'),
+            'include' => $paths->withWording(description: 'Paths to analyse.'),
             'exclude' => $paths,
         ]));
 
@@ -99,7 +99,7 @@ final class EditorSchemaOutputTest extends TestCase
     #[Test]
     public function itDescribesAScalarInPlace(): void
     {
-        $schema = self::documentWith(NodeSchema::scalar(ScalarForm::Integer)->describedAs('How many workers.'));
+        $schema = self::documentWith(NodeSchema::scalar(ScalarForm::Integer)->withWording(description: 'How many workers.'));
 
         self::assertSame(['description' => 'How many workers.', 'type' => ['integer', 'null']], $schema['properties']['key']);
     }

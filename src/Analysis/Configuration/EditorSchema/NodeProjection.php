@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Configuration\EditorSchema;
 
 use LogicException;
-use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\BareElementPolicy;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\KeyDictionary;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use stdClass;
@@ -89,7 +89,7 @@ final class NodeProjection
     {
         $retired = [];
         foreach ($node->map->retiredKeys as $key => $sentence) {
-            $retired[PortableRegex::exactly(ConfigKeySpelling::acceptedSpellings($key))] = ['description' => $sentence, 'not' => new stdClass()];
+            $retired[PortableRegex::exactly(KeyDictionary::acceptedSpellings($key))] = ['description' => $sentence, 'not' => new stdClass()];
         }
 
         $types = $node->map->bareField === null ? ['object'] : ['object', 'boolean'];
@@ -104,22 +104,42 @@ final class NodeProjection
     {
         $names = $node->map->names;
         $closed = $names?->closedNames();
-        $fixed = $closed === null && $names !== null && $names->isFixed() ? $names->fixedNames() : null;
-        $listed = $closed ?? $fixed;
+        if ($closed !== null) {
+            // A closed vocabulary is recognised exactly as written.
+            return self::object(['object', 'array', ...$null->types()], $this->namedEntries($node, $closed), []);
+        }
+        if ($names !== null && $names->isFixed()) {
+            // A fixed vocabulary is recognised with the spelling rule of keys.
+            $entries = $this->namedEntries($node, $names->fixedNames());
 
-        if ($listed === null) {
-            if ($node->map->namedEntrySchema !== null) {
-                throw new LogicException('A named map that derives its entries from names needs a closed vocabulary to be projected.');
-            }
-
-            $entry = $node->map->entry ?? throw new LogicException('A named map needs an entry schema.');
-
-            return array_replace(
-                self::object(['object', 'array', ...$null->types()], [], []),
-                ['additionalProperties' => $this->node($entry, NullAdmission::Admitted)],
-            );
+            return self::object(['object', 'array', ...$null->types()], $entries, self::alternativeSpellings($entries));
         }
 
+        return $this->openNamedMap($node, $null);
+    }
+
+    /** @return array<string, mixed> */
+    private function openNamedMap(NodeSchema $node, NullAdmission $null): array
+    {
+        if ($node->map->namedEntrySchema !== null) {
+            throw new LogicException('A named map that derives its entries from names needs a closed vocabulary to be projected.');
+        }
+
+        $entry = $node->map->entry ?? throw new LogicException('A named map needs an entry schema.');
+
+        return array_replace(
+            self::object(['object', 'array', ...$null->types()], [], []),
+            ['additionalProperties' => $this->node($entry, NullAdmission::Admitted)],
+        );
+    }
+
+    /**
+     * @param list<string> $listed
+     *
+     * @return array<string, array<string, mixed>|PooledNode>
+     */
+    private function namedEntries(NodeSchema $node, array $listed): array
+    {
         sort($listed, \SORT_STRING);
         $entries = [];
         foreach ($listed as $name) {
@@ -128,8 +148,7 @@ final class NodeProjection
             $entries[$name] = $this->node($entry, NullAdmission::Admitted);
         }
 
-        // A fixed vocabulary is recognised with the spelling rule of keys; a closed one exactly as written.
-        return self::object(['object', 'array', ...$null->types()], $entries, $fixed === null ? [] : self::alternativeSpellings($entries));
+        return $entries;
     }
 
     /** @return array<string, mixed> */
@@ -186,7 +205,7 @@ final class NodeProjection
     {
         $patterns = [];
         foreach ($children as $key => $schema) {
-            $others = array_values(array_diff(ConfigKeySpelling::acceptedSpellings((string) $key), [(string) $key]));
+            $others = array_values(array_diff(KeyDictionary::acceptedSpellings((string) $key), [(string) $key]));
             if ($others !== []) {
                 $patterns[PortableRegex::exactly($others)] = $schema;
             }

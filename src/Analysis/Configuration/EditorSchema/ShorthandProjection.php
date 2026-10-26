@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Configuration\EditorSchema;
 
 use LogicException;
-use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\KeyDictionary;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\Shorthand;
@@ -54,7 +54,7 @@ final class ShorthandProjection
     {
         $conditions = [];
         foreach ($map->map->keys->shorthands() as $shorthand) {
-            $unwritten = array_fill_keys(ConfigKeySpelling::acceptedSpellings($shorthand->key), ['type' => 'null']);
+            $unwritten = array_fill_keys(KeyDictionary::acceptedSpellings($shorthand->key), ['type' => 'null']);
             foreach (self::rivals($map, $shorthand) as $rival) {
                 $conditions[] = ['if' => self::written($rival), 'then' => ['properties' => $unwritten]];
             }
@@ -156,7 +156,7 @@ final class ShorthandProjection
 
         $branches = array_map(
             static fn(string $spelling): array => ['required' => [$spelling], 'properties' => [$spelling => $value]],
-            ConfigKeySpelling::acceptedSpellings($path[0]),
+            KeyDictionary::acceptedSpellings($path[0]),
         );
 
         return \count($branches) === 1 ? $branches[0] : ['anyOf' => $branches];
