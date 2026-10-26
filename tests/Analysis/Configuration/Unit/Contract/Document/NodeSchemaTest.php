@@ -104,6 +104,14 @@ final class NodeSchemaTest extends TestCase
     }
 
     #[Test]
+    public function itRefusesAHintRestrictionWithoutAHint(): void
+    {
+        $this->expectException(LogicException::class);
+
+        NodeSchema::scalar(ScalarForm::String)->withWording(hintOnlyFor: ['x']);
+    }
+
+    #[Test]
     public function itKeepsEveryDeclarationWhenAHintAndAnEmptyOverrideNoticeAreAdded(): void
     {
         $element = NodeSchema::scalar(ScalarForm::String);

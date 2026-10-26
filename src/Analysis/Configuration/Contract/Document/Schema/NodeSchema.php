@@ -79,6 +79,9 @@ final readonly class NodeSchema
      */
     public function withWording(?string $hint = null, ?array $hintOnlyFor = null, ?string $emptyOverrideNotice = null, ?string $description = null): self
     {
+        if ($hintOnlyFor !== null && $hint === null) {
+            throw new LogicException('A hint restriction requires the hint it restricts.');
+        }
         if ($emptyOverrideNotice !== null && $this->policy !== MergePolicy::Replace) {
             throw new LogicException('Only a replaced list can announce an empty override.');
         }

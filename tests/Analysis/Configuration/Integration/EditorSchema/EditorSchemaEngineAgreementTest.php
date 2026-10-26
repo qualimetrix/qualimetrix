@@ -130,6 +130,9 @@ final class EditorSchemaEngineAgreementTest extends TestCase
         yield '{} on a scalar' => ['LastWriterWins', 'fail_on: {}', self::REFUSES, '/fail_on'];
         yield 'an unknown key of a map' => ['DeepMerge', 'cache: {nope: 1}', self::REFUSES, '/cache/nope'];
 
+        yield 'an inline merge key' => ['YAML merge keys', 'cache: {<<: {dir: .cache}}', self::ACCEPTS, self::SCHEMA_ACCEPTS];
+        yield 'a block merge key beside a plain one' => ['YAML merge keys', "cache:\n  <<: {dir: .cache}\n  enabled: true", self::ACCEPTS, self::SCHEMA_ACCEPTS];
+
         yield 'a map keyed 0..n for a list' => ['Replace/Accumulate', 'paths: {0: src, 1: tests}', self::ACCEPTS, self::SCHEMA_ACCEPTS];
         yield 'a map keyed 1 for a list' => ['Replace/Accumulate, wider than the engine', 'paths: {1: src}', self::REFUSES, self::SCHEMA_ACCEPTS];
 

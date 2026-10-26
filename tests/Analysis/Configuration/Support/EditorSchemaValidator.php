@@ -13,6 +13,7 @@ use LogicException;
 use Qualimetrix\Analysis\Configuration\EditorSchema\EditorSchemaJson;
 use stdClass;
 use Symfony\Component\Yaml\Yaml;
+use Throwable;
 
 /**
  * Judges data against an editor schema as an editor would: draft-07 in
@@ -43,11 +44,29 @@ final class EditorSchemaValidator
 
     /**
      * YAML parsed the way an editor sees it: a map is an object even when it
-     * is empty, so `{}` and `[]` stay apart.
+     * is empty, so `{}` and `[]` stay apart. Symfony throws an undeclared
+     * TypeError merging a `<<` key into an object map; that text is read as
+     * arrays and its maps made objects afterwards, where an empty map is no
+     * longer told from `[]`.
      */
     public static function parseYaml(string $yaml): mixed
     {
-        return Yaml::parse($yaml, Yaml::PARSE_OBJECT_FOR_MAP);
+        try {
+            return Yaml::parse($yaml, Yaml::PARSE_OBJECT_FOR_MAP);
+        } catch (Throwable) {
+            return self::objectified(Yaml::parse($yaml));
+        }
+    }
+
+    private static function objectified(mixed $value): mixed
+    {
+        if (!\is_array($value)) {
+            return $value;
+        }
+
+        $mapped = array_map(self::objectified(...), $value);
+
+        return array_is_list($mapped) ? $mapped : (object) $mapped;
     }
 
     /**

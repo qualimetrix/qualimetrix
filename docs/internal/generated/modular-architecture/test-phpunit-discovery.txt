@@ -1836,6 +1836,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"[] on a rule"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"[] on an open named map"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"[] on the rules"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a block merge key beside a plain one"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a camel-case root spelling"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a canonical word"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a closed root refuses an unknown key"
@@ -1874,6 +1875,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an empty file"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an empty list for the whole document"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an empty list its owner refuses"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an inline merge key"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an integer where both forms are allowed"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an owner-judged value"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an unknown computed metric"
@@ -1922,6 +1924,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itDescribesANodeWithoutTouchingItsOtherWording
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itDescribesTheDeclaredFormAndRetainsItAcrossModifiers
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itKeepsEveryDeclarationWhenAHintAndAnEmptyOverrideNoticeAreAdded
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesAHintRestrictionWithoutAHint
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesAShorthandSpreadingToAnUndeclaredKey
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesAShorthandThatIsAlsoAKey
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesAnIntegerJudgementOnANonIntegerScalar

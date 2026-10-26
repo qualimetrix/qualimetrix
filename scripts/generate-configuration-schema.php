@@ -23,7 +23,7 @@ namespace Qualimetrix\ConfigurationSchema;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
 use Qualimetrix\Analysis\Configuration\EditorSchema\EditorSchemaJson;
 use Qualimetrix\Analysis\Configuration\EditorSchema\EditorSchemaProjection;
-use RuntimeException;
+use Throwable;
 
 use function Qualimetrix\ConfigurationDeclarations\configurationSections;
 
@@ -59,12 +59,11 @@ function main(array $arguments): int
     }
 
     try {
-        $sections = configurationSections();
-    } catch (RuntimeException $error) {
+        $fresh = EditorSchemaJson::encode(EditorSchemaProjection::project((new DocumentSchema(configurationSections()))->root()));
+    } catch (Throwable $error) {
         fail($error->getMessage());
     }
 
-    $fresh = EditorSchemaJson::encode(EditorSchemaProjection::project((new DocumentSchema($sections))->root()));
     $path = $root . '/' . ARTIFACT;
 
     if (!$check) {

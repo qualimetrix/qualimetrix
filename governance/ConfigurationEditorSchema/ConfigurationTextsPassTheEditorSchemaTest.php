@@ -11,6 +11,7 @@ use Qualimetrix\Subprocess\ChildProcess;
 use Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EngineReading;
 use Qualimetrix\Tests\Analysis\Configuration\Support\EditorSchemaValidator;
 use RuntimeException;
+use stdClass;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 
@@ -23,8 +24,12 @@ require_once \dirname(__DIR__, 2) . '/scripts/subprocess/ChildProcess.php';
  * root — what users copy. The differential test judges the combinations its
  * author listed; these are the combinations people actually write.
  *
- * A text the engine refuses is not judged: the schema promises no refusal
- * beyond its own rows, and the website shows refused examples on purpose.
+ * The texts are judged against the committed `qmx.schema.json`, the file users
+ * receive, not a projection made in this process.
+ *
+ * Only a text the engine accepts is judged: the schema promises nothing about
+ * one the engine refuses. Website blocks the engine refuses are outside that
+ * promise; most of them are outdated examples, not deliberate ones.
  */
 final class ConfigurationTextsPassTheEditorSchemaTest extends TestCase
 {
@@ -53,10 +58,13 @@ final class ConfigurationTextsPassTheEditorSchemaTest extends TestCase
     #[Test]
     public function itPassesEveryTextTheEngineAccepts(): void
     {
+        $schema = json_decode(self::read('qmx.schema.json'), false, 512, \JSON_THROW_ON_ERROR);
+        self::assertInstanceOf(stdClass::class, $schema);
+
         $offenders = [];
         foreach (self::accepted() as $texts) {
             foreach ($texts as $source => $text) {
-                $errors = EditorSchemaValidator::yamlErrors(EngineReading::schema(), $text);
+                $errors = EditorSchemaValidator::yamlErrors($schema, $text);
                 if ($errors !== []) {
                     $offenders[$source] = $errors;
                 }
