@@ -499,7 +499,7 @@ class DailyReportJob
 
     A namespace is not a package in Martin's sense once it has sub-namespaces, so Qualimetrix publishes two values and judges one. The rule judges `coupling.instability-own`, taken over the types declared directly in the namespace (Ca-own and Ce-own), the scope CBO and distance judge too. The subtree value `coupling.instability` folds in every outward dependency of the sub-namespaces while few dependents reach a parent that declares nothing itself, so the root of a bounded context reads close to 1 by construction. It stays published as aggregate evidence and feeds subtree distance, `health.coupling` and the HTML report's Martin diagram, but is not judged.
 
-    A namespace declaring no type of its own is no package: it publishes no `coupling.instability-own` and is never judged. A namespace that declares a type but has no own edge (Ca-own = Ce-own = 0) carries 0 by the convention above.
+    A namespace declaring no analysed type of its own publishes no `coupling.instability-own` and is never judged. One declaring only bare enums publishes the key but is not judged either: the judged population counts classes, traits, interfaces and implementing enums. A namespace that declares a type but has no own edge (Ca-own = Ce-own = 0) carries 0 by the convention above.
 
 <!-- llms:skip-end -->
 
@@ -663,6 +663,13 @@ declares no type of its own carries no own-scope abstractness at all and gets no
 there too): how far a package sits from the main
 sequence is undefined where there is no package, and silence says that where
 `0.0` would not.
+
+Publication and judgement follow different populations. `coupling.instability-own`
+and `coupling.cbo-own` are published on a namespace declaring any analysed type;
+distance and the instability judgement count only classes, traits, interfaces
+and enums that implement an interface. A namespace declaring only bare enums
+therefore carries both `-own` keys but is no package for distance or instability,
+even with `min_type_count: 0`.
 
 **The project number is folded over own scopes.** `coupling.distance-own.avg` is
 the eligible-type-weighted mean of measured `coupling.distance-own` across

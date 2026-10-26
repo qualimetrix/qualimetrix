@@ -35,13 +35,16 @@ distance stays absent without Ca/Ce.
    (D = |A + I - 1|); a namespace is either a package for both or for neither,
    and an interface-only contract namespace is a package too. Like distance,
    the population requires at least one counted own type even when
-   `min_type_count` is 0. `min_class_count`
-   is removed from namespace instability with no alias, per the backward
+   `min_type_count` is 0; bare enums, which implement no interface, are not
+   counted, so a namespace declaring only them is no package for either metric.
+   `min_class_count` is removed from namespace instability with no alias, per the backward
    compatibility policy: the old key is refused by name (exit code 3) in YAML
    and in `--rule-opt`. CBO keeps `min_class_count` over own classes.
-3. **`coupling.instability-own` is absent on a namespace declaring no type**,
-   as `coupling.cbo-own` is: a 0 would read as a measured one, and such a
-   namespace is not a package. A namespace declaring a type with no own edge
+3. **`coupling.instability-own` is absent on a namespace declaring no analysed
+   type**, as `coupling.cbo-own` is: a 0 would read as a measured one, and such
+   a namespace is not a package. Publication follows any declared analysed
+   type, so a namespace holding only bare enums carries both keys; the judged
+   population follows the counted types of decision 2 and excludes it. A namespace declaring a type with no own edge
    (Ca-own = Ce-own = 0) keeps 0 by the existing convention. A user formula
    reading `m["coupling.instability-own"]` without `??` now gets no value on a
    namespace without own types, reported under `computedMetricOutcomes`;
