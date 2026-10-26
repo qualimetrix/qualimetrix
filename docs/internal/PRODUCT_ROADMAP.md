@@ -205,7 +205,6 @@ condition. When an issue closes, drop its line here.
 - [#164](https://github.com/qualimetrix/qualimetrix/issues/164) hardcoded-credentials misses lowercase dotted secret phrases
 - [#166](https://github.com/qualimetrix/qualimetrix/issues/166) Duplication can report one copy in two overlapping groups
 - [#190](https://github.com/qualimetrix/qualimetrix/issues/190) HTML report shows file findings of class-free files on the project root
-- [#202](https://github.com/qualimetrix/qualimetrix/issues/202) Per-rule suppression on project-scoped producers is accepted and inert
 
 ### Product improvements
 
