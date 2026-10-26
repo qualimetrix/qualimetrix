@@ -230,6 +230,7 @@ suppression	src/Analysis/Run/Discovery/EntryInspector.php	code-smell.error-suppr
 suppression	src/Analysis/Run/Discovery/EntryInspector.php	code-smell.error-suppression	src/Analysis/Run/Discovery/EntryInspector.php	Qualimetrix\Analysis\Run\Discovery\EntryInspector::inspectLink	warning	1
 suppression	src/Analysis/Run/Discovery/EntryInspector.php	code-smell.error-suppression	src/Analysis/Run/Discovery/EntryInspector.php	Qualimetrix\Analysis\Run\Discovery\EntryInspector::list	warning	1
 suppression	src/Analysis/Run/Discovery/GeneratedFileFilter.php	code-smell.error-suppression	src/Analysis/Run/Discovery/GeneratedFileFilter.php	Qualimetrix\Analysis\Run\Discovery\GeneratedFileFilter::isGenerated	warning	1
+suppression	src/Analysis/Run/Discovery/RemovedNamespaceText.php	code-smell.error-suppression	src/Analysis/Run/Discovery/RemovedNamespaceText.php	Qualimetrix\Analysis\Run\Discovery\RemovedNamespaceText::read	warning	1
 suppression	src/Analysis/Run/Discovery/WalkedEntryOutcome.php	code-smell.boolean-argument	src/Analysis/Run/Discovery/WalkedEntryOutcome.php	Qualimetrix\Analysis\Run\Discovery\WalkedEntryOutcome::result	warning	2
 suppression	src/Analysis/Run/ExcludeBinding/ExcludeSelectorLedger.php	code-smell.boolean-argument	src/Analysis/Run/ExcludeBinding/ExcludeSelectorLedger.php	Qualimetrix\Analysis\Run\ExcludeBinding\ExcludeSelectorLedger::verdicts	warning	1
 suppression	src/Infrastructure/Ast/CachedFileParser.php	code-smell.empty-catch	src/Infrastructure/Ast/CachedFileParser.php	Qualimetrix\Infrastructure\Ast\CachedFileParser::parseContent	error	1

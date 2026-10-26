@@ -7021,12 +7021,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationSelectionTest::itRejectsAnOrdinaryFailureWithAnInvocationIdentityInEveryAccountingMode
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationSelectionTest::itStopsBeforeAdvancingInputsPastTheFirstFailureInEveryAccountingMode
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationSelectionTest::itUsesTheFailedGateUnitAfterAPassingOrdinaryPrefix
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itConsultsRemovedCodeWhenNoDoorWithholds
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itJudgesALiteralTheRemovedCodeCannotReach
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itJudgesEveryLiteralWhenNoDoorWithholds
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itSetsGeneratedRemovalAsideLikeExcludedPhpFiles
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itTreatsAbsentRemovedNamespacesAsUnknown
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itWithholdsALiteralTheRemovedCodeCouldHaveDeclared
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itWithholdsAnExcludeDoorWithoutPhpEvidence
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itWithholdsEveryLiteralWhenUnreadRemovedCodeOpensNoDoor
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itWithholdsUnderAnyDoorBeyondExcludedOrGeneratedPhp"paths beside exclude"
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itWithholdsUnderAnyDoorBeyondExcludedOrGeneratedPhp"paths"
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itWithholdsUnderAnyDoorBeyondExcludedOrGeneratedPhp"unknown universe beside generated"
@@ -7737,6 +7739,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itAnswersTheSameForRegexPathValue
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itBlamesNothingWhereTheProjectDeclaresNoAutoload
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itBlamesRemovedCodeOnlyForAValueItAloneWithholds
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itBlamesRemovedCodeThatOpenedNoDoor
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itJudgesALiteralNamespaceTheRemovedCodeCannotHaveDeclared
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itJudgesBothRegexKindsFromMeasuredScopeForACompleteNamedRoster
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itJudgesNoNamespaceValueWhereTheProjectDeclaresNoAutoload
@@ -10333,9 +10336,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itDistinguishesObservedOutsidePhpFromAnOutsideAsset
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itDoesNotBindAnOutsideProjectPathWithTheSameSuffix
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itFindsPhpInTheSecondRemovedRunSubtree
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itIgnoresANonPhpFileLinkInsideARemovedDirectoryAsTheWalkDoes
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itJudgesAnUnrelatedNamespaceLiteralBehindAnExcludedPhpTree
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itJudgesEachSelectorAgainstItsOwnInaccessibleLocation
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itJudgesNamedFileRosterAgainstCapturedUniverse
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itJudgesNoNamespaceLiteralALinkedFileInsideAnExcludedTreeMayDeclare
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsASelectorBelowAnUnlistableNamedRootUnjudgeable
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsAnOutsideExcludedDirectoryUnknownWithoutDescendingIntoIt
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsAnUnlistableOutsideProjectRootUnknown
@@ -10346,12 +10351,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsSameSourceWhenHiderAndHiddenSelectorShareMixedHistory
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsSiblingPrefixesSeparate
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsTheFirstNamedLinkWithoutASelectedRegularTargetAndKeepsHardlinksDistinct
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itMakesRemovedNamespacesUnknownForALinkInsideARemovedDirectory"directory link"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itMakesRemovedNamespacesUnknownForALinkInsideARemovedDirectory"php file link"
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itMakesRemovedNamespacesUnknownForAnExcludedNamedFileLink
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itMakesRemovedNamespacesUnknownPastTheByteBudgetWithoutChangingVerdicts
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itMakesRemovedNamespacesUnknownPastTheReadBudgetWithoutChangingVerdicts
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itMakesRemovedNamespacesUnknownWhenADeeperChildIsUnlistableAfterPhpWasFound
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itMakesRemovedNamespacesUnknownWhenAGeneratedFileCannotBeRead
- - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itNeitherFollowsDirectoryLinksNorReadsFileLinksInsideARemovedDirectory
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itPrefersASelectedRegularTargetOverANamedFileLinkRegardlessOfOrder
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itPrefersOtherSourceForPossibleHiddenRegexMatch
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itPrefersOtherSourceWhenTheHiddenSelectorHasMixedHistory
@@ -11510,6 +11516,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CacheDiscardLogLifecycleTest::itPublishesOneCompleteReportAndLogsDiscardBeforeClosingTheTarget
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itAgreesInNumberAcrossTheWarning
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itDoesNotBlameTheExclusionForAValueAnUnanalysedRootWithholds
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itDoesNotJudgeANamespaceRemovedOutsideTheMeasuredUniverse
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itDoesNotJudgeASelectorOfTheNamespaceTheExcludedFileDeclares
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itDoesNotJudgeTheNamespaceOfAFileThatFailedToParse
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itDoesNotJudgeWhenTheExcludedFileCannotBeRead
