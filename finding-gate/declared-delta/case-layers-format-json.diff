@@ -1,0 +1,36 @@
+--- candidate
++++ reference (mapped)
+@@ -247,5 +247,7 @@
+-            "gate": "own-afferent",
+-            "reason": "Own afferent coupling is below its minimum. Metric population boundary was not met.",
+-            "unit": "namespace",
+-            "count": 1,
+-            "examples": [
++            "gate": "namespace-afferent",
++            "reason": "Namespace afferent coupling is below its minimum. Metric population boundary was not met.",
++            "unit": "namespace",
++            "count": 3,
++            "examples": [
++                "ns:Corpus",
++                "ns:Corpus\\Layers",
+@@ -260,10 +262,10 @@
+-            "gate": "own-types",
+-            "reason": "The own type population is below its minimum. Metric population boundary was not met.",
+-            "unit": "namespace",
+-            "count": 8,
+-            "examples": [
+-                "ns:Corpus",
+-                "ns:Corpus\\Layers",
+-                "ns:Corpus\\Layers\\Controller",
+-                "ns:Corpus\\Layers\\Doubt",
+-                "ns:Corpus\\Layers\\Extra"
++            "gate": "namespace-classes",
++            "reason": "Subtree classes are below the configured minimum. Metric population boundary was not met.",
++            "unit": "namespace",
++            "count": 7,
++            "examples": [
++                "ns:Corpus\\Layers\\Controller",
++                "ns:Corpus\\Layers\\Doubt",
++                "ns:Corpus\\Layers\\Extra",
++                "ns:Corpus\\Layers\\GraphBase",
++                "ns:Corpus\\Layers\\Orphan"

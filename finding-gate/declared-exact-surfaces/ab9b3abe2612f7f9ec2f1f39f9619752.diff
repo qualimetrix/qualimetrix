@@ -1,0 +1,26 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 15850
++visible 15825
+@@ -119,4 +119,4 @@
+-    coupling.instability judges coupling.instability, coupling.instability-own
+-    options: max-error, max-warning, threshold
+-    options at class: enabled, max-error, max-warning, min-afferent, threshold
+-    options at namespace: enabled, max-error, max-warning, min-afferent, min-type-count, threshold
++    coupling.instability judges coupling.instability
++    options: max-error, max-warning, threshold
++    options at class: enabled, max-error, max-warning, min-afferent, threshold
++    options at namespace: enabled, max-error, max-warning, min-afferent, min-class-count, threshold
+@@ -226,1 +226,1 @@
+-invocation-rules 15850
++invocation-rules 15825
+@@ -344,4 +344,4 @@
+-    coupling.instability judges coupling.instability, coupling.instability-own
+-    options: max-error, max-warning, threshold
+-    options at class: enabled, max-error, max-warning, min-afferent, threshold
+-    options at namespace: enabled, max-error, max-warning, min-afferent, min-type-count, threshold
++    coupling.instability judges coupling.instability
++    options: max-error, max-warning, threshold
++    options at class: enabled, max-error, max-warning, min-afferent, threshold
++    options at namespace: enabled, max-error, max-warning, min-afferent, min-class-count, threshold

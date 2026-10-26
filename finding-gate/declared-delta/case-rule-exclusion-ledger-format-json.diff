@@ -1,0 +1,29 @@
+--- candidate
++++ reference (mapped)
+@@ -155,7 +155,19 @@
+-            "gate": "own-types",
+-            "reason": "The own type population is below its minimum. Metric population boundary was not met.",
+-            "unit": "namespace",
+-            "count": 4,
+-            "examples": [
+-                "ns:Corpus",
+-                "ns:Corpus\\RuleExclusionLedger",
++            "gate": "namespace-afferent",
++            "reason": "Namespace afferent coupling is below its minimum. Metric population boundary was not met.",
++            "unit": "namespace",
++            "count": 2,
++            "examples": [
++                "ns:Corpus",
++                "ns:Corpus\\RuleExclusionLedger"
++            ],
++            "dataGap": false
++        },
++        {
++            "producer": "coupling.instability",
++            "channel": "coupling.instability",
++            "level": "namespace",
++            "gate": "namespace-classes",
++            "reason": "Subtree classes are below the configured minimum. Metric population boundary was not met.",
++            "unit": "namespace",
++            "count": 2,
++            "examples": [
