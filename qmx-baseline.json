@@ -366,12 +366,6 @@
         "magnitudes": [
           9
         ]
-      },
-      {
-        "channel": "code-smell.long-parameter-list",
-        "magnitudes": [
-          9
-        ]
       }
     ],
     "declaration:callable:Qualimetrix\\Infrastructure\\Console\\CheckReport\\FormatBinding\\FormatterContextFactory::create@src/Infrastructure/Console/CheckReport/FormatBinding/FormatterContextFactory.php": [
@@ -391,12 +385,6 @@
     "declaration:callable:Qualimetrix\\Infrastructure\\Console\\Check\\CheckCommand::__construct@src/Infrastructure/Console/Check/CheckCommand.php": [
       {
         "channel": "code-smell.constructor-overinjection",
-        "magnitudes": [
-          10
-        ]
-      },
-      {
-        "channel": "code-smell.long-parameter-list",
         "magnitudes": [
           10
         ]

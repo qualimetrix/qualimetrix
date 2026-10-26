@@ -139,6 +139,7 @@ final class MetricName
     public const string CODE_SMELL_UNUSED_PRIVATE_CONSTANT = 'code-smell.unused-private.constant';
     public const string CODE_SMELL_PARAMETER_COUNT = 'code-smell.parameter-count';
     public const string CODE_SMELL_IS_VO_CONSTRUCTOR = 'code-smell.is-vo-constructor';
+    public const string CODE_SMELL_IS_INJECTION_CONSTRUCTOR = 'code-smell.is-injection-constructor';
     public const string CODE_SMELL_UNREACHABLE_CODE = 'code-smell.unreachable-code';
     public const string CODE_SMELL_UNREACHABLE_CODE_FIRST_LINE = 'code-smell.unreachable-code.first-line';
 

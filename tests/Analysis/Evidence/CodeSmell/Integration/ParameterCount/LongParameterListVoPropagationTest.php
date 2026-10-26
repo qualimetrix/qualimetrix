@@ -8,9 +8,12 @@ use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ConstructorOverinjectionOptions;
+use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ConstructorOverinjectionRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\LongParameterListOptions;
 use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\LongParameterListRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ParameterCountCollector;
@@ -47,6 +50,7 @@ use Qualimetrix\Core\Symbol\SymbolInfo;
 #[CoversClass(ParameterCountVisitor::class)]
 #[CoversClass(ParameterCountCollector::class)]
 #[CoversClass(LongParameterListRule::class)]
+#[CoversClass(ConstructorOverinjectionRule::class)]
 #[Group('regression')]
 final class LongParameterListVoPropagationTest extends TestCase
 {
@@ -126,10 +130,8 @@ PHP;
     }
 
     #[Test]
-    public function itUsesRegularThresholdsForNonVoConstructorEvenWithRelaxedVoThresholds(): void
+    public function itLeavesANonVoConstructorToConstructorOverinjectionWhateverTheVoThresholds(): void
     {
-        // Non-readonly class with 10 non-promoted parameters — must never take
-        // the VO branch, regardless of how relaxed the VO thresholds are.
         $code = <<<'PHP'
 <?php
 
@@ -152,20 +154,18 @@ class BigService
 }
 PHP;
 
-        $findings = $this->analyzeConstruct(
-            $code,
-            'App\Service',
-            'BigService',
-            new LongParameterListOptions(warning: 4, error: 6, voWarning: 20, voError: 30),
-        );
+        $options = new LongParameterListOptions(warning: 4, error: 6, voWarning: 20, voError: 30);
 
-        self::assertCount(1, $findings);
-        self::assertSame(Severity::Error, $findings[0]->severity);
-        self::assertSame('Method has 10 parameters, exceeds threshold of 6. Consider introducing a parameter object', $findings[0]->message);
+        self::assertSame([], $this->analyzeConstruct($code, 'App\Service', 'BigService', $options));
+
+        $owned = $this->analyzeConstruct($code, 'App\Service', 'BigService', $options, new ConstructorOverinjectionOptions(warning: 8, error: 12));
+        self::assertCount(1, $owned);
+        self::assertSame('code-smell.constructor-overinjection', $owned[0]->ruleName);
+        self::assertSame(Severity::Warning, $owned[0]->severity);
     }
 
     #[Test]
-    public function itUsesRegularThresholdsForAReadonlyServiceWithHiddenDependencies(): void
+    public function itLeavesAReadonlyServiceWithHiddenDependenciesToConstructorOverinjection(): void
     {
         $code = <<<'PHP'
 <?php
@@ -186,16 +186,40 @@ final readonly class Fanout
 }
 PHP;
 
-        $findings = $this->analyzeConstruct(
-            $code,
-            'App\Service',
-            'Fanout',
-            new LongParameterListOptions(warning: 6, error: 8),
-        );
+        self::assertSame([], $this->analyzeConstruct($code, 'App\Service', 'Fanout', new LongParameterListOptions(warning: 6, error: 8)));
 
+        $owned = $this->analyzeConstruct($code, 'App\Service', 'Fanout', new LongParameterListOptions(warning: 6, error: 8), new ConstructorOverinjectionOptions(warning: 6, error: 8));
+        self::assertCount(1, $owned);
+        self::assertSame('code-smell.constructor-overinjection', $owned[0]->ruleName);
+    }
+
+    /**
+     * @return iterable<string, array{int, ?Severity}>
+     */
+    public static function provideServiceSizes(): iterable
+    {
+        yield 'six dependencies' => [6, null];
+        yield 'seven dependencies' => [7, null];
+        yield 'eight dependencies' => [8, Severity::Warning];
+    }
+
+    #[Test]
+    #[DataProvider('provideServiceSizes')]
+    public function itReportsAServiceConstructorOnceAndOnlyByConstructorOverinjection(int $dependencies, ?Severity $expected): void
+    {
+        $promoted = implode(', ', array_map(static fn(int $i): string => 'private Dependency $d' . $i, range(1, $dependencies)));
+        $code = "<?php\n\nnamespace App\\Service;\n\ninterface Dependency {}\n\nfinal readonly class Handler\n{\n    public function __construct({$promoted}) {}\n\n    public function handle(): void {}\n}\n";
+
+        $findings = $this->analyzeConstruct($code, 'App\Service', 'Handler', new LongParameterListOptions(), new ConstructorOverinjectionOptions());
+
+        if ($expected === null) {
+            self::assertSame([], $findings);
+
+            return;
+        }
         self::assertCount(1, $findings);
-        self::assertSame(Severity::Warning, $findings[0]->severity);
-        self::assertSame('Method has 7 parameters, exceeds threshold of 6. Consider introducing a parameter object', $findings[0]->message);
+        self::assertSame('code-smell.constructor-overinjection', $findings[0]->ruleName);
+        self::assertSame($expected, $findings[0]->severity);
     }
 
     /**
@@ -206,6 +230,7 @@ PHP;
         string $namespace,
         string $class,
         LongParameterListOptions $options,
+        ?ConstructorOverinjectionOptions $overinjection = null,
     ): array {
         $collector = new ParameterCountCollector();
 
@@ -248,6 +273,11 @@ PHP;
 
         $context = new AnalysisContext($repository);
 
-        return (new LongParameterListRule($options))->analyze($context);
+        $findings = (new LongParameterListRule($options))->analyze($context);
+        if ($overinjection !== null) {
+            $findings = [...$findings, ...(new ConstructorOverinjectionRule($overinjection))->analyze($context)];
+        }
+
+        return $findings;
     }
 }

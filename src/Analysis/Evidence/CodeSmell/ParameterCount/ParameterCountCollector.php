@@ -45,6 +45,7 @@ final class ParameterCountCollector extends AbstractCollector implements Callabl
         return [
             MetricName::CODE_SMELL_PARAMETER_COUNT,
             MetricName::CODE_SMELL_IS_VO_CONSTRUCTOR,
+            MetricName::CODE_SMELL_IS_INJECTION_CONSTRUCTOR,
         ];
     }
 
@@ -63,6 +64,10 @@ final class ParameterCountCollector extends AbstractCollector implements Callabl
 
         foreach ($this->visitor->getVoConstructors() as $fqn => $_) {
             $bag = $bag->with(MetricName::CODE_SMELL_IS_VO_CONSTRUCTOR . ':' . $fqn, 1);
+        }
+
+        foreach ($this->visitor->getInjectionConstructors() as $fqn => $_) {
+            $bag = $bag->with(MetricName::CODE_SMELL_IS_INJECTION_CONSTRUCTOR . ':' . $fqn, 1);
         }
 
         return $bag;
@@ -108,6 +113,11 @@ final class ParameterCountCollector extends AbstractCollector implements Callabl
             // Boolean flag (0/1) for VO constructor detection — no aggregation needed
             new MetricDefinition(
                 name: MetricName::CODE_SMELL_IS_VO_CONSTRUCTOR,
+                collectedAt: SymbolLevel::Callable,
+                aggregations: [],
+            ),
+            new MetricDefinition(
+                name: MetricName::CODE_SMELL_IS_INJECTION_CONSTRUCTOR,
                 collectedAt: SymbolLevel::Callable,
                 aggregations: [],
             ),
