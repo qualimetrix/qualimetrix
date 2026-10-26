@@ -658,7 +658,13 @@ All nine project-scoped channels use these measured questions; see
 
 Each published skipped value has `{channel, option, pattern}`.
 `unjudgedChannels` lists channels with no judged value; a partially judged channel
-can be absent while its skipped values remain named. Reasons retain
+can be absent while its skipped values remain named. This now holds for
+`suppression.unmatched-namespace` too: removed code (excluded PHP, generated files)
+leaves a literal value judged when it cannot declare that namespace, so the channel
+is absent from `unjudgedChannels` once one of its values was judged
+([ADR 0132](../../docs/adr/0132-removed-code-namespaces-narrow-the-suppression-namespace-audit.md)).
+A caller that computes no values, the directive audit, still names it. The six
+other namespace-claim channels stay all-or-nothing. Reasons retain
 flat named cause fields even on a `covered` run. Namespace location still uses
 accepted PSR-4 facts independently of state. Human wording names unjudged
 channels even when state is `covered`: path coverage alone does not judge every

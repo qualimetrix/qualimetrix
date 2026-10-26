@@ -1335,6 +1335,14 @@ Seven channels ask the first question:
 `suppression.unmatched-rule-ledger` use the second; namespace values under the
 last also ask the first. There are ten channels in total.
 
+For `suppression.unmatched-namespace` and namespace values under
+`suppression.unmatched-rule-ledger`, a literal (`exact`/`subtree`) value is judged
+despite excluded PHP or generated removal when the namespaces those files declare
+(read by a token scan of their `namespace` statements) cannot match it. Everything
+else about the first question is unchanged, and the other six channels remain
+all-or-nothing. See
+[Excluded and generated code](../rules/suppression.md#excluded-and-generated-code).
+
 A complete named PHP roster can cover a known universe. An observed regular
 `.php` outside selection is missing PHP, even when an exclude matches it. An
 excluded directory outside selection hides unseen descendants: named
@@ -1367,11 +1375,17 @@ The object retains five fields: `state`, `uncoveredAutoloadTargets[]`,
 `{channel, option, pattern}`. `unjudgedChannels` contains only channels with no
 judged value; a partially judged channel may be absent while its skipped values
 remain with their `channel`. An empty channel list therefore does not prove
-that every value was judged. Reasons retain `kind` and named cause fields,
+that every value was judged: `suppression.unmatched-namespace` is absent as soon
+as one of its values was judged. Reasons retain `kind` and named cause fields,
 including removals and uncertain locations. Auxiliary Composer issues explain
 ancestry limits without closing main-project coverage. Accepted PSR-4 facts still
 place namespace values independently of the enum.
 See [Suppression rules](../rules/suppression.md#scope-and-severity).
+
+When exclusion or generated filtering leaves namespace suppression values
+unjudged, `check` also warns on stderr (silenced by `-q`), naming the exclusion,
+the number of values and their channels. `directives` and `baseline:*` print no
+such warning; the `projectScope` object is the record in those commands.
 
 
 For a selector hidden by another source, the skipped value keeps its three keys.

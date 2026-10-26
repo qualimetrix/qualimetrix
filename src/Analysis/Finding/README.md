@@ -201,6 +201,10 @@ Namespace/declaration absence asks `judgesNamespaceClaims()`; path values ask
 Literal (`exact`/`subtree`) namespace values ask `judgesNamespaceLiteral()`
 instead: excluded PHP files and generated removal withhold only a value the
 removed code could have declared, as `RemovedCodeNamespaces` records.
+`RemovedCodeNamespaces` (`none`/`known`/`unknown`, ASCII case-folded, ancestors of
+a declared namespace count as declared) lives in `Contract/ProjectScope`; Run
+produces it. Regex namespace values and the six other namespace-claim channels
+keep asking `judgesNamespaceClaims()`.
 Report state and a second Console boolean do not substitute for those facts.
 Accepted PSR-4 records still locate values independently of report state;
 without a usable map namespace values remain unjudged.

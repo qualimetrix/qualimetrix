@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `projectScope.unjudgedChannels` no longer lists `suppression.unmatched-namespace` once at least one of its values was judged; the values still withheld stay in `projectScope.unjudgedValues`.
+
+### Fixed
+
+- An unrelated `exclude` entry or `@generated` file no longer withholds every literal namespace suppression: a stale `exact:`/`subtree:` selector in `suppress_namespaces` (global or per-rule) is reported unless the removed code declares a namespace it could bind, and `check` warns on stderr about values it still could not judge (#200).
+
 ## [0.28.2] - 2026-10-25
 
 ### Fixed

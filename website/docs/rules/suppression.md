@@ -31,16 +31,55 @@ asks two questions. Namespace absence needs complete declaration evidence:
 omitted PHP, authored PHP removal, generated exclusions and an uncertain universe
 withhold it. Path values use PHP-path completeness and universe certainty
 separately; authored/generated removal alone does not close that question.
-Rule-ledger namespace values also ask the declaration question.
+Rule-ledger namespace values also ask the declaration question. For a literal
+(`exact` or `subtree`) namespace value that question is narrower, see
+[Excluded and generated code](#excluded-and-generated-code).
 
 Every value is placed separately. Accepted production/development PSR-4 facts
 from the invocation snapshot locate namespaces independently of report state;
-without a map they remain unjudged. A literal under a removed entry is not judged.
+without a map they remain unjudged. A literal under a removed entry is not judged, and removed code that may declare its namespace withholds it.
 Path/ledger regex is unjudged with incomplete paths or authored removal that could
 hide a match; namespace regex also requires complete declaration evidence. This
 conservative answer can withhold an unrelated stale regex: rerun without the
 exclusion. Reports name every skipped `{channel, option, pattern}` value,
 including on a `covered` run.
+
+### Excluded and generated code
+
+Excluded PHP files and `@generated` files are not analysed, but the run reads the
+`namespace` statements of every one of them (a token scan, no analysis) and judges
+a literal `exact` or `subtree` `suppress_namespaces` value, global or under
+`rules.<name>`, unless that code could have declared a namespace the value binds.
+A stale `exact: App\Does\Not\Exist` is therefore reported although `src/Kernel.php`
+is excluded; `exact: App` is not judged while the excluded file declares `App`. A
+declared namespace also makes its ancestors undecidable: a file in `App\Foo\Bar`
+withholds `exact: App\Foo`. Matching ignores ASCII case.
+
+What is still withheld:
+
+- Every value whose removed code is unknown: an unreadable excluded file, an
+  excluded directory that cannot be listed, or more than 2,000 removed or generated
+  files read in one run (the read budget).
+- `regex` values, as before.
+- Every other withholding cause (omitted PHP paths, an unknown project universe, a
+  missing PSR-4 map) withholds all values, as before.
+- The architecture and cohesion/coupling namespace audits
+  (`architecture.*`, `cohesion.unmatched-exclude-method`,
+  `coupling.unmatched-framework-namespace`) are not narrowed: any removed PHP file
+  still withholds them, because they need class and method names, not only
+  namespaces.
+
+`check` prints a warning on stderr when exclusion or generated filtering is the
+only reason namespace suppression values stayed unjudged. It names the exclusion,
+the number of values and their channels, and `-q` silences it:
+
+```text
+Code removed by exclude "exact:src/Kernel.php" may declare the namespaces of 1 suppression value, so it was not judged (suppression.unmatched-namespace). Narrow the exclusion to judge them.
+```
+
+`directives` and `baseline:*` print no such warning; `directives` still names
+`suppression.unmatched-namespace` in its project scope. The report's
+`projectScope.unjudgedValues` lists every value left unjudged in all formats.
 
 They are not written into a generated baseline: `baseline:generate` measures findings on a different seam, and a warning about the author's own configuration should not become accepted debt in the file that author generates with one command.
 

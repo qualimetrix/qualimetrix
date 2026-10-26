@@ -83,9 +83,15 @@ document without rereading Composer. `WalkedEntrySelection` owns admission and
 recursive metadata descent; `WalkedEntryOutcome` accumulates passed facts with
 no IO. `RemovedRunPhpEvidence` descends every actual removed run entry once and
 returns the selector evidence together with the namespaces its PHP files declare,
-read by `RemovedNamespaceScan` (token-based, whole file). One `RemovedNamespaceBudget` (2,000 file reads per walk) bounds both reads; past it the namespaces become unknown and the descent returns to stopping at the first PHP file. The ledger folds them,
-and the generated-file policy adds those of `@generated` files, into one
-`RemovedCodeNamespaces` carried beside the verdicts to `ProjectScopeJudgement`.
+read by `RemovedNamespaceScan` (token-based, whole file). One
+`RemovedNamespaceBudget` (2,000 file reads per walk) bounds both reads; past it,
+on an unreadable file or on an unlistable child the namespaces are unknown and
+the descent returns to stopping at the first PHP file. The ledger folds them,
+and the generated-file policy adds those of `@generated` files (a full read; the
+generated filter itself reads a header only), into one `RemovedCodeNamespaces`
+carried beside the verdicts to `ProjectScopeJudgement`. This is the one
+exception to "project scope opens no source"; see
+[ADR 0132](../../../docs/adr/0132-removed-code-namespaces-narrow-the-suppression-namespace-audit.md).
 These types share the same inspector and ledger, without another classifier or walk.
 
 ## Phase order
@@ -146,6 +152,11 @@ absence when paths omit observed PHP, an authored removed run entry hides PHP
 is unknown. `judgesExcludeSelectors()` uses path completeness and universe certainty
 separately, without Exclude/Generated doors as inputs. Settled `Removed` selectors
 survive a withheld answer.
+A third question, `judgesNamespaceLiteral()`, serves only literal (`exact`/`subtree`)
+namespace suppression values: when the sole doors are `Exclude` with PHP evidence
+and `Generated`, it withholds just the values the removed code's declared
+namespaces (and their ancestors) could bind. Every other door, an unknown
+`RemovedCodeNamespaces` and `regex` values withhold as under the first question.
 
 Path coverage compares PHP files: a complete explicit roster can cover a known
 universe. An observed outside-selection regular `.php` is a missing file even
@@ -265,7 +276,8 @@ repair an invalid source roster.
 PHP evidence belongs only to real entries removed from this run. The walker can
 search their metadata until the first regular `.php`, continuing to another
 removed run entry if the first contains none. It never searches an excluded
-outside-selection directory or opens source for this audit. Regular PHP or
+outside-selection directory. Its source is read only for the namespace
+statements of removed code (see above), never for analysis. Regular PHP or
 unavailable search metadata from an actual removed run entry holds declaration
 absence closed, with selector/evidence in its Exclude reason; selector
 completeness remains independent.
