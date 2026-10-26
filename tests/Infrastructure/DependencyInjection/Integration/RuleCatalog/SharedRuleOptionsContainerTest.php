@@ -27,13 +27,13 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleEnablementResolver;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
 use Qualimetrix\Infrastructure\Console\RunSetup\Input\AnalysisPreflight;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\DependencyInjection\RuleCatalog\RuleOptionsCompilerPass;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Qualimetrix\Tests\TestSupport\WorkingDirectory\RunsFromRepositoryRoot;
 use ReflectionProperty;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -81,7 +81,7 @@ final class SharedRuleOptionsContainerTest extends TestCase
         $catalog = $container->get(ChannelUniverse::class);
         self::assertInstanceOf(ChannelUniverse::class, $catalog);
         $channels = $catalog->snapshot(new ResolvedComputedMetricDefinitions([]));
-        $resolver = new RuleEnablementResolver();
+        $resolver = ResolvedOptionsFixture::resolver();
         $stated = $resolver->decide($configuration->document, $channels);
         $options = $builder->build($configuration, $stated);
         $registry->replace($configuration->withChannelUniverse($channels)->withResolvedOptions($options)

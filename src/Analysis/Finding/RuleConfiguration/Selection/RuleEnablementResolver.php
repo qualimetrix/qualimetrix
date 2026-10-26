@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\RuleConfiguration\Selection;
 
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPresentationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
+use Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope;
 use Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions;
 use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision;
@@ -21,9 +23,14 @@ use Qualimetrix\Analysis\Finding\Selection\SelectionSpecificity;
 /** Resolves authored cell statements, then adds final option activity. */
 final readonly class RuleEnablementResolver
 {
+    public function __construct(
+        private ChannelFileScope $fileScope,
+        private ChannelPresentationInterface $presentation,
+    ) {}
+
     public function decide(ResolvedDocument $document, ChannelUniverseInterface $channels): StatedEnablement
     {
-        $diagnostics = AuthoredSelection::diagnostics($document, $channels);
+        $diagnostics = AuthoredSelection::diagnostics($document, $channels, $this->fileScope, $this->presentation);
         $statements = AuthoredSelection::statements($document);
         $filter = AuthoredSelection::filter($document);
         $cells = [];

@@ -55,12 +55,12 @@ final class RuleEnablementResolverTest extends TestCase
                     cliOptionNames: [$root => $option],
                 )),
             ]);
-            $lawful = (new RuleEnablementResolver())->decide($compose(['complexity.alpha']), $channels);
+            $lawful = (ResolvedOptionsFixture::resolver())->decide($compose(['complexity.alpha']), $channels);
             self::assertSame($root === 'only_rules', $lawful->decisionFor('complexity.alpha')->on);
             self::assertTrue($lawful->decisionFor('complexity.beta')->on);
             self::assertSame($root === 'only_rules' ? ['complexity.alpha'] : null, $lawful->filter()?->selectors);
             try {
-                (new RuleEnablementResolver())->decide($compose(['complexity.alpha', 'nosuch.channel']), $channels);
+                (ResolvedOptionsFixture::resolver())->decide($compose(['complexity.alpha', 'nosuch.channel']), $channels);
                 self::fail('The unknown CLI selector was accepted.');
             } catch (ConfigurationRefusal $refusal) {
                 self::assertSame('Rule selector "nosuch.channel" does not match any registered producer or channel.', $refusal->summary());
@@ -75,7 +75,7 @@ final class RuleEnablementResolverTest extends TestCase
             ['source' => 'preset', 'values' => [$root => ['complexity.beta']]],
         ], AbsolutePath::fromString('/project'), self::metadata());
         try {
-            (new RuleEnablementResolver())->decide($document->resolved(), ResolvedOptionsFixture::universe(self::metadata()));
+            (ResolvedOptionsFixture::resolver())->decide($document->resolved(), ResolvedOptionsFixture::universe(self::metadata()));
             self::fail('The unknown lower selector was ignored.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertSame('Rule selector "nosuch.channel" does not match any registered producer or channel.', $refusal->summary());
@@ -102,7 +102,7 @@ final class RuleEnablementResolverTest extends TestCase
             ...self::unusedReachPorts(),
         );
         try {
-            (new RuleEnablementResolver())->decide($document->resolved(), $channels);
+            (ResolvedOptionsFixture::resolver())->decide($document->resolved(), $channels);
             self::fail('The class-only namespace suppression key was accepted.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString('does not report at level "namespace"', $refusal->summary());
@@ -121,7 +121,7 @@ final class RuleEnablementResolverTest extends TestCase
             ['source' => 'preset', 'values' => ['disabled_rules' => ['code-smell.*']]],
         ], AbsolutePath::fromString('/project'), $metadata);
         $channels = ResolvedOptionsFixture::universe($metadata);
-        $stated = (new RuleEnablementResolver())->decide($document->resolved(), $channels);
+        $stated = (ResolvedOptionsFixture::resolver())->decide($document->resolved(), $channels);
         self::assertCount(1, $stated->diagnostics());
         $diagnostic = $stated->diagnostics()[0];
         self::assertSame('The group "code-smell.*" no longer includes "design.god-class" or "design.data-class". Name those producers explicitly if they should remain selected.', $diagnostic->message);
@@ -135,7 +135,7 @@ final class RuleEnablementResolverTest extends TestCase
             self::assertSame([$diagnostic], $copy->diagnostics);
         }
         $exact = ResolvedOptionsFixture::document([['source' => 'config', 'values' => ['only_rules' => ['code-smell.eval']]]], AbsolutePath::fromString('/project'), $metadata);
-        self::assertSame([], (new RuleEnablementResolver())->decide($exact->resolved(), $channels)->diagnostics());
+        self::assertSame([], (ResolvedOptionsFixture::resolver())->decide($exact->resolved(), $channels)->diagnostics());
     }
 
     #[Test]

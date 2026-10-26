@@ -169,7 +169,9 @@ Also available as a CLI option: `--suppress-namespace` (merged with YAML config)
 !!! warning "Declared project scope remains exempt"
     `suppress_namespaces` does not suppress `architecture.circular-dependency` cycles or
     declared project-scoped diagnostics. Exemption is declared per channel;
-    the `architecture.` prefix alone grants none.
+    the `architecture.` prefix alone grants none. The per-rule form of the option is
+    refused for such producers; see the note under
+    [Works for every rule](#per-rule-project-scoped-producers).
 
     `architecture.layer-violation` belongs to the source declaration: global
     `suppress_paths` matches the physical dependency site's file, while
@@ -375,12 +377,33 @@ unchanged and stays producer-wide across class and namespace findings.
 
 !!! info "Works for every rule, including the architecture rules"
     `suppress_namespaces`, `suppress_namespace_channels`, and `suppress_paths` are extracted and applied at the framework level for
-    **any** rule name, regardless of whether that rule's Options class declares such a field —
-    this is deliberately not opt-in per rule. That includes `architecture.layer-violation` and
-    `architecture.circular-dependency`. Global exclusions apply to source-owned layer
-    violations; cycles remain project-scoped. The per-rule form explicitly names the producer
-    whose findings should be suppressed. See the architecture rule's
+    rule names regardless of whether that rule's Options class declares such a field —
+    this is deliberately not opt-in per rule. That includes `architecture.layer-violation`.
+    Global exclusions apply to source-owned layer violations. The per-rule form explicitly
+    names the producer whose findings should be suppressed. See the architecture rule's
     [Suppression section](../rules/architecture.md#suppression) for the reasoning.
+
+#### Producers with project-scoped findings only {#per-rule-project-scoped-producers}
+
+A non-empty per-rule `suppress_namespaces` or `suppress_paths` is refused at load
+(exit 3) for a producer whose every channel is project-scoped: its findings are
+about the project, so no path or namespace can address them. The producers are
+`architecture.circular-dependency`, `architecture.layer-declaration`,
+`architecture.unassigned-class`, `baseline.unused-entry`,
+`coupling.unmatched-framework-namespace`, `discovery.unmatched-exclude` and
+`suppression.configuration`. An empty list or `null` is accepted. The same refusal
+applies when the option is written with `--rule-opt`. Producers with at least one
+file-scoped channel (for example `cohesion.lcom`) and computed metrics are not
+affected, even when a computed metric is configured to report only at the project
+level.
+
+The refusal happens in every command that resolves rule options: `check`,
+`directives`, `debug:layer-assignment`, `rules` and `baseline:generate`,
+`baseline:update`, `baseline:cleanup`, `baseline:explain`. `graph:export` does not
+interpret rule options, so it does not refuse them. To accept known findings of
+such a producer, use a [baseline](../usage/baseline.md); for dependency cycles,
+narrow what counts as an edge with `ignore-relations` of
+[`architecture.circular-dependency`](../rules/architecture.md).
 
 **Suppress paths for a rule:**
 
@@ -936,6 +959,12 @@ item's keys are read from the layer that wrote the list and never merge. The
 owner of a key may still refuse a merged value the policy let through — a
 formula referencing an unknown computed metric, or a layer that allows a layer
 `layers` does not declare.
+
+The table lists `suppress-namespaces` and `suppress-paths` under every rule, but for
+the seven producers with project-scoped findings only they accept just an empty list or
+`null`; see [Producers with project-scoped findings only](#per-rule-project-scoped-producers).
+The same holds for `suppress-namespace-channels`, whose entries must name a channel that
+reports at the namespace level.
 
 <!-- generated:configuration-merge-table:begin (php scripts/generate-configuration-merge-table.php) -->
 

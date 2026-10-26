@@ -11,7 +11,9 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedWriteHistoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPresentationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope;
 use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionFilter;
 
 /** Reads every authored selector writer before resolving a cell. */
@@ -119,8 +121,12 @@ final class AuthoredSelection
     }
 
     /** @return list<ConfigurationDiagnostic> */
-    public static function diagnostics(ResolvedDocument $document, ChannelUniverseInterface $channels): array
-    {
-        return AuthoredSelectionDiagnostics::forDocument($document, $channels);
+    public static function diagnostics(
+        ResolvedDocument $document,
+        ChannelUniverseInterface $channels,
+        ChannelFileScope $fileScope,
+        ChannelPresentationInterface $presentation,
+    ): array {
+        return AuthoredSelectionDiagnostics::forDocument($document, $channels, $fileScope, $presentation);
     }
 }

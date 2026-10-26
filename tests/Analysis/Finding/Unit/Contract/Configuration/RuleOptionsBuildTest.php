@@ -40,7 +40,6 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassOptions;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
@@ -121,7 +120,7 @@ final class RuleOptionsBuildTest extends TestCase
             new CommandLinePathWrite(['rules', 'architecture.unassigned-class', 'mode'], 'ignore', '--rule-opt', '--rule-opt=architecture.unassigned-class:mode=ignore', (new RuleOptionDocumentForms())->schemaAt($surface, $address)),
         ]));
         $document = DocumentComposer::compose(new DocumentSchema([new RulesSection($execution, 'rules'), new RulesSection($execution, 'only_rules'), new RulesSection($execution, 'disabled_rules')]), [$layer]);
-        $stated = (new RuleEnablementResolver())->decide($document, ResolvedOptionsFixture::universe($metadata));
+        $stated = (ResolvedOptionsFixture::resolver())->decide($document, ResolvedOptionsFixture::universe($metadata));
         $options = (new RuleOptionsBuild($execution))->build(new FindingConfiguration($document), $stated);
         $decision = $stated->decisionFor('architecture.unassigned-class');
         $cell = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
@@ -193,7 +192,7 @@ final class RuleOptionsBuildTest extends TestCase
             $metadata = $execution->allRules();
             $configuration = $input->document->roots() === [] ? ResolvedOptionsFixture::authoredConfiguration([], $metadata) : $input;
             $channels = ResolvedOptionsFixture::universe($metadata, [GotoRule::NAME => [\Qualimetrix\Core\Symbol\SymbolLevel::Callable]]);
-            $resolver = new RuleEnablementResolver();
+            $resolver = ResolvedOptionsFixture::resolver();
             $stated = $resolver->decide($configuration->document, $channels);
             $options = $builder->build($configuration, $stated);
             return $configuration->withChannelUniverse($channels)->withResolvedOptions($options)
@@ -568,7 +567,7 @@ final class RuleOptionsBuildTest extends TestCase
             new RulesSection($execution, 'only_rules'),
             new RulesSection($execution, 'disabled_rules'),
         ]), $layers);
-        $resolver = new RuleEnablementResolver();
+        $resolver = ResolvedOptionsFixture::resolver();
         $channels = ResolvedOptionsFixture::universe($metadata);
         $stated = $resolver->decide($document, $channels);
         $configuration = new FindingConfiguration($document);

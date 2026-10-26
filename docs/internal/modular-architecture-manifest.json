@@ -21107,6 +21107,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\GraphExport\\GraphExportInput"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Selection\\AuthoredSelectionDiagnostics"
         }
       ]
     },

@@ -384,6 +384,9 @@ not a constructor dependency exposed to consumers.
 
 `RuleEnablementResolver::decide()` reads every authored enabled/disabled writer
 and the effective only filter against the invocation's immutable channel universe.
+It also refuses a non-empty per-rule `suppress_namespaces` / `suppress_paths` on a
+producer whose every channel is project-scoped by `ChannelFileScope` (injected with
+`ChannelPresentationInterface`, which supplies the docs link in the refusal).
 `RuleOptionsBuild::build()` constructs every producer's options through
 `fromResolved(ResolvedRuleOptionValues)`, including inactive producers, and
 projects typed suppression values. `conclude()` adds each cell's option activity,

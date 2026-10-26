@@ -2819,6 +2819,7 @@ Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Analysis\Run\Excl
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Reporting\Formatter\Json\JsonHealthSection	Reporting	src/Reporting/Formatter/Json/JsonHealthSection.php	ast-name
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Reporting\Formatter\Summary\HealthBarRenderer	Reporting	src/Reporting/Formatter/Summary/HealthBarRenderer.php	ast-name
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Reporting\GraphProjection\NamespaceSelection	Reporting.GraphProjection	src/Reporting/GraphProjection/NamespaceSelection.php	ast-name
+Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Analysis\Finding\Selection\AuthoredSelectionDiagnostics	Analysis.Finding	src/Analysis/Finding/Selection/AuthoredSelectionDiagnostics.php	ast-name
 Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Infrastructure\Console\Application\Application	Infrastructure.Console	src/Infrastructure/Console/Application/Application.php	ast-name
 Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Infrastructure\Console\Baseline\BaselineCommand	Infrastructure.Console	src/Infrastructure/Console/Baseline/BaselineCommand.php	ast-name
 Qualimetrix\Core\ProductIdentity	Core.Neutral	Qualimetrix\Infrastructure\Console\Baseline\ChannelRename\ChannelRenameReporter	Infrastructure.Console	src/Infrastructure/Console/Baseline/ChannelRename/ChannelRenameReporter.php	ast-name
