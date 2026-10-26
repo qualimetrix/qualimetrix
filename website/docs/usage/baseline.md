@@ -23,6 +23,12 @@ use `property_type`, and constant declarations use `constant_type`. Former
 `union_type` and `intersection_type` relation entries are inert; these syntax
 forms now live in the graph's `shape` object.
 
+The same applies to references inside attribute arguments (`Repo::class`,
+`new Foo()`, and the like): their edge kind is now `attribute_argument`, so a
+baseline entry for such an edge changes its `edge.type` identity and shows up as
+one stale and one new entry. Add `attribute_argument` to the policy's
+`relations:` if the reference is allowed.
+
 Review the findings before changing acceptance. Keep the existing baseline;
 add new source identities and remove only explicitly selected old identities:
 

@@ -181,6 +181,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0130 — The Finding Gate Keeps Behaviour Tests, Not a Witness Registry](0130-the-finding-gate-keeps-behaviour-tests-not-a-witness-registry.md) — behaviour and failure-class tests at the cheapest level; a comparator change proves its new check bites once.
 - [0131 — A Value Object Exposes Its State](0131-a-value-object-exposes-its-state.md) — a readonly all-promoted constructor is a VO only when its class exposes a promoted property; constructor overinjection leaves VO constructors to long-parameter-list.
 - [0132 — Removed Code's Namespaces Narrow the Suppression Namespace Audit](0132-removed-code-namespaces-narrow-the-suppression-namespace-audit.md) — literal namespace suppression selectors are judged against the namespaces excluded and generated code declares, within bounded read limits; supplements ADR 0093.
+- [0133 — References in Attribute Arguments Are Their Own Edge Kind](0133-attribute-argument-edges-are-their-own-kind.md) — `attribute_argument` is a standalone relations kind outside every alias, the vocabulary lives in DependencyModel, and `architecture.circular-dependency` gains `ignore-relations`; answers ADR 0071.
 
 ## Superseded history
 

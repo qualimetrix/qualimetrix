@@ -257,6 +257,7 @@
   # architecture.circular-dependency:
   #   enabled: true
   #   max_cycle_size: 0          # 0 = report all sizes
+  #   ignore_relations: []       # kinds or aliases whose edges form no cycle, e.g. [attribute_argument]
 
   # Layer violation rule — enforces the architecture defined under the top-level
   # `architecture:` key (see below). Short-circuits when no layers are declared.
@@ -397,7 +398,8 @@
 #
 #     # Long-form target with relations: filter (whitelist of dependency
 #     # kinds). Aliases: inheritance, static_access, type_reference,
-#     # runtime_check.
+#     # runtime_check. `attribute` and `attribute_argument` (references inside
+#     # attribute arguments) are standalone kinds in no alias.
 #     repository:
 #       - target: doctrine
 #         relations: [implements, extends, type_reference]

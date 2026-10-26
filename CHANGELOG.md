@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking
+
+- References inside attribute arguments (`Foo::class`, `Foo::BAR`, enum cases, `new Foo()`, closures) are recorded as the new dependency kind `attribute_argument` instead of `class_const_fetch`, `new` and the like; it joins no `relations:` alias, and graph export `types` shows it; coupling values do not change. A layer policy that admitted such references through `static_access`, `new` or another kind now reports `architecture.layer-violation` ("uses in attribute argument"): add `attribute_argument` to its `relations:` list. Baseline `architecture.layer-violation` entries for these edges change identity (stale plus new): accept the new ones with `baseline:update --accept-new=architecture.layer-violation` and remove the stale ones with `baseline:cleanup` (#196).
+
 ### Changed
+
+- `architecture.circular-dependency` option `ignore_relations`: dependency kinds or `relations:` aliases whose edges do not form cycles, e.g. `[attribute_argument]` for entity–repository cycles that exist only because a mapping attribute names the repository; unknown kinds are refused by name (#196).
 
 - `projectScope.unjudgedChannels` no longer lists `suppression.unmatched-namespace` once at least one of its values was judged; the values still withheld stay in `projectScope.unjudgedValues`.
 
