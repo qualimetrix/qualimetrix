@@ -30,6 +30,34 @@ final class ProjectScopeJudgementLiteralTest extends TestCase
         self::assertTrue($scope->judgesExactNamespace('App'));
     }
 
+    /**
+     * Code removed outside the measured universe opens no door, yet it still
+     * leaves the namespace tree: a literal it may declare is withheld, its
+     * neighbour stays judged, and the all-or-nothing claims stay open.
+     */
+    #[Test]
+    public function itConsultsRemovedCodeWhenNoDoorWithholds(): void
+    {
+        $scope = new ProjectScopeJudgement([], [], [], RemovedCodeNamespaces::known(['App\\Tests\\Legacy']));
+
+        self::assertFalse($scope->judgesExactNamespace('App\\Tests\\Legacy'));
+        self::assertFalse($scope->judgesNamespaceSubtree('App\\Tests'));
+        self::assertFalse($scope->judgesExactNamespace('App\\Tests'), 'the tree materialises the ancestor too');
+        self::assertTrue($scope->judgesExactNamespace('App\\Other'));
+        self::assertTrue($scope->judgesNamespaceClaims());
+        self::assertTrue($scope->judgesBesideRemovedCode());
+    }
+
+    #[Test]
+    public function itWithholdsEveryLiteralWhenUnreadRemovedCodeOpensNoDoor(): void
+    {
+        $scope = new ProjectScopeJudgement([], [], [], RemovedCodeNamespaces::unknown());
+
+        self::assertFalse($scope->judgesExactNamespace('App\\Other'));
+        self::assertFalse($scope->judgesNamespaceSubtree('App'));
+        self::assertTrue($scope->judgesNamespaceClaims());
+    }
+
     #[Test]
     public function itJudgesALiteralTheRemovedCodeCannotReach(): void
     {

@@ -189,6 +189,18 @@ final class ValueScopeJudgementTest extends TestCase
         self::assertTrue($this->removedPhp(RemovedCodeNamespaces::unknown())->withholdsOnlyForRemovedCode($this->exactNamespace('Acme\\Foo')), 'unread removed code may declare anything');
     }
 
+    /** Code removed outside the measured universe opens no door and is still blamed for what it may declare. */
+    #[Test]
+    public function itBlamesRemovedCodeThatOpenedNoDoor(): void
+    {
+        $judgement = $this->judgement(['src', 'tests'], new ProjectScopeJudgement([], [], [], RemovedCodeNamespaces::known(['Acme\\Tests\\Legacy'])));
+
+        self::assertFalse($judgement->judgesNamespaceValue($this->exactNamespace('Acme\\Tests\\Legacy')));
+        self::assertTrue($judgement->withholdsOnlyForRemovedCode($this->exactNamespace('Acme\\Tests\\Legacy')));
+        self::assertTrue($judgement->judgesNamespaceValue($this->exactNamespace('Acme\\Tests\\Gone')));
+        self::assertFalse($judgement->withholdsOnlyForRemovedCode($this->exactNamespace('Acme\\Tests\\Gone')));
+    }
+
     #[Test]
     public function itBlamesNothingWhereTheProjectDeclaresNoAutoload(): void
     {

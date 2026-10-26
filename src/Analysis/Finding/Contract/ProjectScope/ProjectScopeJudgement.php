@@ -90,13 +90,13 @@ final readonly class ProjectScopeJudgement
         return $this->namespaceWithheldBy === [];
     }
 
-    /** Whether an exact namespace selector is judged although code was removed. */
+    /** Whether an exact namespace selector is judged: no removed code may declare it. */
     public function judgesExactNamespace(string $namespace): bool
     {
         return $this->judgesBesideRemovedCode() && !$this->removedCode()->mayDeclare($namespace);
     }
 
-    /** Whether a namespace subtree selector is judged although code was removed. */
+    /** Whether a namespace subtree selector is judged: no removed code may declare within it. */
     public function judgesNamespaceSubtree(string $namespace): bool
     {
         return $this->judgesBesideRemovedCode() && !$this->removedCode()->mayDeclareWithin($namespace);
@@ -125,13 +125,15 @@ final readonly class ProjectScopeJudgement
         return !\in_array(ProjectScopeDoor::Exclude, $this->namespaceWithheldBy, true) || $this->excludeEvidenceIsPhpFilesOnly();
     }
 
+    /**
+     * Removed code is consulted even when no door is open: code removed
+     * outside the measured universe opens none, yet still leaves the
+     * namespace tree. Without evidence, an open door means nothing is known
+     * of the removed code, and no door means nothing was removed.
+     */
     private function removedCode(): RemovedCodeNamespaces
     {
-        if ($this->namespaceWithheldBy === []) {
-            return RemovedCodeNamespaces::none();
-        }
-
-        return $this->removedCode ?? RemovedCodeNamespaces::unknown();
+        return $this->removedCode ?? ($this->namespaceWithheldBy === [] ? RemovedCodeNamespaces::none() : RemovedCodeNamespaces::unknown());
     }
 
     private function excludeEvidenceIsPhpFilesOnly(): bool

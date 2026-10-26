@@ -94,12 +94,18 @@ final readonly class ProjectScopePresenter
         );
     }
 
-    /** @return list<string> */
+    /**
+     * Every selector that removed an entry is named, because the removed
+     * namespaces are known only for the run as a whole; a removal no selector
+     * verdict records is still named, generically.
+     *
+     * @return list<string>
+     */
     private static function removalCauses(AnalysisResult $result): array
     {
         $causes = [];
         foreach ($result->measured->projectScope?->judgement()->excludeSelectors() ?? [] as $selector) {
-            if ($selector->phpEvidence !== null) {
+            if ($selector->removedEntries !== []) {
                 $causes[] = 'exclude "' . $selector->display . '"';
             }
         }
@@ -107,6 +113,6 @@ final readonly class ProjectScopePresenter
             $causes[] = 'generated-file filtering';
         }
 
-        return $causes;
+        return $causes === [] ? ['an exclude entry'] : $causes;
     }
 }

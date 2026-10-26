@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope;
 
+use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\CheckScope\ProjectScopePresenter;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
 use Symfony\Component\Process\Process;
 
 /**
@@ -33,16 +37,11 @@ final class RemovedCodeNamespaceJudgementTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (['src', 'tests'] as $directory) {
-            $sources = glob($this->root . '/' . $directory . '/*');
-            foreach ($sources === false ? [] : $sources as $file) {
-                @chmod($file, 0o644);
-                @unlink($file);
-            }
-            @rmdir($this->root . '/' . $directory);
-        }
-        foreach (['composer.json', 'qmx.yaml'] as $file) {
-            @unlink($this->root . '/' . $file);
+        $entries = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($this->root, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
+        foreach ($entries as $entry) {
+            \assert($entry instanceof SplFileInfo);
+            @chmod($entry->getPathname(), 0o755);
+            $entry->isDir() ? @rmdir($entry->getPathname()) : @unlink($entry->getPathname());
         }
         @rmdir($this->root);
     }
@@ -170,6 +169,31 @@ final class RemovedCodeNamespaceJudgementTest extends TestCase
         self::assertStringNotContainsString('may declare the namespaces', $alone['stderr']);
         self::assertCount(2, $this->unjudgedNamespaceValues($beside['report']));
         self::assertStringContainsString('may declare the namespaces of 1 suppression value, so it was not judged', $beside['stderr']);
+    }
+
+    /**
+     * An exclude entry outside the measured universe (the development root
+     * on `check src tests`) opens no scope door, yet its code still leaves
+     * the namespace tree: a selector it may declare stays unjudged and the
+     * warning names that entry, while a stale neighbour is still reported.
+     */
+    #[Test]
+    public function itDoesNotJudgeANamespaceRemovedOutsideTheMeasuredUniverse(): void
+    {
+        mkdir($this->root . '/tests/Legacy', 0o777, true);
+        file_put_contents($this->root . '/tests/KeptTest.php', "<?php\nnamespace App\\Tests;\nfinal class KeptTest {}\n");
+        file_put_contents($this->root . '/tests/Legacy/OldTest.php', "<?php\nnamespace App\\Tests\\Legacy;\nfinal class OldTest {}\n");
+        file_put_contents($this->root . '/composer.json', json_encode(['autoload' => ['psr-4' => ['App\\' => 'src/']], 'autoload-dev' => ['psr-4' => ['App\\Tests\\' => 'tests/']]], \JSON_THROW_ON_ERROR));
+
+        $run = $this->check("exclude:\n  - {subtree: tests/Legacy}\nsuppress_namespaces:\n  - {exact: 'App\\Tests\\Legacy'}\n  - {exact: 'App\\Tests\\Gone'}\n", ['src', 'tests']);
+
+        self::assertSame(1, $this->staleFindings($run['report']));
+        self::assertSame(
+            [['channel' => self::CHANNEL, 'option' => 'suppress_namespaces', 'pattern' => 'exact:App\\Tests\\Legacy']],
+            $this->unjudgedNamespaceValues($run['report']),
+        );
+        self::assertNotContains(self::CHANNEL, $run['report']['projectScope']['unjudgedChannels']);
+        self::assertStringContainsString('Code removed by exclude "subtree:tests/Legacy" may declare the namespaces of 1 suppression value', $run['stderr']);
     }
 
     #[Test]
