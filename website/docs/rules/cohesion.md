@@ -92,11 +92,22 @@ selections and class overrides; an unread trait is reported, not assumed empty.
     when the constructor calls them, nor are static methods or `exclude_methods`
     entries, and the callees of those are ordinary. A closure, arrow function or
     first-class callable (`$this->handle(...)`) created in the constructor or in a
-    helper runs after construction, so the method it names stays in the graph.
+    helper runs after construction, so the method it names stays in the graph;
+    every closure counts this way, even one invoked at once (`array_map`), which
+    keeps its callees in the graph. A helper that hands state on, by touching
+    `$this->p` inside a closure, arrow function or nested function or by binding a
+    property (or its element or member) by reference, registers behavior and stays
+    as well.
     Removing a helper can raise LCOM when it was the only bridge between two
     property groups, and can empty the graph, which then publishes no value.
-    TCC/LCC are unchanged. A helper used only through a call on another
-    instance (`$other->m()`), an array callable (`[$this, 'm']`) or `parent::m()`
+    TCC/LCC are unchanged. No method leaves the graph when the call map may be
+    incomplete: when a used trait was not read (`cohesion.unread-trait-count`
+    above zero) or when the class names an own call dynamically --
+    `$this->$name()` or `$this->{expr}()`, `self::$name()` or `static::$name()`
+    (and their `{expr}` forms), a two-element array whose first element is `$this`,
+    `self::class` or `static::class`, or `call_user_func` /
+    `call_user_func_array` with `$this` first. The remaining limitation: a helper
+    used only through a call on another instance (`$other->m()`) or `parent::m()`
     is not seen as used and counts as initialization.
 
 !!! note "Comparing with other tools"
