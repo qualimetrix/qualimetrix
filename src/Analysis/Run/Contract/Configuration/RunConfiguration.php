@@ -19,6 +19,7 @@ final readonly class RunConfiguration
     /**
      * @param list<PathPattern> $pathExcludes
      * @param list<AuthoredExclude> $authoredPathExcludes
+     * @param bool $hasLiteralNamespaceSuppression whether a literal namespace suppression value will ask what removed code declares
      */
     public function __construct(
         public array $pathExcludes,
@@ -27,6 +28,7 @@ final readonly class RunConfiguration
         public ProjectScopeMeasurement $projectScope,
         public array $authoredPathExcludes,
         public AutoloadDevPolicy $autoloadDevPolicy,
+        public bool $hasLiteralNamespaceSuppression = false,
     ) {
         $sameRoot = $projectRoot->equals($projectScope->universe->projectRoot);
         foreach ($projectScope->universe->pathResolutions as $resolution) {
@@ -49,6 +51,7 @@ final readonly class RunConfiguration
             projectScope: $measurement,
             authoredPathExcludes: $this->authoredPathExcludes,
             autoloadDevPolicy: $this->autoloadDevPolicy,
+            hasLiteralNamespaceSuppression: $this->hasLiteralNamespaceSuppression,
         );
     }
 }

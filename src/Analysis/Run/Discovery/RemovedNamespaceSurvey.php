@@ -22,7 +22,7 @@ final class RemovedNamespaceSurvey
 {
     public const int READS = 2000;
 
-    public const int BYTES = 32 * 1024 * 1024;
+    public const int BYTES = 8 * 1024 * 1024;
 
     public const int ENTRIES = 20000;
 
@@ -40,6 +40,16 @@ final class RemovedNamespaceSurvey
         $this->bytesLeft = $bytes;
         $this->entriesLeft = $entries;
         $this->namespaces = RemovedCodeNamespaces::none();
+    }
+
+    /**
+     * A survey that reads nothing: it stays known only while nothing PHP is
+     * removed, and otherwise closes at once, leaving the walk its metadata-only
+     * cost when no namespace selector will consult the result.
+     */
+    public static function unfunded(): self
+    {
+        return new self(0, 0, 0);
     }
 
     /** Whether reading on can still change the namespaces; a closed survey has none to offer. */

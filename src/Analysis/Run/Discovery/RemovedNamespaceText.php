@@ -123,7 +123,7 @@ final class RemovedNamespaceText
         while (($at += strspn($text, " \t\r\n", $at)) < $limit) {
             $end = match (true) {
                 substr_compare($text, '/*', $at, 2) === 0 => self::after($text, '*/', $at + 2, $limit),
-                substr_compare($text, '//', $at, 2) === 0, $text[$at] === '#' => self::after($text, "\n", $at + 1, $limit),
+                substr_compare($text, '//', $at, 2) === 0, $text[$at] === '#' => self::pastLineComment($text, $at + 1, $limit),
                 default => $at,
             };
             if ($end === $at || $end === null) {
@@ -133,6 +133,19 @@ final class RemovedNamespaceText
         }
 
         return null;
+    }
+
+    /** Where a `//` or `#` comment ends as the lexer ends it: past a CR or LF, or at a closing tag. */
+    private static function pastLineComment(string $text, int $from, int $limit): ?int
+    {
+        $line = substr($text, $from, $limit - $from);
+        $length = strcspn($line, "\r\n");
+        $close = strpos($line, '?>');
+        if ($close !== false && $close < $length) {
+            return $from + $close;
+        }
+
+        return $length < \strlen($line) ? $from + $length + 1 : null;
     }
 
     /** The offset past the needle when it ends before the limit. */

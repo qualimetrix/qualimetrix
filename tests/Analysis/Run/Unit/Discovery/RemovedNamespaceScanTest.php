@@ -108,6 +108,8 @@ final class RemovedNamespaceScanTest extends TestCase
         yield 'words in comments count' => ["<?php\n{$padding}\n// the namespace Mentioned\nclass X {}", ['Mentioned', '']];
         yield 'member and relative names do not' => ["<?php\n{$padding}\n\$o->namespace = namespace\\f(); X::namespace();", ['']];
         yield 'a comment longer than the lookahead is undecided' => ["<?php\n{$padding}\nnamespace /* " . str_repeat('y', 5000) . ' */ Late;', null];
+        yield 'a line comment ends at a carriage return' => ["<?php\n{$padding}\rnamespace // c\rApp\\Cr;\rfunction f() {}\nfunction g() {}\n", ['App\\Cr', '']];
+        yield 'a line comment ends at a closing tag' => ["<?php\n{$padding}\nnamespace # c ?>\nNotAName", ['']];
         yield 'an unterminated comment at the end of the file ends it' => ["<?php\n{$padding}\nnamespace /* never closed", ['']];
     }
 

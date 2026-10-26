@@ -201,4 +201,32 @@ final class RunConfigurationResolverTest extends TestCase
         );
         self::assertSame($expectedPolicy, $configuration->autoloadDevPolicy);
     }
+
+    /** @return iterable<string, array{array<string, mixed>, bool}> */
+    public static function provideNamespaceSuppression(): iterable
+    {
+        $rule = static fn(array $options): array => [ConfigSchema::RULES => ['coupling.cbo' => $options]];
+        yield 'none' => [[], false];
+        yield 'global exact' => [[ConfigSchema::SUPPRESS_NAMESPACES => [['exact' => 'App\\Gone']]], true];
+        yield 'global regex only' => [[ConfigSchema::SUPPRESS_NAMESPACES => [['regex' => '/^App/']]], false];
+        yield 'rule subtree' => [$rule(['suppress_namespaces' => [['subtree' => 'App']]]), true];
+        yield 'rule channel exact' => [$rule(['suppress_namespace_channels' => ['coupling.cbo.class' => [['exact' => 'App\\Gone']]]]), true];
+        yield 'rule channel regex only' => [$rule(['suppress_namespace_channels' => ['coupling.cbo.class' => [['regex' => '/x/']]]]), false];
+        yield 'rule paths only' => [$rule(['suppress_paths' => [['subtree' => 'src']]]), false];
+        yield 'rule thresholds only' => [$rule(['class' => ['warning' => 10, 'error' => 20]]), false];
+    }
+
+    /** @param array<string, mixed> $values */
+    #[Test]
+    #[DataProvider('provideNamespaceSuppression')]
+    public function itRecordsWhetherALiteralNamespaceSuppressionValueIsConfigured(array $values, bool $expected): void
+    {
+        $configuration = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerManifestReader())))->resolve(LayeredDocument::of(
+            [['source' => 'qmx.yaml', 'values' => [ConfigSchema::PATHS => ['src'], ...$values]]],
+            AbsolutePath::fromString(sys_get_temp_dir()),
+        ));
+
+        self::assertSame($expected, $configuration->hasLiteralNamespaceSuppression);
+        self::assertSame($expected, $configuration->withProjectScope($configuration->projectScope)->hasLiteralNamespaceSuppression);
+    }
 }

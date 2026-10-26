@@ -1007,6 +1007,33 @@ final class ProjectWalkTest extends TestCase
     }
 
     #[Test]
+    public function itReadsNoRemovedFileWhenNoLiteralNamespaceSuppressionIsConfigured(): void
+    {
+        file_put_contents($this->root . '/src/Legacy/Old/O.php', '<?php namespace Legacy\\Old;');
+        file_put_contents($this->root . '/src/Gen.php', "<?php\n// @generated\nnamespace Gen;");
+        $selectors = [$this->selector(SelectorKind::Subtree, 'src/Legacy', ConfigurationSource::ConfigFile)];
+        $discover = fn(bool $literal) => (new ProjectFiles(new ProjectWalk(new EntryInspector()), new GeneratedFileFilter()))
+            ->discover($this->configuration([$this->root . '/src'], $selectors, $literal));
+        $unconsulted = $discover(false);
+        $consulted = $discover(true);
+
+        self::assertFalse($unconsulted->scopeFacts->removedCode?->isKnown(), 'nothing removed is read');
+        self::assertTrue($consulted->scopeFacts->removedCode?->mayDeclare('Legacy\\Old'));
+        self::assertFalse($consulted->scopeFacts->removedCode->mayDeclare('Unrelated'));
+        self::assertEquals($consulted->selectorVerdicts, $unconsulted->selectorVerdicts);
+    }
+
+    #[Test]
+    public function itKnowsNothingIsRemovedWithoutReadingWhenNoLiteralIsConfigured(): void
+    {
+        $files = (new ProjectFiles(new ProjectWalk(new EntryInspector()), new GeneratedFileFilter()))
+            ->discover($this->configuration([$this->root . '/src'], [], false));
+
+        self::assertTrue($files->scopeFacts->removedCode?->isKnown());
+        self::assertFalse($files->scopeFacts->removedCode->mayDeclareWithin(''));
+    }
+
+    #[Test]
     public function itRemovesNothingFromTheNamespacesWhenNoEntryIsExcluded(): void
     {
         [, $removed] = $this->walkSurveying([$this->root . '/src'], []);
@@ -1316,7 +1343,7 @@ final class ProjectWalkTest extends TestCase
     /** @param list<string> $paths
      * @param list<AuthoredExclude> $selectors
      */
-    private function configuration(array $paths, array $selectors): RunConfiguration
+    private function configuration(array $paths, array $selectors, bool $literalNamespaceSuppression = true): RunConfiguration
     {
         $root = AbsolutePath::fromString($this->root);
         $absolutePaths = array_map(AbsolutePath::fromString(...), $paths);
@@ -1340,6 +1367,7 @@ final class ProjectWalkTest extends TestCase
             projectScope: new ProjectScopeMeasurement($universe, $absolutePaths, ProjectScopeState::Covered, []),
             authoredPathExcludes: $selectors,
             autoloadDevPolicy: AutoloadDevPolicy::Exclude,
+            hasLiteralNamespaceSuppression: $literalNamespaceSuppression,
         );
     }
 

@@ -23,9 +23,10 @@ final readonly class ProjectFiles implements ProjectFilesInterface
         private GeneratedFileFilterInterface $generatedFilter,
     ) {}
 
-    /** @param RemovedNamespaceSurvey $removedNamespaces a fresh survey; its budget bounds what removed code is read */
-    public function discover(RunConfiguration $run, RemovedNamespaceSurvey $removedNamespaces = new RemovedNamespaceSurvey()): DiscoveredProjectFiles
+    /** @param RemovedNamespaceSurvey|null $removedNamespaces a fresh survey; by default funded only when the run consults it */
+    public function discover(RunConfiguration $run, ?RemovedNamespaceSurvey $removedNamespaces = null): DiscoveredProjectFiles
     {
+        $removedNamespaces ??= $run->hasLiteralNamespaceSuppression ? new RemovedNamespaceSurvey() : RemovedNamespaceSurvey::unfunded();
         $walked = $this->walk->walk(new WalkRequest($run, $removedNamespaces));
         $root = $run->projectScope->universe->projectRoot;
         $files = self::selectCandidates($walked->candidates, $root);
