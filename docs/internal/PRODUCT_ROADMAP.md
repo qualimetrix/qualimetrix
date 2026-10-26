@@ -217,7 +217,6 @@ condition. When an issue closes, drop its line here.
 - [#174](https://github.com/qualimetrix/qualimetrix/issues/174) Phar as a required check and the Docker image built from it
 - [#197](https://github.com/qualimetrix/qualimetrix/issues/197) `directives` runtime options (cache, workers, memory)
 - [#198](https://github.com/qualimetrix/qualimetrix/issues/198) LCOM4: constructor-only private helpers become isolated components
-- [#199](https://github.com/qualimetrix/qualimetrix/issues/199) Namespace instability judges the subtree while CBO and distance judge own scope
 - [#201](https://github.com/qualimetrix/qualimetrix/issues/201) Closure identity without its enclosing class or method
 
 ### Internal debt
