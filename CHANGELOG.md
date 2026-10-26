@@ -14,7 +14,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `architecture.circular-dependency` option `ignore_relations`: dependency kinds or `relations:` aliases whose edges do not form cycles, e.g. `[attribute_argument]` for entity–repository cycles that exist only because a mapping attribute names the repository; unknown kinds are refused by name (#196).
-
 - `projectScope.unjudgedChannels` no longer lists `suppression.unmatched-namespace` once at least one of its values was judged; the values still withheld stay in `projectScope.unjudgedValues`.
 
 ### Fixed
