@@ -136,6 +136,8 @@
         "html-bundle:check": "php scripts/check-html-bundle-freshness.php",
         "configuration:merge-table": "php scripts/generate-configuration-merge-table.php",
         "configuration:merge-table:check": "php scripts/generate-configuration-merge-table.php --check",
+        "configuration:schema": "php scripts/generate-configuration-schema.php",
+        "configuration:schema:check": "php scripts/generate-configuration-schema.php --check",
         "selfcheck": [
             "@architecture:check",
             "@selfcheck:analysis"
@@ -175,7 +177,8 @@
             "@enumeration:directives:check",
             "@suppression-snapshot:check",
             "@html-bundle:check",
-            "@configuration:merge-table:check"
+            "@configuration:merge-table:check",
+            "@configuration:schema:check"
         ],
         "check:self": [
             "@selfcheck:analysis",
@@ -236,6 +239,8 @@
         "check:docs": "What a website change invalidates: a strict mkdocs build",
         "configuration:merge-table": "Regenerate the table of how each configuration key combines across layers in website/docs/getting-started/configuration.md (EN and RU) from the section declarations",
         "configuration:merge-table:check": "Fail if that table differs from what the section declarations generate",
+        "configuration:schema": "Regenerate qmx.schema.json, the editor JSON Schema of qmx.yaml, from the section declarations",
+        "configuration:schema:check": "Fail if qmx.schema.json differs from what the section declarations generate",
         "check:artifacts": "What a manifest, config or corpus change invalidates: every generated artifact against a fresh measurement",
         "check:self": "What the product says about this repository: the qmx ratchet and the directive audit",
         "directives:narrow-control": "Prove --sweep=narrow and --sweep=full agree verdict for verdict: the seeded fixture whole (every verdict and every refusal), its Silenced/ half (where a wrong-producer defect reaches the comparison), then src/. Cheapest signal first, because composer stops at the first run that fails",
