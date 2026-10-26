@@ -304,35 +304,6 @@ twin by `scripts/generate-configuration-merge-table.php`
 decision and what it leaves unexpressible are recorded in
 [ADR 0086](../../../docs/adr/0086-one-configuration-document-merged-by-declared-policy.md).
 
-## Editor schema
-
-`EditorSchema/` projects the same declarations into `qmx.schema.json`, a
-draft-07 JSON Schema that gives editors completion and form validation for
-one authored file. `EditorSchemaProjection::project()` takes the document
-root (`DocumentSchema::root()`) and is the only entry;
-`EditorSchemaJson::encode()` serializes it deterministically. It reads only
-`NodeSchema` facts, so it knows nothing about Finding or the container:
-`scripts/generate-configuration-schema.php` collects the registered sections
-through `scripts/configuration-declarations.php`, the collection the merge
-table generator shares.
-
-Its promise is one-sided: on the same scalar typing, the schema never refuses
-what the engine accepts in one layer. It expresses form — keys and their
-three spellings, scalar forms, word sets, minimums, shorthand conflicts,
-`~` and empty collections, and the collection shapes the YAML loader accepts.
-Owner judges, merged-context constraints and opaque nodes stay outside it.
-Where a form is expressible only approximately, the schema is wider, never
-stricter.
-
-- `tests/Analysis/Configuration/Integration/EditorSchema/` holds the promise
-  case by case: each case is read by the product's YAML loader and judged by
-  `DocumentComposer`, and declares both verdicts; a case may not declare a
-  refusal the engine does not make.
-- `governance/ConfigurationEditorSchema/` holds it on real texts: tracked
-  configurations and the documentation's YAML examples the engine accepts.
-- `configuration:schema:check`, in `check:artifacts`, fails when a declaration
-  changed and `qmx.schema.json` did not.
-
 The engine runs in every resolution. Cache, Coupling, Console, Parallel, Run,
 Reporting, FindingProjection and Finding read their declared resolved values.
 Finding registers a `RulesSection` for each of `rules`, `only_rules` and
@@ -397,6 +368,36 @@ document origin and list position when translating mapping or PCRE validation
 failures to `ConfigurationRefusal`, then builds the separator-bound Core value.
 The declared entry form preserves malformed selector mappings for an authored
 refusal rather than silently converting them into unwritten configuration.
+
+## Editor schema
+
+`EditorSchema/` projects the same declarations into `qmx.schema.json`, a
+draft-07 JSON Schema that gives editors completion and form validation for
+one authored file. `EditorSchemaProjection::project()` takes the document
+root (`DocumentSchema::root()`) and is the only entry;
+`EditorSchemaJson::encode()` serializes it deterministically. It reads only
+`NodeSchema` facts, so it knows nothing about Finding or the container:
+`scripts/generate-configuration-schema.php` collects the registered sections
+through `scripts/configuration-declarations.php`, the collection the merge
+table generator shares.
+
+Its promise is one-sided: on the same scalar typing, the schema never refuses
+what the engine accepts in one layer. It expresses form — keys and their
+three spellings, scalar forms, word sets, minimums, shorthand conflicts,
+`~` and empty collections, and the collection shapes the YAML loader accepts.
+Owner judges, merged-context constraints and opaque nodes stay outside it.
+Where a form is expressible only approximately, the schema is wider, never
+stricter. The decisions are recorded in
+[ADR 0132](../../../docs/adr/0132-editor-schema-of-the-configuration-document.md).
+
+- `tests/Analysis/Configuration/Integration/EditorSchema/` holds the promise
+  case by case: each case is read by the product's YAML loader and judged by
+  `DocumentComposer`, and declares both verdicts; a case may not declare a
+  refusal the engine does not make.
+- `governance/ConfigurationEditorSchema/` holds it on real texts: tracked
+  configurations and the documentation's YAML examples the engine accepts.
+- `configuration:schema:check`, in `check:artifacts`, fails when a declaration
+  changed and `qmx.schema.json` did not.
 
 ## Public contracts and adapters
 

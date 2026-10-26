@@ -1741,6 +1741,73 @@ rules:
 
 ---
 
+## Editor support {#editor-support}
+
+Qualimetrix ships a JSON Schema of its configuration file, `qmx.schema.json`.
+Point an editor that validates YAML against JSON Schema at it, and while you
+write `qmx.yaml` you get:
+
+- completion of keys, rule names and each rule's options;
+- each rule's description as a hint;
+- highlighting of shape errors: an unknown key, a value of the wrong type, a
+  number below its minimum, a word outside a fixed list.
+
+The schema checks the **shape of one file, not its meaning**. `qmx` stays the
+final judge. The editor does not check formulas, selectors, regular
+expressions, paths, references to declared architecture layers, constraints
+that span several keys, or anything that depends on how presets and your file
+combine. A file the editor accepts can still be refused by `qmx check`.
+
+The reverse is what the schema is built to avoid: it is generated from the
+same declarations `qmx` reads, and it is tested never to flag a file `qmx`
+accepts — except where the editor's YAML parser reads a value differently
+(see [Limitations](#editor-schema-limitations)).
+
+### Where to get the schema
+
+| Source                                                                                | Use it when                                                                                                                                                                    |
+| ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `vendor/qualimetrix/qualimetrix/qmx.schema.json`                                      | **Recommended.** You installed Qualimetrix with Composer: the file always matches the installed version.                                                                       |
+| `https://raw.githubusercontent.com/qualimetrix/qualimetrix/vX.Y.Z/qmx.schema.json`    | You need a fixed address, for example with the phar, which does not carry the schema. Replace `vX.Y.Z` with your installed version; the content at this address never changes. |
+| `https://github.com/qualimetrix/qualimetrix/releases/latest/download/qmx.schema.json` | You always run the latest release. This address redirects to the newest release's asset; whether every editor follows the redirect has not been verified.                      |
+
+Releases published before the schema was introduced have no file at these
+addresses.
+
+### VS Code
+
+Install the YAML extension by Red Hat and make this the first line of
+`qmx.yaml`, with the address or a path relative to the file:
+
+```yaml
+# yaml-language-server: $schema=vendor/qualimetrix/qualimetrix/qmx.schema.json
+paths: [src]
+```
+
+`qmx.yaml.example` already starts with such a line, pointing at the latest
+release.
+
+### PhpStorm
+
+Open **Settings → Languages & Frameworks → Schemas and DTDs → JSON Schema
+Mappings**, add a mapping, choose `vendor/qualimetrix/qualimetrix/qmx.schema.json`
+(or one of the addresses above) as the schema, and add `qmx.yaml` as a file
+mapped to it. If the dialog asks for a schema version, choose JSON Schema
+version 7.
+
+### Limitations {#editor-schema-limitations}
+
+- **Different YAML parsers.** `qmx` reads YAML with Symfony YAML; editors use
+  their own parser (the Red Hat extension follows YAML 1.2). A scalar the two
+  type differently — `1_000`, `0755`, a date — can be accepted by one and
+  flagged by the other. Where they disagree on such a value, `qmx check` is
+  right.
+- **Match the versions.** Use the schema of the `qmx` version you run. A newer
+  release may remove keys your version still accepts, and an older schema does
+  not know keys added since.
+
+---
+
 ## What's Next?
 
 See the [CLI Options](../usage/cli-options.md) reference for the complete list of command-line options.

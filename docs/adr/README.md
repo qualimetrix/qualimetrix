@@ -180,6 +180,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0129 — Public Report and Baseline Values with Subject-Owned Delivery](0129-public-report-and-baseline-values-with-subject-owned-delivery.md) — public immutable report and baseline values remain separate from subject-owned assembly and delivery.
 - [0130 — The Finding Gate Keeps Behaviour Tests, Not a Witness Registry](0130-the-finding-gate-keeps-behaviour-tests-not-a-witness-registry.md) — behaviour and failure-class tests at the cheapest level; a comparator change proves its new check bites once.
 - [0131 — A Value Object Exposes Its State](0131-a-value-object-exposes-its-state.md) — a readonly all-promoted constructor is a VO only when its class exposes a promoted property; constructor overinjection leaves VO constructors to long-parameter-list.
+- [0132 — Editor Schema of the Configuration Document](0132-editor-schema-of-the-configuration-document.md) — `qmx.schema.json` is projected from the section declarations, judges one file's form without being stricter than the engine, and is held to the engine itself.
 
 ## Superseded history
 
