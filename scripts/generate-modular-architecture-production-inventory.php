@@ -2511,6 +2511,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0133-attribute-argument-edges-are-their-own-kind.md' => 'Analysis.Evidence.DependencyModel',
         'docs/adr/0134-namespace-instability-judges-its-own-declarations.md' => 'Analysis.Evidence.Coupling',
         'docs/adr/0135-a-constructor-has-one-parameter-count-owner.md' => 'Analysis.Evidence.CodeSmell',
+        'docs/adr/0136-constructor-only-helpers-leave-the-lcom4-graph.md' => 'Analysis.Evidence.Cohesion',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/ProjectManifest/README.md' => 'Analysis.ProjectManifest',

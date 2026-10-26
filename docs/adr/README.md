@@ -184,6 +184,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0133 — References in Attribute Arguments Are Their Own Edge Kind](0133-attribute-argument-edges-are-their-own-kind.md) — `attribute_argument` is a standalone relations kind outside every alias, the vocabulary lives in DependencyModel, and `architecture.circular-dependency` gains `ignore-relations`; answers ADR 0071.
 - [0134 — Namespace Instability Judges Its Own Declarations](0134-namespace-instability-judges-its-own-declarations.md) — namespace `coupling.instability` judges `coupling.instability-own` over the namespace's own types (`min_type_count`, as distance); the own value is absent without a declared type; the Martin diagram and `health.coupling` stay on the subtree; supplements ADR 0080.
 - [0135 — A Constructor Has One Parameter-Count Owner](0135-a-constructor-has-one-parameter-count-owner.md) — a value-object constructor belongs to `long-parameter-list`, any other constructor to `constructor-overinjection`; the shared `code-smell.is-injection-constructor` flag drives `long-parameter-list`'s abstention; supplements ADR 0131.
+- [0136 — Constructor-Only Helpers Leave the LCOM4 Graph](0136-constructor-only-helpers-leave-the-lcom4-graph.md) — private helpers only a constructor or destructor reaches leave the LCOM4 graph; deferred calls keep their callees; LCOM may rise or the graph may empty; TCC/LCC unchanged.
 
 ## Superseded history
 

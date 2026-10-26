@@ -17,7 +17,9 @@ means that the class is cohesive; values above `1` indicate independent groups
 of responsibilities that may be split. Qualimetrix connects methods that share
 a property or call one another through `$this->method()`, `self::method()` or `static::method()`, excludes static,
 constructor and destructor methods, and groups only uncalled stateless constant methods
-into one virtual node. A called method remains its own graph vertex.
+into one virtual node. A called method remains its own graph vertex. Private helpers
+that only the constructor or destructor reaches are initialization, not behavior, and
+leave the graph with them (see the deviation note below).
 
 The default warning/error thresholds are `3` and `5`, inclusive at equality. Readonly classes are
 excluded by default, and classes must have at least three graph-eligible methods after exclusions. You can also
@@ -80,6 +82,22 @@ selections and class overrides; an unread trait is reported, not assumed empty.
     from the LCOM method population as a scope adaptation. TCC/LCC also exclude
     them, as Bieman and Kang specify. Initialization is not a behavioral group;
     constructor edges must not bridge unrelated responsibilities.
+
+    The private instance methods that only the constructor or destructor reaches
+    through `$this->`, `self::` or `static::` calls, directly or through other such
+    helpers, are initialization helpers and are excluded as well. Otherwise each
+    would form its own disconnected component, since the constructor edge that
+    would join it to the class is removed. A method stays in the graph when any
+    other method reaches it: public and protected methods are never helpers, even
+    when the constructor calls them, nor are static methods or `exclude_methods`
+    entries, and the callees of those are ordinary. A closure, arrow function or
+    first-class callable (`$this->handle(...)`) created in the constructor or in a
+    helper runs after construction, so the method it names stays in the graph.
+    Removing a helper can raise LCOM when it was the only bridge between two
+    property groups, and can empty the graph, which then publishes no value.
+    TCC/LCC are unchanged. A helper used only through a call on another
+    instance (`$other->m()`), an array callable (`[$this, 'm']`) or `parent::m()`
+    is not seen as used and counts as initialization.
 
 !!! note "Comparing with other tools"
     phpmetrics uses the Henderson-Sellers LCOM formula, whose values are on a
