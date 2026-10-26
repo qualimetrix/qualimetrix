@@ -1755,8 +1755,9 @@ write `qmx.yaml` you get:
 The schema checks the **shape of one file, not its meaning**. `qmx` stays the
 final judge. The editor does not check formulas, selectors, regular
 expressions, paths, references to declared architecture layers, constraints
-that span several keys, or anything that depends on how presets and your file
-combine. A file the editor accepts can still be refused by `qmx check`.
+that depend on other values, or anything that depends on how presets and your
+file combine. It does catch a shorthand written beside its own target in one
+object, such as `threshold` together with `warning`. A file the editor accepts can still be refused by `qmx check`.
 
 The reverse is what the schema is built to avoid: it is generated from the
 same declarations `qmx` reads, and it is tested never to flag a file `qmx`
@@ -1774,6 +1775,7 @@ accepts — except where the editor's YAML parser reads a value differently
 Releases published before the schema was introduced have no file at these
 addresses.
 
+<!-- llms:skip-begin -->
 ### VS Code
 
 Install the YAML extension by Red Hat and make this the first line of
@@ -1784,16 +1786,20 @@ Install the YAML extension by Red Hat and make this the first line of
 paths: [src]
 ```
 
-`qmx.yaml.example` already starts with such a line, pointing at the latest
-release.
+`qmx.yaml.example` already starts with such a line. The path is resolved
+relative to the config file, so it works when the file lies in the project root
+next to `vendor/`.
 
 ### PhpStorm
 
 Open **Settings → Languages & Frameworks → Schemas and DTDs → JSON Schema
 Mappings**, add a mapping, choose `vendor/qualimetrix/qualimetrix/qmx.schema.json`
-(or one of the addresses above) as the schema, and add `qmx.yaml` as a file
-mapped to it. If the dialog asks for a schema version, choose JSON Schema
-version 7.
+(or one of the addresses above) as the schema, and add `qmx.yaml` and `qmx.yml`
+as files mapped to it. A config file with another name, passed through
+`--config` or a preset, is bound the same way: add its name or path to the
+mapping (or put the modeline from the VS Code section on its first line). If
+the dialog asks for a schema version, choose JSON Schema version 7.
+<!-- llms:skip-end -->
 
 ### Limitations {#editor-schema-limitations}
 

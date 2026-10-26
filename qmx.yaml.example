@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://github.com/qualimetrix/qualimetrix/releases/latest/download/qmx.schema.json
+# yaml-language-server: $schema=vendor/qualimetrix/qualimetrix/qmx.schema.json
 # =============================================================================
 # Qualimetrix — Example Configuration
 # =============================================================================
@@ -44,7 +44,7 @@
 # -----------------------------------------------------------------------------
 
 # Output format: summary, text, json, metrics, checkstyle, sarif, gitlab, github, health, html
-# Docs: https://qualimetrix.dev/reference/output-formats/
+# Docs: https://qualimetrix.dev/usage/output-formats/
 # format: summary              # default: summary
 
 # When to exit with non-zero code: "warning" or "error"
@@ -70,7 +70,7 @@
 # -----------------------------------------------------------------------------
 # Coupling Settings
 # -----------------------------------------------------------------------------
-# Docs: https://qualimetrix.dev/metrics/coupling/
+# Docs: https://qualimetrix.dev/rules/coupling/
 
 # Framework namespace selectors — dependencies on these are tracked separately
 # as CBO_FRAMEWORK (not counted toward CBO_APP).
@@ -91,7 +91,7 @@
 # All default thresholds:
 #   https://qualimetrix.dev/reference/default-thresholds/
 # Available rules:
-#   https://qualimetrix.dev/reference/rules/
+#   https://qualimetrix.dev/rules/
 #
 # Every rule supports these universal options:
 #   suppress_namespaces — explicit exact/subtree/regex namespace selectors
@@ -114,7 +114,7 @@
 # rules:
 
   # — Complexity —
-  # Docs: https://qualimetrix.dev/metrics/complexity/
+  # Docs: https://qualimetrix.dev/rules/complexity/
 
   # Cyclomatic complexity (McCabe). Counts decision points in code.
   # complexity.ccn:
@@ -143,7 +143,7 @@
   #   error: 80                  # default: 80
 
   # — Size —
-  # Docs: https://qualimetrix.dev/metrics/size/
+  # Docs: https://qualimetrix.dev/rules/size/
 
   # size.method-count:
   #   warning: 20                # methods per class, default: 20
@@ -160,7 +160,7 @@
   #   exclude_promoted_only: true
 
   # — Cohesion —
-  # Docs: https://qualimetrix.dev/metrics/cohesion/
+  # Docs: https://qualimetrix.dev/rules/cohesion/
 
   # LCOM4 — Lack of Cohesion of Methods. Lower is better (1 = perfectly cohesive).
   # cohesion.lcom:
@@ -170,7 +170,7 @@
   #   exclude_readonly: true
 
   # — Design —
-  # Docs: https://qualimetrix.dev/metrics/design/
+  # Docs: https://qualimetrix.dev/rules/design/
 
   # DIT — Depth of Inheritance Tree.
   # design.dit:
@@ -210,7 +210,7 @@
   #   exclude_readonly: true
 
   # — Maintainability —
-  # Docs: https://qualimetrix.dev/metrics/maintainability/
+  # Docs: https://qualimetrix.dev/rules/maintainability/
 
   # Maintainability Index. Inverted: values BELOW the threshold trigger violations.
   # maintainability.mi:
@@ -220,7 +220,7 @@
   #   min_statements: 10
 
   # — Coupling —
-  # Docs: https://qualimetrix.dev/metrics/coupling/
+  # Docs: https://qualimetrix.dev/rules/coupling/
 
   # CBO — Coupling Between Objects.
   # coupling.cbo:
@@ -266,7 +266,7 @@
   #   severity: warning          # warning | error
 
   # — Code Smells —
-  # Docs: https://qualimetrix.dev/rules/code-smells/
+  # Docs: https://qualimetrix.dev/rules/code-smell/
 
   # code-smell.long-parameter-list:
   #   warning: 4                 # default: 4
@@ -324,7 +324,7 @@
 # -----------------------------------------------------------------------------
 # Computed Metrics (Health Scores)
 # -----------------------------------------------------------------------------
-# Docs: https://qualimetrix.dev/metrics/health-scores/
+# Docs: https://qualimetrix.dev/reference/health-scores/
 #
 # Override built-in health score thresholds or define custom computed metrics.
 

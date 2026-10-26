@@ -143,8 +143,9 @@ The file is committed at the repository root and generated, never edited.
   `vendor/qualimetrix/qualimetrix/qmx.schema.json` is exactly the installed
   version. This is the recommended path.
 - Every GitHub release attaches it as an asset uploaded from the tag's
-  checkout, so the latest-release download address always serves the newest
-  release's file. The tag's raw address serves one fixed version.
+  checkout, so the latest-release download address serves the file of the newest
+  release whose workflow attached it (the asset is attached right after the
+  release is created, so a brief gap is possible). The tag's raw address serves one fixed version.
 - The phar does not carry it: editors read a schema from disk or by URL, never
   from inside an archive.
 - Not the website: it can be redeployed by hand from `main` for a
