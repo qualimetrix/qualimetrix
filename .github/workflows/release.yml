@@ -108,3 +108,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release upload "$GITHUB_REF_NAME" build/qmx.phar --clobber
+
+      # The file comes from the tag's checkout. --clobber keeps a re-run
+      # replacing the asset instead of failing on the existing one.
+      - name: Attach the editor schema
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "$GITHUB_REF_NAME" qmx.schema.json --clobber

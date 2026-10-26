@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://github.com/qualimetrix/qualimetrix/releases/latest/download/qmx.schema.json
 # =============================================================================
 # Qualimetrix — Example Configuration
 # =============================================================================
@@ -9,7 +10,7 @@
 #   vendor/bin/qmx check src/ --config=my-config.yaml
 #
 # Full documentation:
-#   https://qualimetrix.github.io/qualimetrix/getting-started/configuration/
+#   https://qualimetrix.dev/getting-started/configuration/
 #
 # Configuration priority (highest wins):
 #   CLI options > config file > presets > composer.json auto-discovery > defaults
@@ -43,7 +44,7 @@
 # -----------------------------------------------------------------------------
 
 # Output format: summary, text, json, metrics, checkstyle, sarif, gitlab, github, health, html
-# Docs: https://qualimetrix.github.io/qualimetrix/reference/output-formats/
+# Docs: https://qualimetrix.dev/reference/output-formats/
 # format: summary              # default: summary
 
 # When to exit with non-zero code: "warning" or "error"
@@ -69,7 +70,7 @@
 # -----------------------------------------------------------------------------
 # Coupling Settings
 # -----------------------------------------------------------------------------
-# Docs: https://qualimetrix.github.io/qualimetrix/metrics/coupling/
+# Docs: https://qualimetrix.dev/metrics/coupling/
 
 # Framework namespace selectors — dependencies on these are tracked separately
 # as CBO_FRAMEWORK (not counted toward CBO_APP).
@@ -88,9 +89,9 @@
 # Only override thresholds you want to change — defaults apply for the rest.
 #
 # All default thresholds:
-#   https://qualimetrix.github.io/qualimetrix/reference/default-thresholds/
+#   https://qualimetrix.dev/reference/default-thresholds/
 # Available rules:
-#   https://qualimetrix.github.io/qualimetrix/reference/rules/
+#   https://qualimetrix.dev/reference/rules/
 #
 # Every rule supports these universal options:
 #   suppress_namespaces — explicit exact/subtree/regex namespace selectors
@@ -113,7 +114,7 @@
 # rules:
 
   # — Complexity —
-  # Docs: https://qualimetrix.github.io/qualimetrix/metrics/complexity/
+  # Docs: https://qualimetrix.dev/metrics/complexity/
 
   # Cyclomatic complexity (McCabe). Counts decision points in code.
   # complexity.ccn:
@@ -142,7 +143,7 @@
   #   error: 80                  # default: 80
 
   # — Size —
-  # Docs: https://qualimetrix.github.io/qualimetrix/metrics/size/
+  # Docs: https://qualimetrix.dev/metrics/size/
 
   # size.method-count:
   #   warning: 20                # methods per class, default: 20
@@ -159,7 +160,7 @@
   #   exclude_promoted_only: true
 
   # — Cohesion —
-  # Docs: https://qualimetrix.github.io/qualimetrix/metrics/cohesion/
+  # Docs: https://qualimetrix.dev/metrics/cohesion/
 
   # LCOM4 — Lack of Cohesion of Methods. Lower is better (1 = perfectly cohesive).
   # cohesion.lcom:
@@ -169,7 +170,7 @@
   #   exclude_readonly: true
 
   # — Design —
-  # Docs: https://qualimetrix.github.io/qualimetrix/metrics/design/
+  # Docs: https://qualimetrix.dev/metrics/design/
 
   # DIT — Depth of Inheritance Tree.
   # design.dit:
@@ -209,7 +210,7 @@
   #   exclude_readonly: true
 
   # — Maintainability —
-  # Docs: https://qualimetrix.github.io/qualimetrix/metrics/maintainability/
+  # Docs: https://qualimetrix.dev/metrics/maintainability/
 
   # Maintainability Index. Inverted: values BELOW the threshold trigger violations.
   # maintainability.mi:
@@ -219,7 +220,7 @@
   #   min_statements: 10
 
   # — Coupling —
-  # Docs: https://qualimetrix.github.io/qualimetrix/metrics/coupling/
+  # Docs: https://qualimetrix.dev/metrics/coupling/
 
   # CBO — Coupling Between Objects.
   # coupling.cbo:
@@ -265,7 +266,7 @@
   #   severity: warning          # warning | error
 
   # — Code Smells —
-  # Docs: https://qualimetrix.github.io/qualimetrix/rules/code-smells/
+  # Docs: https://qualimetrix.dev/rules/code-smells/
 
   # code-smell.long-parameter-list:
   #   warning: 4                 # default: 4
@@ -295,7 +296,7 @@
   #     - mkdir
 
   # — Security —
-  # Docs: https://qualimetrix.github.io/qualimetrix/rules/security/
+  # Docs: https://qualimetrix.dev/rules/security/
   # All security rules are enabled by default with no thresholds.
 
   # — Duplication —
@@ -323,7 +324,7 @@
 # -----------------------------------------------------------------------------
 # Computed Metrics (Health Scores)
 # -----------------------------------------------------------------------------
-# Docs: https://qualimetrix.github.io/qualimetrix/metrics/health-scores/
+# Docs: https://qualimetrix.dev/metrics/health-scores/
 #
 # Override built-in health score thresholds or define custom computed metrics.
 
@@ -353,7 +354,7 @@
 # -----------------------------------------------------------------------------
 # Architecture (layer rules)
 # -----------------------------------------------------------------------------
-# Docs: https://qualimetrix.github.io/qualimetrix/rules/architecture/
+# Docs: https://qualimetrix.dev/rules/architecture/
 #
 # Declare your layers and the allowed inter-layer dependencies. The
 # `architecture.layer-violation` rule flags any dependency edge whose source
