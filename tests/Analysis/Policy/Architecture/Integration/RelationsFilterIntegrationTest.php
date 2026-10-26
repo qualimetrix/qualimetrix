@@ -112,6 +112,37 @@ final class RelationsFilterIntegrationTest extends TestCase
     }
 
     #[Test]
+    public function itTreatsAReferenceInsideAnAttributeArgumentAsItsOwnRelationKind(): void
+    {
+        $config = self::baseConfig();
+        $config['allow'] = [
+            'domain' => [
+                ['target' => 'vendor', 'relations' => ['static_access']],
+            ],
+        ];
+
+        self::assertEdgeViolates(
+            $this->collectFindingMessages($config),
+            'AttributeUser',
+            'Helper',
+            'static_access must not cover a reference written inside an attribute argument',
+        );
+
+        $config['allow'] = [
+            'domain' => [
+                ['target' => 'vendor', 'relations' => ['static_access', 'attribute_argument']],
+            ],
+        ];
+
+        self::assertEdgeNotViolating(
+            $this->collectFindingMessages($config),
+            'AttributeUser',
+            'Helper',
+            'attribute_argument must accept a reference written inside an attribute argument',
+        );
+    }
+
+    #[Test]
     public function itAcceptsEveryEdgeKindForABareTargetWithoutRelations(): void
     {
         // Short-form (bare-string) target leaves relations=null on AllowTarget;

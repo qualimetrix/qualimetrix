@@ -4439,6 +4439,18 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyRelationTokens": {
+      "path": "src/Analysis/Evidence/DependencyModel/Contract/DependencyRelationTokens.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.DependencyModel",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Allow\\AllowAliasExpander"
+        }
+      ]
+    },
     "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyTraversalParticipantInterface": {
       "path": "src/Analysis/Evidence/DependencyModel/Contract/DependencyTraversalParticipantInterface.php",
       "kind": "interface",

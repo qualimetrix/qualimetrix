@@ -1675,6 +1675,7 @@ Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule	Analysis.
 Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement	Analysis.Finding	Qualimetrix\Core\Pattern\NamespacePattern	Core.Neutral	contract
 Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement	Analysis.Finding	Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	contract
 Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement	Analysis.Finding	Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	contract
+Qualimetrix\Analysis\Policy\Architecture\Allow\AllowAliasExpander	Analysis.Policy.Architecture	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyRelationTokens	Analysis.Evidence.DependencyModel	contract
 Qualimetrix\Analysis\Policy\Architecture\Allow\AllowAliasExpander	Analysis.Policy.Architecture	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType	Analysis.Evidence.DependencyModel	contract
 Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy	Analysis.Policy.Architecture	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	contract
 Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy	Analysis.Policy.Architecture	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	Analysis.Evidence.DependencyModel	contract

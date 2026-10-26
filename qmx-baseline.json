@@ -781,6 +781,14 @@
         ]
       }
     ],
+    "ns:Qualimetrix\\Analysis\\Evidence": [
+      {
+        "channel": "health.coupling",
+        "magnitudes": [
+          50.0
+        ]
+      }
+    ],
     "ns:Qualimetrix\\Analysis\\Evidence\\CodeSmell": [
       {
         "channel": "coupling.cbo",

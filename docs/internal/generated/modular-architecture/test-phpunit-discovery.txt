@@ -4670,6 +4670,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFramework\UnmatchedFrameworkNamespaceRuleTest::itSaysNothingWithoutADependencyGraph
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Contract\AttributeSiteTest::itIdentifiesOnlyDeclaredMemberSites
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Contract\ClassLikeDeclarationTest::itCanRewriteLogicalSpellingWithoutChangingExactDeclarationFacts
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Contract\DependencyRelationTokensTest::itExpandsAnAliasToItsMembersInDeclaredOrder"inheritance"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Contract\DependencyRelationTokensTest::itExpandsAnAliasToItsMembersInDeclaredOrder"runtime_check"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Contract\DependencyRelationTokensTest::itExpandsAnAliasToItsMembersInDeclaredOrder"static_access"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Contract\DependencyRelationTokensTest::itExpandsAnAliasToItsMembersInDeclaredOrder"type_reference"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Contract\DependencyRelationTokensTest::itKeepsAttributeKindsOutOfEveryAlias"attribute"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Contract\DependencyRelationTokensTest::itKeepsAttributeKindsOutOfEveryAlias"attribute_argument"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Contract\DependencyRelationTokensTest::itListsEveryKindAndAliasAsAcceptedSorted
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Contract\DependencyRelationTokensTest::itReturnsNullForAnUnknownToken
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Contract\TypeShapeTest::itPublishesTheCompleteShapeVocabulary
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itCanonicalizesPhpClassIdentityWithoutChangingExactDeclarations
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itCountsAnExtendsEdgeToANonPhpClassAsCoupling
@@ -7904,6 +7912,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RelationsFilterIntegrationTest::itLetsTheTypeReferenceAliasPermitTypeHintAndForbidExtendsAndStaticCall
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RelationsFilterIntegrationTest::itPermitsOnlyTheListedDependencyKindsForAMixOfDirectValues
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RelationsFilterIntegrationTest::itPreservesTheRelationsKeyAndItsAliasThroughYamlConfigLoader
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RelationsFilterIntegrationTest::itTreatsAReferenceInsideAnAttributeArgumentAsItsOwnRelationKind
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RepeatedPatternShadowIntegrationTest::itDoesNotReportTheLayerReceivingTheResidueOfAMatchAllLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RepeatedPatternShadowIntegrationTest::itDoesNotReportTheRecipientOfACarveOutAsShadowed
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RepeatedPatternShadowIntegrationTest::itStillReportsANarrowerLayerBehindABroadLayerWithAnExclude
@@ -8036,16 +8045,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ClassSetTest::itDelegatesToTheFactoryAndReturnsAMinimalContextWithoutAGraph
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ClassSetTest::itReflectsWhetherTheClassListIsEmpty
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ClassSetTest::itReturnsTheSuppliedClassListUnchanged
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itAcceptsAttributeArgumentAsAStandaloneRelationKind
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itAppendsAnUnrelatedDirectTokenAfterAliasMembers
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itDedupesADirectTokenThatRepeatsAPrecedingAliasMember
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itDedupesAcrossOverlappingAliasMembers
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itDedupesRepeatedDirectTokens
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itDelegatesAValidRelationsListToExpand
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itExpandsASingleDirectTokenToItsOwnEnumCase
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itExpandsTheInheritanceAliasToExtendsImplementsAndTraitUse
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itExpandsTheRuntimeCheckAliasToCatchAndInstanceof
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itExpandsTheStaticAccessAliasToStaticCallStaticPropertyAndClassConst
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itExpandsTheTypeReferenceAliasToEveryTypePosition
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itPreservesInputOrderForMultipleDirectTokens
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itRejectsANonStringToken
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itRejectsAScalarRelationsValueWithAListHint
@@ -8055,7 +8061,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itRejectsAnUnknownTokenWithBothKnownListsInTheMessage
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itRejectsTheRemovedShapeTokensAndNamesThePositionReplacement
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itReturnsNullWhenTheRelationsKeyIsAbsent
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itTreatsAttributeAsAStandaloneTokenNotAnAlias
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowValidatorTest::itAcceptsACamelCaseAllowCrossInstanceFlagInALongFormAllowEntry
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowValidatorTest::itAcceptsACapturedTargetWithASubsetOfSourceVariables
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowValidatorTest::itAcceptsAnAllowCrossInstanceFlagInALongFormAllowEntry

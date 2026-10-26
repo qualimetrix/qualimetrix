@@ -368,6 +368,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyLocationInterface'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyRelationTokens'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ExternalClassSpellingInterface'
