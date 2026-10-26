@@ -1840,6 +1840,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a camel-case root spelling"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a canonical word"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a closed root refuses an unknown key"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a coverage mode in another case"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a coverage mode outside the vocabulary"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a fail_on threshold"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a form feed is not blank"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a fraction where integers are allowed"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a fraction where numbers are allowed"
@@ -1849,11 +1852,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a map keyed 1 for a list"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a nested alternative spelling"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a no-break space is not blank"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a registered output format"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a report-only severity as fail_on"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a reporting level in another case"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a reporting level"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a retired key, camelCase"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a retired key, kebab-case"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a retired key, snake_case"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a retired output format"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a rule given a bare number"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a rule switched off by a bare boolean"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a scalar of the wrong type"
@@ -1922,16 +1928,21 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NameVocabularyTest::itExposesTheNamesOfAClosedVocabularyOnly
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NameVocabularyTest::itKeepsAClosedVocabularyAPredicateForTheEngine
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NameVocabularyTest::itRefusesANonMemberWithTheRefusalTheOwnerWorded
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itAdvisesTheExactLiteralBeforeTheGeneralHint
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itAnnouncesAnEmptyOverrideOnlyOnAReplacedList
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itDeclaresOnePolicyPerFactory
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itDescribesANodeWithoutTouchingItsOtherWording
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itDescribesTheDeclaredFormAndRetainsItAcrossModifiers
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itKeepsAHintForAWordOutsideACaseSensitiveVocabulary
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itKeepsEveryDeclarationWhenAHintAndAnEmptyOverrideNoticeAreAdded
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesAHintRestrictionWithoutAHint
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itKeepsHintsForLiteralsThatDifferOnlyInType
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesAHintForAWordTheNodeAccepts"the hint, then words"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesAHintForAWordTheNodeAccepts"words, then the hint"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesAShorthandSpreadingToAnUndeclaredKey
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesAShorthandThatIsAlsoAKey
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesAnIntegerJudgementOnANonIntegerScalar
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesToDeclareANonCanonicalKey
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesTwoHintsForOneLiteral
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesTwoShorthandsSpreadingToOneKey
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRetainsBlankWordsInAScalarVocabulary
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRetainsTheDescriptionAcrossEveryModifier"admittingBareElement"
@@ -2117,6 +2128,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ResolvedWritesTest::itRetainsReplacedListsIncludingAnEmptyWinningListAndItsNotice
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itAcceptsOneBareElementOnlyWhereTheListDeclaresIt
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itAddsNoHintToARefusalAboutAnotherNode
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itAddsTheAdviceForTheWrittenValueToAConstraintRefusal"a word outside the vocabulary"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itAddsTheAdviceForTheWrittenValueToAConstraintRefusal"a word with its own hint"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itAddsTheAdviceForTheWrittenValueToAConstraintRefusal"another case of a word with its own hint"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itAddsTheAdviceForTheWrittenValueToAConstraintRefusal"below the floor"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itAddsTheAdviceForTheWrittenValueToAConstraintRefusal"blank text"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itAddsTheNodesHintToTheRefusalOfItsForm"a collection for a scalar"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itAddsTheNodesHintToTheRefusalOfItsForm"a list element"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itAddsTheNodesHintToTheRefusalOfItsForm"a list for a map"
@@ -2124,12 +2140,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itAddsTheNodesHintToTheRefusalOfItsForm"a scalar for a list"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itAddsTheNodesHintToTheRefusalOfItsForm"a scalar for a map"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itAddsTheNodesHintToTheRefusalOfItsForm"a scalar of the wrong type"
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itDoesNotTreatACollectionAsAScalarNullForAHint#0
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itDoesNotTreatACollectionAsAScalarNullForAHint#1
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itDoesNotTreatACollectionAsAScalarNullForAHint#2
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itDoesNotTreatACollectionAsTheScalarItHoldsForAHint#0
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itDoesNotTreatACollectionAsTheScalarItHoldsForAHint#1
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itDoesNotTreatACollectionAsTheScalarItHoldsForAHint#2
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itJudgesClosedWordsNumericFloorsAndNonEmptyTextInEachLayer
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itJudgesRetiredKeysEvenWhenWrittenAsNull
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itKeepsTheOtherConstraintRefusalsOpen
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itPublishesNoPositionForAWordAnUnpositionedLayerWrote
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itReadsABareBooleanAsTheDeclaredFieldWithoutTreatingNullAsFalse
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itRefusesAListElementOutsideTheVocabularyAtItsIndex
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShapeRefusalHintTest::itRefusesAWordOutsideTheVocabularyAtAClosedPositionNamingTheValue
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShorthandPathTest::itAllowsAShortcutBesideADifferentNestedLeaf
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShorthandPathTest::itExpandsThroughAChildShorthandWithCanonicalJudgementAndAuthoredProvenance
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ShorthandPathTest::itMergesTheSameLeafWhenDifferentLayersWriteIt
@@ -12563,23 +12583,24 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverReportOnlyTest::itExitsCleanOnAnInfoOnlyRunUnderEveryFailOnSetting
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverReportOnlyTest::itIgnoresInfoWhenAGatingFindingIsPresent
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverReportOnlyTest::itStillFailsOnAWarningUnderTheWarningThreshold
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itAcceptsProgrammaticResolvedValues"warning severity"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itAcceptsTheRemainingThresholds"error"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itAcceptsTheRemainingThresholds"none"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itAcceptsTheRemainingThresholds"unset"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itAcceptsTheRemainingThresholds"warning"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itExplainsUnknownThresholdsWithoutInfoAdvice#0
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itExplainsUnknownThresholdsWithoutInfoAdvice#1
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itExplainsUnknownThresholdsWithoutInfoAdvice#2
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itKeepsTheProgrammaticNeverFailValue
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itNamesTheAllowedValuesWhenRejectingAnUnknownWord
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itPreservesTheAuthorWhenTheFactoryRefusesAnInvalidValue"non-scalar array"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itPreservesTheAuthorWhenTheFactoryRefusesAnInvalidValue"scalar false"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itPreservesTheAuthorWhenTheFactoryRefusesAnInvalidValue"scalar true"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itNamesTheAllowedValuesAtAClosedPosition
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itRefusesAnInvalidThresholdEvenWhenTheCommandLineOverridesIt#0
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itRefusesAnInvalidThresholdEvenWhenTheCommandLineOverridesIt#1
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itRefusesAuthoredFalseAndNamesItsFile
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itRefusesToBeConstructedWithInfoAtAll
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itRejectsInfoAsAFailOnThreshold
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itTrustsTheEngineToHaveRefusedEveryOtherValue"a severity instance"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itTrustsTheEngineToHaveRefusedEveryOtherValue"an unknown word"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itTrustsTheEngineToHaveRefusedEveryOtherValue"false"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itTrustsTheEngineToHaveRefusedEveryOtherValue"info"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itUsesTheWinningThreshold
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FilteredInputDefinitionTest::itExcludesHiddenOptionsFromGetOptions
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FilteredInputDefinitionTest::itExcludesHiddenOptionsFromTheSynopsis

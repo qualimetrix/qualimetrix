@@ -603,19 +603,11 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimePolicy\\ExitPolicySection"
-        },
-        {
-          "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimePolicy\\MemoryLimitSection"
         },
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimePolicy\\RuntimeLimits"
-        },
-        {
-          "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Configuration\\OutputFormatSection"
         },
         {
           "owner": "Reporting",
@@ -763,6 +755,22 @@
       "owner": "Analysis.Configuration",
       "visibility": "internal",
       "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\LiteralHint": {
+      "path": "src/Analysis/Configuration/Contract/Document/Schema/LiteralHint.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimePolicy\\ExitPolicySection"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Configuration\\OutputFormatVocabulary"
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\MergePolicy": {
       "path": "src/Analysis/Configuration/Contract/Document/Schema/MergePolicy.php",
@@ -1033,6 +1041,18 @@
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricEntryKeys"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\ArchitectureSection"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimePolicy\\ExitPolicySection"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Configuration\\OutputFormatVocabulary"
         }
       ]
     },
@@ -13840,6 +13860,10 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Contract\\Report\\Report"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimePolicy\\ExitPolicySection"
         }
       ]
     },
