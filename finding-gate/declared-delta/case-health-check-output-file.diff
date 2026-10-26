@@ -1,0 +1,17 @@
+--- candidate
++++ reference (mapped)
+@@ -57,14 +57,0 @@
+-            "producer": "code-smell.long-parameter-list",
+-            "channel": "code-smell.long-parameter-list",
+-            "level": "callable",
+-            "gate": "injection-constructor",
+-            "reason": "The constructor is owned by code-smell.constructor-overinjection. Excluded by the declared population flag.",
+-            "unit": "callable",
+-            "count": 2,
+-            "examples": [
+-                "declaration:callable:Corpus\\Health\\Engine\\Dispatcher::__construct@src/Engine/Dispatcher.php",
+-                "declaration:callable:Corpus\\Health\\Engine\\Pipeline::__construct@src/Engine/Pipeline.php"
+-            ],
+-            "dataGap": false
+-        },
+-        {

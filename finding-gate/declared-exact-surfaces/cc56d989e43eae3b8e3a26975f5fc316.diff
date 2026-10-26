@@ -1,0 +1,12 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 4085
++visible 4250
+@@ -21,0 +21,1 @@
++::error file=src/Injection.php,line=7,title=code-smell.long-parameter-list::Method has 9 parameters, exceeds threshold of 6. Consider introducing a parameter object
+@@ -36,1 +37,1 @@
+-invocation-format:github 4085
++invocation-format:github 4250
+@@ -56,0 +57,1 @@
++::error file=src/Injection.php,line=7,title=code-smell.long-parameter-list::Method has 9 parameters, exceeds threshold of 6. Consider introducing a parameter object

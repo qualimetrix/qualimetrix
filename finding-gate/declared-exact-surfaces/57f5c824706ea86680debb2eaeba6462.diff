@@ -1,0 +1,51 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 7852
++visible 8106
+@@ -24,1 +24,5 @@
+-src/Injection.php (12 violations)
++src/Injection.php (13 violations)
++  ERROR  Injection::__construct
++    Method has 9 parameters, exceeds threshold of 6. Consider introducing a parameter object  [code-smell.long-parameter-list]
++    Recommendation: Parameters: 9 (threshold: 6) — consider introducing a parameter object
++
+@@ -142,0 +146,1 @@
++  code-smell.long-parameter-list           ~40min    (2 violations)
+@@ -150,9 +155,8 @@
+-  code-smell.long-parameter-list           ~20min    (1 violation)
+-  code-smell.debug-code                    ~10min    (2 violations)
+-  code-smell.unreachable-code              ~10min    (1 violation)
+-
+-Qualimetrix dev-main: 8 error(s), 25 warning(s) in 6 file(s)
+-Analysis complete: 6 analyzed, 0 generated file(s) excluded.
+-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
+-
+-invocation-format:text-detail 7852
++  code-smell.debug-code                    ~10min    (2 violations)
++  code-smell.unreachable-code              ~10min    (1 violation)
++
++Qualimetrix dev-main: 9 error(s), 25 warning(s) in 6 file(s)
++Analysis complete: 6 analyzed, 0 generated file(s) excluded.
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-format:text-detail 8106
+@@ -181,1 +185,5 @@
+-src/Injection.php (12 violations)
++src/Injection.php (13 violations)
++  ERROR  Injection::__construct
++    Method has 9 parameters, exceeds threshold of 6. Consider introducing a parameter object  [code-smell.long-parameter-list]
++    Recommendation: Parameters: 9 (threshold: 6) — consider introducing a parameter object
++
+@@ -299,0 +307,1 @@
++  code-smell.long-parameter-list           ~40min    (2 violations)
+@@ -307,5 +316,4 @@
+-  code-smell.long-parameter-list           ~20min    (1 violation)
+-  code-smell.debug-code                    ~10min    (2 violations)
+-  code-smell.unreachable-code              ~10min    (1 violation)
+-
+-Qualimetrix dev-main: 8 error(s), 25 warning(s) in 6 file(s)
++  code-smell.debug-code                    ~10min    (2 violations)
++  code-smell.unreachable-code              ~10min    (1 violation)
++
++Qualimetrix dev-main: 9 error(s), 25 warning(s) in 6 file(s)

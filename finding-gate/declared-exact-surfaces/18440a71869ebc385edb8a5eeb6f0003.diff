@@ -1,0 +1,12 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 5003
++visible 5185
+@@ -10,0 +10,1 @@
++    <error line="7" severity="error" message="Method has 9 parameters, exceeds threshold of 6. Consider introducing a parameter object" source="qmx.code-smell.long-parameter-list"/>
+@@ -49,1 +50,1 @@
+-invocation-format:checkstyle 5003
++invocation-format:checkstyle 5185
+@@ -58,0 +59,1 @@
++    <error line="7" severity="error" message="Method has 9 parameters, exceeds threshold of 6. Consider introducing a parameter object" source="qmx.code-smell.long-parameter-list"/>

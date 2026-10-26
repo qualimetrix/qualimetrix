@@ -1,0 +1,66 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 45930
++visible 47099
+@@ -167,1 +167,1 @@
+-                                "level": "warning"
++                                "level": "error"
+@@ -655,0 +655,25 @@
++                    "level": "error",
++                    "message": {
++                        "text": "Method has 9 parameters, exceeds threshold of 6. Consider introducing a parameter object"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "code-smell.long-parameter-list:declaration:callable:Corpus\\Smells\\Injection::__construct@src/Injection.php"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/Injection.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 7,
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]
++                },
++                {
++                    "ruleId": "code-smell.long-parameter-list",
++                    "ruleIndex": 10,
+@@ -1017,1 +1042,1 @@
+-invocation-format:sarif 45930
++invocation-format:sarif 47099
+@@ -1183,1 +1208,1 @@
+-                                "level": "warning"
++                                "level": "error"
+@@ -1662,0 +1687,25 @@
++                                    "startColumn": 1
++                                }
++                            }
++                        }
++                    ]
++                },
++                {
++                    "ruleId": "code-smell.long-parameter-list",
++                    "ruleIndex": 10,
++                    "level": "error",
++                    "message": {
++                        "text": "Method has 9 parameters, exceeds threshold of 6. Consider introducing a parameter object"
++                    },
++                    "partialFingerprints": {
++                        "primaryLocationLineHash": "code-smell.long-parameter-list:declaration:callable:Corpus\\Smells\\Injection::__construct@src/Injection.php"
++                    },
++                    "locations": [
++                        {
++                            "physicalLocation": {
++                                "artifactLocation": {
++                                    "uri": "src/Injection.php",
++                                    "uriBaseId": "%SRCROOT%"
++                                },
++                                "region": {
++                                    "startLine": 7,

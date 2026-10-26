@@ -1,0 +1,43 @@
+--- candidate
++++ reference (mapped)
+@@ -13,6 +13,6 @@
+-        "violationCount": 32,
+-        "errorCount": 8,
+-        "warningCount": 24,
+-        "infoCount": 0,
+-        "techDebtMinutes": 460,
+-        "debtPer1kLoc": 3650.8
++        "violationCount": 33,
++        "errorCount": 9,
++        "warningCount": 24,
++        "infoCount": 0,
++        "techDebtMinutes": 480,
++        "debtPer1kLoc": 3809.5
+@@ -79,13 +79,0 @@
+-            ],
+-            "dataGap": false
+-        },
+-        {
+-            "producer": "code-smell.long-parameter-list",
+-            "channel": "code-smell.long-parameter-list",
+-            "level": "callable",
+-            "gate": "injection-constructor",
+-            "reason": "The constructor is owned by code-smell.constructor-overinjection. Excluded by the declared population flag.",
+-            "unit": "callable",
+-            "count": 1,
+-            "examples": [
+-                "declaration:callable:Corpus\\Smells\\Injection::__construct@src/Injection.php"
+@@ -862,0 +849,1 @@
++        
+@@ -1200,2 +1188,2 @@
+-        "total": 32,
+-        "shown": 32,
++        "total": 33,
++        "shown": 33,
+@@ -1214,3 +1202,3 @@
+-            "code-smell.boolean-argument": 1,
+-            "code-smell.constructor-overinjection": 1,
+-            "code-smell.long-parameter-list": 1,
++            "code-smell.long-parameter-list": 2,
++            "code-smell.boolean-argument": 1,
++            "code-smell.constructor-overinjection": 1,

@@ -1,0 +1,9 @@
+--- candidate
++++ reference (mapped)
+@@ -1366,1 +1366,0 @@
+-                
+@@ -1528,2 +1527,2 @@
+-        "violations": 33,
+-        "errors": 8,
++        "violations": 34,
++        "errors": 9,

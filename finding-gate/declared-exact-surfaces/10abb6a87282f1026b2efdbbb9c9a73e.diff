@@ -1,0 +1,34 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 12113
++visible 12525
+@@ -232,0 +232,12 @@
++        "description": "Method has 9 parameters, exceeds threshold of 6. Consider introducing a parameter object",
++        "check_name": "code-smell.long-parameter-list",
++        "fingerprint": "bfb845f72d1504fcd08a6e7bfe738874",
++        "severity": "critical",
++        "location": {
++            "path": "src/Injection.php",
++            "lines": {
++                "begin": 7
++            }
++        }
++    },
++    {
+@@ -400,1 +412,1 @@
+-invocation-format:gitlab 12113
++invocation-format:gitlab 12525
+@@ -627,0 +639,12 @@
++            }
++        }
++    },
++    {
++        "description": "Method has 9 parameters, exceeds threshold of 6. Consider introducing a parameter object",
++        "check_name": "code-smell.long-parameter-list",
++        "fingerprint": "bfb845f72d1504fcd08a6e7bfe738874",
++        "severity": "critical",
++        "location": {
++            "path": "src/Injection.php",
++            "lines": {
++                "begin": 7

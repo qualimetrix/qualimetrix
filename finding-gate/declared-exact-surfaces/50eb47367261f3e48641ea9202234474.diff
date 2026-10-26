@@ -1,0 +1,27 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,2 @@
+-visible 4124
++visible 4296
++src/Injection.php: error[code-smell.long-parameter-list]: Method has 9 parameters, exceeds threshold of 6. Consider introducing a parameter object (Injection::__construct)
+@@ -36,6 +37,7 @@
+-Qualimetrix dev-main: 8 error(s), 25 warning(s) in 6 file(s)
+-Analysis complete: 6 analyzed, 0 generated file(s) excluded.
+-Technical debt: 7h 50min
+-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
+-
+-invocation-show-suppressed 4124
++Qualimetrix dev-main: 9 error(s), 25 warning(s) in 6 file(s)
++Analysis complete: 6 analyzed, 0 generated file(s) excluded.
++Technical debt: 1d 10min
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++invocation-show-suppressed 4296
++src/Injection.php: error[code-smell.long-parameter-list]: Method has 9 parameters, exceeds threshold of 6. Consider introducing a parameter object (Injection::__construct)
+@@ -76,3 +78,3 @@
+-Qualimetrix dev-main: 8 error(s), 25 warning(s) in 6 file(s)
+-Analysis complete: 6 analyzed, 0 generated file(s) excluded.
+-Technical debt: 7h 50min
++Qualimetrix dev-main: 9 error(s), 25 warning(s) in 6 file(s)
++Analysis complete: 6 analyzed, 0 generated file(s) excluded.
++Technical debt: 1d 10min
