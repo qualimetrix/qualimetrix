@@ -10,9 +10,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedWriteHistoryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPresentationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
-use Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleNameJudge;
 use Qualimetrix\Core\ProductIdentity;
@@ -20,17 +18,20 @@ use Qualimetrix\Core\ProductIdentity;
 /** Judges authored selector and namespace-channel spelling with its writers. */
 final class AuthoredSelectionDiagnostics
 {
-    /** @return list<ConfigurationDiagnostic> */
+    /**
+     * @param array<string, ?string> $projectOnlyProducerDocsPages producer whose every channel is project-scoped => its docs page
+     *
+     * @return list<ConfigurationDiagnostic>
+     */
     public static function forDocument(
         ResolvedDocument $document,
         ChannelUniverseInterface $channels,
-        ChannelFileScope $fileScope,
-        ChannelPresentationInterface $presentation,
+        array $projectOnlyProducerDocsPages,
     ): array {
         $judge = new RuleNameJudge($channels->ruleNames());
         $diagnosticSources = self::selectorDiagnostics($document, $judge, $channels);
         self::judgeNamespaceChannels($document, $judge, $channels);
-        self::judgeProjectScopedSuppression($document, $channels, $fileScope, $presentation);
+        self::judgeProjectScopedSuppression($document, $projectOnlyProducerDocsPages);
         $diagnostics = [];
         foreach ($diagnosticSources as $message => $writers) {
             usort($writers, static fn(Provenance $a, Provenance $b): int => $a->layerIndex <=> $b->layerIndex);
@@ -118,23 +119,17 @@ final class AuthoredSelectionDiagnostics
      * The global filters already skip a project-scoped channel; a per-rule
      * selector on a producer whose every channel is project-scoped would be
      * accepted and then match nothing a finding could be addressed by.
+     *
+     * @param array<string, ?string> $projectOnlyProducerDocsPages
      */
-    private static function judgeProjectScopedSuppression(
-        ResolvedDocument $document,
-        ChannelUniverseInterface $channels,
-        ChannelFileScope $fileScope,
-        ChannelPresentationInterface $presentation,
-    ): void {
+    private static function judgeProjectScopedSuppression(ResolvedDocument $document, array $projectOnlyProducerDocsPages): void
+    {
         $rules = $document->get('rules');
         if (!$rules instanceof ResolvedMapInterface) {
             return;
         }
         foreach ($rules->entries() as $producer => $rule) {
-            if (!$rule instanceof ResolvedMapInterface) {
-                continue;
-            }
-            $produced = $channels->channelsProducedBy($producer);
-            if ($produced === [] || array_any($produced, $fileScope->isFileScoped(...))) {
+            if (!$rule instanceof ResolvedMapInterface || !\array_key_exists($producer, $projectOnlyProducerDocsPages)) {
                 continue;
             }
             foreach ([FrameworkOptionKeys::NAMESPACES, FrameworkOptionKeys::PATHS] as $key) {
@@ -142,28 +137,16 @@ final class AuthoredSelectionDiagnostics
                 if ($selectors === null || \in_array($selectors->plain(), [[], null], true)) {
                     continue;
                 }
-                $link = self::docsLink($produced, $presentation);
+                $page = $projectOnlyProducerDocsPages[$producer];
                 throw Provenance::refusalOf($selectors->contributors(), \sprintf(
                     'Option "%s" for rule "%s" can never apply: findings of this rule are project-level and cannot be addressed by path or namespace.'
                     . ' Remove the option; to accept known findings, use a baseline.%s',
                     str_replace('-', '_', $key),
                     $producer,
-                    $link,
+                    $page === null ? '' : ' See ' . ProductIdentity::docsPageUrl($page) . '.',
                 ));
             }
         }
-    }
-
-    /** @param non-empty-list<\Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel> $produced */
-    private static function docsLink(array $produced, ChannelPresentationInterface $presentation): string
-    {
-        foreach ($produced as $channel) {
-            $page = $presentation->presentationFor($channel->code)?->docsPage;
-            if ($page !== null) {
-                return ' See ' . ProductIdentity::docsPageUrl($page) . '.';
-            }
-        }
-        return '';
     }
 
     private static function atIndex(Provenance $writer, int $index): Provenance
