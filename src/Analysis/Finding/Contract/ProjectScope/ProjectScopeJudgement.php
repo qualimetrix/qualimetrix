@@ -90,15 +90,28 @@ final readonly class ProjectScopeJudgement
         return $this->namespaceWithheldBy === [];
     }
 
+    /** Whether an exact namespace selector is judged although code was removed. */
+    public function judgesExactNamespace(string $namespace): bool
+    {
+        return $this->judgesBesideRemovedCode() && !$this->removedCode()->mayDeclare($namespace);
+    }
+
+    /** Whether a namespace subtree selector is judged although code was removed. */
+    public function judgesNamespaceSubtree(string $namespace): bool
+    {
+        return $this->judgesBesideRemovedCode() && !$this->removedCode()->mayDeclareWithin($namespace);
+    }
+
     /**
-     * Whether a literal namespace selector is judged although code was removed.
+     * Whether literal namespace selectors are decided by what removed code
+     * declares alone, so that one is judged when that code misses it.
      *
      * Only authored removal of PHP files and generated removal can be set
-     * aside, and only when what that code declares is known and misses the
-     * selector. Any other door, an unlistable removed directory or unknown
-     * removed namespaces withhold as {@see judgesNamespaceClaims()} does.
+     * aside. Any other door or an unlistable removed directory withholds every
+     * literal selector, as {@see judgesNamespaceClaims()} does. Unknown removed
+     * namespaces still withhold each selector through {@see RemovedCodeNamespaces}.
      */
-    public function judgesNamespaceLiteral(string $namespace, bool $subtree): bool
+    public function judgesBesideRemovedCode(): bool
     {
         if ($this->namespaceWithheldBy === []) {
             return true;
@@ -108,11 +121,17 @@ final readonly class ProjectScopeJudgement
                 return false;
             }
         }
-        if (\in_array(ProjectScopeDoor::Exclude, $this->namespaceWithheldBy, true) && !$this->excludeEvidenceIsPhpFilesOnly()) {
-            return false;
+
+        return !\in_array(ProjectScopeDoor::Exclude, $this->namespaceWithheldBy, true) || $this->excludeEvidenceIsPhpFilesOnly();
+    }
+
+    private function removedCode(): RemovedCodeNamespaces
+    {
+        if ($this->namespaceWithheldBy === []) {
+            return RemovedCodeNamespaces::none();
         }
 
-        return !($this->removedCode ?? RemovedCodeNamespaces::unknown())->mayDeclareWithin($namespace, $subtree);
+        return $this->removedCode ?? RemovedCodeNamespaces::unknown();
     }
 
     private function excludeEvidenceIsPhpFilesOnly(): bool

@@ -166,20 +166,53 @@ final class ValueScopeJudgementTest extends TestCase
         self::assertFalse($paths->judgesNamespaceValue($this->subtreeNamespace('Acme\\Gone')));
     }
 
-    private function removedPhp(RemovedCodeNamespaces $removed): ValueScopeJudgement
+    /**
+     * Removed code is blamed for a value only when it is the one reason the
+     * value is withheld: the value would be judged had that code declared
+     * nothing. Each withheld value here is paired with its blamed neighbour.
+     */
+    #[Test]
+    public function itBlamesRemovedCodeOnlyForAValueItAloneWithholds(): void
+    {
+        $judgement = $this->removedPhp(RemovedCodeNamespaces::known(['Acme\\Foo\\Bar', 'Acme\\Tests\\Old']));
+        $srcOnly = $this->removedPhp(RemovedCodeNamespaces::known(['Acme\\Tests\\Old']), ['src']);
+        $pathsDoor = $this->judgement(['src', 'tests'], new ProjectScopeJudgement([ProjectScopeDoor::Paths, ProjectScopeDoor::Exclude], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::known(['Acme\\Foo'])));
+
+        self::assertTrue($judgement->withholdsOnlyForRemovedCode($this->exactNamespace('Acme\\Foo')));
+        self::assertTrue($judgement->withholdsOnlyForRemovedCode($this->subtreeNamespace('Acme\\Foo')));
+        self::assertTrue($judgement->withholdsOnlyForRemovedCode($this->exactNamespace('Acme\\Tests\\Old')));
+        self::assertFalse($judgement->withholdsOnlyForRemovedCode($this->exactNamespace('Acme\\Baz')), 'judged, so not withheld at all');
+        self::assertFalse($judgement->withholdsOnlyForRemovedCode($this->regexNamespace('Acme\\\\Foo.*')), 'a regex is withheld by removal whatever it declares');
+        self::assertFalse($srcOnly->withholdsOnlyForRemovedCode($this->exactNamespace('Acme\\Tests\\Old')), 'an unanalysed PSR-4 root withholds it too');
+        self::assertFalse($pathsDoor->withholdsOnlyForRemovedCode($this->exactNamespace('Acme\\Foo')), 'a paths door withholds it too');
+        self::assertFalse($this->removedPhp(RemovedCodeNamespaces::unknown(), ['src', 'tests'], 'unlistable')->withholdsOnlyForRemovedCode($this->exactNamespace('Acme\\Foo')));
+        self::assertTrue($this->removedPhp(RemovedCodeNamespaces::unknown())->withholdsOnlyForRemovedCode($this->exactNamespace('Acme\\Foo')), 'unread removed code may declare anything');
+    }
+
+    #[Test]
+    public function itBlamesNothingWhereTheProjectDeclaresNoAutoload(): void
+    {
+        $removed = ExcludeSelectorVerdict::fromMeasuredFacts($this->subtreePath('src/Legacy'), [ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml')], ['src/Legacy'], ['src/Legacy'], 'php-file', null, [], true);
+        $undeclared = $this->judgement(['src', 'tests'], new ProjectScopeJudgement([ProjectScopeDoor::Exclude], [], [$removed], RemovedCodeNamespaces::known(['Acme\\Foo'])), false);
+
+        self::assertFalse($undeclared->withholdsOnlyForRemovedCode($this->exactNamespace('Acme\\Foo')));
+    }
+
+    /** @param list<string> $analyzedPaths */
+    private function removedPhp(RemovedCodeNamespaces $removed, array $analyzedPaths = ['src', 'tests'], string $evidence = 'php-file'): ValueScopeJudgement
     {
         $removedSelector = ExcludeSelectorVerdict::fromMeasuredFacts(
             $this->subtreePath('src/Legacy'),
             [ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml')],
             ['src/Legacy'],
             ['src/Legacy'],
-            'php-file',
+            $evidence,
             null,
             [],
             true,
         );
 
-        return $this->judgement(['src', 'tests'], new ProjectScopeJudgement([ProjectScopeDoor::Exclude], [], [$removedSelector], $removed));
+        return $this->judgement($analyzedPaths, new ProjectScopeJudgement([ProjectScopeDoor::Exclude], [], [$removedSelector], $removed));
     }
 
     private function exactNamespace(string $value): NamespacePattern

@@ -64,19 +64,25 @@ final readonly class RemovedCodeNamespaces
     }
 
     /**
-     * Whether removed code could have declared the namespace, or, for a
-     * subtree, any namespace within it. Unknown removed code could.
+     * Whether removed code could have declared the namespace itself: it, or a
+     * namespace beneath it, is declared. Unknown removed code could.
      */
-    public function mayDeclareWithin(string $namespace, bool $subtree): bool
+    public function mayDeclare(string $namespace): bool
+    {
+        return $this->declared === null || isset($this->declared[self::fold($namespace)]);
+    }
+
+    /**
+     * Whether removed code could have declared the namespace or any namespace
+     * within it. Unknown removed code could.
+     */
+    public function mayDeclareWithin(string $namespace): bool
     {
         if ($this->declared === null) {
             return true;
         }
 
         $folded = self::fold($namespace);
-        if (!$subtree) {
-            return isset($this->declared[$folded]);
-        }
         if ($folded === '') {
             return $this->declared !== [];
         }

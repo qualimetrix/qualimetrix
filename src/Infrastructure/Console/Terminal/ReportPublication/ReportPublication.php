@@ -18,6 +18,11 @@ final readonly class ReportPublication
 
     public function publishReport(RenderedCheckReport $report, InputInterface $input, OutputInterface $output, RunTargets $runTargets): void
     {
+        foreach ($report->warnings as $warning) {
+            // Raw: the text quotes configured selectors, which must print
+            // literally rather than be read as console markup.
+            $this->errorStream->writer($output)->writeln('Warning: ' . $warning, OutputInterface::OUTPUT_RAW);
+        }
         $this->writeOutput($report->formatted, $report->format, $input, $output, $runTargets);
     }
 

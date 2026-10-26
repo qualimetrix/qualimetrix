@@ -98,11 +98,36 @@ final readonly class ValueScopeJudgement
         }
 
         $head = trim($pattern->definition->value, '\\');
-        if (!$this->scope->judgesNamespaceLiteral($head, $pattern->definition->kind === SelectorKind::Subtree)) {
+
+        return $this->judgesLiteral($pattern, $head)
+            && !$this->hasUnanalysedNamespaceRoot($head, $this->projectRoot, $this->psr4Roots);
+    }
+
+    /**
+     * Whether removed code is the only reason a namespace-shaped value is not
+     * judged: it would be, had that code declared nothing.
+     *
+     * A regex value has no literal anchor to hold against what removed code
+     * declares, so removal withholds it whatever that code declares.
+     */
+    public function withholdsOnlyForRemovedCode(NamespacePattern $pattern): bool
+    {
+        if (!$this->projectDeclared || $pattern->definition->kind === SelectorKind::Regex) {
             return false;
         }
 
-        return !$this->hasUnanalysedNamespaceRoot($head, $this->projectRoot, $this->psr4Roots);
+        $head = trim($pattern->definition->value, '\\');
+
+        return $this->scope->judgesBesideRemovedCode()
+            && !$this->judgesLiteral($pattern, $head)
+            && !$this->hasUnanalysedNamespaceRoot($head, $this->projectRoot, $this->psr4Roots);
+    }
+
+    private function judgesLiteral(NamespacePattern $pattern, string $head): bool
+    {
+        return $pattern->definition->kind === SelectorKind::Subtree
+            ? $this->scope->judgesNamespaceSubtree($head)
+            : $this->scope->judgesExactNamespace($head);
     }
 
     /** @param array<string, list<string>> $psr4Roots */

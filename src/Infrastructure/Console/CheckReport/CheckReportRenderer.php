@@ -18,14 +18,13 @@ use Qualimetrix\Infrastructure\Console\Terminal\ReportPublication\RenderedCheckR
 use Qualimetrix\Reporting\Contract\OutputFormat;
 use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionResult;
-use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /** @qmx-threshold coupling.instability 0.842107 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies. */
 final readonly class CheckReportRenderer
 {
-    public function __construct(private ReportAssembler $assembler, private ReportFormatter $formatter, private ExitCodeResolver $exitCodeResolver, private ProfilerInterface $profiler, private \Qualimetrix\Infrastructure\Console\CheckScope\ProjectScopePresenter $scopePresenter, private \Qualimetrix\Infrastructure\Console\Terminal\Diagnostics\ErrorStream $errorStream) {}
+    public function __construct(private ReportAssembler $assembler, private ReportFormatter $formatter, private ExitCodeResolver $exitCodeResolver, private ProfilerInterface $profiler, private \Qualimetrix\Infrastructure\Console\CheckScope\ProjectScopePresenter $scopePresenter) {}
 
     /**
      * @param list<array{message: string, source: list<array<string, mixed>>}> $configurationDiagnostics
@@ -46,10 +45,7 @@ final readonly class CheckReportRenderer
         ?NamespacePattern $namespace = null,
     ): RenderedCheckReport {
         $projectScope = $this->scopePresenter->project($result, $options);
-        $removedCodeWarning = $this->scopePresenter->removedCodeWarning($projectScope, $result);
-        if ($removedCodeWarning !== null) {
-            $this->errorStream->write($output, \sprintf('<comment>Warning: %s</comment>', OutputFormatter::escape($removedCodeWarning)));
-        }
+        $removedCodeWarning = $this->scopePresenter->removedCodeWarning($result, $options);
         $suppressionOptions = ($format->value === 'suppressed' || $input->getOption('show-suppressed') === true)
             ? $options
             : null;
@@ -58,7 +54,7 @@ final readonly class CheckReportRenderer
             $context = $this->formatter->context($input, $output, $configuration->projectRoot, $format, $scope->scope->reportScope !== null, $namespace);
             $report = $this->assembler->assemble($result, $projection, $context->context, $projectScope, $configurationDiagnostics, $suppressionOptions);
             $formatted = $this->formatter->format($report, $context, $output);
-            return new RenderedCheckReport($formatted, $format->value, $this->exitCodeResolver->resolve($projection->findings, $report->coverage, $exitPolicy));
+            return new RenderedCheckReport($formatted, $format->value, $this->exitCodeResolver->resolve($projection->findings, $report->coverage, $exitPolicy), $removedCodeWarning === null ? [] : [$removedCodeWarning]);
         } finally {
             $this->profiler->stop('reporting');
         }

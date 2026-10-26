@@ -26,8 +26,8 @@ final class ProjectScopeJudgementLiteralTest extends TestCase
     {
         $scope = new ProjectScopeJudgement();
 
-        self::assertTrue($scope->judgesNamespaceLiteral('App', true));
-        self::assertTrue($scope->judgesNamespaceLiteral('App', false));
+        self::assertTrue($scope->judgesNamespaceSubtree('App'));
+        self::assertTrue($scope->judgesExactNamespace('App'));
     }
 
     #[Test]
@@ -35,8 +35,8 @@ final class ProjectScopeJudgementLiteralTest extends TestCase
     {
         $scope = $this->excluded('php-file', RemovedCodeNamespaces::known(['App\\Foo\\Bar']));
 
-        self::assertTrue($scope->judgesNamespaceLiteral('App\\Does\\Not\\Exist', false));
-        self::assertTrue($scope->judgesNamespaceLiteral('App\\Baz', true));
+        self::assertTrue($scope->judgesExactNamespace('App\\Does\\Not\\Exist'));
+        self::assertTrue($scope->judgesNamespaceSubtree('App\\Baz'));
         self::assertFalse($scope->judgesNamespaceClaims());
     }
 
@@ -45,10 +45,10 @@ final class ProjectScopeJudgementLiteralTest extends TestCase
     {
         $scope = $this->excluded('php-file', RemovedCodeNamespaces::known(['App\\Foo\\Bar']));
 
-        self::assertFalse($scope->judgesNamespaceLiteral('App', true));
-        self::assertFalse($scope->judgesNamespaceLiteral('App\\Foo', true));
-        self::assertFalse($scope->judgesNamespaceLiteral('App\\Foo', false));
-        self::assertFalse($scope->judgesNamespaceLiteral('app\\foo\\bar', false));
+        self::assertFalse($scope->judgesNamespaceSubtree('App'));
+        self::assertFalse($scope->judgesNamespaceSubtree('App\\Foo'));
+        self::assertFalse($scope->judgesExactNamespace('App\\Foo'));
+        self::assertFalse($scope->judgesExactNamespace('app\\foo\\bar'));
     }
 
     #[Test]
@@ -57,8 +57,8 @@ final class ProjectScopeJudgementLiteralTest extends TestCase
         $verdict = $this->verdict('php-file');
         $scope = new ProjectScopeJudgement([ProjectScopeDoor::Exclude], [], [$verdict]);
 
-        self::assertFalse($scope->judgesNamespaceLiteral('App\\Does\\Not\\Exist', false));
-        self::assertFalse((new ProjectScopeJudgement([ProjectScopeDoor::Generated]))->judgesNamespaceLiteral('Zzz', false));
+        self::assertFalse($scope->judgesExactNamespace('App\\Does\\Not\\Exist'));
+        self::assertFalse((new ProjectScopeJudgement([ProjectScopeDoor::Generated]))->judgesExactNamespace('Zzz'));
     }
 
     #[Test]
@@ -66,7 +66,7 @@ final class ProjectScopeJudgementLiteralTest extends TestCase
     {
         $scope = $this->excluded('php-file', RemovedCodeNamespaces::unknown());
 
-        self::assertFalse($scope->judgesNamespaceLiteral('App\\Does\\Not\\Exist', false));
+        self::assertFalse($scope->judgesExactNamespace('App\\Does\\Not\\Exist'));
     }
 
     #[Test]
@@ -74,7 +74,7 @@ final class ProjectScopeJudgementLiteralTest extends TestCase
     {
         $scope = $this->excluded('unlistable', RemovedCodeNamespaces::none());
 
-        self::assertFalse($scope->judgesNamespaceLiteral('App\\Does\\Not\\Exist', false));
+        self::assertFalse($scope->judgesExactNamespace('App\\Does\\Not\\Exist'));
     }
 
     #[Test]
@@ -87,7 +87,7 @@ final class ProjectScopeJudgementLiteralTest extends TestCase
             RemovedCodeNamespaces::none(),
         );
 
-        self::assertFalse($scope->judgesNamespaceLiteral('Zzz', false));
+        self::assertFalse($scope->judgesExactNamespace('Zzz'));
     }
 
     #[Test]
@@ -95,7 +95,7 @@ final class ProjectScopeJudgementLiteralTest extends TestCase
     {
         $scope = new ProjectScopeJudgement([ProjectScopeDoor::Exclude], [], [], RemovedCodeNamespaces::none());
 
-        self::assertFalse($scope->judgesNamespaceLiteral('Zzz', false));
+        self::assertFalse($scope->judgesExactNamespace('Zzz'));
     }
 
     #[Test]
@@ -103,8 +103,8 @@ final class ProjectScopeJudgementLiteralTest extends TestCase
     {
         $scope = new ProjectScopeJudgement([ProjectScopeDoor::Generated], [], [], RemovedCodeNamespaces::known(['Gen\\Proxy']));
 
-        self::assertTrue($scope->judgesNamespaceLiteral('App\\Gone', false));
-        self::assertFalse($scope->judgesNamespaceLiteral('Gen', true));
+        self::assertTrue($scope->judgesExactNamespace('App\\Gone'));
+        self::assertFalse($scope->judgesNamespaceSubtree('Gen'));
     }
 
     /** @return iterable<string, array{list<ProjectScopeDoor>}> */
@@ -128,8 +128,8 @@ final class ProjectScopeJudgementLiteralTest extends TestCase
         $scope = new ProjectScopeJudgement($doors, $selectorDoors, [], RemovedCodeNamespaces::known(['Other']));
         $withEvidence = new ProjectScopeJudgement($doors, $selectorDoors, [$this->verdict('php-file')], RemovedCodeNamespaces::known(['Other']));
 
-        self::assertFalse($scope->judgesNamespaceLiteral('App\\Gone', false));
-        self::assertFalse($withEvidence->judgesNamespaceLiteral('App\\Gone', false));
+        self::assertFalse($scope->judgesExactNamespace('App\\Gone'));
+        self::assertFalse($withEvidence->judgesExactNamespace('App\\Gone'));
     }
 
     private function excluded(string $evidence, RemovedCodeNamespaces $removed): ProjectScopeJudgement

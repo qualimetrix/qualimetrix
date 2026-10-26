@@ -7721,23 +7721,22 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesAnUnmatchedNamespaceRegexOnAWholeProjectRun
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesBinarySuppressionSelectorsWithoutCollapsingLiteralEscapes
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNamespacesAgainstAnEmptyTree
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNoNamespaceValueWhenAFileFailedAnalysis
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNoNamespaceWhenTheRunBuiltNoNamespaceTree
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNoValueWhoseSubjectTheRunDidNotAnalyse
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNothingWhenTheProducerIsDisabled
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesTheSameValuesOnARunThatReachesTheirSubject
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itLeavesAnUnmatchedRegexSilentOnAPartialRun
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itNamesOnlyTheValuesRemovedCodeAloneWithholds
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itReadsBothSpellingsOfThePerRuleLedgerOptions
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itReadsEachInvocationSnapshotFromTheSameAuditInstance
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itReplacesTheTypedSuppressionUniverseBetweenInvocations
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itStaysSilentOnAChannelSuppressionPatternThatBinds
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itStillNamesAnAnchoredNamespaceValueOnThatSameRun
- - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itTellsNamespaceValuesFromPathValues"global namespace"
- - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itTellsNamespaceValuesFromPathValues"global path"
- - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itTellsNamespaceValuesFromPathValues"ledger namespace channel"
- - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itTellsNamespaceValuesFromPathValues"ledger namespace"
- - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itTellsNamespaceValuesFromPathValues"ledger path"
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itAnchorsAValueOnACharacterOnlyTheJudgeUsedToCallAGlob
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itAnswersTheSameForRegexPathValue
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itBlamesNothingWhereTheProjectDeclaresNoAutoload
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itBlamesRemovedCodeOnlyForAValueItAloneWithholds
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itJudgesALiteralNamespaceTheRemovedCodeCannotHaveDeclared
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itJudgesBothRegexKindsFromMeasuredScopeForACompleteNamedRoster
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itJudgesNoNamespaceValueWhereTheProjectDeclaresNoAutoload
@@ -10328,6 +10327,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itBindsAllSelectorsAtTheSameDirectoryBeforePruning
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itCollectsEveryNamespaceOfARemovedDirectory
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itCollectsNamespacesOfEveryEntryASingleSelectorRemoves
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itCollectsTheNamespacesOfAnExcludedEntryOutsideTheMeasuredUniverse
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itCoversHiddenLiteralFromSameSource
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itCoversHiddenRegexFromSameSource
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itDistinguishesObservedOutsidePhpFromAnOutsideAsset
@@ -10346,6 +10346,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsSameSourceWhenHiderAndHiddenSelectorShareMixedHistory
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsSiblingPrefixesSeparate
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsTheFirstNamedLinkWithoutASelectedRegularTargetAndKeepsHardlinksDistinct
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itMakesRemovedNamespacesUnknownForAnExcludedNamedFileLink
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itMakesRemovedNamespacesUnknownPastTheByteBudgetWithoutChangingVerdicts
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itMakesRemovedNamespacesUnknownPastTheReadBudgetWithoutChangingVerdicts
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itMakesRemovedNamespacesUnknownWhenADeeperChildIsUnlistableAfterPhpWasFound
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itMakesRemovedNamespacesUnknownWhenAGeneratedFileCannotBeRead
@@ -10371,16 +10373,47 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itReportsAWalkedFileLinkAsFailureWhileKeepingTheRegularTarget
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itReportsAWalkedPhpNamedPipeWithoutPhpEvidence
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itReportsUnreadableHeaderAsFailureInsteadOfTreatingItAsOrdinary
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itSkipsTheNamespacesOfARemovalOutsideTheUniverseOnceTheSurveyIsClosed
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itSpendsOneBudgetOnRemovedAndGeneratedFiles
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itStopsDescendingAnEvidencedSelectorsLaterEntriesOnceTheBudgetIsSpent
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itStopsTheNamespaceDescentPastTheEntryBudgetWithoutChangingVerdicts
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itWalksAnExplicitExternalAliasIntoTheProjectWithoutFollowingChildDirectoryLinks
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itWalksNamedEntriesInsideAReservedAncestor
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itWithholdsANamespaceLiteralRemovedOutsideTheUniverseBesideAnUnrelatedExclusion
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itCannotReadAFileBeyondItsByteAllowance
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itCannotReadAFileWithANamespaceStatementItDoesNotRecognise"after a statement"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itCannotReadAFileWithANamespaceStatementItDoesNotRecognise"at the end of the file"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itCannotReadAFileWithANamespaceStatementItDoesNotRecognise"fully qualified name"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itCannotReadAFileWithANamespaceStatementItDoesNotRecognise"no name"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itFindsANameThatStraddlesTwoChunks
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itListsEveryNamespaceAWordCouldDeclareInALargeFile"a comment longer than the lookahead is undecided"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itListsEveryNamespaceAWordCouldDeclareInALargeFile"an unterminated comment at the end of the file ends it"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itListsEveryNamespaceAWordCouldDeclareInALargeFile"braced global block"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itListsEveryNamespaceAWordCouldDeclareInALargeFile"keyword name"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itListsEveryNamespaceAWordCouldDeclareInALargeFile"member and relative names do not"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itListsEveryNamespaceAWordCouldDeclareInALargeFile"name after a comment"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itListsEveryNamespaceAWordCouldDeclareInALargeFile"words in comments count"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsALargeFileAsTextWithinABoundedHeap
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"braced keyword name"
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"braced namespaces"
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"comment between keyword and name"
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"comments and strings"
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"global block beside a named one"
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"global block"
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"inline html only"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"keyword name Abstract"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"keyword name Array"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"keyword name Class"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"keyword name Default"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"keyword name Enum"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"keyword name Exit"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"keyword name Fn"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"keyword name List"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"keyword name Match"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"keyword name Print"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"keyword name Readonly"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"keyword name Static"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"namespace as constant, case, method and argument name"
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"namespace as member name"
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"no namespace"
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"relative name is not a declaration"
@@ -11475,7 +11508,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Baseline\BaselineGenerateProjectScopeFlagsTest::itConsumesSharedRuntimeFlagsAtEveryMeasuringBaselineCommand"update"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Baseline\BaselineGenerateProjectScopeFlagsTest::itLeavesTestCodeOutOfACaptureTakenWithoutTheFlag
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CacheDiscardLogLifecycleTest::itPublishesOneCompleteReportAndLogsDiscardBeforeClosingTheTarget
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itAgreesInNumberAcrossTheWarning
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itDoesNotBlameTheExclusionForAValueAnUnanalysedRootWithholds
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itDoesNotJudgeASelectorOfTheNamespaceTheExcludedFileDeclares
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itDoesNotJudgeTheNamespaceOfAFileThatFailedToParse
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itDoesNotJudgeWhenTheExcludedFileCannotBeRead
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itJudgesAStaleGlobalSelectorUnderAnUnrelatedExclude
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itJudgesAStalePerRuleSelectorUnderAnUnrelatedExclude

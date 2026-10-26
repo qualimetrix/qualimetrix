@@ -17,9 +17,9 @@ final class RemovedCodeNamespacesTest extends TestCase
     {
         $none = RemovedCodeNamespaces::none();
 
-        foreach ([true, false] as $subtree) {
-            self::assertFalse($none->mayDeclareWithin('App', $subtree));
-            self::assertFalse($none->mayDeclareWithin('', $subtree));
+        foreach (['App', ''] as $namespace) {
+            self::assertFalse($none->mayDeclare($namespace));
+            self::assertFalse($none->mayDeclareWithin($namespace));
         }
         self::assertTrue($none->isKnown());
     }
@@ -29,9 +29,9 @@ final class RemovedCodeNamespacesTest extends TestCase
     {
         $unknown = RemovedCodeNamespaces::unknown();
 
-        foreach ([true, false] as $subtree) {
-            self::assertTrue($unknown->mayDeclareWithin('Any\\Thing', $subtree));
-            self::assertTrue($unknown->mayDeclareWithin('', $subtree));
+        foreach (['Any\\Thing', ''] as $namespace) {
+            self::assertTrue($unknown->mayDeclare($namespace));
+            self::assertTrue($unknown->mayDeclareWithin($namespace));
         }
         self::assertFalse($unknown->isKnown());
     }
@@ -41,11 +41,11 @@ final class RemovedCodeNamespacesTest extends TestCase
     {
         $known = RemovedCodeNamespaces::known(['App\\Foo\\Bar']);
 
-        self::assertTrue($known->mayDeclareWithin('App\\Foo\\Bar', false));
-        self::assertTrue($known->mayDeclareWithin('App\\Foo', false));
-        self::assertTrue($known->mayDeclareWithin('App', false));
-        self::assertFalse($known->mayDeclareWithin('App\\Baz', false));
-        self::assertFalse($known->mayDeclareWithin('App\\Foo\\Bar\\Deeper', false));
+        self::assertTrue($known->mayDeclare('App\\Foo\\Bar'));
+        self::assertTrue($known->mayDeclare('App\\Foo'));
+        self::assertTrue($known->mayDeclare('App'));
+        self::assertFalse($known->mayDeclare('App\\Baz'));
+        self::assertFalse($known->mayDeclare('App\\Foo\\Bar\\Deeper'));
     }
 
     #[Test]
@@ -53,12 +53,12 @@ final class RemovedCodeNamespacesTest extends TestCase
     {
         $known = RemovedCodeNamespaces::known(['App\\Foo\\Bar']);
 
-        self::assertTrue($known->mayDeclareWithin('App', true));
-        self::assertTrue($known->mayDeclareWithin('App\\Foo', true));
-        self::assertTrue($known->mayDeclareWithin('App\\Foo\\Bar', true));
-        self::assertFalse($known->mayDeclareWithin('App\\Foo\\Bar\\Deeper', true));
-        self::assertFalse($known->mayDeclareWithin('App\\Baz', true));
-        self::assertFalse($known->mayDeclareWithin('Ap', true), 'A prefix is not a namespace boundary');
+        self::assertTrue($known->mayDeclareWithin('App'));
+        self::assertTrue($known->mayDeclareWithin('App\\Foo'));
+        self::assertTrue($known->mayDeclareWithin('App\\Foo\\Bar'));
+        self::assertFalse($known->mayDeclareWithin('App\\Foo\\Bar\\Deeper'));
+        self::assertFalse($known->mayDeclareWithin('App\\Baz'));
+        self::assertFalse($known->mayDeclareWithin('Ap'), 'A prefix is not a namespace boundary');
     }
 
     #[Test]
@@ -66,9 +66,9 @@ final class RemovedCodeNamespacesTest extends TestCase
     {
         $known = RemovedCodeNamespaces::known(['\\App\\Foo']);
 
-        self::assertTrue($known->mayDeclareWithin('app\\foo', false));
-        self::assertTrue($known->mayDeclareWithin('APP', true));
-        self::assertFalse($known->mayDeclareWithin('app\\fooo', false));
+        self::assertTrue($known->mayDeclare('app\\foo'));
+        self::assertTrue($known->mayDeclareWithin('APP'));
+        self::assertFalse($known->mayDeclare('app\\fooo'));
     }
 
     #[Test]
@@ -76,15 +76,15 @@ final class RemovedCodeNamespacesTest extends TestCase
     {
         $global = RemovedCodeNamespaces::known(['']);
 
-        self::assertTrue($global->mayDeclareWithin('', false));
-        self::assertTrue($global->mayDeclareWithin('', true));
-        self::assertFalse($global->mayDeclareWithin('App', false));
-        self::assertFalse($global->mayDeclareWithin('App', true));
+        self::assertTrue($global->mayDeclare(''));
+        self::assertTrue($global->mayDeclareWithin(''));
+        self::assertFalse($global->mayDeclare('App'));
+        self::assertFalse($global->mayDeclareWithin('App'));
 
         $named = RemovedCodeNamespaces::known(['App']);
 
-        self::assertFalse($named->mayDeclareWithin('', false), 'Declaring App does not declare global code');
-        self::assertTrue($named->mayDeclareWithin('', true), 'The subtree of the global namespace covers everything');
+        self::assertFalse($named->mayDeclare(''), 'Declaring App does not declare global code');
+        self::assertTrue($named->mayDeclareWithin(''), 'The subtree of the global namespace covers everything');
     }
 
     #[Test]
@@ -94,16 +94,16 @@ final class RemovedCodeNamespacesTest extends TestCase
         $b = RemovedCodeNamespaces::known(['Lib\\B']);
 
         $both = $a->merge($b);
-        self::assertTrue($both->mayDeclareWithin('App\\A', false));
-        self::assertTrue($both->mayDeclareWithin('Lib\\B', false));
-        self::assertFalse($both->mayDeclareWithin('Other', false));
+        self::assertTrue($both->mayDeclare('App\\A'));
+        self::assertTrue($both->mayDeclare('Lib\\B'));
+        self::assertFalse($both->mayDeclare('Other'));
 
-        self::assertFalse($a->merge(RemovedCodeNamespaces::none())->mayDeclareWithin('Lib', true));
-        self::assertTrue(RemovedCodeNamespaces::none()->merge($a)->mayDeclareWithin('App\\A', false));
-        self::assertFalse(RemovedCodeNamespaces::none()->merge(RemovedCodeNamespaces::none())->mayDeclareWithin('App', true));
+        self::assertFalse($a->merge(RemovedCodeNamespaces::none())->mayDeclareWithin('Lib'));
+        self::assertTrue(RemovedCodeNamespaces::none()->merge($a)->mayDeclare('App\\A'));
+        self::assertFalse(RemovedCodeNamespaces::none()->merge(RemovedCodeNamespaces::none())->mayDeclareWithin('App'));
 
-        self::assertTrue($a->merge(RemovedCodeNamespaces::unknown())->mayDeclareWithin('Zzz', false));
-        self::assertTrue(RemovedCodeNamespaces::unknown()->merge($a)->mayDeclareWithin('Zzz', false));
+        self::assertTrue($a->merge(RemovedCodeNamespaces::unknown())->mayDeclare('Zzz'));
+        self::assertTrue(RemovedCodeNamespaces::unknown()->merge($a)->mayDeclare('Zzz'));
         self::assertFalse($a->merge(RemovedCodeNamespaces::unknown())->isKnown());
     }
 }

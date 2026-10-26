@@ -66,7 +66,6 @@ final class ErrorStreamContainerIdentityTest extends TestCase
      * @var list<class-string>
      */
     private const array CONSUMERS = [
-        'Qualimetrix\\Infrastructure\\Console\\CheckReport\\CheckReportRenderer',
         'Qualimetrix\\Infrastructure\\Console\\CheckReport\\FormatBinding\\ReportFormatter',
         'Qualimetrix\\Infrastructure\\Console\\CheckReport\\Projection\\FindingDiagnostics',
         'Qualimetrix\\Infrastructure\\Console\\CheckScope\\CheckScopeResolver',

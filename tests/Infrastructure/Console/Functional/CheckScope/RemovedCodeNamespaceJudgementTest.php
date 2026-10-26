@@ -33,15 +33,17 @@ final class RemovedCodeNamespaceJudgementTest extends TestCase
 
     protected function tearDown(): void
     {
-        $sources = glob($this->root . '/src/*');
-        foreach ($sources === false ? [] : $sources as $file) {
-            @chmod($file, 0o644);
-            @unlink($file);
+        foreach (['src', 'tests'] as $directory) {
+            $sources = glob($this->root . '/' . $directory . '/*');
+            foreach ($sources === false ? [] : $sources as $file) {
+                @chmod($file, 0o644);
+                @unlink($file);
+            }
+            @rmdir($this->root . '/' . $directory);
         }
         foreach (['composer.json', 'qmx.yaml'] as $file) {
             @unlink($this->root . '/' . $file);
         }
-        @rmdir($this->root . '/src');
         @rmdir($this->root);
     }
 
@@ -120,6 +122,64 @@ final class RemovedCodeNamespaceJudgementTest extends TestCase
             $this->unjudgedNamespaceValues($run['report']),
         );
         self::assertStringContainsString('generated-file filtering', $run['stderr']);
+    }
+
+    /**
+     * A file that failed to parse declares nothing in the namespace tree, so a
+     * selector written for it is not stale: the value stays unjudged, alone
+     * and beside an unrelated exclusion, and the exclusion is not blamed.
+     */
+    #[Test]
+    public function itDoesNotJudgeTheNamespaceOfAFileThatFailedToParse(): void
+    {
+        file_put_contents($this->root . '/src/Broken.php', "<?php\nnamespace App\\Broken;\nfinal class Broken {\n");
+        $runs = [
+            'alone' => "suppress_namespaces:\n  - {exact: 'App\\Broken'}\n",
+            'beside an unrelated exclusion' => "exclude:\n  - {exact: src/Removed.php}\nsuppress_namespaces:\n  - {exact: 'App\\Broken'}\n",
+        ];
+
+        foreach ($runs as $label => $yaml) {
+            $run = $this->check($yaml);
+
+            self::assertSame(0, $this->staleFindings($run['report']), $label);
+            self::assertSame(
+                [['channel' => self::CHANNEL, 'option' => 'suppress_namespaces', 'pattern' => 'exact:App\\Broken']],
+                $this->unjudgedNamespaceValues($run['report']),
+                $label,
+            );
+            self::assertContains(self::CHANNEL, $run['report']['projectScope']['unjudgedChannels'], $label);
+            self::assertStringNotContainsString('may declare the namespaces', $run['stderr'], $label);
+        }
+    }
+
+    /**
+     * A value served from an unanalysed PSR-4 root stays unjudged whatever
+     * the exclusion removed, so the warning neither names nor counts it.
+     */
+    #[Test]
+    public function itDoesNotBlameTheExclusionForAValueAnUnanalysedRootWithholds(): void
+    {
+        mkdir($this->root . '/tests');
+        file_put_contents($this->root . '/tests/KeptTest.php', "<?php\nnamespace App\\Tests;\nfinal class KeptTest {}\n");
+        file_put_contents($this->root . '/composer.json', json_encode(['autoload' => ['psr-4' => ['App\\' => 'src/']], 'autoload-dev' => ['psr-4' => ['App\\Tests\\' => 'tests/']]], \JSON_THROW_ON_ERROR));
+
+        $alone = $this->check("exclude:\n  - {exact: src/Removed.php}\nsuppress_namespaces:\n  - {exact: 'App\\Tests\\Foo'}\n", ['src']);
+        $beside = $this->check("exclude:\n  - {exact: src/Removed.php}\nsuppress_namespaces:\n  - {exact: 'App\\Tests\\Foo'}\n  - {exact: 'App\\Removed'}\n", ['src']);
+
+        self::assertCount(1, $this->unjudgedNamespaceValues($alone['report']));
+        self::assertStringNotContainsString('may declare the namespaces', $alone['stderr']);
+        self::assertCount(2, $this->unjudgedNamespaceValues($beside['report']));
+        self::assertStringContainsString('may declare the namespaces of 1 suppression value, so it was not judged', $beside['stderr']);
+    }
+
+    #[Test]
+    public function itAgreesInNumberAcrossTheWarning(): void
+    {
+        $one = $this->check("exclude:\n  - {exact: src/Removed.php}\nsuppress_namespaces:\n  - {exact: 'App\\Removed'}\n");
+        $two = $this->check("exclude:\n  - {exact: src/Removed.php}\nsuppress_namespaces:\n  - {exact: 'App\\Removed'}\n  - {subtree: 'App\\Removed'}\n");
+
+        self::assertStringContainsString('of 1 suppression value, so it was not judged (' . self::CHANNEL . '). Narrow the exclusion to judge it.', $one['stderr']);
+        self::assertStringContainsString('of 2 suppression values, so they were not judged (' . self::CHANNEL . '). Narrow the exclusion to judge them.', $two['stderr']);
     }
 
     /**

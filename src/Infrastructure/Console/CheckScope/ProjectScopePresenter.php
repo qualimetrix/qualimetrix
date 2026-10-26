@@ -7,7 +7,6 @@ namespace Qualimetrix\Infrastructure\Console\CheckScope;
 use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorOutcome;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels;
-use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Reporting\Contract\Report\ReportProjectScope;
@@ -27,10 +26,12 @@ final readonly class ProjectScopePresenter
         $facts = $measurement->universe->manifestFacts;
         $reasons = $this->observedProjectScopeReasons->forMainSource($facts->source(), $facts->state, $measurement->universe->projectRoot);
         $namespaces = $result->measured->namespaceTree?->getAllNamespaces();
+        $failedFiles = $result->measured->coverage->failedFilesCount();
         $unjudged = $this->unboundSuppressionAudit->unjudgedValues(
             $options->suppressPaths,
             $options->suppressNamespaces,
             $namespaces,
+            $failedFiles,
             $valueScope,
         );
         foreach ($judgement->excludeSelectors() as $selector) {
@@ -46,6 +47,7 @@ final readonly class ProjectScopePresenter
             $options->suppressPaths,
             $options->suppressNamespaces,
             $namespaces,
+            $failedFiles,
             $valueScope,
         );
         foreach ($judgement->excludeSelectors() as $selector) {
@@ -59,52 +61,52 @@ final readonly class ProjectScopePresenter
     }
 
     /**
-     * The warning for a run whose namespace suppressions stayed unjudged only
-     * because removed code (an `exclude` of PHP files, generated files) may
-     * declare their namespaces; null when nothing is in that state.
-     *
-     * Any other withholding door already has its own scope warning, and a
-     * value unjudged for another reason is not this warning's business.
+     * The warning for a run whose suppression values removed code alone kept
+     * from being judged; null when there is none. Which values those are is
+     * the audit's answer: this only words it.
      */
-    public function removedCodeWarning(ReportProjectScope $scope, AnalysisResult $result): ?string
+    public function removedCodeWarning(AnalysisResult $result, FindingProjectionOptions $options): ?string
     {
-        $judgement = ($result->measured->projectScope ?? throw new LogicException('A pipeline result requires measured project scope'))->judgement();
-        $doors = $judgement->withheldBy();
-        if ($doors === [] || array_filter($doors, static fn(ProjectScopeDoor $door): bool => $door !== ProjectScopeDoor::Exclude && $door !== ProjectScopeDoor::Generated) !== []) {
+        $measurement = $result->measured->projectScope ?? throw new LogicException('A pipeline result requires measured project scope');
+        $withheld = $this->unboundSuppressionAudit->withheldForRemovedCode(
+            $options->suppressPaths,
+            $options->suppressNamespaces,
+            $result->measured->namespaceTree?->getAllNamespaces(),
+            $result->measured->coverage->failedFilesCount(),
+            $measurement->valueScopeJudgement(),
+        );
+        if ($withheld === []) {
             return null;
         }
 
-        $channels = [];
-        $count = 0;
-        foreach ($scope->unjudgedValues as $value) {
-            if (UnboundSuppressionAudit::isNamespaceValue($value)) {
-                $channels[$value['channel']] = true;
-                ++$count;
-            }
-        }
-        if ($count === 0) {
-            return null;
-        }
+        $channels = array_values(array_unique(array_column($withheld, 'channel')));
+        sort($channels);
+        $one = \count($withheld) === 1;
 
+        return \sprintf(
+            'Code removed by %s may declare the namespaces of %d suppression %s, so %s not judged (%s). Narrow the exclusion to judge %s.',
+            implode(' and ', self::removalCauses($result)),
+            \count($withheld),
+            $one ? 'value' : 'values',
+            $one ? 'it was' : 'they were',
+            implode(', ', $channels),
+            $one ? 'it' : 'them',
+        );
+    }
+
+    /** @return list<string> */
+    private static function removalCauses(AnalysisResult $result): array
+    {
         $causes = [];
-        foreach ($judgement->excludeSelectors() as $selector) {
+        foreach ($result->measured->projectScope?->judgement()->excludeSelectors() ?? [] as $selector) {
             if ($selector->phpEvidence !== null) {
                 $causes[] = 'exclude "' . $selector->display . '"';
             }
         }
-        if (\in_array(ProjectScopeDoor::Generated, $doors, true)) {
+        if ($result->measured->coverage->generatedExcludedFiles !== []) {
             $causes[] = 'generated-file filtering';
         }
-        $channelNames = array_keys($channels);
-        sort($channelNames);
 
-        return \sprintf(
-            'Code removed by %s may declare the namespaces of %d suppression %s, so %s not judged (%s). Narrow the exclusion to judge them.',
-            implode(' and ', $causes),
-            $count,
-            $count === 1 ? 'value' : 'values',
-            $count === 1 ? 'it was' : 'they were',
-            implode(', ', $channelNames),
-        );
+        return $causes;
     }
 }
