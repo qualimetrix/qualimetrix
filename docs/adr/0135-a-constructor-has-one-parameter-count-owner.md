@@ -60,7 +60,22 @@ A constructor is judged by exactly one of the two rules:
 6. **A global function named `__construct` stays with `long-parameter-list`.**
    It has no class context, so `constructor-overinjection` never admitted it,
    and it is a function, not a constructor.
-7. **No option.** A switch to restore the double report (such as an
+7. **The owner of "not a value object" is the injection rule, and that
+   population is wide.** The value-object predicate (ADR 0131) is narrow, so
+   every mutable DTO, entity, and record that validates in its constructor body
+   or keeps private state behind derived getters is now judged at 8/12 with
+   the advice to split responsibilities. A five-parameter validating record
+   used to warn under `long-parameter-list` and is now not reported. The flag
+   name says "injection" for a population that is defined negatively. Rejected:
+   counting only collaborator dependencies (issue #170's second option: keep
+   both rules, with `constructor-overinjection` counting object-typed
+   parameters). It needs a second metric and a type inference of what a
+   "service" parameter is, which the collector cannot decide reliably (an
+   interface-typed value, a closure, a DateTimeInterface); one owner per
+   constructor from evidence the collector already holds is cheaper and
+   decidable. The cost is accepted and recorded here rather than hidden in the
+   flag name.
+8. **No option.** A switch to restore the double report (such as an
    `exclude_constructors` option on `long-parameter-list`) was rejected as a
    surface that preserves the defect; `@qmx-threshold` already gives a finite
    local boundary.
@@ -80,6 +95,10 @@ A constructor is judged by exactly one of the two rules:
   `code-smell.long-parameter-list` on non-value-object constructors disappear;
   the equivalent findings come from `code-smell.constructor-overinjection`.
 - Self-analysis: 15 `@qmx-threshold code-smell.long-parameter-list` directives
-  on non-value-object constructors became inert and were removed; 17 others sit
+  on non-value-object constructors became inert and were removed. Their
+  reasons said the parameters were not injected services,
+  which is the population of decision 7: for these the
+  removal widened the accepted size from 4/6 to 8/12 rather than proving the
+  constructors services; 17 others sit
   on value-object constructors and stay. Two ratchet ceilings, on the
   constructors of `CheckCommand` and `BaselineRun`, were removed.
