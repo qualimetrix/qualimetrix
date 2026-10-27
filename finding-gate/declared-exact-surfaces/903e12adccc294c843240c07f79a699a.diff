@@ -1,0 +1,16 @@
+--- candidate
++++ reference (mapped)
+@@ -951,3 +951,3 @@
+-            "line": 7,
+-            "subject": "declaration:func:App\\F::Repo::debugInfo::{closure#1}@src/dbg/F.php",
+-            "symbol": "App\\F\\Repo::debugInfo::{closure#1}",
++            "line": 3,
++            "subject": "declaration:func:App\\F::debug@src/dbg/F.php",
++            "symbol": "App\\F\\debug",
+@@ -975,3 +975,3 @@
+-            "line": 3,
+-            "subject": "declaration:func:App\\F::debug@src/dbg/F.php",
+-            "symbol": "App\\F\\debug",
++            "line": 7,
++            "subject": "declaration:func:App\\F::Repo::debugInfo::{closure#1}@src/dbg/F.php",
++            "symbol": "App\\F\\Repo::debugInfo::{closure#1}",

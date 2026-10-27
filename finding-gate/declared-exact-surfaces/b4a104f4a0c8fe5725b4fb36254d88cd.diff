@@ -1,0 +1,11 @@
+--- candidate
++++ reference (mapped)
+@@ -226,4 +226,4 @@
+-    "declaration:func:App\\F::Repo::debugInfo::{closure#1}@src/dbg/F.php": [
+-      {"channel":"code-smell.debug-code","occurrence":"9d9a9bef4ea8a01f","count":1}
+-    ],
+-    "declaration:func:App\\F::debug@src/dbg/F.php": [
++    "declaration:func:App\\F::debug@src/dbg/F.php": [
++      {"channel":"code-smell.debug-code","occurrence":"9d9a9bef4ea8a01f","count":1}
++    ],
++    "declaration:func:App\\F::Repo::debugInfo::{closure#1}@src/dbg/F.php": [

@@ -446,7 +446,7 @@ PHP;
         self::assertSame(1, $metrics->get('complexity.ccn:App\ClosureTest::withClosure'));
 
         // Closure: CC = 1 (base) + 1 (if) = 2
-        self::assertSame(2, $metrics->get('complexity.ccn:App\ClosureTest::{closure#1}'));
+        self::assertSame(2, $metrics->get('complexity.ccn:App\ClosureTest::withClosure::{closure#1}'));
     }
 
     #[Test]
@@ -769,7 +769,7 @@ PHP;
         self::assertSame(1, $metrics->get('complexity.ccn:App\Test::getMapper'));
 
         // Arrow function: CC = 1 (base) + 1 (ternary) = 2
-        self::assertSame(2, $metrics->get('complexity.ccn:App\Test::{closure#1}'));
+        self::assertSame(2, $metrics->get('complexity.ccn:App\Test::getMapper::{closure#1}'));
     }
 
     /**
@@ -795,7 +795,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Arrow function with no decision points: CC = 1
-        self::assertSame(1, $metrics->get('complexity.ccn:App\Test::{closure#1}'));
+        self::assertSame(1, $metrics->get('complexity.ccn:App\Test::getDoubler::{closure#1}'));
     }
 
     /**
@@ -821,7 +821,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Arrow function: CC = 1 (base) + 1 (&&) = 2
-        self::assertSame(2, $metrics->get('complexity.ccn:App\Test::{closure#1}'));
+        self::assertSame(2, $metrics->get('complexity.ccn:App\Test::getValidator::{closure#1}'));
     }
 
     /**

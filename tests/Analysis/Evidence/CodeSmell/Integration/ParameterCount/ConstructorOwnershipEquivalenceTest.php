@@ -140,7 +140,7 @@ PHP;
         yield 'anonymous class constructor' => ['App\{anonymous#0}::__construct#', true];
         yield 'global function named like a constructor' => ['App\__construct#', false];
         yield 'ordinary method' => ['App\Service::handle#', false];
-        yield 'closure inside a constructor' => ['App\{closure#1}#', false];
+        yield 'closure inside a constructor' => ['App\WithClosure::__construct::{closure#1}#', false];
     }
 
     #[Test]

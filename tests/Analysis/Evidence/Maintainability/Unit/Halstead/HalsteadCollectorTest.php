@@ -390,7 +390,7 @@ PHP;
         self::assertNotNull($metrics->get('maintainability.halstead.volume:App\WithClosure::withCallback'));
 
         // Closure metrics
-        $closureVolume = $metrics->get('maintainability.halstead.volume:App\WithClosure::{closure#1}');
+        $closureVolume = $metrics->get('maintainability.halstead.volume:App\WithClosure::withCallback::{closure#1}');
         self::assertIsFloat($closureVolume);
         self::assertGreaterThan(0, $closureVolume);
     }
@@ -415,7 +415,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Arrow function metrics
-        $arrowVolume = $metrics->get('maintainability.halstead.volume:App\WithArrow::{closure#1}');
+        $arrowVolume = $metrics->get('maintainability.halstead.volume:App\WithArrow::mapper::{closure#1}');
         self::assertIsFloat($arrowVolume);
         self::assertGreaterThan(0, $arrowVolume);
     }

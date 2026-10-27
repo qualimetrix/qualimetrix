@@ -263,7 +263,7 @@ PHP;
         self::assertSame(3, $metrics->get('complexity.npath:App\\Test::ternaryWrapper'));
         self::assertSame(3, $metrics->get('complexity.npath:App\\Test::ternaryArgument'));
         self::assertSame(3, $metrics->get('complexity.npath:App\\Test::coalesceArgument'));
-        self::assertSame(2, $metrics->get('complexity.npath:App\\Test::{closure#1}'));
+        self::assertSame(2, $metrics->get('complexity.npath:App\\Test::arrow::{closure#1}'));
         self::assertSame(2, $metrics->get('complexity.npath:App\\Test::hooked::get'));
     }
 
@@ -1072,7 +1072,7 @@ PHP;
         self::assertSame(1, $metrics->get('complexity.npath:App\Test::getMapper'));
 
         // Arrow function: NPath = ternary cond(0) + true(0) + false(0) + 2 = 2
-        self::assertSame(2, $metrics->get('complexity.npath:App\Test::{closure#1}'));
+        self::assertSame(2, $metrics->get('complexity.npath:App\Test::getMapper::{closure#1}'));
     }
 
     /**
@@ -1098,7 +1098,7 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         // Arrow function with no branching: NPath = 1
-        self::assertSame(1, $metrics->get('complexity.npath:App\Test::{closure#1}'));
+        self::assertSame(1, $metrics->get('complexity.npath:App\Test::getDoubler::{closure#1}'));
     }
 
     /**

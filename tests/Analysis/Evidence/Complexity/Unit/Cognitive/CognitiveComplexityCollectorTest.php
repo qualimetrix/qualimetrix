@@ -110,7 +110,7 @@ PHP;
 
         // The closure adds nothing to the method; its own if runs at nesting=1
         self::assertSame(0, $metrics->get('complexity.cognitive:App\ClosureTest::withClosure'));
-        self::assertSame(2, $metrics->get('complexity.cognitive:App\ClosureTest::{closure#1}'));
+        self::assertSame(2, $metrics->get('complexity.cognitive:App\ClosureTest::withClosure::{closure#1}'));
     }
 
     #[Test]
