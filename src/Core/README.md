@@ -7,7 +7,7 @@ nothing from the project outside `Core`. PHP-parser types are confined to
 `Core/Ast/`; `Version.php` uses `Composer\InstalledVersions` from the declared
 `composer-runtime-api` platform package.
 
-No control holds Core to that list. The generated `qmx.yaml` lets every owner
+No control holds Core to that list. The generated `qmx.architecture.yaml` lets every owner
 reach its `external` layer, and
 `governance/DeclaredDependencies/ShippedCodeReachesOnlyDeclaredPackagesTest`
 checks only that shipped code reaches declared packages, wherever it sits. A new

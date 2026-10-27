@@ -449,6 +449,7 @@ CRITICAL_FILES=(
     "phpunit.xml.dist"
     "phpstan.neon"
     "qmx.yaml"
+    "qmx.architecture.yaml"
     "CLAUDE.md"
 )
 
