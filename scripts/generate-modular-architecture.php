@@ -60,7 +60,7 @@ $root = dirname(__DIR__);
 $targetDirectory = $root . '/docs/internal/generated/modular-architecture';
 $stageDirectory = sys_get_temp_dir() . '/qmx-modular-architecture-' . bin2hex(random_bytes(12));
 $stageGenerated = $stageDirectory . '/generated';
-$stageQmx = $stageDirectory . '/qmx.yaml';
+$stageArchitecture = $stageDirectory . '/qmx.architecture.yaml';
 
 $outputs = [];
 $failure = null;
@@ -72,7 +72,7 @@ try {
         PHP_BINARY,
         $root . '/scripts/generate-modular-architecture-production-inventory.php',
         '--output-directory=' . $stageGenerated,
-        '--qmx-output=' . $stageQmx,
+        '--architecture-output=' . $stageArchitecture,
     ], $root);
     $outputs[] = runGenerator([
         PHP_BINARY,
@@ -81,21 +81,21 @@ try {
     ], $root);
 
     assertExactFileSet($stageGenerated, GENERATED_ARTIFACTS, 'staged generated artifacts');
-    if (!is_file($stageQmx)) {
-        fail('Production generator did not render staged qmx.yaml.');
+    if (!is_file($stageArchitecture)) {
+        fail('Production generator did not render staged qmx.architecture.yaml.');
     }
 
     if ($check) {
         assertExactFileSet($targetDirectory, GENERATED_ARTIFACTS, 'committed generated artifacts');
-        assertSameFile($stageQmx, $root . '/qmx.yaml');
+        assertSameFile($stageArchitecture, $root . '/qmx.architecture.yaml');
         foreach (GENERATED_ARTIFACTS as $name) {
             assertSameFile($stageGenerated . '/' . $name, $targetDirectory . '/' . $name);
         }
     } else {
         publishTransaction(
-            $stageQmx,
+            $stageArchitecture,
             $stageGenerated,
-            $root . '/qmx.yaml',
+            $root . '/qmx.architecture.yaml',
             $targetDirectory,
             GENERATED_ARTIFACTS,
             $failAfterPublish === false ? null : $failAfterPublish,
@@ -116,8 +116,8 @@ try {
             unlink($path);
         }
     }
-    if (is_file($stageQmx) || is_link($stageQmx)) {
-        unlink($stageQmx);
+    if (is_file($stageArchitecture) || is_link($stageArchitecture)) {
+        unlink($stageArchitecture);
     }
     if (is_dir($stageGenerated)) {
         rmdir($stageGenerated);
@@ -200,9 +200,9 @@ function publishAtomically(string $source, string $target): void
  * @param list<string> $expected
  */
 function publishTransaction(
-    string $stageQmx,
+    string $stageArchitecture,
     string $stageGenerated,
-    string $targetQmx,
+    string $targetArchitecture,
     string $targetDirectory,
     array $expected,
     ?int $failAfterPublish,
@@ -224,7 +224,7 @@ function publishTransaction(
     }
     sort($orphans, SORT_STRING);
 
-    $operations = [[$stageQmx, $targetQmx]];
+    $operations = [[$stageArchitecture, $targetArchitecture]];
     foreach ($expected as $name) {
         $operations[] = [$stageGenerated . '/' . $name, $targetDirectory . '/' . $name];
     }
