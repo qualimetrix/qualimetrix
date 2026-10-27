@@ -8,11 +8,13 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionS
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
+use Qualimetrix\Analysis\Configuration\Loader\ImportListSchema;
 use Qualimetrix\Core\Pattern\SelectorKind;
 
 /** Configuration's document declarations, apart from the sections their consumers register. */
 enum ConfigurationRoot: string implements DocumentSectionSchemaInterface
 {
+    case Imports = ConfigSchema::IMPORTS;
     case Exclude = 'exclude';
     case SuppressPaths = 'suppress_paths';
     case SuppressNamespaces = 'suppress_namespaces';
@@ -31,12 +33,23 @@ enum ConfigurationRoot: string implements DocumentSectionSchemaInterface
         $selectors = self::selectorSet();
 
         return [
+            self::Imports->value => ImportListSchema::schema(),
             self::Exclude->value => $selectors,
             self::SuppressPaths->value => $selectors,
             self::SuppressNamespaces->value => $selectors,
             self::IncludeGenerated->value => $boolean,
             self::IncludeAutoloadDev->value => $boolean,
         ];
+    }
+
+    /**
+     * The declared roots read from each file on its own and never composed.
+     *
+     * @return list<self>
+     */
+    public static function perFile(): array
+    {
+        return array_map(self::from(...), ConfigSchema::PER_FILE_ROOTS);
     }
 
     /**

@@ -128,6 +128,14 @@ final class EditorSchemaEngineAgreementTest extends TestCase
         yield '{} on a list' => ['Replace/Accumulate', 'exclude_health: {}', self::ACCEPTS, self::SCHEMA_ACCEPTS];
         yield 'an empty list its owner refuses' => ['layerJudge, outside the promise', 'paths: {}', self::REFUSES, self::SCHEMA_ACCEPTS];
         yield '{} on a scalar' => ['LastWriterWins', 'fail_on: {}', self::REFUSES, '/fail_on'];
+
+        yield 'an import list' => ['imports', 'imports: [cfg/base.yaml, team.YML]', self::ACCEPTS, self::SCHEMA_ACCEPTS];
+        yield 'a bare import' => ['imports', 'imports: cfg/base.yaml', self::REFUSES, '/imports'];
+        yield 'an import that is not text' => ['imports', 'imports: [1]', self::REFUSES, '/imports/0'];
+        yield 'an empty import' => ['imports', 'imports: [""]', self::REFUSES, '/imports/0'];
+        yield 'an import naming a URL' => ['imports, layerJudge outside the promise', 'imports: ["https://example.com/a.yaml"]', self::REFUSES, self::SCHEMA_ACCEPTS];
+        yield 'an import with a glob' => ['imports, layerJudge outside the promise', 'imports: ["cfg/*.yaml"]', self::REFUSES, self::SCHEMA_ACCEPTS];
+        yield 'an import of another format' => ['imports, layerJudge outside the promise', 'imports: [a.json]', self::REFUSES, self::SCHEMA_ACCEPTS];
         yield 'an unknown key of a map' => ['DeepMerge', 'cache: {nope: 1}', self::REFUSES, '/cache/nope'];
 
         yield 'an inline merge key' => ['YAML merge keys', 'cache: {<<: {dir: .cache}}', self::ACCEPTS, self::SCHEMA_ACCEPTS];

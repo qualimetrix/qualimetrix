@@ -49,6 +49,7 @@ final class ConfigSchema
     public const string INCLUDE_AUTOLOAD_DEV = 'include_autoload_dev';
     public const string MEMORY_LIMIT = 'memory_limit';
     public const string ARCHITECTURE = 'architecture';
+    public const string IMPORTS = 'imports';
 
     /**
      * The production and `autoload-dev` targets `composer.json` declares —
@@ -74,6 +75,15 @@ final class ConfigSchema
      * @var list<string>
      */
     public const array INTERNAL_KEYS = [self::DISCOVERED_AUTOLOAD_PATHS, self::DISCOVERED_AUTOLOAD_DEV_PATHS];
+
+    /**
+     * Roots read from each file on its own before composition and never
+     * composed: the import chain takes them out of every layer it hands on.
+     * They have no ENTRIES row and are not {@see self::DOCUMENT_ROOTS}.
+     *
+     * @var list<string>
+     */
+    public const array PER_FILE_ROOTS = [self::IMPORTS];
 
     /** Capability-owned roots transported in ordered configuration documents. */
     public const array DOCUMENT_ROOTS = [self::COUPLING, self::COMPUTED_METRICS, self::EXCLUDE_HEALTH, self::ARCHITECTURE, self::FORMAT, self::PARALLEL, self::RULES];
@@ -151,7 +161,7 @@ final class ConfigSchema
             $keys[$root] = true;
         }
 
-        return array_values(array_unique([...array_keys($keys), ...self::DOCUMENT_ROOTS]));
+        return array_values(array_unique([...array_keys($keys), ...self::DOCUMENT_ROOTS, ...self::PER_FILE_ROOTS]));
     }
 
     /**
@@ -236,6 +246,7 @@ final class ConfigSchema
             'includeGenerated' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
             'includeAutoloadDev' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
             'memoryLimit' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
+            self::IMPORTS => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
 
             // Typed sections — sub-keys are schema-known options.
             'cache' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,

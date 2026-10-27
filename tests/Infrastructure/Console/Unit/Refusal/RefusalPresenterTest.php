@@ -522,6 +522,23 @@ final class RefusalPresenterTest extends TestCase
         ], $sources);
     }
 
+    /** The importer chain is published to its end, not to a fixed depth. */
+    #[Test]
+    public function itPublishesAnImporterChainTwoLevelsDeep(): void
+    {
+        $output = self::terminalOutput();
+        $root = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml');
+        $middle = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'cfg/team.yaml')->importedThrough($root);
+        $leaf = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'cfg/base.yaml')->importedThrough($middle);
+
+        $this->presenter()->refusal($output, 'json', ConfigurationRefusal::aboutDocument($leaf, 'not found'));
+
+        self::assertSame(
+            [['kind' => 'file', 'name' => 'cfg/base.yaml', 'imported_by' => ['kind' => 'file', 'name' => 'cfg/team.yaml', 'imported_by' => ['kind' => 'file', 'name' => 'qmx.yaml', 'imported_by' => null]]]],
+            json_decode($output->standardOutputContent(), true, flags: \JSON_THROW_ON_ERROR)['source'],
+        );
+    }
+
     /**
      * The JSON envelope stays closed at its four keys: `present()` never
      * appends the pointer to `writeEnvelope()`'s output.

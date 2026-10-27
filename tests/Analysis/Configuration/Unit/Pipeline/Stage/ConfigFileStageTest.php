@@ -173,7 +173,7 @@ final class ConfigFileStageTest extends TestCase
         );
 
         self::assertNotNull($layer);
-        self::assertSame('custom.yaml', $layer->source);
+        self::assertSame($this->directory . '/custom.yaml', $layer->source);
         self::assertSame(['format' => 'json'], $layer->authored[0]->root->plain());
         self::assertSame([], $layer->values);
         self::assertSame($this->directory . '/custom.yaml', $layer->authored[0]->origin->locator());

@@ -321,9 +321,9 @@ YAML);
         $this->assertDocumentRefusal($path, 'Rule option owner "complexity" does not match any registered producer rule.', ['rules', 'complexity'], 'complexity');
         $path = $this->tempDir . '/known-owner.yaml';
         file_put_contents($path, "rules:\n  complexity.ccn: {enabled: true}\nunknown_key: some_value\nanother_bad_key: true\n");
-        $this->assertDocumentRefusal($path, \sprintf('Unknown key "unknown_key" in configuration file "%s". Accepted keys: exclude, suppress_paths, suppress_namespaces, include_generated, include_autoload_dev, cache, parallel, coupling, computed_metrics, exclude_health, rules, only_rules, disabled_rules, architecture, fail_on, memory_limit, paths, format.', $path), ['unknown_key'], 'unknown_key');
+        $this->assertDocumentRefusal($path, \sprintf('Unknown key "unknown_key" in configuration file "%s". Accepted keys: imports, exclude, suppress_paths, suppress_namespaces, include_generated, include_autoload_dev, cache, parallel, coupling, computed_metrics, exclude_health, rules, only_rules, disabled_rules, architecture, fail_on, memory_limit, paths, format.', $path), ['unknown_key'], 'unknown_key');
         file_put_contents($path, "rules:\n  complexity.ccn: {enabled: true}\nformat: json\nanother_bad_key: true\n");
-        $this->assertDocumentRefusal($path, \sprintf('Unknown key "another_bad_key" in configuration file "%s". Accepted keys: exclude, suppress_paths, suppress_namespaces, include_generated, include_autoload_dev, cache, parallel, coupling, computed_metrics, exclude_health, rules, only_rules, disabled_rules, architecture, fail_on, memory_limit, paths, format.', $path), ['another_bad_key'], 'another_bad_key');
+        $this->assertDocumentRefusal($path, \sprintf('Unknown key "another_bad_key" in configuration file "%s". Accepted keys: imports, exclude, suppress_paths, suppress_namespaces, include_generated, include_autoload_dev, cache, parallel, coupling, computed_metrics, exclude_health, rules, only_rules, disabled_rules, architecture, fail_on, memory_limit, paths, format.', $path), ['another_bad_key'], 'another_bad_key');
     }
 
     /**

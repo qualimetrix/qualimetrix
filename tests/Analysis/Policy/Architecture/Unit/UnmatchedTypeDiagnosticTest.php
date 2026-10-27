@@ -51,6 +51,31 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 #[CoversClass(LayerEvidence::class)]
 final class UnmatchedTypeDiagnosticTest extends TestCase
 {
+    /**
+     * The identity carries the write's provenance: moving the criterion into
+     * a file the root imports re-identifies the finding, as adding a preset
+     * below it does. Pinned so a change to that is a decision, not a drift.
+     */
+    #[Test]
+    public function itReidentifiesAnOccurrenceWhoseCriterionMovesIntoAnImportedFile(): void
+    {
+        $root = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml');
+        $path = ['architecture', 'layers', '0', 'implements', '0'];
+        $inRoot = new NamedType('App\\Missing', new Provenance($root, $path, 3, 7));
+        $imported = new NamedType('App\\Missing', new Provenance(
+            ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'cfg/architecture.yaml')->importedThrough($root),
+            $path,
+            3,
+            7,
+        ));
+
+        self::assertNotSame(UnmatchedTypeOccurrence::identityOf($inRoot), UnmatchedTypeOccurrence::identityOf($imported));
+        self::assertSame(
+            ['origin_0_source' => 'file', 'origin_0_locator' => 'cfg/architecture.yaml', 'origin_1_source' => 'file', 'origin_1_locator' => 'qmx.yaml'],
+            array_intersect_key((new UnmatchedTypeOccurrence($imported, null))->identityEvidence(), array_flip(['origin_0_source', 'origin_0_locator', 'origin_1_source', 'origin_1_locator'])),
+        );
+    }
+
     #[Test]
     public function itReportsEachUnmetPositiveAndExcludeTypeBesideAKnownType(): void
     {

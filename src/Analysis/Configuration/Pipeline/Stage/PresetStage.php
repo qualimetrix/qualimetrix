@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration\Pipeline\Stage;
 
+use Qualimetrix\Analysis\Configuration\ConfigurationRoot;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredShape;
 use Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface;
@@ -65,7 +69,18 @@ final class PresetStage implements ConfigurationStageInterface
         foreach ($presetNames as $name) {
             $path = $this->resolver->resolve($name, $workingDirectory);
             $origin = ConfigurationOrigin::of(ConfigurationSource::Preset, $name);
-            $authored[] = new AuthoredLayer($origin, $this->loader->read($path, $origin)->authored);
+            $document = $this->loader->read($path, $origin)->authored;
+            if ($document->shape === AuthoredShape::Mapping && \array_key_exists(ConfigurationRoot::Imports->value, $document->children)) {
+                throw ConfigurationRefusal::at(
+                    $origin,
+                    RefusedPosition::open([ConfigurationRoot::Imports->value], ConfigurationRoot::Imports->value),
+                    \sprintf(
+                        '"imports" in %s is refused: a preset cannot import files. Name each file as its own --preset, or import it from the configuration file.',
+                        $origin->describe(),
+                    ),
+                );
+            }
+            $authored[] = new AuthoredLayer($origin, $document);
         }
         return $authored;
     }

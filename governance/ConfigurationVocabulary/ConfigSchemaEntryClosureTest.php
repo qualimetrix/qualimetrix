@@ -231,7 +231,7 @@ final class ConfigSchemaEntryClosureTest extends TestCase
     #[Test]
     public function itGivesEveryConstantAnEntryOrMarksItInternal(): void
     {
-        $internalConstants = [...ConfigSchema::INTERNAL_KEYS, ...ConfigSchema::DOCUMENT_ROOTS];
+        $internalConstants = [...ConfigSchema::INTERNAL_KEYS, ...ConfigSchema::DOCUMENT_ROOTS, ...ConfigSchema::PER_FILE_ROOTS];
 
         $reflection = new ReflectionClass(ConfigSchema::class);
         $entryResultKeys = array_map(static fn(array $e): string => $e[1], ConfigSchema::ENTRIES);

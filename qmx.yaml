@@ -122,6 +122,8 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\Loader\CommandLineValue'
         - 'Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface'
         - 'Qualimetrix\Analysis\Configuration\Loader\DocumentKeyNormalizer'
+        - 'Qualimetrix\Analysis\Configuration\Loader\ImportChain'
+        - 'Qualimetrix\Analysis\Configuration\Loader\ImportListSchema'
         - 'Qualimetrix\Analysis\Configuration\Loader\LoadedDocument'
         - 'Qualimetrix\Analysis\Configuration\Loader\RootContainerShapes'
         - 'Qualimetrix\Analysis\Configuration\Loader\SectionNormalizationPolicy'
@@ -1648,6 +1650,7 @@ architecture:
   allow:
     analysis-configuration:
       - analysis-projectmanifest
+      - core-filetarget
       - core-neutral
       - core-path
       - external
@@ -2012,6 +2015,8 @@ rules:
         - exact: 'Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage'
         - exact: 'Qualimetrix\Analysis\Finding\Contract\Rule\Override'
         - exact: 'Qualimetrix\Core\Ast'
+        # Judged file-target primitives every owner that reads or writes a file by identity uses.
+        - exact: 'Qualimetrix\Core\FileTarget'
         - exact: 'Qualimetrix\Core\Path'
         - exact: 'Qualimetrix\Core\Pattern'
         - exact: 'Qualimetrix\Core\Symbol'
@@ -2034,6 +2039,8 @@ rules:
       - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationOrigin.php
       - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php
       - exact: src/Analysis/Configuration/Contract/Refusal/RefusedPosition.php
+      # The closed vocabulary of scalar forms every section declaration names.
+      - exact: src/Analysis/Configuration/Contract/Document/Schema/ScalarForm.php
       - exact: src/Analysis/Finding/Contract/Channel/ChannelDeclaration.php
       - exact: src/Analysis/Finding/Contract/Channel/ChannelDeclarationRegistryInterface.php
       - exact: src/Analysis/Finding/Contract/Channel/ChannelShape.php

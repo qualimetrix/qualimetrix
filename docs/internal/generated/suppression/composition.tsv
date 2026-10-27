@@ -19,6 +19,7 @@ rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Analy
 rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Analysis\Run\Contract\Configuration	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Analysis\Run\Contract\Discovery	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Core\Ast	warning	1
+rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Core\FileTarget	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Core\Path	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Core\Pattern	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	(no file)	Qualimetrix\Core\Symbol	error	1
@@ -100,6 +101,7 @@ rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contr
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Document/Provenance.php	Qualimetrix\Analysis\Configuration\Contract\Document\Provenance	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Document/ResolvedValueInterface.php	Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Document/Schema/NodeSchema.php	Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema	error	1
+rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Document/Schema/ScalarForm.php	Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Refusal/ConfigurationOrigin.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Refusal/RefusedPosition.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	warning	1
@@ -202,6 +204,7 @@ suppression	src/Analysis/Configuration/Document/ScalarConstraints.php	code-smell
 suppression	src/Analysis/Configuration/Document/ScalarConstraints.php	code-smell.boolean-argument	src/Analysis/Configuration/Document/ScalarConstraints.php	Qualimetrix\Analysis\Configuration\Document\ScalarConstraints::belowMinimum	warning	1
 suppression	src/Analysis/Configuration/Document/ScalarConstraints.php	code-smell.boolean-argument	src/Analysis/Configuration/Document/ScalarConstraints.php	Qualimetrix\Analysis\Configuration\Document\ScalarConstraints::blank	warning	1
 suppression	src/Analysis/Configuration/Document/ScalarConstraints.php	code-smell.boolean-argument	src/Analysis/Configuration/Document/ScalarConstraints.php	Qualimetrix\Analysis\Configuration\Document\ScalarConstraints::judge	warning	1
+suppression	src/Analysis/Configuration/Loader/ImportChain.php	code-smell.error-suppression	src/Analysis/Configuration/Loader/ImportChain.php	Qualimetrix\Analysis\Configuration\Loader\ImportChain::identify	warning	1
 suppression	src/Analysis/Evidence/Cohesion/CohesionDeclarationData.php	code-smell.boolean-argument	src/Analysis/Evidence/Cohesion/CohesionDeclarationData.php	Qualimetrix\Analysis\Evidence\Cohesion\CohesionDeclarationData::declareMethod	warning	1
 suppression	src/Analysis/Evidence/ComputedMetrics/Contract/Finding/ComputedMetricChannelFamily.php	code-smell.boolean-argument	src/Analysis/Evidence/ComputedMetrics/Contract/Finding/ComputedMetricChannelFamily.php	Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily::declarationFor	warning	1
 suppression	src/Analysis/Evidence/DependencyModel/Contract/ClassLikeDeclaration.php	code-smell.boolean-argument	src/Analysis/Evidence/DependencyModel/Contract/ClassLikeDeclaration.php	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration::of	warning	2

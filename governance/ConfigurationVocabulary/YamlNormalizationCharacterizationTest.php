@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestDox;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
@@ -77,7 +78,8 @@ final class YamlNormalizationCharacterizationTest extends TestCase
         }
 
         $missing = [];
-        foreach (DocumentRoots::known() as $root) {
+        // A per-file root never reaches the composed document this test reads.
+        foreach (array_diff(DocumentRoots::known(), ConfigSchema::PER_FILE_ROOTS) as $root) {
             if (!isset($covered[$root])) {
                 $missing[] = $root;
             }
