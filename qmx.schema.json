@@ -359,6 +359,9 @@
                                 "null"
                             ]
                         },
+                        "ignore-relations": {
+                            "$ref": "#/definitions/570ca24ecf9d"
+                        },
                         "max-cycle-size": {
                             "type": [
                                 "integer",
@@ -388,6 +391,9 @@
                                 "boolean",
                                 "null"
                             ]
+                        },
+                        "^(?:ignore_relations|ignoreRelations)$": {
+                            "$ref": "#/definitions/570ca24ecf9d"
                         },
                         "^(?:max_cycle_size|maxCycleSize)$": {
                             "type": [
@@ -2649,7 +2655,7 @@
                                     ],
                                     "minimum": 0
                                 },
-                                "min-class-count": {
+                                "min-type-count": {
                                     "type": [
                                         "integer",
                                         "null"
@@ -2686,7 +2692,7 @@
                                     ],
                                     "minimum": 0
                                 },
-                                "^(?:min_class_count|minClassCount)$": {
+                                "^(?:min_type_count|minTypeCount)$": {
                                     "type": [
                                         "integer",
                                         "null"
@@ -4653,6 +4659,62 @@
             },
             "patternProperties": {
                 "^<<$": true
+            },
+            "additionalProperties": false
+        },
+        "570ca24ecf9d": {
+            "type": [
+                "array",
+                "object",
+                "null"
+            ],
+            "items": {
+                "type": "string",
+                "enum": [
+                    "attribute",
+                    "attribute_argument",
+                    "catch",
+                    "class_const_fetch",
+                    "constant_type",
+                    "extends",
+                    "implements",
+                    "inheritance",
+                    "instanceof",
+                    "new",
+                    "property_type",
+                    "runtime_check",
+                    "static_access",
+                    "static_call",
+                    "static_property_fetch",
+                    "trait_use",
+                    "type_hint",
+                    "type_reference"
+                ]
+            },
+            "patternProperties": {
+                "^(?:0|-?[1-9][0-9]*)$": {
+                    "type": "string",
+                    "enum": [
+                        "attribute",
+                        "attribute_argument",
+                        "catch",
+                        "class_const_fetch",
+                        "constant_type",
+                        "extends",
+                        "implements",
+                        "inheritance",
+                        "instanceof",
+                        "new",
+                        "property_type",
+                        "runtime_check",
+                        "static_access",
+                        "static_call",
+                        "static_property_fetch",
+                        "trait_use",
+                        "type_hint",
+                        "type_reference"
+                    ]
+                }
             },
             "additionalProperties": false
         },

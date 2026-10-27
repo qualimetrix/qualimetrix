@@ -27,10 +27,11 @@ use Symfony\Component\Console\Input\InputOption;
  *
  * The execution options (`--no-cache`, `--cache-dir`, `--workers`, `--memory-limit`)
  * live here too, as {@see addCacheOptions()}, {@see addNoCacheOption()},
- * {@see addWorkersOption()} and {@see addMemoryLimitOption()}: a run is only
- * reproducible and isolatable when every analysing command accepts the same
- * spellings with the same meaning. `--cache-dir` is a separate method because a
- * command may take the switch without the directory.
+ * {@see addWorkersOption()} and {@see addMemoryLimitOption()}: a command that
+ * accepts one of them accepts the spelling and meaning `check` gives it.
+ * `--cache-dir` is a separate method because `graph:export` and `baseline:*`
+ * take the switch without the directory: their preflight profiles do not map
+ * a cache directory.
  */
 final class AnalysisReportCommandDefinition
 {
