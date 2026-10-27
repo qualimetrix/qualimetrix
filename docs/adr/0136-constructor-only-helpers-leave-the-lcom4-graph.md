@@ -35,34 +35,49 @@ calls, transitively, and no other method reaches it.
    a root, and an excluded private method that only the constructor calls is
    itself a candidate.
 4. **Deferred calls are a pseudo-root.** A closure, arrow function or
-   first-class callable (`$this->h(...)`) created in a lifecycle body or a
-   candidate runs after construction, so the method it names is behavior
-   (a registered listener), not initialization. The visitor records such calls
-   apart from direct ones, for every method, because trait aliases decide
-   lifecycle only after composition. A private `registerListeners()` called
-   only by the constructor leaves the graph; the `handle` it registers through
-   a closure stays. Every closure counts as deferred, even one invoked at
-   once (`array_map`): telling registration from immediate use is not worth a
+   callable reference created in a lifecycle body or a candidate runs after
+   construction, so the method it names is behavior (a registered listener),
+   not initialization. A private `registerListeners()` called only by the
+   constructor leaves the graph; the `handle` it registers through a closure
+   stays. Every closure counts as deferred, even one invoked at once
+   (`array_map`): telling registration from immediate use is not worth a
    heuristic, and the approximation errs toward keeping callees in the graph.
-   A candidate that hands state on also stays: it touches `$this->p` inside a
-   closure, arrow function or nested function, or binds a property (or its
-   element or member) by reference, which registers behavior.
-5. **Removal before the stateless split.** Helpers leave before uncalled
+   The visitor records deferred calls apart from direct ones, for every method,
+   because trait aliases decide lifecycle only after composition.
+5. **Callable references are edges (new deviation from LCOM4).** A reference to
+   an own method counts as a deferred call: `$this->m(...)`, `[X, 'm']`,
+   `Closure::fromCallable([X, 'm'])`, `new ReflectionMethod(X, 'm')`, and the
+   strings `'self::m'`, `'static::m'`, `'Own::m'`, with `X` one of `$this`,
+   `self::class`, `static::class`, `Own::class`, `$this::class`, `__CLASS__`,
+   `get_class($this)`, `get_called_class()`. Direct calls are also read through
+   `Own::m()`, `$this::m()`, `$this->{'m'}()` and `self::{'m'}()`. Route
+   callbacks and listeners are written this way; without the edge the
+   referenced methods would stay isolated components. The original definition
+   knows only direct calls, so this is documented as a deviation.
+6. **Hand-off keeps a helper.** A candidate that hands state on registers
+   behavior and stays: it touches a property inside a closure, arrow function
+   or nested function (by name or dynamically); binds a property, or its
+   element or member, by reference (either side of `=&`, an array element, a
+   `foreach` value); or is a generator.
+7. **Removal before the stateless split.** Helpers leave before uncalled
    stateless constant methods are merged into the virtual node, so a removed
    constant helper never holds the virtual vertex open.
-6. **LCOM may rise or the graph may empty.** A helper can be the only bridge
+8. **LCOM may rise or the graph may empty.** A helper can be the only bridge
    between two property groups; removing it raises LCOM. A class whose graph
    becomes empty publishes no value. Both follow directly from excluding the
    constructor and are accepted, not compensated.
-7. **Fail closed.** No method leaves the graph when the call map may be
-   incomplete: `cohesion.unread-trait-count` is above zero, or the class has a
-   dynamically named own call (`$this->$name()`, `$this->{expr}()`,
-   `self::$name()`, `static::$name()` and their `{expr}` forms, a two-element
-   array whose first element is `$this`, `self::class` or `static::class`, or
-   `call_user_func` / `call_user_func_array` with `$this` first).
-8. **Limitation.** Calls on another instance (`$o->m()`) and `parent::` calls
-   are not recorded, so a helper used only that way counts as initialization.
-   TCC/LCC are unchanged.
+9. **Fail closed.** No method leaves the graph when the call map may be
+   incomplete: `cohesion.unread-trait-count` is above zero, or a non-literal
+   name appears in any form of decision 5 or in a dynamic own call
+   (`$this->$name()`, `self::$name()`, `$this::{$x}()`, `[$this, $name]`,
+   `new ReflectionMethod($this, $name)`).
+10. **Limitations.** Not recorded, so a helper used only that way counts as
+    initialization: `$o->m()` on another instance (including `$self = $this`),
+    `$this?->m()`, `parent::`, own names reached through other strings or
+    reflection lookups, a property passed by reference as an argument, and an
+    object taken from a property and captured by value in a static closure.
+    `call_user_func($this)` reaches only the public `__invoke`, an ordinary
+    root. TCC/LCC are unchanged.
 
 ## Measurement
 
@@ -70,16 +85,19 @@ Classes with an LCOM value before the change (aggregates only):
 
 | Corpus                                | Classes | Fell        | Rose       | Disappeared  | Unchanged |
 | ------------------------------------- | ------- | ----------- | ---------- | ------------ | --------- |
-| Benchmark projects (17)               | 4747    | 24 (0.51 %) | 6 (0.13 %) | 5 (0.11 %)   | 4712      |
-| Private application corpus (62 roots) | 10110   | 18 (0.18 %) | 0          | 159 (1.57 %) | 9933      |
+| Benchmark projects (17)               | 4747    | 91 (1.92 %) | 6 (0.13 %) | 5 (0.11 %)   | 4645      |
+| Private application corpus (62 roots) | 10110   | 31 (0.31 %) | 0          | 159 (1.57 %) | 9920      |
 | Qualimetrix `src/`                    | 900     | 3           | 4          | 1            | -         |
 
-In the benchmark corpus LCOM fell by 1 in 17 classes, by 2 in 6 and by 6 in
-one; it rose by 1 in 4 and by 2 in 2. All 159 vanished classes of the private
-corpus had LCOM 1 with a single graph method that was an initialization
-helper. `composer benchmark:check` stays green, every project in range;
-`health.cohesion` moved by +0.5, +0.2, +0.1, -0.1 and -0.1 on five benchmark
-projects and by 0 elsewhere, `health.overall` within 0.1.
+In the benchmark corpus LCOM fell by 1 in 50 classes, by 2 in 24, by 3 in 7,
+by 4 in 4, by 5 in 1, by 6 in 3, by 10 in 1 and by 11 in 1. Most of the falls
+beyond the initialization effect come from callable-array route callbacks in
+the REST controllers of one WordPress-style project, whose methods the
+callable edges now link. All 159 vanished classes of the private corpus had
+LCOM 1 with a single graph method that was an initialization helper.
+`composer benchmark:check` stays green, every project in range;
+`health.cohesion` moved by +0.7, +0.5, +0.3, +0.2, +0.1, +0.1, -0.1 and -0.1 on
+eight benchmark projects, `health.overall` within 0.1.
 
 ## Alternatives rejected
 

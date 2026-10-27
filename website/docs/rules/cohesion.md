@@ -15,7 +15,8 @@ See also: [LCOM (Lack of Cohesion of Methods)](#lcom----lack-of-cohesion-of-meth
 LCOM4 counts disconnected groups of related instance methods. A value of `1`
 means that the class is cohesive; values above `1` indicate independent groups
 of responsibilities that may be split. Qualimetrix connects methods that share
-a property or call one another through `$this->method()`, `self::method()` or `static::method()`, excludes static,
+a property or call one another through `$this->method()`, `self::method()` or `static::method()`
+(or refer to one another through a callable reference), excludes static,
 constructor and destructor methods, and groups only uncalled stateless constant methods
 into one virtual node. A called method remains its own graph vertex. Private helpers
 that only the constructor or destructor reaches are initialization, not behavior, and
@@ -83,32 +84,45 @@ selections and class overrides; an unread trait is reported, not assumed empty.
     them, as Bieman and Kang specify. Initialization is not a behavioral group;
     constructor edges must not bridge unrelated responsibilities.
 
+    A reference to an own method is an edge, counted as a deferred call: a
+    first-class callable (`$this->m(...)`), a callable array `[X, 'm']`,
+    `Closure::fromCallable([X, 'm'])`, `new ReflectionMethod(X, 'm')`, or a string
+    `'self::m'`, `'static::m'` or `'Own::m'`, where `X` is `$this`, `self::class`,
+    `static::class`, `Own::class`, `$this::class`, `__CLASS__`, `get_class($this)`
+    or `get_called_class()`. Direct calls are also recognised through `Own::m()`,
+    `$this::m()`, `$this->{'m'}()` and `self::{'m'}()`. The original definition
+    knows only direct calls; PHP code registers behavior through callables
+    (route callbacks, event listeners), and ignoring them would leave the
+    referenced methods as isolated components.
+
     The private instance methods that only the constructor or destructor reaches
-    through `$this->`, `self::` or `static::` calls, directly or through other such
-    helpers, are initialization helpers and are excluded as well. Otherwise each
-    would form its own disconnected component, since the constructor edge that
-    would join it to the class is removed. A method stays in the graph when any
-    other method reaches it: public and protected methods are never helpers, even
-    when the constructor calls them, nor are static methods or `exclude_methods`
-    entries, and the callees of those are ordinary. A closure, arrow function or
-    first-class callable (`$this->handle(...)`) created in the constructor or in a
-    helper runs after construction, so the method it names stays in the graph;
-    every closure counts this way, even one invoked at once (`array_map`), which
-    keeps its callees in the graph. A helper that hands state on, by touching
-    `$this->p` inside a closure, arrow function or nested function or by binding a
-    property (or its element or member) by reference, registers behavior and stays
-    as well.
-    Removing a helper can raise LCOM when it was the only bridge between two
-    property groups, and can empty the graph, which then publishes no value.
-    TCC/LCC are unchanged. No method leaves the graph when the call map may be
-    incomplete: when a used trait was not read (`cohesion.unread-trait-count`
-    above zero) or when the class names an own call dynamically --
-    `$this->$name()` or `$this->{expr}()`, `self::$name()` or `static::$name()`
-    (and their `{expr}` forms), a two-element array whose first element is `$this`,
-    `self::class` or `static::class`, or `call_user_func` /
-    `call_user_func_array` with `$this` first. The remaining limitation: a helper
-    used only through a call on another instance (`$other->m()`) or `parent::m()`
-    is not seen as used and counts as initialization.
+    through such calls, directly or through other such helpers, are initialization
+    helpers and are excluded as well. Otherwise each would form its own
+    disconnected component, since the constructor edge that would join it to the
+    class is removed. A method stays in the graph when any other method reaches
+    it: public and protected methods are never helpers, even when the constructor
+    calls them, nor are static methods or `exclude_methods` entries, and the
+    callees of those are ordinary. A callable reference or closure created in the
+    constructor or in a helper runs after construction, so the method it names
+    stays in the graph; every closure counts this way, even one invoked at once
+    (`array_map`), which keeps its callees in the graph. A helper that hands state
+    on registers behavior and stays as well: it touches a property inside a
+    closure, arrow function or nested function (by name or dynamically), binds a
+    property or its element or member by reference (on either side of `=&`, as an
+    array element or as a `foreach` value), or is a generator. Removing a helper
+    can raise LCOM when it was the only bridge between two property groups, and
+    can empty the graph, which then publishes no value. TCC/LCC are unchanged.
+
+    No method leaves the graph when the call map may be incomplete: when a used
+    trait was not read (`cohesion.unread-trait-count` above zero) or when a
+    non-literal name appears in any of the forms above (`$this->$name()`,
+    `self::$name()`, `$this::{$x}()`, `[$this, $name]`, `new ReflectionMethod($this, $name)`).
+    Not recorded, so a helper used only that way counts as initialization: calls on
+    another instance (`$other->m()`, including an alias `$self = $this`), the
+    nullsafe `$this?->m()`, `parent::m()`, own names reached through other strings
+    or reflection lookups, a property passed by reference as an argument, and an
+    object taken from a property and captured by value in a static closure.
+    `call_user_func($this)` reaches only the public `__invoke`, an ordinary root.
 
 !!! note "Comparing with other tools"
     phpmetrics uses the Henderson-Sellers LCOM formula, whose values are on a
