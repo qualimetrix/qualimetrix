@@ -23,7 +23,8 @@ use Qualimetrix\Core\Symbol\MetricSubjectCodec;
  * kind — a callable or a class-like declaration — and counted inside that frame
  * only: `App\A::rows::{closure#1}`. Counting per frame is what keeps a closure's
  * name from moving when a closure is added anywhere else in the file. Outside
- * every frame the file is the parent, so top-level closures share one counter.
+ * every frame the namespace is the parent: top-level closures count per
+ * namespace of the file, across every block that declares it.
  */
 final class VisitorLexicalScope
 {
@@ -55,7 +56,8 @@ final class VisitorLexicalScope
 
     private ?string $namespace = null;
 
-    private int $fileClosureCounter = 0;
+    /** @var array<string, int> */
+    private array $topLevelClosures = [];
 
     public function __construct(
         private readonly FileEntrySubjectRegistry $subjects,
@@ -72,7 +74,7 @@ final class VisitorLexicalScope
         $this->properties = [];
         $this->frames = [];
         $this->namespace = null;
-        $this->fileClosureCounter = 0;
+        $this->topLevelClosures = [];
         $this->subjects->reset();
     }
 
@@ -240,7 +242,10 @@ final class VisitorLexicalScope
     private function mintAnonymousMember(): string
     {
         if ($this->frames === []) {
-            return '{closure#' . ++$this->fileClosureCounter . '}';
+            $namespace = $this->namespace ?? '';
+            $this->topLevelClosures[$namespace] = ($this->topLevelClosures[$namespace] ?? 0) + 1;
+
+            return '{closure#' . $this->topLevelClosures[$namespace] . '}';
         }
 
         $parent = array_key_last($this->frames);

@@ -146,11 +146,12 @@ final class AnonymousCallableNameTest extends TestCase
             $first = fn() => 2;
             PHP, ['top::{closure#1}', '{closure#1}']];
 
-        yield 'file-level counter spans braced namespaces' => [<<<'PHP'
+        yield 'file-level code counts per namespace' => [<<<'PHP'
             <?php
-            namespace First { $a = fn() => 1; }
-            namespace Second { $b = fn() => 2; }
-            PHP, ['First\{closure#1}', 'Second\{closure#2}']];
+            namespace First { $a = fn() => 1; $b = fn() => 2; }
+            namespace Second { $c = fn() => 3; }
+            namespace First { $d = fn() => 4; }
+            PHP, ['First\{closure#1}', 'First\{closure#2}', 'Second\{closure#1}', 'First\{closure#3}']];
     }
 
     #[Test]
@@ -203,6 +204,92 @@ final class AnonymousCallableNameTest extends TestCase
                 'declaration:func:App::f::{closure#1}@src/Fixture.php#1',
             ],
             array_map(static fn(array $record): string => $record['callable']->declarationPath->toCanonical(), $closures),
+        );
+    }
+
+    #[Test]
+    public function itKeepsATopLevelClosureNameWhenAnotherNamespaceGainsOne(): void
+    {
+        $before = <<<'PHP'
+            <?php
+            namespace First { $a = fn() => 1; }
+            namespace Second { $b = fn() => 2; }
+            PHP;
+        $after = str_replace('$a = fn() => 1;', '$a = fn() => 1; $extra = fn() => 0;', $before);
+
+        self::assertSame(
+            self::scopeAtLine(self::traverse($before), 3)['callable']->declarationPath->toCanonical(),
+            self::scopeAtLine(self::traverse($after), 3)['callable']->declarationPath->toCanonical(),
+        );
+    }
+
+    /**
+     * The parser visits an anonymous class body before its constructor
+     * arguments, so declarations sharing one key are met out of source order.
+     * Their ranks still have to be distinct and positional.
+     */
+    #[Test]
+    public function itNumbersSameNamedDeclarationsMetOutOfSourceOrderOnce(): void
+    {
+        $records = self::traverse(<<<'PHP'
+            <?php namespace App;
+            $x = new class((function () { class A { const C = static function () {}; } })()) {
+                function method() { function A() { return fn() => 2; } }
+            };
+            PHP);
+        $byPosition = [];
+        foreach ($records as ['scope' => $scope, 'callable' => $callable]) {
+            if ($scope->logicalFqn === 'App\\A::{closure#1}') {
+                $byPosition[$scope->startFilePos] = $callable->declarationPath->toCanonical();
+            }
+        }
+        ksort($byPosition);
+
+        self::assertSame([
+            'declaration:func:App::A::{closure#1}@src/Fixture.php',
+            'declaration:func:App::A::{closure#1}@src/Fixture.php#1',
+        ], array_values($byPosition));
+
+        $functions = [];
+        foreach (self::traverse(<<<'PHP'
+            <?php namespace App;
+            $x = new class((function () { function f() {} })()) {
+                public function m(): void { function f() {} }
+            };
+            PHP) as ['scope' => $scope, 'callable' => $callable]) {
+            if ($scope->logicalFqn === 'App\\f') {
+                $functions[$scope->startFilePos] = $callable->declarationPath->toCanonical();
+            }
+        }
+        ksort($functions);
+
+        self::assertSame(['declaration:func:App::f@src/Fixture.php', 'declaration:func:App::f@src/Fixture.php#1'], array_values($functions));
+    }
+
+    /**
+     * A class and a function of one name parent closures of one name. They stay
+     * two declarations through the ordinal, which ranks both by file position.
+     */
+    #[Test]
+    public function itTellsASameNamedClassAndFunctionApartByOrdinal(): void
+    {
+        $records = self::traverse(<<<'PHP'
+            <?php
+            namespace App;
+            function A() { return fn() => 1; }
+            final class A { const C = static fn() => 2; }
+            PHP);
+
+        self::assertSame(['App\\A::{closure#1}', 'App\\A::{closure#1}'], self::anonymousNames($records));
+        self::assertSame(
+            [
+                'declaration:func:App::A::{closure#1}@src/Fixture.php',
+                'declaration:func:App::A::{closure#1}@src/Fixture.php#1',
+            ],
+            array_values(array_map(
+                static fn(array $record): string => $record['callable']->declarationPath->toCanonical(),
+                array_filter($records, static fn(array $record): bool => $record['scope']->kind === CallableKind::AnonymousCallable),
+            )),
         );
     }
 

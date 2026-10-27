@@ -100,7 +100,11 @@ positions that rank is computed from are collected by one registrar per
 traversal, `DeclarationRegistrarInterface`, created through
 `DeclarationRegistrarFactory` and added to the traverser **before** every other
 visitor. Producers never count: they receive the file's `FileDeclarationIndex`
-through `DeclarationIndexAwareInterface` and ask it.
+through `DeclarationIndexAwareInterface` and ask it. The registrar walks the
+whole file on its own before the shared traversal starts, because the parser
+visits an anonymous class body before its constructor arguments: a rank asked
+for while only the positions met so far are registered would give two
+declarations of one key met out of source order the same number.
 
 The factory is a required constructor dependency of `CompositeCollector`
 precisely because the parallel worker assembles that constructor positionally: a
@@ -119,7 +123,7 @@ subject is made of moves with the wire grammar and lives with the registry.
 A closure or arrow function is named by the scope under its nearest enclosing
 frame — a callable or a class-like declaration — and counted inside that frame:
 `App\A::rows::{closure#1}`, `App\A::rows::{closure#1}::{closure#1}`; outside
-every frame, `App\{closure#N}` counts across the file. The composite name is the
+every frame, `App\{closure#N}` counts per namespace of the file. The composite name is the
 callable's member, so its path stays function-shaped (`func:`) and it rolls up
 into its namespace, never into a class. `DeclarationNumbering::callablePath()`
 is the one rule every projection of a callable reads — numbering key, stored
