@@ -214,8 +214,6 @@ condition. When an issue closes, drop its line here.
 - [#172](https://github.com/qualimetrix/qualimetrix/issues/172) Dependency graph: global functions as nodes
 - [#173](https://github.com/qualimetrix/qualimetrix/issues/173) New-findings-only CI gate against a base revision
 - [#174](https://github.com/qualimetrix/qualimetrix/issues/174) Phar as a required check and the Docker image built from it
-- [#197](https://github.com/qualimetrix/qualimetrix/issues/197) `directives` runtime options (cache, workers, memory)
-- [#201](https://github.com/qualimetrix/qualimetrix/issues/201) Closure identity without its enclosing class or method
 
 ### Internal debt
 
