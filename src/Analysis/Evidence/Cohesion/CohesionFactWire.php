@@ -37,7 +37,7 @@ final class CohesionFactWire
         foreach (self::propertyRows($state['deferredPropertyAccesses'], CohesionMemberWire::DEFERRED_PROPERTY) as $row) {
             $rows[] = $row;
         }
-        foreach (['call' => $state['methodCalls'], CohesionMemberWire::DEFERRED_CALL => $state['deferredMethodCalls']] as $tag => $calls) {
+        foreach (['call' => $state['methodCalls'], CohesionMemberWire::DEFERRED_CALL => $state['deferredMethodCalls'], CohesionMemberWire::REFERENCE => $state['methodReferences']] as $tag => $calls) {
             foreach ($calls as $caller => $callees) {
                 foreach ($callees as $callee => $_) {
                     $rows[] = ['tag' => $tag, 'caller' => $caller, 'callee' => $callee];

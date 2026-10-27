@@ -8,12 +8,14 @@ use LogicException;
 use Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitMethodSource;
 use Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitUseFacts;
 
-/** Encodes declared members, trait composition inputs and deferred-access rows for a class or trait. */
+/** Encodes declared members, trait composition inputs, deferred-access and method-reference rows for a class or trait. */
 final class CohesionMemberWire
 {
     public const string DEFERRED_CALL = 'deferredCall';
 
     public const string DEFERRED_PROPERTY = 'deferredProperty';
+
+    public const string REFERENCE = 'reference';
 
     /**
      * @param array<string, TraitMethodSource> $declaredMethods
@@ -47,6 +49,9 @@ final class CohesionMemberWire
                 break;
             case self::DEFERRED_CALL:
                 $data->addDeferredMethodCall((string) $row['caller'], (string) $row['callee']);
+                break;
+            case self::REFERENCE:
+                $data->addMethodReference((string) $row['caller'], (string) $row['callee']);
                 break;
             case self::DEFERRED_PROPERTY:
                 $data->addDeferredPropertyAccess((string) $row['method'], (string) $row['name']);

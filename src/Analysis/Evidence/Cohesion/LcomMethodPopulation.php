@@ -14,11 +14,13 @@ use Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitMethodSource;
  * An initialization helper is a private instance method that constructor or destructor
  * bodies reach through direct calls and that no other method reaches. A method that hands
  * instance state to later code (a property touched inside a closure, bound by reference, or
- * a generator body) registers behaviour instead and is never a candidate. Every method that is neither
- * lifecycle nor a candidate keeps what it calls, and so do the closures and first-class
+ * a generator body) registers behaviour instead and is never a candidate. Every method that
+ * is neither lifecycle nor a candidate keeps what it calls, and so do the closures and first-class
  * callables that lifecycle bodies and candidates create: every such callable is treated as
- * deferred, including one invoked during construction. Reachability uses effective names
- * after trait composition and never passes through a lifecycle body.
+ * deferred, including one invoked during construction. Any other syntactic reference to an
+ * own method (a callable array or string, a reflection, a call through the own class name)
+ * keeps its target too, without becoming an edge. Reachability uses effective names after
+ * trait composition and never passes through a lifecycle body.
  *
  * No method leaves when the call map may be incomplete: a used trait was not read, or an
  * own method is named only dynamically ({@see self::ANY_METHOD}). Calls on another
@@ -27,7 +29,7 @@ use Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitMethodSource;
  */
 final class LcomMethodPopulation
 {
-    /** Callee of an own call whose target the facts cannot name, such as `$this->$name()`. */
+    /** Target of an own-method reference whose name the facts cannot read, such as `$this->$name()`. */
     public const string ANY_METHOD = '*';
 
     /**
@@ -71,7 +73,8 @@ final class LcomMethodPopulation
      *     propertyAccesses: array<string, array<string, true>>,
      *     deferredPropertyAccesses: array<string, array<string, true>>,
      *     methodCalls: array<string, array<string, true>>,
-     *     deferredMethodCalls: array<string, array<string, true>>
+     *     deferredMethodCalls: array<string, array<string, true>>,
+     *     methodReferences: array<string, array<string, true>>
      * } $state
      * @param int $unreadTraitCount used traits whose bodies were not read
      */
@@ -183,7 +186,8 @@ final class LcomMethodPopulation
      *     declaredMethods: array<string, TraitMethodSource>,
      *     deferredPropertyAccesses: array<string, array<string, true>>,
      *     methodCalls: array<string, array<string, true>>,
-     *     deferredMethodCalls: array<string, array<string, true>>
+     *     deferredMethodCalls: array<string, array<string, true>>,
+     *     methodReferences: array<string, array<string, true>>
      * } $state
      * @param array<string, string> $names folded name => declared spelling of each method body
      * @param array<string, true> $lifecycle folded lifecycle names
@@ -193,15 +197,19 @@ final class LcomMethodPopulation
      */
     private static function initializationHelpers(array $state, array $names, array $lifecycle, int $unreadTraitCount): array
     {
-        $allCalls = self::foldCallers($state['methodCalls'], $state['deferredMethodCalls']);
-        if ($lifecycle === [] || $unreadTraitCount > 0 || self::callsAnyMethod($allCalls)) {
+        $references = self::foldCallers($state['methodReferences']);
+        if ($lifecycle === [] || $unreadTraitCount > 0 || self::referencesAnyMethod($references)) {
             return [];
         }
+        $allCalls = self::foldCallers($state['methodCalls'], $state['deferredMethodCalls']);
         $candidates = self::candidates($state, $names, $lifecycle);
         $roots = array_diff_key($names, $lifecycle, $candidates);
         $deferred = self::foldCallers($state['deferredMethodCalls']);
         foreach (array_keys($lifecycle + $candidates) as $key) {
             $roots += $deferred[$key] ?? [];
+        }
+        foreach ($references as $targets) {
+            $roots += $targets;
         }
 
         return array_diff_key($candidates, LcomGraphCalculator::reachable(array_keys(array_diff_key($roots, $lifecycle)), $allCalls, $lifecycle));
@@ -257,7 +265,7 @@ final class LcomMethodPopulation
     }
 
     /** @param array<string, array<string, true>> $calls */
-    private static function callsAnyMethod(array $calls): bool
+    private static function referencesAnyMethod(array $calls): bool
     {
         foreach ($calls as $callees) {
             if (isset($callees[self::ANY_METHOD])) {

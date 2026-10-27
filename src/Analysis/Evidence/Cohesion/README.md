@@ -7,16 +7,16 @@ collectors, their AST visitors and per-class calculation data, the
 `cohesion.lcom` rule with its options, and the LCOM collection configuration
 needed by its named sequential and parallel consumers.
 `ClassVisitorStackTrait` is private scaffolding shared only by the two Cohesion
-visitors. `CohesionAstFacts` captures class and trait member facts, own
-property accesses, hand-offs of own state and own calls, keeping what closures,
-arrow functions and first-class callables do apart as deferred; `CohesionOwnCalls`
-names the own method a node invokes or refers to, or any method when only a
-dynamic name is given; `CohesionTraitUses` preserves
+visitors. `CohesionAstFacts` captures what method bodies do: own property
+accesses, hand-offs of own state, own call edges and own-method references, keeping what closures, arrow functions and first-class callables do
+apart as deferred; `CohesionOwnCalls` names the own method a node refers to
+without a call edge, or any method when only a dynamic name is given; `CohesionTraitUses` preserves
 resolved trait adaptations across the worker boundary. `CohesionMemberWire`
-encodes declaration member facts and deferred-access rows, and
+encodes declaration member facts, deferred-access and method-reference rows, and
 `CohesionFactWire` owns the exact serializable row format, while
 `CohesionFactProjectionTrait` publishes those rows under declaration subjects.
-`CohesionDeclarationData` keeps declared members separate from the LCOM graph;
+`CohesionDeclarationData` records declared members from their AST nodes and
+keeps them separate from the LCOM graph;
 `CohesionMethodReachability` follows instance calls to property reads;
 `CohesionTraitComposition` resolves effective class members before metrics are
 calculated.
@@ -121,10 +121,10 @@ worker payload; it is Cohesion-owned invocation state with an explicit reset
 point.
 
 LCOM4 counts connected groups of instance methods through shared property
-access or own-method calls: through `$this`, `self`, `static`, the class's own
-name or `$this` used as a class, and through references to an own method —
-a first-class callable, a callable array or callable string naming the object
-or class, or `new ReflectionMethod(...)` — which count as deferred calls.
+access or calls to instance methods through `$this`, `self`, or `static`,
+including first-class callables of those calls; no other syntactic form adds an
+edge, so LCOM4 and TCC/LCC read the same call map as before initialization
+helpers existed.
 Method names follow PHP's case-insensitive matching. Constructors and destructors are excluded
 from the graph by their effective names after trait composition (see the
 scope-adaptation note below). Raw lifecycle bodies and method flags remain
@@ -135,10 +135,10 @@ methods that a constructor or destructor body reaches through direct calls,
 transitively, and that hand no instance state to later code: a method that
 touches a property inside a closure, arrow function or nested function (by name
 or dynamically), binds a property or an element or member of one by reference
-(on either side of `=&`, as a by-reference array item or as a by-reference
-`foreach` value), or is a generator registers behaviour and is never a
-candidate. Every other method — public and protected
-ones (even when the constructor calls them), static methods and
+(on either side of `=&`, as a by-reference array item, as a by-reference
+`foreach` value or through by-reference destructuring), or is a generator
+registers behaviour and is never a candidate. Every other method — public and
+protected ones (even when the constructor calls them), static methods and
 `exclude_methods` entries — is a root of ordinary use, and so are the callees
 of deferred calls made by lifecycle bodies and candidates. Every closure, arrow
 function and first-class callable counts as deferred, including one the
@@ -151,20 +151,33 @@ way, because trait aliases decide lifecycle only after composition; for
 ordinary methods they are edges and accesses like any other, and TCC/LCC
 reachability reads both kinds alike.
 
+Every other reference to an own method only keeps its target, wherever it
+appears: a call through the own fully qualified class name or `$this::`, a
+literal name in braces (`$this->{'m'}()`), an unkeyed two-element array or a
+two-argument `new ReflectionMethod(...)` whose first element is `$this`,
+`self::class`, `static::class`, the own `::class`, `$this::class`, `__CLASS__`,
+`get_class($this)`, `get_class()`, `get_called_class()` or the string `'self'`,
+`'static'` or the own fully qualified name, and a callable string `'self::m'`,
+`'static::m'` or `'App\Own::m'`. A reference is never an LCOM4 edge and never
+feeds TCC/LCC. Matching is deliberately broad: a false reference only keeps a
+helper.
+
 No method leaves when the call map may be incomplete: when a used trait was not
-read (`cohesion.unread-trait-count` above zero), or when any method names an own
-method only dynamically — a non-literal name in an own call (`$this->$name()`,
-`self::$name()`, `$this::{$x}()`), a callable array or `new ReflectionMethod`
-whose first element is `$this`, `self::class`, `static::class`, the own
-`::class`, `$this::class`, `__CLASS__`, `get_class($this)` or
-`get_called_class()` and whose method name is not a literal. Invoking `$this`
-itself (`call_user_func($this)`) reaches only the public `__invoke`, a root of
-ordinary use, and records nothing. Not recorded, so a helper reached only through them is taken for an
-initialization helper: calls on another instance (including an alias such as
-`$self = $this`), the nullsafe `$this?->m()`, `parent::` calls and own names
-reached through other strings or reflection lookups. By-reference argument
-passing and an object-valued property captured by value in a static closure
-do not count as a hand-off. Uncalled stateless
+read (`cohesion.unread-trait-count` above zero), or when an own method is named
+only dynamically — a non-literal name in an own call (`$this->$name()`,
+`self::$name()`, `$this::{$x}()`) or in a reference above, a string literal or
+interpolated string that starts with `self::`, `static::` or the own fully
+qualified name and `::` without being a plain callable string, or a
+concatenation starting with the own class name. Invoking `$this` itself
+(`call_user_func($this)`) reaches only the public `__invoke`, a root of
+ordinary use, and records nothing. Not recorded, so a helper reached only
+through them is taken for an initialization helper: calls on another instance
+(including an alias such as `$self = $this`), the nullsafe `$this?->m()`,
+`parent::` calls, a short class name (in a namespace it names another class),
+a callable string built by `sprintf()` or from a variable class name, and
+reflection lookups such as `getMethod('m')`. By-reference argument passing and
+an object-valued property captured by value in a static closure do not count
+as a hand-off. Uncalled stateless
 constant methods are merged into a virtual node to avoid false positives from protocol metadata; a called stateless method
 stays in the graph. TCC and LCC measure direct and transitive property-sharing
 connections among public methods, including reads through own-method calls.

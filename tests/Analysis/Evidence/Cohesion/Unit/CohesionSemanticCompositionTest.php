@@ -567,7 +567,6 @@ PHP;
             'literal dynamic method name' => '$this->{"load"}()',
             'literal dynamic self call' => 'self::{"load"}()',
             'own class first-class callable' => '$f = Candidate::load(...)',
-            'static first-class callable' => '$f = static::load(...)',
             'callable array on __CLASS__' => '$f = [__CLASS__, "load"]',
             'callable array on this class constant' => '$f = [$this::class, "load"]',
             'callable array on own class constant' => '$f = [Candidate::class, "load"]',
@@ -578,19 +577,46 @@ PHP;
             'static callable string' => '$f = "static::load"',
             'own class callable string' => '$f = "App\\\\Candidate::load"',
             'reflection method' => '$f = new \\ReflectionMethod($this, "load")',
+            'reflection method from a callable string' => '$f = new \\ReflectionMethod("self::load")',
+            'callable array on the own class name string' => '$f = ["App\\\\Candidate", "load"]',
+            'callable array on the self string' => '$f = ["self", "load"]',
+            'concatenated literal callable string' => '$f = "self::" . "load"',
         ] as $form => $call) {
-            yield 'own call through ' . $form . ' keeps the helper' => [
+            // A reference keeps its target but adds no edge: again() stays a separate component.
+            yield 'own reference through ' . $form . ' keeps the helper' => [
                 'class Candidate { private int $a = 0; private int $b = 0;
                     public function __construct() { $this->load(); } private function load(): void { $this->a = 1; $this->b = 1; }
                     public function again(): void { ' . $call . '; }
                     public function x(): int { return $this->a; } public function y(): int { return $this->b; } }',
-                4, 1,
+                4, 2,
+            ];
+        }
+        foreach ([
+            'own class of someone else' => '$f = [get_class($other), "load"]',
+            'keyed record' => '$f = ["owner" => $this, "label" => "load"]',
+            'global class of the same short name' => '\\Candidate::load()',
+            'global class string of the same short name' => '$f = "Candidate::load"',
+            'reflection of another object' => '$f = new \\ReflectionMethod($other, "load")',
+        ] as $form => $call) {
+            yield 'foreign reference does not keep the helper: ' . $form => [
+                'class Candidate { private int $a = 0; private int $b = 0;
+                    public function __construct() { $this->load(); } private function load(): void { $this->a = 1; $this->b = 1; }
+                    public function again(object $other): void { ' . $call . '; }
+                    public function x(): int { return $this->a; } public function y(): int { return $this->b; } }',
+                3, 3,
             ];
         }
         foreach ([
             'dynamic call on this as a class' => '$this::$name()',
             'callable array on __CLASS__ with a dynamic name' => '$f = [__CLASS__, $name]',
             'reflection method with a dynamic name' => '$f = new \\ReflectionMethod($this, $name)',
+            'interpolated static callable string' => '$f = "static::$name"',
+            'interpolated self callable string with braces' => '$f = "self::{$name}"',
+            'concatenated self callable string' => '$f = "self::" . $name',
+            'closure from a concatenated string' => '$f = \\Closure::fromCallable("static::" . $name)',
+            'reflection of a concatenated own class name' => '$f = new \\ReflectionMethod(static::class . "::" . $name)',
+            'concatenated own class constant' => '$f = __CLASS__ . "::" . $name',
+            'callable array with a concatenated name' => '$f = [$this, "lo" . $name]',
         ] as $form => $call) {
             yield 'unresolvable own call keeps every helper: ' . $form => [
                 'class Candidate { private int $a = 0; private int $b = 0;
@@ -617,6 +643,46 @@ PHP;
                 3, $lcom,
             ];
         }
+        foreach ([
+            'by-reference destructuring of a property' => '[, &$second] = $this->pair; $this->callback = static function () use (&$second): void { $second++; };',
+            'by-reference keyed destructuring of a property' => '["k" => &$slot] = $this->pair; $this->callback = static function () use (&$slot): void { $slot++; };',
+            'by-reference destructuring in foreach' => 'foreach ($this->rows as [&$cell]) { $this->callback = static function () use (&$cell): void { $cell++; }; }',
+        ] as $form => $body) {
+            yield 'helper handing off state through ' . $form . ' stays' => [
+                'class Candidate { private $callback; private array $pair = [0, 0]; private array $rows = [];
+                    public function __construct() { $this->wire(); }
+                    private function wire(): void { ' . $body . ' }
+                    public function run(): void { ($this->callback)(); } public function total(): int { return \\count($this->pair) + \\count($this->rows); } }',
+                3, 1,
+            ];
+        }
+        yield 'delegating generator helper stays' => [
+            'class Candidate { private iterable $rows; private array $source = [];
+                public function __construct() { $this->rows = $this->generate(); }
+                private function generate(): iterable { yield from $this->source; }
+                public function next(): mixed { return $this->rows; } public function replace(array $s): void { $this->source = $s; } }',
+            3, 2,
+        ];
+        yield 'generators on disjoint state stay separate' => [
+            'class Candidate { private array $a = []; private array $b = [];
+                public function first(): iterable { yield from $this->a; } public function second(): iterable { yield from $this->b; } }',
+            2, 2,
+        ];
+        yield 'pair with an empty class string is no reference' => [
+            'class Candidate { private int $a = 0; private int $b = 0;
+                public function __construct() { $this->load(); } private function load(): void { $this->a = 1; $this->b = 1; }
+                public function again(): void { $f = ["", "load"]; $g = ["\\\\", "load"]; }
+                public function x(): int { return $this->a; } public function y(): int { return $this->b; } }',
+            3, 3,
+        ];
+        yield 'literal reference keeps only its target' => [
+            'class Candidate { private int $a = 0; private int $b = 0;
+                public function __construct() { $this->load(); $this->reset(); }
+                private function load(): void { $this->a = 1; } private function reset(): void { $this->b = 0; }
+                public function again(): void { $this->{"load"}(); }
+                public function x(): int { return $this->a; } public function y(): int { return $this->b; } }',
+            4, 3,
+        ];
         yield 'generator helper stays' => [
             'class Candidate { private iterable $rows; private array $source = []; private int $read = 0;
                 public function __construct() { $this->rows = $this->generate(); }
@@ -668,6 +734,57 @@ PHP;
             'class Candidate { ' . $handler . ' public function __construct() { $this->callback = function (): void { $o = new class { public function m(): void {} }; $this->handle(); }; } }',
             2, 1,
         ];
+    }
+
+    /**
+     * The edges LCOM4 and TCC/LCC read are those recorded before initialization helpers existed:
+     * own-method references beyond `$this->m()`, `self::m()` and `static::m()` only keep a helper.
+     */
+    #[Test]
+    #[DataProvider('ownReferencesWithoutEdges')]
+    public function itKeepsOwnReferencesOutOfLcomAndTccEdges(string $reference): void
+    {
+        $metrics = self::measureCandidate('class Candidate { private int $a = 0; private int $b = 0;
+            public function m(): int { return $this->a; }
+            public function other(string $name): int { $f = ' . $reference . '; return $this->b; } }');
+
+        self::assertSame(2, $metrics->get('cohesion.lcom-method-count'));
+        self::assertSame(2, $metrics->get('cohesion.lcom'));
+        self::assertSame(0.0, $metrics->get('cohesion.tcc'));
+        self::assertSame(0.0, $metrics->get('cohesion.lcc'));
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function ownReferencesWithoutEdges(): iterable
+    {
+        foreach ([
+            'callable array on this' => '[$this, "m"]',
+            'callable array on self class' => '[self::class, "m"]',
+            'callable array on __CLASS__' => '[__CLASS__, "m"]',
+            'callable array on the own class string' => '["App\\\\Candidate", "m"]',
+            'closure from a callable array' => '\\Closure::fromCallable([$this, "m"])',
+            'callable string' => '"self::m"',
+            'reflection method' => 'new \\ReflectionMethod($this, "m")',
+            'call through the own class name' => 'Candidate::m()',
+            'call through this as a class' => '$this::m()',
+            'first-class callable through the own class name' => 'Candidate::m(...)',
+            'literal dynamic method name' => '$this->{"m"}()',
+            'dynamic method name' => '$this->$name()',
+            'interpolated callable string' => '"static::$name"',
+        ] as $form => $reference) {
+            yield $form => [$reference];
+        }
+    }
+
+    #[Test]
+    public function itKeepsUnnamedHandOffsOutOfSharedProperties(): void
+    {
+        $metrics = self::measureCandidate('class Candidate { private array $a = []; private array $b = [];
+            public function first(): iterable { yield from $this->a; } public function second(): iterable { yield $this->b; } }');
+
+        self::assertSame(2, $metrics->get('cohesion.lcom'));
+        self::assertSame(0.0, $metrics->get('cohesion.tcc'));
+        self::assertSame(0.0, $metrics->get('cohesion.lcc'));
     }
 
     #[Test]

@@ -55,6 +55,16 @@ final class LcomClassData
     private array $deferredMethodCalls = [];
 
     /**
+     * Map of method => set of own methods it names without a call edge: a callable array or
+     * string, a reflection, a call through the own class name or `$this::`, or a dynamic name
+     * ({@see LcomMethodPopulation::ANY_METHOD}). A reference keeps its target out of the
+     * initialization helpers; it is never an LCOM4 edge and never feeds TCC/LCC.
+     *
+     * @var array<string, array<string, true>>
+     */
+    private array $methodReferences = [];
+
+    /**
      * Set of static methods (excluded from LCOM graph).
      *
      * @var array<string, true>
@@ -133,6 +143,14 @@ final class LcomClassData
         $this->deferredMethodCalls[$callerMethod][ClassNameSpelling::fold($calledMethod)] = true;
     }
 
+    public function addMethodReference(string $method, string $referencedMethod): void
+    {
+        if (!isset($this->methodReferences[$method])) {
+            $this->methodReferences[$method] = [];
+        }
+        $this->methodReferences[$method][ClassNameSpelling::fold($referencedMethod)] = true;
+    }
+
     public function markStatic(string $method): void
     {
         $this->staticMethods[$method] = true;
@@ -203,16 +221,12 @@ final class LcomClassData
         if (isset($source->statelessMethods[$original])) {
             $this->markStatelessConstant($effectiveName);
         }
-        $this->importAccesses($effectiveName, $source, $original);
-    }
-
-    private function importAccesses(string $effectiveName, self $source, string $original): void
-    {
         $imports = [
             [$source->propertyAccesses, $this->addPropertyAccess(...)],
             [$source->deferredPropertyAccesses, $this->addDeferredPropertyAccess(...)],
             [$source->methodCalls, $this->addMethodCall(...)],
             [$source->deferredMethodCalls, $this->addDeferredMethodCall(...)],
+            [$source->methodReferences, $this->addMethodReference(...)],
         ];
         foreach ($imports as [$facts, $add]) {
             foreach (array_keys($facts[$original] ?? []) as $member) {
@@ -232,7 +246,8 @@ final class LcomClassData
      *     propertyAccesses: array<string, array<string, true>>,
      *     deferredPropertyAccesses: array<string, array<string, true>>,
      *     methodCalls: array<string, array<string, true>>,
-     *     deferredMethodCalls: array<string, array<string, true>>
+     *     deferredMethodCalls: array<string, array<string, true>>,
+     *     methodReferences: array<string, array<string, true>>
      * }
      */
     public function factState(): array
@@ -248,6 +263,7 @@ final class LcomClassData
             'deferredPropertyAccesses' => $this->deferredPropertyAccesses,
             'methodCalls' => $this->methodCalls,
             'deferredMethodCalls' => $this->deferredMethodCalls,
+            'methodReferences' => $this->methodReferences,
         ];
     }
 

@@ -109,7 +109,7 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
 
         if ($node instanceof Node\Stmt\TraitUse || $node instanceof Node\Stmt\Property) {
             $position = $this->getCurrentClassPosition();
-            CohesionAstFacts::captureMember($node, $position === null ? null : ($this->classData[$position] ?? null));
+            ($position === null ? null : ($this->classData[$position] ?? null))?->declaration()->declareMember($node);
 
             return null;
         }
@@ -155,7 +155,7 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
         $this->closureDepth = 0;
 
         $position = $this->getCurrentClassPosition();
-        CohesionAstFacts::captureMethod($node, $position === null ? null : ($this->classData[$position] ?? null));
+        ($position === null ? null : ($this->classData[$position] ?? null))?->declaration()->declareClassMethod($node);
 
         // Lifecycle bodies can become ordinary methods through trait aliases.
         if ($node->isAbstract()) {
