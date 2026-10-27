@@ -405,6 +405,8 @@ Formulas read every metric through a single `m` array, indexed by the metric's r
 
 Common aggregation suffixes on a key: `.avg`, `.min`, `.max`, `.sum`, `.p5`, `.p95`.
 
+`coupling.instability-own` (like `coupling.cbo-own`) is available only on a namespace that declares a type of its own: on any other namespace the key is absent, not 0. A formula that reads `m["coupling.instability-own"]` without `??` therefore gets no value on such a namespace, which is listed under `computedMetricOutcomes`; write `m["coupling.instability-own"] ?? 0` to keep a value there. A namespace that declares a type but has no own edge (Ca-own = Ce-own = 0) carries 0 by convention.
+
 This is not an exhaustive list — any metric collected by Qualimetrix can be referenced in formulas by its key. Use `bin/qmx check src/ --format=metrics` to see all available metrics and their exact keys for your project.
 
 !!! warning "Unknown metric references"

@@ -114,7 +114,7 @@ final class BaselineWriterTest extends TestCase
         $data = json_decode((string) file_get_contents($path), true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame(['version', 'generated', 'scope', 'exclusions', 'entries'], array_keys($data));
-        self::assertSame(14, $data['version']);
+        self::assertSame(15, $data['version']);
         self::assertSame('2026-08-05T12:00:00+03:00', $data['generated']);
         self::assertSame(['src'], $data['scope']);
         self::assertSame(['patterns' => [], 'generated' => 'excluded'], $data['exclusions']);
@@ -668,7 +668,45 @@ final class BaselineWriterTest extends TestCase
         // No source hash: nothing was read, so there is nothing to conflict with.
         $this->writer->write($this->baseline(), \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path), $this->projectRoot);
 
-        self::assertStringContainsString('"version": 14', (string) file_get_contents($path));
+        self::assertStringContainsString('"version": 15', (string) file_get_contents($path));
+    }
+
+    #[Test]
+    public function itRewritesALoadedVersionFourteenDocumentAsTheCurrentVersionWithItsEntriesUnchanged(): void
+    {
+        $current = (string) file_get_contents($this->write($this->baseline(), 'current.json'));
+        $legacy = $this->tempDir . '/legacy.json';
+        file_put_contents($legacy, str_replace("\n  \"version\": 15,\n", "\n  \"version\": 14,\n", $current));
+        self::assertNotSame($current, file_get_contents($legacy));
+
+        $loaded = $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($legacy));
+        $this->writer->write($loaded, \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($legacy), $this->projectRoot);
+
+        self::assertSame($current, file_get_contents($legacy));
+    }
+
+    #[Test]
+    public function itRefusesToCarryARetiredClosureEntryIntoTheCurrentVersion(): void
+    {
+        $path = $this->tempDir . '/baseline.json';
+        file_put_contents($path, 'held');
+        $identity = new BaselineIdentity('declaration:func:App::{closure#2}@src/A.php', new FindingChannel('complexity.ccn'));
+        $retired = InertBaselineEntry::forIdentity($identity, InertEntryReason::RetiredClosureIdentity, 'retired', ['channel' => 'complexity.ccn', 'magnitudes' => [12]]);
+        $baseline = new Baseline(
+            generated: new DateTimeImmutable('2026-08-05T12:00:00+03:00'),
+            scope: ['src'],
+            entries: $this->baseline()->entries,
+            exclusions: self::fixtureExclusions(),
+            inertEntries: [$retired],
+        );
+
+        try {
+            $this->writer->write($baseline, \Qualimetrix\Core\FileTarget\Resolution\TargetPath::resolve($path), $this->projectRoot);
+            self::fail('A retired closure entry was written as the current version.');
+        } catch (InvalidArgumentException $refusal) {
+            self::assertStringContainsString('baseline:cleanup <baseline> <paths...> --remove=' . $identity->selector()->value, $refusal->getMessage());
+        }
+        self::assertSame('held', file_get_contents($path));
     }
 
     /**
@@ -861,7 +899,7 @@ final class BaselineWriterTest extends TestCase
         $lines = explode("\n", (string) file_get_contents($path));
 
         self::assertSame('{', $lines[0]);
-        self::assertSame('  "version": 14,', $lines[1]);
+        self::assertSame('  "version": 15,', $lines[1]);
         self::assertSame('  "scope": ["src"],', $lines[3]);
         self::assertSame('  "exclusions": {"patterns":[],"generated":"excluded"},', $lines[4]);
         self::assertSame('  "entries": {', $lines[5]);

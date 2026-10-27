@@ -110,6 +110,9 @@ final class CommandLineSpellingDoorTest extends TestCase
         yield 'rules --group' => [['command' => 'rules', '--group' => true], '--group'];
         yield 'directives --format' => [['command' => 'directives', 'paths' => ['src'], '--format' => true], '--format'];
         yield 'directives --sweep' => [['command' => 'directives', 'paths' => ['src'], '--sweep' => true], '--sweep'];
+        foreach (['cache-dir', 'workers', 'memory-limit'] as $option) {
+            yield 'directives --' . $option => [['command' => 'directives', 'paths' => ['src'], '--' . $option => true], '--' . $option];
+        }
         yield 'debug:layer-assignment --format' => [['command' => 'debug:layer-assignment', 'fqn' => 'App\A', '--format' => true], '--format'];
         yield 'debug:layer-assignment fqn' => [['command' => 'debug:layer-assignment', 'fqn' => true], 'fqn'];
 

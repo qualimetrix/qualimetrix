@@ -19,6 +19,8 @@ final class WalkedEntrySelection
 
     private readonly RemovedRunPhpEvidence $evidence;
 
+    private readonly RemovedNamespaceSurvey $survey;
+
     public function __construct(
         private readonly WalkRequest $request,
         private readonly EntryInspectorInterface $inspector,
@@ -28,7 +30,8 @@ final class WalkedEntrySelection
         private readonly Closure $builtInFloor,
         private readonly Closure $coveredByRun,
     ) {
-        $this->evidence = new RemovedRunPhpEvidence($inspector);
+        $this->survey = $request->removedNamespaces;
+        $this->evidence = new RemovedRunPhpEvidence($inspector, $this->survey);
     }
 
     public function namedBase(AbsolutePath $path, EntryKind $kind): ?RelativePath
@@ -79,7 +82,9 @@ final class WalkedEntrySelection
             return null;
         }
         if ($matching !== []) {
-            $this->recordRemovedRunEntry($path, $originalKind, $relative, $matching, $zone);
+            if ($zone === 'run') {
+                $this->recordRemovedRunEntry($path, $originalKind, $admittedKind, $relative, $matching);
+            }
             $this->outcome->recordMatched($path, $admittedKind, $relative, $matching, $zone);
 
             return $relative;
@@ -94,12 +99,19 @@ final class WalkedEntrySelection
     }
 
     /** @param non-empty-list<string> $matching */
-    private function recordRemovedRunEntry(AbsolutePath $path, EntryKind $kind, RelativePath $relative, array $matching, string $zone): void
+    private function recordRemovedRunEntry(AbsolutePath $path, EntryKind $kind, EntryKind $admittedKind, RelativePath $relative, array $matching): void
     {
-        if ($zone !== 'run' || !($this->inUniverse)($path)) {
+        if ($kind !== $admittedKind && $admittedKind === EntryKind::RegularFile) {
+            // A named file link would have been analysed, but its target is not read for namespaces.
+            $this->survey->close();
+        }
+        if (!($this->inUniverse)($path)) {
+            // Outside the measured universe the removal judges no selector, yet its code still leaves the run.
+            $this->evidence->surveyOnly($path, $kind);
+
             return;
         }
-        $evidence = $this->ledger->needsPhpEvidence($matching) ? $this->evidence->search($path, $kind) : null;
+        $evidence = $this->survey->isOpen() || $this->ledger->needsPhpEvidence($matching) ? $this->evidence->search($path, $kind) : null;
         $this->ledger->removedFromRun($relative, $matching, $evidence);
     }
 

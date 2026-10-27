@@ -50,6 +50,7 @@ final readonly class FindingProjection
             $options->suppressNamespaces,
             $result->measured->coverage->analyzedFiles,
             $result->measured->namespaceTree?->getAllNamespaces(),
+            $result->measured->coverage->failedFilesCount(),
             $valueScope,
             $result->populationPublication ?? throw new LogicException('Suppression accounting requires captured channel publication'),
         );

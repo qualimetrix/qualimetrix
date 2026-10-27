@@ -30,7 +30,7 @@ final class ReportRecords
     public static function baselineEntries(string $text, array $records): array
     {
         $document = self::baselineDocument($text);
-        if (!\in_array($document['version'] ?? null, [13, 14], true) || !\is_array($document['entries'] ?? null)) {
+        if (!\in_array($document['version'] ?? null, [13, 14, 15], true) || !\is_array($document['entries'] ?? null)) {
             throw new GateError('The baseline publication has no supported entries schema.');
         }
         $groups = [];
@@ -189,7 +189,7 @@ final class ReportRecords
         }
         $identity = ['target' => $edge['target']];
         if (\array_key_exists('type', $edge)) {
-            if (!\is_string($edge['type']) || !\in_array($edge['type'], ['extends', 'implements', 'trait_use', 'new', 'static_call', 'static_property_fetch', 'class_const_fetch', 'type_hint', 'catch', 'instanceof', 'attribute', 'property_type', 'constant_type', 'intersection_type', 'union_type'], true)) {
+            if (!\is_string($edge['type']) || !\in_array($edge['type'], ['extends', 'implements', 'trait_use', 'new', 'static_call', 'static_property_fetch', 'class_const_fetch', 'type_hint', 'catch', 'instanceof', 'attribute', 'attribute_argument', 'property_type', 'constant_type', 'intersection_type', 'union_type'], true)) {
                 throw new GateError('A record edge requires a known dependency type.');
             }
             $identity['type'] = $edge['type'];
@@ -367,7 +367,7 @@ final class ReportRecords
     public static function baselineDocument(string $text): array
     {
         $native = self::native($text);
-        if (!$native instanceof stdClass || !\in_array($native->version ?? null, [13, 14], true)
+        if (!$native instanceof stdClass || !\in_array($native->version ?? null, [13, 14, 15], true)
             || !($native->entries ?? null) instanceof stdClass) {
             throw new GateError('The baseline publication has no supported entries schema.');
         }

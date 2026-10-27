@@ -40,7 +40,6 @@ final class DependencyGraph implements DependencyGraphInterface
      *                                                  already lost every such edge but `extends`
      * @param list<ClassLikeDeclaration> $classLikeDeclarations Named declaration facts in encounter order
      *
-      * @qmx-threshold code-smell.long-parameter-list 11 -- Logical, declaration and namespace indexes are views of the same dependency graph; constructing them together prevents mismatched graph snapshots.
       * @qmx-threshold code-smell.constructor-overinjection 11 -- The complete immutable graph facts travel together through one graph lifecycle; the finite boundary keeps further growth visible.
      */
     public function __construct(

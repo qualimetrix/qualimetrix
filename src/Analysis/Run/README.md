@@ -81,9 +81,31 @@ path IO and universe construction; defaults retain their refusal contract.
 Private `RunPathSelection` chooses authored or inferred paths from the captured
 document without rereading Composer. `WalkedEntrySelection` owns admission and
 recursive metadata descent; `WalkedEntryOutcome` accumulates passed facts with
-no IO. `RemovedRunPhpEvidence` searches metadata only for actual removed run
-entries that require PHP evidence. These types share the same inspector and
-ledger, without another classifier or walk.
+no IO. `RemovedRunPhpEvidence` descends every actual removed run entry once and
+returns the selector evidence; the namespaces of the PHP files it meets go to the
+walk's `RemovedNamespaceSurvey` (ledger and verdicts carry none). Files up to
+64 KiB are tokenized by `RemovedNamespaceScan`; larger ones are read as text in
+64 KiB chunks by `RemovedNamespaceText`, counting every `namespace` word followed
+by a name or `{` (a superset, so it errs toward withholding). The survey is bounded
+by 2,000 reads, 8 MiB and 20,000 inspected entries per walk; when a limit is
+spent, something is unreadable (a directory link or non-regular `.php` entry inside
+a removed directory, an excluded file link, an unlistable child) the namespaces are
+unknown and the descent returns to stopping at the first PHP file. The survey runs
+only when `RunConfiguration::$hasLiteralNamespaceSuppression` is true (computed by
+`RunConfigurationResolver`: a literal global `suppress_namespaces` value or any rule
+option other than `suppress_paths`); otherwise it stays known-empty until a PHP file
+is removed, then unknown (entries without PHP do not close it), and discovery keeps
+its metadata-only cost. `check` adds its `--suppress-namespace` values through
+`RunConfiguration::withNamespaceSuppressionValues()`, so a literal CLI value funds
+the survey too. Removed run
+entries outside the measured universe are surveyed for namespaces only. The
+generated-file policy adds the namespaces of `@generated` files (a full read; the
+generated filter itself reads a header only). The result is one
+`RemovedCodeNamespaces` in the scope facts (`null` = unknown), carried to
+`ProjectScopeJudgement`. This reads removed source beyond the generated-file
+header; see
+[ADR 0133](../../../docs/adr/0133-removed-code-namespaces-narrow-the-suppression-namespace-audit.md).
+These types share the same inspector and ledger, without another classifier or walk.
 
 ## Phase order
 
@@ -143,6 +165,13 @@ absence when paths omit observed PHP, an authored removed run entry hides PHP
 is unknown. `judgesExcludeSelectors()` uses path completeness and universe certainty
 separately, without Exclude/Generated doors as inputs. Settled `Removed` selectors
 survive a withheld answer.
+Two narrower questions, `judgesExactNamespace()` and `judgesNamespaceSubtree()`,
+serve only literal (`exact`/`subtree`) namespace suppression values: when the sole
+doors are `Exclude` with PHP evidence and `Generated`, they withhold just the values
+the removed code's declared namespaces (and their ancestors) could bind, and they
+consult those namespaces even when no door is open (removal outside the measured
+universe). Every other door, an unknown `RemovedCodeNamespaces` and `regex` values
+withhold as under the first question.
 
 Path coverage compares PHP files: a complete explicit roster can cover a known
 universe. An observed outside-selection regular `.php` is a missing file even
@@ -262,7 +291,8 @@ repair an invalid source roster.
 PHP evidence belongs only to real entries removed from this run. The walker can
 search their metadata until the first regular `.php`, continuing to another
 removed run entry if the first contains none. It never searches an excluded
-outside-selection directory or opens source for this audit. Regular PHP or
+outside-selection directory. Its source is read only for the namespace
+statements of removed code (see above), never for analysis. Regular PHP or
 unavailable search metadata from an actual removed run entry holds declaration
 absence closed, with selector/evidence in its Exclude reason; selector
 completeness remains independent.

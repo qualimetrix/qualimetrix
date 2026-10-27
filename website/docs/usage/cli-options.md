@@ -1127,10 +1127,16 @@ bin/qmx directives src/ --format=json
 | `--only-rule=RULE`        | Judge under a run that ran only these rules (repeatable)                                 |
 | `--disable-rule=RULE`     | Judge under a run with these rules off (repeatable)                                      |
 | `--rule-opt=RULE:OPT=VAL` | Judge under a run with this rule option (repeatable)                                     |
+| `--no-cache`              | Do not read or write the AST cache                                                       |
+| `--cache-dir=DIR`         | AST cache directory, judged as for `check`                                               |
+| `-w`, `--workers=N`       | Parallel workers (`0` = sequential)                                                      |
+| `--memory-limit=LIMIT`    | PHP memory limit, e.g. `512M` or `-1`                                                    |
 
 The four selection options exist because a verdict is relative to the run that produced it: point the command at the same rules and boundaries your CI checks with, or it will answer about a different run.
 
 A `@qmx-threshold` names exactly one rule, so under `--sweep=narrow` a counterfactual re-executes only that rule. `--sweep=full` re-executes every enabled rule for the same verdicts, at far higher cost — it is not a slower fallback but the control that measures, rather than assumes, that removing a directive of one rule cannot move another rule's findings: the two scopes are swept over the same tree and compared verdict for verdict. On this project's own `src/` the narrow sweep is several times cheaper and the two scopes agree on every verdict. Both the text report and `--format=json` state the sweep the verdicts were measured under.
+
+The execution options mean what they mean for `check` ([`--no-cache`](#--no-cache), [`--cache-dir`](#--cache-dir), [`--workers`](#--workers--w), [`--memory-limit`](#--memory-limit)), so an audit can run isolated from the shared cache: `bin/qmx directives src/ --no-cache --workers=0`.
 
 Exit codes: `0` no publishable refusal or observable inert directive, including
 a complete intentionally empty excluded set; `2` at least one publishable

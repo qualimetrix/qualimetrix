@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyAnalysis;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Cycle;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -19,6 +20,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
+use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\CycleRuleConfiguration;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\FixedCycleDetector;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
@@ -32,7 +34,7 @@ final class CircularDependencyRuleTest extends TestCase
     protected function setUp(): void
     {
         $this->detector = new FixedCycleDetector();
-        $this->analysis = new CircularDependencyAnalysis($this->detector);
+        $this->analysis = new CircularDependencyAnalysis($this->detector, CycleRuleConfiguration::authored());
     }
 
     #[Test]
@@ -316,6 +318,69 @@ final class CircularDependencyRuleTest extends TestCase
         CircularDependencyOptions::fromResolved(ResolvedOptionsFixture::values(CircularDependencyOptions::class, [
             'max_cycle_size' => 5,
             'maxCycleSize' => 3,
+        ]));
+    }
+
+    #[Test]
+    public function itReadsIgnoredRelationsWithAliasesExpandedOnceInTheOrderFirstNamed(): void
+    {
+        $options = CircularDependencyOptions::fromResolved(ResolvedOptionsFixture::values(CircularDependencyOptions::class, [
+            'ignore_relations' => ['attribute_argument', 'static_access', 'class_const_fetch', 'new'],
+        ]));
+
+        self::assertSame(
+            [
+                DependencyType::AttributeArgument,
+                DependencyType::StaticCall,
+                DependencyType::StaticPropertyFetch,
+                DependencyType::ClassConstFetch,
+                DependencyType::New_,
+            ],
+            $options->ignoredRelations,
+        );
+    }
+
+    #[Test]
+    public function itAcceptsEveryRelationSpellingOfTheOptionKey(): void
+    {
+        foreach (['ignore_relations', 'ignoreRelations', 'ignore-relations'] as $key) {
+            $options = CircularDependencyOptions::fromResolved(ResolvedOptionsFixture::values(CircularDependencyOptions::class, [
+                $key => ['attribute_argument'],
+            ]));
+
+            self::assertSame([DependencyType::AttributeArgument], $options->ignoredRelations, $key);
+        }
+    }
+
+    #[Test]
+    public function itTreatsAnAbsentOrEmptyRelationListAsNoFilter(): void
+    {
+        foreach ([[], ['ignore_relations' => []], ['ignore_relations' => null]] as $values) {
+            $options = CircularDependencyOptions::fromResolved(ResolvedOptionsFixture::values(CircularDependencyOptions::class, $values));
+
+            self::assertSame([], $options->ignoredRelations, json_encode($values, \JSON_THROW_ON_ERROR));
+        }
+    }
+
+    #[Test]
+    public function itRefusesAnUnknownRelationTokenByName(): void
+    {
+        self::expectException(\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal::class);
+        self::expectExceptionMessageMatches('/^"rules\.fixture\.ignore_relations\[1\]" in configuration file "\/project\/qmx\.yaml" must be one of .*attribute_argument.*static_access.*, got "attribute_args"\.$/');
+
+        CircularDependencyOptions::fromResolved(ResolvedOptionsFixture::values(CircularDependencyOptions::class, [
+            'ignore_relations' => ['attribute', 'attribute_args'],
+        ]));
+    }
+
+    #[Test]
+    public function itRefusesARelationWrittenOutsideAList(): void
+    {
+        self::expectException(\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal::class);
+        self::expectExceptionMessage('"rules.fixture.ignore_relations" in configuration file "/project/qmx.yaml" must be a list, got string.');
+
+        CircularDependencyOptions::fromResolved(ResolvedOptionsFixture::values(CircularDependencyOptions::class, [
+            'ignore_relations' => 'attribute_argument',
         ]));
     }
 

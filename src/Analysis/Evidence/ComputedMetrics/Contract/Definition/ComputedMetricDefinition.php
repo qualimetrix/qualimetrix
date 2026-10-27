@@ -22,7 +22,6 @@ final readonly class ComputedMetricDefinition
      * @param list<SymbolLevel> $levels
      * @param array<string, ComputedMetricApplicability> $applicability Builtin policy by stored formula level; absent means authored/synthetic Always
      *
-      * @qmx-threshold code-smell.long-parameter-list 9 -- Formula, applicability, direction and thresholds declare one computed producer; splitting them would weaken definition validation.
       * @qmx-threshold code-smell.constructor-overinjection 9 -- Formula, applicability, direction and thresholds declare one computed producer; splitting them would weaken definition validation.
      */
     public function __construct(

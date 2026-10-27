@@ -118,13 +118,13 @@ PHP;
         self::assertSame('method', $probe->subjects[0]['logicalKind']);
         self::assertSame('name::get', $probe->subjects[0]['member']);
         self::assertSame('function', $probe->subjects[1]['logicalKind']);
-        self::assertSame('{closure#1}', $probe->subjects[1]['member']);
+        self::assertSame('Service::name::get::{closure#1}', $probe->subjects[1]['member']);
         self::assertSame('method', $probe->subjects[2]['logicalKind']);
         self::assertSame('outer', $probe->subjects[2]['member']);
         self::assertSame('function', $probe->subjects[3]['logicalKind']);
         self::assertSame('nested', $probe->subjects[3]['member']);
         self::assertSame('function', $probe->subjects[4]['logicalKind']);
-        self::assertSame('{closure#2}', $probe->subjects[4]['member']);
+        self::assertSame('Service::outer::{closure#1}', $probe->subjects[4]['member']);
         self::assertSame(['subjectKind' => 'file'], $probe->subjects[5]);
 
         $context->reset();

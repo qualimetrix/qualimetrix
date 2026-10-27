@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Run\Configuration;
 
 use LogicException;
+use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\ConfigurationRoot;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface;
@@ -52,6 +53,8 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
                 ? GeneratedFilePolicy::Include
                 : GeneratedFilePolicy::Exclude,
             autoloadDevPolicy: $autoloadDev,
+            hasLiteralNamespaceSuppression: self::hasLiteralNamespaceSelector($resolved->get(ConfigurationRoot::SuppressNamespaces->value)?->plain())
+                || self::hasLiteralNamespaceSelector($resolved->get(ConfigSchema::RULES)?->plain()),
         );
     }
 
@@ -133,6 +136,36 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
             )),
             ['vendor', 'node_modules', '.git'],
         );
+    }
+
+    /**
+     * Whether a literal (`exact` or `subtree`) selector stands anywhere in a
+     * value other than under `suppress_paths`: the only reader of what removed
+     * code declares is a literal namespace suppression value, global or under
+     * a rule. Another rule option shaped like a selector only costs the survey.
+     * Values given with `--suppress-namespace` are not in the document; the
+     * command adds them through `RunConfiguration::withNamespaceSuppressionValues()`.
+     */
+    private static function hasLiteralNamespaceSelector(mixed $value): bool
+    {
+        if (!\is_array($value)) {
+            return false;
+        }
+        if (\count($value) === 1 && \is_string(current($value)) && \in_array(key($value), [SelectorKind::Exact->value, SelectorKind::Subtree->value], true)) {
+            return true;
+        }
+        foreach ($value as $key => $item) {
+            if (!self::spellsPathSuppression((string) $key) && self::hasLiteralNamespaceSelector($item)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function spellsPathSuppression(string $key): bool
+    {
+        return strtolower(str_replace(['_', '-'], '', $key)) === str_replace('_', '', ConfigSchema::SUPPRESS_PATHS);
     }
 
     private static function flag(?ResolvedValueInterface $value): bool

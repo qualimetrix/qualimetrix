@@ -1,6 +1,6 @@
 # Baseline
 
-A version 14 baseline records accepted groups as reported-magnitude ceilings.
+A version 15 baseline records accepted groups as reported-magnitude ceilings.
 It preserves a deliberate acceptance, including its discovery exclusions.
 
 ## Create and use a baseline
@@ -22,6 +22,12 @@ Parameter/return dependencies keep `type_hint`; promoted-property dependencies
 use `property_type`, and constant declarations use `constant_type`. Former
 `union_type` and `intersection_type` relation entries are inert; these syntax
 forms now live in the graph's `shape` object.
+
+The same applies to references inside attribute arguments (`Repo::class`,
+`new Foo()`, and the like): their edge kind is now `attribute_argument`, so a
+baseline entry for such an edge changes its `edge.type` identity and shows up as
+one stale and one new entry. Add `attribute_argument` to the policy's
+`relations:` if the reference is allowed.
 
 Review the findings before changing acceptance. Keep the existing baseline;
 add new source identities and remove only explicitly selected old identities:
@@ -133,8 +139,10 @@ sibling publication. File modes, locking and content-hash CAS are preserved.
 
 ### Replace an older baseline
 
-Only v14 is loadable. For v13 retain entries, scope and generated time, change
-version to 14 and explicitly add the original exclusion definition:
+v15 is current and v14 still loads (its closure entries are retired, see [Migrating from version 14](#migrating-from-version-14)). For v13 only, retain entries, scope and generated time, change
+version to 14 and explicitly add the original exclusion definition, then follow
+the version 14 migration; never edit the number on to 15. The exclusion
+definition looks like this:
 
 ```json
 "exclusions": {"patterns": ["subtree:vendor"], "generated": "excluded"}
@@ -150,6 +158,36 @@ when other subjects are updated. Adding an entry at that same subject refuses
 before replacing the file. Review the cleanup candidates and remove that bucket
 with `baseline:cleanup --remove=<selector>` before accepting the new entry;
 cleanup only lists candidates by default.
+
+### Migrating from version 14
+
+Version 14 named a closure by its rank among all closures of the file; version
+15 names it under its enclosing declaration (`App\A::rows::{closure#1}`).
+A version 14 file still loads, but every entry under a closure key is inert as
+`retired closure identity` and accepts nothing. Every command that writes version
+15 from it (`baseline:update`, `baseline:cleanup --remove`) refuses (exit 3,
+nothing written) while one remains. `baseline:rename-channels` writes the version
+it read, so its output stays version 14 with the entries still retired.
+
+Do not convert the file by editing `"version": 14` to 15. The number is the only
+marker of the old closure keys: under 15 they load as live keys and silently
+accept whichever closure holds their number. One procedure:
+
+```bash
+bin/qmx baseline:cleanup baseline.json src/
+bin/qmx baseline:cleanup baseline.json src/ --remove=SELECTOR_1 --remove=SELECTOR_2
+bin/qmx baseline:update baseline.json src/ --accept-new=code-smell.debug-code
+```
+
+1. List the retired entries (the first command is read-only).
+2. Remove all of them in one call; it writes version 15 and keeps every other
+   entry. Two entries of one duplicated closure identity share one selector,
+   which removes both.
+3. The closures now appear as new findings. Fix them, or accept them with
+   `--accept-new=<channel>`, which accepts every new identity of that channel:
+   review the diff.
+
+Do not use `baseline:generate --force`: it re-captures unrelated ceilings.
 
 ### Tighten after repairs
 

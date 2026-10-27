@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\RuleConfiguration\Selection;
 
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPresentationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
+use Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope;
 use Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions;
 use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision;
@@ -21,9 +23,14 @@ use Qualimetrix\Analysis\Finding\Selection\SelectionSpecificity;
 /** Resolves authored cell statements, then adds final option activity. */
 final readonly class RuleEnablementResolver
 {
+    public function __construct(
+        private ChannelFileScope $fileScope,
+        private ChannelPresentationInterface $presentation,
+    ) {}
+
     public function decide(ResolvedDocument $document, ChannelUniverseInterface $channels): StatedEnablement
     {
-        $diagnostics = AuthoredSelection::diagnostics($document, $channels);
+        $diagnostics = AuthoredSelection::diagnostics($document, $channels, $this->projectOnlyProducerDocsPages($channels));
         $statements = AuthoredSelection::statements($document);
         $filter = AuthoredSelection::filter($document);
         $cells = [];
@@ -33,6 +40,31 @@ final readonly class RuleEnablementResolver
             $cells[] = SelectionSpecificity::decision($address, $applicable, $filter);
         }
         return new StatedEnablement($cells, $filter, $diagnostics);
+    }
+
+    /**
+     * Per run, not per instance: the channel universe differs between runs.
+     *
+     * @return array<string, ?string> producer whose every channel is project-scoped => its docs page
+     */
+    private function projectOnlyProducerDocsPages(ChannelUniverseInterface $channels): array
+    {
+        $pages = [];
+        foreach ($channels->ruleNames() as $producer) {
+            $produced = $channels->channelsProducedBy($producer);
+            if ($produced === [] || array_any($produced, $this->fileScope->isFileScoped(...))) {
+                continue;
+            }
+            $pages[$producer] = null;
+            foreach ($produced as $channel) {
+                $page = $this->presentation->presentationFor($channel->code)?->docsPage;
+                if ($page !== null) {
+                    $pages[$producer] = $page;
+                    break;
+                }
+            }
+        }
+        return $pages;
     }
 
     public function conclude(StatedEnablement $stated, ResolvedRuleOptions $options): RuleEnablement

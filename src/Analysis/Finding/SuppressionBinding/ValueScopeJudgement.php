@@ -17,7 +17,9 @@ use Qualimetrix\Core\Pattern\SelectorKind;
  * namespace claims and a declared production autoload. A complete named PHP
  * roster can provide the same measured completeness as a directory selection.
  * Generated removal closes namespace claims while leaving selector completeness
- * open, so it does not by itself withhold path regex judgement.
+ * open, so it does not by itself withhold path regex judgement. Literal
+ * namespaces ask the narrower literal question instead: removal of PHP files
+ * withholds only a value the removed code could have declared.
  *
  * Literal paths use their deepest existing ancestor: `tests/Gone/Deep` anchors
  * at `tests/`. A run that did not analyse that location cannot distinguish
@@ -83,17 +85,49 @@ final readonly class ValueScopeJudgement
      */
     public function judgesNamespaceValue(NamespacePattern $pattern): bool
     {
-        // Before the regex branch: a whole-tree run would otherwise judge a
-        // regex namespace value here while refusing every literal one.
-        if (!$this->projectDeclared || !$this->scope->judgesNamespaceClaims()) {
+        if (!$this->projectDeclared) {
             return false;
         }
 
+        // Before the regex branch: a whole-tree run would otherwise judge a
+        // regex namespace value here while refusing every literal one.
         if ($pattern->definition->kind === SelectorKind::Regex) {
-            return $this->scope->judgesExcludeSelectors() && !$this->hasAuthoredRemoval();
+            return $this->scope->judgesNamespaceClaims()
+                && $this->scope->judgesExcludeSelectors()
+                && !$this->hasAuthoredRemoval();
         }
 
-        return !$this->hasUnanalysedNamespaceRoot(trim($pattern->definition->value, '\\'), $this->projectRoot, $this->psr4Roots);
+        $head = trim($pattern->definition->value, '\\');
+
+        return $this->judgesLiteral($pattern, $head)
+            && !$this->hasUnanalysedNamespaceRoot($head, $this->projectRoot, $this->psr4Roots);
+    }
+
+    /**
+     * Whether removed code is the only reason a namespace-shaped value is not
+     * judged: it would be, had that code declared nothing.
+     *
+     * A regex value has no literal anchor to hold against what removed code
+     * declares, so removal withholds it whatever that code declares.
+     */
+    public function withholdsOnlyForRemovedCode(NamespacePattern $pattern): bool
+    {
+        if (!$this->projectDeclared || $pattern->definition->kind === SelectorKind::Regex) {
+            return false;
+        }
+
+        $head = trim($pattern->definition->value, '\\');
+
+        return $this->scope->judgesBesideRemovedCode()
+            && !$this->judgesLiteral($pattern, $head)
+            && !$this->hasUnanalysedNamespaceRoot($head, $this->projectRoot, $this->psr4Roots);
+    }
+
+    private function judgesLiteral(NamespacePattern $pattern, string $head): bool
+    {
+        return $pattern->definition->kind === SelectorKind::Subtree
+            ? $this->scope->judgesNamespaceSubtree($head)
+            : $this->scope->judgesExactNamespace($head);
     }
 
     /** @param array<string, list<string>> $psr4Roots */

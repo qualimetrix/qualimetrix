@@ -67,7 +67,6 @@ final class Report
      *                                                                                                   `source` entry is the
      *                                                                                                   refusal envelope's
      *
-      * @qmx-threshold code-smell.long-parameter-list 15 -- Sources, published findings and measured coverage form one synchronized publication snapshot; health enrichment replaces one report-owned value.
       * @qmx-threshold code-smell.constructor-overinjection 15 -- Sources, published findings and measured coverage form one synchronized publication snapshot; health enrichment replaces one report-owned value.
      */
     public function __construct(

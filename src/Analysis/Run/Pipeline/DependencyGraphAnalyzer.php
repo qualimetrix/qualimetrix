@@ -111,8 +111,10 @@ final readonly class DependencyGraphAnalyzer implements DependencyGraphAnalyzerI
     /**
      * Numbering belongs to one traversal of one file: the registrar and its
      * index are rebuilt per file, and the visitor shared with the check path
-     * is rebound to this path's index. The registrar goes in first so a
-     * producer asking about the node it is entering finds it registered.
+     * is rebound to this path's index. The registrar registers the whole file
+     * in its own walk from `beforeTraverse()`, so every rank is final before a
+     * producer asks; it goes in first so that walk also precedes every other
+     * visitor's `beforeTraverse()`.
      */
     private function beginNumbering(NodeTraverser $traverser): DeclarationRegistrarInterface
     {

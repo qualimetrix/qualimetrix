@@ -71,7 +71,7 @@
 
 **CBO (Coupling Between Objects)** подсчитывает количество других классов, от которых зависит данный класс. Высокая связанность затрудняет внесение изменений.
 
-**Instability** -- коэффициент от 0 (полностью стабильный) до 1 (полностью нестабильный). Класс, который зависит от многих других, но от которого никто не зависит -- нестабилен. По умолчанию `min_afferent: 1` -- классы и пространства имён без зависимых (Ca=0) пропускаются, так как имеют I=1.0 по определению. Установите `2`, чтобы также пропускать символы с единственным зависимым.
+**Instability** -- коэффициент от 0 (полностью стабильный) до 1 (полностью нестабильный). Класс, который зависит от многих других, но от которого никто не зависит -- нестабилен. По умолчанию `min_afferent: 1` -- классы и пространства имён без зависимых (Ca=0) пропускаются, так как имеют I=1.0 по определению. Установите `2`, чтобы также пропускать символы с единственным зависимым. На уровне пространства имён правило судит `coupling.instability-own`, а `min_afferent` считает `coupling.ca-own`; `namespace.min_type_count` (по умолчанию `3`) пропускает пространство имён, объявляющее меньше собственных классов, трейтов, интерфейсов и енумов с `implements`.
 
 **Distance from the Main Sequence** измеряет, насколько хорошо пространство имен балансирует между абстрактностью и стабильностью. Значение, близкое к 0 -- идеально.
 
@@ -143,7 +143,7 @@
 
 | Правило                    | ID                                     | Warning                                            | Error             | Статус                                                                                             |
 | -------------------------- | -------------------------------------- | -------------------------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------- |
-| Constructor Over-injection | `code-smell.constructor-overinjection` | 8 params                                           | 12 params         | включено                                                                                           |
+| Constructor Over-injection | `code-smell.constructor-overinjection` | 8 params (non-VO constructors)                     | 12 params         | включено                                                                                           |
 | Data Class                 | `design.data-class`                    | WOC ≤ 33%, WMC ≤ 10                                | —                 | включено                                                                                           |
 | God Class                  | `design.god-class`                     | WMC ≥ 47, TCC < 0.33, LCOM ≥ 3, LOC ≥ 300 (3 of 4) | —                 | включено                                                                                           |
 | Boolean Argument           | `code-smell.boolean-argument`          | —                                                  | —                 | включено (allowed_prefixes: is, has, can, should, will, did, was; flag_promoted_properties: false) |
@@ -155,7 +155,7 @@
 | exit()/die()               | `code-smell.exit`                      | всегда                                             | —                 | включено                                                                                           |
 | goto                       | `code-smell.goto`                      | —                                                  | всегда            | включено                                                                                           |
 | Superglobals               | `code-smell.superglobals`              | всегда                                             | —                 | включено                                                                                           |
-| Long Parameter List        | `code-smell.long-parameter-list`       | 4 params (VO: 8)                                   | 6 params (VO: 12) | включено                                                                                           |
+| Long Parameter List        | `code-smell.long-parameter-list`       | 4 params (methods, functions; VO ctor: 8)          | 6 params (VO: 12) | включено                                                                                           |
 | Unreachable Code           | `code-smell.unreachable-code`          | 1                                                  | 2                 | включено                                                                                           |
 | Unused Private             | `code-smell.unused-private`            | всегда                                             | —                 | включено                                                                                           |
 | Identical Sub-expression   | `code-smell.identical-subexpression`   | всегда                                             | —                 | включено                                                                                           |

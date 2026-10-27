@@ -475,7 +475,51 @@ final class LongParameterListRuleTest extends TestCase
     }
 
     #[Test]
-    public function itNonVoConstructorStillUsesStandardThresholds(): void
+    public function itLeavesAnInjectionConstructorToConstructorOverinjection(): void
+    {
+        $rule = new LongParameterListRule(new LongParameterListOptions(warning: 4, error: 6, voWarning: 8, voError: 12));
+        $constructor = $this->exactDeclarationInfo(SymbolPath::forMethod('App\Service', 'UserService', '__construct'), 'src/Service/UserService.php', 10);
+        $method = $this->exactDeclarationInfo(SymbolPath::forMethod('App\Service', 'UserService', 'run'), 'src/Service/UserService.php', 20);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allCallables')->willReturn([$constructor, $method]);
+        $repository->method('getSubject')->willReturnCallback(static function (MetricSubject $subject): MetricBag {
+            $metrics = (new MetricBag())->with('code-smell.parameter-count', 7);
+
+            return $subject->toSymbolPath()->member === '__construct'
+                ? $metrics->with('code-smell.is-injection-constructor', 1)
+                : $metrics;
+        });
+        $session = $this->populationSession();
+
+        $findings = $rule->analyze((new AnalysisContext($repository))->withPopulationTrace($session));
+
+        self::assertCount(1, $findings);
+        self::assertSame($method->subject, $findings[0]->subject);
+        self::assertStringContainsString('Method has 7 parameters', $findings[0]->message);
+        $abstentions = $session->freeze()->abstentions();
+        self::assertCount(1, $abstentions);
+        self::assertSame('injection-constructor', $abstentions[0]->gate);
+        self::assertStringStartsWith('The constructor is owned by code-smell.constructor-overinjection.', $abstentions[0]->reason);
+        self::assertStringContainsString('UserService', $abstentions[0]->examples[0]);
+    }
+
+    #[Test]
+    public function itKeepsJudgingAValueObjectConstructorBesideTheInjectionGate(): void
+    {
+        $rule = new LongParameterListRule(new LongParameterListOptions(warning: 4, error: 6, voWarning: 8, voError: 12));
+        $info = $this->exactDeclarationInfo(SymbolPath::forMethod('App\Dto', 'Fields', '__construct'), 'src/Dto/Fields.php', 10);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allCallables')->willReturn([$info]);
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('code-smell.parameter-count', 9)->with('code-smell.is-vo-constructor', 1));
+
+        $findings = $rule->analyze((new AnalysisContext($repository))->withPopulationTrace($this->populationSession()));
+
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('VO constructor has 9 promoted parameters', $findings[0]->message);
+    }
+
+    #[Test]
+    public function itJudgesAConstructorWithoutTheInjectionFlagByTheStandardThresholds(): void
     {
         $rule = new LongParameterListRule(new LongParameterListOptions(
             warning: 4,
@@ -484,10 +528,10 @@ final class LongParameterListRuleTest extends TestCase
             voError: 12,
         ));
 
-        $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', '__construct');
-        $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
+        // A global function named __construct has no class context, so the collector publishes no flag for it.
+        $symbolPath = SymbolPath::forGlobalFunction('App', '__construct');
+        $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/functions.php', 10);
 
-        // 5 params in non-VO constructor — above warning=4, below error=6
         $metricBag = (new MetricBag())
             ->with('code-smell.parameter-count', 5);
 
@@ -501,7 +545,7 @@ final class LongParameterListRuleTest extends TestCase
 
         self::assertCount(1, $findings);
         self::assertSame(Severity::Warning, $findings[0]->severity);
-        self::assertStringContainsString('Method has 5 parameters', $findings[0]->message);
+        self::assertStringContainsString('Function has 5 parameters', $findings[0]->message);
         self::assertSame(4, $findings[0]->threshold);
     }
 
@@ -833,6 +877,18 @@ final class LongParameterListRuleTest extends TestCase
         self::assertSame($voSubject->toCanonical(), $findings[1]->subject->toCanonical());
         self::assertSame('VO constructor has 8 promoted parameters, reaches threshold of 8. Consider splitting the value object', $findings[1]->message);
         self::assertSame(8, $findings[1]->threshold);
+    }
+
+    private function populationSession(): \Qualimetrix\Analysis\Finding\Population\PopulationSession
+    {
+        $decisions = [];
+        foreach (LongParameterListRule::channelDeclarations() as $channel => $declaration) {
+            foreach ($declaration->levels as $level) {
+                $decisions[] = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress(LongParameterListRule::NAME, new \Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel($channel), $level, \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole::Selectable), new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(\Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On, \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct));
+            }
+        }
+
+        return new \Qualimetrix\Analysis\Finding\Population\PopulationSession((new \Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication(new \Qualimetrix\Analysis\Finding\Contract\RuleEnablement($decisions, null)))->publishes(...));
     }
 
     private function exactDeclarationInfo(SymbolPath $symbolPath, string $file, int $line): SymbolInfo

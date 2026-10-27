@@ -19,9 +19,7 @@ final class CohesionFactWire
     public static function lcomRows(LcomClassData $data): array
     {
         $state = $data->factState();
-        $header = self::declarationRow($data);
-        $header['nonTrivial'] = $state['nonTrivial'];
-        $rows = [$header];
+        $rows = [self::declarationRow($data)];
         foreach ($state['methods'] as $method => $_) {
             $rows[] = [
                 'tag' => 'method',
@@ -36,9 +34,14 @@ final class CohesionFactWire
         foreach (self::propertyRows($state['propertyAccesses']) as $row) {
             $rows[] = $row;
         }
-        foreach ($state['methodCalls'] as $caller => $callees) {
-            foreach ($callees as $callee => $_) {
-                $rows[] = ['tag' => 'call', 'caller' => $caller, 'callee' => $callee];
+        foreach (self::propertyRows($state['deferredPropertyAccesses'], CohesionMemberWire::DEFERRED_PROPERTY) as $row) {
+            $rows[] = $row;
+        }
+        foreach (['call' => $state['methodCalls'], CohesionMemberWire::DEFERRED_CALL => $state['deferredMethodCalls'], CohesionMemberWire::REFERENCE => $state['methodReferences']] as $tag => $calls) {
+            foreach ($calls as $caller => $callees) {
+                foreach ($callees as $callee => $_) {
+                    $rows[] = ['tag' => $tag, 'caller' => $caller, 'callee' => $callee];
+                }
             }
         }
 
@@ -83,12 +86,12 @@ final class CohesionFactWire
      *
      * @return list<array<string, scalar>>
      */
-    private static function propertyRows(array $accesses): array
+    private static function propertyRows(array $accesses, string $tag = 'property'): array
     {
         $rows = [];
         foreach ($accesses as $method => $properties) {
             foreach ($properties as $property => $_) {
-                $rows[] = ['tag' => 'property', 'method' => $method, 'name' => $property];
+                $rows[] = ['tag' => $tag, 'method' => $method, 'name' => $property];
             }
         }
 
@@ -105,13 +108,6 @@ final class CohesionFactWire
             (int) $declaration['line'],
             (int) $declaration['position'],
         );
-        $nonTrivial = $declaration['nonTrivial'] ?? null;
-        if (!\is_bool($nonTrivial)) {
-            throw new LogicException('LCOM declaration fact must contain a boolean nonTrivial flag');
-        }
-        if ($nonTrivial) {
-            $data->markNonTrivial();
-        }
         $traitRows = [];
         foreach (\array_slice($rows, 1) as $row) {
             if (\in_array($row['tag'] ?? null, ['trait', 'alias', 'precedence'], true)) {

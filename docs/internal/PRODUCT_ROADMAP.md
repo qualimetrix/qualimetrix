@@ -210,7 +210,6 @@ condition. When an issue closes, drop its line here.
 
 - [#168](https://github.com/qualimetrix/qualimetrix/issues/168) Report-target preflight is best-effort
 - [#169](https://github.com/qualimetrix/qualimetrix/issues/169) `--format=metrics` key vocabularies and class owner
-- [#170](https://github.com/qualimetrix/qualimetrix/issues/170) Overlap of `long-parameter-list` and `constructor-overinjection`
 - [#171](https://github.com/qualimetrix/qualimetrix/issues/171) Dependency graph: PHPDoc types as dependency edges
 - [#172](https://github.com/qualimetrix/qualimetrix/issues/172) Dependency graph: global functions as nodes
 - [#173](https://github.com/qualimetrix/qualimetrix/issues/173) New-findings-only CI gate against a base revision

@@ -13,11 +13,15 @@ final readonly class ProjectScopeJudgement
      * @param list<ProjectScopeDoor> $namespaceWithheldBy
      * @param list<ProjectScopeDoor> $selectorsWithheldBy
      * @param list<ExcludeSelectorVerdict> $excludeSelectors
+     * @param RemovedCodeNamespaces|null $removedCode null means the removed code's namespaces were not
+     *                                                established, which counts as unknown: a caller that
+     *                                                knows nothing was removed passes `none()`
      */
     public function __construct(
         private array $namespaceWithheldBy = [],
         private array $selectorsWithheldBy = [],
         private array $excludeSelectors = [],
+        private ?RemovedCodeNamespaces $removedCode = null,
     ) {
         self::assertDistinctDoors($namespaceWithheldBy);
         self::assertDistinctDoors($selectorsWithheldBy);
@@ -86,6 +90,73 @@ final readonly class ProjectScopeJudgement
     public function judgesNamespaceClaims(): bool
     {
         return $this->namespaceWithheldBy === [];
+    }
+
+    /** Whether an exact namespace selector is judged: no removed code may declare it. */
+    public function judgesExactNamespace(string $namespace): bool
+    {
+        return $this->judgesBesideRemovedCode() && !$this->removedCode()->mayDeclare($namespace);
+    }
+
+    /** Whether a namespace subtree selector is judged: no removed code may declare within it. */
+    public function judgesNamespaceSubtree(string $namespace): bool
+    {
+        return $this->judgesBesideRemovedCode() && !$this->removedCode()->mayDeclareWithin($namespace);
+    }
+
+    /**
+     * Whether literal namespace selectors are decided by what removed code
+     * declares alone, so that one is judged when that code misses it.
+     *
+     * Only authored removal of PHP files and generated removal can be set
+     * aside. Any other door or an unlistable removed directory withholds every
+     * literal selector, as {@see judgesNamespaceClaims()} does. Unknown removed
+     * namespaces still withhold each selector through {@see RemovedCodeNamespaces}.
+     */
+    public function judgesBesideRemovedCode(): bool
+    {
+        if ($this->namespaceWithheldBy === []) {
+            return true;
+        }
+        foreach ($this->namespaceWithheldBy as $door) {
+            if ($door !== ProjectScopeDoor::Exclude && $door !== ProjectScopeDoor::Generated) {
+                return false;
+            }
+        }
+
+        return !\in_array(ProjectScopeDoor::Exclude, $this->namespaceWithheldBy, true) || $this->excludeEvidenceIsPhpFilesOnly();
+    }
+
+    /** Whether what removed code declares was established in full; when not, it may declare anything. */
+    public function removedCodeIsKnown(): bool
+    {
+        return $this->removedCode()->isKnown();
+    }
+
+    /**
+     * Removed code is consulted even when no door is open: code removed
+     * outside the measured universe opens none, yet still leaves the
+     * namespace tree.
+     */
+    private function removedCode(): RemovedCodeNamespaces
+    {
+        return $this->removedCode ?? RemovedCodeNamespaces::unknown();
+    }
+
+    private function excludeEvidenceIsPhpFilesOnly(): bool
+    {
+        $phpFile = false;
+        foreach ($this->excludeSelectors as $selector) {
+            if ($selector->phpEvidence === null) {
+                continue;
+            }
+            if ($selector->phpEvidence !== 'php-file') {
+                return false;
+            }
+            $phpFile = true;
+        }
+
+        return $phpFile;
     }
 
     /** @return list<ProjectScopeDoor> */

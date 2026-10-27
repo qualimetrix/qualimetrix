@@ -124,6 +124,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimePolicy\\RuntimeEffects"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\RunConfigurationResolver"
         }
       ]
     },
@@ -2097,6 +2101,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CycleEdgeFilter": {
+      "path": "src/Analysis/Evidence/CircularDependency/CycleEdgeFilter.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.CircularDependency",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CycleFinding": {
       "path": "src/Analysis/Evidence/CircularDependency/CycleFinding.php",
       "kind": "class",
@@ -2519,6 +2530,13 @@
     },
     "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionMethodReachability": {
       "path": "src/Analysis/Evidence/Cohesion/CohesionMethodReachability.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Cohesion",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionOwnCalls": {
+      "path": "src/Analysis/Evidence/Cohesion/CohesionOwnCalls.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Cohesion",
       "visibility": "internal",
@@ -4003,7 +4021,7 @@
         {
           "owner": "Analysis.Evidence.CircularDependency",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyDetector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CycleEdgeFilter",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\Dependency"
         },
         {
@@ -4269,10 +4287,6 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Analysis.Evidence.CircularDependency",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyDetector"
-        },
-        {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationFinding"
         },
@@ -4287,6 +4301,10 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Observation\\EdgeEvidenceWalk"
+        },
+        {
+          "owner": "Analysis.Evidence.CircularDependency",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CycleEdgeFilter"
         }
       ]
     },
@@ -4522,6 +4540,22 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyRelationTokens": {
+      "path": "src/Analysis/Evidence/DependencyModel/Contract/DependencyRelationTokens.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.DependencyModel",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Allow\\AllowAliasExpander"
+        },
+        {
+          "owner": "Analysis.Evidence.CircularDependency",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyOptions"
+        }
+      ]
+    },
     "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyTraversalParticipantInterface": {
       "path": "src/Analysis/Evidence/DependencyModel/Contract/DependencyTraversalParticipantInterface.php",
       "kind": "interface",
@@ -4623,7 +4657,7 @@
         {
           "owner": "Analysis.Evidence.CircularDependency",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyDetector",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CycleEdgeFilter",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\Dependency"
         },
         {
@@ -5453,10 +5487,6 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Distance\\DistanceCollector"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Instability\\InstabilityRule"
         },
         {
           "owner": "Analysis.Evidence.Design",
@@ -10455,6 +10485,22 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\ProjectScope\\RemovedCodeNamespaces": {
+      "path": "src/Analysis/Finding/Contract/ProjectScope/RemovedCodeNamespaces.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Discovery\\RemovedNamespaceSurvey"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Discovery\\ScopeFacts"
+        }
+      ]
+    },
     "Qualimetrix\\Analysis\\Finding\\Contract\\ProjectScope\\SubjectCoverageFacts": {
       "path": "src/Analysis/Finding/Contract/ProjectScope/SubjectCoverageFacts.php",
       "kind": "class",
@@ -10624,6 +10670,10 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Inline\\InlineConfigurator"
+        },
+        {
+          "owner": "Analysis.Evidence.CircularDependency",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyAnalysis"
         }
       ]
     },
@@ -12466,6 +12516,10 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveOptions"
+        },
+        {
+          "owner": "Analysis.Evidence.CircularDependency",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyOptions"
         }
       ]
     },
@@ -18773,6 +18827,27 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Run\\Discovery\\RemovedNamespaceScan": {
+      "path": "src/Analysis/Run/Discovery/RemovedNamespaceScan.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Run\\Discovery\\RemovedNamespaceSurvey": {
+      "path": "src/Analysis/Run/Discovery/RemovedNamespaceSurvey.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Run\\Discovery\\RemovedNamespaceText": {
+      "path": "src/Analysis/Run/Discovery/RemovedNamespaceText.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Run\\Discovery\\RemovedRunPhpEvidence": {
       "path": "src/Analysis/Run/Discovery/RemovedRunPhpEvidence.php",
       "kind": "class",
@@ -20140,6 +20215,14 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Preparation\\RunPreparation"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Discovery\\RemovedNamespaceScan"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Discovery\\RemovedNamespaceSurvey"
         }
       ]
     },
@@ -20999,6 +21082,10 @@
         {
           "owner": "Reporting.GraphProjection",
           "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\NamespaceSelection"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\RunConfiguration"
         }
       ]
     },
@@ -21114,6 +21201,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\GraphExport\\GraphExportInput"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Selection\\AuthoredSelectionDiagnostics"
         }
       ]
     },

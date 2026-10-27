@@ -45,6 +45,7 @@ final readonly class CheckReportRenderer
         ?NamespacePattern $namespace = null,
     ): RenderedCheckReport {
         $projectScope = $this->scopePresenter->project($result, $options);
+        $removedCodeWarning = $this->scopePresenter->removedCodeWarning($result, $options);
         $suppressionOptions = ($format->value === 'suppressed' || $input->getOption('show-suppressed') === true)
             ? $options
             : null;
@@ -53,7 +54,7 @@ final readonly class CheckReportRenderer
             $context = $this->formatter->context($input, $output, $configuration->projectRoot, $format, $scope->scope->reportScope !== null, $namespace);
             $report = $this->assembler->assemble($result, $projection, $context->context, $projectScope, $configurationDiagnostics, $suppressionOptions);
             $formatted = $this->formatter->format($report, $context, $output);
-            return new RenderedCheckReport($formatted, $format->value, $this->exitCodeResolver->resolve($projection->findings, $report->coverage, $exitPolicy));
+            return new RenderedCheckReport($formatted, $format->value, $this->exitCodeResolver->resolve($projection->findings, $report->coverage, $exitPolicy), $removedCodeWarning === null ? [] : [$removedCodeWarning]);
         } finally {
             $this->profiler->stop('reporting');
         }

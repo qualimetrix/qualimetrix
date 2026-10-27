@@ -348,17 +348,21 @@ final class UnmatchedDiscoveryExcludeIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function itReportsADeadRegexWhileWithholdingNamespaceAbsenceInOneRun(): void
+    public function itReportsADeadRegexAndJudgesOnlyTheNamespaceLiteralsRemovedCodeCannotHold(): void
     {
-        $tester = $this->check("exclude:\n  - {subtree: src/Legacy}\n  - {regex: NoSuchPath}\nsuppress_namespaces:\n  - {subtree: Sample\\Gone}\n");
+        $tester = $this->check("exclude:\n  - {subtree: src/Legacy}\n  - {regex: NoSuchPath}\nsuppress_namespaces:\n  - {subtree: Sample\\Gone}\n  - {subtree: Sample\\Legacy}\n");
         $payload = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertIsArray($payload);
 
         $findings = $this->findingsOnChannel($tester);
         self::assertCount(1, $findings);
         self::assertStringContainsString('NoSuchPath', $findings[0]['message']);
-        self::assertContains('suppression.unmatched-namespace', $payload['projectScope']['unjudgedChannels']);
+        self::assertNotContains('suppression.unmatched-namespace', $payload['projectScope']['unjudgedChannels']);
         self::assertContains(
+            ['channel' => 'suppression.unmatched-namespace', 'option' => 'suppress_namespaces', 'pattern' => 'subtree:Sample\\Legacy'],
+            $payload['projectScope']['unjudgedValues'],
+        );
+        self::assertNotContains(
             ['channel' => 'suppression.unmatched-namespace', 'option' => 'suppress_namespaces', 'pattern' => 'subtree:Sample\\Gone'],
             $payload['projectScope']['unjudgedValues'],
         );

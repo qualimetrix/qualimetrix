@@ -1267,6 +1267,196 @@ PHP, 'src/Subject.php');
         self::assertSame('src/Subject.php:6', $dependencies[0]->location->toString());
     }
 
+    #[Test]
+    #[DataProvider('provideAttributeArgumentSites')]
+    public function itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite(string $declaration, bool $anonymousHeader): void
+    {
+        $deps = $this->analyze("<?php\nnamespace App;\n" . $declaration);
+
+        self::assertSame(
+            [
+                ['App\\Host', 'App\\Mark', DependencyType::Attribute],
+                ['App\\Host', 'App\\Repo', DependencyType::AttributeArgument],
+            ],
+            self::edgesTo($deps, ['App\\Mark', 'App\\Repo']),
+        );
+        $byTarget = [];
+        foreach ($deps as $dependency) {
+            $byTarget[$dependency->targetLogical()->toString()] = $dependency;
+        }
+        self::assertSame($anonymousHeader, $byTarget['App\\Mark']->describesNestedAnonymousClass);
+        self::assertFalse($byTarget['App\\Repo']->describesNestedAnonymousClass);
+        self::assertNull($byTarget['App\\Repo']->attributeSite);
+    }
+
+    /** @return iterable<string, array{string, bool}> */
+    public static function provideAttributeArgumentSites(): iterable
+    {
+        yield 'class' => ['#[Mark(Repo::class)] final class Host {}', false];
+        yield 'trait' => ['#[Mark(Repo::class)] trait Host {}', false];
+        yield 'interface' => ['#[Mark(Repo::class)] interface Host {}', false];
+        yield 'enum' => ['#[Mark(Repo::class)] enum Host {}', false];
+        yield 'method' => ['final class Host { #[Mark(Repo::class)] public function m(): void {} }', false];
+        yield 'property' => ['final class Host { #[Mark(Repo::class)] public string $p = \'\'; }', false];
+        yield 'parameter' => ['final class Host { public function m(#[Mark(Repo::class)] string $v): void {} }', false];
+        yield 'promoted parameter' => ['final class Host { public function __construct(#[Mark(Repo::class)] public string $v) {} }', false];
+        yield 'constant' => ['final class Host { #[Mark(Repo::class)] public const C = 1; }', false];
+        yield 'enum case' => ['enum Host { #[Mark(Repo::class)] case One; }', false];
+        yield 'property hook' => ['final class Host { public string $p { #[Mark(Repo::class)] get => \'\'; } }', false];
+        yield 'closure' => ['final class Host { public function m(): void { $f = #[Mark(Repo::class)] function (): void {}; } }', false];
+        yield 'arrow function' => ['final class Host { public function m(): void { $f = #[Mark(Repo::class)] fn() => null; } }', false];
+        yield 'anonymous class' => ['final class Host { public function m(): object { return new #[Mark(Repo::class)] class {}; } }', true];
+        yield 'nested named class' => ['final class Outer { public function m(): void { #[Mark(Repo::class)] final class Host {} } }', false];
+    }
+
+    #[Test]
+    #[DataProvider('provideAttributeArgumentExpressions')]
+    public function itRecordsEveryExpressionShapeInAnAttributeArgumentAsAnAttributeArgument(string $argument): void
+    {
+        $deps = $this->analyze("<?php\nnamespace App;\n#[Mark({$argument})] final class Host {}");
+
+        self::assertSame(
+            [
+                ['App\\Host', 'App\\Mark', DependencyType::Attribute],
+                ['App\\Host', 'App\\Repo', DependencyType::AttributeArgument],
+            ],
+            self::edgesTo($deps, ['App\\Mark', 'App\\Repo']),
+        );
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function provideAttributeArgumentExpressions(): iterable
+    {
+        yield 'class name' => ['Repo::class'];
+        yield 'named argument' => ['repositoryClass: Repo::class'];
+        yield 'class constant' => ['Repo::LIMIT'];
+        yield 'enum case' => ['Repo::Active'];
+        yield 'instantiation' => ['new Repo()'];
+        yield 'array element' => ['[Repo::class]'];
+    }
+
+    /**
+     * The inner attribute closes before `new After()` is visited: a flag
+     * cleared on leaving it would record that edge as an ordinary `new`.
+     */
+    #[Test]
+    public function itRecordsAClosureInAnAttributeArgumentAsAttributeArgumentsExceptForAttributeNames(): void
+    {
+        $deps = $this->analyze(<<<'PHP'
+<?php
+namespace App;
+#[Mark(static function (Param $p): Ret {
+    $f = #[Nested(NestedArg::class)] static fn(): ?Inner => null;
+    try { new After(); } catch (Failure $e) {}
+    return $p instanceof Checked ? Util::call() : null;
+})]
+final class Host { public function m(): void { new Plain(); } }
+PHP);
+
+        self::assertSame(
+            [
+                ['App\\Host', 'App\\Mark', DependencyType::Attribute],
+                ['App\\Host', 'App\\Param', DependencyType::AttributeArgument],
+                ['App\\Host', 'App\\Ret', DependencyType::AttributeArgument],
+                ['App\\Host', 'App\\Nested', DependencyType::Attribute],
+                ['App\\Host', 'App\\Inner', DependencyType::AttributeArgument],
+                ['App\\Host', 'App\\NestedArg', DependencyType::AttributeArgument],
+                ['App\\Host', 'App\\After', DependencyType::AttributeArgument],
+                ['App\\Host', 'App\\Failure', DependencyType::AttributeArgument],
+                ['App\\Host', 'App\\Checked', DependencyType::AttributeArgument],
+                ['App\\Host', 'App\\Util', DependencyType::AttributeArgument],
+                ['App\\Host', 'App\\Plain', DependencyType::New_],
+            ],
+            self::edgesTo($deps),
+        );
+        self::assertSame(AttributeSite::NestedCallable, $deps[3]->attributeSite);
+        self::assertNull($deps[1]->shape);
+        self::assertNull($deps[4]->shape);
+    }
+
+    /**
+     * PHP refuses a class declared there, but the parser accepts it; the
+     * declaration's own edges are its usages, not the enclosing attribute's.
+     */
+    #[Test]
+    public function itStartsANamedClassDeclaredInsideAnAttributeArgumentOutsideAnyAttribute(): void
+    {
+        $deps = $this->analyze(<<<'PHP'
+<?php
+namespace App;
+#[Mark(static function (): void {
+    final class Inner { public function m(): void { new Body(); } }
+    new After();
+})]
+final class Host {}
+PHP);
+
+        self::assertSame(
+            [
+                ['App\\Inner', 'App\\Body', DependencyType::New_],
+                ['App\\Host', 'App\\Mark', DependencyType::Attribute],
+                ['App\\Host', 'App\\After', DependencyType::AttributeArgument],
+            ],
+            self::edgesTo($deps),
+        );
+    }
+
+    #[Test]
+    public function itRecordsNoEdgeForAnAttributeArgumentOfATopLevelFunction(): void
+    {
+        self::assertSame([], $this->analyze("<?php\nnamespace App;\n#[Mark(Repo::class, new Other())] function f(): void {}"));
+    }
+
+    #[Test]
+    public function itKeepsBothKindsWhenATargetIsReferencedInAnAttributeArgumentAndInCode(): void
+    {
+        $deps = $this->analyze(<<<'PHP'
+<?php
+namespace App;
+#[Mark(Repo::class)]
+final class Host { public function m(): Repo { return new Repo(); } }
+PHP);
+
+        self::assertSame(
+            [
+                ['App\\Host', 'App\\Repo', DependencyType::AttributeArgument],
+                ['App\\Host', 'App\\Repo', DependencyType::TypeHint],
+                ['App\\Host', 'App\\Repo', DependencyType::New_],
+            ],
+            self::edgesTo($deps, ['App\\Repo']),
+        );
+        $graph = (new \Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder(new \Qualimetrix\Analysis\Evidence\DependencyModel\UnplacedExternalClassSpelling()))->build(array_values($deps), $this->visitor->classLikeDeclarations())->graph;
+        self::assertSame(
+            [DependencyType::AttributeArgument, DependencyType::TypeHint, DependencyType::New_],
+            array_values(array_map(
+                static fn($dependency): DependencyType => $dependency->type,
+                array_filter(
+                    $graph->getAllDependencies(),
+                    static fn($dependency): bool => $dependency->targetLogical()->toString() === 'App\\Repo',
+                ),
+            )),
+        );
+    }
+
+    /**
+     * @param array<\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency> $deps
+     * @param list<string>|null $targets
+     *
+     * @return list<array{string, string, DependencyType}>
+     */
+    private static function edgesTo(array $deps, ?array $targets = null): array
+    {
+        $edges = [];
+        foreach ($deps as $dependency) {
+            $target = $dependency->targetLogical()->toString();
+            if ($targets === null || \in_array($target, $targets, true)) {
+                $edges[] = [$dependency->sourceLogical()->toString(), $target, $dependency->type];
+            }
+        }
+
+        return $edges;
+    }
+
     /**
      * @return array<\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency>
      */

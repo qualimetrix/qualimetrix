@@ -61,6 +61,7 @@ final class DependencyTest extends TestCase
         yield 'static call is not strong' => [DependencyType::StaticCall, false];
         yield 'type hint is not strong' => [DependencyType::TypeHint, false];
         yield 'attribute is not strong' => [DependencyType::Attribute, false];
+        yield 'attribute argument is not strong' => [DependencyType::AttributeArgument, false];
     }
 
     #[DataProvider('toStringDataProvider')]
@@ -112,6 +113,14 @@ final class DependencyTest extends TestCase
             DependencyType::TraitUse,
             new Location(RelativePath::fromString('src/Model/User.php')),
             'App\Model\User uses trait App\Trait\Timestampable at src/Model/User.php',
+        ];
+
+        yield 'attribute argument dependency' => [
+            'App\Entity\User',
+            'App\Repository\UserRepository',
+            DependencyType::AttributeArgument,
+            new Location(RelativePath::fromString('src/Entity/User.php'), 7),
+            'App\Entity\User uses in attribute argument App\Repository\UserRepository at src/Entity/User.php:7',
         ];
     }
 

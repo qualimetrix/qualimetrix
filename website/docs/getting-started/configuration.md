@@ -169,7 +169,9 @@ Also available as a CLI option: `--suppress-namespace` (merged with YAML config)
 !!! warning "Declared project scope remains exempt"
     `suppress_namespaces` does not suppress `architecture.circular-dependency` cycles or
     declared project-scoped diagnostics. Exemption is declared per channel;
-    the `architecture.` prefix alone grants none.
+    the `architecture.` prefix alone grants none. The per-rule form of the option is
+    refused for such producers; see the note under
+    [Works for every rule](#per-rule-project-scoped-producers).
 
     `architecture.layer-violation` belongs to the source declaration: global
     `suppress_paths` matches the physical dependency site's file, while
@@ -375,12 +377,33 @@ unchanged and stays producer-wide across class and namespace findings.
 
 !!! info "Works for every rule, including the architecture rules"
     `suppress_namespaces`, `suppress_namespace_channels`, and `suppress_paths` are extracted and applied at the framework level for
-    **any** rule name, regardless of whether that rule's Options class declares such a field —
-    this is deliberately not opt-in per rule. That includes `architecture.layer-violation` and
-    `architecture.circular-dependency`. Global exclusions apply to source-owned layer
-    violations; cycles remain project-scoped. The per-rule form explicitly names the producer
-    whose findings should be suppressed. See the architecture rule's
+    rule names regardless of whether that rule's Options class declares such a field —
+    this is deliberately not opt-in per rule. That includes `architecture.layer-violation`.
+    Global exclusions apply to source-owned layer violations. The per-rule form explicitly
+    names the producer whose findings should be suppressed. See the architecture rule's
     [Suppression section](../rules/architecture.md#suppression) for the reasoning.
+
+#### Producers with project-scoped findings only {#per-rule-project-scoped-producers}
+
+A non-empty per-rule `suppress_namespaces` or `suppress_paths` is refused at load
+(exit 3) for a producer whose every channel is project-scoped: its findings are
+about the project, so no path or namespace can address them. The producers are
+`architecture.circular-dependency`, `architecture.layer-declaration`,
+`architecture.unassigned-class`, `baseline.unused-entry`,
+`coupling.unmatched-framework-namespace`, `discovery.unmatched-exclude` and
+`suppression.configuration`. An empty list or `null` is accepted. The same refusal
+applies when the option is written with `--rule-opt`. Producers with at least one
+file-scoped channel (for example `cohesion.lcom`) and computed metrics are not
+affected, even when a computed metric is configured to report only at the project
+level.
+
+The refusal happens in every command that resolves rule options: `check`,
+`directives`, `debug:layer-assignment`, `rules` and `baseline:generate`,
+`baseline:update`, `baseline:cleanup`, `baseline:explain`. `graph:export` does not
+interpret rule options, so it does not refuse them. To accept known findings of
+such a producer, see the [baseline](../usage/baseline.md) page for which findings a
+baseline can accept; for dependency cycles, narrow what counts as an edge with
+`ignore-relations` of [`architecture.circular-dependency`](../rules/architecture.md).
 
 **Suppress paths for a rule:**
 
@@ -937,6 +960,12 @@ owner of a key may still refuse a merged value the policy let through — a
 formula referencing an unknown computed metric, or a layer that allows a layer
 `layers` does not declare.
 
+The table lists `suppress-namespaces` and `suppress-paths` under every rule, but for
+producers with project-scoped findings only they accept just an empty list or
+`null`; see [Producers with project-scoped findings only](#per-rule-project-scoped-producers).
+The same holds for `suppress-namespace-channels`, whose entries must name a channel that
+reports at the namespace level.
+
 <!-- generated:configuration-merge-table:begin (php scripts/generate-configuration-merge-table.php) -->
 
 | Key                                                                               | Value                                                                               | Across layers                                                                                                                                                                                                      | Written `~`                                                                              | Written empty (`{}`, `[]`)                                                                      |
@@ -1011,6 +1040,7 @@ formula referencing an unknown computed metric, or a layer that allows a layer
 | `rules.annotation.directive.suppress-paths`                                       | list (item: map)                                                                    | The last layer that writes the list replaces it whole; an empty list replaces too.                                                                                                                                 | Not written: the layer below stands. An item written `~` is refused.                     | Replaces the list below with an empty one.                                                      |
 | `rules.architecture.circular-dependency`                                          | map                                                                                 | Merged key by key; a written empty map changes nothing.                                                                                                                                                            | The name is judged; the body stays with the layer below.                                 | Changes nothing.                                                                                |
 | `rules.architecture.circular-dependency.direct-as-error`                          | boolean                                                                             | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |
+| `rules.architecture.circular-dependency.ignore-relations`                         | list (item: string)                                                                 | The last layer that writes the list replaces it whole; an empty list replaces too.                                                                                                                                 | Not written: the layer below stands. An item written `~` is refused.                     | Replaces the list below with an empty one.                                                      |
 | `rules.architecture.circular-dependency.max-cycle-size`                           | integer                                                                             | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |
 | `rules.architecture.circular-dependency.enabled`                                  | boolean                                                                             | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |
 | `rules.architecture.circular-dependency.suppress-namespace-channels`              | map by name: a name judged by the section's grammar in the layer that wrote it      | Merged entry by entry, keyed by name; each entry merges by its own policy.                                                                                                                                         | Not written: the layer below stands.                                                     | Changes nothing.                                                                                |
@@ -1275,7 +1305,7 @@ formula referencing an unknown computed metric, or a layer that allows a layer
 | `rules.coupling.instability.namespace.max-error`                                  | number                                                                              | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |
 | `rules.coupling.instability.namespace.max-warning`                                | number                                                                              | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |
 | `rules.coupling.instability.namespace.min-afferent`                               | integer                                                                             | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |
-| `rules.coupling.instability.namespace.min-class-count`                            | integer                                                                             | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |
+| `rules.coupling.instability.namespace.min-type-count`                             | integer                                                                             | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |
 | `rules.coupling.instability.namespace.threshold`                                  | number                                                                              | Shorthand for `max-warning` and `max-error`: expanded in the layer that wrote it, before any merge; each key then merges on its own. Writing it beside one of them in the same layer is refused.                   | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |
 | `rules.coupling.instability.enabled`                                              | boolean                                                                             | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |
 | `rules.coupling.instability.suppress-namespace-channels`                          | map by name: a name judged by the section's grammar in the layer that wrote it      | Merged entry by entry, keyed by name; each entry merges by its own policy.                                                                                                                                         | Not written: the layer below stands.                                                     | Changes nothing.                                                                                |
@@ -1647,9 +1677,9 @@ unnoticed:
   each key's own declared shape, not of its rule or family as a whole: keys
   living right beside an accepting one stay whole numbers and refuse a
   fraction, because they count something instead of measuring it —
-  `coupling.distance.min-class-count`, `coupling.instability.min-afferent`
-  (at every level slot) and `coupling.instability.namespace.min-class-count`
-  are each a class or file count, not a ratio.
+  `coupling.distance.min-type-count`, `coupling.instability.min-afferent`
+  (at every level slot) and `coupling.instability.namespace.min-type-count`
+  are each a type or file count, not a ratio.
 - **A threshold or a count is never negative.** Every numeric option under
   `rules:` is a count or a boundary on a measurement that cannot be negative,
   and a negative boundary does not tighten a rule, it inverts it: `warning: -1`

@@ -26,7 +26,11 @@ use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReason;
  * claims were judged. Namespace absence (Q1) closes for missing paths,
  * unknown universe, generated files or excluded PHP; exclude selectors (Q2)
  * close only for missing paths or unknown universe. Excluded and generated
- * code cannot by themselves close Q2.
+ * code cannot by themselves close Q2. Generated files and excluded PHP close
+ * Q1 for every namespace-claim channel except `suppression.unmatched-namespace`,
+ * which names itself unjudged only when none of its configured values was
+ * judged: a literal selector the removed code cannot have declared still is.
+ * A caller that computes no values names the channel unjudged.
  *
  * **A run can judge one configured value while withholding another in the
  * same channel.** A literal path under removed code or a namespace with no
@@ -87,21 +91,12 @@ final readonly class ReportProjectScope
     public static function measured(ProjectScopeMeasurement $measurement, array $unjudgedValues, array $judgedValueChannels): self
     {
         $judgement = $measurement->judgement();
-        $withheld = [];
+        $withheld = array_diff([
+            ...array_column($unjudgedValues, 'channel'),
+            ...($judgement->judgesExcludeSelectors() ? [] : [...ProjectScopeChannels::VALUE_CHANNELS, ProjectScopeChannels::WALK_CHANNEL]),
+        ], $judgedValueChannels);
         if (!$judgement->judgesNamespaceClaims()) {
-            $withheld = ProjectScopeChannels::NAMESPACE_CLAIM_CHANNELS;
-        }
-        foreach ($unjudgedValues as $value) {
-            if (!\in_array($value['channel'], $judgedValueChannels, true)) {
-                $withheld[] = $value['channel'];
-            }
-        }
-        if (!$judgement->judgesExcludeSelectors()) {
-            foreach ([...ProjectScopeChannels::VALUE_CHANNELS, ProjectScopeChannels::WALK_CHANNEL] as $channel) {
-                if (!\in_array($channel, $judgedValueChannels, true)) {
-                    $withheld[] = $channel;
-                }
-            }
+            $withheld = [...$withheld, ...self::withheldNamespaceClaimChannels($judgedValueChannels)];
         }
         $withheld = array_values(array_unique($withheld));
         sort($withheld);
@@ -113,6 +108,25 @@ final readonly class ReportProjectScope
             $unjudgedValues,
             $measurement->reasons(),
         );
+    }
+
+    /**
+     * Only `suppression.unmatched-namespace` narrows to its literal values
+     * under removed code; a caller that computed no values has no evidence of
+     * a judged one and so still names it.
+     *
+     * @param list<string> $judgedValueChannels
+     *
+     * @return list<string>
+     */
+    private static function withheldNamespaceClaimChannels(array $judgedValueChannels): array
+    {
+        $judgedLiterally = \in_array(ProjectScopeChannels::UNMATCHED_NAMESPACE_SUPPRESSION, $judgedValueChannels, true);
+
+        return array_values(array_filter(
+            ProjectScopeChannels::NAMESPACE_CLAIM_CHANNELS,
+            static fn(string $channel): bool => !$judgedLiterally || $channel !== ProjectScopeChannels::UNMATCHED_NAMESPACE_SUPPRESSION,
+        ));
     }
 
     /**

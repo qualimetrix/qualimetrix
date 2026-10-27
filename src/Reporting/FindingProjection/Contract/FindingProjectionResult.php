@@ -51,7 +51,6 @@ final readonly class FindingProjectionResult
      *                                     form; `null` when no baseline was loaded, never used to fail
      *                                     the run — only to report a mismatch (ADR 0017)
      *
-      * @qmx-threshold code-smell.long-parameter-list 11 -- Published findings, removed-stage evidence and baseline outcomes must retain one projection and its measured population.
       * @qmx-threshold code-smell.constructor-overinjection 11 -- Published findings, removed-stage evidence and baseline outcomes must retain one projection and its measured population.
      */
     public function __construct(

@@ -45,11 +45,24 @@ final class DeclarationNumbering
 
     public function forCallable(?string $namespace, ?string $class, string $member, CallableKind $kind, int $startFilePos): DeclarationOrdinal
     {
-        $logical = $class !== null && \in_array($kind, [CallableKind::Method, CallableKind::PropertyHook], true)
+        return $this->ordinalOf(DeclarationKey::forLogical(self::callablePath($namespace, $class, $member, $kind)), $startFilePos);
+    }
+
+    /**
+     * The logical path every projection of a callable is read from: its
+     * numbering key, its stored declaration, its wire subject and the key of
+     * the per-visitor metric maps.
+     *
+     * Only a named member belongs to its class. An anonymous callable stays a
+     * function-shaped path even when it is declared inside a class: its
+     * enclosing names travel in its minted member, so its identity says where
+     * it is without making it a member of anything.
+     */
+    public static function callablePath(?string $namespace, ?string $class, string $member, CallableKind $kind): SymbolPath
+    {
+        return $class !== null && \in_array($kind, [CallableKind::Method, CallableKind::PropertyHook], true)
             ? SymbolPath::forMethod($namespace ?? '', $class, $member)
             : SymbolPath::forGlobalFunction($namespace ?? '', $member);
-
-        return $this->ordinalOf(DeclarationKey::forLogical($logical), $startFilePos);
     }
 
     private function ordinalOf(DeclarationKey $key, int $startFilePos): DeclarationOrdinal

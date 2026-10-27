@@ -168,7 +168,9 @@ suppress_namespaces:
 !!! warning "Объявленный project scope сохраняется"
     `suppress_namespaces` не подавляет циклы `architecture.circular-dependency` и объявленные
     project-scoped diagnostics. Исключение задаётся для каждого канала отдельно;
-    префикс `architecture.` сам по себе его не даёт.
+    префикс `architecture.` сам по себе его не даёт. Форма этой опции на уровне правила для
+    таких producer отказывается; см. примечание под
+    [«Работает для любого правила»](#per-rule-project-scoped-producers).
 
     `architecture.layer-violation` относится к объявлению-источнику: глобальный
     `suppress_paths` сравнивается с файлом физического dependency site, а
@@ -380,12 +382,31 @@ Namespace. Нарушения уровня класса `health.cohesion` в т�
 
 !!! info "Работает для любого правила, включая архитектурные"
     `suppress_namespaces`, `suppress_namespace_channels` и `suppress_paths` извлекаются и применяются на уровне фреймворка для
-    **любого** имени правила, независимо от того, объявляет ли класс Options этого правила такое
+    имён правил независимо от того, объявляет ли класс Options этого правила такое
     поле — это намеренно не opt-in для каждого правила по отдельности. Это касается и
-    `architecture.layer-violation`, и `architecture.circular-dependency`. Глобальные
-    исключения применяются к source-owned нарушениям слоёв; циклы остаются project-scoped.
-    Форма на уровне правила явно называет producer, чьи находки нужно подавить. См. раздел [«Подавление нарушений»](../rules/architecture.ru.md#подавление-нарушений)
+    `architecture.layer-violation`. Глобальные исключения применяются к source-owned
+    нарушениям слоёв. Форма на уровне правила явно называет producer, чьи находки нужно подавить. См. раздел [«Подавление нарушений»](../rules/architecture.ru.md#подавление-нарушений)
     архитектурного правила — там объяснена логика.
+
+#### Producer только с project-scoped находками {#per-rule-project-scoped-producers}
+
+Непустой `suppress_namespaces` или `suppress_paths` на уровне правила отказывается при
+загрузке (exit 3) у producer, все каналы которого project-scoped: его находки относятся
+к проекту, и ни путь, ни неймспейс их не адресует. Это `architecture.circular-dependency`,
+`architecture.layer-declaration`, `architecture.unassigned-class`, `baseline.unused-entry`,
+`coupling.unmatched-framework-namespace`, `discovery.unmatched-exclude` и
+`suppression.configuration`. Пустой список и `null` принимаются. Тот же отказ действует,
+когда опция записана через `--rule-opt`. Producer хотя бы с одним file-scoped каналом
+(например, `cohesion.lcom`) и вычисляемые метрики не затрагиваются, даже если вычисляемая
+метрика настроена отчитываться только на уровне проекта.
+
+Отказ происходит в каждой команде, разрешающей опции правил: `check`, `directives`,
+`debug:layer-assignment`, `rules`, `baseline:generate`, `baseline:update`,
+`baseline:cleanup`, `baseline:explain`. `graph:export` опции правил не интерпретирует,
+поэтому не отказывает. Какие находки может принять baseline — см. страницу
+[baseline](../usage/baseline.ru.md); для циклов зависимостей — сузить, что считается
+ребром, опцией `ignore-relations` правила
+[`architecture.circular-dependency`](../rules/architecture.ru.md).
 
 **Подавление путей для правила:**
 
@@ -949,6 +970,12 @@ Warning: "only_rules" is written empty in configuration file "qmx.yaml" and repl
 формулу со ссылкой на неизвестную вычисляемую метрику или разрешение для слоя,
 которого `layers` не объявляет.
 
+Таблица перечисляет `suppress-namespaces` и `suppress-paths` под каждым правилом, но у
+producer только с project-scoped находками они принимают лишь пустой список или
+`null`; см. [Producer только с project-scoped находками](#per-rule-project-scoped-producers).
+То же верно для `suppress-namespace-channels`: его записи должны называть канал,
+который отчитывается на уровне неймспейса.
+
 <!-- generated:configuration-merge-table:begin (php scripts/generate-configuration-merge-table.php) -->
 
 | Ключ                                                                              | Значение                                                                         | Между слоями                                                                                                                                                                                                 | Записано `~`                                                         | Записано пустым (`{}`, `[]`)                                                         |
@@ -1023,6 +1050,7 @@ Warning: "only_rules" is written empty in configuration file "qmx.yaml" and repl
 | `rules.annotation.directive.suppress-paths`                                       | список (элемент: карта)                                                          | Последний записавший слой заменяет список целиком; пустой список тоже заменяет.                                                                                                                              | Не записано: остаётся значение нижнего слоя. Элемент `~` — отказ.    | Заменяет нижний список пустым.                                                       |
 | `rules.architecture.circular-dependency`                                          | карта                                                                            | Сливается по ключам; записанная пустая карта ничего не меняет.                                                                                                                                               | Имя проверяется; тело остаётся за нижним слоем.                      | Ничего не меняет.                                                                    |
 | `rules.architecture.circular-dependency.direct-as-error`                          | boolean                                                                          | Побеждает последний слой, записавший значение.                                                                                                                                                               | Не записано: остаётся значение нижнего слоя.                         | Отказ: ожидается скаляр.                                                             |
+| `rules.architecture.circular-dependency.ignore-relations`                         | список (элемент: строка)                                                         | Последний записавший слой заменяет список целиком; пустой список тоже заменяет.                                                                                                                              | Не записано: остаётся значение нижнего слоя. Элемент `~` — отказ.    | Заменяет нижний список пустым.                                                       |
 | `rules.architecture.circular-dependency.max-cycle-size`                           | целое число                                                                      | Побеждает последний слой, записавший значение.                                                                                                                                                               | Не записано: остаётся значение нижнего слоя.                         | Отказ: ожидается скаляр.                                                             |
 | `rules.architecture.circular-dependency.enabled`                                  | boolean                                                                          | Побеждает последний слой, записавший значение.                                                                                                                                                               | Не записано: остаётся значение нижнего слоя.                         | Отказ: ожидается скаляр.                                                             |
 | `rules.architecture.circular-dependency.suppress-namespace-channels`              | карта по имени: имя проверяется по грамматике секции в слое, который его записал | Сливается запись за записью по имени; каждая запись — по своей политике.                                                                                                                                     | Не записано: остаётся значение нижнего слоя.                         | Ничего не меняет.                                                                    |
@@ -1287,7 +1315,7 @@ Warning: "only_rules" is written empty in configuration file "qmx.yaml" and repl
 | `rules.coupling.instability.namespace.max-error`                                  | число                                                                            | Побеждает последний слой, записавший значение.                                                                                                                                                               | Не записано: остаётся значение нижнего слоя.                         | Отказ: ожидается скаляр.                                                             |
 | `rules.coupling.instability.namespace.max-warning`                                | число                                                                            | Побеждает последний слой, записавший значение.                                                                                                                                                               | Не записано: остаётся значение нижнего слоя.                         | Отказ: ожидается скаляр.                                                             |
 | `rules.coupling.instability.namespace.min-afferent`                               | целое число                                                                      | Побеждает последний слой, записавший значение.                                                                                                                                                               | Не записано: остаётся значение нижнего слоя.                         | Отказ: ожидается скаляр.                                                             |
-| `rules.coupling.instability.namespace.min-class-count`                            | целое число                                                                      | Побеждает последний слой, записавший значение.                                                                                                                                                               | Не записано: остаётся значение нижнего слоя.                         | Отказ: ожидается скаляр.                                                             |
+| `rules.coupling.instability.namespace.min-type-count`                             | целое число                                                                      | Побеждает последний слой, записавший значение.                                                                                                                                                               | Не записано: остаётся значение нижнего слоя.                         | Отказ: ожидается скаляр.                                                             |
 | `rules.coupling.instability.namespace.threshold`                                  | число                                                                            | Сокращение для `max-warning` и `max-error`: раскрывается в слое, который его записал, до слияния; дальше каждый ключ сливается сам. Сокращение рядом с одним из них в том же слое — отказ.                   | Не записано: остаётся значение нижнего слоя.                         | Отказ: ожидается скаляр.                                                             |
 | `rules.coupling.instability.enabled`                                              | boolean                                                                          | Побеждает последний слой, записавший значение.                                                                                                                                                               | Не записано: остаётся значение нижнего слоя.                         | Отказ: ожидается скаляр.                                                             |
 | `rules.coupling.instability.suppress-namespace-channels`                          | карта по имени: имя проверяется по грамматике секции в слое, который его записал | Сливается запись за записью по имени; каждая запись — по своей политике.                                                                                                                                     | Не записано: остаётся значение нижнего слоя.                         | Ничего не меняет.                                                                    |
@@ -1658,9 +1686,9 @@ https://qualimetrix.dev/llms.txt`); здесь она опущена, чтобы
   TCC на `design.god-class.tcc-threshold`. Это свойство объявленной формы
   КОНКРЕТНОГО ключа, а не его правила или семейства целиком: ключи,
   стоящие рядом с принимающим, остаются целыми и отклоняют дробь, потому что
-  считают что-то, а не измеряют, — `coupling.distance.min-class-count`,
+  считают что-то, а не измеряют, — `coupling.distance.min-type-count`,
   `coupling.instability.min-afferent` (на каждом слоте уровня) и
-  `coupling.instability.namespace.min-class-count` каждый раз считают классы
+  `coupling.instability.namespace.min-type-count` каждый раз считают типы
   или файлы, а не отношение.
 - **Порог или счётчик не бывает отрицательным.** Каждая числовая опция под
   `rules:` — это счётчик или граница измерения, которое не может быть

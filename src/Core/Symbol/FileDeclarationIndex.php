@@ -9,9 +9,12 @@ use InvalidArgumentException;
 /**
  * Sole owner of declaration numbering for one file of one traversal.
  *
- * The rank of a position never changes when a later position is registered, so
- * a producer may ask while the traversal is still running and gets the same
- * answer it would get afterwards.
+ * A rank is final only once every position of its key is registered: a
+ * position registered later but lying earlier in the file raises the rank of
+ * everything after it. The parser does meet positions out of source order — an
+ * anonymous class body before its constructor arguments — so a producer must
+ * ask only after the whole file has been registered, which the registrar does
+ * in a walk of its own before the shared traversal starts.
  *
  * An unregistered pair is answered, not rejected: reaching it means the asking
  * producer and the registrar tracked lexical context differently, which costs

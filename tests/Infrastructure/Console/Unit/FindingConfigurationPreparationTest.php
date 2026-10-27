@@ -19,7 +19,6 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetri
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleEnablementResolver;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Console\RunSetup\Finding\FindingConfigurationPreparation;
@@ -68,7 +67,7 @@ final class FindingConfigurationPreparationTest extends TestCase
             $document = ResolvedOptionsFixture::document([
                 ['source' => 'config', 'values' => ['only_rules' => [$selector]]],
             ], AbsolutePath::fromString('/project'), []);
-            $stated = (new RuleEnablementResolver())->decide($document->resolved(), $snapshot);
+            $stated = (ResolvedOptionsFixture::resolver())->decide($document->resolved(), $snapshot);
             self::assertSame([$selector], $stated->filter()?->selectors);
             self::assertSame(
                 ['health.complexity'],
@@ -180,7 +179,7 @@ final class FindingConfigurationPreparationTest extends TestCase
 
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('is written in the retired channel-pair form');
-        (new RuleEnablementResolver())->decide($document->resolved(), $channels);
+        (ResolvedOptionsFixture::resolver())->decide($document->resolved(), $channels);
     }
 
     /**
@@ -294,7 +293,7 @@ final class FindingConfigurationPreparationTest extends TestCase
             $static,
             new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
             self::createStub(ComputedMetricConfiguratorInterface::class),
-            new RuleEnablementResolver(),
+            ResolvedOptionsFixture::resolver(),
             self::createStub(\Qualimetrix\Analysis\Policy\Architecture\Contract\UnassignedClassLayerRequirementInterface::class),
         );
         $disabled = ['health.complexity:class'];
@@ -403,7 +402,7 @@ final class FindingConfigurationPreparationTest extends TestCase
             $static,
             new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
             self::createStub(ComputedMetricConfiguratorInterface::class),
-            new RuleEnablementResolver(),
+            ResolvedOptionsFixture::resolver(),
             self::createStub(\Qualimetrix\Analysis\Policy\Architecture\Contract\UnassignedClassLayerRequirementInterface::class),
         );
     }
@@ -428,7 +427,7 @@ final class FindingConfigurationPreparationTest extends TestCase
             $channels,
             new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild($execution),
             $computed,
-            new RuleEnablementResolver(),
+            ResolvedOptionsFixture::resolver(),
             self::createStub(\Qualimetrix\Analysis\Policy\Architecture\Contract\UnassignedClassLayerRequirementInterface::class),
         ))->resolve($document);
         $snapshot = $resolved->channels ?? throw new LogicException('Rule channels must be decided before validation.');

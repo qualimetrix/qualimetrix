@@ -33,7 +33,6 @@ final class CheckResponse
 
     /**
      * @qmx-threshold code-smell.constructor-overinjection 10 -- This invocation-local response holds input, output, target ownership and completed delivery operations for one publication lifetime.
-     * @qmx-threshold code-smell.long-parameter-list 10 -- Independent invocation facts and delivery operations must remain explicit rather than being bundled into a parameter bag.
      */
     public function __construct(
         private readonly InputInterface $input,

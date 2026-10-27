@@ -48,7 +48,6 @@ final readonly class ExcludeSpec
      *                                  any entry is a non-string /
      *                                  empty-string.
      *
-      * @qmx-threshold code-smell.long-parameter-list 9 -- All authored exclusion criteria and their matching mode form one exclusion predicate; separate carriers would divide its validation boundary.
       * @qmx-threshold code-smell.constructor-overinjection 9 -- All authored exclusion criteria and their matching mode form one exclusion predicate; separate carriers would divide its validation boundary.
      */
     public function __construct(

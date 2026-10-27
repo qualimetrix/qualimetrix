@@ -46,6 +46,7 @@ use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Channel\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
@@ -197,6 +198,11 @@ final class ChannelCoverageTest extends TestCase
             ),
         ];
 
+        $ruleConfiguration = self::createStub(RuleConfigurationInterface::class);
+        $ruleConfiguration->method('resolvedOptions')->willReturn(new ResolvedRuleOptions(
+            [CircularDependencyRule::NAME => new CircularDependencyOptions()],
+            [],
+        ));
         $analysis = new CircularDependencyAnalysis(new class ($cycles) extends CircularDependencyDetector {
             /** @param list<Cycle> $cycles */
             public function __construct(private readonly array $cycles) {}
@@ -205,7 +211,7 @@ final class ChannelCoverageTest extends TestCase
             {
                 return $this->cycles;
             }
-        });
+        }, $ruleConfiguration);
         $analysis->prepare(self::createStub(DependencyGraphInterface::class));
         $rule = new CircularDependencyRule(new CircularDependencyOptions(), $analysis);
 

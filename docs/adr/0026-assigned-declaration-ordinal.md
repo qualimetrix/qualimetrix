@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-20
 
-**Status:** Accepted
+**Status:** Accepted; the closure parts of items 1 and 2 and of the Context are amended by [ADR 0138](0138-closures-are-named-under-their-enclosing-declaration.md)
 
 **Supersedes:** [ADR 0021](0021-declaration-scoped-callable-identity-and-dependency-projections.md)
 in one part — the `startFilePos` component of `DeclarationPath` and the sentence

@@ -1575,6 +1575,56 @@ PHP;
     }
 
     #[Test]
+    public function itDropsValidatorsOnlyTheConstructorCallsFromLcom(): void
+    {
+        $metrics = $this->collectMetrics(self::constructorValidators(''));
+
+        // v1..v4 touch no property and are reached only from the constructor:
+        // they leave the graph with it, instead of forming four components.
+        self::assertSame(1, $metrics->get('cohesion.lcom:App\C'));
+    }
+
+    #[Test]
+    public function itKeepsAConstructorValidatorThatAnotherMethodAlsoCalls(): void
+    {
+        $metrics = $this->collectMetrics(self::constructorValidators('public function revalidate(array $c): void { $this->v1($c); }'));
+
+        // v1 stays through revalidate(), which shares no property: {x, y, z} + {revalidate, v1}.
+        self::assertSame(2, $metrics->get('cohesion.lcom:App\C'));
+    }
+
+    private static function constructorValidators(string $extraMethod): string
+    {
+        return <<<PHP
+<?php
+namespace App;
+
+final class C
+{
+    private array \$a;
+    private array \$b;
+
+    public function __construct(array \$cfg)
+    {
+        \$this->v1(\$cfg); \$this->v2(\$cfg); \$this->v3(\$cfg); \$this->v4(\$cfg);
+        \$this->a = \$cfg['a'];
+        \$this->b = \$cfg['b'];
+    }
+
+    private function v1(array \$c): void { if (!isset(\$c['a'])) { throw new \\RuntimeException('a'); } }
+    private function v2(array \$c): void { if (!isset(\$c['b'])) { throw new \\RuntimeException('b'); } }
+    private function v3(array \$c): void { if (!isset(\$c['c'])) { throw new \\RuntimeException('c'); } }
+    private function v4(array \$c): void { if (!isset(\$c['d'])) { throw new \\RuntimeException('d'); } }
+
+    public function x(): array { return \$this->a; }
+    public function y(): array { return \$this->b; }
+    public function z(): int { return \\count(\$this->a) + \\count(\$this->b); }
+    {$extraMethod}
+}
+PHP;
+    }
+
+    #[Test]
     public function itDeliberatelyDoesNotProvideCallableMetrics(): void
     {
         self::assertNotContains(\Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface::class, class_implements($this->collector));
@@ -1604,7 +1654,7 @@ PHP);
         self::assertInstanceOf(LcomVisitor::class, $visitor);
         $classes = array_values($visitor->getClassData());
         self::assertCount(2, $classes);
-        self::assertSame([1, 2], array_map(static fn(LcomClassData $class): int => $class->calculateLcom([]), $classes));
+        self::assertSame([1, 2], array_map(static fn(LcomClassData $class): int => $class->calculateLcom([], 0), $classes));
     }
 
     private function collectMetrics(string $code): MetricBag
@@ -1629,8 +1679,8 @@ PHP);
             self::assertInstanceOf(MetricBag::class, $wire);
             $data = CohesionFactWire::lcomFromRows($wire->entries(LcomCollector::FACTS));
             $name = $data->namespace !== null && $data->namespace !== '' ? $data->namespace . '\\' . $data->className : $data->className;
-            if ($data->lcomMethodCount($this->configuration->excludedMethods) > 0) {
-                $metrics = $metrics->with('cohesion.lcom:' . $name, $data->calculateLcom($this->configuration->excludedMethods));
+            if ($data->lcomMethodCount($this->configuration->excludedMethods, 0) > 0) {
+                $metrics = $metrics->with('cohesion.lcom:' . $name, $data->calculateLcom($this->configuration->excludedMethods, 0));
             }
         }
 

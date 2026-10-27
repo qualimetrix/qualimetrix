@@ -24,6 +24,14 @@ use Symfony\Component\Console\Input\InputOption;
  * analysis without it leaves the caller no way to silence the bar, and
  * {@see \Qualimetrix\Infrastructure\Console\RunSetup\RuntimeConfigurator} reads the
  * flag off the input by name for every command alike.
+ *
+ * The execution options (`--no-cache`, `--cache-dir`, `--workers`, `--memory-limit`)
+ * live here too, as {@see addCacheOptions()}, {@see addNoCacheOption()},
+ * {@see addWorkersOption()} and {@see addMemoryLimitOption()}: a command that
+ * accepts one of them accepts the spelling and meaning `check` gives it.
+ * `--cache-dir` is a separate method because `graph:export` and `baseline:*`
+ * take the switch without the directory: their preflight profiles do not map
+ * a cache directory.
  */
 final class AnalysisReportCommandDefinition
 {
@@ -99,5 +107,47 @@ final class AnalysisReportCommandDefinition
                 'Rule-specific option (format: rule-name:option=value)',
                 [],
             );
+    }
+
+    /** `--no-cache` and `--cache-dir`. */
+    public static function addCacheOptions(Command $command): Command
+    {
+        return self::addNoCacheOption($command)
+            ->addOption(
+                'cache-dir',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Writable private cache directory outside the project root (default: user cache directory)',
+            );
+    }
+
+    public static function addNoCacheOption(Command $command): Command
+    {
+        return $command->addOption(
+            'no-cache',
+            null,
+            InputOption::VALUE_NONE,
+            'Disable caching',
+        );
+    }
+
+    public static function addWorkersOption(Command $command): Command
+    {
+        return $command->addOption(
+            'workers',
+            'w',
+            InputOption::VALUE_REQUIRED,
+            'Number of parallel workers (0 = disable parallel, default: auto-detect)',
+        );
+    }
+
+    public static function addMemoryLimitOption(Command $command): Command
+    {
+        return $command->addOption(
+            'memory-limit',
+            null,
+            InputOption::VALUE_REQUIRED,
+            'PHP memory limit (e.g., 512M, 1G, -1 for unlimited)',
+        );
     }
 }

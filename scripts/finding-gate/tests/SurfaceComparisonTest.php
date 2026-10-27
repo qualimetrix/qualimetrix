@@ -87,6 +87,8 @@ final class SurfaceComparisonTest extends TestCase
             ['baseline-file', '{"version":14,"entries":[]}', 'whole-invocation', '0', ''],
             ['baseline-file', '{"version":14,"entries":{"subject":[]}}', 'records', '0', ''],
             ['baseline-file', '{"version":14,"entries":{"subject":{}}}', 'whole-invocation', '0', ''],
+            ['baseline-file', '{"version":15,"entries":{}}', 'records', '0', ''],
+            ['baseline-file', '{"version":16,"entries":{}}', 'whole-invocation', '0', ''],
             ['format:summary', 'No findings', 'whole-invocation', '0', ''],
             ['format:text', 'No findings', 'whole-invocation', '0', ''],
             ['format:text-detail', 'No findings', 'whole-invocation', '0', ''],

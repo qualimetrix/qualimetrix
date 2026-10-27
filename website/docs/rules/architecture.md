@@ -89,11 +89,12 @@ Cycle *identity* -- the violation's symbol path and the baseline key -- is unaff
 
 ### Options
 
-| Option          | Default | Description                                         |
-| --------------- | ------- | --------------------------------------------------- |
-| `enabled`       | `true`  | Enable or disable this rule                         |
-| `maxCycleSize`  | `0`     | Maximum cycle size to report (0 = report all sizes) |
-| `directAsError` | `true`  | Treat direct cycles (size 2) as errors              |
+| Option            | Default | Description                                                            |
+| ----------------- | ------- | ---------------------------------------------------------------------- |
+| `enabled`         | `true`  | Enable or disable this rule                                            |
+| `maxCycleSize`    | `0`     | Maximum cycle size to report (0 = report all sizes)                    |
+| `directAsError`   | `true`  | Treat direct cycles (size 2) as errors                                 |
+| `ignoreRelations` | `[]`    | Dependency kinds or aliases whose edges do not form cycles (see below) |
 
 ### Configuration example
 
@@ -103,7 +104,24 @@ rules:
   architecture.circular-dependency:
     maxCycleSize: 5        # ignore very large cycles
     directAsError: true    # direct cycles are errors
+    ignoreRelations: [attribute_argument]   # references inside attribute arguments do not form cycles
 ```
+
+### Ignoring dependency kinds
+
+`ignoreRelations` takes the same tokens as layer `relations:` — a dependency kind (`attribute_argument`, `new`, ...) or an alias (`inheritance`, `static_access`, `type_reference`, `runtime_check`). Edges of the listed kinds are left out when cycles are searched. The YAML keys `ignore_relations` and `ignore-relations` are accepted as well; on the command line:
+
+```bash
+vendor/bin/qmx check src/ --rule-opt='architecture.circular-dependency:ignore-relations=[attribute_argument]'
+```
+
+The typical use is an entity that names its repository in an attribute (`#[ORM\Entity(repositoryClass: UserRepository::class)]`) while the repository depends on the entity: that loop is a mapping, not runtime coupling, and `attribute_argument` removes it from the cycle report.
+
+- The default `[]` is no filter; output is unchanged.
+- The value must be a list — a scalar is refused ("must be a list"). An unknown token is refused by name (exit code 3).
+- A pair of classes stays a cycle edge if **any** of its recorded dependencies is admitted. An entity that references the repository both in an attribute and in its code keeps the cycle.
+- The filter decides which cycles exist, not how a remaining cycle is identified: its representative and baseline key still depend on its members only. The displayed path uses admitted dependencies only.
+- `maxCycleSize` and `directAsError` judge the filtered cycles. A three-class component can become a direct cycle once an edge is ignored, and is then reported as an error.
 
 Cycle findings are currently project-scoped and remain visible in Git reports,
 including `--report-strict`, regardless of which files changed.
@@ -665,7 +683,7 @@ new,
 static_call, static_property_fetch, class_const_fetch,
 type_hint, property_type, constant_type,
 catch, instanceof,
-attribute
+attribute, attribute_argument
 ```
 
 **Aliases** are configuration-layer shorthand that expand to constituent direct values:
@@ -677,7 +695,7 @@ attribute
 | `type_reference` | `type_hint`, `property_type`, `constant_type`               |
 | `runtime_check`  | `catch`, `instanceof`                                       |
 
-`attribute` stands alone — there is no group it belongs to. Aliases and direct values can be mixed in the same `relations:` list and are deduplicated after expansion. Direct values are validated against `DependencyType::cases()` reflectively, so adding a new dependency kind to the collector automatically becomes accepted in YAML without a release.
+`attribute` and `attribute_argument` stand alone — no group contains them. Aliases and direct values can be mixed in the same `relations:` list and are deduplicated after expansion. Direct values are validated against `DependencyType::cases()` reflectively, so adding a new dependency kind to the collector automatically becomes accepted in YAML without a release.
 
 An anonymous class nested inside a named class contributes its `extends`,
 `implements`, `trait_use`, and `attribute` edges to `relations:` filtering
@@ -700,6 +718,12 @@ parameter is `property_type`, and a typed constant is `constant_type`. Graph JSO
 to its sorted observed shape names (`single`, `nullable`, `union`,
 `intersection`, `dnf`), for example `{"property_type": ["nullable"],
 "type_hint": ["union"]}`. An edge with no type-shape facts has `shape: {}`. `union_type` and `intersection_type` are no longer accepted in `relations:`.
+
+#### Attribute arguments have their own relation kind
+
+Everything referenced inside an attribute's **arguments** — `Repo::class`, `Foo::BAR`, an enum case, `new Foo()`, and the signature and body of a closure or arrow function there (PHP 8.5) — is recorded as `attribute_argument` ("uses in attribute argument") instead of `new`, `class_const_fetch` and the like. The attribute's own name keeps `attribute`; `extends`, `implements` and `trait_use` keep their kinds; type edges inside arguments carry no `shape`. Coupling values (CBO, Ce/Ca, instability, ClassRank, namespace coupling) are unchanged: they count distinct targets, not edges.
+
+`attribute_argument` joins no alias. A `relations:` list that used to admit such a reference through `static_access`, `new` or another alias now reports `architecture.layer-violation`, for example `Layer "domain" must not depend on layer "infra" (App\Domain\E → App\Infra\Repo, uses in attribute argument)`. Add `attribute_argument` to `relations:` to allow it. The `edge.type` of the affected baseline entries changes, so each shows up as one stale entry and one new one; see [Baseline](../usage/baseline.md).
 
 ### Coverage modes
 
@@ -1208,7 +1232,7 @@ rules:
       - subtree: src/Legacy
 ```
 
-The framework (`RuleOptionsBuild`) extracts `suppress_namespaces` / `suppress_paths` for any producer before building its Options. Per-rule exclusions are counted and reported like those of other rules; see [Visibility](../getting-started/configuration.md#rules).
+The framework (`RuleOptionsBuild`) extracts `suppress_namespaces` / `suppress_paths` for producers that report on code before building their Options. The exception is a producer whose every channel is project-scoped, such as `architecture.circular-dependency`, `architecture.layer-declaration` and `architecture.unassigned-class`: a non-empty list on it is refused at load (exit 3), because its findings are about the project and cannot be addressed by path or namespace. For cycles, narrow what counts as an edge with `ignore-relations` (see above); the rule's page says what else applies. Per-rule exclusions are counted and reported like those of other rules; see [Visibility](../getting-started/configuration.md#rules).
 
 <!-- llms:skip-end -->
 

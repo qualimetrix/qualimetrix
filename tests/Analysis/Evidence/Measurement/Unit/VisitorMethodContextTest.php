@@ -100,7 +100,8 @@ final class VisitorMethodContextTest extends TestCase
         self::assertNotNull($scope);
         self::assertTrue($scope->anonymousClassContext);
         self::assertSame('{anonymous#0}', $scope->class);
-        self::assertSame('{closure#1}', $scope->member);
+        self::assertSame('{anonymous#0}::{closure#1}', $scope->member);
+        self::assertSame('App\{anonymous#0}::{closure#1}', $scope->logicalFqn);
         self::assertSame(CallableKind::AnonymousCallable, $scope->kind);
         self::assertSame('closure', $scope->anonymousSyntax);
         self::assertSame(['subjectKind' => 'file'], $context->fileEntrySubjectComponents($context->currentFileEntrySubjectId()));
@@ -123,7 +124,8 @@ final class VisitorMethodContextTest extends TestCase
         $arrow = new Node\Expr\ArrowFunction(['expr' => new Node\Scalar\Int_(1)], ['startFilePos' => 20, 'startLine' => 3]);
         $arrowScope = $context->enter($arrow);
         self::assertNotNull($arrowScope);
-        self::assertSame('{closure#2}', $arrowScope->member);
+        self::assertSame('Outer::{closure#2}', $arrowScope->member);
+        self::assertSame('App\Outer::{closure#2}', $arrowScope->logicalFqn);
         self::assertSame('arrow', $arrowScope->anonymousSyntax);
         $context->leave($arrow);
         $context->leave(new Stmt\Class_('Outer'));

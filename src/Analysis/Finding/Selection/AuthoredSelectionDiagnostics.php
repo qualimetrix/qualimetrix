@@ -13,16 +13,25 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedWriteHistoryInt
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleNameJudge;
+use Qualimetrix\Core\ProductIdentity;
 
 /** Judges authored selector and namespace-channel spelling with its writers. */
 final class AuthoredSelectionDiagnostics
 {
-    /** @return list<ConfigurationDiagnostic> */
-    public static function forDocument(ResolvedDocument $document, ChannelUniverseInterface $channels): array
-    {
+    /**
+     * @param array<string, ?string> $projectOnlyProducerDocsPages producer whose every channel is project-scoped => its docs page
+     *
+     * @return list<ConfigurationDiagnostic>
+     */
+    public static function forDocument(
+        ResolvedDocument $document,
+        ChannelUniverseInterface $channels,
+        array $projectOnlyProducerDocsPages,
+    ): array {
         $judge = new RuleNameJudge($channels->ruleNames());
         $diagnosticSources = self::selectorDiagnostics($document, $judge, $channels);
         self::judgeNamespaceChannels($document, $judge, $channels);
+        self::judgeProjectScopedSuppression($document, $projectOnlyProducerDocsPages);
         $diagnostics = [];
         foreach ($diagnosticSources as $message => $writers) {
             usort($writers, static fn(Provenance $a, Provenance $b): int => $a->layerIndex <=> $b->layerIndex);
@@ -102,6 +111,40 @@ final class AuthoredSelectionDiagnostics
             if ($problem !== null) {
                 $writers = array_map(static fn(array $write): Provenance => $write['provenance'], $patterns->writes());
                 throw Provenance::refusalOf($writers, $problem->summary);
+            }
+        }
+    }
+
+    /**
+     * The global filters already skip a project-scoped channel; a per-rule
+     * selector on a producer whose every channel is project-scoped would be
+     * accepted and then match nothing a finding could be addressed by.
+     *
+     * @param array<string, ?string> $projectOnlyProducerDocsPages
+     */
+    private static function judgeProjectScopedSuppression(ResolvedDocument $document, array $projectOnlyProducerDocsPages): void
+    {
+        $rules = $document->get('rules');
+        if (!$rules instanceof ResolvedMapInterface) {
+            return;
+        }
+        foreach ($rules->entries() as $producer => $rule) {
+            if (!$rule instanceof ResolvedMapInterface || !\array_key_exists($producer, $projectOnlyProducerDocsPages)) {
+                continue;
+            }
+            foreach ([FrameworkOptionKeys::NAMESPACES, FrameworkOptionKeys::PATHS] as $key) {
+                $selectors = $rule->get($key);
+                if ($selectors === null || \in_array($selectors->plain(), [[], null], true)) {
+                    continue;
+                }
+                $page = $projectOnlyProducerDocsPages[$producer];
+                throw Provenance::refusalOf($selectors->contributors(), \sprintf(
+                    'Option "%s" for rule "%s" can never apply: findings of this rule are project-level and cannot be addressed by path or namespace.'
+                    . ' Remove the option.%s',
+                    str_replace('-', '_', $key),
+                    $producer,
+                    $page === null ? '' : ' See ' . ProductIdentity::docsPageUrl($page) . '.',
+                ));
             }
         }
     }

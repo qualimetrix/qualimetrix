@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPresentationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
@@ -16,6 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleEnablementResolver;
+use Qualimetrix\Infrastructure\DependencyInjection\ChannelCatalog\DeclaredChannelFileScope;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -148,7 +150,9 @@ final class LevelActivityCoversEveryDeclaredLevelTest extends TestCase
             new RulesSection($executor, 'disabled_rules'),
         ]), []);
         $configuration = new FindingConfiguration(document: $document);
-        $resolver = new RuleEnablementResolver();
+        $presentation = $container->get(ChannelPresentationInterface::class);
+        self::assertInstanceOf(ChannelPresentationInterface::class, $presentation);
+        $resolver = new RuleEnablementResolver(DeclaredChannelFileScope::create(), $presentation);
         $stated = $resolver->decide($document, $universe);
         $builder = $container->get(RuleOptionsBuild::class);
         self::assertInstanceOf(RuleOptionsBuild::class, $builder);

@@ -18,6 +18,13 @@ use Qualimetrix\Core\Symbol\MetricSubjectCodec;
  * its own stacks. The subject id of each frame is kept here too: which subject
  * is *current* follows from where the traversal is, while what that subject is
  * made of belongs to {@see FileEntrySubjectRegistry}.
+ *
+ * An anonymous callable is named after the nearest enclosing frame of either
+ * kind — a callable or a class-like declaration — and counted inside that frame
+ * only: `App\A::rows::{closure#1}`. Counting per frame is what keeps a closure's
+ * name from moving when a closure is added anywhere else in the file. Outside
+ * every frame the namespace is the parent: top-level closures count per
+ * namespace of the file, across every block that declares it.
  */
 final class VisitorLexicalScope
 {
@@ -39,9 +46,18 @@ final class VisitorLexicalScope
     /** @var list<?string> */
     private array $properties = [];
 
+    /**
+     * Callable and class-like frames in lexical order, each with the number of
+     * anonymous callables minted directly inside it so far.
+     *
+     * @var list<array{name: string, closures: int}>
+     */
+    private array $frames = [];
+
     private ?string $namespace = null;
 
-    private int $closureCounter = 0;
+    /** @var array<string, int> */
+    private array $topLevelClosures = [];
 
     public function __construct(
         private readonly FileEntrySubjectRegistry $subjects,
@@ -56,8 +72,9 @@ final class VisitorLexicalScope
         $this->classes = [];
         $this->namespaces = [];
         $this->properties = [];
+        $this->frames = [];
         $this->namespace = null;
-        $this->closureCounter = 0;
+        $this->topLevelClosures = [];
         $this->subjects->reset();
     }
 
@@ -91,11 +108,13 @@ final class VisitorLexicalScope
                 ? null
                 : $this->subjects->register(MetricSubjectCodec::encodeClass($this->namespace ?? '', $class), $ordinal),
         ];
+        $this->frames[] = ['name' => $class, 'closures' => 0];
     }
 
     public function leaveClass(): void
     {
         array_pop($this->classes);
+        array_pop($this->frames);
     }
 
     public function enterProperty(?string $name): void
@@ -125,16 +144,14 @@ final class VisitorLexicalScope
             if ($member !== null) {
                 throw new InvalidArgumentException('Anonymous callable scope must not supply a member');
             }
-            $member = '{closure#' . ++$this->closureCounter . '}';
+            $member = $this->mintAnonymousMember();
         } elseif ($member === null || $member === '') {
             throw new InvalidArgumentException('Named callable scope requires a non-empty member');
         }
 
         $classContext = $this->currentClass();
-        $logicalOwner = $class === null ? null : $this->qualified($namespace, $class);
-        $logicalFqn = $logicalOwner === null
-            ? $this->qualified($namespace, $member)
-            : $logicalOwner . '::' . $member;
+        $logical = DeclarationNumbering::callablePath($namespace, $class, $member, $kind);
+        $logicalFqn = $logical->toString();
         $base = $logicalFqn . '@' . $startFilePos;
         $traversalOrdinal = $this->callableTraversalOrdinals[$base] ?? 0;
         $this->callableTraversalOrdinals[$base] = $traversalOrdinal + 1;
@@ -156,6 +173,7 @@ final class VisitorLexicalScope
         );
         $this->callables[] = $scope;
         $this->callableSubjects[] = $this->callableSubject($scope);
+        $this->frames[] = ['name' => $logical->getSymbolName() ?? $member, 'closures' => 0];
 
         return $scope;
     }
@@ -163,6 +181,7 @@ final class VisitorLexicalScope
     public function leaveCallable(): ?VisitorCallableScope
     {
         array_pop($this->callableSubjects);
+        array_pop($this->frames);
 
         return array_pop($this->callables);
     }
@@ -206,8 +225,9 @@ final class VisitorLexicalScope
         }
 
         $namespace = $scope->namespace ?? '';
-        $components = $scope->class !== null && \in_array($scope->kind, [CallableKind::Method, CallableKind::PropertyHook], true)
-            ? MetricSubjectCodec::encodeMethod($namespace, $scope->class, $scope->member)
+        $logical = DeclarationNumbering::callablePath($scope->namespace, $scope->class, $scope->member, $scope->kind);
+        $components = $logical->type !== null && $logical->member !== null
+            ? MetricSubjectCodec::encodeMethod($namespace, $logical->type, $logical->member)
             : MetricSubjectCodec::encodeFunction($namespace, $scope->member);
 
         return $this->subjects->register($components, $scope->ordinal);
@@ -219,8 +239,17 @@ final class VisitorLexicalScope
         return $classStartFilePos === null ? null : ($classContext['ordinal'] ?? null);
     }
 
-    private function qualified(?string $namespace, string $name): string
+    private function mintAnonymousMember(): string
     {
-        return $namespace === null || $namespace === '' ? $name : $namespace . '\\' . $name;
+        if ($this->frames === []) {
+            $namespace = $this->namespace ?? '';
+            $this->topLevelClosures[$namespace] = ($this->topLevelClosures[$namespace] ?? 0) + 1;
+
+            return '{closure#' . $this->topLevelClosures[$namespace] . '}';
+        }
+
+        $parent = array_key_last($this->frames);
+
+        return $this->frames[$parent]['name'] . '::{closure#' . ++$this->frames[$parent]['closures'] . '}';
     }
 }

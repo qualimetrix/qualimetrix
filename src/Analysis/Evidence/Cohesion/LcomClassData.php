@@ -32,11 +32,37 @@ final class LcomClassData
     private array $propertyAccesses = [];
 
     /**
-     * Map of method => set of called methods (via $this->method()).
+     * Map of method => set of properties it hands to later code: accessed inside a closure,
+     * an arrow function or a nested function, or bound by reference.
+     *
+     * @var array<string, array<string, true>>
+     */
+    private array $deferredPropertyAccesses = [];
+
+    /**
+     * Map of method => set of methods it calls directly (via $this->method(), self:: or static::).
      *
      * @var array<string, array<string, true>>
      */
     private array $methodCalls = [];
+
+    /**
+     * Map of method => set of methods it calls from a closure, an arrow function or a
+     * first-class callable: code that runs after the body, not during it.
+     *
+     * @var array<string, array<string, true>>
+     */
+    private array $deferredMethodCalls = [];
+
+    /**
+     * Map of method => set of own methods it names without a call edge: a callable array or
+     * string, a reflection, a call through the own class name or `$this::`, or a dynamic name
+     * ({@see LcomMethodPopulation::ANY_METHOD}). A reference keeps its target out of the
+     * initialization helpers; it is never an LCOM4 edge and never feeds TCC/LCC.
+     *
+     * @var array<string, array<string, true>>
+     */
+    private array $methodReferences = [];
 
     /**
      * Set of static methods (excluded from LCOM graph).
@@ -58,8 +84,6 @@ final class LcomClassData
     private array $statelessMethods = [];
 
     private CohesionDeclarationData $declaration;
-
-    private bool $hasNonTrivialMethod = false;
 
     public function __construct(
         public readonly ?string $namespace = null,
@@ -95,6 +119,14 @@ final class LcomClassData
         $this->propertyAccesses[$methodName][$propertyName] = true;
     }
 
+    public function addDeferredPropertyAccess(string $methodName, string $propertyName): void
+    {
+        if (!isset($this->deferredPropertyAccesses[$methodName])) {
+            $this->deferredPropertyAccesses[$methodName] = [];
+        }
+        $this->deferredPropertyAccesses[$methodName][$propertyName] = true;
+    }
+
     public function addMethodCall(string $callerMethod, string $calledMethod): void
     {
         if (!isset($this->methodCalls[$callerMethod])) {
@@ -103,32 +135,30 @@ final class LcomClassData
         $this->methodCalls[$callerMethod][ClassNameSpelling::fold($calledMethod)] = true;
     }
 
+    public function addDeferredMethodCall(string $callerMethod, string $calledMethod): void
+    {
+        if (!isset($this->deferredMethodCalls[$callerMethod])) {
+            $this->deferredMethodCalls[$callerMethod] = [];
+        }
+        $this->deferredMethodCalls[$callerMethod][ClassNameSpelling::fold($calledMethod)] = true;
+    }
+
+    public function addMethodReference(string $method, string $referencedMethod): void
+    {
+        if (!isset($this->methodReferences[$method])) {
+            $this->methodReferences[$method] = [];
+        }
+        $this->methodReferences[$method][ClassNameSpelling::fold($referencedMethod)] = true;
+    }
+
     public function markStatic(string $method): void
     {
         $this->staticMethods[$method] = true;
     }
 
-    public function markNonTrivial(): void
-    {
-        $this->hasNonTrivialMethod = true;
-    }
-
     public function markStatelessConstant(string $method): void
     {
         $this->statelessMethods[$method] = true;
-    }
-
-    /**
-     * Whether a method was classified as a stateless constant during AST traversal.
-     */
-    public function isStatelessConstant(string $method): bool
-    {
-        return isset($this->statelessMethods[$method]);
-    }
-
-    public function getMethodCount(): int
-    {
-        return \count($this->methods);
     }
 
     /**
@@ -140,17 +170,26 @@ final class LcomClassData
     }
 
     /**
+     * Direct and deferred accesses alike.
+     *
      * @return list<string>
      */
     public function getPropertiesAccessedBy(string $methodName): array
     {
-        return array_keys($this->propertyAccesses[$methodName] ?? []);
+        $accesses = ($this->propertyAccesses[$methodName] ?? []) + ($this->deferredPropertyAccesses[$methodName] ?? []);
+        unset($accesses[LcomMethodPopulation::ANY_PROPERTY]);
+
+        return array_keys($accesses);
     }
 
-    /** @return list<string> */
+    /**
+     * Direct and deferred callees alike: both reach the callee's state from this method.
+     *
+     * @return list<string>
+     */
     public function callsFrom(string $methodName): array
     {
-        return array_keys($this->methodCalls[$methodName] ?? []);
+        return array_keys(($this->methodCalls[$methodName] ?? []) + ($this->deferredMethodCalls[$methodName] ?? []));
     }
 
     public function hasGraphMethod(string $methodName): bool
@@ -182,11 +221,17 @@ final class LcomClassData
         if (isset($source->statelessMethods[$original])) {
             $this->markStatelessConstant($effectiveName);
         }
-        foreach ($source->getPropertiesAccessedBy($original) as $property) {
-            $this->addPropertyAccess($effectiveName, $property);
-        }
-        foreach ($source->callsFrom($original) as $callee) {
-            $this->addMethodCall($effectiveName, $callee);
+        $imports = [
+            [$source->propertyAccesses, $this->addPropertyAccess(...)],
+            [$source->deferredPropertyAccesses, $this->addDeferredPropertyAccess(...)],
+            [$source->methodCalls, $this->addMethodCall(...)],
+            [$source->deferredMethodCalls, $this->addDeferredMethodCall(...)],
+            [$source->methodReferences, $this->addMethodReference(...)],
+        ];
+        foreach ($imports as [$facts, $add]) {
+            foreach (array_keys($facts[$original] ?? []) as $member) {
+                $add($effectiveName, $member);
+            }
         }
     }
 
@@ -199,8 +244,10 @@ final class LcomClassData
      *     traitUses: list<TraitUseFacts>,
      *     instancePropertyCount: int,
      *     propertyAccesses: array<string, array<string, true>>,
+     *     deferredPropertyAccesses: array<string, array<string, true>>,
      *     methodCalls: array<string, array<string, true>>,
-     *     nonTrivial: bool
+     *     deferredMethodCalls: array<string, array<string, true>>,
+     *     methodReferences: array<string, array<string, true>>
      * }
      */
     public function factState(): array
@@ -213,8 +260,10 @@ final class LcomClassData
             'traitUses' => $this->declaration->traitUses(),
             'instancePropertyCount' => $this->declaration->instancePropertyCount(),
             'propertyAccesses' => $this->propertyAccesses,
+            'deferredPropertyAccesses' => $this->deferredPropertyAccesses,
             'methodCalls' => $this->methodCalls,
-            'nonTrivial' => $this->hasNonTrivialMethod,
+            'deferredMethodCalls' => $this->deferredMethodCalls,
+            'methodReferences' => $this->methodReferences,
         ];
     }
 
@@ -223,9 +272,13 @@ final class LcomClassData
      *
      * LCOM4 is the number of connected components in the graph where:
      * - Vertices = methods
-     * - Edges = (m1, m2) if m1 and m2 share a property OR one calls the other via $this->
+     * - Edges = (m1, m2) if m1 and m2 share a property OR one calls the other via $this->,
+     *   self:: or static::, directly or from a closure or first-class callable
      * - Static, constructor and destructor methods are excluded from the graph
      *   after trait composition resolves effective method names
+     * - Initialization helpers leave the graph with the constructor: private instance
+     *   methods that only constructor or destructor bodies reach through direct calls
+     *   and that hand no state to later code (see {@see LcomMethodPopulation})
      * - Stateless constant methods are merged into a single virtual node to reduce
      *   false positives from interface-mandated metadata methods (e.g., getName())
      *
@@ -234,12 +287,13 @@ final class LcomClassData
      * stateful/stateless classification phase.
      *
      * @param list<string> $excludeMethods Method names to exclude from the LCOM graph
+     * @param int $unreadTraitCount Used traits whose bodies were not read; any keeps every helper
      *
      * @return int Number of connected components (1 = perfectly cohesive)
      */
-    public function calculateLcom(array $excludeMethods = []): int
+    public function calculateLcom(array $excludeMethods, int $unreadTraitCount): int
     {
-        $population = new LcomMethodPopulation($this->factState());
+        $population = new LcomMethodPopulation($this->factState(), $unreadTraitCount);
         $methods = $population->graphMethods($excludeMethods);
         $count = \count($methods);
 
@@ -257,16 +311,7 @@ final class LcomClassData
         // property access / method calls in the collected data are treated as stateless.
         [$statefulMethods, $statelessInGraph] = $population->partitionByStatelessness($methods);
 
-        $properties = $calls = [];
-        foreach ($this->propertyAccesses as $method => $accesses) {
-            $key = ClassNameSpelling::fold($method);
-            $properties[$key] = ($properties[$key] ?? []) + $accesses;
-        }
-        foreach ($this->methodCalls as $method => $callees) {
-            $key = ClassNameSpelling::fold($method);
-            $calls[$key] = ($calls[$key] ?? []) + $callees;
-        }
-        $graph = new LcomGraphCalculator($properties, $calls);
+        $graph = $population->graph();
         $methods = array_map(ClassNameSpelling::fold(...), $methods);
         $statefulMethods = array_map(ClassNameSpelling::fold(...), $statefulMethods);
         $statelessInGraph = array_fill_keys(array_map(ClassNameSpelling::fold(...), array_keys($statelessInGraph)), true);
@@ -280,9 +325,9 @@ final class LcomClassData
     }
 
     /** @param list<string> $excludeMethods */
-    public function lcomMethodCount(array $excludeMethods = []): int
+    public function lcomMethodCount(array $excludeMethods, int $unreadTraitCount): int
     {
-        return (new LcomMethodPopulation($this->factState()))->count($excludeMethods);
+        return (new LcomMethodPopulation($this->factState(), $unreadTraitCount))->count($excludeMethods);
     }
 
 }

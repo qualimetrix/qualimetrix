@@ -202,7 +202,7 @@ final class BaselineWorkflowTest extends TestCase
         $this->expectExceptionMessage(
             'Baseline version 10 cannot be converted automatically because declaration identity cannot be inferred '
             . 'from a logical symbol key. Run a fresh analysis, deliberately map or split accepted entries, then '
-            . 'write a new version 14 baseline (or regenerate and review the accepted state).',
+            . 'write a new version 15 baseline (or regenerate and review the accepted state).',
         );
 
         $loader->load((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($this->baselinePath));

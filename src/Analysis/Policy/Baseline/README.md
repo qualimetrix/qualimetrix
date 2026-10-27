@@ -176,17 +176,53 @@ report it otherwise, and "Baseline with 0 entries written" would read as success
 - **Version 13**: A declaration key carries an assigned ordinal instead of a
   byte offset, so editing text above a declaration no longer moves its key
 - **Version 14**: Required recorded discovery exclusions and closed document grammar
+- **Version 15**: A closure key names the closure's enclosing declaration
+  (ADR 0138); a version 14 file still loads with its closure entries retired
 
 An ordinal is a rank, so the three identities that carry a non-trivial one — a
 closure, the members of an anonymous class, and a declaration sharing its logical
 identity with another in the same file (ADR 0026) — move when the siblings they
-are counted against change. Such an entry does not become stale: the vacated rank
-is reused, so its acceptance silently rebinds to whatever holds that number now.
+are counted against change. A closure is named under its nearest enclosing
+declaration (`App\A::rows::{closure#1}`, ADR 0138) and counted inside that
+parent only, so it moves when an anonymous callable is added to the same parent
+or when the parent is renamed; a closure inside an anonymous class's member
+carries that class's rank as well. Such an entry does not become stale: the
+vacated rank is reused, so its acceptance silently rebinds to whatever holds that
+number now.
 
-Only version 14 is loadable. For a v13 file, retain entries, scope and generated
+Version 15 is current, and version 14 still loads. A version 14 closure key (a subject key whose symbol, before `@`,
+contains `{closure#`) counted the closure among all closures of the file. A
+file-level closure still spells `App\{closure#N}`, so such a key would bind to
+whichever closure holds that number now and never go stale. The loader therefore
+makes every entry under such a key inert as `retired-closure-identity`, whatever
+its own state, under its unchanged selector: it accepts nothing, `check` reports
+it through `baseline.unused-entry`, and `baseline:cleanup` lists it. Every other
+version 14 entry loads exactly as under version 15. Retired contenders of one
+duplicated identity share one selector, which removes all of them, exactly as
+duplicate contenders do; `check` reports them in one warning, and its advice for
+any retired entry names every retired selector.
+
+`BaselineWriter` writes version 15 and refuses (exit 3, nothing written) while
+any retired entry remains, naming every retired selector, because the same line
+under version 15 would bind by name. So `baseline:update` and `baseline:cleanup
+--remove` refuse until one `baseline:cleanup --remove` call names all of them;
+that call is the only conversion to version 15 that keeps the other entries.
+`baseline:generate` reads no previous file. `baseline:rename-channels` is the one
+writer that keeps the version it read: it writes version 14 and exits 0, and the
+closure entries stay retired. Dropping them silently would be removal nobody
+asked for.
+
+Do not convert a version 14 file by editing its number to 15. The number is the
+only marker of the old closure keys: under version 15 they load as live keys and
+re-attach to whichever closure holds their number, without any entry going
+stale.
+
+For a v13 file only, retain entries, scope and generated
 time, change version to 14 and explicitly add the original discovery exclusion
-definition. Do not infer an old definition from new configuration. Earlier formats
-also require deliberate identity migration; regenerating is a new acceptance.
+definition, so its closure entries are retired as above; then follow the
+version 14 procedure, never a second hand edit to 15. Do not infer an old
+definition from new configuration. Earlier formats also require deliberate
+identity migration; regenerating is a new acceptance.
 
 ## Parsing, Capture, and Explanation Boundaries
 
@@ -383,7 +419,7 @@ user copies rather than composes it. `<symbol>#<channel>` cannot serve: `#` alre
 separates the two halves of a channel key, and two forbidden edges out of one class on
 one channel agree on everything else.
 
-## File Contract (version 14)
+## File Contract (version 15)
 
 The file is one JSON document, written in a canonical layout: **one entry per
 line**, two-space indentation, a subject key on the line above the entries it
@@ -391,7 +427,7 @@ owns.
 
 ```json
 {
-  "version": 14,
+  "version": 15,
   "generated": "2026-08-05T12:00:00+03:00",
   "scope": ["src"],
   "exclusions": {"patterns": [], "generated": "excluded"},
@@ -422,7 +458,7 @@ pair, not the whole file).
 
 | Field        | Contract                                                                                                                          |
 | ------------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| `version`    | Exactly `14`                                                                                                                      |
+| `version`    | Exactly `15` when written; `14` is still read, with its closure entries retired                                                   |
 | `generated`  | ISO 8601, from an injected clock (`Core\Time\ClockInterface`)                                                                     |
 | `exclusions` | Required `{patterns, generated}`; explicit `exact:`, `subtree:` or `regex:` selectors, and `included`/`excluded` generated policy |
 | `scope`      | The analysed path set that produced this file, normalized                                                                         |
@@ -474,7 +510,7 @@ numeric comparison and stable from the first write.
 
 A malformed entry, an undeclared channel, a channel that reports a configuration
 error, a shape mismatch in either direction, an unrecognized `mode`, a component
-carrying the identity key separator, or a duplicated identity makes an entry **inert**: it does not
+carrying the identity key separator, a duplicated identity, or a version 14 closure key makes an entry **inert**: it does not
 suppress, and it does not fail the load — refusing to load would punish a whole run
 for one bad line. An inert entry keeps its symbol, channel, selector and reason for
 reporting, and its raw payload so a rewrite preserves its normalized contents.
@@ -483,7 +519,8 @@ when another subject is updated. A valid entry cannot share its portable subject
 with that whole-bucket payload: the writer refuses before replacing the file.
 Review and remove the malformed bucket with `baseline:cleanup --remove=<selector>`
 before admitting an entry at the same subject. Updates to other subjects remain
-available.
+available. A retired closure entry is the one inert entry a rewrite cannot carry:
+see the version paragraph above.
 
 ### Reads
 
@@ -582,6 +619,8 @@ carried and counted. Formatting is rendered, not promised byte-for-byte for
 arbitrary human input. A newly created identity collision refuses the write;
 pre-existing duplicates are retained. No renamed entries means no publication.
 New channel names are validated for form, not current registry membership.
+The carried document keeps the version it was read with: a carry changes no
+identity, so a version 14 file's closure entries stay retired.
 
 ## Related Documents
 

@@ -40,9 +40,7 @@ final class VisitorCallableMetadata
 
     private static function logicalPath(VisitorCallableScope $scope, string $namespace): SymbolPath
     {
-        return self::isClassMember($scope) && $scope->class !== null
-            ? SymbolPath::forMethod($namespace, $scope->class, $scope->member)
-            : SymbolPath::forGlobalFunction($namespace, $scope->member);
+        return DeclarationNumbering::callablePath($namespace, $scope->class, $scope->member, $scope->kind);
     }
 
     private static function lexicalClass(VisitorCallableScope $scope, string $namespace, RelativePath $file): ?DeclarationPath
@@ -67,12 +65,7 @@ final class VisitorCallableMetadata
     {
         $projected = [];
         foreach ($metrics as $key => $value) {
-            $scope = $scopes[$key] ?? null;
-            $logicalFqn = $scope === null ? $key : $scope->logicalFqn;
-            if ($scope?->kind === CallableKind::AnonymousCallable && $scope->class === null) {
-                $logicalFqn = ($scope->namespace ?? '') . '::' . $scope->member;
-            }
-            $projected[$logicalFqn] = $value;
+            $projected[isset($scopes[$key]) ? $scopes[$key]->logicalFqn : $key] = $value;
         }
 
         return $projected;

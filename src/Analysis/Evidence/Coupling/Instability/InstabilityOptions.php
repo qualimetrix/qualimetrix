@@ -44,7 +44,7 @@ final readonly class InstabilityOptions implements HierarchicalRuleOptionsInterf
         }
         if (!$config->boolean('enabled', true)) {
             $class = new ClassInstabilityOptions(enabled: false, maxWarning: $class->maxWarning, maxError: $class->maxError, minAfferent: $class->minAfferent);
-            $namespace = new NamespaceInstabilityOptions(enabled: false, maxWarning: $namespace->maxWarning, maxError: $namespace->maxError, minClassCount: $namespace->minClassCount, minAfferent: $namespace->minAfferent);
+            $namespace = new NamespaceInstabilityOptions(enabled: false, maxWarning: $namespace->maxWarning, maxError: $namespace->maxError, minTypeCount: $namespace->minTypeCount, minAfferent: $namespace->minAfferent);
         }
         return new self(class: $class, namespace: $namespace);
     }

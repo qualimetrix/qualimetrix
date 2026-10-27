@@ -7,12 +7,14 @@ Qualimetrix\Analysis\Configuration\SelectorYamlDecoder	Analysis.Configuration	Qu
 Qualimetrix\Analysis\Configuration\SelectorYamlDecoder	Analysis.Configuration	Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	contract
 Qualimetrix\Analysis\Configuration\SelectorYamlDecoder	Analysis.Configuration	Qualimetrix\Core\Pattern\SelectorDefinition	Core.Neutral	contract
 Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyAnalysis	Analysis.Evidence.CircularDependency	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	Analysis.Evidence.DependencyModel	contract
-Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyDetector	Analysis.Evidence.CircularDependency	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency	Analysis.Evidence.DependencyModel	contract
+Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyAnalysis	Analysis.Evidence.CircularDependency	Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyDetector	Analysis.Evidence.CircularDependency	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	Analysis.Evidence.DependencyModel	contract
 Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyDetector	Analysis.Evidence.CircularDependency	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
+Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions	Analysis.Evidence.CircularDependency	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyRelationTokens	Analysis.Evidence.DependencyModel	contract
 Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions	Analysis.Evidence.CircularDependency	Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOptionValues	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions	Analysis.Evidence.CircularDependency	Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions	Analysis.Evidence.CircularDependency	Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape	Analysis.Finding	contract
+Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions	Analysis.Evidence.CircularDependency	Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionWordSet	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions	Analysis.Evidence.CircularDependency	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions	Analysis.Evidence.CircularDependency	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule	Analysis.Evidence.CircularDependency	Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration	Analysis.Finding	contract
@@ -30,6 +32,7 @@ Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule	Analysis
 Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule	Analysis.Evidence.CircularDependency	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface	Analysis.Evidence.CircularDependency	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	Analysis.Evidence.DependencyModel	contract
 Qualimetrix\Analysis\Evidence\CircularDependency\Cycle	Analysis.Evidence.CircularDependency	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
+Qualimetrix\Analysis\Evidence\CircularDependency\CycleEdgeFilter	Analysis.Evidence.CircularDependency	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency	Analysis.Evidence.DependencyModel	contract
 Qualimetrix\Analysis\Evidence\CircularDependency\CycleFinding	Analysis.Evidence.CircularDependency	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\CircularDependency\CycleFinding	Analysis.Evidence.CircularDependency	Qualimetrix\Analysis\Finding\Contract\Location	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\CircularDependency\CycleFinding	Analysis.Evidence.CircularDependency	Qualimetrix\Analysis\Finding\Contract\OccurrenceKey	Analysis.Finding	contract
@@ -835,7 +838,6 @@ Qualimetrix\Analysis\Evidence\Coupling\Instability\InstabilityOptions	Analysis.E
 Qualimetrix\Analysis\Evidence\Coupling\Instability\InstabilityOptions	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionRefusal	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\Instability\InstabilityOptions	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\Instability\InstabilityOptions	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
-Qualimetrix\Analysis\Evidence\Coupling\Instability\InstabilityRule	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\Instability\InstabilityRule	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Coupling\Instability\InstabilityRule	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\Instability\InstabilityRule	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Channel\ChannelShape	Analysis.Finding	contract
@@ -1658,6 +1660,7 @@ Qualimetrix\Analysis\Finding\Selection\AuthoredSelectionDiagnostics	Analysis.Fin
 Qualimetrix\Analysis\Finding\Selection\AuthoredSelectionDiagnostics	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument	Analysis.Configuration	contract
 Qualimetrix\Analysis\Finding\Selection\AuthoredSelectionDiagnostics	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface	Analysis.Configuration	contract
 Qualimetrix\Analysis\Finding\Selection\AuthoredSelectionDiagnostics	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedWriteHistoryInterface	Analysis.Configuration	contract
+Qualimetrix\Analysis\Finding\Selection\AuthoredSelectionDiagnostics	Analysis.Finding	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract
 Qualimetrix\Analysis\Finding\Selection\EnablementIndex	Analysis.Finding	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
 Qualimetrix\Analysis\Finding\Selection\SelectionCauses	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Document\Provenance	Analysis.Configuration	contract
 Qualimetrix\Analysis\Finding\Selection\SelectionCauses	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource	Analysis.Configuration	contract
@@ -1676,6 +1679,7 @@ Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule	Analysis.
 Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement	Analysis.Finding	Qualimetrix\Core\Pattern\NamespacePattern	Core.Neutral	contract
 Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement	Analysis.Finding	Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	contract
 Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement	Analysis.Finding	Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	contract
+Qualimetrix\Analysis\Policy\Architecture\Allow\AllowAliasExpander	Analysis.Policy.Architecture	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyRelationTokens	Analysis.Evidence.DependencyModel	contract
 Qualimetrix\Analysis\Policy\Architecture\Allow\AllowAliasExpander	Analysis.Policy.Architecture	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType	Analysis.Evidence.DependencyModel	contract
 Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy	Analysis.Policy.Architecture	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	contract
 Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy	Analysis.Policy.Architecture	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	Analysis.Evidence.DependencyModel	contract
@@ -2246,6 +2250,7 @@ Qualimetrix\Analysis\Run\Configuration\ProjectScopeDefaults	Analysis.Run	Qualime
 Qualimetrix\Analysis\Run\Configuration\ProjectScopePaths	Analysis.Run	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
 Qualimetrix\Analysis\Run\Configuration\ProjectScopePaths	Analysis.Run	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Analysis\Run\Configuration\ProjectScopePaths	Analysis.Run	Qualimetrix\Core\Path\PathFactory	Core.Path	contract
+Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver	Analysis.Run	Qualimetrix\Analysis\Configuration\ConfigSchema	Analysis.Configuration	contract
 Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver	Analysis.Run	Qualimetrix\Analysis\Configuration\ConfigurationRoot	Analysis.Configuration	contract
 Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver	Analysis.Run	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	contract
 Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver	Analysis.Run	Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface	Analysis.Configuration	contract
@@ -2281,6 +2286,7 @@ Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReason	Analysis.Run	
 Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse	Analysis.Run	Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts	Analysis.ProjectManifest	contract
 Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse	Analysis.Run	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
+Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	contract
 Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface	Analysis.Run	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	contract
 Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisCoverage	Analysis.Run	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
 Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailure	Analysis.Run	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
@@ -2315,7 +2321,11 @@ Qualimetrix\Analysis\Run\Discovery\ProjectWalk	Analysis.Run	Qualimetrix\Analysis
 Qualimetrix\Analysis\Run\Discovery\ProjectWalk	Analysis.Run	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
 Qualimetrix\Analysis\Run\Discovery\ProjectWalk	Analysis.Run	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Analysis\Run\Discovery\ProjectWalk	Analysis.Run	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
+Qualimetrix\Analysis\Run\Discovery\RemovedNamespaceScan	Analysis.Run	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
+Qualimetrix\Analysis\Run\Discovery\RemovedNamespaceSurvey	Analysis.Run	Qualimetrix\Analysis\Finding\Contract\ProjectScope\RemovedCodeNamespaces	Analysis.Finding	contract
+Qualimetrix\Analysis\Run\Discovery\RemovedNamespaceSurvey	Analysis.Run	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Analysis\Run\Discovery\RemovedRunPhpEvidence	Analysis.Run	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
+Qualimetrix\Analysis\Run\Discovery\ScopeFacts	Analysis.Run	Qualimetrix\Analysis\Finding\Contract\ProjectScope\RemovedCodeNamespaces	Analysis.Finding	contract
 Qualimetrix\Analysis\Run\Discovery\ScopeFacts	Analysis.Run	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Analysis\Run\Discovery\WalkedEntryOutcome	Analysis.Run	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Analysis\Run\Discovery\WalkedEntryOutcome	Analysis.Run	Qualimetrix\Core\Path\RelativePath	Core.Path	contract

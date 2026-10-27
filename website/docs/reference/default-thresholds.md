@@ -71,7 +71,7 @@ Rules that check how tightly classes and namespaces are connected to each other.
 
 **CBO (Coupling Between Objects)** counts the number of other classes a class depends on. High coupling makes code harder to change.
 
-**Instability** is a ratio from 0 (fully stable) to 1 (fully unstable). A class that depends on many others but is not depended upon is unstable. By default, `min_afferent: 1` -- classes and namespaces with no dependents (Ca=0) are skipped since they have I=1.0 by definition. Set to `2` to also skip symbols with only one dependent.
+**Instability** is a ratio from 0 (fully stable) to 1 (fully unstable). A class that depends on many others but is not depended upon is unstable. By default, `min_afferent: 1` -- classes and namespaces with no dependents (Ca=0) are skipped since they have I=1.0 by definition. Set to `2` to also skip symbols with only one dependent. At namespace level the rule judges `coupling.instability-own` and `min_afferent` counts `coupling.ca-own`; `namespace.min_type_count` (default `3`) skips a namespace declaring fewer own classes, traits, interfaces and implementing enums.
 
 **Distance from the Main Sequence** measures how well a namespace balances abstractness and stability. A distance close to 0 is ideal.
 
@@ -144,7 +144,7 @@ These rules detect specific patterns that are usually bad practice. Most do not 
 
 | Rule                       | ID                                     | Warning                                            | Error             | Status                                                                                            |
 | -------------------------- | -------------------------------------- | -------------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------- |
-| Constructor Over-injection | `code-smell.constructor-overinjection` | 8 params                                           | 12 params         | enabled                                                                                           |
+| Constructor Over-injection | `code-smell.constructor-overinjection` | 8 params (non-VO constructors)                     | 12 params         | enabled                                                                                           |
 | Data Class                 | `design.data-class`                    | WOC ≤ 33%, WMC ≤ 10                                | —                 | enabled                                                                                           |
 | God Class                  | `design.god-class`                     | WMC ≥ 47, TCC < 0.33, LCOM ≥ 3, LOC ≥ 300 (3 of 4) | —                 | enabled                                                                                           |
 | Boolean Argument           | `code-smell.boolean-argument`          | —                                                  | —                 | enabled (allowed_prefixes: is, has, can, should, will, did, was; flag_promoted_properties: false) |
@@ -156,7 +156,7 @@ These rules detect specific patterns that are usually bad practice. Most do not 
 | exit()/die()               | `code-smell.exit`                      | always                                             | —                 | enabled                                                                                           |
 | goto                       | `code-smell.goto`                      | —                                                  | always            | enabled                                                                                           |
 | Superglobals               | `code-smell.superglobals`              | always                                             | —                 | enabled                                                                                           |
-| Long Parameter List        | `code-smell.long-parameter-list`       | 4 params (VO: 8)                                   | 6 params (VO: 12) | enabled                                                                                           |
+| Long Parameter List        | `code-smell.long-parameter-list`       | 4 params (methods, functions; VO ctor: 8)          | 6 params (VO: 12) | enabled                                                                                           |
 | Unreachable Code           | `code-smell.unreachable-code`          | 1                                                  | 2                 | enabled                                                                                           |
 | Unused Private             | `code-smell.unused-private`            | always                                             | —                 | enabled                                                                                           |
 | Identical Sub-expression   | `code-smell.identical-subexpression`   | always                                             | —                 | enabled                                                                                           |

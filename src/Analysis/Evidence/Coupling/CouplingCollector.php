@@ -312,10 +312,11 @@ final class CouplingCollector implements GlobalContextCollectorInterface
      * It is taken over the same region as the published Ca and Ce: the subtree
      * (see {@see CoupledNamespaces}).
      *
-     * `coupling.cbo-own` is the same count over the namespace's own
-     * declarations, published only on a namespace declaring a type the run
-     * analysed: a namespace with no declarations of its own is no package, and
-     * a 0 would read as a measured one.
+     * `coupling.cbo-own` and `coupling.instability-own` are published only on
+     * a namespace declaring a type the run analysed: a namespace with no
+     * declarations of its own is no package, and a 0 would read as a measured
+     * one. A declaring namespace with no own edge still gets instability 0 by
+     * the same convention as the subtree value.
      */
     private function computeNamespaceMetrics(
         DependencyGraphInterface $graph,
@@ -343,12 +344,13 @@ final class CouplingCollector implements GlobalContextCollectorInterface
                 ->with(MetricName::COUPLING_CBO, $cbo)
                 ->with(MetricName::COUPLING_INSTABILITY, $instability)
                 ->with(MetricName::COUPLING_CA_OWN, $ownCa)
-                ->with(MetricName::COUPLING_CE_OWN, $ownCe)
-                ->with(MetricName::COUPLING_INSTABILITY_OWN, $this->computeInstability($ownCa, $ownCe));
+                ->with(MetricName::COUPLING_CE_OWN, $ownCe);
 
             $namespace = $symbolPath->namespace ?? '';
             if (isset($declaring[$namespace])) {
-                $metrics = $metrics->with(MetricName::COUPLING_CBO_OWN, $coupledNamespaces->ownCountFor($namespace));
+                $metrics = $metrics
+                    ->with(MetricName::COUPLING_INSTABILITY_OWN, $this->computeInstability($ownCa, $ownCe))
+                    ->with(MetricName::COUPLING_CBO_OWN, $coupledNamespaces->ownCountFor($namespace));
             }
 
             $repository->add($symbolPath, $metrics, null, null);

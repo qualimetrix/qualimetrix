@@ -36,6 +36,8 @@ final class ProjectScopePublicationTest extends TestCase
 
     private const array UNKNOWN_VALUES = [['channel' => 'suppression.unmatched-namespace', 'option' => 'suppress_namespaces', 'pattern' => 'subtree:Tests']];
 
+    private const array NAMESPACE_VALUE = ['channel' => 'suppression.unmatched-namespace', 'option' => 'suppress_namespaces', 'pattern' => 'exact:App\\Removed'];
+
     private const array SKIPPED_VALUES = [['channel' => 'suppression.unmatched-path', 'option' => 'suppress_paths', 'pattern' => 'subtree:tests/Legacy']];
 
     /** @return iterable<string, array{string}> */
@@ -313,6 +315,65 @@ final class ProjectScopePublicationTest extends TestCase
 
         self::assertContains('architecture.unreachable-layer', $scope->unjudgedChannels);
         self::assertStringContainsString('architecture.unreachable-layer', (string) $scope->describe());
+    }
+
+    #[Test]
+    public function itOmitsTheNamespaceChannelWhenARemovedFileLeftOneOfItsValuesJudged(): void
+    {
+        $scope = self::coveredByRemovedCode([self::NAMESPACE_VALUE], ['suppression.unmatched-namespace']);
+
+        self::assertNotContains('suppression.unmatched-namespace', $scope->unjudgedChannels);
+        self::assertContains('architecture.unreachable-layer', $scope->unjudgedChannels);
+        self::assertSame(
+            $scope->unjudgedChannels,
+            self::decode($this->format('json', $scope))['projectScope']['unjudgedChannels'],
+        );
+    }
+
+    #[Test]
+    public function itNamesTheNamespaceChannelWhenNoValueOfItWasJudged(): void
+    {
+        $scope = self::coveredByRemovedCode([self::NAMESPACE_VALUE], []);
+
+        self::assertContains('suppression.unmatched-namespace', $scope->unjudgedChannels);
+        self::assertSame([self::NAMESPACE_VALUE], self::decode($this->format('json', $scope))['projectScope']['unjudgedValues']);
+    }
+
+    /** A caller that computes no values, as the directive audit does, has no evidence of a judged one. */
+    #[Test]
+    public function itStillNamesTheNamespaceChannelWhenTheCallerComputedNoValues(): void
+    {
+        self::assertContains('suppression.unmatched-namespace', self::coveredByRemovedCode([], [])->unjudgedChannels);
+    }
+
+    /**
+     * @param list<array{channel: string, option: string, pattern: string}> $values
+     * @param list<string> $judgedChannels
+     */
+    private static function coveredByRemovedCode(array $values, array $judgedChannels): ReportProjectScope
+    {
+        return ReportProjectScope::measured(
+            new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(
+                new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(
+                    \Qualimetrix\Core\Path\AbsolutePath::fromString('/fixture'),
+                    true,
+                    [],
+                    [],
+                    [],
+                    true,
+                    [],
+                    (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read(\Qualimetrix\Core\Path\AbsolutePath::fromString('/fixture')),
+                ),
+                [],
+                \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered,
+                [],
+                new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement([
+                    \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor::Exclude,
+                ]),
+            ),
+            $values,
+            $judgedChannels,
+        );
     }
 
     /** A narrowed run judges no value, so it has none to skip, and a list beside its channels could only contradict them. */

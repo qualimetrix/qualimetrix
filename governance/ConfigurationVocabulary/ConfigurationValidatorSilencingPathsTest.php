@@ -280,8 +280,8 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
     /**
      * Path 3: `suppress_paths` keyed by the producer. Live for the three
      * directive diagnostics, which carry the file the annotation is written
-     * in; inert for the five layer diagnostics, whose location is
-     * `Location::none()`.
+     * in; refused at load for the layer producer, every channel of which is
+     * project-scoped and has no file for a path to name.
      */
     #[Test]
     public function itAppliesPathExclusionToTheDirectiveDiagnosticsButNotTheLayerOnes(): void
@@ -292,28 +292,30 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
             'A directive diagnostic carries its file, so a path exclusion keyed by its producer reaches it.',
         );
 
-        self::assertSame(
-            self::allDiagnostics(),
-            $this->diagnosticsFrom(['--rule-opt' => [self::LAYER_PRODUCER . ':suppress_paths=regex:.*']]),
-            'A layer diagnostic has no file, so a path exclusion cannot reach it. This is today\'s behaviour,'
-            . ' pinned so the move out of the rule class does not change it by accident.',
+        $refusal = $this->refusalFrom(['--rule-opt' => [self::LAYER_PRODUCER . ':suppress_paths=regex:.*']]);
+        self::assertStringContainsString(
+            'Option "suppress_paths" for rule "' . self::LAYER_PRODUCER . '"',
+            $refusal,
+            'A layer diagnostic has no file, so a path exclusion keyed by its producer is refused rather than accepted and inert.',
         );
     }
 
     /**
-     * Path 4: `suppress_namespaces` keyed by the producer — inert for all
-     * eight, because a project-level and a file-level subject carry no
-     * namespace for the filter to compare.
+     * Path 4: `suppress_namespaces` keyed by the producer — refused at load
+     * for the layer producer, and inert for the directive producer, whose
+     * file-level subject carries no namespace for the filter to compare.
      */
     #[Test]
     public function itDoesNotLetNamespaceExclusionReachAnyOfTheEight(): void
     {
         self::assertSame(
             self::allDiagnostics(),
-            $this->diagnosticsFrom(['--rule-opt' => [
-                self::LAYER_PRODUCER . ':suppress_namespaces=subtree:Silencing',
-                self::DIRECTIVE_PRODUCER . ':suppress_namespaces=subtree:Silencing',
-            ]]),
+            $this->diagnosticsFrom(['--rule-opt' => [self::DIRECTIVE_PRODUCER . ':suppress_namespaces=subtree:Silencing']]),
+        );
+
+        self::assertStringContainsString(
+            'Option "suppress_namespaces" for rule "' . self::LAYER_PRODUCER . '"',
+            $this->refusalFrom(['--rule-opt' => [self::LAYER_PRODUCER . ':suppress_namespaces=subtree:Silencing']]),
         );
     }
 
@@ -373,6 +375,45 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
      */
     private function diagnosticsFrom(array $extraOptions): array
     {
+        $tester = $this->executeCheck($extraOptions);
+
+        $report = json_decode(self::extractJsonObject($tester->getDisplay()), true, 512, \JSON_THROW_ON_ERROR);
+        self::assertIsArray($report);
+        self::assertIsArray($report['violations'] ?? null);
+
+        $reported = [];
+        foreach ($report['violations'] as $finding) {
+            $reported[] = new FindingChannel($finding['channel'])->code;
+        }
+
+        return array_values(array_filter(
+            self::allDiagnostics(),
+            static fn(string $diagnostic): bool => \in_array($diagnostic, $reported, true),
+        ));
+    }
+
+    /**
+     * The refusal text of a run that must be refused at load: exit 3, nothing analysed.
+     *
+     * @param array<string, mixed> $extraOptions
+     */
+    private function refusalFrom(array $extraOptions): string
+    {
+        $tester = $this->executeCheck($extraOptions);
+        $output = $tester->getDisplay() . $tester->getErrorOutput();
+        self::assertSame(3, $tester->getStatusCode(), $output);
+        $document = json_decode(self::extractJsonObject($tester->getDisplay()), true, 512, \JSON_THROW_ON_ERROR);
+        self::assertIsArray($document);
+        self::assertIsString($document['error'] ?? null, $output);
+
+        return $document['error'];
+    }
+
+    /**
+     * @param array<string, mixed> $extraOptions
+     */
+    private function executeCheck(array $extraOptions): CommandTester
+    {
         /** @var CheckCommand $command */
         $command = (new ContainerFactory())->create()->get(CheckCommand::class);
         $application = new Application();
@@ -394,24 +435,12 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
                 '--no-progress' => true,
                 '--fail-on' => 'none',
                 ...$extraOptions,
-            ]);
+            ], ['capture_stderr_separately' => true]);
         } finally {
             chdir($previous);
         }
 
-        $report = json_decode(self::extractJsonObject($tester->getDisplay()), true, 512, \JSON_THROW_ON_ERROR);
-        self::assertIsArray($report);
-        self::assertIsArray($report['violations'] ?? null);
-
-        $reported = [];
-        foreach ($report['violations'] as $finding) {
-            $reported[] = new FindingChannel($finding['channel'])->code;
-        }
-
-        return array_values(array_filter(
-            self::allDiagnostics(),
-            static fn(string $diagnostic): bool => \in_array($diagnostic, $reported, true),
-        ));
+        return $tester;
     }
 
     /**

@@ -25,7 +25,6 @@ use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfig
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
@@ -57,6 +56,7 @@ use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Subprocess\ChildProcess;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Qualimetrix\Tests\Infrastructure\Console\Support\SplitStreamConsoleOutput;
 use ReflectionClass;
 use ReflectionProperty;
@@ -169,7 +169,7 @@ final class RuntimeConfiguratorTest extends TestCase
             $this->snapshotFactory,
             new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::execution($metadata)),
             $computedMetrics,
-            new RuleEnablementResolver(),
+            ResolvedOptionsFixture::resolver(),
             self::createStub(\Qualimetrix\Analysis\Policy\Architecture\Contract\UnassignedClassLayerRequirementInterface::class),
         );
         $analysis = new AnalysisRuntimeConfigurator(

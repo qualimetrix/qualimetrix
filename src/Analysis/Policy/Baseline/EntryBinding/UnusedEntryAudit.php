@@ -41,19 +41,8 @@ final readonly class UnusedEntryAudit
                     $baselinePath,
                 );
             }
-            $duplicateCounts = self::duplicateCounts($outcome->inertEntries);
-            $reportedDuplicates = [];
-            foreach ($outcome->inertEntries as $entry) {
-                $reason = $entry->reason->description() . ': ' . $entry->detail;
-                if ($entry->reason === InertEntryReason::DuplicateIdentity && $entry->identity !== null) {
-                    $key = $entry->identity->key();
-                    $selector = $entry->selector->value;
-                    if (isset($reportedDuplicates[$key][$selector])) {
-                        continue;
-                    }
-                    $reportedDuplicates[$key][$selector] = true;
-                    $reason .= '; ' . $duplicateCounts[$key][$selector] . ' contenders share this identity';
-                }
+            $retiredSelectors = self::retiredSelectors($outcome->inertEntries);
+            foreach (self::reportedInert($outcome->inertEntries) as [$entry, $reason]) {
                 yield ['identity' => PopulationIdentity::occurrence('inert:' . $entry->describe() . ':' . $entry->selector->value, $ordinal++, 'baseline-diagnostic-record'), 'inputs' => []];
                 $findings[] = UnusedEntryFinding::of(
                     'inert',
@@ -61,6 +50,7 @@ final readonly class UnusedEntryAudit
                     $entry->describe(),
                     $reason,
                     $baselinePath,
+                    $entry->reason === InertEntryReason::RetiredClosureIdentity ? $retiredSelectors : [],
                 );
             }
         })();
@@ -70,21 +60,68 @@ final readonly class UnusedEntryAudit
     }
 
     /**
+     * Each inert entry with its reported reason, contenders of one identity
+     * and selector collapsed into the first of them.
+     *
      * @param list<InertBaselineEntry> $entries
      *
-     * @return array<string, array<string, int>>
+     * @return list<array{InertBaselineEntry, string}>
      */
-    private static function duplicateCounts(array $entries): array
+    private static function reportedInert(array $entries): array
     {
-        $duplicateCounts = [];
+        $contenders = array_count_values(array_filter(array_map(self::contenderKey(...), $entries), \is_string(...)));
+        $reported = [];
+        $seen = [];
         foreach ($entries as $entry) {
-            if ($entry->reason === InertEntryReason::DuplicateIdentity && $entry->identity !== null) {
-                $key = $entry->identity->key();
-                $selector = $entry->selector->value;
-                $duplicateCounts[$key][$selector] = ($duplicateCounts[$key][$selector] ?? 0) + 1;
+            $contender = self::contenderKey($entry);
+            if ($contender !== null && isset($seen[$contender])) {
+                continue;
+            }
+            $seen[$contender ?? ''] = true;
+            $reason = $entry->reason->description() . ': ' . $entry->detail;
+            $count = $contender === null ? 1 : $contenders[$contender];
+            $reported[] = [$entry, $count > 1 ? $reason . '; ' . $count . ' contenders share this identity' : $reason];
+        }
+
+        return $reported;
+    }
+
+    private static function contenderKey(InertBaselineEntry $entry): ?string
+    {
+        return self::contendsForIdentity($entry) && $entry->identity !== null
+            ? $entry->identity->key() . "\x1F" . $entry->selector->value
+            : null;
+    }
+
+    /**
+     * A retired closure entry keeps the identity it claimed, so two of them
+     * under one key are contenders exactly as duplicates are: one warning,
+     * one selector that removes both.
+     */
+    private static function contendsForIdentity(InertBaselineEntry $entry): bool
+    {
+        return $entry->reason === InertEntryReason::DuplicateIdentity
+            || $entry->reason === InertEntryReason::RetiredClosureIdentity;
+    }
+
+    /**
+     * Every retired selector once, in entry order: a write is refused while any
+     * of them remains, so advice naming one alone would be refused too.
+     *
+     * @param list<InertBaselineEntry> $entries
+     *
+     * @return list<string>
+     */
+    private static function retiredSelectors(array $entries): array
+    {
+        $selectors = [];
+        foreach ($entries as $entry) {
+            if ($entry->reason === InertEntryReason::RetiredClosureIdentity) {
+                $selectors[] = $entry->selector->value;
             }
         }
-        return $duplicateCounts;
+
+        return array_values(array_unique($selectors));
     }
 
 }

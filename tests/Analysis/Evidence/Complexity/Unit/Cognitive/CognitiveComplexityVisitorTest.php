@@ -319,7 +319,7 @@ class ClosureTest
 PHP,
             'expected' => [
                 'App\ClosureTest::withClosure' => 0, // closure +0
-                'App\ClosureTest::{closure#1}' => 2, // if +2 (nesting=1)
+                'App\ClosureTest::withClosure::{closure#1}' => 2, // if +2 (nesting=1)
             ],
         ];
 
@@ -591,7 +591,7 @@ function foo($a, $b, $c) {
 PHP,
             'expected' => [
                 'foo' => 3,             // +1 (if $a) + 2 (if $c at nesting=1) = 3
-                '::{closure#1}' => 3,   // +3 (if $b at nesting=2)
+                'foo::{closure#1}' => 3, // +3 (if $b at nesting=2)
             ],
         ];
 
@@ -1209,7 +1209,7 @@ PHP;
         // outer: +1 (if) + 1 (||) = 2
         self::assertSame(2, $complexities['outer']);
         // closure: +3 (if at nesting=2) + 1 (|| starts a fresh sequence) = 4
-        self::assertSame(4, $complexities['::{closure#1}']);
+        self::assertSame(4, $complexities['outer::{closure#1}']);
     }
 
     /**
@@ -1735,71 +1735,71 @@ PHP;
         // The lambda is its own unit here; the whitepaper's total is the sum.
         yield 'whitepaper myMethod2: lambda adds nothing and nests its body' => [
             'code' => '<?php function myMethod2($c) { $r = function () use ($c) { if ($c) {} }; }',
-            'expected' => ['myMethod2' => 0, '::{closure#1}' => 2], // closure +0, if +2 (nesting=1)
+            'expected' => ['myMethod2' => 0, 'myMethod2::{closure#1}' => 2], // closure +0, if +2 (nesting=1)
             'whitepaperTotal' => 2,
         ];
 
         yield 'closure without control flow adds nothing' => [
             'code' => '<?php function f() { $fn = function () { return 1; }; }',
-            'expected' => ['f' => 0, '::{closure#1}' => 0],
+            'expected' => ['f' => 0, 'f::{closure#1}' => 0],
         ];
 
         yield 'arrow function without control flow adds nothing' => [
             'code' => '<?php function f() { $fn = fn () => 1; }',
-            'expected' => ['f' => 0, '::{closure#1}' => 0],
+            'expected' => ['f' => 0, 'f::{closure#1}' => 0],
         ];
 
         yield 'arrow function body is nested one level' => [
             'code' => '<?php function f($a) { return array_map(fn ($x) => $x ? 1 : 0, $a); }',
-            'expected' => ['f' => 0, '::{closure#1}' => 2], // ternary +2 (nesting=1)
+            'expected' => ['f' => 0, 'f::{closure#1}' => 2], // ternary +2 (nesting=1)
         ];
 
         // The whitepaper's "#if DEBUG" variant: a lambda one level deep puts its if at nesting=2.
         yield 'closure inside an if body' => [
             'code' => '<?php function f($a, $b) { if ($a) { $fn = function () use ($b) { if ($b) {} }; } }',
-            'expected' => ['f' => 1, '::{closure#1}' => 3], // if +1; inner if +3 (nesting=2)
+            'expected' => ['f' => 1, 'f::{closure#1}' => 3], // if +1; inner if +3 (nesting=2)
             'whitepaperTotal' => 4,
         ];
 
         yield 'closure in an if condition is nested one level' => [
             'code' => '<?php function f($a) { if (array_filter($a, fn ($y) => $y ? 1 : 0)) {} }',
-            'expected' => ['f' => 1, '::{closure#1}' => 2], // if +1; ternary +2 (lambda nesting=1)
+            'expected' => ['f' => 1, 'f::{closure#1}' => 2], // if +1; ternary +2 (lambda nesting=1)
         ];
 
         yield 'closure in a ternary branch is nested twice' => [
             'code' => '<?php function f($a, $b) { $f = $a ? function () use ($b) { if ($b) {} } : null; }',
-            'expected' => ['f' => 1, '::{closure#1}' => 3], // ternary +1; if +3 (ternary +1, lambda +1)
+            'expected' => ['f' => 1, 'f::{closure#1}' => 3], // ternary +1; if +3 (ternary +1, lambda +1)
         ];
 
         yield 'lambda in a lambda continues the nesting' => [
             'code' => '<?php function f($a) { $g = function () use ($a) { $h = fn () => $a ? 1 : 2; }; }',
-            'expected' => ['f' => 0, '::{closure#1}' => 0, '::{closure#2}' => 3], // ternary +3 (nesting=2)
+            'expected' => ['f' => 0, 'f::{closure#1}' => 0, 'f::{closure#1}::{closure#1}' => 3], // ternary +3 (nesting=2)
             'whitepaperTotal' => 3,
         ];
 
         yield 'logical sequence inside a lambda starts fresh' => [
             'code' => '<?php function f($a, $x, $z) { return $a && array_filter($x, fn ($y) => $y && $z); }',
-            'expected' => ['f' => 1, '::{closure#1}' => 1], // outer && +1; inner && +1
+            'expected' => ['f' => 1, 'f::{closure#1}' => 1], // outer && +1; inner && +1
         ];
 
         yield 'nesting is restored after a closure' => [
             'code' => '<?php function f($a, $b, $c) { if ($a) { $fn = function () use ($b) { if ($b) {} }; if ($c) {} } }',
-            'expected' => ['f' => 3, '::{closure#1}' => 3], // if +1, if $c +2; closure if +3
+            'expected' => ['f' => 3, 'f::{closure#1}' => 3], // if +1, if $c +2; closure if +3
         ];
 
         yield 'closure at file level starts at nesting zero' => [
             'code' => '<?php $f = function ($a) { if ($a) {} };',
-            'expected' => ['::{closure#1}' => 1],
+            'expected' => ['{closure#1}' => 1],
         ];
 
         yield 'lambda inside a file-level closure continues its nesting' => [
             'code' => '<?php $f = function ($a) { $g = fn () => $a ? 1 : 2; };',
-            'expected' => ['::{closure#1}' => 0, '::{closure#2}' => 2], // ternary +2 (nesting=1)
+            'expected' => ['{closure#1}' => 0, '{closure#1}::{closure#1}' => 2], // ternary +2 (nesting=1)
         ];
 
         yield 'closure in a method is a separate unit of the method' => [
             'code' => '<?php namespace App; class C { public function m($a) { return function () use ($a) { if ($a) {} }; } }',
-            'expected' => ['App\C::m' => 0, 'App\C::{closure#1}' => 2],
+            'expected' => ['App\C::m' => 0, 'App\C::m::{closure#1}' => 2],
         ];
 
         // B1: "each method in a recursion cycle" is one increment, not one per call.

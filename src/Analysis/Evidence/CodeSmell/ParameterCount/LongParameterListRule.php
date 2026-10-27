@@ -29,7 +29,9 @@ use Qualimetrix\Core\Symbol\SymbolType;
  *
  * Besides the published `code-smell.parameter-count` value, also reads
  * `code-smell.is-vo-constructor` to relax the threshold for value-object
- * constructors.
+ * constructors. A constructor that is not a value object is left to
+ * `code-smell.constructor-overinjection` through
+ * `code-smell.is-injection-constructor`.
  */
 #[CliAlias('long-parameter-list-warning', 'warning')]
 #[CliAlias('long-parameter-list-error', 'error')]
@@ -77,6 +79,7 @@ final class LongParameterListRule extends AbstractRule
             )->withGates(
                 self::populationGate('callable-coordinate', self::NAME, SymbolLevel::Callable, 'callable', self::kindIn('callable-coordinate', [SymbolType::Method, SymbolType::Function_]), 'The subject is outside the declared symbol coordinate.'),
                 self::populationGate('published-value', self::NAME, SymbolLevel::Callable, 'callable', self::keyPresent('published-value', [MetricName::CODE_SMELL_PARAMETER_COUNT]), 'The rule metric was not published.'),
+                self::populationGate('injection-constructor', self::NAME, SymbolLevel::Callable, 'callable', self::flagExcludes('injection-constructor', MetricName::CODE_SMELL_IS_INJECTION_CONSTRUCTOR), 'The constructor is owned by code-smell.constructor-overinjection.'),
             ),
         ];
     }
@@ -108,7 +111,7 @@ final class LongParameterListRule extends AbstractRule
             $declaration = $subject->declarationPath() ?? throw new LogicException('Long parameter list findings require a declaration subject');
             $symbolType = $declaration->logical->getType();
 
-            $metrics = $this->admittedMetrics($context, $subject, $populationDeclaration, static fn(MetricBag $metrics): array => [GateInput::metrics('published-value', $metrics)], [GateInput::kind('callable-coordinate', $declaration->logical->getType())], unit: 'callable', level: SymbolLevel::Callable);
+            $metrics = $this->admittedMetrics($context, $subject, $populationDeclaration, static fn(MetricBag $metrics): array => [GateInput::metrics('published-value', $metrics), GateInput::metrics('injection-constructor', $metrics)], [GateInput::kind('callable-coordinate', $declaration->logical->getType())], unit: 'callable', level: SymbolLevel::Callable);
             if ($metrics === null) {
                 continue;
             }

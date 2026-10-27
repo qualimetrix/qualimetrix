@@ -72,7 +72,7 @@ context beside the layer operation.
 ```text
 Architecture/
 ├── Allow/
-│   ├── AllowAliasExpander.php
+│   ├── AllowAliasExpander.php          # `relations` refusal text; the vocabulary is DependencyModel's DependencyRelationTokens
 │   ├── AllowListEntry.php
 │   ├── AllowTarget.php
 │   ├── CaptureBinding.php

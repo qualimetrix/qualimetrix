@@ -576,7 +576,7 @@ final class BaselineEntryParserTest extends TestCase
                 self::assertStringContainsString('version 13', $refusal->summary());
                 self::assertStringContainsString('git log -1 -- <baseline-file>', $refusal->summary());
                 self::assertStringContainsString('"exclusions"', $refusal->summary());
-                self::assertStringContainsString('"version" to ' . BaselineFormatVersion::CURRENT, $refusal->summary());
+                self::assertStringContainsString('"version" to ' . BaselineFormatVersion::OLDEST_READABLE, $refusal->summary());
             }
 
             $document['version'] = BaselineFormatVersion::CURRENT;

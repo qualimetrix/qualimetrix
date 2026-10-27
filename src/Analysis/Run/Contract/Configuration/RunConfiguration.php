@@ -7,6 +7,8 @@ namespace Qualimetrix\Analysis\Run\Contract\Configuration;
 use LogicException;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
 
 /** Immutable execution input; the coverage verdict is derived from the measured paths. */
 final readonly class RunConfiguration
@@ -19,6 +21,7 @@ final readonly class RunConfiguration
     /**
      * @param list<PathPattern> $pathExcludes
      * @param list<AuthoredExclude> $authoredPathExcludes
+     * @param bool $hasLiteralNamespaceSuppression whether a literal namespace suppression value will ask what removed code declares
      */
     public function __construct(
         public array $pathExcludes,
@@ -27,6 +30,7 @@ final readonly class RunConfiguration
         public ProjectScopeMeasurement $projectScope,
         public array $authoredPathExcludes,
         public AutoloadDevPolicy $autoloadDevPolicy,
+        public bool $hasLiteralNamespaceSuppression = false,
     ) {
         $sameRoot = $projectRoot->equals($projectScope->universe->projectRoot);
         foreach ($projectScope->universe->pathResolutions as $resolution) {
@@ -40,6 +44,32 @@ final readonly class RunConfiguration
         $this->coversProjectScope = $projectScope->state()->coversProjectScope();
     }
 
+    /**
+     * Counts namespace suppression values the invocation adds beside the
+     * document, such as `--suppress-namespace`, so that a literal one funds
+     * the removed-code survey as a configured one does.
+     *
+     * @param list<SelectorDefinition> $namespaceSelectors
+     */
+    public function withNamespaceSuppressionValues(array $namespaceSelectors): self
+    {
+        foreach ($namespaceSelectors as $selector) {
+            if ($selector->kind !== SelectorKind::Regex) {
+                return new self(
+                    pathExcludes: $this->pathExcludes,
+                    projectRoot: $this->projectRoot,
+                    generatedFilePolicy: $this->generatedFilePolicy,
+                    projectScope: $this->projectScope,
+                    authoredPathExcludes: $this->authoredPathExcludes,
+                    autoloadDevPolicy: $this->autoloadDevPolicy,
+                    hasLiteralNamespaceSuppression: true,
+                );
+            }
+        }
+
+        return $this;
+    }
+
     public function withProjectScope(ProjectScopeMeasurement $measurement): self
     {
         return new self(
@@ -49,6 +79,7 @@ final readonly class RunConfiguration
             projectScope: $measurement,
             authoredPathExcludes: $this->authoredPathExcludes,
             autoloadDevPolicy: $this->autoloadDevPolicy,
+            hasLiteralNamespaceSuppression: $this->hasLiteralNamespaceSuppression,
         );
     }
 }

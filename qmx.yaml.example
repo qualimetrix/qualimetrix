@@ -240,7 +240,8 @@
   #   namespace:
   #     max_warning: 0.8
   #     max_error: 0.95
-  #     min_afferent: 1          # skip namespaces with Ca < N (default: 1)
+  #     min_afferent: 1          # skip namespaces with Ca-own < N (default: 1)
+  #     min_type_count: 3        # skip namespaces declaring fewer own types (default: 3)
 
   # Distance from Main Sequence. Range 0.0–1.0.
   # coupling.distance:
@@ -258,6 +259,7 @@
   # architecture.circular-dependency:
   #   enabled: true
   #   max_cycle_size: 0          # 0 = report all sizes
+  #   ignore_relations: []       # kinds or aliases whose edges form no cycle, e.g. [attribute_argument]
 
   # Layer violation rule — enforces the architecture defined under the top-level
   # `architecture:` key (see below). Short-circuits when no layers are declared.
@@ -398,7 +400,8 @@
 #
 #     # Long-form target with relations: filter (whitelist of dependency
 #     # kinds). Aliases: inheritance, static_access, type_reference,
-#     # runtime_check.
+#     # runtime_check. `attribute` and `attribute_argument` (references inside
+#     # attribute arguments) are standalone kinds in no alias.
 #     repository:
 #       - target: doctrine
 #         relations: [implements, extends, type_reference]

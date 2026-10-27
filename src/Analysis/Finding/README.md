@@ -198,6 +198,22 @@ its authored `kind:value` identity rather than the rendered PCRE.
 The audit consumes the pipeline's single measured `ProjectScopeJudgement`.
 Namespace/declaration absence asks `judgesNamespaceClaims()`; path values ask
 `judgesExcludeSelectors()`, and rule-ledger namespace values also ask the former.
+Literal (`exact`/`subtree`) namespace values ask `judgesExactNamespace()` or
+`judgesNamespaceSubtree()` instead: excluded PHP files and generated removal
+withhold only a value the removed code could have declared, as
+`RemovedCodeNamespaces` (`mayDeclare()` / `mayDeclareWithin()`) records, and they
+are consulted even when no door is open. `ValueScopeJudgement::withholdsOnlyForRemovedCode()`
+and `UnboundSuppressionAudit::withheldForRemovedCode()` name the values removed
+code alone kept unjudged; any file that failed analysis (`$failedFiles`, taken by
+every public audit method) leaves every namespace value unjudged. A literal value
+the analysed namespace tree already binds is judged and bound beside removed code,
+since removed code can only add namespaces. A `ProjectScopeJudgement` without
+removed-code namespaces treats them as unknown (`removedCodeIsKnown()` is false);
+a caller that knows nothing was removed passes `RemovedCodeNamespaces::none()`.
+`RemovedCodeNamespaces` (`none`/`known`/`unknown`, ASCII case-folded, ancestors of
+a declared namespace count as declared) lives in `Contract/ProjectScope`; Run
+produces it. Regex namespace values and the six other namespace-claim channels
+keep asking `judgesNamespaceClaims()`.
 Report state and a second Console boolean do not substitute for those facts.
 Accepted PSR-4 records still locate values independently of report state;
 without a usable map namespace values remain unjudged.
@@ -368,6 +384,9 @@ not a constructor dependency exposed to consumers.
 
 `RuleEnablementResolver::decide()` reads every authored enabled/disabled writer
 and the effective only filter against the invocation's immutable channel universe.
+It also refuses a non-empty per-rule `suppress_namespaces` / `suppress_paths` on a
+producer whose every channel is project-scoped by `ChannelFileScope` (injected with
+`ChannelPresentationInterface`, which supplies the docs link in the refusal).
 `RuleOptionsBuild::build()` constructs every producer's options through
 `fromResolved(ResolvedRuleOptionValues)`, including inactive producers, and
 projects typed suppression values. `conclude()` adds each cell's option activity,

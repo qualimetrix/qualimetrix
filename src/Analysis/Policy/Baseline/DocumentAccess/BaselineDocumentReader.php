@@ -9,7 +9,6 @@ use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineFileShape;
 
-use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineFormatVersion;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\CanonicalBaselineReader;
 use Qualimetrix\Core\FileTarget\FileIdentity;
 use Qualimetrix\Core\FileTarget\NativeCall;
@@ -32,7 +31,7 @@ final readonly class BaselineDocumentReader
         return new BaselineDocument(
             path: $path,
             contentHash: hash('sha256', $content),
-            version: BaselineFormatVersion::CURRENT,
+            version: $envelope['version'],
             generated: $envelope['generated'],
             scope: $envelope['scope'],
             exclusions: $envelope['exclusions'],

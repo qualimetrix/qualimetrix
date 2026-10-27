@@ -17,14 +17,14 @@ use RecursiveIteratorIterator;
 use SplFileInfo;
 
 /**
- * Direct mentions of the two measured question APIs and their judgement type
+ * Direct mentions of the measured question APIs and their judgement type
  * are either registered readers with exact channels or registered carriers.
  * Indirect wrappers and variable provenance are outside this literal scan.
  */
 #[CoversClass(ProjectScopeChannels::class)]
 final class ProjectScopeReadersTest extends TestCase
 {
-    private const string PREDICATE = '/judgesNamespaceClaims|judgesExcludeSelectors|ProjectScopeJudgement/';
+    private const string PREDICATE = '/judgesNamespaceClaims|judgesExactNamespace|judgesNamespaceSubtree|judgesBesideRemovedCode|judgesExcludeSelectors|ProjectScopeJudgement/';
 
     /**
      * Every production PHP file naming a measured question or its judgement type,

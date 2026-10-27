@@ -32,6 +32,9 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Declara
     /** @var array<string, bool> Method/function FQN => is VO constructor */
     private array $voConstructors = [];
 
+    /** @var array<string, true> Method FQN => declared as a constructor in a class-like */
+    private array $constructors = [];
+
     /** @var array<string, VisitorCallableScope> */
     private array $scopes = [];
 
@@ -46,6 +49,7 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Declara
     {
         $this->parameterCounts = [];
         $this->voConstructors = [];
+        $this->constructors = [];
         $this->scopes = [];
         $this->resetVisitorMethodContext();
         $this->valueObjects->reset();
@@ -78,6 +82,20 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Declara
     }
 
     /**
+     * Returns FQNs of constructors that are not value-object constructors: the ones whose parameters
+     * are injected dependencies, judged by `code-smell.constructor-overinjection`.
+     *
+     * @return array<string, bool>
+     */
+    public function getInjectionConstructors(): array
+    {
+        /** @var array<string, bool> $projected */
+        $projected = $this->projectLogicalMetricMap($this->injectionConstructorKeys(), $this->scopes);
+
+        return $projected;
+    }
+
+    /**
      * @return array<string, VisitorCallableScope>
      */
     public function getMethodInfos(): array
@@ -93,12 +111,17 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Declara
     public function getCallablesWithMetrics(RelativePath $file): array
     {
         $result = [];
+        $injectionConstructors = $this->injectionConstructorKeys();
 
         foreach ($this->scopes as $fqn => $scope) {
             $metrics = (new MetricBag())->with(MetricName::CODE_SMELL_PARAMETER_COUNT, $this->parameterCounts[$fqn] ?? 0);
 
             if (isset($this->voConstructors[$fqn])) {
                 $metrics = $metrics->with(MetricName::CODE_SMELL_IS_VO_CONSTRUCTOR, 1);
+            }
+
+            if (isset($injectionConstructors[$fqn])) {
+                $metrics = $metrics->with(MetricName::CODE_SMELL_IS_INJECTION_CONSTRUCTOR, 1);
             }
 
             $result[] = $this->createCallableWithMetrics($scope, $file, $metrics);
@@ -123,6 +146,7 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Declara
         $this->parameterCounts[$fqn] = \count($node->getParams());
 
         if ($node instanceof ClassMethod && strtolower($scope->member) === '__construct') {
+            $this->constructors[$fqn] = true;
             $this->valueObjects->proposeConstructor($fqn, $node);
         }
 
@@ -138,5 +162,13 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Declara
         }
 
         return null;
+    }
+
+    /**
+     * @return array<string, true>
+     */
+    private function injectionConstructorKeys(): array
+    {
+        return array_diff_key($this->constructors, $this->voConstructors);
     }
 }

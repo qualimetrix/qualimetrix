@@ -45,7 +45,8 @@ JSON edges aggregate `types`, occurrence `count`, and an always-object `shape`
 map from dependency positions to sorted syntax forms. For example,
 `{"property_type":["nullable"],"type_hint":["union"]}` preserves the association
 between each position and its shapes; no facts gives `{}`. Relation selection
-uses positions, not the shape names.
+uses positions, not the shape names. A reference inside an attribute's arguments
+publishes the kind `attribute_argument`, and its type edges carry no `shape`.
 
 `JsonGraphExporter` separates node, class-set and edge projection internally,
 while retaining the same deterministic JSON shape and ordering. These helpers

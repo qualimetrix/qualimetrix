@@ -151,7 +151,7 @@ final class RulesSectionTest extends TestCase
         }
         $document = DocumentComposer::compose($schema, [$upper]);
         $configuration = new \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration($document);
-        $resolver = new \Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleEnablementResolver();
+        $resolver = \Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::resolver();
         $stated = $resolver->decide($document, ResolvedOptionsFixture::universe($execution->allRules()));
         $options = (new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild($execution))->build($configuration, $stated);
         $resolver->conclude($stated, $options);

@@ -145,6 +145,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule'
         - 'Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface'
         - 'Qualimetrix\Analysis\Evidence\CircularDependency\Cycle'
+        - 'Qualimetrix\Analysis\Evidence\CircularDependency\CycleEdgeFilter'
         - 'Qualimetrix\Analysis\Evidence\CircularDependency\CycleFinding'
         - 'Qualimetrix\Analysis\Evidence\CircularDependency\CycleMemberLabels'
     - name: analysis-evidence-codesmell
@@ -210,6 +211,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Cohesion\CohesionFactWire'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\CohesionMemberWire'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\CohesionMethodReachability'
+        - 'Qualimetrix\Analysis\Evidence\Cohesion\CohesionOwnCalls'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\CohesionTraitComposition'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\CohesionTraitUses'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\Configuration\LcomCollectionConfigurationResolver'
@@ -378,6 +380,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyLocationInterface'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyRelationTokens'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ExternalClassSpellingInterface'
@@ -649,6 +652,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels'
         - 'Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor'
         - 'Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement'
+        - 'Qualimetrix\Analysis\Finding\Contract\ProjectScope\RemovedCodeNamespaces'
         - 'Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts'
         - 'Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageObservation'
         - 'Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions'
@@ -1106,6 +1110,9 @@ architecture:
         - 'Qualimetrix\Analysis\Run\Discovery\ProjectFiles'
         - 'Qualimetrix\Analysis\Run\Discovery\ProjectTree'
         - 'Qualimetrix\Analysis\Run\Discovery\ProjectWalk'
+        - 'Qualimetrix\Analysis\Run\Discovery\RemovedNamespaceScan'
+        - 'Qualimetrix\Analysis\Run\Discovery\RemovedNamespaceSurvey'
+        - 'Qualimetrix\Analysis\Run\Discovery\RemovedNamespaceText'
         - 'Qualimetrix\Analysis\Run\Discovery\RemovedRunPhpEvidence'
         - 'Qualimetrix\Analysis\Run\Discovery\ScopeFacts'
         - 'Qualimetrix\Analysis\Run\Discovery\WalkRequest'
@@ -2304,7 +2311,10 @@ rules:
       - igbinary_unserialize
       - unserialize
 
-  # Immutable records carry independent authored and measured facts as arguments.
+  # Applies to methods and functions only: constructors belong to
+  # constructor-overinjection, value-object constructors to the vo-* thresholds.
+  # Many methods here pass independent authored and measured facts as arguments;
+  # the default 4/6 would report about 480 of them.
   code-smell.long-parameter-list:
     warning: 8
     error: 12

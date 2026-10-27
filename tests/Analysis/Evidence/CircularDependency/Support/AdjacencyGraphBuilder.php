@@ -36,6 +36,23 @@ final readonly class AdjacencyGraphBuilder
      */
     public static function build(array $adjacencyList): DependencyGraphInterface
     {
+        return self::typed(array_map(
+            static fn(array $targets): array => array_map(
+                static fn(string $target): array => [$target, DependencyType::TypeHint],
+                $targets,
+            ),
+            $adjacencyList,
+        ));
+    }
+
+    /**
+     * One dependency record per entry, with its kind: a target listed twice
+     * with two kinds is two records between the same pair of classes.
+     *
+     * @param array<string, list<array{string, DependencyType}>> $adjacencyList Class FQN → [target FQN, kind] records
+     */
+    public static function typed(array $adjacencyList): DependencyGraphInterface
+    {
         $dependencies = [];
         $bySource = [];
         $byTarget = [];
@@ -47,7 +64,7 @@ final readonly class AdjacencyGraphBuilder
             $sourceKey = $sourcePath->toCanonical();
             $classMap[$sourceKey] = $sourcePath;
 
-            foreach ($targets as $target) {
+            foreach ($targets as [$target, $type]) {
                 $targetPath = SymbolPath::fromClassFqn($target);
                 $targetKey = $targetPath->toCanonical();
                 $classMap[$targetKey] = $targetPath;
@@ -55,7 +72,7 @@ final readonly class AdjacencyGraphBuilder
                 $dependency = Dependency::ofKind(
                     source: DeclarationPath::of($sourcePath, RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
                     target: new LogicalClassPath($targetPath),
-                    type: DependencyType::TypeHint,
+                    type: $type,
                     location: new Location(RelativePath::fromString('test.php'), 1),
                 );
 

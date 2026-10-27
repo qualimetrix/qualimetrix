@@ -706,7 +706,7 @@ final class ReportAssemblerTest extends TestCase
         $report = $presenter->assembler->assemble($analysisResult, $projection, $context->context, $projectScope, $configurationDiagnostics, $suppressionOptions);
         $formatted = $presenter->formatter->format($report, $context, $output);
         $exit = $presenter->exit->resolve($findings, $report->coverage, $exitPolicy);
-        $presenter->publication->publishReport(new \Qualimetrix\Infrastructure\Console\Terminal\ReportPublication\RenderedCheckReport($formatted, $outputFormat->value, $exit), $input, $output, $runTargets);
+        $presenter->publication->publishReport(new \Qualimetrix\Infrastructure\Console\Terminal\ReportPublication\RenderedCheckReport($formatted, $outputFormat->value, $exit, []), $input, $output, $runTargets);
         return $exit;
     }
 

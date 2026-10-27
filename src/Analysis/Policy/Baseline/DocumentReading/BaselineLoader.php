@@ -18,6 +18,9 @@ use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertEntryReason;
  */
 final readonly class BaselineLoader
 {
+    /** The member every anonymous callable name ends in, whatever its parent. */
+    private const string CLOSURE_MEMBER = '{closure#';
+
     public function __construct(private BaselineEntryParser $entryParser) {}
 
     /** Semantic entries are judged only after the current run has resolved configuration. */
@@ -35,7 +38,7 @@ final readonly class BaselineLoader
     private function parseBaseline(array $data, string $contentHash, string $path): Baseline
     {
         $envelope = BaselineFileShape::envelope($data, $path);
-        [$entries, $inertEntries] = $this->parseEntries($data['entries'], $path);
+        [$entries, $inertEntries] = self::retirePreRenameClosures($envelope['version'], ...$this->parseEntries($data['entries'], $path));
 
         return new Baseline(
             generated: $envelope['generated'],
@@ -58,7 +61,7 @@ final readonly class BaselineLoader
     private function assembleCanonical(array $canonical, string $path): Baseline
     {
         $envelope = BaselineFileShape::envelope([...$canonical['envelope'], 'entries' => []], $path);
-        [$entries, $inertEntries] = $this->separateDuplicates($canonical['entries'], $canonical['inert']);
+        [$entries, $inertEntries] = self::retirePreRenameClosures($envelope['version'], ...$this->separateDuplicates($canonical['entries'], $canonical['inert']));
 
         return new Baseline(
             generated: $envelope['generated'],
@@ -68,6 +71,55 @@ final readonly class BaselineLoader
             inertEntries: $inertEntries,
             sourceContentHash: $canonical['contentHash'],
         );
+    }
+
+    /**
+     * Demotes every entry under a closure key of a document older than
+     * {@see BaselineFormatVersion::ENCLOSING_DECLARATION_CLOSURE_NAMES},
+     * whatever its own state. Such a key meant the closure's rank among all
+     * anonymous callables of the file, and a file-level closure still spells
+     * that rank today, so applying it would accept a different closure's
+     * findings without any entry ever going stale. Selectors are kept, so
+     * `baseline:cleanup --remove` addresses the lines it lists.
+     *
+     * @param list<BaselineEntry> $entries
+     * @param list<InertBaselineEntry> $inert
+     *
+     * @return array{list<BaselineEntry>, list<InertBaselineEntry>}
+     */
+    private static function retirePreRenameClosures(int $version, array $entries, array $inert): array
+    {
+        if ($version >= BaselineFormatVersion::ENCLOSING_DECLARATION_CLOSURE_NAMES) {
+            return [$entries, $inert];
+        }
+
+        $detail = \sprintf(
+            'this document is version %d, and the closure holding this name now need not be the one accepted',
+            $version,
+        );
+        $kept = $retired = [];
+        foreach ($entries as $entry) {
+            if (!self::namesClosure($entry->identity->subjectKey)) {
+                $kept[] = $entry;
+
+                continue;
+            }
+            $retired[] = InertBaselineEntry::forIdentity($entry->identity, InertEntryReason::RetiredClosureIdentity, $detail, $entry->toArray());
+        }
+        foreach ($inert as $entry) {
+            $retired[] = self::namesClosure($entry->subjectKey)
+                ? new InertBaselineEntry($entry->subjectKey, $entry->channelKey, $entry->identity, $entry->selector, InertEntryReason::RetiredClosureIdentity, $detail, $entry->raw)
+                : $entry;
+        }
+
+        return [$kept, $retired];
+    }
+
+    /** A `file:` key is a path, which may spell anything; every other key names a symbol before its `@`. */
+    private static function namesClosure(string $subjectKey): bool
+    {
+        return !str_starts_with($subjectKey, 'file:')
+            && str_contains(explode('@', $subjectKey, 2)[0], self::CLOSURE_MEMBER);
     }
 
     /**

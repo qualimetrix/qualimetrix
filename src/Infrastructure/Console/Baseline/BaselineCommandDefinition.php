@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Baseline;
 
+use Qualimetrix\Infrastructure\Console\Invocation\CommandDefinition\AnalysisReportCommandDefinition;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
@@ -142,10 +143,11 @@ final class BaselineCommandDefinition
                 null,
                 InputOption::VALUE_NONE,
                 'Disable progress bar',
-            )
-            ->addOption('no-cache', null, InputOption::VALUE_NONE, 'Disable caching')
-            ->addOption('workers', 'w', InputOption::VALUE_REQUIRED, 'Number of parallel workers')
-            ->addOption('memory-limit', null, InputOption::VALUE_REQUIRED, 'PHP memory limit');
+            );
+
+        AnalysisReportCommandDefinition::addNoCacheOption($command);
+        AnalysisReportCommandDefinition::addWorkersOption($command);
+        AnalysisReportCommandDefinition::addMemoryLimitOption($command);
     }
 
     /**

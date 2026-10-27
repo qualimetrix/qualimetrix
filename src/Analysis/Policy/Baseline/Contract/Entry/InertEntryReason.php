@@ -55,19 +55,33 @@ enum InertEntryReason: string
     case DuplicateIdentity = 'duplicate-identity';
 
     /**
+     * A closure key read from a document older than version 15. It named the
+     * closure's rank among all closures of the file; a closure is now named
+     * under its enclosing declaration, and a file-level closure still spells
+     * the old form, so the key would bind to whichever closure holds that rank
+     * today. Not stale either: a stale entry is one nothing reports, and this
+     * one may coincide with a reported closure it never described.
+     */
+    case RetiredClosureIdentity = 'retired-closure-identity';
+
+    /** Keyed by case value; static analysis refuses a case without one. */
+    private const array DESCRIPTIONS = [
+        'malformed' => 'malformed entry',
+        'undeclared-channel' => 'channel is not declared by any rule',
+        'level-not-declared' => 'subject level is not declared by this channel in this configuration',
+        'baseline-audit-channel' => 'baseline audit findings cannot be accepted as debt',
+        'configuration-error-channel' => 'channel reports a configuration error, which cannot be accepted as debt',
+        'shape-mismatch' => 'entry does not match the channel\'s declared shape',
+        'unrecognized-mode' => 'unrecognized mode',
+        'duplicate-identity' => 'duplicate identity',
+        'retired-closure-identity' => 'retired closure identity: baseline versions before 15 named a closure by its rank in the file',
+    ];
+
+    /**
      * Short human-readable form for `check` output.
      */
     public function description(): string
     {
-        return match ($this) {
-            self::Malformed => 'malformed entry',
-            self::UndeclaredChannel => 'channel is not declared by any rule',
-            self::LevelNotDeclared => 'subject level is not declared by this channel in this configuration',
-            self::BaselineAuditChannel => 'baseline audit findings cannot be accepted as debt',
-            self::ConfigurationErrorChannel => 'channel reports a configuration error, which cannot be accepted as debt',
-            self::ShapeMismatch => 'entry does not match the channel\'s declared shape',
-            self::UnrecognizedMode => 'unrecognized mode',
-            self::DuplicateIdentity => 'duplicate identity',
-        };
+        return self::DESCRIPTIONS[$this->value];
     }
 }

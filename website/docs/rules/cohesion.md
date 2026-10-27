@@ -17,7 +17,9 @@ means that the class is cohesive; values above `1` indicate independent groups
 of responsibilities that may be split. Qualimetrix connects methods that share
 a property or call one another through `$this->method()`, `self::method()` or `static::method()`, excludes static,
 constructor and destructor methods, and groups only uncalled stateless constant methods
-into one virtual node. A called method remains its own graph vertex.
+into one virtual node. A called method remains its own graph vertex. Private helpers
+that only the constructor or destructor reaches are initialization, not behavior, and
+leave the graph with them (see the deviation note below).
 
 The default warning/error thresholds are `3` and `5`, inclusive at equality. Readonly classes are
 excluded by default, and classes must have at least three graph-eligible methods after exclusions. You can also
@@ -80,6 +82,51 @@ selections and class overrides; an unread trait is reported, not assumed empty.
     from the LCOM method population as a scope adaptation. TCC/LCC also exclude
     them, as Bieman and Kang specify. Initialization is not a behavioral group;
     constructor edges must not bridge unrelated responsibilities.
+
+    The private instance methods that only the constructor or destructor reaches
+    through `$this->`, `self::` or `static::` calls, directly or through other such
+    helpers, are initialization helpers and are excluded as well. Otherwise each
+    would form its own disconnected component, since the constructor edge that
+    would join it to the class is removed. A method stays in the graph when any
+    other method reaches it: public and protected methods are never helpers, even
+    when the constructor calls them, nor are static methods or `exclude_methods`
+    entries, and the callees of those are ordinary. A closure, arrow function or
+    first-class callable created in the constructor or in a helper runs after
+    construction, so the method it names stays in the graph; every closure counts
+    this way, even one invoked at once (`array_map`), which keeps its callees in
+    the graph. A helper that hands state on registers behavior and stays as well:
+    it touches a property inside a closure, arrow function or nested function (by
+    name or dynamically), binds a property or its element or member by reference
+    (on either side of `=&`, as an array element, as a `foreach` value or through
+    destructuring), or is a generator (`yield`, `yield from`). Removing a helper
+    can raise LCOM when it was the only bridge between two property groups, and
+    can empty the graph, which then publishes no value. TCC/LCC are unchanged.
+
+    Other references to an own method only protect their target from this
+    removal; they are never LCOM4 or TCC/LCC edges. They are: a call through the
+    own fully qualified class name or `$this::`, a literal name in braces
+    (`$this->{'m'}()`, `self::{'m'}()`), a two-element array or
+    `new ReflectionMethod(X, 'm')` with `X` being `$this`, `self::class`,
+    `static::class`, the own `::class`, `$this::class`, `__CLASS__`,
+    `get_class($this)`, `get_class()`, `get_called_class()` or the string
+    `'self'`, `'static'` or the own fully qualified name, and the callable strings
+    `'self::m'`, `'static::m'` and `'App\Own::m'`. Matching is deliberately broad:
+    a false reference only keeps a helper in the graph.
+
+    No method leaves the graph when the call map may be incomplete: when a used
+    trait was not read (`cohesion.unread-trait-count` above zero), when a
+    non-literal name appears in an own call or in any reference above
+    (`$this->$name()`, `self::$name()`, `$this::{$x}()`, `[$this, $name]`), when a
+    string or interpolated string starts with an own prefix plus `::` without
+    being a plain callable string, or when a concatenation starts with the own
+    class name. Not recorded, so a helper used only that way counts as
+    initialization: calls on another instance (`$other->m()`, including an alias
+    `$self = $this`), the nullsafe `$this?->m()`, `parent::m()`, a short class
+    name, a callable string built by `sprintf()` or from a variable class name,
+    reflection lookups such as `getMethod('m')`, a property passed by reference
+    as an argument, and an object taken from a property and captured by value in a
+    static closure. `call_user_func($this)` reaches only the public `__invoke`, an
+    ordinary root.
 
 !!! note "Comparing with other tools"
     phpmetrics uses the Henderson-Sellers LCOM formula, whose values are on a

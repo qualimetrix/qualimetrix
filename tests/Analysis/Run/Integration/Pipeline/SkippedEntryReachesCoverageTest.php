@@ -156,7 +156,7 @@ final class SkippedEntryReachesCoverageTest extends TestCase
                 $this->profiler,
             ))
             ->withComputedMetricEvaluation($computed)
-            ->withCircularDependencyPreparation(new CircularDependencyAnalysis(new CircularDependencyDetector()))
+            ->withCircularDependencyPreparation(new CircularDependencyAnalysis(new CircularDependencyDetector(), $configuration))
             ->withFileSetInspection(new FileSetInspectionComposite(
                 [],
                 new RuleSelectorProducerGate($configuration),

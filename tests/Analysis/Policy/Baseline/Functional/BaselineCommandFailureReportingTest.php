@@ -25,7 +25,6 @@ use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineConflictException;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
@@ -290,7 +289,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
             $staticChannels,
             new RuleOptionsBuild(self::createStub(RuleExecutionInterface::class)),
             self::createStub(ComputedMetricConfiguratorInterface::class),
-            new RuleEnablementResolver(),
+            ResolvedOptionsFixture::resolver(),
             self::createStub(\Qualimetrix\Analysis\Policy\Architecture\Contract\UnassignedClassLayerRequirementInterface::class),
         );
 
@@ -326,7 +325,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
             $staticChannels,
             new RuleOptionsBuild(self::createStub(RuleExecutionInterface::class)),
             self::createStub(ComputedMetricConfiguratorInterface::class),
-            new RuleEnablementResolver(),
+            ResolvedOptionsFixture::resolver(),
             self::createStub(\Qualimetrix\Analysis\Policy\Architecture\Contract\UnassignedClassLayerRequirementInterface::class),
         );
     }

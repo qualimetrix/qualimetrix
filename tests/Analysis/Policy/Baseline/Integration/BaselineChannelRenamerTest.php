@@ -754,6 +754,34 @@ final class BaselineChannelRenamerTest extends TestCase
         self::assertSame($replacement, (string) file_get_contents($path));
     }
 
+    /**
+     * A carry changes no identity, so it keeps the version it read: a closure
+     * entry of a version 14 file stays retired after its channel is renamed,
+     * rather than becoming a current-version key that binds by name.
+     */
+    #[Test]
+    public function itKeepsTheVersionOfTheDocumentItCarries(): void
+    {
+        $closure = 'declaration:func:App::{closure#2}@src/A.php';
+        $path = $this->rawFixture([
+            $closure => [['channel' => 'mid.two', 'count' => 1]],
+            'class:App\Foo' => [['channel' => 'mid.two', 'count' => 1]],
+        ]);
+        $legacy = str_replace('"version":' . BaselineFormatVersion::CURRENT . ',', '"version":14,', (string) file_get_contents($path));
+        file_put_contents($path, $legacy);
+
+        $report = $this->renamer->carry((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($path), $this->map("mid.two\tmid.renamed"));
+
+        self::assertSame(2, $report->renamedEntries);
+        $carried = json_decode((string) file_get_contents($path), true, 512, \JSON_THROW_ON_ERROR);
+        self::assertSame(14, $carried['version']);
+        $loaded = (new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults())))
+            ->load((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($path));
+        $closureEntries = array_values(array_filter($loaded->inertEntries, static fn($entry): bool => $entry->subjectKey === $closure));
+        self::assertCount(1, $closureEntries);
+        self::assertSame(\Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertEntryReason::RetiredClosureIdentity, $closureEntries[0]->reason);
+    }
+
     private function map(string ...$rows): ChannelRenameMap
     {
         $lines = "old\tnew\treason\n";

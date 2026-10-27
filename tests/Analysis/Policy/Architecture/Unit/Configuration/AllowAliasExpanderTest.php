@@ -45,71 +45,23 @@ final class AllowAliasExpanderTest extends TestCase
         );
     }
 
-    // -------------------------------------------------------------------------
-    // Alias expansion
-    // -------------------------------------------------------------------------
-
     #[Test]
-    public function itExpandsTheInheritanceAliasToExtendsImplementsAndTraitUse(): void
+    public function itAcceptsAttributeArgumentAsAStandaloneRelationKind(): void
     {
-        $result = $this->parseRelationList(ArchitectureDocument::relations(['inheritance']), 'architecture.allow.app[0]');
-
-        self::assertSame(
-            [DependencyType::Extends, DependencyType::Implements, DependencyType::TraitUse],
-            $result,
+        $result = $this->parseRelationList(
+            ArchitectureDocument::relations(['static_access', 'attribute_argument']),
+            'architecture.allow.app[0]',
         );
-    }
-
-    #[Test]
-    public function itExpandsTheStaticAccessAliasToStaticCallStaticPropertyAndClassConst(): void
-    {
-        $result = $this->parseRelationList(ArchitectureDocument::relations(['static_access']), 'architecture.allow.app[0]');
 
         self::assertSame(
             [
                 DependencyType::StaticCall,
                 DependencyType::StaticPropertyFetch,
                 DependencyType::ClassConstFetch,
+                DependencyType::AttributeArgument,
             ],
             $result,
         );
-    }
-
-    #[Test]
-    public function itExpandsTheTypeReferenceAliasToEveryTypePosition(): void
-    {
-        $result = $this->parseRelationList(ArchitectureDocument::relations(['type_reference']), 'architecture.allow.app[0]');
-
-        self::assertSame(
-            [
-                DependencyType::TypeHint,
-                DependencyType::PropertyType,
-                DependencyType::ConstantType,
-            ],
-            $result,
-        );
-    }
-
-    #[Test]
-    public function itExpandsTheRuntimeCheckAliasToCatchAndInstanceof(): void
-    {
-        $result = $this->parseRelationList(ArchitectureDocument::relations(['runtime_check']), 'architecture.allow.app[0]');
-
-        self::assertSame(
-            [DependencyType::Catch_, DependencyType::Instanceof_],
-            $result,
-        );
-    }
-
-    #[Test]
-    public function itTreatsAttributeAsAStandaloneTokenNotAnAlias(): void
-    {
-        // `attribute` is intentionally NOT grouped under any alias — ADR 0059
-        // marks it as a distinct metadata category. Confirm the token round-trips
-        // through the direct-value path (no expansion).
-        $result = $this->parseRelationList(ArchitectureDocument::relations(['attribute']), 'architecture.allow.app[0]');
-
-        self::assertSame([DependencyType::Attribute], $result);
     }
 
     // -------------------------------------------------------------------------

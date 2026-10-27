@@ -53,7 +53,7 @@ final class ParameterCountCollectorTest extends TestCase
     #[Test]
     public function itProvidesExpectedMetricKeys(): void
     {
-        self::assertSame(['code-smell.parameter-count', 'code-smell.is-vo-constructor'], $this->collector->provides());
+        self::assertSame(['code-smell.parameter-count', 'code-smell.is-vo-constructor', 'code-smell.is-injection-constructor'], $this->collector->provides());
     }
 
     #[Test]
@@ -263,7 +263,7 @@ PHP;
     {
         $definitions = $this->collector->getMetricDefinitions();
 
-        self::assertCount(2, $definitions);
+        self::assertCount(3, $definitions);
 
         $definition = $definitions[0];
         self::assertSame('code-smell.parameter-count', $definition->name);
@@ -293,6 +293,12 @@ PHP;
         $voDefinition = $definitions[1];
         self::assertSame('code-smell.is-vo-constructor', $voDefinition->name);
         self::assertSame(SymbolLevel::Callable, $voDefinition->collectedAt);
+        self::assertSame([], $voDefinition->aggregations);
+
+        $injectionDefinition = $definitions[2];
+        self::assertSame('code-smell.is-injection-constructor', $injectionDefinition->name);
+        self::assertSame(SymbolLevel::Callable, $injectionDefinition->collectedAt);
+        self::assertSame([], $injectionDefinition->aggregations);
     }
 
     #[Test]
@@ -356,6 +362,49 @@ PHP;
 
         self::assertSame(4, $metrics->get('code-smell.parameter-count:App\Dto\UserDto::__construct'));
         self::assertSame(1, $metrics->get('code-smell.is-vo-constructor:App\Dto\UserDto::__construct'));
+    }
+
+    /**
+     * @return iterable<string, array{string, string, bool, bool}>
+     */
+    public static function provideConstructorFlags(): iterable
+    {
+        $params = 'private object $a, private object $b';
+        yield 'service constructor' => ['class S { public function __construct(' . $params . ') {} }', 'S::__construct', true, false];
+        yield 'constructor in another letter case' => ['class S { public function __CONSTRUCT(' . $params . ') {} }', 'S::__CONSTRUCT', true, false];
+        yield 'readonly service with hidden dependencies' => ['final readonly class S { public function __construct(' . $params . ') {} }', 'S::__construct', true, false];
+        yield 'value-object constructor' => ['final readonly class S { public function __construct(public string $a, public string $b) {} }', 'S::__construct', false, true];
+        yield 'abstract constructor' => ['abstract class S { abstract public function __construct(object $a, object $b); }', 'S::__construct', true, false];
+        yield 'interface constructor' => ['interface S { public function __construct(object $a, object $b); }', 'S::__construct', true, false];
+        yield 'trait constructor' => ['trait S { public function __construct(' . $params . ') {} }', 'S::__construct', true, false];
+        yield 'anonymous class constructor' => ['function f() { return new class { public function __construct(' . $params . ') {} }; }', '{anonymous#0}::__construct', true, false];
+        yield 'method with many parameters' => ['class S { public function run(object $a, object $b, object $c, object $d, object $e, object $f, object $g): void {} }', 'S::run', false, false];
+        yield 'global function named like a constructor' => ['function __construct(object $a, object $b) {}', '__construct', false, false];
+    }
+
+    #[Test]
+    #[DataProvider('provideConstructorFlags')]
+    public function itPublishesTheInjectionConstructorFlagOnlyForConstructorsThatAreNotValueObjects(string $declaration, string $member, bool $injection, bool $valueObject): void
+    {
+        $metrics = $this->collectMetrics("<?php\n\nnamespace App;\n\n" . $declaration);
+        $methodsWithMetrics = $this->collectMethodsWithMetrics("<?php\n\nnamespace App;\n\n" . $declaration);
+
+        $perCallable = null;
+        foreach ($methodsWithMetrics as $callable) {
+            $logical = $callable->declarationPath->logical;
+            if (($logical->type !== null ? $logical->type . '::' : '') . $logical->member === $member) {
+                $perCallable = $callable;
+            }
+        }
+        self::assertNotNull($perCallable, $member);
+
+        self::assertSame($injection, $perCallable->metrics->has('code-smell.is-injection-constructor'));
+        self::assertSame($valueObject, $perCallable->metrics->has('code-smell.is-vo-constructor'));
+        $key = 'code-smell.is-injection-constructor:App\\' . $member;
+        self::assertSame($injection, $metrics->has($key), $key);
+        if ($injection) {
+            self::assertSame(1, $perCallable->metrics->get('code-smell.is-injection-constructor'));
+        }
     }
 
     #[Test]

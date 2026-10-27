@@ -91,6 +91,10 @@ final class DirectivesCommand extends Command
             DirectiveSweepScope::Narrow->value,
         );
 
+        AnalysisReportCommandDefinition::addCacheOptions($this);
+        AnalysisReportCommandDefinition::addWorkersOption($this);
+        AnalysisReportCommandDefinition::addMemoryLimitOption($this);
+
         AnalysisReportCommandDefinition::addSelectionOptions($this)
             ->setHelp(implode("\n", [
                 'Answers, for every inline directive in the analysed tree, whether it still',

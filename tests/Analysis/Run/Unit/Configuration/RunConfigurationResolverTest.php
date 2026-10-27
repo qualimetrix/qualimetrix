@@ -20,6 +20,8 @@ use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
@@ -200,5 +202,53 @@ final class RunConfigurationResolverTest extends TestCase
             array_map(static fn(AbsolutePath $path): string => $path->value(), $configuration->paths),
         );
         self::assertSame($expectedPolicy, $configuration->autoloadDevPolicy);
+    }
+
+    /** @return iterable<string, array{array<string, mixed>, bool}> */
+    public static function provideNamespaceSuppression(): iterable
+    {
+        $rule = static fn(array $options): array => [ConfigSchema::RULES => ['coupling.cbo' => $options]];
+        yield 'none' => [[], false];
+        yield 'global exact' => [[ConfigSchema::SUPPRESS_NAMESPACES => [['exact' => 'App\\Gone']]], true];
+        yield 'global regex only' => [[ConfigSchema::SUPPRESS_NAMESPACES => [['regex' => '/^App/']]], false];
+        yield 'rule subtree' => [$rule(['suppress_namespaces' => [['subtree' => 'App']]]), true];
+        yield 'rule channel exact' => [$rule(['suppress_namespace_channels' => ['coupling.cbo.class' => [['exact' => 'App\\Gone']]]]), true];
+        yield 'rule channel regex only' => [$rule(['suppress_namespace_channels' => ['coupling.cbo.class' => [['regex' => '/x/']]]]), false];
+        yield 'rule paths only' => [$rule(['suppress_paths' => [['subtree' => 'src']]]), false];
+        yield 'rule thresholds only' => [$rule(['class' => ['warning' => 10, 'error' => 20]]), false];
+    }
+
+    /** @param array<string, mixed> $values */
+    #[Test]
+    #[DataProvider('provideNamespaceSuppression')]
+    public function itRecordsWhetherALiteralNamespaceSuppressionValueIsConfigured(array $values, bool $expected): void
+    {
+        $configuration = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerManifestReader())))->resolve(LayeredDocument::of(
+            [['source' => 'qmx.yaml', 'values' => [ConfigSchema::PATHS => ['src'], ...$values]]],
+            AbsolutePath::fromString(sys_get_temp_dir()),
+        ));
+
+        self::assertSame($expected, $configuration->hasLiteralNamespaceSuppression);
+        self::assertSame($expected, $configuration->withProjectScope($configuration->projectScope)->hasLiteralNamespaceSuppression);
+    }
+
+    #[Test]
+    public function itCountsALiteralNamespaceSuppressionValueTheInvocationAdds(): void
+    {
+        $configuration = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerManifestReader())))->resolve(LayeredDocument::of(
+            [['source' => 'qmx.yaml', 'values' => [ConfigSchema::PATHS => ['src'], 'exclude' => [['subtree' => 'src/Legacy']]]]],
+            AbsolutePath::fromString(sys_get_temp_dir()),
+        ));
+        $regex = $configuration->withNamespaceSuppressionValues([new SelectorDefinition(SelectorKind::Regex, '/^App/')]);
+        $literal = $configuration->withNamespaceSuppressionValues([
+            new SelectorDefinition(SelectorKind::Regex, '/^App/'),
+            new SelectorDefinition(SelectorKind::Exact, 'App\\Gone'),
+        ]);
+
+        self::assertFalse($configuration->hasLiteralNamespaceSuppression);
+        self::assertSame($configuration, $regex);
+        self::assertTrue($literal->hasLiteralNamespaceSuppression);
+        self::assertEquals($configuration->authoredPathExcludes, $literal->authoredPathExcludes);
+        self::assertSame($configuration->projectScope, $literal->projectScope);
     }
 }

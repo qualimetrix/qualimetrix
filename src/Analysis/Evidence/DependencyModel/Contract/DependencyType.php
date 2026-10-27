@@ -79,6 +79,14 @@ enum DependencyType: string
     case Attribute = 'attribute';
 
     /**
+     * Class reference inside an attribute's arguments, whatever expression
+     * spells it: a class constant, an enum case, `new`, or a closure body or
+     * signature. The attribute's own name stays {@see self::Attribute}.
+     * Example: #[Entity(repositoryClass: FooRepository::class)]
+     */
+    case AttributeArgument = 'attribute_argument';
+
+    /**
      * Typed property declaration.
      * Example: private Foo $bar;
      */
@@ -107,6 +115,7 @@ enum DependencyType: string
             self::Catch_ => 'catches exception',
             self::Instanceof_ => 'checks instanceof',
             self::Attribute => 'uses attribute',
+            self::AttributeArgument => 'uses in attribute argument',
             self::PropertyType => 'uses as property type',
             self::ConstantType => 'uses as class constant type',
         };

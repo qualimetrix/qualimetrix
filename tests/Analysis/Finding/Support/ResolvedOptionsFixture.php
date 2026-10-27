@@ -24,11 +24,14 @@ use Qualimetrix\Analysis\Configuration\Loader\CommandLineLayer;
 use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPresentation;
+use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPresentationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ProducerDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope;
 use Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
@@ -124,12 +127,26 @@ final class ResolvedOptionsFixture
             $resolved = self::authoredConfiguration([], $metadata, $cliPathWrites, $only, $disabled);
         }
         $channels ??= self::universe($metadata);
-        $resolver = new RuleEnablementResolver();
+        $resolver = self::resolver();
         $stated = $resolver->decide($resolved->document, $channels);
         $options = (new RuleOptionsBuild(self::execution($metadata)))->build($resolved, $stated);
         return $resolved->withChannelUniverse($channels)->withResolvedOptions($options)
             ->withDiagnostics([...$configuration->diagnostics, ...$stated->diagnostics()])
             ->withEnablement($resolver->conclude($stated, $options));
+    }
+
+    /** @param list<string> $projectScopedChannels */
+    public static function resolver(array $projectScopedChannels = []): RuleEnablementResolver
+    {
+        return new RuleEnablementResolver(
+            new ChannelFileScope($projectScopedChannels),
+            new class implements ChannelPresentationInterface {
+                public function presentationFor(string $code): ?ChannelPresentation
+                {
+                    return null;
+                }
+            },
+        );
     }
 
     /**
@@ -350,7 +367,7 @@ final class ResolvedOptionsFixture
     }
 
     /** @return array{\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface} */
-    private static function unusedReachPorts(): array
+    public static function unusedReachPorts(): array
     {
         return [
             new class implements \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface {

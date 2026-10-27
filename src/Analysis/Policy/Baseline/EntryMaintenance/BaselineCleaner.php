@@ -219,8 +219,10 @@ final readonly class BaselineCleaner
 
     private static function sameDuplicateContender(BaselineEntry|InertBaselineEntry $match, BaselineIdentity $identity, EntrySelector $selector): bool
     {
+        // A retired closure entry was relabelled after its duplicate verdict,
+        // so retired contenders of one identity are still duplicates.
         return $match instanceof InertBaselineEntry
-            && $match->reason === InertEntryReason::DuplicateIdentity
+            && \in_array($match->reason, [InertEntryReason::DuplicateIdentity, InertEntryReason::RetiredClosureIdentity], true)
             && $match->identity !== null
             && $match->identity->equals($identity)
             && $match->selector->value === $selector->value;

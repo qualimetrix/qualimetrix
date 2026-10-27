@@ -24,6 +24,7 @@ DependencyModel/
 │   ├── DependencyGraphBuilderInterface.php
 │   ├── DependencyGraphInterface.php
 │   ├── DependencyLocationInterface.php
+│   ├── DependencyRelationTokens.php
 │   ├── DependencyTraversalParticipantInterface.php
 │   ├── DependencyType.php
 │   ├── ExternalClassSpellingInterface.php
@@ -91,6 +92,23 @@ position (`type_hint`, `property_type`, or `constant_type`) and carry a separate
 `TypeShape` (`single`, `nullable`, `union`, `intersection`, or `dnf`). Attribute
 edges carry an `AttributeSite`; member, promoted-parameter, hook, nested-callable
 and nested-class sites remain distinguishable without inventing relation kinds.
+
+A reference recorded while the traversal is inside an attribute's arguments —
+`Foo::class`, a constant or enum case, `new Foo()`, or a closure's signature and
+body there — has the kind `attribute_argument`, not the kind the same expression
+has in code. The attribute's own name keeps `attribute`, including an attribute
+on a closure inside an argument, and an anonymous class's `extends`,
+`implements` and `trait_use` keep theirs. The edge carries no `AttributeSite`
+and no `TypeShape`. `DependencyVisitor` counts the attributes it is inside, per
+named declaration, and brackets each handler dispatch with that state, so no
+handler knows the kind. Coupling counts distinct targets, so the kind moves no
+coupling value; it does move layer `relations:` matching, layer-violation
+identity and graph-export `types`.
+
+`DependencyRelationTokens` owns the vocabulary users write to name dependency
+kinds in `relations:` and `ignore-relations`: every `DependencyType` value plus
+the aliases `inheritance`, `static_access`, `type_reference` and
+`runtime_check`. `attribute` and `attribute_argument` belong to no alias.
 
 `ClassCouplings` carries each class's outgoing occurrences, incoming occurrences,
 Ce and Ca in one canonical-key row. The graph builds that row from the supplied
@@ -234,8 +252,8 @@ The module owns these Unit test classes under
 
 - `DependencyTest`, `DependencyGraphTest`, `DependencyGraphBuilderTest`,
   `NamespaceCouplingsTest`, and `StringSetTest` at the root
-- `AttributeSiteTest`, `ClassLikeDeclarationTest`, and `TypeShapeTest` in
-  `Contract/`
+- `AttributeSiteTest`, `ClassLikeDeclarationTest`, `DependencyRelationTokensTest`,
+  and `TypeShapeTest` in `Contract/`
 - `DependencyResolverTest`, `DependencyVisitorTest`, and
   `DuplicateDeclarationEdgeSourceTest` in `Extraction/`
 - `TypeDependencyHelperTest` in `Extraction/Handler/`

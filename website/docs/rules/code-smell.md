@@ -565,7 +565,9 @@ Common request abstractions:
 
 Detects constructors with too many dependencies injected. A long constructor parameter list in DI-heavy codebases is a direct signal of Single Responsibility Principle violation -- the class has too many collaborators.
 
-A [value-object constructor](#value-object-constructor-exemption) carries fields, not dependencies, and is not judged by this rule: `code-smell.long-parameter-list` judges it with its VO thresholds. The JSON report lists such constructors under `abstentions` with the gate `value-object-constructor`.
+Every constructor has exactly one owner. This rule owns each `__construct` of a class, abstract class, interface, trait or anonymous class (the name is matched case-insensitively) that is not a value-object constructor. A [value-object constructor](#value-object-constructor-exemption) carries fields, not dependencies, and is not judged by this rule: `code-smell.long-parameter-list` judges it with its VO thresholds. The JSON report lists such constructors under `abstentions` with the gate `value-object-constructor`.
+
+Disabling this rule, or excluding it with `--only-rule`, leaves the constructors it owns unjudged: `code-smell.long-parameter-list` does not take them over. A global function named `__construct` has no class and stays with `long-parameter-list`.
 
 <!-- llms:skip-end -->
 
@@ -651,12 +653,14 @@ bin/qmx check src/ --rule-opt="code-smell.constructor-overinjection:threshold=8"
 
 Detects methods and functions with too many parameters. A long parameter list makes the method hard to call correctly, hard to test, and often indicates the method is doing too many things. Consider using a parameter object or splitting the method.
 
+Of all constructors, this rule judges only [value-object constructors](#value-object-constructor-exemption). Any other constructor belongs to [`code-smell.constructor-overinjection`](#constructor-over-injection), so one constructor is never reported by both rules; the JSON report lists it under `abstentions` with the gate `injection-constructor`. Disabling `constructor-overinjection` therefore leaves those constructors unjudged. A global function named `__construct` is a function, not a constructor, and uses the standard thresholds.
+
 <!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### Thresholds
 
-**Standard thresholds** (methods and functions):
+**Standard thresholds** (methods and functions, constructors excluded):
 
 | Value | Severity | Meaning                              |
 | ----- | -------- | ------------------------------------ |
@@ -688,15 +692,14 @@ data container, not a sign of poor decomposition. These constructors use separat
    `readonly` / `private(set)`), or a method of the class itself returns it exactly as
    `return $this->name;`
 
-When **any** condition is not met, standard thresholds apply.
+When **any** condition is not met, the constructor is not a value-object constructor and `code-smell.constructor-overinjection` judges it with its own thresholds (8/12); `long-parameter-list` abstains.
 
 The fourth criterion separates a data carrier from a readonly service. A `final readonly class` whose
 promoted properties are all private and never returned holds injected dependencies, not data, and is
 judged like any other constructor. A getter that returns a derived value (`$this->name->value`,
 `['name' => $this->name]`) does not count as exposure; neither does a return inside a closure or arrow
 function, which is how services hand `fn() => $this->dependency` to lazy factories, nor a getter declared
-in a used trait. A value object whose state is reachable only that way also gets standard thresholds. A `@qmx-threshold code-smell.long-parameter-list` on such a
-constructor tunes the standard thresholds.
+in a used trait. A value object whose state is reachable only that way is judged by `code-smell.constructor-overinjection`. A `@qmx-threshold code-smell.long-parameter-list` on a constructor that rule owns has nothing to tune: use `code-smell.constructor-overinjection` there.
 
 ### Example
 
@@ -762,7 +765,7 @@ final readonly class CreateUserRequest
 # qmx.yaml
 rules:
   code-smell.long-parameter-list:
-    warning: 4        # standard methods/functions
+    warning: 4        # methods and functions
     error: 6
     vo-warning: 8     # readonly VO constructors
     vo-error: 12

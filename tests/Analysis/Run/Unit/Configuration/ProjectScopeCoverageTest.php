@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\RemovedCodeNamespaces;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeDefaults;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopePaths;
@@ -134,7 +135,7 @@ final class ProjectScopeCoverageTest extends TestCase
             (new ComposerManifestReader())->read($root)->state,
         );
         $measured = $initial->narrowTo([$source])->withDiscoveredFiles(
-            new DiscoveredProjectFiles([], [], [], [], [], new ScopeFacts([], [], [], false), 0),
+            new DiscoveredProjectFiles([], [], [], [], [], new ScopeFacts([], [], [], false, removedCode: RemovedCodeNamespaces::none()), 0),
         );
         $valueScope = $measured->valueScopeJudgement();
 

@@ -76,8 +76,10 @@ final readonly class UnboundSuppressionAudit
      * at all. That is not "nothing bound": it is "the universe to judge
      * against was never built", and the namespace half stays silent rather
      * than reporting every configured namespace as unbound — naming each such
-     * value in {@see unjudgedValues()} instead. The path half is unaffected:
-     * its universe is the coverage, which always exists.
+     * value in {@see unjudgedValues()} instead. A file that failed analysis
+     * leaves the tree without whatever it declares, so any failure silences
+     * the namespace half the same way. The path half is unaffected: its
+     * universe is the coverage, which always exists.
      *
      * The findings are passed through `publishable()` here rather than at the
      * seam: `--disable-rule`, `--only-rule`, the baseline and `--fail-on` must
@@ -88,6 +90,7 @@ final readonly class UnboundSuppressionAudit
      * @param list<NamespacePattern> $suppressNamespaces global `suppress_namespaces`, `--suppress-namespace` included
      * @param list<RelativePath> $analyzedFiles the run's own file universe
      * @param ?list<string> $declaredNamespaces every namespace the run declared, or `null` if it built no tree
+     * @param int $failedFiles how many discovered files the run failed to analyse
      * @param ValueScopeJudgement $scope the run's shape, asked of every value before it is judged
      *
      * @return array{findings: list<Finding>, population: JudgedPopulation}
@@ -97,6 +100,7 @@ final readonly class UnboundSuppressionAudit
         array $suppressNamespaces,
         array $analyzedFiles,
         ?array $declaredNamespaces,
+        int $failedFiles,
         ValueScopeJudgement $scope,
         ChannelPublication $publication,
     ): array {
@@ -116,7 +120,7 @@ final readonly class UnboundSuppressionAudit
             if (!$publication->publishes(UnboundSuppressionRule::NAME, $channel, SymbolLevel::Project)) {
                 continue;
             }
-            $judged = $this->judges($value, $declaredNamespaces, $scope);
+            $judged = $this->judges($value, $declaredNamespaces, $failedFiles, $scope);
             $input = GateInput::context($value['pattern'] instanceof PathPattern ? 'suppressionPathJudged' : 'suppressionNamespaceJudged', $judged);
             $identity = PopulationIdentity::occurrence(json_encode([$value['channel'], $value['rule'], $value['option'], SourceBytes::framed($value['pattern']->definition->display())], \JSON_THROW_ON_ERROR), $ordinal, 'configured-suppression-value-occurrence');
             $declaration = $declarations[$channel->code];
@@ -156,21 +160,70 @@ final readonly class UnboundSuppressionAudit
         array $suppressPaths,
         array $suppressNamespaces,
         ?array $declaredNamespaces,
+        int $failedFiles,
         ValueScopeJudgement $scope,
     ): array {
         $unjudged = [];
 
         foreach ($this->configuredValues($suppressPaths, $suppressNamespaces) as $value) {
-            if (!$this->judges($value, $declaredNamespaces, $scope)) {
-                $unjudged[] = [
-                    'channel' => $value['channel'],
-                    'option' => $value['rule'] === null ? $value['option'] : \sprintf('rules.%s.%s', $value['rule'], $value['option']),
-                    'pattern' => $value['pattern']->definition->display(),
-                ];
+            if (!$this->judges($value, $declaredNamespaces, $failedFiles, $scope)) {
+                $unjudged[] = self::published($value);
             }
         }
 
         return $unjudged;
+    }
+
+    /**
+     * The values of {@see unjudgedValues()} that removed code alone kept from
+     * being judged: each would be judged had that code declared nothing.
+     *
+     * A value withheld for any other reason as well — an unanalysed PSR-4
+     * root, no production autoload, no complete namespace tree, a regex with
+     * no literal anchor — is not named, because narrowing the removal would
+     * not judge it. Nor is one the analysed tree already binds: removed code
+     * can only add namespaces, so that value is judged and bound.
+     *
+     * @param list<PathPattern> $suppressPaths
+     * @param list<NamespacePattern> $suppressNamespaces
+     * @param ?list<string> $declaredNamespaces
+     *
+     * @return list<array{channel: string, option: string, pattern: string}>
+     */
+    public function withheldForRemovedCode(
+        array $suppressPaths,
+        array $suppressNamespaces,
+        ?array $declaredNamespaces,
+        int $failedFiles,
+        ValueScopeJudgement $scope,
+    ): array {
+        if (!self::namespaceUniverseComplete($declaredNamespaces, $failedFiles)) {
+            return [];
+        }
+
+        $withheld = [];
+        foreach ($this->configuredValues($suppressPaths, $suppressNamespaces) as $value) {
+            $pattern = $value['pattern'];
+            if ($pattern instanceof NamespacePattern && $scope->withholdsOnlyForRemovedCode($pattern) && !self::bindsNamespace($pattern, $declaredNamespaces)) {
+                $withheld[] = self::published($value);
+            }
+        }
+
+        return $withheld;
+    }
+
+    /**
+     * @param array{channel: string, rule: ?string, option: string, pattern: PathPattern|NamespacePattern} $value
+     *
+     * @return array{channel: string, option: string, pattern: string}
+     */
+    private static function published(array $value): array
+    {
+        return [
+            'channel' => $value['channel'],
+            'option' => $value['rule'] === null ? $value['option'] : \sprintf('rules.%s.%s', $value['rule'], $value['option']),
+            'pattern' => $value['pattern']->definition->display(),
+        ];
     }
 
     /**
@@ -180,11 +233,11 @@ final readonly class UnboundSuppressionAudit
      *
      * @return list<string>
      */
-    public function judgedChannels(array $suppressPaths, array $suppressNamespaces, ?array $declaredNamespaces, ValueScopeJudgement $scope): array
+    public function judgedChannels(array $suppressPaths, array $suppressNamespaces, ?array $declaredNamespaces, int $failedFiles, ValueScopeJudgement $scope): array
     {
         $channels = [];
         foreach ($this->configuredValues($suppressPaths, $suppressNamespaces) as $value) {
-            if ($this->judges($value, $declaredNamespaces, $scope)) {
+            if ($this->judges($value, $declaredNamespaces, $failedFiles, $scope)) {
                 $channels[$value['channel']] = true;
             }
         }
@@ -255,13 +308,13 @@ final readonly class UnboundSuppressionAudit
 
     /**
      * Whether this run can judge the value at all: its shape reaches the place
-     * the value names, and — for a namespace — the run built the universe it is
-     * judged against.
+     * the value names, and — for a namespace — the run built the whole universe
+     * it is judged against.
      *
      * @param array{channel: string, rule: ?string, option: string, pattern: PathPattern|NamespacePattern} $value
      * @param ?list<string> $declaredNamespaces
      */
-    private function judges(array $value, ?array $declaredNamespaces, ValueScopeJudgement $scope): bool
+    private function judges(array $value, ?array $declaredNamespaces, int $failedFiles, ValueScopeJudgement $scope): bool
     {
         $pattern = $value['pattern'];
 
@@ -269,7 +322,20 @@ final readonly class UnboundSuppressionAudit
             return $scope->judgesPathValue($pattern);
         }
 
-        return $declaredNamespaces !== null && $scope->judgesNamespaceValue($pattern);
+        if (!self::namespaceUniverseComplete($declaredNamespaces, $failedFiles)) {
+            return false;
+        }
+
+        // Removed code can only add namespaces, so a value the analysed tree
+        // already binds stays bound whatever that code declares.
+        return $scope->judgesNamespaceValue($pattern)
+            || ($scope->withholdsOnlyForRemovedCode($pattern) && self::bindsNamespace($pattern, $declaredNamespaces));
+    }
+
+    /** @param ?list<string> $declaredNamespaces */
+    private static function namespaceUniverseComplete(?array $declaredNamespaces, int $failedFiles): bool
+    {
+        return $declaredNamespaces !== null && $failedFiles === 0;
     }
 
     /**
@@ -291,24 +357,19 @@ final readonly class UnboundSuppressionAudit
             return false;
         }
 
-        foreach ($declaredNamespaces ?? [] as $namespace) {
-            if ($pattern->matches($namespace)) {
-                return true;
-            }
-        }
+        return self::bindsNamespace($pattern, $declaredNamespaces);
+    }
 
-        return false;
+    /** @param ?list<string> $declaredNamespaces */
+    private static function bindsNamespace(NamespacePattern $pattern, ?array $declaredNamespaces): bool
+    {
+        return array_any($declaredNamespaces ?? [], static fn(string $namespace): bool => $pattern->matches($namespace));
     }
 
     /** @param array<string, ChannelDeclaration> $declarations */
     private static function hasSelectedChannel(ChannelPublication $publication, array $declarations): bool
     {
-        foreach ($declarations as $code => $declaration) {
-            if ($publication->publishes(UnboundSuppressionRule::NAME, new FindingChannel($code), SymbolLevel::Project)) {
-                return true;
-            }
-        }
-        return false;
+        return array_any(array_keys($declarations), static fn(string $code): bool => $publication->publishes(UnboundSuppressionRule::NAME, new FindingChannel($code), SymbolLevel::Project));
     }
 
     private static function record(PopulationSession $session, FindingChannel $channel, ChannelDeclaration $declaration, PopulationIdentity $identity, GateInput $input): void

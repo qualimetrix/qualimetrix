@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Policy\Baseline\DocumentWriting;
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertBaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\InertEntryReason;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineConflictException;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentWriter;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentReading\BaselineFormatVersion;
@@ -63,6 +64,7 @@ final readonly class BaselineWriter
      *
      * @throws BaselineConflictException if the target changed or vanished since it was read
      * @throws RuntimeException if the write fails
+     * @throws InvalidArgumentException if the baseline cannot be written as the current version
      */
     public function write(Baseline $baseline, ResolvedTarget $target, AbsolutePath $projectRoot, ?PreparedTarget $prepared = null, ?callable $beforePublish = null): string
     {
@@ -81,6 +83,8 @@ final readonly class BaselineWriter
             ));
         }
 
+        self::refuseRetiredClosureEntries($baseline, $target);
+
         $serialized = $this->serializeBaseline($baseline, $projectRoot);
         $entries = $serialized['entries'];
         unset($serialized['entries']);
@@ -90,6 +94,45 @@ final readonly class BaselineWriter
         $this->documents->replace($target, $json, $baseline->sourceContentHash, $prepared, $beforePublish);
 
         return hash('sha256', $json);
+    }
+
+    /**
+     * Every other inert entry is written back verbatim, but a retired closure
+     * entry cannot be: it is retired only because its document predates
+     * {@see BaselineFormatVersion::ENCLOSING_DECLARATION_CLOSURE_NAMES}, and the
+     * same line under the version written here would bind to whichever
+     * file-level closure holds its number. Dropping it instead would be removal
+     * nobody asked for, so the write is refused until `baseline:cleanup`
+     * removes them, all in the same invocation.
+     *
+     * @throws InvalidArgumentException naming every retired selector
+     */
+    private static function refuseRetiredClosureEntries(Baseline $baseline, ResolvedTarget $target): void
+    {
+        $selectors = [];
+        foreach ($baseline->inertEntries as $entry) {
+            if ($entry->reason === InertEntryReason::RetiredClosureIdentity) {
+                $selectors[] = '--remove=' . $entry->selector->value;
+            }
+        }
+        $selectors = array_values(array_unique($selectors));
+        if ($selectors === []) {
+            return;
+        }
+
+        throw new InvalidArgumentException(\sprintf(
+            'Baseline file %s holds %d closure entr%s from a version older than %d, which named a closure by its rank '
+            . 'in the file; writing it as version %d would let %s accept the findings of a different closure. '
+            . 'Nothing was written. Remove %s first, in one invocation: baseline:cleanup <baseline> <paths...> %s',
+            $target->spelling,
+            \count($selectors),
+            \count($selectors) === 1 ? 'y' : 'ies',
+            BaselineFormatVersion::ENCLOSING_DECLARATION_CLOSURE_NAMES,
+            BaselineFormatVersion::CURRENT,
+            \count($selectors) === 1 ? 'it' : 'them',
+            \count($selectors) === 1 ? 'it' : 'them all',
+            implode(' ', $selectors),
+        ));
     }
 
     /**

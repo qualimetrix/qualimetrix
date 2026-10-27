@@ -118,9 +118,16 @@ final class AuthoredSelection
             : $path . ': ' . $value;
     }
 
-    /** @return list<ConfigurationDiagnostic> */
-    public static function diagnostics(ResolvedDocument $document, ChannelUniverseInterface $channels): array
-    {
-        return AuthoredSelectionDiagnostics::forDocument($document, $channels);
+    /**
+     * @param array<string, ?string> $projectOnlyProducerDocsPages
+     *
+     * @return list<ConfigurationDiagnostic>
+     */
+    public static function diagnostics(
+        ResolvedDocument $document,
+        ChannelUniverseInterface $channels,
+        array $projectOnlyProducerDocsPages,
+    ): array {
+        return AuthoredSelectionDiagnostics::forDocument($document, $channels, $projectOnlyProducerDocsPages);
     }
 }

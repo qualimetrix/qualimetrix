@@ -6,7 +6,6 @@ namespace Qualimetrix\Analysis\Run\Discovery;
 
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles;
 use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
@@ -24,12 +23,14 @@ final readonly class ProjectFiles implements ProjectFilesInterface
         private GeneratedFileFilterInterface $generatedFilter,
     ) {}
 
-    public function discover(RunConfiguration $run): DiscoveredProjectFiles
+    /** @param RemovedNamespaceSurvey|null $removedNamespaces a fresh survey; by default funded only when the run consults it */
+    public function discover(RunConfiguration $run, ?RemovedNamespaceSurvey $removedNamespaces = null): DiscoveredProjectFiles
     {
-        $walked = $this->walk->walk(new WalkRequest($run));
+        $removedNamespaces ??= $run->hasLiteralNamespaceSuppression ? new RemovedNamespaceSurvey() : RemovedNamespaceSurvey::unfunded();
+        $walked = $this->walk->walk(new WalkRequest($run, $removedNamespaces));
         $root = $run->projectScope->universe->projectRoot;
         $files = self::selectCandidates($walked->candidates, $root);
-        [$eligible, $generated, $skipped] = $this->applyGeneratedPolicy($files, $walked->skipped, $run->generatedFilePolicy);
+        [$eligible, $generated, $skipped] = $this->applyGeneratedPolicy($files, $walked->skipped, $run->generatedFilePolicy, $removedNamespaces);
 
         $facts = new ScopeFacts(
             $walked->facts->missingByPaths,
@@ -38,6 +39,7 @@ final readonly class ProjectFiles implements ProjectFilesInterface
             $walked->facts->namedFilesOnly,
             \count($generated),
             $walked->facts->unlistableOutsideRoot,
+            $removedNamespaces->namespaces(),
         );
 
         return new DiscoveredProjectFiles(
@@ -105,7 +107,7 @@ final readonly class ProjectFiles implements ProjectFilesInterface
      *
      * @return array{list<SplFileInfo>, list<RelativePath>, list<SkippedEntry>}
      */
-    private function applyGeneratedPolicy(array $files, array $skipped, GeneratedFilePolicy $policy): array
+    private function applyGeneratedPolicy(array $files, array $skipped, GeneratedFilePolicy $policy, RemovedNamespaceSurvey $removedNamespaces): array
     {
         $eligible = [];
         $generated = [];
@@ -116,13 +118,11 @@ final readonly class ProjectFiles implements ProjectFilesInterface
             }
             $classification = $this->generatedFilter->isGenerated($file);
             if ($classification === null) {
-                $skipped[] = new SkippedEntry(
-                    AbsolutePath::fromString($file->getPathname()),
-                    AnalysisFailureKind::UnreadableFile,
-                    'File header cannot be read',
-                );
+                $skipped[] = SkippedEntry::unreadableFile(AbsolutePath::fromString($file->getPathname()), 'File header cannot be read');
             } elseif ($classification) {
                 $generated[] = RelativePath::fromString($relative);
+                // The header filter saw 2 KB; the `namespace` statement may lie anywhere in the file.
+                $removedNamespaces->read($file->getPathname());
             } else {
                 $eligible[] = $file;
             }

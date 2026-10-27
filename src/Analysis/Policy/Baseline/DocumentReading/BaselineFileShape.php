@@ -27,7 +27,7 @@ final class BaselineFileShape
         13 => 'Baseline version 13 does not record discovery exclusions. Recover the complete exclusion definition '
             . 'used to capture this file (consult `git log -1 -- <baseline-file>` and its configuration), add '
             . '"exclusions": {"patterns": [...], "generated": "included" or "excluded"}, and change '
-            . '"version" to %v%. Preserve and review the accepted entries; regenerate only if accepting the '
+            . '"version" to %oldest%. Preserve and review the accepted entries; regenerate only if accepting the '
             . 'current findings is intended.',
         5 => 'This baseline is version 5, a historical format that cannot be loaded or converted to version %v% '
             . 'because declaration identity cannot be inferred from a logical symbol key. Run a fresh analysis, '
@@ -90,16 +90,17 @@ final class BaselineFileShape
     /**
      * @param array<mixed, mixed> $document
      *
-     * @return array{generated: DateTimeImmutable, scope: list<string>, exclusions: RecordedExclusions}
+     * @return array{version: int, generated: DateTimeImmutable, scope: list<string>, exclusions: RecordedExclusions}
      */
     public static function envelope(array $document, string $path): array
     {
-        self::assertVersion($document['version'] ?? null, $path);
+        $version = self::assertVersion($document['version'] ?? null, $path);
         self::assertEnvelopeKeys($document, $path);
 
         self::entryBlocks($document['entries'] ?? null, $path);
 
         return [
+            'version' => $version,
             'generated' => self::parseGenerated($document['generated'] ?? null, $path),
             'scope' => self::parseScope($document['scope'] ?? null, $path),
             'exclusions' => BaselineExclusionShape::parse($document['exclusions'] ?? null, $path),
@@ -165,19 +166,22 @@ final class BaselineFileShape
         }
     }
 
-    private static function assertVersion(mixed $version, string $path): void
+    private static function assertVersion(mixed $version, string $path): int
     {
         if (!\is_int($version)) {
             throw ConfigurationRefusal::aboutBaselineFileDocument($path, 'Baseline "version" must be an integer');
         }
-        if ($version === BaselineFormatVersion::CURRENT) {
-            return;
+        if (BaselineFormatVersion::isReadable($version)) {
+            return $version;
         }
 
         $reason = self::REJECTED_VERSION_REASONS[$version] ?? null;
         throw ConfigurationRefusal::aboutBaselineFileDocument($path, $reason === null
             ? \sprintf('Unsupported baseline version: %d. Expected version %d.', $version, BaselineFormatVersion::CURRENT)
-            : strtr($reason, ['%v%' => (string) BaselineFormatVersion::CURRENT]));
+            : strtr($reason, [
+                '%v%' => (string) BaselineFormatVersion::CURRENT,
+                '%oldest%' => (string) BaselineFormatVersion::OLDEST_READABLE,
+            ]));
     }
 
     private static function parseGenerated(mixed $generated, string $path): DateTimeImmutable

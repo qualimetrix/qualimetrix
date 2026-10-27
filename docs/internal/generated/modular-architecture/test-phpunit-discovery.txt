@@ -585,9 +585,10 @@ Available tests:
  - QmxFindingGate\Tests\ReportRecordsTest::itDoesNotLicenseVariantResidualsWithAMainViewIntent
  - QmxFindingGate\Tests\ReportRecordsTest::itEditsOnlyLicensedValueSpansAndPreservesUnrelatedJsonBytes
  - QmxFindingGate\Tests\ReportRecordsTest::itJoinsBaselineEdgesByExactNamedFieldsAndPreservesTheirPublishedBytes
- - QmxFindingGate\Tests\ReportRecordsTest::itKeepsCurrentAndHistoricalTypePositionEdgesInRecordIdentity"current constant type position"
- - QmxFindingGate\Tests\ReportRecordsTest::itKeepsCurrentAndHistoricalTypePositionEdgesInRecordIdentity"historical intersection type position"
- - QmxFindingGate\Tests\ReportRecordsTest::itKeepsCurrentAndHistoricalTypePositionEdgesInRecordIdentity"historical union type position"
+ - QmxFindingGate\Tests\ReportRecordsTest::itKeepsCurrentAndHistoricalDependencyKindEdgesInRecordIdentity"current attribute argument kind"
+ - QmxFindingGate\Tests\ReportRecordsTest::itKeepsCurrentAndHistoricalDependencyKindEdgesInRecordIdentity"current constant type position"
+ - QmxFindingGate\Tests\ReportRecordsTest::itKeepsCurrentAndHistoricalDependencyKindEdgesInRecordIdentity"historical intersection type position"
+ - QmxFindingGate\Tests\ReportRecordsTest::itKeepsCurrentAndHistoricalDependencyKindEdgesInRecordIdentity"historical union type position"
  - QmxFindingGate\Tests\ReportRecordsTest::itKeepsFieldValueMeasurementsDistinctAcrossMainAndVariantInvocations
  - QmxFindingGate\Tests\ReportRecordsTest::itKeepsMissingIdentityLoudWithoutAbortingPreparation
  - QmxFindingGate\Tests\ReportRecordsTest::itPairsAValidNeighbourWithoutCreditingOrDerivingTheFailedIdentityView
@@ -1140,6 +1141,7 @@ Available tests:
  - Qualimetrix\Governance\HealthVocabulary\HealthDecompositionAgreesWithFormulasTest::itShowsOnlyInputsTheFormulaAtThatLevelReads
  - Qualimetrix\Governance\HealthVocabulary\RankedOffenderLevelsAgreeWithTheBuilderTest::itRanksOffendersForExactlyTheLevelsTheUniverseTrustsWithACanonicalName
  - Qualimetrix\Governance\LayerPolicyVocabulary\DependencyTypeAliasCensusTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"attribute"
+ - Qualimetrix\Governance\LayerPolicyVocabulary\DependencyTypeAliasCensusTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"attribute_argument"
  - Qualimetrix\Governance\LayerPolicyVocabulary\DependencyTypeAliasCensusTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"catch"
  - Qualimetrix\Governance\LayerPolicyVocabulary\DependencyTypeAliasCensusTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"class_const_fetch"
  - Qualimetrix\Governance\LayerPolicyVocabulary\DependencyTypeAliasCensusTest::itAcceptsEveryDependencyTypeCaseAsADirectToken"constant_type"
@@ -2420,6 +2422,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\SelectorYamlDecoderTest::itRefusesEveryMalformedYamlSelectorEntry"multiple kinds"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\SelectorYamlDecoderTest::itRefusesEveryMalformedYamlSelectorEntry"non-string value"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\SelectorYamlDecoderTest::itRefusesEveryMalformedYamlSelectorEntry"unknown kind"
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyAnalysisTest::itFiltersByTheIgnoredRelationsOfTheRunsResolvedOptions
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyAnalysisTest::itJudgesSizeCeilingAndDirectSeverityOnTheFilteredGraph
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyAnalysisTest::itReplacesResultsAcrossSequentialPrepares
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyAnalysisTest::itResetsPreparedCyclesWithoutTraversingTheGraph
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyAnalysisTest::itTakesEvidenceOnlyFromPreparation
@@ -2434,6 +2438,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyDetectorTest::itHasNoCycleForSingleNode
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyDetectorTest::itHasNoCyclesInDAG
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyDetectorTest::itWalksALongChainWithoutGrowingTheCallStack
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itAcceptsEveryRelationSpellingOfTheOptionKey
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itAssignsErrorSeverityForDirectCycle
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itAssignsWarningSeverityForTransitiveCycle
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itCountsCeilingExclusionsBeforeSeverityAndBypassesNonpositiveCeilings
@@ -2449,6 +2454,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itKeepsLargeCycleAdviceWithoutEmbeddingCycleData
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itKeepsRoutingAdviceWithoutEmbeddingCycleData
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itKeysOccurrenceToTheFrozenChannelSpellingNotToName
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itReadsIgnoredRelationsWithAliasesExpandedOnceInTheOrderFirstNamed
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itRefusesARelationWrittenOutsideAList
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itRefusesAnUnknownRelationTokenByName
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itRefusesTwoAuthoredSpellingsOfTheCycleLimit
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itRespectsMaxCycleSize
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itReturnsCorrectName
@@ -2456,6 +2464,15 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itReturnsEmptyWhenDisabled
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itReturnsEmptyWhenNoCycles
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itSetsMetricValueToCycleSize
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itTreatsAnAbsentOrEmptyRelationListAsNoFilter
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CycleEdgeFilterTest::itAdmitsEveryKindWithoutAFilter
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CycleEdgeFilterTest::itDisplaysAPathThroughAdmittedRecordsOnly
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CycleEdgeFilterTest::itKeepsACycleWhoseIgnoredLinkIsAlsoAnOrdinaryDependency
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CycleEdgeFilterTest::itLeavesTheIdentityOfRemainingCyclesUnchanged
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CycleEdgeFilterTest::itLeavesTheSharedDetectorUnfiltered
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CycleEdgeFilterTest::itRefusesOnlyTheIgnoredKinds
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CycleEdgeFilterTest::itRemovesACycleOnlyOnceEveryKindClosingItIsIgnored
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CycleEdgeFilterTest::itRemovesACycleThatOnlyAnIgnoredKindCloses
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CycleIdentityStabilityTest::itDistinguishesFindingsWithDifferentCompleteMemberSets
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CycleIdentityStabilityTest::itIgnoresASelfLoopOnTheRepresentativeWhenBuildingThePath
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CycleIdentityStabilityTest::itIsUnaffectedByRepeatedEdgesBetweenTheSameClasses
@@ -2505,15 +2522,42 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CycleTest::itReturnsSmallSizeCategory
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CycleTest::itReturnsSmallSizeCategoryAtBoundary
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CycleTest::itTruncatesShortStringForLargeCycle
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\IgnoreRelationsCheckTest::itDropsTheCycleWhenAttributeArgumentsAreIgnoredInTheConfigurationFile
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\IgnoreRelationsCheckTest::itDropsTheCycleWhenAttributeArgumentsAreIgnoredOnTheCommandLine
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\IgnoreRelationsCheckTest::itKeepsTheCycleWhenOnlyUnrelatedKindsAreIgnored
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\IgnoreRelationsCheckTest::itRefusesAnUnknownRelationInTheConfigurationFileByName
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\IgnoreRelationsCheckTest::itRefusesAnUnknownRelationOnTheCommandLineByName
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\IgnoreRelationsCheckTest::itReportsAnEmptyListExactlyAsAnAbsentOne
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\IgnoreRelationsCheckTest::itReportsTheAttributeMappedCycleWithoutTheOption
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\CodeSmellLinePrecisionTest::itCreatesPerOccurrenceFindingsWithCorrectLines
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\CodeSmellLinePrecisionTest::itEmitsNoFindingsWhenTheMetricBagHasNoEntriesForTheSmellType
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\CodeSmellLinePrecisionTest::itPropagatesVisitorLineDataThroughTheCollector
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\CodeSmellLinePrecisionTest::itRecordsNoEntriesAndEmitsNoFindingsForCleanCode
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\CodeSmellLinePrecisionTest::itStoresPerOccurrenceLineDataInTheCollector
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\ConstructorOwnershipEquivalenceTest::itAssignsEachConstructorKindToItsOwner"abstract constructor"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\ConstructorOwnershipEquivalenceTest::itAssignsEachConstructorKindToItsOwner"anonymous class constructor"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\ConstructorOwnershipEquivalenceTest::itAssignsEachConstructorKindToItsOwner"closure inside a constructor"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\ConstructorOwnershipEquivalenceTest::itAssignsEachConstructorKindToItsOwner"constructor holding a closure"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\ConstructorOwnershipEquivalenceTest::itAssignsEachConstructorKindToItsOwner"constructor in another letter case"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\ConstructorOwnershipEquivalenceTest::itAssignsEachConstructorKindToItsOwner"global function named like a constructor"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\ConstructorOwnershipEquivalenceTest::itAssignsEachConstructorKindToItsOwner"interface constructor"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\ConstructorOwnershipEquivalenceTest::itAssignsEachConstructorKindToItsOwner"ordinary method"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\ConstructorOwnershipEquivalenceTest::itAssignsEachConstructorKindToItsOwner"readonly service with hidden dependencies"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\ConstructorOwnershipEquivalenceTest::itAssignsEachConstructorKindToItsOwner"service constructor"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\ConstructorOwnershipEquivalenceTest::itAssignsEachConstructorKindToItsOwner"trait constructor"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\ConstructorOwnershipEquivalenceTest::itAssignsEachConstructorKindToItsOwner"value-object constructor"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\ConstructorOwnershipEquivalenceTest::itGivesEveryConstructorToExactlyOneRule
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\LongParameterListVoPropagationTest::itLeavesANonVoConstructorToConstructorOverinjectionWhateverTheVoThresholds
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\LongParameterListVoPropagationTest::itLeavesAReadonlyServiceWithHiddenDependenciesToConstructorOverinjection
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\LongParameterListVoPropagationTest::itReportsAServiceConstructorOnceAndOnlyByConstructorOverinjection"eight dependencies"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\LongParameterListVoPropagationTest::itReportsAServiceConstructorOnceAndOnlyByConstructorOverinjection"seven dependencies"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\LongParameterListVoPropagationTest::itReportsAServiceConstructorOnceAndOnlyByConstructorOverinjection"six dependencies"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\LongParameterListVoPropagationTest::itReportsNoFindingForVoConstructorBelowVoThresholds
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\LongParameterListVoPropagationTest::itReportsVoWarningWhenVoThresholdIsExceeded
- - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\LongParameterListVoPropagationTest::itUsesRegularThresholdsForAReadonlyServiceWithHiddenDependencies
- - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\LongParameterListVoPropagationTest::itUsesRegularThresholdsForNonVoConstructorEvenWithRelaxedVoThresholds
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\ServiceConstructorRunTest::itReportsALongParameterListDirectiveOnAServiceConstructorAsUnused
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\ServiceConstructorRunTest::itReportsAServiceConstructorOnlyThroughConstructorOverinjection"eight dependencies"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\ServiceConstructorRunTest::itReportsAServiceConstructorOnlyThroughConstructorOverinjection"seven dependencies"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\ParameterCount\ServiceConstructorRunTest::itReportsAServiceConstructorOnlyThroughConstructorOverinjection"six dependencies"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\BooleanArgumentSelectionTest::itPublishesBooleanArgumentsFromAnonymousAndNamedMethods"anonymous class method"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\BooleanArgumentSelectionTest::itPublishesBooleanArgumentsFromAnonymousAndNamedMethods"named method"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\BooleanArgumentSmellsTest::itPreservesPromotedPropertyEvidence
@@ -2902,8 +2946,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\LongParameterListRuleTest::itGetVoSeverityAtWarning
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\LongParameterListRuleTest::itGetVoSeverityBelowWarning
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\LongParameterListRuleTest::itGetVoSeverityBetweenWarningAndError
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\LongParameterListRuleTest::itJudgesAConstructorWithoutTheInjectionFlagByTheStandardThresholds
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\LongParameterListRuleTest::itKeepsJudgingAValueObjectConstructorBesideTheInjectionGate
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\LongParameterListRuleTest::itKeepsRegularThresholdOverridesOnTheRegularBranch
- - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\LongParameterListRuleTest::itNonVoConstructorStillUsesStandardThresholds
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\LongParameterListRuleTest::itLeavesAnInjectionConstructorToConstructorOverinjection
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\LongParameterListRuleTest::itOptionsDefaultVoThresholds
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\LongParameterListRuleTest::itOptionsFromArrayCustomValues
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\LongParameterListRuleTest::itOptionsFromArrayDefaults
@@ -2971,6 +3017,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itOmitsVoConstructorFlagInPerMethodMetricsForRegularMethod
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itProducesNoMetricsForReadonlyClassWithNoConstructor
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itProvidesExpectedMetricKeys
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itPublishesTheInjectionConstructorFlagOnlyForConstructorsThatAreNotValueObjects"abstract constructor"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itPublishesTheInjectionConstructorFlagOnlyForConstructorsThatAreNotValueObjects"anonymous class constructor"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itPublishesTheInjectionConstructorFlagOnlyForConstructorsThatAreNotValueObjects"constructor in another letter case"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itPublishesTheInjectionConstructorFlagOnlyForConstructorsThatAreNotValueObjects"global function named like a constructor"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itPublishesTheInjectionConstructorFlagOnlyForConstructorsThatAreNotValueObjects"interface constructor"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itPublishesTheInjectionConstructorFlagOnlyForConstructorsThatAreNotValueObjects"method with many parameters"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itPublishesTheInjectionConstructorFlagOnlyForConstructorsThatAreNotValueObjects"readonly service with hidden dependencies"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itPublishesTheInjectionConstructorFlagOnlyForConstructorsThatAreNotValueObjects"service constructor"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itPublishesTheInjectionConstructorFlagOnlyForConstructorsThatAreNotValueObjects"trait constructor"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itPublishesTheInjectionConstructorFlagOnlyForConstructorsThatAreNotValueObjects"value-object constructor"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itReturnsCollectorName
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itReturnsCorrectMetricDefinitions
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ParameterCount\ParameterCountCollectorTest::itSkipsAnonymousClassMethodsInsideNamedClass
@@ -3224,7 +3280,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionCompositionCollectorTest::itKeepsSerializedSameNameDeclarationsSeparate
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionCompositionCollectorTest::itRefusesTruncatedRawFacts
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionCompositionCollectorTest::itRejectsNonBooleanLcomFacts"abstract"
- - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionCompositionCollectorTest::itRejectsNonBooleanLcomFacts"nonTrivial"
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionCompositionCollectorTest::itRejectsNonBooleanLcomFacts"stateless"
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionCompositionCollectorTest::itRejectsNonBooleanLcomFacts"static"
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionCompositionCollectorTest::itRejectsNonIntegerInstancePropertyCount
@@ -3236,9 +3291,123 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itCountsAmbiguousDuplicateTraitNamesAsUnread
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itDeclaresRunReachForEveryComposedMetric
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itFollowsPrivateHelpersForTccAndPureMethodCount
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itKeepsClosureEdgesOfAConstructorAliasedToAnOrdinaryMethod
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itKeepsOwnReferencesOutOfLcomAndTccEdges"call through the own class name"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itKeepsOwnReferencesOutOfLcomAndTccEdges"call through this as a class"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itKeepsOwnReferencesOutOfLcomAndTccEdges"callable array on __CLASS__"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itKeepsOwnReferencesOutOfLcomAndTccEdges"callable array on self class"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itKeepsOwnReferencesOutOfLcomAndTccEdges"callable array on the own class string"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itKeepsOwnReferencesOutOfLcomAndTccEdges"callable array on this"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itKeepsOwnReferencesOutOfLcomAndTccEdges"callable string"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itKeepsOwnReferencesOutOfLcomAndTccEdges"closure from a callable array"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itKeepsOwnReferencesOutOfLcomAndTccEdges"dynamic method name"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itKeepsOwnReferencesOutOfLcomAndTccEdges"first-class callable through the own class name"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itKeepsOwnReferencesOutOfLcomAndTccEdges"interpolated callable string"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itKeepsOwnReferencesOutOfLcomAndTccEdges"literal dynamic method name"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itKeepsOwnReferencesOutOfLcomAndTccEdges"reflection method"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itKeepsUnnamedHandOffsOutOfSharedProperties
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itOmitsLcomWithoutVerticesAndPublishesCompleteness
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itPreservesOwnFactsAndRetainsUnusedTraitPropertiesForTcc
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itReachesInstancePropertiesThroughMixedCaseCyclesWithoutFollowingOtherCalls
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"arrow function registered by the constructor keeps its handler"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"bridging helper leaves and LCOM rises"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"call on another instance is not recorded"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"chain from the constructor leaves entirely"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"chain tail also called by an ordinary method stays"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"class of initialization helpers only has no value"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"closure depth resumes after a method nested in a closure"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"closure of a removed helper keeps a helper the constructor also calls"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"closure registered by a private helper keeps the handler, not the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"constructor aliased to an ordinary method keeps its helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"constructor from a trait drops its helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"constructor reaching state through a public reset keeps both"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"cycle entered by an ordinary method stays"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"cycle reached only from the constructor leaves"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"delegating generator helper stays"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"destructor helper leaves"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"excluded caller keeps the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"first-class callable passed by the constructor keeps its handler"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"foreign reference does not keep the helper: global class of the same short name"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"foreign reference does not keep the helper: global class string of the same short name"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"foreign reference does not keep the helper: keyed record"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"foreign reference does not keep the helper: own class of someone else"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"foreign reference does not keep the helper: reflection of another object"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"generator helper stays"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"generators on disjoint state stay separate"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"handler called directly and from a closure keeps its deferred reach"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"helper also called by an ordinary method stays"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"helper binding a property element by reference stays"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"helper binding properties by reference stays"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"helper handing off state through by-reference destructuring in foreach stays"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"helper handing off state through by-reference destructuring of a property stays"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"helper handing off state through by-reference foreach over a property stays"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"helper handing off state through by-reference keyed destructuring of a property stays"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"helper handing off state through dynamic property in a closure stays"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"helper handing off state through nested member bound by reference stays"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"helper handing off state through property as a by-reference array item stays"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"helper handing off state through property bound to a reference stays"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"helper shared by constructor and destructor leaves"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"helper whose closure touches state registers behaviour and stays"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"helper writing a property an ordinary method reads leaves"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"invoking an object without __invoke keeps no helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"invoking the object reaches only its public __invoke"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"issue fixture: four validators called only by the constructor"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"lifecycle and helper names fold case"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"literal reference keeps only its target"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"ordinary method aliased to the constructor defers its closure calls"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"ordinary self caller keeps the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"own reference through callable array on __CLASS__ keeps the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"own reference through callable array on get_called_class keeps the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"own reference through callable array on get_class keeps the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"own reference through callable array on own class constant keeps the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"own reference through callable array on the own class name string keeps the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"own reference through callable array on the self string keeps the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"own reference through callable array on this class constant keeps the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"own reference through closure from callable array keeps the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"own reference through concatenated literal callable string keeps the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"own reference through literal dynamic method name keeps the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"own reference through literal dynamic self call keeps the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"own reference through own class callable string keeps the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"own reference through own class first-class callable keeps the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"own reference through own qualified class name keeps the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"own reference through own short class name keeps the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"own reference through reflection method from a callable string keeps the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"own reference through reflection method keeps the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"own reference through self callable string keeps the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"own reference through static callable string keeps the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"own reference through this used as a class keeps the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"pair with an empty class string is no reference"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"parent constructor call does not keep the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"private trait helper called by the constructor leaves"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"protected method called only by the constructor stays"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"public method called only by the constructor stays"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"public method re-entering the constructor does not keep its helpers"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"self and static calls from the constructor"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"stateless constant helper leaves before the virtual node forms"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"static caller keeps the helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"static first-class callable passed by the constructor keeps its handler"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"static helpers were already outside the graph"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"trait helper whose closure touches host state stays"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"trait method adapted to private leaves"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"trait method kept public stays"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"unread trait keeps every helper"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"unresolvable own call keeps every helper: callable array on __CLASS__ with a dynamic name"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"unresolvable own call keeps every helper: callable array on self class"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"unresolvable own call keeps every helper: callable array on static class"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"unresolvable own call keeps every helper: callable array on this"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"unresolvable own call keeps every helper: callable array with a concatenated name"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"unresolvable own call keeps every helper: closure from a concatenated string"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"unresolvable own call keeps every helper: concatenated own class constant"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"unresolvable own call keeps every helper: concatenated self callable string"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"unresolvable own call keeps every helper: dynamic call on this as a class"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"unresolvable own call keeps every helper: dynamic method expression"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"unresolvable own call keeps every helper: dynamic method name"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"unresolvable own call keeps every helper: dynamic self call"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"unresolvable own call keeps every helper: dynamic static call"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"unresolvable own call keeps every helper: interpolated self callable string with braces"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"unresolvable own call keeps every helper: interpolated static callable string"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"unresolvable own call keeps every helper: reflection method with a dynamic name"
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRemovesInitializationHelpersWithTheirLifecycleBody"unresolvable own call keeps every helper: reflection of a concatenated own class name"
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itRetainsCalledStatelessMethodsAsVertices
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itSelectsEffectiveLifecycleNamesAfterTraitComposition"abstract constructor alias remains excluded"
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionSemanticCompositionTest::itSelectsEffectiveLifecycleNamesAfterTraitComposition"authored equivalent"
@@ -3256,8 +3425,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomClassDataTest::itCalculatesLcomWhenExcludingAllMethods
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomClassDataTest::itCalculatesLcomWhenExcludingNonexistentMethod
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomClassDataTest::itCalculatesLcomWithExcludedMethods
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomClassDataTest::itKeepsDirectAndDeferredFactsApartAcrossTheCollectionWire
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomClassDataTest::itMatchesConfiguredMethodExclusionsWithoutCase
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomClassDataTest::itPreservesExactFactRowsAcrossTheCollectionWire
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomClassDataTest::itRemovesInitializationHelpersBeforeMergingStatelessMethods
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectionConfigurationTest::itDefaultsToNoExcludedMethods
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectionConfigurationTest::itRejectsAListContainingNonStrings
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itCalculatesHighLcomForGodClass
@@ -3281,6 +3452,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itDoesNotTreatMatchReturningDifferentConstantsAsStateless
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itDoesNotTreatMethodAccessingPropertyViaCallAsStateless
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itDoesNotTreatMethodCallingInstanceMethodAsStateless
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itDropsValidatorsOnlyTheConstructorCallsFromLcom
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itExcludesAbstractMethodsFromLcom
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itExcludesConstructorWithExplicitPropertyAssignmentFromLcom
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itExcludesDestructorFromLcom
@@ -3294,6 +3466,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itIgnoresDynamicPropertyAccess
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itIgnoresEnum
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itIgnoresInterface
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itKeepsAConstructorValidatorThatAnotherMethodAlsoCalls
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itKeepsDistinctCohesionGraphsForSameFileDeclarations
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itKeepsStandardLcomCalculationWhenNoStatelessMethods
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itMergesStatelessMethodCallingAnotherStatelessInternally
@@ -4385,9 +4558,17 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\WeightedHealthFormulaTest::itReadsNoWeightedSumOutOfAFormulaThatIsNotOne
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\WeightedHealthFormulaTest::itReadsTheCompleteOrderedMeanOnTheNativeAst
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\WeightedHealthFormulaTest::itRefusesPartialDuplicateOrInvalidCanonicalTerms
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\AttributeArgumentCouplingIntegrationTest::itMeasuresAnAttributeArgumentReferenceAsTheSameReferenceInCode
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceCboScopeIntegrationTest::itJudgesANamespaceWithASubNamespaceOnItsOwnClasses
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceCboScopeIntegrationTest::itJudgesTheSameNamespaceOnFewerCouplingsWhenADependentIsLeftOutOfTheRun
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceCboScopeIntegrationTest::itReachesTheSameVerdictWhenTheSubNamespaceIsLeftOutOfTheRun
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceInstabilityScopeIntegrationTest::itDoesNotJudgeAContextRootThatDeclaresNoTypeOfItsOwn
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceInstabilityScopeIntegrationTest::itJudgesEveryNamespaceOnTheCouplingOfItsOwnTypes
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceInstabilityScopeIntegrationTest::itJudgesNoNamespaceDeclaringOnlyBareEnumsEvenWithoutATypeMinimum
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceInstabilityScopeIntegrationTest::itLeavesAFormulaOverOwnInstabilityWithoutValueOnANamespaceDeclaringNoType
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceInstabilityScopeIntegrationTest::itPublishesNoOwnInstabilityForANamespaceDeclaringNoType
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceInstabilityScopeIntegrationTest::itRefusesTheRetiredClassCountKeyByName"configuration file"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\NamespaceInstabilityScopeIntegrationTest::itRefusesTheRetiredClassCountKeyByName"rule option"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\Rfc\RfcResolvedRunTest::itPreservesExactResolvedMetricsAcrossWorkersAndWarmAstCache
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\UnmatchedFrameworkNamespaceIntegrationTest::itFailsTheRunUnderFailOnWarning
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Integration\UnmatchedFrameworkNamespaceIntegrationTest::itIsSilencedByDisablingTheProducingRule
@@ -4582,6 +4763,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itPartitionsCeIntoCeAppAndCeFrameworkWithoutOverlap
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itProvidesTheCouplingMetricNames
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itPublishesAnOwnCboThatCountsTheSubNamespaceAsAnotherNamespace
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itPublishesOwnInstabilityOnlyOnANamespaceDeclaringATypeOfItsOwn
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itPublishesTheOwnScopeOfANamespaceBesideItsSubtreeRollup
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itPublishesTheSameOwnCboWhenTheSubNamespaceIsLeftOutOfTheRun
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingCollectorTest::itRegistersAGlobalNamespaceClassUnderAnEmptyNamespace
@@ -4680,39 +4862,49 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityOptionsTest::itThrowsWhenTheFlatThresholdIsMixedWithBareMaxWarningInTheSameConfigArray
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itAccountsMeasuredZeroAndMissingSelectedPublicationBeforeSeverity
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itAnalyzesBothLevels
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itChecksNamespaceWhenAboveMinClassCount
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itChecksNamespaceWhenAboveMinTypeCount
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itChecksWhetherLevelIsEnabled
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itCountsOwnInterfacesTraitsAndImplementingEnumsTowardsTheMinimum
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDeclaresCorrectCliAliases
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDefaultsClassMinAfferentToOne
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDefaultsMissingClassEfferentCouplingToZeroInTheExactMessage
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDefaultsNamespaceMinAfferentToOne
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDefaultsNamespaceMinClassCountToThree
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDefaultsNamespaceMinTypeCountToThree
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDistinguishesRoundedInstabilityFromItsThreshold"class"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDistinguishesRoundedInstabilityFromItsThreshold"namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDoesNotJudgeANamespaceDeclaringOnlyBareEnumsWithoutATypeMinimum
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDoesNotJudgeAnUnstableSubtreeWhoseOwnScopeIsStable
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDoesNotSkipClassWhenCaTwoMeetsMinAfferentTwo
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDoesNotSkipClassWhenMinAfferentIsZero
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itDoesNotSkipNamespaceWhenMinAfferentIsZero
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itGatesTheAfferentMinimumOnOwnCa
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itGeneratesClassInstabilityError
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itGeneratesClassInstabilityWarning
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itGeneratesNamespaceInstabilityError
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itGeneratesNamespaceInstabilityWarning
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itGetsSupportedLevels
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itJudgesANamespaceOnItsOwnInstabilityAndNotOnItsSubtree
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itNeverJudgesANamespaceThatDeclaresNoTypeOfItsOwn"default minimum"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itNeverJudgesANamespaceThatDeclaresNoTypeOfItsOwn"no minimum"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itParsesClassMinAfferentCamelCaseAlias
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itParsesClassMinAfferentFromArray
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itParsesClassOptionsFromArray
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itParsesClassOptionsFromArrayWithCamelCase
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itParsesInstabilityOptionsFromHierarchicalArray
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itParsesNamespaceMinAfferentFromArray
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itParsesNamespaceMinClassCountCamelCaseAlias
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itParsesNamespaceMinClassCountFromArray
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itParsesNamespaceMinTypeCountCamelCaseAlias
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itParsesNamespaceMinTypeCountFromArray
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itParsesNamespaceOptionsFromArray
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itParsesNamespaceOptionsFromArrayWithCamelCase
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itPreservesClassMinAfferentOnOverride
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itPreservesNamespaceMinAfferentOnOverride
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itRecordsConfiguredPopulationBoundaries"class-afferent"
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itRecordsConfiguredPopulationBoundaries"namespace-afferent"
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itRecordsConfiguredPopulationBoundaries"namespace-classes"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itRecordsConfiguredPopulationBoundaries"own-afferent"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itRecordsConfiguredPopulationBoundaries"own-types"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itRefusesEveryRetiredClassCountSpelling"camel"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itRefusesEveryRetiredClassCountSpelling"kebab"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itRefusesEveryRetiredClassCountSpelling"snake"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itRespectsInstabilityThresholdBoundaries"above error threshold"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itRespectsInstabilityThresholdBoundaries"above warning, below error"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itRespectsInstabilityThresholdBoundaries"at error threshold"
@@ -4731,7 +4923,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itSkipsClassWhenCaOneBelowMinAfferentTwo
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itSkipsClassesWithoutInstabilityMetric
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itSkipsNamespaceBelowDefaultMinAfferent
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itSkipsNamespaceBelowMinClassCount
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itSkipsNamespaceBelowMinTypeCount
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itSkipsNamespaceWhenCaOneBelowMinAfferentTwo
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itThrowsForInvalidOptionsType
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\Instability\InstabilityRuleTest::itThrowsForUnsupportedLevel
@@ -4869,6 +5061,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFramework\UnmatchedFrameworkNamespaceRuleTest::itSaysNothingWithoutADependencyGraph
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Contract\AttributeSiteTest::itIdentifiesOnlyDeclaredMemberSites
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Contract\ClassLikeDeclarationTest::itCanRewriteLogicalSpellingWithoutChangingExactDeclarationFacts
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Contract\DependencyRelationTokensTest::itExpandsAnAliasToItsMembersInDeclaredOrder"inheritance"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Contract\DependencyRelationTokensTest::itExpandsAnAliasToItsMembersInDeclaredOrder"runtime_check"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Contract\DependencyRelationTokensTest::itExpandsAnAliasToItsMembersInDeclaredOrder"static_access"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Contract\DependencyRelationTokensTest::itExpandsAnAliasToItsMembersInDeclaredOrder"type_reference"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Contract\DependencyRelationTokensTest::itKeepsAttributeKindsOutOfEveryAlias"attribute"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Contract\DependencyRelationTokensTest::itKeepsAttributeKindsOutOfEveryAlias"attribute_argument"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Contract\DependencyRelationTokensTest::itListsEveryKindAndAliasAsAcceptedSorted
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Contract\DependencyRelationTokensTest::itReturnsNullForAnUnknownToken
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Contract\TypeShapeTest::itPublishesTheCompleteShapeVocabulary
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itCanonicalizesPhpClassIdentityWithoutChangingExactDeclarations
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itCountsAnExtendsEdgeToANonPhpClassAsCoupling
@@ -4918,6 +5118,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::itTreatsAGlobalNamespaceClassAsAValidMember
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::itTreatsDependenciesBetweenSiblingChildrenAsInternalToTheParent
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itConstructorWithAllProperties
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itIsStrongCoupling"attribute argument is not strong"
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itIsStrongCoupling"attribute is not strong"
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itIsStrongCoupling"extends is strong"
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itIsStrongCoupling"implements is strong"
@@ -4927,6 +5128,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itIsStrongCoupling"type hint is not strong"
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itRefusesAWriteToAConstructedDependency
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itRewritesLogicalEndpointsWithoutChangingTheExactSource
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itToString"attribute argument dependency"
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itToString"dependency without line"
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itToString"extends dependency"
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itToString"implements dependency"
@@ -4960,6 +5162,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itIgnoresBuiltinScalarAndArrayTypes
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itIgnoresClosureSignatureOutsideAnyEnclosingClass
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itIgnoresSelfStaticAndParentReferences
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itKeepsBothKindsWhenATargetIsReferencedInAnAttributeArgumentAndInCode
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itKeepsImportsScopedToTheirOwnNamespaceBlock
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itKeepsTypePositionSeparateFromUnionAndPromotedPropertyShape
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itLeavesUsageDependenciesFromInsideAnAnonymousClassBodyUnflagged
@@ -4978,11 +5181,27 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itPublishesNamedClassLikeFactsWithoutSyntheticStringableEdges
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsACatchDependency
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAClassConstFetchDependency
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAClosureInAnAttributeArgumentAsAttributeArgumentsExceptForAttributeNames
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsADependencyForEachImplementedInterface
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsADependencyForEachIntersectionTypeMember
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsADependencyForEachUnionTypeMember
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsANewInstantiationDependency
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAPropertyTypeDependency
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"anonymous class"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"arrow function"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"class"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"closure"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"constant"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"enum case"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"enum"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"interface"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"method"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"nested named class"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"parameter"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"promoted parameter"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"property hook"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"property"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAReferenceInAnAttributeArgumentAsAnAttributeArgumentAtEverySite"trait"
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAStaticCallDependency
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAStaticPropertyFetchDependency
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsATraitUseDependency
@@ -4994,8 +5213,15 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAnImplementsDependencyForAnEnum
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsAnInstanceofDependency
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsConstantAndEnumCaseTypesAndAttributeSites
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsEveryExpressionShapeInAnAttributeArgumentAsAnAttributeArgument"array element"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsEveryExpressionShapeInAnAttributeArgumentAsAnAttributeArgument"class constant"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsEveryExpressionShapeInAnAttributeArgumentAsAnAttributeArgument"class name"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsEveryExpressionShapeInAnAttributeArgumentAsAnAttributeArgument"enum case"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsEveryExpressionShapeInAnAttributeArgumentAsAnAttributeArgument"instantiation"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsEveryExpressionShapeInAnAttributeArgumentAsAnAttributeArgument"named argument"
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsNamedClassSelfExtendsWithoutOrdinarySelfReferences
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsNestedFunctionSignatureAndItsAttributeSites
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsNoEdgeForAnAttributeArgumentOfATopLevelFunction
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsPropertyHookAndHookParameterFacts
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsTheInterfacesPhpGivesAClassLikeUnwritten"backed enum"
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsTheInterfacesPhpGivesAClassLikeUnwritten"class declaring __toString"
@@ -5006,6 +5232,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsTheInterfacesPhpGivesAClassLikeUnwritten"trait declaring __toString"
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itResetsDependenciesAndImportsWhenReusedForAnotherFile
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itReturnsDependencyModelOwnedLocationsForExtractedDependencies
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itStartsANamedClassDeclaredInsideAnAttributeArgumentOutsideAnyAttribute
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itStillDetectsInstantiationInsideClosureBody
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DuplicateDeclarationEdgeSourceTest::itNumbersTheSecondDeclarationOfOneClassIdentityInItsEdges
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\Handler\TypeDependencyHelperTest::itDoesNotProduceADependencyForSelfInAParameterTypeHint
@@ -5734,6 +5961,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\DeclarationIdentityTest::itKeepsEveryKeyWhenTextAboveTheDeclarationsChanges
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\DeclarationIdentityTest::itNumbersEachFileOnItsOwnAcrossWorkerCounts
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\DeclarationIdentityTest::itRenumbersAnAnonymousClassWhenAnotherIsDeclaredAboveIt
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Visitor\AnonymousCallableIdentityTest::itLeavesClosuresOutOfAClassSelection
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Visitor\AnonymousCallableIdentityTest::itRollsClosuresUpIntoTheNamespaceButNotIntoTheirClass
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Visitor\AnonymousCallableIdentityTest::itStoresClosuresUnderTheirEnclosingNames
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\AggregationHelperTest::itComputesThe5thPercentileOfAValueList"100 values 1..100"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\AggregationHelperTest::itComputesThe5thPercentileOfAValueList"MI-like distribution"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\AggregationHelperTest::itComputesThe5thPercentileOfAValueList"all same values"
@@ -5828,6 +6058,23 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\TreeAwareNamespaceAggregatorTest::itLeavesTheRepositoryUnchangedWhenNoParentNamespaceExists
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\TreeAwareNamespaceAggregatorTest::itPropagatesALeafsMetricsThroughEveryAncestorInADeepHierarchy
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\TreeAwareNamespaceAggregatorTest::itSumsMetricsFromDescendantLeafNamespacesIntoTheParent
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itKeepsAClosureNameWhenAClosureIsAddedToAnotherMethod
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itKeepsATopLevelClosureNameWhenAnotherNamespaceGainsOne
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itKeepsAnonymousCallablesOutOfClassOwnership
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"class declared inside a function owns the closure in its constant"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"closure and arrow function in methods"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"closure in a closure in an anonymous class method"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"closure in an anonymous class property default inside a method"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"closures in class constant, property default and attribute arguments"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"file-level code counts per namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"global namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"nested closures count inside their own parent"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"property hook and function declared inside a method"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"top-level function and file top-level code"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNumbersSameNamedDeclarationsMetOutOfSourceOrderOnce
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itProjectsOneNameIntoEveryIdentityOfACallable
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itTellsASameNamedClassAndFunctionApartByOrdinal
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itTellsSameNamedConditionalParentsApartByOrdinal
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousClassContextRegressionTest::itAttributesDependenciesToTheOuterClassAcrossAnAnonymousClass
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousClassContextRegressionTest::itKeepsTheCognitiveVisitorsClassContextAfterAnAnonymousClass
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousClassContextRegressionTest::itKeepsTheCorrectFqnInCognitiveComplexitiesAfterAnAnonymousClass
@@ -6980,6 +7227,17 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleConfiguration\Selection\ContainerRuleNameValidationTest::itAcceptsARegisteredRuleName
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleConfiguration\Selection\ContainerRuleNameValidationTest::itRefusesAnUnknownRuleNameInAPreset
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleConfiguration\Selection\ContainerRuleNameValidationTest::itRefusesAnUnknownRuleNameInTheConfigurationFile
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleConfiguration\Selection\ProjectScopedSuppressionRefusalRunTest::itAcceptsAProducerThatHasAFileScopedChannel
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleConfiguration\Selection\ProjectScopedSuppressionRefusalRunTest::itAcceptsAnEmptyList
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleConfiguration\Selection\ProjectScopedSuppressionRefusalRunTest::itLeavesGraphExportUnaffected
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleConfiguration\Selection\ProjectScopedSuppressionRefusalRunTest::itRefusesTheCycleRuleSuppressionAtEveryCommandThatResolvesTheConfiguration"baseline:generate"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleConfiguration\Selection\ProjectScopedSuppressionRefusalRunTest::itRefusesTheCycleRuleSuppressionAtEveryCommandThatResolvesTheConfiguration"check"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleConfiguration\Selection\ProjectScopedSuppressionRefusalRunTest::itRefusesTheCycleRuleSuppressionAtEveryCommandThatResolvesTheConfiguration"directives"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleConfiguration\Selection\ProjectScopedSuppressionRefusalRunTest::itRefusesTheCycleRuleSuppressionInTheRuleListing
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleConfiguration\Selection\ProjectScopedSuppressionRefusalRunTest::itRefusesTheOptionWrittenThroughRuleOpt
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleConfiguration\Selection\ProjectScopedSuppressionRefusalRunTest::itRefusesTheOtherProjectOnlyProducerAndOptionPairs"cycle paths"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleConfiguration\Selection\ProjectScopedSuppressionRefusalRunTest::itRefusesTheOtherProjectOnlyProducerAndOptionPairs"unused baseline entry namespaces"
+ - Qualimetrix\Tests\Analysis\Finding\Integration\RuleConfiguration\Selection\ProjectScopedSuppressionRefusalRunTest::itRefusesTheOtherProjectOnlyProducerAndOptionPairs"unused baseline entry paths"
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesErrorViaDedicatedCliFlag
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesErrorViaRuleOptToOneDimensionOnly
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesVoErrorViaConfigFileKebabKey
@@ -7223,6 +7481,22 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationSelectionTest::itRejectsAnOrdinaryFailureWithAnInvocationIdentityInEveryAccountingMode
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationSelectionTest::itStopsBeforeAdvancingInputsPastTheFirstFailureInEveryAccountingMode
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationSelectionTest::itUsesTheFailedGateUnitAfterAPassingOrdinaryPrefix
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itConsultsRemovedCodeWhenNoDoorWithholds
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itJudgesALiteralTheRemovedCodeCannotReach
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itJudgesEveryLiteralWhenNoDoorWithholdsAndNothingWasRemoved
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itReadsAbsentRemovedNamespacesAsUnknownWithoutADoor
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itSetsGeneratedRemovalAsideLikeExcludedPhpFiles
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itTreatsAbsentRemovedNamespacesAsUnknown
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itWithholdsALiteralTheRemovedCodeCouldHaveDeclared
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itWithholdsAnExcludeDoorWithoutPhpEvidence
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itWithholdsEveryLiteralWhenUnreadRemovedCodeOpensNoDoor
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itWithholdsUnderAnyDoorBeyondExcludedOrGeneratedPhp"paths beside exclude"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itWithholdsUnderAnyDoorBeyondExcludedOrGeneratedPhp"paths"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itWithholdsUnderAnyDoorBeyondExcludedOrGeneratedPhp"unknown universe beside generated"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itWithholdsUnderAnyDoorBeyondExcludedOrGeneratedPhp"unknown universe"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itWithholdsWhenARemovedDirectoryCouldNotBeListed
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itWithholdsWhenAnUnlistableSelectorSitsBesideAPhpFileOne
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itWithholdsWhenRemovedNamespacesAreUnknown
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementTest::itDerivesSameAndOtherFromHiddenDirectorySources
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementTest::itKeepsBlockedEvidenceWhenTheQuestionCloses
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementTest::itKeepsTheSelectorQuestionOpenWhenExcludedCodeWithholdsNamespaceClaims
@@ -7230,6 +7504,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementTest::itRefusesContradictoryPhpEvidence
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementTest::itRefusesNotJudgedWhileTheSelectorQuestionIsOpen
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementTest::itRetainsARemovedSelectorWhenPathsAreNarrowed
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\RemovedCodeNamespacesTest::itAsksWhetherAnythingDeclaredLiesInsideASubtree
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\RemovedCodeNamespacesTest::itFoldsAsciiCaseAndIgnoresSurroundingBackslashes
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\RemovedCodeNamespacesTest::itKeepsTheGlobalNamespaceApartFromNamedOnes
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\RemovedCodeNamespacesTest::itMayDeclareAnythingWhenUnknown
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\RemovedCodeNamespacesTest::itMayDeclareNothingWhenNothingWasRemoved
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\RemovedCodeNamespacesTest::itMergesWithUnknownAbsorbingAndNoneNeutral
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\RemovedCodeNamespacesTest::itTreatsAncestorsOfADeclaredNamespaceAsDeclared
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ResolvedRuleOptionsTest::itRefusesAnUnknownProducerInsteadOfInventingDefaults
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ResolvedRuleOptionsTest::itRefusesSuppressionForAnUnknownProducer
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ResolvedRuleOptionsTest::itReturnsTheOwnedOptionsAndTypedSuppressionObjectsByIdentity
@@ -7535,6 +7816,20 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RulesSectionTest::itRefusesAnUnsupportedSectionRoot
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RulesSectionTest::itRefusesFrameworkSuppressionInsideALevel
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RulesSectionTest::itRefusesOverlappingAuthoredSpreadingPathsInTheSameLayer
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\ProjectScopedSuppressionRefusalTest::itAcceptsAProducerThatHasNoChannels"namespaces"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\ProjectScopedSuppressionRefusalTest::itAcceptsAProducerThatHasNoChannels"paths"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\ProjectScopedSuppressionRefusalTest::itAcceptsAProducerWithAFileScopedChannel"namespaces"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\ProjectScopedSuppressionRefusalTest::itAcceptsAProducerWithAFileScopedChannel"paths"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\ProjectScopedSuppressionRefusalTest::itAcceptsAProjectLevelChannelThatNoCapabilityDeclaresProjectScoped"namespaces"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\ProjectScopedSuppressionRefusalTest::itAcceptsAProjectLevelChannelThatNoCapabilityDeclaresProjectScoped"paths"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\ProjectScopedSuppressionRefusalTest::itAcceptsAnEmptyOrNullList"namespaces"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\ProjectScopedSuppressionRefusalTest::itAcceptsAnEmptyOrNullList"paths"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\ProjectScopedSuppressionRefusalTest::itJudgesTheListTheHigherLayerLeavesEffective"namespaces"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\ProjectScopedSuppressionRefusalTest::itJudgesTheListTheHigherLayerLeavesEffective"paths"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\ProjectScopedSuppressionRefusalTest::itOmitsTheDocsLinkWhenNoPageIsKnown
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\ProjectScopedSuppressionRefusalTest::itRefusesANonEmptyListOnAProducerWithOnlyProjectScopedChannels"namespaces"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\ProjectScopedSuppressionRefusalTest::itRefusesANonEmptyListOnAProducerWithOnlyProjectScopedChannels"paths"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\ProjectScopedSuppressionRefusalTest::itRefusesNothingWhenNoChannelIsDeclaredProjectScoped
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleEnablementRefusalTest::itNamesBothEqualRankDisableWritersBehindAnEmptyFilter
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleEnablementRefusalTest::itNamesTheDefaultMutedModeWhenItMakesTheOnlyFilterEmpty
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\Selection\RuleEnablementRefusalTest::itNamesTheUpperExplicitEnableAndLowerFilterWriters
@@ -7902,14 +8197,17 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itExplainsTheExplicitSelectorKindInUnmatchedRecommendations
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itHonoursTheRegexAndSubtreeModesTheSuppressionFiltersUse
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesAChannelSuppressionPatternTheLedgerApplies
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesALiteralTheAnalysedTreeAlreadyBindsBesideRemovedCode
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesAnUnmatchedNamespaceRegexOnAWholeProjectRun
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesBinarySuppressionSelectorsWithoutCollapsingLiteralEscapes
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNamespacesAgainstAnEmptyTree
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNoNamespaceValueWhenAFileFailedAnalysis
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNoNamespaceWhenTheRunBuiltNoNamespaceTree
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNoValueWhoseSubjectTheRunDidNotAnalyse
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesNothingWhenTheProducerIsDisabled
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itJudgesTheSameValuesOnARunThatReachesTheirSubject
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itLeavesAnUnmatchedRegexSilentOnAPartialRun
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itNamesOnlyTheValuesRemovedCodeAloneWithholds
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itReadsBothSpellingsOfThePerRuleLedgerOptions
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itReadsEachInvocationSnapshotFromTheSameAuditInstance
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itReplacesTheTypedSuppressionUniverseBetweenInvocations
@@ -7917,6 +8215,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itStillNamesAnAnchoredNamespaceValueOnThatSameRun
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itAnchorsAValueOnACharacterOnlyTheJudgeUsedToCallAGlob
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itAnswersTheSameForRegexPathValue
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itBlamesNothingWhereTheProjectDeclaresNoAutoload
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itBlamesRemovedCodeOnlyForAValueItAloneWithholds
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itBlamesRemovedCodeThatOpenedNoDoor
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itJudgesALiteralNamespaceTheRemovedCodeCannotHaveDeclared
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itJudgesBothRegexKindsFromMeasuredScopeForACompleteNamedRoster
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itJudgesNoNamespaceValueWhereTheProjectDeclaresNoAutoload
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itJudgesRegexOnlyWhenTheWholeProjectIsAnalysed
@@ -7924,6 +8226,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itStillDeclinesToJudgeAValueServedFromAnUnanalysedRoot
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itStillJudgesAnAnchoredNamespaceValueOnAWholeProjectRun
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itWithholdsALiteralUnderRemovedCodeButJudgesItsNeighbour
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itWithholdsEveryNamespaceValueWhenTheRemovedNamespacesAreUnknownOrAPathsDoorIsOpen
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdCrossingTest::itNamesTheRawNumericCrossing"integer equality"
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdCrossingTest::itNamesTheRawNumericCrossing"mixed numeric equality"
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdCrossingTest::itNamesTheRawNumericCrossing"same displayed precision"
@@ -8047,6 +8350,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RelationsFilterIntegrationTest::itLetsTheTypeReferenceAliasPermitTypeHintAndForbidExtendsAndStaticCall
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RelationsFilterIntegrationTest::itPermitsOnlyTheListedDependencyKindsForAMixOfDirectValues
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RelationsFilterIntegrationTest::itPreservesTheRelationsKeyAndItsAliasThroughYamlConfigLoader
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RelationsFilterIntegrationTest::itTreatsAReferenceInsideAnAttributeArgumentAsItsOwnRelationKind
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RepeatedPatternShadowIntegrationTest::itDoesNotReportTheLayerReceivingTheResidueOfAMatchAllLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RepeatedPatternShadowIntegrationTest::itDoesNotReportTheRecipientOfACarveOutAsShadowed
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\RepeatedPatternShadowIntegrationTest::itStillReportsANarrowerLayerBehindABroadLayerWithAnExclude
@@ -8179,16 +8483,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ClassSetTest::itDelegatesToTheFactoryAndReturnsAMinimalContextWithoutAGraph
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ClassSetTest::itReflectsWhetherTheClassListIsEmpty
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ClassSetTest::itReturnsTheSuppliedClassListUnchanged
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itAcceptsAttributeArgumentAsAStandaloneRelationKind
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itAppendsAnUnrelatedDirectTokenAfterAliasMembers
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itDedupesADirectTokenThatRepeatsAPrecedingAliasMember
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itDedupesAcrossOverlappingAliasMembers
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itDedupesRepeatedDirectTokens
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itDelegatesAValidRelationsListToExpand
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itExpandsASingleDirectTokenToItsOwnEnumCase
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itExpandsTheInheritanceAliasToExtendsImplementsAndTraitUse
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itExpandsTheRuntimeCheckAliasToCatchAndInstanceof
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itExpandsTheStaticAccessAliasToStaticCallStaticPropertyAndClassConst
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itExpandsTheTypeReferenceAliasToEveryTypePosition
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itPreservesInputOrderForMultipleDirectTokens
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itRejectsANonStringToken
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itRejectsAScalarRelationsValueWithAListHint
@@ -8198,7 +8499,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itRejectsAnUnknownTokenWithBothKnownListsInTheMessage
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itRejectsTheRemovedShapeTokensAndNamesThePositionReplacement
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itReturnsNullWhenTheRelationsKeyIsAbsent
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowAliasExpanderTest::itTreatsAttributeAsAStandaloneTokenNotAnAlias
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowValidatorTest::itAcceptsACamelCaseAllowCrossInstanceFlagInALongFormAllowEntry
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowValidatorTest::itAcceptsACapturedTargetWithASubsetOfSourceVariables
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\AllowValidatorTest::itAcceptsAnAllowCrossInstanceFlagInALongFormAllowEntry
@@ -9153,13 +9453,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineIncompleteAnalysisTest::itLeavesEveryExistingDestinationByteUnchangedOnIncompleteAnalysis"baseline:update partial"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineIncompleteAnalysisTest::itRefusesAllBaselineLifecycleOperationsAfterARealLateDuplicationReadFailure
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itKeepsTheBuildGreenAfterDeletingOneOfTwoBaselinedDuplicateBlocks
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itListsRetiredClosureEntriesAndWritesOnlyOnceAllOfThemAreRemoved
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itListsSeveralManualRepairsAndRemovesOnlyTheirNamedSelectors
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itReKeysADuplicateWhoseMatchedTokensChangeInEveryCopy
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itRemovesDuplicatedRetiredClosureEntriesWithTheirSharedSelector
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itReportsANewCopyOfAnAcceptedDuplicateBlock
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itReportsARepairedCopyAsStaleAndKeepsTheOtherCopiesAccepted
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itRoundTripsARepositoryShapedProjectWithAnIgnoredGroupMember
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itSaysAnEntryWasNotMeasuredWhenASelectorSwitchedItsLevelOff
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itSaysAnEntryWasNotMeasuredWhenConfigurationSwitchedItsLevelOff
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itStopsAVersionFourteenClosureEntryFromAcceptingTheClosureThatHoldsItsNameNow
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMeasuredSetSeamTest::itAppliesDiscoveryExclusionBeforeEveryBaselineLifecycleMeasurement
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMeasuredSetSeamTest::itCapturesExactlyWhatCheckMeasuresOverTheSamePaths
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMeasuredSetSeamTest::itReadsBackACapturedComputedEntryAsAnApplicableOne
@@ -9210,6 +9513,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itCarriesHeldBytesAndRefusesChangedTargetOnWrite
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itChangesNothingButTheChannelValuesItWasToldTo
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itDropsAnEmptySubjectBlock
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itKeepsTheVersionOfTheDocumentItCarries
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itLeavesTheFileByteIdenticalUnderAnEmptyMap
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itLeavesTheFileTheProductWouldHaveWritten
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itPlacesADeclaredEntryWhereTheWriterWouldWithoutRerenderingIt
@@ -9265,6 +9569,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRefusesATargetThatIsADirectoryWithoutAPhpDiagnostic
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRefusesRawNonUtf8DiscoveryDefinitionWithoutReplacingTheDestination#0
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRefusesRawNonUtf8DiscoveryDefinitionWithoutReplacingTheDestination#1
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRefusesToCarryARetiredClosureEntryIntoTheCurrentVersion
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRefusesToOverwriteAFileThatChangedSinceItWasRead
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRefusesToWriteTwoIdentitiesThatCollapseOnRelativization
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRefusesToWriteWhileAnotherProcessHoldsTheLock
@@ -9273,6 +9578,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRelativizesAbsoluteFileKeysAgainstTheProjectRoot
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRelativizesEncodedFileKeysAgainstTheRawProjectRoot
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRewritesAFileItJustReadWithoutMovingAByte
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRewritesALoadedVersionFourteenDocumentAsTheCurrentVersionWithItsEntriesUnchanged
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRoundTripsEdgesAndMultiElementMagnitudes
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRoundTripsMagnitudesExactlyAtEverySerializePrecision
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itWritesAFreshBaselineOverAnyExistingFile
@@ -9376,6 +9682,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itPrefersChannelNotDeclaredOverStaleWhenBothApply
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itRemovesAnInertEntryAddressedByItsSelector
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itRemovesEveryInertContenderOfOneDuplicateIdentity
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itRemovesEveryRetiredContenderOfOneClosureIdentity
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itRemovesExactlyTheNamedEntryAndLeavesItsNeighbours
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itRemovesOneOfTwoEntriesDifferingOnlyByEdge
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itReportsASelectorThatNamesNothing
@@ -9471,6 +9778,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itHashesTheFileTheSameWayOnEitherRoute
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itKeepsLoadingWhenOneEntryIsUnusable
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itKeepsTwoEntriesUnderOneSymbolThatDifferOnlyByEdge
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itLoadsAVersionFourteenDocumentWithoutClosureEntriesAsItsCurrentVersionTwin
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itLoadsOnlyThePreflightBytesAfterSourceReplacement
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itLoadsTheContractOfTheCurrentVersion
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itNamesVersionThirteenAsTheOrdinalIdentityBreakForVersionTwelve
@@ -9502,6 +9810,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionTenBeforeReadingEntriesAndGivesManualV14Guidance
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRetainsNativeLastKeyBehaviorForCanonicalEntryObjects
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRetainsTheDocumentedRepeatedKeyLimitForNoncanonicalFallback
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRetiresEveryClosureEntryOfAVersionFourteenDocumentUnderTheSelectorItHadBefore#0
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRetiresEveryClosureEntryOfAVersionFourteenDocumentUnderTheSelectorItHadBefore#1
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itSpendsTheSameNestingBudgetOnAnEntryAsTheWholeDocumentPath
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itTurnsAMalformedSymbolBucketInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itTurnsAnEntryWhoseComponentsCarryTheKeySeparatorInert
@@ -9640,6 +9950,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\Contract\RunScopeTest::itRefusesARunNarrowerThanTheRecordedScope
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\Contract\RunScopeTest::itTreatsTheFilesystemRootAsCoveringEveryPath
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\Contract\RunScopeTest::itTreatsTheProjectRootAsCoveringEveryProjectRelativePath
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryBinding\UnusedEntryAuditTest::itAdvisesRemovingEveryRetiredClosureEntryInOneCall
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryBinding\UnusedEntryAuditTest::itDeclaresAnEnabledWarningProjectRuleThatEmitsNothingDuringMeasurement
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryBinding\UnusedEntryAuditTest::itHonoursTheCommittedAuditSelection
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryBinding\UnusedEntryAuditTest::itReportsOneFindingForAllInertContendersOfADuplicateIdentity
@@ -10202,7 +10513,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedDiscoveryExcludeIntegrationTest::itNeverReportsTheProductsOwnBuiltInExcludes
  - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedDiscoveryExcludeIntegrationTest::itReportsACommandLineExcludeThatMatchedNothing
  - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedDiscoveryExcludeIntegrationTest::itReportsAConfiguredExcludeThatMatchedNothingAndNotOneThatMatched
- - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedDiscoveryExcludeIntegrationTest::itReportsADeadRegexWhileWithholdingNamespaceAbsenceInOneRun
+ - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedDiscoveryExcludeIntegrationTest::itReportsADeadRegexAndJudgesOnlyTheNamespaceLiteralsRemovedCodeCannotHold
  - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedDiscoveryExcludeIntegrationTest::itReportsEveryUnboundPatternSeparately
  - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedDiscoveryExcludeIntegrationTest::itStaysSilentOnARunNarrowedBelowTheAutoloadRoots
  - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedDiscoveryExcludeIntegrationTest::itStaysSilentWhenEveryAnalysedPathIsAFile
@@ -10385,7 +10696,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopeCoverageTest::itWithholdsSubsetJudgementWhenTheManifestDeclaresNoUsableUniverse"production sections that are all empty"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopePathsTest::itNamesTheOutermostPrunedDirectoryAWalkWouldStopAt
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\ProjectScopePathsTest::itProvidesBuiltInsThatMatchReservedDirectoriesAtAnyDepth
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itCountsALiteralNamespaceSuppressionValueTheInvocationAdds
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itKeepsRelativePathsRootedAtIngressWhenTheProcessDirectoryChanges
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itRecordsWhetherALiteralNamespaceSuppressionValueIsConfigured"global exact"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itRecordsWhetherALiteralNamespaceSuppressionValueIsConfigured"global regex only"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itRecordsWhetherALiteralNamespaceSuppressionValueIsConfigured"none"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itRecordsWhetherALiteralNamespaceSuppressionValueIsConfigured"rule channel exact"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itRecordsWhetherALiteralNamespaceSuppressionValueIsConfigured"rule channel regex only"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itRecordsWhetherALiteralNamespaceSuppressionValueIsConfigured"rule paths only"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itRecordsWhetherALiteralNamespaceSuppressionValueIsConfigured"rule subtree"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itRecordsWhetherALiteralNamespaceSuppressionValueIsConfigured"rule thresholds only"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itRefusesAnOutsideComposerTargetWithoutInventingAPathsPosition
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itRefusesTheSpecificOutsidePathAuthor"command line"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\RunConfigurationResolverTest::itRefusesTheSpecificOutsidePathAuthor"configuration file"
@@ -10506,15 +10826,22 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectTreeTest::itListsPhpBelowAuthoredExcludedDirectoriesOnDemand
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectTreeTest::itReportsInaccessibleMetadataAsIncompleteAndUnknown
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itBindsAllSelectorsAtTheSameDirectoryBeforePruning
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itCollectsEveryNamespaceOfARemovedDirectory
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itCollectsNamespacesOfEveryEntryASingleSelectorRemoves
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itCollectsTheNamespacesOfAnExcludedEntryOutsideTheMeasuredUniverse
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itCoversHiddenLiteralFromSameSource
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itCoversHiddenRegexFromSameSource
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itDistinguishesObservedOutsidePhpFromAnOutsideAsset
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itDoesNotBindAnOutsideProjectPathWithTheSameSuffix
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itFindsPhpInTheSecondRemovedRunSubtree
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itIgnoresANonPhpFileLinkInsideARemovedDirectoryAsTheWalkDoes
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itJudgesAnUnrelatedNamespaceLiteralBehindAnExcludedPhpTree
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itJudgesEachSelectorAgainstItsOwnInaccessibleLocation
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itJudgesNamedFileRosterAgainstCapturedUniverse
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itJudgesNoNamespaceLiteralALinkedFileInsideAnExcludedTreeMayDeclare
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsASelectorBelowAnUnlistableNamedRootUnjudgeable
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsAnOutsideExcludedDirectoryUnknownWithoutDescendingIntoIt
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsAnUnfundedSurveyKnownBesideAnExcludedTreeWithoutPhp
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsAnUnlistableOutsideProjectRootUnknown
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsAnUnlistableOutsideTargetUnknownWithoutCurrentRunFailure
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsAnUnreadableRemovedRunSubtreeAsUncertainPhpEvidence
@@ -10523,10 +10850,20 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsSameSourceWhenHiderAndHiddenSelectorShareMixedHistory
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsSiblingPrefixesSeparate
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKeepsTheFirstNamedLinkWithoutASelectedRegularTargetAndKeepsHardlinksDistinct
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itKnowsNothingIsRemovedWithoutReadingWhenNoLiteralIsConfigured
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itMakesRemovedNamespacesUnknownForALinkInsideARemovedDirectory"directory link"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itMakesRemovedNamespacesUnknownForALinkInsideARemovedDirectory"php file link"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itMakesRemovedNamespacesUnknownForAnExcludedNamedFileLink
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itMakesRemovedNamespacesUnknownPastTheByteBudgetWithoutChangingVerdicts
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itMakesRemovedNamespacesUnknownPastTheReadBudgetWithoutChangingVerdicts
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itMakesRemovedNamespacesUnknownWhenADeeperChildIsUnlistableAfterPhpWasFound
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itMakesRemovedNamespacesUnknownWhenAGeneratedFileCannotBeRead
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itPrefersASelectedRegularTargetOverANamedFileLinkRegardlessOfOrder
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itPrefersOtherSourceForPossibleHiddenRegexMatch
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itPrefersOtherSourceWhenTheHiddenSelectorHasMixedHistory
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itPublishesWalkedDirectoryLinksToTheRootAndOutsideByTheirWrittenNames
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itReadsNoRemovedFileWhenNoLiteralNamespaceSuppressionIsConfigured
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itReadsTheNamespaceOfAGeneratedFileBeyondTheHeaderWindow
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itRecordsAChildStatFailureAndKeepsItsSiblingsAndBlockedSelector
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itRecordsANamedDirectoryAliasRemovedByAnExcludeAsHidden
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itRefusesANamedFileLinkToANamedPipeBeforeOpeningIt
@@ -10539,11 +10876,62 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itRefusesMultipleReservedRootsBeforeReturningASelectedSibling
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itRemovesARegularFileMatchingAFileShapedRegexBeforeHeaderClassification
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itRemovesAnAuthoredExcludedFifoBeforeHeaderClassification
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itRemovesNothingFromTheNamespacesWhenNoEntryIsExcluded
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itReportsAWalkedFileLinkAsFailureWhileKeepingTheRegularTarget
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itReportsAWalkedPhpNamedPipeWithoutPhpEvidence
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itReportsUnreadableHeaderAsFailureInsteadOfTreatingItAsOrdinary
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itSkipsTheNamespacesOfARemovalOutsideTheUniverseOnceTheSurveyIsClosed
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itSpendsOneBudgetOnRemovedAndGeneratedFiles
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itStopsDescendingAnEvidencedSelectorsLaterEntriesOnceTheBudgetIsSpent
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itStopsTheNamespaceDescentPastTheEntryBudgetWithoutChangingVerdicts
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itWalksAnExplicitExternalAliasIntoTheProjectWithoutFollowingChildDirectoryLinks
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itWalksNamedEntriesInsideAReservedAncestor
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itWithholdsANamespaceLiteralRemovedOutsideTheUniverseBesideAnUnrelatedExclusion
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itCannotReadAFileBeyondItsByteAllowance
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itCannotReadAFileWithANamespaceStatementItDoesNotRecognise"after a statement"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itCannotReadAFileWithANamespaceStatementItDoesNotRecognise"at the end of the file"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itCannotReadAFileWithANamespaceStatementItDoesNotRecognise"fully qualified name"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itCannotReadAFileWithANamespaceStatementItDoesNotRecognise"no name"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itFindsANameThatStraddlesTwoChunks
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itListsEveryNamespaceAWordCouldDeclareInALargeFile"a comment longer than the lookahead is undecided"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itListsEveryNamespaceAWordCouldDeclareInALargeFile"a line comment ends at a carriage return"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itListsEveryNamespaceAWordCouldDeclareInALargeFile"a line comment ends at a closing tag"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itListsEveryNamespaceAWordCouldDeclareInALargeFile"an unterminated comment at the end of the file ends it"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itListsEveryNamespaceAWordCouldDeclareInALargeFile"braced global block"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itListsEveryNamespaceAWordCouldDeclareInALargeFile"keyword name"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itListsEveryNamespaceAWordCouldDeclareInALargeFile"member and relative names do not"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itListsEveryNamespaceAWordCouldDeclareInALargeFile"name after a comment"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itListsEveryNamespaceAWordCouldDeclareInALargeFile"words in comments count"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsALargeFileAsTextWithinABoundedHeap
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"braced keyword name"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"braced namespaces"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"comment between keyword and name"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"comments and strings"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"global block beside a named one"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"global block"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"inline html only"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"keyword name Abstract"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"keyword name Array"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"keyword name Class"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"keyword name Default"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"keyword name Enum"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"keyword name Exit"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"keyword name Fn"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"keyword name List"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"keyword name Match"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"keyword name Print"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"keyword name Readonly"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"keyword name Static"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"namespace as constant, case, method and argument name"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"namespace as member name"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"no namespace"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"relative name is not a declaration"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"repeated name is listed once"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"several namespaces"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"single namespace"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsDeclaredNamespacesFromTokens"single segment"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReadsPastTheFirstTwoKilobytes
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\RemovedNamespaceScanTest::itReturnsNullForAMissingUnreadableOrNonRegularFile
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\UnjudgedExcludeTest::itGivesTheUnjudgedVerdictAnIdentityOfItsOwn
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\UnjudgedExcludeTest::itNamesASelectorHiddenByAnotherExclude
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\UnjudgedExcludeTest::itNamesTheSelectorItCouldNotJudgeAndTheDirectoryThatStoppedIt
@@ -11629,6 +12017,21 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Baseline\BaselineGenerateProjectScopeFlagsTest::itConsumesSharedRuntimeFlagsAtEveryMeasuringBaselineCommand"update"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Baseline\BaselineGenerateProjectScopeFlagsTest::itLeavesTestCodeOutOfACaptureTakenWithoutTheFlag
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CacheDiscardLogLifecycleTest::itPublishesOneCompleteReportAndLogsDiscardBeforeClosingTheTarget
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itAgreesInNumberAcrossTheWarning
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itDoesNotBlameTheExclusionForAValueAnUnanalysedRootWithholds
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itDoesNotJudgeANamespaceRemovedOutsideTheMeasuredUniverse
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itDoesNotJudgeASelectorOfTheNamespaceTheExcludedFileDeclares
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itDoesNotJudgeTheNamespaceOfAFileThatFailedToParse
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itDoesNotJudgeWhenTheExcludedFileCannotBeRead
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itDoesNotNameAnExclusionThatRemovedNoPhp
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itJudgesAStaleGlobalSelectorUnderAnUnrelatedExclude
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itJudgesAStalePerRuleSelectorUnderAnUnrelatedExclude
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itJudgesAValueTheAnalysedTreeBindsBesideAnExcludedSubTree
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itJudgesAroundAGeneratedFileAndWithholdsWhatItCouldDeclare
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itNamesTheExclusionThatRemovedPhpBesideOneThatRemovedNone
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itOffersBothRemediesWhenAnExclusionAndTheGeneratedPolicyRemovedCode
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itSilencesTheWarningUnderQuiet
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CheckScope\RemovedCodeNamespaceJudgementTest::itStaysQuietWhenEveryNamespaceValueWasJudged
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandAutoloadDevScopeTest::itDoesNotWidenPathsTheAuthorNamed
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandAutoloadDevScopeTest::itLeavesTestCodeOutOfBothHalvesByDefault
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandAutoloadDevScopeTest::itTakesTestCodeIntoBothHalvesWhenTheFlagIsGiven
@@ -11778,8 +12181,11 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"check paths"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"debug:layer-assignment --format"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"debug:layer-assignment fqn"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"directives --cache-dir"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"directives --format"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"directives --memory-limit"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"directives --sweep"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"directives --workers"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"graph:export --direction"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"graph:export --exclude-namespace"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"graph:export --format"
@@ -11865,6 +12271,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itJudgesADeadNocDirectiveInsideTheSelectedUniverse"excluded"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itJudgesADeadNocDirectiveInsideTheSelectedUniverse"generated"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itKeepsFileOwnedUnusedDirectivesUnderBroadNamespaceExclusions
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itKeepsNamingTheNamespaceChannelUnjudgedUnderAnExclude
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff"every level of it"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff"the level the directive sits on"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff"the whole rule"
@@ -11915,6 +12322,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itReportsIdenticalDirectivesFromTwoCommentsOnOneLineAsTwoSites
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itSaysTheSameThingInBothFormats
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itStillJudgesSuppressionsWhenTheDirectiveRuleIsDisabled
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itWritesNothingToTheCacheDirectoryUnderNoCache
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itWritesTheAstCacheToTheGivenCacheDirectory
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itDrawsTheFrameBelowEveryLineWrittenBeforeIt
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itDropsDiagnosticsWhenTheOutputHasNoErrorChannel
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itKeepsALoggerLineAboveTheFrame
@@ -13499,6 +13908,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itOutputsPrettyPrintedJson
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itPreservesAllDependencyTypes
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itPreservesTypeAndShapeAssociationsOnAggregatedEdges
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itPublishesAnAttributeArgumentKindBesideTheSameTargetsCodeKind
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itRepairsInvalidUtf8InAClassNameInsteadOfFailing
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itSortsEdgesByFromThenTo
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\NamespaceFilterTest::itCombinesIncludesWithOrAndLetsARegexExclusionWin
@@ -13758,6 +14168,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesARunWhosePathsWereTakenAsTheProject"sarif"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesARunWhosePathsWereTakenAsTheProject"summary"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesARunWhosePathsWereTakenAsTheProject"text"
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesTheNamespaceChannelWhenNoValueOfItWasJudged
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesTheValuesACoveredRunSkipped"github"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesTheValuesACoveredRunSkipped"health"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesTheValuesACoveredRunSkipped"html"
@@ -13765,6 +14176,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesTheValuesACoveredRunSkipped"summary"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesTheValuesACoveredRunSkipped"text"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesUnjudgedChannelsOfACoveredRun
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itOmitsTheNamespaceChannelWhenARemovedFileLeftOneOfItsValuesJudged
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itPreservesSourceReasonsWhenPublishingSkippedValues"json"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itPreservesSourceReasonsWhenPublishingSkippedValues"metrics"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itPreservesSourceReasonsWhenPublishingSkippedValues"suppressed"
@@ -13775,6 +14187,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itPublishesTheStateUnderOneKeyOfOneShape"suppressed"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itPublishesUnderTheProjectScopeName
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itRefusesSkippedValuesOnANarrowedRun
+ - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itStillNamesTheNamespaceChannelWhenTheCallerComputedNoValues
  - Qualimetrix\Tests\Reporting\Unit\Contract\Formatting\FormatterContextTest::itDisablesDetailWhenLimitIsNull
  - Qualimetrix\Tests\Reporting\Unit\Contract\Formatting\FormatterContextTest::itEnablesDetailWhenLimitIsPositive
  - Qualimetrix\Tests\Reporting\Unit\Contract\Formatting\FormatterContextTest::itEnablesDetailWhenLimitIsZero
