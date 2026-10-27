@@ -30,7 +30,7 @@ final class ReportRecords
     public static function baselineEntries(string $text, array $records): array
     {
         $document = self::baselineDocument($text);
-        if (!\in_array($document['version'] ?? null, [13, 14], true) || !\is_array($document['entries'] ?? null)) {
+        if (!\in_array($document['version'] ?? null, [13, 14, 15], true) || !\is_array($document['entries'] ?? null)) {
             throw new GateError('The baseline publication has no supported entries schema.');
         }
         $groups = [];
@@ -367,7 +367,7 @@ final class ReportRecords
     public static function baselineDocument(string $text): array
     {
         $native = self::native($text);
-        if (!$native instanceof stdClass || !\in_array($native->version ?? null, [13, 14], true)
+        if (!$native instanceof stdClass || !\in_array($native->version ?? null, [13, 14, 15], true)
             || !($native->entries ?? null) instanceof stdClass) {
             throw new GateError('The baseline publication has no supported entries schema.');
         }
