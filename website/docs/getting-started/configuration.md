@@ -638,10 +638,10 @@ Configure framework namespace prefixes for the CBO (Coupling Between Objects) me
 ```yaml
 coupling:
   framework-namespaces:
-    - Symfony
-    - Doctrine
-    - Psr
-    - Illuminate
+    - subtree: Symfony
+    - subtree: Doctrine
+    - subtree: Psr
+    - subtree: Illuminate
 ```
 
 When no `framework-namespaces` are configured, `coupling.cbo-app` equals `coupling.cbo` (no effect).
@@ -1758,16 +1758,89 @@ rules:
 
 An **element of a list** is the one place this does not apply, and for a reason:
 an element is a value, not a key that was left unwritten, so there is nothing for
-it to mean. A `~` element is refused in every list outside `rules:`, with its
-index, and in the `rules:` lists declared to hold non-empty strings:
+it to mean. A `~` element is refused, with its index, in every list outside
+`rules:` and in every list a rule's options declare:
 
 ```yaml
 rules:
   complexity.ccn:
     suppress_namespaces:
-      - App\Legacy
+      - subtree: App\Legacy
       - ~              # refused: exit 3
 ```
+
+---
+
+## Editor support {#editor-support}
+
+Qualimetrix ships a JSON Schema of its configuration file, `qmx.schema.json`.
+Point an editor that validates YAML against JSON Schema at it, and while you
+write `qmx.yaml` you get:
+
+- completion of keys, rule names and each rule's options;
+- each rule's description as a hint;
+- highlighting of shape errors: an unknown key, a value of the wrong type, a
+  number below its minimum, a word outside a fixed list.
+
+The schema checks the **shape of one file, not its meaning**. `qmx` stays the
+final judge. The editor does not check formulas, selectors, regular
+expressions, paths, references to declared architecture layers, constraints
+that depend on other values, or anything that depends on how presets and your
+file combine. It does catch a shorthand written beside its own target in one
+object, such as `threshold` together with `warning`. A file the editor accepts can still be refused by `qmx check`.
+
+The reverse is what the schema is built to avoid: it is generated from the
+same declarations `qmx` reads, and it is tested never to flag a file `qmx`
+accepts — except where the editor's YAML parser reads a value differently
+(see [Limitations](#editor-schema-limitations)).
+
+### Where to get the schema
+
+| Source                                                                                | Use it when                                                                                                                                                                    |
+| ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `vendor/qualimetrix/qualimetrix/qmx.schema.json`                                      | **Recommended.** You installed Qualimetrix with Composer: the file always matches the installed version.                                                                       |
+| `https://raw.githubusercontent.com/qualimetrix/qualimetrix/vX.Y.Z/qmx.schema.json`    | You need a fixed address, for example with the phar, which does not carry the schema. Replace `vX.Y.Z` with your installed version; the content at this address never changes. |
+| `https://github.com/qualimetrix/qualimetrix/releases/latest/download/qmx.schema.json` | You always run the latest release. This address redirects to the newest release's asset; whether every editor follows the redirect has not been verified.                      |
+
+Releases published before the schema was introduced have no file at these
+addresses.
+
+<!-- llms:skip-begin -->
+### VS Code
+
+Install the YAML extension by Red Hat and make this the first line of
+`qmx.yaml`, with the address or a path relative to the file:
+
+```yaml
+# yaml-language-server: $schema=vendor/qualimetrix/qualimetrix/qmx.schema.json
+paths: [src]
+```
+
+`qmx.yaml.example` already starts with such a line. The path is resolved
+relative to the config file, so it works when the file lies in the project root
+next to `vendor/`.
+
+### PhpStorm
+
+Open **Settings → Languages & Frameworks → Schemas and DTDs → JSON Schema
+Mappings**, add a mapping, choose `vendor/qualimetrix/qualimetrix/qmx.schema.json`
+(or one of the addresses above) as the schema, and add `qmx.yaml` and `qmx.yml`
+as files mapped to it. A config file with another name, passed through
+`--config` or a preset, is bound the same way: add its name or path to the
+mapping (or put the modeline from the VS Code section on its first line). If
+the dialog asks for a schema version, choose JSON Schema version 7.
+<!-- llms:skip-end -->
+
+### Limitations {#editor-schema-limitations}
+
+- **Different YAML parsers.** `qmx` reads YAML with Symfony YAML; editors use
+  their own parser (the Red Hat extension follows YAML 1.2). A scalar the two
+  type differently — `1_000`, `0755`, a date — can be accepted by one and
+  flagged by the other. Where they disagree on such a value, `qmx check` is
+  right.
+- **Match the versions.** Use the schema of the `qmx` version you run. A newer
+  release may remove keys your version still accepts, and an older schema does
+  not know keys added since.
 
 ---
 

@@ -6,31 +6,14 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration;
 
 /**
  * The words of every refusal `computed_metrics:` and `exclude_health:` raise
- * about what a value means — an invalid level, name or dimension, or an
- * invalid formula — held in one place so the entry reader, the name resolver
- * and the formula validator stay consistent. Unknown keys and the form of a
- * value are refused by the configuration document in its own words.
+ * about what a value means — a repeated level, an invalid name or dimension,
+ * or an invalid formula — held in one place so the entry reader, the name
+ * resolver and the formula validator stay consistent. Unknown keys, the form
+ * of a value and a level word outside the declared reporting levels are
+ * refused by the configuration document in its own words.
  */
 final class ComputedMetricRefusalWording
 {
-    /** @param list<string> $reportingLevels canonical level words, sorted */
-    public static function levelWordNotAReportingLevel(string $level, array $reportingLevels): string
-    {
-        $words = array_map(static fn(string $word): string => \sprintf('"%s"', $word), $reportingLevels);
-        $last = array_pop($words);
-
-        return \sprintf(
-            'Computed metric level "%s" is not supported; computed metrics report at %s only.',
-            $level,
-            implode(', ', $words) . ' or ' . $last,
-        );
-    }
-
-    public static function levelWordNotALevelAtAll(string $level): string
-    {
-        return \sprintf('Invalid computed metric level: "%s"', $level);
-    }
-
     public static function duplicateLevel(string $metricName): string
     {
         return \sprintf('Computed metric "%s" declares the same level more than once', $metricName);

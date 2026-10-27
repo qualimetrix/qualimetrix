@@ -52,6 +52,7 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
             'suppression-snapshot:check',
             'html-bundle:check',
             'configuration:merge-table:check',
+            'configuration:schema:check',
             'selfcheck:analysis',
             'directives:audit',
         ];

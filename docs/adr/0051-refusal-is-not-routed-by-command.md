@@ -297,3 +297,12 @@ was asked for an artifact it did not deliver, and exit 3 is how a wrapper
 learns that.
 Writing the profile before the report was rejected too: the profile would
 then miss the reporting phase it measures.
+
+## Amendment, 2026-10-26: `written` for a value outside a word set
+
+A position names the key in `written` only where the refusal is about the key.
+A value outside a declared word set is refused at a closed position whose
+`written` is the value and whose `accepted` lists the declared words, as
+[ADR 0132](0132-editor-schema-of-the-configuration-document.md) records.
+An unknown `format:` is such a value now, refused in the layer that wrote it,
+so it no longer serves as the example of a merged value without a position.

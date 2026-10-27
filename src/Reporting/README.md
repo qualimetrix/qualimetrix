@@ -224,11 +224,11 @@ Console presenter without adding output policy to the transitional runtime
 configuration. `OutputFormatVocabulary` asks `FormatterRegistryInterface`
 which names exist and owns the canonical `format` key. `OutputFormatSection` returns an atomic
 `SectionDeclaration` through `DocumentSectionSchemaInterface`: the
-`format` string scalar uses the vocabulary in every writing layer before
-merge, so a typo remains refused even under a valid command-line override.
-`OutputFormatResolver` uses that same vocabulary for the winner before a
-single file is read, including documents composed without the real format
-section. Refusals retain their source. Infrastructure registers the section
+`format` string scalar declares the registered names as a word set, with a
+hint for the retired `text-verbose`, so the engine refuses a typo in every
+writing layer before merge, even under a valid command-line override, and
+`qmx.schema.json` offers the names. `OutputFormatResolver` returns the winner
+and treats a name outside the registry as an internal error. Infrastructure registers the section
 with autoconfiguration and the vocabulary and resolver as separate services.
 See [ADR 0088](../../docs/adr/0088-atomic-section-declarations-and-format-vocabulary.md).
 

@@ -28,6 +28,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - An unrelated `exclude` entry or `@generated` file no longer withholds every literal namespace suppression: a stale `exact:`/`subtree:` selector in `suppress_namespaces` (global or per-rule) is reported unless the removed code may declare a namespace it binds, and `check` warns on stderr about values only the removed code left unjudged (#200).
 - A namespace suppression is no longer reported stale when its code was excluded outside the analysed autoload roots or failed to parse; any analysis failure now leaves namespace suppression values unjudged.
 
+## [0.29.0] - 2026-10-27
+
+### Changed
+
+- `qmx.schema.json` — a JSON Schema of `qmx.yaml` for completion, rule descriptions and form validation in PhpStorm and VS Code; shipped in the Composer package and attached to every release. It offers the values of `format`, `fail_on`, `architecture.coverage-gap` and `computed_metrics.<name>.levels`. An unsupported `computed_metrics.<name>.levels` value is now refused with the accepted levels named.
+
+### Breaking
+
+- A configuration value outside a fixed list (`format`, `fail_on`, `architecture.coverage-gap`, `computed_metrics.<name>.levels`, a rule option's words) is refused with one sentence shape — `"fail_on" in configuration file "qmx.yaml" must be one of none, warning, error, got "info".` followed by any advice — instead of `Invalid value "info" for "fail_on". Allowed values: …`, `Output format "x" is not one of: …` and `architecture.coverage-gap: must be one of …`. In a JSON refusal its `position` is now closed, with the value in `written` (it was the key) and the words in `accepted`; `coverage-gap` was already closed and now lists its words in their documented order rather than alphabetically. Match on `position`, not on the sentence.
+
 ## [0.28.2] - 2026-10-25
 
 ### Fixed
@@ -1800,7 +1810,8 @@ Initial release.
 [0.9.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.0...v0.7.1
-[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.28.2...HEAD
+[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.29.0...HEAD
+[0.29.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.28.2...v0.29.0
 [0.28.2]: https://github.com/qualimetrix/qualimetrix/compare/v0.28.1...v0.28.2
 [0.28.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.28.0...v0.28.1
 [0.28.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.27.0...v0.28.0

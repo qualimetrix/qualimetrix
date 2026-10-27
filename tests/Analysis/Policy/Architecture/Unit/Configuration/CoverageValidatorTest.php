@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageValidator;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\SectionSpot;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
 
 #[CoversClass(CoverageValidator::class)]
@@ -64,12 +68,42 @@ final class CoverageValidatorTest extends TestCase
     }
 
     #[Test]
+    public function itRefusesAnUnknownCoverageValueAtAClosedPosition(): void
+    {
+        try {
+            $this->validator->validate(ArchitectureDocument::spot(['coverage-gap' => 'Verbose'], 'coverage-gap'));
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $e) {
+            self::assertStringContainsString('must be one of ignore, warn, error, got "Verbose".', $e->summary());
+            $position = $e->position();
+            self::assertNotNull($position);
+            self::assertSame(['architecture', 'coverage-gap'], $position->segments);
+            self::assertSame('Verbose', $position->written);
+            self::assertSame(['ignore', 'warn', 'error'], $position->accepted);
+            self::assertTrue($position->closed);
+        }
+    }
+
+    #[Test]
     public function itRejectsACoverageValueOfTheWrongType(): void
     {
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('architecture.coverage-gap');
 
         $this->validator->validate(ArchitectureDocument::spot(['coverage-gap' => 42], 'coverage-gap'));
+    }
+
+    #[Test]
+    #[TestWith(['verbose'])]
+    #[TestWith([42])]
+    public function itTreatsAValueTheEngineDidNotAdmitAsAnInternalError(mixed $written): void
+    {
+        $value = self::createStub(ResolvedValueInterface::class);
+        $value->method('plain')->willReturn($written);
+
+        $this->expectException(LogicException::class);
+
+        $this->validator->validate(SectionSpot::node(['architecture', 'coverage-gap'], $value));
     }
 
     #[Test]

@@ -9,6 +9,14 @@ construction described here is amended by
 mandatory captured measurement now derives Run's paths and coverage, preserves
 authoredness and reasons, and transfers without another manifest read.
 
+The format dictionary's two refusal boundaries are amended by
+[ADR 0132](0132-editor-schema-of-the-configuration-document.md):
+`OutputFormatSection` declares the vocabulary's names as the node's word set,
+so the engine refuses an unknown name in every layer, and the winner is always
+one of those judged values. `OutputFormatResolver` treats a name outside the
+registry as an internal error; a document composed without the Reporting
+section is a programming error, not an author's input.
+
 ## Context
 
 [ADR 0086](0086-one-configuration-document-merged-by-declared-policy.md)

@@ -72,18 +72,20 @@ final readonly class NodeSchema
         return new self(MergePolicy::PerLayer, new NodeScalarFacts(), new NodeMapFacts(KeyDictionary::none()), null, new NodeWording(), null);
     }
 
-    public function announcingEmptyOverride(string $notice): self
+    /**
+     * Replaces the sentences given; one not given stays. An empty-override notice is for a replaced list only.
+     *
+     * @param ?list<LiteralHint> $literalHints Advice for exact refused scalars, in place of the general hint.
+     */
+    public function withWording(?string $hint = null, ?array $literalHints = null, ?string $emptyOverrideNotice = null, ?string $description = null): self
     {
-        if ($this->policy !== MergePolicy::Replace) {
+        if ($emptyOverrideNotice !== null && $this->policy !== MergePolicy::Replace) {
             throw new LogicException('Only a replaced list can announce an empty override.');
         }
-        return $this->recompose(wording: $this->wording->with(emptyOverrideNotice: $notice));
-    }
+        $wording = $this->wording->with($hint, $emptyOverrideNotice, $literalHints, $description);
+        self::assertEveryLiteralHintCanFire($wording, $this->scalar);
 
-    /** @param list<int|float|string|bool|null>|null $onlyFor Exact scalar literals; null leaves the hint unrestricted. */
-    public function withHint(string $hint, ?array $onlyFor = null): self
-    {
-        return $this->recompose(wording: $this->wording->with(hint: $hint, hintOnlyFor: $onlyFor));
+        return $this->recompose(wording: $wording);
     }
 
     /** @param Closure(ResolvedValueInterface, list<string>): void|IntegerJudgement $judge */
@@ -134,7 +136,10 @@ final readonly class NodeSchema
         if ($this->policy !== MergePolicy::LastWriterWins) {
             throw new LogicException('A word vocabulary requires a string scalar and at least one word.');
         }
-        return $this->recompose(scalar: $this->scalar->words($words));
+        $scalar = $this->scalar->words($words);
+        self::assertEveryLiteralHintCanFire($this->wording, $scalar);
+
+        return $this->recompose(scalar: $scalar);
     }
 
     public function nonEmpty(): self
@@ -154,6 +159,16 @@ final readonly class NodeSchema
             MergePolicy::ByName => 'a map of named entries',
             MergePolicy::PerLayer => 'a value carried per layer',
         };
+    }
+
+    /** A hint for a word the vocabulary accepts would never be read. */
+    private static function assertEveryLiteralHintCanFire(NodeWording $wording, NodeScalarFacts $scalar): void
+    {
+        foreach ($wording->literalHints as $literalHint) {
+            if (\is_string($literalHint->literal) && $scalar->words?->contains($literalHint->literal) === true) {
+                throw new LogicException(\sprintf('A hint for "%s" can never be given: the node accepts that word.', $literalHint->literal));
+            }
+        }
     }
 
     private function recompose(

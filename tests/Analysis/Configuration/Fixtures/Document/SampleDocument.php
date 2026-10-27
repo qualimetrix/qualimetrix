@@ -39,7 +39,7 @@ final class SampleDocument
                 'enabled' => NodeSchema::scalar(ScalarForm::Boolean),
             ])),
             self::section('paths', NodeSchema::list(NodeSchema::scalar(ScalarForm::String))),
-            self::section('only_rules', NodeSchema::list(NodeSchema::scalar(ScalarForm::String))->announcingEmptyOverride('Every rule runs.')),
+            self::section('only_rules', NodeSchema::list(NodeSchema::scalar(ScalarForm::String))->withWording(emptyOverrideNotice: 'Every rule runs.')),
             self::section('exclude', NodeSchema::set(NodeSchema::scalar(ScalarForm::String))),
             self::section('architecture', NodeSchema::map([
                 'layers' => NodeSchema::list(NodeSchema::map([

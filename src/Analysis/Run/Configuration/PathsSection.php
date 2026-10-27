@@ -18,7 +18,7 @@ final class PathsSection implements DocumentSectionSchemaInterface
     public function declaration(): SectionDeclaration
     {
         return new SectionDeclaration(ConfigSchema::PATHS, NodeSchema::list(
-            NodeSchema::scalar(ScalarForm::String)->withHint('Quote a name that reads as a number or a keyword ("2024", "true").'),
+            NodeSchema::scalar(ScalarForm::String)->withWording(hint: 'Quote a name that reads as a number or a keyword ("2024", "true").'),
         )->judgedInEachLayer(static function (ResolvedValueInterface $value): void {
             \assert($value instanceof ResolvedListInterface);
             self::read($value);

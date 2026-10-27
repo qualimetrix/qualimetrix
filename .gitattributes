@@ -15,6 +15,7 @@
 /LICENSE                 -export-ignore
 /README.md               -export-ignore
 /qmx.yaml.example        -export-ignore
+/qmx.schema.json         -export-ignore
 # The HTML report is an npm project; HtmlFormatter reads only these four assets.
 /html-report             -export-ignore
 /html-report/*           export-ignore

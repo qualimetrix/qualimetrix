@@ -1188,7 +1188,9 @@ synthetic merged-input refusal carries `null` even when the message names a key.
 A file's invalid `memory_limit`, `fail_on` or `parallel.workers` retains its
 writing layer and document position.
 When present, `position` locates the refused spot as the check found it: for a
-required key that was left out, `path` ends at that key and `written` names it.
+required key that was left out, `path` ends at that key and `written` names it;
+for a value outside a fixed list (`format`, `fail_on`, a rule option's words),
+`written` is the value, `accepted` the list and `closed` is `true`.
 `source` lists the configuration layers the refusal is about, lowest precedence
 first — one for a value a single layer wrote, every contributing layer for a
 constraint between keys — each as `{"kind": ..., "name": ..., "imported_by": ...}`.

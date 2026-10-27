@@ -31,16 +31,17 @@ final readonly class RulesSection implements DocumentSectionSchemaInterface
             $element = NodeSchema::scalar(ScalarForm::String)->nonEmpty();
             return new SectionDeclaration($this->root, $this->root === 'disabled_rules'
                 ? NodeSchema::set($element)
-                : NodeSchema::list($element)->announcingEmptyOverride('An empty only_rules applies no rule filter: every enabled rule runs.'));
+                : NodeSchema::list($element)->withWording(emptyOverrideNotice: 'An empty only_rules applies no rule filter: every enabled rule runs.'));
         }
         $entries = [];
         foreach ($this->execution->allRules() as $producer) {
-            $entries[$producer->name] = (new RuleOptionDocumentForms())->schema(RuleOptionSurface::of($producer->optionsClass));
+            $entries[$producer->name] = (new RuleOptionDocumentForms())->schema(RuleOptionSurface::of($producer->optionsClass))
+                ->withWording(description: $producer->description);
         }
         $judge = new RuleNameJudge(array_keys($entries));
         return new SectionDeclaration('rules', NodeSchema::namedMapOf(
             static fn(string $name): ?NodeSchema => $entries[$name] ?? null,
-            NameVocabulary::predicate($judge->judge(...)),
+            NameVocabulary::closed(array_keys($entries), $judge->refusalFor(...)),
         ));
     }
 }

@@ -1236,9 +1236,9 @@ final class LegacyAdminController
 rules:
   architecture.layer-violation:
     suppress_namespaces:
-      - App\Legacy
+      - subtree: App\Legacy
     suppress_paths:
-      - src/Legacy
+      - subtree: src/Legacy
 ```
 
 Фреймворк (`RuleOptionsBuild`) извлекает `suppress_namespaces` / `suppress_paths` для producer, которые отчитываются о коде, до построения их Options. Исключение — producer, все каналы которого project-scoped (`architecture.circular-dependency`, `architecture.layer-declaration`, `architecture.unassigned-class`): непустой список на нём отказывается при загрузке (exit 3), потому что находки таких правил относятся к проекту и не адресуются ни путём, ни неймспейсом. Для циклов сузить, что считается ребром, можно через `ignore-relations` (см. выше); что ещё применимо — сказано на странице правила. Такие per-rule исключения учитываются и показываются как исключения других правил; см. [«Видимость»](../getting-started/configuration.ru.md#правила-rules).

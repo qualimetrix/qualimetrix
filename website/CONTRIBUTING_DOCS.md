@@ -254,6 +254,7 @@ title (`""`) is allowed when the admonition needs no visible heading.
 | Baseline behavior changed   | `usage/baseline.md`                                                                      |
 | Git integration changed     | `usage/git-integration.md`                                                               |
 | Configuration option added  | `getting-started/configuration.md` + `usage/cli-options.md`                              |
+| Editor schema hosting/scope | `getting-started/configuration.md` (Editor support section)                              |
 | CI/CD integration changed   | `ci-cd/`                                                                                 |
 | Default thresholds changed  | `reference/default-thresholds.md` + `rules/{group}.md`                                   |
 

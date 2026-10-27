@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionS
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SchemaWordSet;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
 use Qualimetrix\Analysis\Policy\Architecture\Allow\InvalidSelectorException;
 use Qualimetrix\Analysis\Policy\Architecture\Allow\LayerSelectorParser;
@@ -71,7 +72,10 @@ final readonly class ArchitectureSection implements DocumentSectionSchemaInterfa
                 )),
                 NameVocabulary::fromSibling('layers', self::layerNames(...), self::refersToALayer(...)),
             )->judgedInEachLayer(CarriedValueForm::ofAllowMap(...)),
-            'coverage-gap' => NodeSchema::scalar(ScalarForm::String)->judgedInEachLayer(CarriedValueForm::ofCoverageMode(...)),
+            'coverage-gap' => NodeSchema::scalar(ScalarForm::String)->words(SchemaWordSet::foldingCase(...array_map(
+                static fn(CoverageMode $mode): string => $mode->value,
+                CoverageMode::cases(),
+            ))),
             'max_expanded_layers' => NodeSchema::scalar(ScalarForm::Integer)->judgedInEachLayer(CarriedValueForm::ofExpansionCeiling(...)),
         ]));
     }

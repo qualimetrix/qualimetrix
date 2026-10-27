@@ -65,6 +65,7 @@ final class PharCarriesWhatTheDistCarriesTest extends TestCase
         'README.md' => 'read on the repository, not from inside an archive',
         'composer.json' => 'box writes the archive\'s own autoloader; a consumer installs nothing',
         'qmx.yaml.example' => 'a sample to copy out of the repository, not to carry in the archive',
+        'qmx.schema.json' => 'editors read the schema from disk or by URL, never from inside the archive',
         'src/.gitkeep' => "box resolves src/ through Finder, which ignores dot-files; this one holds no code",
     ];
 

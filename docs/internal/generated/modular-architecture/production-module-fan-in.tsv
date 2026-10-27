@@ -10,15 +10,16 @@ Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument	Analysis.C
 Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface	Analysis.Configuration	13	6
 Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface	Analysis.Configuration	9	4
 Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaqueInterface	Analysis.Configuration	2	1
-Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface	Analysis.Configuration	28	8
+Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface	Analysis.Configuration	26	8
 Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedWriteHistoryInterface	Analysis.Configuration	6	2
 Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface	Analysis.Configuration	11	9
 Qualimetrix\Analysis\Configuration\Contract\Document\Schema\IntegerJudgement	Analysis.Configuration	1	1
+Qualimetrix\Analysis\Configuration\Contract\Document\Schema\LiteralHint	Analysis.Configuration	2	2
 Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary	Analysis.Configuration	4	3
 Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema	Analysis.Configuration	17	10
 Qualimetrix\Analysis\Configuration\Contract\Document\Schema\RefusedName	Analysis.Configuration	2	2
 Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm	Analysis.Configuration	13	9
-Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SchemaWordSet	Analysis.Configuration	1	1
+Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SchemaWordSet	Analysis.Configuration	5	5
 Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration	Analysis.Configuration	11	9
 Qualimetrix\Analysis\Configuration\Contract\Document\Schema\Shorthand	Analysis.Configuration	2	2
 Qualimetrix\Analysis\Configuration\Contract\Document\Schema\TextRequirement	Analysis.Configuration	1	1
@@ -228,7 +229,7 @@ Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOptionQueries	Analysis.Findi
 Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Selection\SelectionRecord	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Selection\StatedEnablement	Analysis.Finding	1	1
-Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	86	18
+Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	87	18
 Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing	Analysis.Finding	14	6
 Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride	Analysis.Finding	9	4
 Qualimetrix\Analysis\Finding\Contract\ValueReach	Analysis.Finding	6	3

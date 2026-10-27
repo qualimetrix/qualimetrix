@@ -252,7 +252,9 @@ targets a lower layer gave it; with none, it allows nothing.
 value with the resolved node it came from: every validator refuses through the
 spot, so a refusal names the file or preset that wrote the value — the one
 that won a leaf or wrote a list, every contributor of a merged map, and both
-halves of a relation (an allow cycle, a `coverage-gap` without `layers`). The
+halves of a relation (an allow cycle, a `coverage-gap` without `layers`).
+`coverage-gap` itself is a declared case-insensitive word set: the engine
+refuses any other mode in its writing layer before the factory reads it. The
 central Configuration merger has no Architecture-specific branch or
 deferred-warning transport.
 

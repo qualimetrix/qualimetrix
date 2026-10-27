@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\LiteralHint;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
@@ -26,7 +27,7 @@ use Qualimetrix\Analysis\Configuration\Document\LayerReading;
 use Qualimetrix\Analysis\Configuration\Document\ScalarConstraints;
 use Qualimetrix\Analysis\Configuration\Document\WrittenForm;
 
-/** A node's hint follows the engine's refusal of the form written at that node, and only there. */
+/** A node's advice follows every engine refusal of a value written at that node, and only there. */
 #[CoversClass(LayerReading::class)]
 #[CoversClass(WrittenForm::class)]
 #[CoversClass(ScalarConstraints::class)]
@@ -69,11 +70,11 @@ final class ShapeRefusalHintTest extends TestCase
     #[TestWith([[]])]
     #[TestWith([[false]])]
     #[TestWith([['value' => false]])]
-    public function itDoesNotTreatACollectionAsAScalarNullForAHint(array $collection): void
+    public function itDoesNotTreatACollectionAsTheScalarItHoldsForAHint(array $collection): void
     {
         $schema = new DocumentSchema([self::section(
             'name',
-            NodeSchema::scalar(ScalarForm::String)->withHint('Null hint.', onlyFor: [null]),
+            NodeSchema::scalar(ScalarForm::String)->withWording(literalHints: [new LiteralHint(false, 'False hint.')]),
         )]);
 
         try {
@@ -83,7 +84,7 @@ final class ShapeRefusalHintTest extends TestCase
             )]);
             self::fail('A collection cannot be written for a string scalar.');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertStringNotContainsString('Null hint.', $refusal->summary());
+            self::assertStringNotContainsString('False hint.', $refusal->summary());
         }
     }
 
@@ -180,13 +181,114 @@ final class ShapeRefusalHintTest extends TestCase
         }
     }
 
+    /** @return iterable<string, array{array<string, mixed>, non-empty-string}> */
+    public static function provideConstraintRefusals(): iterable
+    {
+        yield 'below the floor' => [['count' => 0], '"count" in configuration file "/p/qmx.yaml" must be at least 1, got 0. Count hint.'];
+        yield 'blank text' => [['label' => ' '], '"label" in configuration file "/p/qmx.yaml" must be non-empty text. Label hint.'];
+        yield 'a word outside the vocabulary' => [['mode' => 'loud'], '"mode" in configuration file "/p/qmx.yaml" must be one of warn, error, got "loud". Mode hint.'];
+        yield 'a word with its own hint' => [['mode' => 'warning'], '"mode" in configuration file "/p/qmx.yaml" must be one of warn, error, got "warning". Write "warn".'];
+        yield 'another case of a word with its own hint' => [['mode' => 'Warning'], 'got "Warning". Mode hint.'];
+    }
+
+    /**
+     * @param array<string, mixed> $document
+     * @param non-empty-string $expected
+     */
+    #[Test]
+    #[DataProvider('provideConstraintRefusals')]
+    public function itAddsTheAdviceForTheWrittenValueToAConstraintRefusal(array $document, string $expected): void
+    {
+        self::assertStringEndsWith($expected, self::constraintRefusal($document)->summary());
+    }
+
+    #[Test]
+    public function itRefusesAWordOutsideTheVocabularyAtAClosedPositionNamingTheValue(): void
+    {
+        $position = self::constraintRefusal(['mode' => 'Loud'])->position();
+
+        self::assertNotNull($position);
+        self::assertSame(['mode'], $position->segments);
+        self::assertSame('Loud', $position->written);
+        self::assertSame(['warn', 'error'], $position->accepted);
+        self::assertTrue($position->closed);
+    }
+
+    #[Test]
+    public function itRefusesAListElementOutsideTheVocabularyAtItsIndex(): void
+    {
+        $position = self::constraintRefusal(['levels' => ['class', 'module']])->position();
+
+        self::assertNotNull($position);
+        self::assertSame(['levels', '1'], $position->segments);
+        self::assertSame('module', $position->written);
+        self::assertSame(['class', 'project'], $position->accepted);
+        self::assertTrue($position->closed);
+    }
+
+    #[Test]
+    public function itKeepsTheOtherConstraintRefusalsOpen(): void
+    {
+        foreach ([['count' => 0], ['label' => ' ']] as $document) {
+            $position = self::constraintRefusal($document)->position();
+
+            self::assertNotNull($position);
+            self::assertSame([(string) array_key_first($document)], [$position->written]);
+            self::assertFalse($position->closed);
+        }
+    }
+
+    #[Test]
+    public function itPublishesNoPositionForAWordAnUnpositionedLayerWrote(): void
+    {
+        try {
+            DocumentComposer::compose(self::constraintSchema(), [new AuthoredLayer(
+                ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--mode'),
+                AuthoredNode::fromPlain(['mode' => 'loud']),
+                positioned: false,
+            )]);
+            self::fail('A word outside the vocabulary was accepted.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertNull($refusal->position());
+            self::assertStringEndsWith('must be one of warn, error, got "loud". Mode hint.', $refusal->summary());
+        }
+    }
+
+    private static function constraintSchema(): DocumentSchema
+    {
+        return new DocumentSchema([
+            self::section('count', NodeSchema::scalar(ScalarForm::Integer)->atLeast(1)->withWording(hint: 'Count hint.')),
+            self::section('label', NodeSchema::scalar(ScalarForm::String)->nonEmpty()->withWording(hint: 'Label hint.')),
+            self::section('mode', NodeSchema::scalar(ScalarForm::String)->words(SchemaWordSet::of('warn', 'error'))->withWording(
+                hint: 'Mode hint.',
+                literalHints: [new LiteralHint('warning', 'Write "warn".')],
+            )),
+            self::section('levels', NodeSchema::list(NodeSchema::scalar(ScalarForm::String)->words(SchemaWordSet::of('class', 'project')))),
+        ]);
+    }
+
+    /** @param array<string, mixed> $document */
+    private static function constraintRefusal(array $document): ConfigurationRefusal
+    {
+        try {
+            DocumentComposer::compose(self::constraintSchema(), [new AuthoredLayer(
+                ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/p/qmx.yaml'),
+                AuthoredNode::fromPlain($document),
+            )]);
+        } catch (ConfigurationRefusal $refusal) {
+            return $refusal;
+        }
+
+        self::fail('Expected a refusal.');
+    }
+
     /** @param array<string, mixed> $document */
     private static function refusal(array $document): ConfigurationRefusal
     {
         $schema = new DocumentSchema([
-            self::section('name', NodeSchema::scalar(ScalarForm::String)->withHint('Scalar hint.')),
-            self::section('cache', NodeSchema::map(['dir' => NodeSchema::scalar(ScalarForm::String)])->withHint('Map hint.')),
-            self::section('paths', NodeSchema::list(NodeSchema::scalar(ScalarForm::String)->withHint('Element hint.'))->withHint('List hint.')),
+            self::section('name', NodeSchema::scalar(ScalarForm::String)->withWording(hint: 'Scalar hint.')),
+            self::section('cache', NodeSchema::map(['dir' => NodeSchema::scalar(ScalarForm::String)])->withWording(hint: 'Map hint.')),
+            self::section('paths', NodeSchema::list(NodeSchema::scalar(ScalarForm::String)->withWording(hint: 'Element hint.'))->withWording(hint: 'List hint.')),
         ]);
 
         try {

@@ -87,6 +87,16 @@ Configuration/
 │   ├── ShorthandTarget.php
 │   ├── WrittenForm.php
 │   └── WrittenNames.php
+├── EditorSchema/
+│   ├── DefinitionPool.php
+│   ├── EditorSchemaJson.php
+│   ├── EditorSchemaProjection.php
+│   ├── NodeProjection.php
+│   ├── NullAdmission.php
+│   ├── PooledNode.php
+│   ├── PortableRegex.php
+│   ├── ScalarProjection.php
+│   └── ShorthandProjection.php
 ├── Loader/
 │   ├── CommandLineLayer.php
 │   ├── CommandLineSyntax.php
@@ -219,7 +229,7 @@ precedence index within this composed document).
   (replaced whole), `set` (accumulated), `namedMap` (with a `NameVocabulary`)
   or `opaque` (kept per layer for an owner that still folds it) — and
   `ConfigurationPipeline::addSection()` registers it. What the engine tells an
-  author about a node beyond its form — `withHint()`, `announcingEmptyOverride()`
+  author about a node beyond its form — `NodeSchema::withWording()`
   — travels as its `NodeWording`. A node may add `judgedInEachLayer()`: the owner's judgement of what the engine carries
   unread below it, run in phase 1 on each layer's value, so a malformed value a
   higher layer replaces is still refused in the layer that wrote it. An empty collection reads
@@ -238,18 +248,28 @@ precedence index within this composed document).
   `RefusedName` says why and, for a few alternatives, which) or `fromSibling`
   (names another node declares, judged after the merge; exact unless the
   vocabulary's own judge says how a written name refers to the declared ones).
+  `NameVocabulary::closed()` is a `predicate` whose judge is derived from a
+  listed set of names: the owner words only the refusal, and `closedNames()`
+  lets a projection enumerate exactly what the engine admits. Finding's
+  `rules` uses it; the engine's branches on vocabulary kind see a predicate.
   A name is judged whatever is written under it: an entry whose body is `~`,
   `{}` or nothing but `~` stays in the document as a
   `ResolvedBareNameInterface`, which a body any layer wrote stands over. Its
   owner says what naming it alone means.
-- A node may carry a hint (`NodeSchema::withHint()`): the engine adds it to its
-  refusal of the form written at that node — `paths: [2024]` is told to quote
-  the name, a bare string in `exclude` is shown the selector kinds. Its optional
-  `onlyFor` list restricts the hint to exact scalar values and types; `null`
-  leaves it unrestricted, while `[]` matches nothing. Collection shapes never
-  match a scalar literal, including `[null]`. Console declares `[false]` for
-  the retired `fail_on: false` hint, so it names `none` only for boolean `false`,
-  preserving other malformed-value refusals.
+- A node may carry advice (`NodeSchema::withWording(hint:, literalHints:)`): the
+  engine adds it to every refusal of a value written at that node, of its form
+  or of a constraint (minimum, non-blank text, word set) — `paths: [2024]` is
+  told to quote the name, a bare string in `exclude` is shown the selector
+  kinds. A `LiteralHint` replaces the general hint for exactly one scalar,
+  compared strictly; a collection matches no literal. `fail_on` declares one
+  for `false` and one for `info` beside a general hint, and `format` one for
+  the retired `text-verbose`. Two hints for one literal, or a hint for a word
+  the node's set accepts, are refused at declaration.
+- A value outside a word set is refused at a closed position: `written` is the
+  value and `accepted` the declared words, in declaration order.
+- A node may carry a description (`NodeSchema::withWording(description:)`). The engine
+  never reads it; it is what an editor shows for the node. Finding describes
+  each rule entry with the rule's own description.
 - The engine never learns the format: a loader hands it an `AuthoredLayer` —
   the source's `ConfigurationOrigin` and an `AuthoredNode` tree with the keys as
   written. A new format is a loader producing that tree (with lines, if it has
@@ -351,6 +371,36 @@ document origin and list position when translating mapping or PCRE validation
 failures to `ConfigurationRefusal`, then builds the separator-bound Core value.
 The declared entry form preserves malformed selector mappings for an authored
 refusal rather than silently converting them into unwritten configuration.
+
+## Editor schema
+
+`EditorSchema/` projects the same declarations into `qmx.schema.json`, a
+draft-07 JSON Schema that gives editors completion and form validation for
+one authored file. `EditorSchemaProjection::project()` takes the document
+root (`DocumentSchema::root()`) and is the only entry;
+`EditorSchemaJson::encode()` serializes it deterministically. It reads only
+`NodeSchema` facts, so it knows nothing about Finding or the container:
+`scripts/generate-configuration-schema.php` collects the registered sections
+through `scripts/configuration-declarations.php`, the collection the merge
+table generator shares.
+
+Its promise is one-sided: on the same scalar typing, the schema never refuses
+what the engine accepts in one layer. It expresses form — keys and their
+three spellings, scalar forms, word sets, minimums, shorthand conflicts,
+`~` and empty collections, and the collection shapes the YAML loader accepts.
+Owner judges, merged-context constraints and opaque nodes stay outside it.
+Where a form is expressible only approximately, the schema is wider, never
+stricter. The decisions are recorded in
+[ADR 0132](../../../docs/adr/0132-editor-schema-of-the-configuration-document.md).
+
+- `tests/Analysis/Configuration/Integration/EditorSchema/` holds the promise
+  case by case: each case is read by the product's YAML loader and judged by
+  `DocumentComposer`, and declares both verdicts; a case may not declare a
+  refusal the engine does not make.
+- `governance/ConfigurationEditorSchema/` holds it on real texts: tracked
+  configurations and the documentation's YAML examples the engine accepts.
+- `configuration:schema:check`, in `check:artifacts`, fails when a declaration
+  changed and `qmx.schema.json` did not.
 
 ## Public contracts and adapters
 
