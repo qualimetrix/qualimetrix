@@ -139,7 +139,7 @@ sibling publication. File modes, locking and content-hash CAS are preserved.
 
 ### Replace an older baseline
 
-v15 is current and v14 still loads (its closure entries are retired, see the migration note below). For v13 retain entries, scope and generated time, change
+v15 is current and v14 still loads (its closure entries are retired, see [Migrating from version 14](#migrating-from-version-14)). For v13 retain entries, scope and generated time, change
 version to 14 and explicitly add the original exclusion definition:
 
 ```json
@@ -156,6 +156,29 @@ when other subjects are updated. Adding an entry at that same subject refuses
 before replacing the file. Review the cleanup candidates and remove that bucket
 with `baseline:cleanup --remove=<selector>` before accepting the new entry;
 cleanup only lists candidates by default.
+
+### Migrating from version 14
+
+Version 14 named a closure by its rank among all closures of the file; version
+15 names it under its enclosing declaration (`App\A::rows::{closure#1}`).
+A version 14 file still loads, but every entry under a closure key is inert as
+`retired closure identity` and accepts nothing, and any command that would write
+the file refuses (exit 3, nothing written) while one remains. One procedure:
+
+```bash
+bin/qmx baseline:cleanup baseline.json src/
+bin/qmx baseline:cleanup baseline.json src/ --remove=SELECTOR_1 --remove=SELECTOR_2
+bin/qmx baseline:update baseline.json src/ --accept-new=complexity.cyclomatic
+```
+
+1. List the retired entries (the first command is read-only).
+2. Remove all of them in one call; it writes version 15 and keeps every other
+   entry. `baseline:rename-channels` keeps the version it read.
+3. The closures now appear as new findings. Fix them, or accept them with
+   `--accept-new=<channel>`, which accepts every new identity of that channel:
+   review the diff.
+
+Do not use `baseline:generate --force`: it re-captures unrelated ceilings.
 
 ### Tighten after repairs
 

@@ -37,8 +37,9 @@ The parent is the **nearest enclosing frame of any kind, by lexical depth**: a
 callable (function, method, property hook, another closure) or a class-like
 declaration (named or anonymous). `k` counts the anonymous callables minted
 directly inside that frame, from 1. Outside every frame the file is the parent:
-`{Ns}\{closure#N}`, one counter per file that continues across braced
-namespaces.
+`{Ns}\{closure#N}`, one counter **per namespace of the file**, continuing across
+that namespace's blocks. A closure added in namespace A does not rename one in
+namespace B.
 
 The parent contributes **its own logical name and nothing above it**. For a
 class-like parent that means no chain through an outer class or method:
@@ -70,9 +71,18 @@ path for the member, the logical FQN, the declaration numbering and the callable
 metadata. The metric-map key a collector stores for a closure outside a class is
 now that same path, `App\{closure#1}` (it was `App::{closure#1}`).
 
-The ordinal index of ADR 0026 is unchanged. Two frames with the same logical name
-— the branches of a conditional function declaration — produce identical closure
-names, and the existing assigned ordinal tells those apart.
+The ordinal index of ADR 0026 keeps its role and gains a stronger guarantee: the
+registrar numbers the whole file in its own pre-pass, so an ordinal is the final
+rank by position, independent of traversal order. This also closes a defect ADR
+0026 left unstated for every declaration kind — same-named declarations in a
+`new class` body and in its constructor arguments received one ordinal and the
+file failed.
+
+Two frames with the same logical name produce identical closure names: the
+branches of a conditional function declaration, or a class and a function of the
+same name in one namespace and file. Only the positional ordinal tells those
+apart, so adding a closure to one parent may shift the ordinal of a same-named
+parent's closure further down the file.
 
 ### 3. The restated stability statement
 
@@ -93,9 +103,9 @@ ADR 0026 listed three unstable cases. The first two change:
 >   file subject.
 > - **A named declaration sharing its logical identity** — unchanged.
 
-ADR 0026's remark that `new class (…) { … }` is visited body first still matters
-for `{anonymous#N}` and for closures at file level; it no longer affects closures
-inside named frames.
+ADR 0026's remark that traversal order differs from source order for
+`new class (…) { … }` no longer affects any assigned ordinal, and it does not
+affect closure counters inside named frames.
 
 The silent-rebinding consequence of ADR 0026 item 2 applies exactly as before,
 over the narrower set of renamings above.
@@ -121,11 +131,25 @@ over the narrower set of renamings above.
   fingerprints and the GitLab Code Quality and SARIF fingerprints derived from
   them. Previously seen GitLab findings show once as new and closed or dismissed
   GitHub code scanning alerts reappear as open.
-- **The baseline format version does not change.** The key grammar is the same;
-  only the minted member differs. A baseline containing closure entries is
-  migrated by regenerating those entries (`bin/qmx baseline:generate <baseline>
-  <paths...> --force`) and reviewing the diff; entries of other declarations are
-  unaffected. A stale closure entry is reported as stale and its finding as new.
+- **The baseline format version becomes 15.** The key grammar is the same, but
+  the meaning of a closure key changed, and a file-level `App\{closure#N}` spells
+  exactly like the old file-wide rank: an old entry would silently re-attach to
+  whichever closure holds that number instead of going stale. The version number
+  is the only marker of old keys. Version 14 still loads; its closure entries
+  become inert (`retired closure identity`) under their unchanged selector; every
+  write refuses while any remains; `baseline:rename-channels` keeps the version it
+  read.
+- **One migration procedure.** List the retired entries with
+  `baseline:cleanup <baseline> <paths...>`; remove all of them in one call with
+  `baseline:cleanup <baseline> <paths...> --remove=<selector> ...`, which writes
+  version 15 and keeps every other entry; fix or accept the closure findings now
+  reported as new with `baseline:update <baseline> <paths...>
+  --accept-new=<channel>` (it accepts every new identity of the channel, so the
+  diff is reviewed). Never `baseline:generate --force`.
+- **Rejected for the version-14 file:** refusing the whole document (more
+  friction, hand edits); dropping retired entries silently on write (an
+  unrequested deletion); rewriting old keys (the file-wide rank cannot recover the
+  parent); `baseline:generate --force` (re-captures unrelated ceilings).
 - **Reports locate the code.** `App\A::rows::{closure#1}` names its method.
 - **No ratchet entry of this repository names a closure**, so its own baseline is
   unaffected.
