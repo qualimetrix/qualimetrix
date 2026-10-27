@@ -19393,6 +19393,10 @@
       "visibility": "contract",
       "consumers": [
         {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportChain"
+        },
+        {
           "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\DocumentAccess\\BaselineDocumentReader"
         },

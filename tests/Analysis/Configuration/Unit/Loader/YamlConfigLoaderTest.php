@@ -140,7 +140,7 @@ YAML);
         $path = $this->tempDir . '/nonexistent.yaml';
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage(\sprintf('Configuration file "%s" was not found.', $path));
+        self::expectExceptionMessage(\sprintf('Configuration file "%s" was not found or is not accessible.', $path));
 
         array_map(static fn(\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value): mixed => $value->plain(), WrittenFile::compose($path)->roots());
     }
@@ -279,10 +279,10 @@ YAML);
         $imported = self::configFile('cfg/base.yaml')->importedThrough($root);
         $importedChain = ['configuration file "cfg/base.yaml" (imported by configuration file "qmx.yaml")', 'configuration file "qmx.yaml"'];
 
-        yield 'preset missing' => ['', $preset, 'Preset "./team.yaml" was not found.', ['preset "./team.yaml"']];
+        yield 'preset missing' => ['', $preset, 'Preset "./team.yaml" was not found or is not accessible.', ['preset "./team.yaml"']];
         yield 'preset unparseable' => ["rules: [\n", $preset, 'Failed to parse preset "./team.yaml": ', ['preset "./team.yaml"']];
         yield 'preset not a mapping' => ['just a string', $preset, 'Preset "./team.yaml" is not valid YAML format.', ['preset "./team.yaml"']];
-        yield 'imported missing' => ['', $imported, 'Configuration file "cfg/base.yaml" (imported by configuration file "qmx.yaml") was not found.', $importedChain];
+        yield 'imported missing' => ['', $imported, 'Configuration file "cfg/base.yaml" (imported by configuration file "qmx.yaml") was not found or is not accessible.', $importedChain];
         yield 'imported unparseable' => ["rules: [\n", $imported, 'Failed to parse configuration file "cfg/base.yaml" (imported by configuration file "qmx.yaml"): ', $importedChain];
         yield 'imported not a mapping' => ['just a string', $imported, 'Configuration file "cfg/base.yaml" (imported by configuration file "qmx.yaml") is not valid YAML format.', $importedChain];
         yield 'imported retired root key' => ["exclude_paths: [src]\n", $imported, 'The "exclude_paths" option was retired.', $importedChain];

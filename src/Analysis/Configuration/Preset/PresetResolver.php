@@ -117,7 +117,7 @@ final class PresetResolver
         if (!file_exists($resolvedPath)) {
             throw ConfigurationRefusal::aboutPresetDocument(
                 $path,
-                \sprintf('Preset "%s" was not found at %s.', $path, $resolvedPath),
+                \sprintf('Preset "%s" was not found or is not accessible at %s.', $path, $resolvedPath),
             );
         }
 

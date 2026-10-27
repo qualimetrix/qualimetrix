@@ -769,10 +769,13 @@ config/architecture.yaml, config/thresholds.yaml, qmx.yaml, cli`).
 
 **Paths.** An `imports` entry is resolved against the directory of the file
 that writes it, so `--config=sub/qmx.yaml` with `imports: [base.yaml]` reads
-`sub/base.yaml`. Every other path, in any file of the chain — `paths`,
-`exclude`, `cache.dir` — keeps the working directory as its base, exactly as in
-the root file. Refusals name an imported file by that path as seen from the
-root file's name, together with the file that imported it.
+`sub/base.yaml`. When the root file is a symlink, that is the directory of the
+file it points to: a configuration linked into a project reads the bases
+beside it. Every other path, in any file of the chain — `paths`, `exclude`,
+`cache.dir` — keeps the working directory as its base, exactly as in the root
+file. Refusals and `-v` name an imported file by that path as seen from the
+root file's name (`./` dropped, `..` kept) — or by its full path when the root
+file is a symlink — together with the file that imported it.
 
 **Only the root imports.** An imported file that writes `imports` — even
 `imports: []` — is refused: list the files it builds on in the root file

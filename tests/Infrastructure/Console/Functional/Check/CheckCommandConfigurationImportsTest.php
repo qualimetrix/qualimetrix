@@ -63,7 +63,7 @@ final class CheckCommandConfigurationImportsTest extends TestCase
         self::assertSame(3, $process->getExitCode(), $process->getErrorOutput());
         /** @var array{error: string, source: list<array{kind: string, name: string, imported_by: mixed}>} $envelope */
         $envelope = json_decode($process->getOutput(), true, flags: \JSON_THROW_ON_ERROR);
-        self::assertSame('Configuration error: Configuration file "sub/missing.yaml" (imported by configuration file "sub/qmx.yaml") was not found.', $envelope['error']);
+        self::assertSame('Configuration error: Configuration file "sub/missing.yaml" (imported by configuration file "sub/qmx.yaml") was not found or is not accessible.', $envelope['error']);
         self::assertSame(
             [['kind' => 'file', 'name' => 'sub/missing.yaml', 'imported_by' => ['kind' => 'file', 'name' => 'sub/qmx.yaml', 'imported_by' => null]]],
             $envelope['source'],

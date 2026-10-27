@@ -62,19 +62,37 @@ One file is one `Core\FileTarget\FileIdentity` (device, inode, type). `./a.yaml`
 `a.yaml` and a symlink to it are the same file. A target that cannot be
 stat'ed, reports inode 0, or is not a regular file (a directory, a FIFO) is
 refused before it is read — never a silent fallback to comparing paths, never
-a blocking read.
+a blocking read. A failed `stat` reports no reason PHP can read, so such an
+entry is refused as "not found or not accessible".
+
+These refusals are raised on the imported file's origin, so text and JSON
+(`source[].imported_by`) name the missing file together with its importer, as
+the loader's own refusals of an imported file do. The price is the position:
+the refusal does not point at `imports[N]` of the root, and a JSON consumer is
+handed a file that may not exist; the importer and the entry's name in the
+sentence locate it instead. The same file written twice is refused on the root
+at the later entry, `imports[N]`, naming both positions; an entry naming the
+root itself is refused at that entry.
 
 ### 4. Path bases
 
-An entry resolves against the directory of the file that writes it, as that
-file was opened — not its display name and not the process working directory.
+An entry resolves against the real directory of the file that writes it — a
+root that is a symlink resolves against its target's directory, so a
+configuration linked into a project reads the bases beside it — not against
+its display name and not the process working directory.
 Every other path in any file of the chain keeps the request's working directory
 as its base, as in the root file today; re-basing value paths is out of scope.
 The asymmetry is stated in the key's description and on the configuration page.
 
-An imported file's display locator joins the root locator's directory with the
-entry and normalizes it lexically; the file itself is opened by its physical
-path, so through a symlinked directory followed by `..` the two can differ.
+An imported file is named by a path that leads to the file read: the root
+locator's directory joined with the entry, with `.` and empty segments dropped
+and `x/..` kept as written, because after a symlinked directory it leads
+elsewhere than collapsing it would say. When the root file is itself a symlink,
+its locator's directory is the link's, not the one entries resolve against, so
+its imports are named by their physical path instead. Either way two different
+files never share a name. A physical name is specific to the checkout's
+location, and it reaches `architecture.unmatched-type` identity like any origin
+(see Consequences).
 
 ### 5. Declared once, read per file, never composed
 
@@ -169,7 +187,9 @@ near-config-name diagnostic and at imports in presets.
 - `architecture.unmatched-type` identity includes the layer index and origin
   chain of the write naming the type. Moving that criterion into an imported
   file re-identifies the finding and its baseline entry goes stale, as adding a
-  preset already does. Whether identity should drop provenance is issue
+  preset already does; under a symlinked root, whose imports are named by
+  their physical path, it also differs between checkouts in different
+  directories. Whether identity should drop provenance is issue
   [#214](https://github.com/qualimetrix/qualimetrix/issues/214); a test pins
   today's behaviour.
 - `check --output` is guarded only against `--config` and `--baseline`, so it

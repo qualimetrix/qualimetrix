@@ -38,7 +38,7 @@ final class YamlConfigLoader implements ConfigLoaderInterface
         $subject = ucfirst($origin->describe());
 
         if (!file_exists($physicalPath)) {
-            throw ConfigurationRefusal::aboutDocument($origin, \sprintf('%s was not found.', $subject));
+            throw ConfigurationRefusal::aboutDocument($origin, \sprintf('%s was not found or is not accessible.', $subject));
         }
 
         if (!is_readable($physicalPath)) {

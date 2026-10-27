@@ -79,7 +79,7 @@ final class ConfigFileStage implements ConfigurationStageInterface
             if (!file_exists($request->configFilePath)) {
                 throw ConfigurationRefusal::aboutConfigFileDocument(
                     $request->configFilePath,
-                    \sprintf('Configuration file "%s" was not found.', $request->configFilePath),
+                    \sprintf('Configuration file "%s" was not found or is not accessible.', $request->configFilePath),
                 );
             }
 

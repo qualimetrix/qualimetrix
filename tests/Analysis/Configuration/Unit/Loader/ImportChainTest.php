@@ -28,8 +28,9 @@ final class ImportChainTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->directory = sys_get_temp_dir() . '/qmx-import-chain-' . bin2hex(random_bytes(6));
-        mkdir($this->directory . '/cfg', 0o777, true);
+        $directory = sys_get_temp_dir() . '/qmx-import-chain-' . bin2hex(random_bytes(6));
+        mkdir($directory . '/cfg', 0o777, true);
+        $this->directory = (string) realpath($directory);
         $this->reads = new ArrayObject();
     }
 
@@ -167,22 +168,86 @@ final class ImportChainTest extends TestCase
     }
 
     /**
-     * The name shown is normalized lexically; the file opened is the path the
-     * kernel resolves, which differs when `..` follows a symlinked directory.
+     * `..` after a symlinked directory leads where the kernel resolves it, not
+     * where collapsing it would say, so the name keeps it: two different files
+     * never share a name.
      */
     #[Test]
-    public function itOpensTheEntryByItsPhysicalPathAndShowsItLexically(): void
+    public function itKeepsParentSegmentsInTheNameSoTwoFilesNeverShareOne(): void
     {
         mkdir($this->directory . '/elsewhere/deep', 0o777, true);
         $this->write('elsewhere/a.yaml', "format: json\n");
         symlink($this->directory . '/elsewhere/deep', $this->directory . '/link');
+        $this->write('a.yaml', "format: summary\n");
         $this->write('absolute.yaml', "format: text\n");
-        $this->write('qmx.yaml', \sprintf("imports: [link/../a.yaml, %s]\n", $this->directory . '/absolute.yaml'));
+        $this->write('qmx.yaml', \sprintf("imports: [link/../a.yaml, ./a.yaml, %s]\n", $this->directory . '/absolute.yaml'));
 
         $layers = $this->expand();
 
-        self::assertSame(['a.yaml', $this->directory . '/absolute.yaml', 'qmx.yaml'], array_map(static fn(AuthoredLayer $layer): ?string => $layer->origin->locator(), $layers));
+        self::assertSame(['link/../a.yaml', 'a.yaml', $this->directory . '/absolute.yaml', 'qmx.yaml'], array_map(static fn(AuthoredLayer $layer): ?string => $layer->origin->locator(), $layers));
+        self::assertSame([['format' => 'json'], ['format' => 'summary'], ['format' => 'text'], []], self::plain($layers));
+    }
+
+    /**
+     * A configuration linked into a project reads the files beside its
+     * target, not a same-named file beside the link, and names them by where
+     * they are: a name drawn from the link's directory would point elsewhere.
+     */
+    #[Test]
+    public function itResolvesEntriesBesideTheRealFileOfASymlinkedRoot(): void
+    {
+        mkdir($this->directory . '/shared');
+        mkdir($this->directory . '/project');
+        $this->write('shared/qmx.yaml', "imports: [base.yaml]\n");
+        $this->write('shared/base.yaml', "fail_on: error\n");
+        $this->write('project/base.yaml', "fail_on: none\n");
+        symlink($this->directory . '/shared/qmx.yaml', $this->directory . '/project/qmx.yaml');
+
+        $layers = $this->chain()->expand($this->directory . '/project/qmx.yaml', self::root('qmx.yaml'));
+
+        self::assertSame([['fail_on' => 'error'], []], self::plain($layers));
+        self::assertSame([$this->directory . '/shared/base.yaml', 'qmx.yaml'], array_map(static fn(AuthoredLayer $layer): ?string => $layer->origin->locator(), $layers));
+    }
+
+    /** A name always leads to the file read, so two different files never share one, absolute or relative. */
+    #[Test]
+    public function itNamesEveryImportOfAnAbsoluteRootByAPathThatLeadsToIt(): void
+    {
+        mkdir($this->directory . '/elsewhere/deep', 0o777, true);
+        $this->write('elsewhere/a.yaml', "format: json\n");
+        symlink($this->directory . '/elsewhere/deep', $this->directory . '/link');
+        $this->write('a.yaml', "format: text\n");
+        $this->write('qmx.yaml', \sprintf("imports: [link/../a.yaml, %s/a.yaml]\n", $this->directory));
+
+        $layers = $this->chain()->expand($this->directory . '/qmx.yaml', self::root($this->directory . '/qmx.yaml'));
+
+        self::assertSame(
+            [$this->directory . '/link/../a.yaml', $this->directory . '/a.yaml', $this->directory . '/qmx.yaml'],
+            array_map(static fn(AuthoredLayer $layer): ?string => $layer->origin->locator(), $layers),
+        );
         self::assertSame([['format' => 'json'], ['format' => 'text'], []], self::plain($layers));
+    }
+
+    /** @return iterable<string, array{string, non-empty-string}> */
+    public static function provideImportedDocumentsTheLoaderRefuses(): iterable
+    {
+        yield 'unparseable' => ["rules: [\n", 'Failed to parse configuration file "cfg/a.yaml" (imported by configuration file "qmx.yaml"): '];
+        yield 'not a mapping' => ['just a string', 'Configuration file "cfg/a.yaml" (imported by configuration file "qmx.yaml") is not valid YAML format.'];
+        yield 'retired root key' => ["exclude_paths: [src]\n", 'The "exclude_paths" option was retired.'];
+    }
+
+    /** @param non-empty-string $expected */
+    #[Test]
+    #[DataProvider('provideImportedDocumentsTheLoaderRefuses')]
+    public function itHandsTheLoaderTheImportedOriginSoItsRefusalsNameTheImporter(string $imported, string $expected): void
+    {
+        $this->write('cfg/a.yaml', $imported);
+        $this->write('qmx.yaml', "imports: [cfg/a.yaml]\n");
+
+        $refusal = $this->refusal();
+
+        self::assertStringStartsWith($expected, $refusal->summary());
+        self::assertSame('configuration file "cfg/a.yaml" (imported by configuration file "qmx.yaml")', $refusal->sources()[0]->describe());
     }
 
     #[Test]
@@ -192,7 +257,7 @@ final class ImportChainTest extends TestCase
 
         $refusal = $this->refusal();
 
-        self::assertSame('Configuration file "cfg/missing.yaml" (imported by configuration file "qmx.yaml") was not found.', $refusal->summary());
+        self::assertSame('Configuration file "cfg/missing.yaml" (imported by configuration file "qmx.yaml") was not found or is not accessible.', $refusal->summary());
         self::assertSame('qmx.yaml', $refusal->sources()[0]->importer()?->locator());
         self::assertSame([$this->directory . '/qmx.yaml'], $this->reads->getArrayCopy());
     }
@@ -209,7 +274,7 @@ final class ImportChainTest extends TestCase
     public function itRefusesATargetThatIsNotARegularFileWithoutReadingIt(string $entry): void
     {
         mkdir($this->directory . '/dir.yaml');
-        if (!\function_exists('posix_mkfifo') || !posix_mkfifo($this->directory . '/fifo.yaml', 0o600)) {
+        if ($entry === 'fifo.yaml' && (!\function_exists('posix_mkfifo') || !posix_mkfifo($this->directory . '/fifo.yaml', 0o600))) {
             self::markTestSkipped('posix_mkfifo is unavailable.');
         }
         $this->write('qmx.yaml', \sprintf("imports: [%s]\n", $entry));

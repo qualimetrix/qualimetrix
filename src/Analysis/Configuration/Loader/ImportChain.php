@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Configuration\Document\AuthoredShape;
 use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
 use Qualimetrix\Core\FileTarget\FileIdentity;
+use Qualimetrix\Core\FileTarget\NativeCall;
 
 /**
  * The root configuration file and the files its `imports` list names, as the
@@ -49,13 +50,14 @@ final class ImportChain
         }
 
         $placed = [-1 => [self::identify($rootPhysicalPath, $rootOrigin), (string) $rootOrigin->locator()]];
-        $displayDirectory = \dirname($rootOrigin->locator() ?? '.');
+        $directory = self::realDirectory($rootPhysicalPath, $rootOrigin);
+        $displayDirectory = is_link($rootPhysicalPath) ? $directory : \dirname($rootOrigin->locator() ?? '.');
         $layers = [];
         foreach ($entries as $index => $entry) {
             $written = (string) $entry->plain();
+            $physical = self::joined($directory, $written);
             $origin = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, self::normalize(self::joined($displayDirectory, $written)))
                 ->importedThrough($rootOrigin);
-            $physical = self::joined(\dirname($rootPhysicalPath), $written);
             $placed = self::placed($placed, $index, self::identify($physical, $origin), $entry, $rootOrigin);
 
             $document = $this->loader->read($physical, $origin)->authored;
@@ -161,6 +163,25 @@ final class ImportChain
     }
 
     /**
+     * The directory entries resolve against: the root file's own, through a
+     * symlink to it, so a configuration linked into a project reads the files
+     * beside its target. An entry is named from the root's name, which leads
+     * to the same file because `..` is kept as written — unless the root is
+     * itself a symlink, whose name leads to the link's directory: its imports
+     * are then named by this directory.
+     *
+     * @throws ConfigurationRefusal
+     */
+    private static function realDirectory(string $rootPhysicalPath, ConfigurationOrigin $rootOrigin): string
+    {
+        $real = realpath($rootPhysicalPath);
+
+        return $real === false
+            ? throw ConfigurationRefusal::aboutDocument($rootOrigin, \sprintf('%s cannot be resolved to a file path.', ucfirst($rootOrigin->describe())))
+            : \dirname($real);
+    }
+
+    /**
      * Refused before the file is read: a target that cannot be stat'ed or
      * reports inode 0 has no identity to compare, and a directory or a FIFO
      * would fail or block the read.
@@ -169,11 +190,11 @@ final class ImportChain
      */
     private static function identify(string $physicalPath, ConfigurationOrigin $origin): FileIdentity
     {
-        // @qmx-ignore-next-line code-smell.error-suppression -- A missing target is refused below by name; the interpreter warning must not reach the report.
-        $stat = @stat($physicalPath);
+        // The warning names no reason: a missing file and an untraversable directory read alike.
+        [$stat] = NativeCall::attempt(static fn(): array|false => stat($physicalPath));
         $identity = $stat === false ? null : FileIdentity::fromStat($stat);
         $problem = match (true) {
-            $identity === null => 'was not found',
+            $identity === null => 'was not found or is not accessible',
             $identity->type !== self::REGULAR_FILE => 'is not a regular file',
             $identity->inode === 0 => 'reports no file identity (inode 0), so it cannot be told apart from the other files',
             default => null,
@@ -181,7 +202,7 @@ final class ImportChain
 
         return $problem === null && $identity !== null
             ? $identity
-            : throw ConfigurationRefusal::aboutDocument($origin, \sprintf('%s %s.', ucfirst($origin->describe()), $problem ?? 'was not found'));
+            : throw ConfigurationRefusal::aboutDocument($origin, \sprintf('%s %s.', ucfirst($origin->describe()), $problem ?? 'was not found or is not accessible'));
     }
 
     private static function joined(string $directory, string $entry): string
@@ -190,22 +211,14 @@ final class ImportChain
     }
 
     /**
-     * Lexical: `.` and `x/..` collapse without consulting the filesystem, so
-     * the name shown can differ from the file opened when a directory on the
-     * way is a symlink.
+     * Drops `.` and empty segments only. `x/..` is kept as written: through a
+     * symlinked directory it leads elsewhere than collapsing it would say, so
+     * a name always leads to the file read and two files never share one.
      */
     private static function normalize(string $path): string
     {
-        $absolute = str_starts_with($path, '/');
-        $kept = [];
-        foreach (array_diff(explode('/', $path), ['', '.']) as $segment) {
-            if ($segment === '..' && $kept !== [] && end($kept) !== '..') {
-                array_pop($kept);
-            } elseif ($segment !== '..' || !$absolute) {
-                $kept[] = $segment;
-            }
-        }
+        $kept = array_diff(explode('/', $path), ['', '.']);
 
-        return ($absolute ? '/' : '') . implode('/', $kept);
+        return (str_starts_with($path, '/') ? '/' : '') . implode('/', $kept);
     }
 }

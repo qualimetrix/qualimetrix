@@ -222,12 +222,16 @@ importer, and JSON publishes the chain under `source[].imported_by`.
 - **Identity.** Files are compared by `Core\FileTarget\FileIdentity`
   (device, inode, type), so two spellings or a symlink of one file are one
   file. An entry naming the root or a file an earlier entry placed is refused
-  at that entry, naming both positions. A target that cannot be stat'ed, reports inode 0 or is not a regular
-  file is refused before it is read.
-- **Path bases.** An entry resolves against the directory of the file that
-  writes it, as that file was opened; its display name joins the root's
-  locator directory with the entry, lexically normalized. Every other path in
-  any file keeps the request's working directory as its base.
+  at that entry, naming both positions. A target that cannot be stat'ed
+  ("not found or not accessible": PHP reports no reason), reports inode 0 or
+  is not a regular file is refused before it is read, on the imported origin.
+- **Path bases.** An entry resolves against the real directory of the file
+  that writes it (a symlinked root resolves to its target's directory). Its
+  display name is a path that leads to that file: the root's locator
+  directory joined with the entry, dropping only `.` segments — `x/..` stays —
+  or, when the root file is a symlink, the physical path. Two files therefore
+  never share a name. Every other path in any file keeps the request's
+  working directory as its base.
 - **Read per file, never composed.** `ConfigurationRoot::Imports` declares the
   key and `Loader/ImportListSchema` its grammar (non-empty local `.yaml`/`.yml`
   paths, no URL, no glob, judged in each layer). The chain reads the entries

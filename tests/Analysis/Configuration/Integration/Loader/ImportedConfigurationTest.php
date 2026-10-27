@@ -259,7 +259,7 @@ final class ImportedConfigurationTest extends TestCase
 
         $refusal = $this->refusal(presets: ['./team.yaml']);
 
-        self::assertStringContainsString('a preset cannot import files', $refusal->summary());
+        self::assertStringContainsString('is refused: only the root configuration file reads it', $refusal->summary());
         self::assertSame('preset "./team.yaml"', $refusal->sources()[0]->describe());
         self::assertSame(['imports'], $refusal->position()?->segments);
     }

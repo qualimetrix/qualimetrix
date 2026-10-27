@@ -2297,10 +2297,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\CommandLineValueTest::itParsesBooleanIntegerFloatAndStringThroughTheirDeclaredForms
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\CommandLineValueTest::itReadsOnlyFlowListsAndPreservesQuotedCommas
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\CommandLineValueTest::itRefusesNullAndMappingsAtTheCliDoor
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itHandsTheLoaderTheImportedOriginSoItsRefusalsNameTheImporter"not a mapping"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itHandsTheLoaderTheImportedOriginSoItsRefusalsNameTheImporter"retired root key"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itHandsTheLoaderTheImportedOriginSoItsRefusalsNameTheImporter"unparseable"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itHandsTheRootAloneWhenItImportsNothing"empty list"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itHandsTheRootAloneWhenItImportsNothing"no key"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itHandsTheRootAloneWhenItImportsNothing"null"
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itOpensTheEntryByItsPhysicalPathAndShowsItLexically
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itKeepsParentSegmentsInTheNameSoTwoFilesNeverShareOne
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itNamesEveryImportOfAnAbsoluteRootByAPathThatLeadsToIt
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itPlacesTheEntriesInWrittenOrderBelowTheRootAndReadsEachOnce
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesAMissingImportBeforeReadingIt
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesATargetThatIsNotARegularFileWithoutReadingIt"directory"
@@ -2317,6 +2321,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesTheSameFileTwiceNamingBothPositions"parent segment"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesTheSameFileTwiceNamingBothPositions"symlink"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itResolvesAnEntryAgainstTheImportingFilesDirectoryAndNamesItFromTheRootsName
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itResolvesEntriesBesideTheRealFileOfASymlinkedRoot
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderKeySpellingTest::itKeepsSiblingSpellingsAndRefusesAKeyOutsideItsDeclaredSlot
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderKeySpellingTest::itListsCanonicalSectionKeysBesideTheAuthorsSpelling"camel"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderKeySpellingTest::itListsCanonicalSectionKeysBesideTheAuthorsSpelling"kebab"

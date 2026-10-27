@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
 use Qualimetrix\Analysis\Configuration\Document\AuthoredShape;
 use Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
@@ -70,18 +71,33 @@ final class PresetStage implements ConfigurationStageInterface
             $path = $this->resolver->resolve($name, $workingDirectory);
             $origin = ConfigurationOrigin::of(ConfigurationSource::Preset, $name);
             $document = $this->loader->read($path, $origin)->authored;
-            if ($document->shape === AuthoredShape::Mapping && \array_key_exists(ConfigurationRoot::Imports->value, $document->children)) {
+            self::refusePerFileRoots($document, $origin);
+            $authored[] = new AuthoredLayer($origin, $document);
+        }
+        return $authored;
+    }
+
+    /**
+     * A root read per file belongs to the root configuration file alone: a
+     * preset writing one is refused here rather than reaching the pipeline's
+     * guard as a programmer error.
+     *
+     * @throws ConfigurationRefusal
+     */
+    private static function refusePerFileRoots(AuthoredNode $document, ConfigurationOrigin $origin): void
+    {
+        foreach (ConfigurationRoot::perFile() as $root) {
+            if ($document->shape === AuthoredShape::Mapping && \array_key_exists($root->value, $document->children)) {
                 throw ConfigurationRefusal::at(
                     $origin,
-                    RefusedPosition::open([ConfigurationRoot::Imports->value], ConfigurationRoot::Imports->value),
+                    RefusedPosition::open([$root->value], $root->value),
                     \sprintf(
-                        '"imports" in %s is refused: a preset cannot import files. Name each file as its own --preset, or import it from the configuration file.',
+                        '"%s" in %s is refused: only the root configuration file reads it. To build on another file, name that file as its own --preset or import it from the configuration file.',
+                        $root->value,
                         $origin->describe(),
                     ),
                 );
             }
-            $authored[] = new AuthoredLayer($origin, $document);
         }
-        return $authored;
     }
 }
