@@ -70,8 +70,9 @@ final class RetiredSuppressionOptions
      *
      * @param array<int, string> $unknownKeys normalized (camelCase) key names
      * @param array<string, string> $keyMap normalized key => the spelling the author wrote
+     * @param ConfigurationOrigin $origin the document the keys were written in
      */
-    public static function refuseRootKey(array $unknownKeys, string $path, array $keyMap): void
+    public static function refuseRootKey(array $unknownKeys, ConfigurationOrigin $origin, array $keyMap): void
     {
         $liveRootKeys = ConfigSchema::allowedRootKeys();
 
@@ -84,8 +85,8 @@ final class RetiredSuppressionOptions
 
             $authored = $keyMap[$key] ?? $key;
 
-            throw ConfigurationRefusal::atConfigFileKey(
-                $path,
+            throw ConfigurationRefusal::at(
+                $origin,
                 RefusedPosition::open([$authored], $authored),
                 self::refusalText($authored, ConfigKeySpelling::rewriteLike($replacement, $authored)),
             );

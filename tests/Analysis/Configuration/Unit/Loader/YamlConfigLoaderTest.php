@@ -10,7 +10,9 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\Document\WrittenFile;
 
@@ -45,26 +47,14 @@ final class YamlConfigLoaderTest extends TestCase
         mkdir($this->tempDir, 0755, true);
     }
 
+    private static function configFile(string $locator): ConfigurationOrigin
+    {
+        return ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $locator);
+    }
+
     protected function tearDown(): void
     {
         $this->removeDirectory($this->tempDir);
-    }
-
-    #[Test]
-    public function itSupportsYamlExtension(): void
-    {
-        self::assertTrue($this->loader->supports('/path/to/config.yaml'));
-        self::assertTrue($this->loader->supports('/path/to/config.yml'));
-        self::assertTrue($this->loader->supports('/path/to/config.YAML'));
-        self::assertTrue($this->loader->supports('/path/to/config.YML'));
-    }
-
-    #[Test]
-    public function itDoesNotSupportOtherExtensions(): void
-    {
-        self::assertFalse($this->loader->supports('/path/to/config.php'));
-        self::assertFalse($this->loader->supports('/path/to/config.json'));
-        self::assertFalse($this->loader->supports('/path/to/config.xml'));
     }
 
     #[Test]
@@ -150,7 +140,7 @@ YAML);
         $path = $this->tempDir . '/nonexistent.yaml';
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Configuration file not found');
+        self::expectExceptionMessage(\sprintf('Configuration file "%s" was not found.', $path));
 
         array_map(static fn(\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value): mixed => $value->plain(), WrittenFile::compose($path)->roots());
     }
@@ -172,7 +162,7 @@ YAML);
             }
 
             self::expectException(ConfigurationRefusal::class);
-            self::expectExceptionMessage('Configuration file is not readable');
+            self::expectExceptionMessage(\sprintf('Configuration file "%s" is not readable.', $path));
 
             array_map(static fn(\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value): mixed => $value->plain(), WrittenFile::compose($path)->roots());
         } finally {
@@ -192,7 +182,7 @@ rules:
 YAML);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Failed to parse configuration file');
+        self::expectExceptionMessage(\sprintf('Failed to parse configuration file "%s": ', $path));
 
         array_map(static fn(\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value): mixed => $value->plain(), WrittenFile::compose($path)->roots());
     }
@@ -204,10 +194,10 @@ YAML);
         file_put_contents($path, "rules: [\n");
 
         try {
-            $this->loader->read($path, 'qmx.yaml');
+            $this->loader->read($path, self::configFile('qmx.yaml'));
             self::fail('Malformed YAML must be refused.');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertStringContainsString('Failed to parse configuration file qmx.yaml', $refusal->summary());
+            self::assertStringContainsString('Failed to parse configuration file "qmx.yaml"', $refusal->summary());
             self::assertStringNotContainsString($this->tempDir, $refusal->summary());
             self::assertSame('qmx.yaml', $refusal->sources()[0]->locator());
         }
@@ -220,7 +210,7 @@ YAML);
         file_put_contents($path, 'just a string');
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('is not valid YAML format');
+        self::expectExceptionMessage(\sprintf('Configuration file "%s" is not valid YAML format.', $path));
 
         array_map(static fn(\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value): mixed => $value->plain(), WrittenFile::compose($path)->roots());
     }
@@ -247,6 +237,57 @@ YAML);
         self::assertSame(15, $lawful->get('rules', 'complexity.ccn', 'class', 'max-warning')?->plain());
     }
 
+    /**
+     * The loader names the source it was handed: a preset is not a
+     * "configuration file", and a file another one imported says so.
+     *
+     * @param non-empty-string $expected
+     * @param list<string> $expectedChain the origin and each importer, outermost last
+     */
+    #[Test]
+    #[DataProvider('provideWholeDocumentRefusals')]
+    public function itWordsEveryWholeDocumentRefusalThroughTheOriginItWasGiven(
+        string $content,
+        ConfigurationOrigin $origin,
+        string $expected,
+        array $expectedChain,
+    ): void {
+        $path = $this->tempDir . '/document.yaml';
+        if ($content !== '') {
+            file_put_contents($path, $content);
+        }
+
+        try {
+            $this->loader->read($path, $origin);
+            self::fail('The document must be refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringStartsWith($expected, $refusal->summary());
+            self::assertStringNotContainsString($this->tempDir, $refusal->summary());
+            $chain = [];
+            for ($source = $refusal->sources()[0]; $source !== null; $source = $source->importer()) {
+                $chain[] = $source->describe();
+            }
+            self::assertSame($expectedChain, $chain);
+        }
+    }
+
+    /** @return iterable<string, array{string, ConfigurationOrigin, non-empty-string, list<string>}> */
+    public static function provideWholeDocumentRefusals(): iterable
+    {
+        $preset = ConfigurationOrigin::of(ConfigurationSource::Preset, './team.yaml');
+        $root = self::configFile('qmx.yaml');
+        $imported = self::configFile('cfg/base.yaml')->importedThrough($root);
+        $importedChain = ['configuration file "cfg/base.yaml" (imported by configuration file "qmx.yaml")', 'configuration file "qmx.yaml"'];
+
+        yield 'preset missing' => ['', $preset, 'Preset "./team.yaml" was not found.', ['preset "./team.yaml"']];
+        yield 'preset unparseable' => ["rules: [\n", $preset, 'Failed to parse preset "./team.yaml": ', ['preset "./team.yaml"']];
+        yield 'preset not a mapping' => ['just a string', $preset, 'Preset "./team.yaml" is not valid YAML format.', ['preset "./team.yaml"']];
+        yield 'imported missing' => ['', $imported, 'Configuration file "cfg/base.yaml" (imported by configuration file "qmx.yaml") was not found.', $importedChain];
+        yield 'imported unparseable' => ["rules: [\n", $imported, 'Failed to parse configuration file "cfg/base.yaml" (imported by configuration file "qmx.yaml"): ', $importedChain];
+        yield 'imported not a mapping' => ['just a string', $imported, 'Configuration file "cfg/base.yaml" (imported by configuration file "qmx.yaml") is not valid YAML format.', $importedChain];
+        yield 'imported retired root key' => ["exclude_paths: [src]\n", $imported, 'The "exclude_paths" option was retired.', $importedChain];
+    }
+
     /** Physical loading preserves the document before the declared schema judges it. */
     #[Test]
     public function itCarriesTheWrittenDocumentUntilTheEngineJudgesIt(): void
@@ -254,14 +295,14 @@ YAML);
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, "rules: 5\nFail_On: error\n");
 
-        $loaded = $this->loader->read($path, $path);
+        $loaded = $this->loader->read($path, self::configFile($path));
 
         self::assertSame(['rules' => 5, 'Fail_On' => 'error'], $loaded->authored->plain());
         $this->assertDocumentRefusal($path, \sprintf('"rules" in configuration file "%s" must be a map, got int.', $path), ['rules'], 'rules');
         $lawful = $this->lawfulDocument("rules: {}\nfail_on: error\n");
         self::assertSame('error', $lawful->get('fail_on')?->plain());
         file_put_contents($path, "rules: {}\nFail_On: error\n");
-        self::assertSame(['rules' => [], 'Fail_On' => 'error'], $this->loader->read($path, $path)->authored->plain());
+        self::assertSame(['rules' => [], 'Fail_On' => 'error'], $this->loader->read($path, self::configFile($path))->authored->plain());
         $this->assertDocumentRefusal($path, \sprintf('Key "Fail_On" in configuration file "%s" is not written in an accepted spelling; write "fail_on" (its snake_case, camelCase and kebab-case spellings are accepted).', $path), ['Fail_On'], 'Fail_On');
     }
 
@@ -1332,7 +1373,7 @@ YAML);
     /** @return array<string, mixed> */
     private function authoredValues(string $path): array
     {
-        $plain = $this->loader->read($path, $path)->authored->plain();
+        $plain = $this->loader->read($path, self::configFile($path))->authored->plain();
         self::assertIsArray($plain);
         $values = [];
         foreach ($plain as $key => $value) {

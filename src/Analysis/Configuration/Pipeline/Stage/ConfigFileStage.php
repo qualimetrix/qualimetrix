@@ -54,13 +54,13 @@ final class ConfigFileStage implements ConfigurationStageInterface
             return $diagnostics === [] ? null : new ConfigurationLayer('config_file', [], diagnostics: $diagnostics);
         }
 
-        $sourceName = $request->configFilePath ?? basename($configPath);
-        $loaded = $this->loader->read($configPath, $sourceName);
+        $origin = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $request->configFilePath ?? basename($configPath));
+        $loaded = $this->loader->read($configPath, $origin);
 
         return new ConfigurationLayer(
             basename($configPath),
             [],
-            authored: [new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $sourceName), $loaded->authored)],
+            authored: [new AuthoredLayer($origin, $loaded->authored)],
             diagnostics: $diagnostics,
         );
     }
@@ -79,7 +79,7 @@ final class ConfigFileStage implements ConfigurationStageInterface
             if (!file_exists($request->configFilePath)) {
                 throw ConfigurationRefusal::aboutConfigFileDocument(
                     $request->configFilePath,
-                    \sprintf('Configuration file not found: %s', $request->configFilePath),
+                    \sprintf('Configuration file "%s" was not found.', $request->configFilePath),
                 );
             }
 

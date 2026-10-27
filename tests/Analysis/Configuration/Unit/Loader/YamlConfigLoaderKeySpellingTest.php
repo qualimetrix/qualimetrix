@@ -8,7 +8,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\Document\WrittenFile;
 
@@ -77,7 +79,7 @@ final class YamlConfigLoaderKeySpellingTest extends TestCase
             "suppressPaths: []\nrules:\n  complexity.ccn:\n    class: {max_warning: 1}\n    callable: {max_warning: 2}\n",
         );
 
-        $loaded = (new YamlConfigLoader())->read($this->path, $this->path);
+        $loaded = (new YamlConfigLoader())->read($this->path, ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $this->path));
         self::assertSame(['suppressPaths' => [], 'rules' => ['complexity.ccn' => ['class' => ['max_warning' => 1], 'callable' => ['max_warning' => 2]]]], $loaded->authored->plain());
         try {
             WrittenFile::compose($this->path);

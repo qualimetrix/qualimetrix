@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
@@ -111,7 +112,7 @@ final class ConfigFileStageTest extends TestCase
     {
         touch($this->directory . '/qmx.yaml');
         $this->loader->expects(self::once())->method('read')
-            ->with($this->directory . '/qmx.yaml', 'qmx.yaml')
+            ->with($this->directory . '/qmx.yaml', ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml'))
             ->willReturn(new LoadedDocument(
                 AuthoredNode::fromPlain(['cache' => ['enabled' => false], 'paths' => ['src']]),
             ));
@@ -164,7 +165,7 @@ final class ConfigFileStageTest extends TestCase
         touch($this->directory . '/qmx.yaml');
         touch($this->directory . '/custom.yaml');
         $this->loader->expects(self::once())->method('read')
-            ->with($this->directory . '/custom.yaml', $this->directory . '/custom.yaml')
+            ->with($this->directory . '/custom.yaml', ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $this->directory . '/custom.yaml'))
             ->willReturn(new LoadedDocument(AuthoredNode::fromPlain(['format' => 'json'])));
 
         $layer = (new ConfigFileStage($this->loader))->apply(
@@ -251,7 +252,7 @@ final class ConfigFileStageTest extends TestCase
         touch($this->directory . '/qmx.yaml.bak');
         touch($this->directory . '/qmx.yaml');
         $this->loader->expects(self::once())->method('read')
-            ->with($this->directory . '/qmx.yaml', 'qmx.yaml')
+            ->with($this->directory . '/qmx.yaml', ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml'))
             ->willReturn(new LoadedDocument(AuthoredNode::fromPlain([])));
 
         $layer = (new ConfigFileStage($this->loader))

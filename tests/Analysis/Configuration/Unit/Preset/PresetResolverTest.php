@@ -115,11 +115,15 @@ final class PresetResolverTest extends TestCase
     }
 
     #[Test]
-    public function itRefusesAFilePathThatDoesNotExist(): void
+    public function itRefusesAFilePathThatDoesNotExistNamingThePresetAsWritten(): void
     {
-        self::expectException(ConfigurationRefusal::class);
-
-        $this->resolver->resolve('./missing.yaml', '/tmp');
+        try {
+            $this->resolver->resolve('./missing.yaml', '/tmp');
+            self::fail('A missing preset file must be refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('Preset "./missing.yaml" was not found at /tmp/./missing.yaml.', $refusal->summary());
+            self::assertSame('preset "./missing.yaml"', $refusal->sources()[0]->describe());
+        }
     }
 
     #[Test]

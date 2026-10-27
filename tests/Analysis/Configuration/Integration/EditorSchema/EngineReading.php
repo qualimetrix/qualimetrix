@@ -51,9 +51,10 @@ final class EngineReading
         }
 
         try {
-            $loaded = (new YamlConfigLoader())->read($path, 'qmx.yaml');
+            $origin = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml');
+            $loaded = (new YamlConfigLoader())->read($path, $origin);
             DocumentComposer::compose(self::document(), [
-                new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml'), $loaded->authored),
+                new AuthoredLayer($origin, $loaded->authored),
             ]);
         } catch (ConfigurationRefusal $refusal) {
             return $refusal;

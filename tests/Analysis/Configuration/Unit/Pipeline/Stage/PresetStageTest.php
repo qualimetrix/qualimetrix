@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
@@ -62,9 +63,9 @@ final class PresetStageTest extends TestCase
         ];
         $index = 0;
         $this->loader->expects(self::exactly(2))->method('read')->willReturnCallback(
-            static function (string $physicalPath, string $sourceName) use ($loaded, $paths, &$index): LoadedDocument {
+            static function (string $physicalPath, ConfigurationOrigin $origin) use ($loaded, $paths, &$index): LoadedDocument {
                 self::assertSame($paths[$index], $physicalPath);
-                self::assertSame($physicalPath, $sourceName);
+                self::assertEquals(ConfigurationOrigin::of(ConfigurationSource::Preset, ['strict', 'ci'][$index]), $origin);
 
                 return $loaded[$index++];
             },
@@ -137,7 +138,7 @@ final class PresetStageTest extends TestCase
     public function itTrimsWhitespaceAroundAPresetName(): void
     {
         $path = (new PresetResolver())->resolve('strict', '/project');
-        $this->loader->expects(self::once())->method('read')->with($path, $path)->willReturn(
+        $this->loader->expects(self::once())->method('read')->with($path, ConfigurationOrigin::of(ConfigurationSource::Preset, 'strict'))->willReturn(
             new LoadedDocument(AuthoredNode::fromPlain(['format' => 'json'])),
         );
 

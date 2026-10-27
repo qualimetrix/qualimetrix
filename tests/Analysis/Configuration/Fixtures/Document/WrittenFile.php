@@ -23,10 +23,11 @@ final class WrittenFile
     /** @throws ConfigurationRefusal */
     public static function compose(string $path): ResolvedDocument
     {
-        $loaded = (new YamlConfigLoader())->read($path, $path);
+        $origin = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $path);
+        $loaded = (new YamlConfigLoader())->read($path, $origin);
         $document = DocumentComposer::compose(
             new DocumentSchema([...\Qualimetrix\Analysis\Configuration\ConfigurationRoot::cases(), ...LayeredDocument::standaloneSections()]),
-            [new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $path), $loaded->authored)],
+            [new AuthoredLayer($origin, $loaded->authored)],
         );
 
         return $document;

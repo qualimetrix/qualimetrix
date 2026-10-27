@@ -52,7 +52,7 @@ final class RulesSourcePathTest extends TestCase
                 self::assertSame(3, $process->getExitCode(), $process->getOutput() . $process->getErrorOutput());
                 $errors[] = $process->getErrorOutput();
                 self::assertStringContainsString(
-                    'Source: configuration file "' . ($explicit ? $external : 'qmx.yaml') . '".',
+                    'configuration file "' . ($explicit ? $external : 'qmx.yaml') . '"',
                     $process->getErrorOutput(),
                 );
                 if (!$explicit) {

@@ -64,8 +64,8 @@ final class PresetStage implements ConfigurationStageInterface
         $authored = [];
         foreach ($presetNames as $name) {
             $path = $this->resolver->resolve($name, $workingDirectory);
-            $loaded = $this->loader->read($path, $path);
-            $authored[] = new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::Preset, $name), $loaded->authored);
+            $origin = ConfigurationOrigin::of(ConfigurationSource::Preset, $name);
+            $authored[] = new AuthoredLayer($origin, $this->loader->read($path, $origin)->authored);
         }
         return $authored;
     }

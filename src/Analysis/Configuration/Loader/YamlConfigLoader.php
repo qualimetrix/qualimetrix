@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Configuration\Loader;
 
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
 use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
@@ -14,11 +15,12 @@ use Symfony\Component\Yaml\Yaml;
 
 final class YamlConfigLoader implements ConfigLoaderInterface
 {
-    private const array SUPPORTED_EXTENSIONS = ['yaml', 'yml'];
+    /** File extensions this loader reads, lowercase; compare a path's extension lowercased. */
+    public const array SUPPORTED_EXTENSIONS = ['yaml', 'yml'];
 
-    public function read(string $physicalPath, string $sourceName): LoadedDocument
+    public function read(string $physicalPath, ConfigurationOrigin $origin): LoadedDocument
     {
-        return new LoadedDocument(AuthoredNode::fromPlain($this->parse($physicalPath, $sourceName)));
+        return new LoadedDocument(AuthoredNode::fromPlain($this->parse($physicalPath, $origin)));
     }
 
     /**
@@ -31,29 +33,25 @@ final class YamlConfigLoader implements ConfigLoaderInterface
      *
      * @return array<string|int, mixed>
      */
-    private function parse(string $physicalPath, string $sourceName): array
+    private function parse(string $physicalPath, ConfigurationOrigin $origin): array
     {
+        $subject = ucfirst($origin->describe());
+
         if (!file_exists($physicalPath)) {
-            throw ConfigurationRefusal::aboutConfigFileDocument(
-                $sourceName,
-                \sprintf('Configuration file not found: %s', $sourceName),
-            );
+            throw ConfigurationRefusal::aboutDocument($origin, \sprintf('%s was not found.', $subject));
         }
 
         if (!is_readable($physicalPath)) {
-            throw ConfigurationRefusal::aboutConfigFileDocument(
-                $sourceName,
-                \sprintf('Configuration file is not readable: %s', $sourceName),
-            );
+            throw ConfigurationRefusal::aboutDocument($origin, \sprintf('%s is not readable.', $subject));
         }
 
         try {
             $content = Yaml::parseFile($physicalPath);
         } catch (ParseException $e) {
-            $e->setParsedFile($sourceName);
-            throw ConfigurationRefusal::aboutConfigFileDocument(
-                $sourceName,
-                \sprintf('Failed to parse configuration file %s: %s', $sourceName, $e->getMessage()),
+            $e->setParsedFile($origin->locator() ?? $physicalPath);
+            throw ConfigurationRefusal::aboutDocument(
+                $origin,
+                \sprintf('Failed to parse %s: %s', $origin->describe(), $e->getMessage()),
                 $e,
             );
         }
@@ -63,27 +61,17 @@ final class YamlConfigLoader implements ConfigLoaderInterface
                 // Empty file is valid, return empty config
                 return [];
             }
-            throw ConfigurationRefusal::aboutConfigFileDocument(
-                $sourceName,
-                \sprintf('Configuration file %s is not valid %s format', $sourceName, 'YAML'),
-            );
+            throw ConfigurationRefusal::aboutDocument($origin, \sprintf('%s is not valid YAML format.', $subject));
         }
 
         $keyMap = $this->buildRootKeyMap($content);
         RetiredSuppressionOptions::refuseRootKey(
             array_values(array_diff(array_keys($keyMap), ConfigSchema::allowedRootKeys())),
-            $sourceName,
+            $origin,
             $keyMap,
         );
 
         return $content;
-    }
-
-    public function supports(string $path): bool
-    {
-        $extension = strtolower(pathinfo($path, \PATHINFO_EXTENSION));
-
-        return \in_array($extension, self::SUPPORTED_EXTENSIONS, true);
     }
 
     /**
