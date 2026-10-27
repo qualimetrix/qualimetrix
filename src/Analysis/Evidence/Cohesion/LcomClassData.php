@@ -158,7 +158,10 @@ final class LcomClassData
      */
     public function getPropertiesAccessedBy(string $methodName): array
     {
-        return array_keys(($this->propertyAccesses[$methodName] ?? []) + ($this->deferredPropertyAccesses[$methodName] ?? []));
+        $accesses = ($this->propertyAccesses[$methodName] ?? []) + ($this->deferredPropertyAccesses[$methodName] ?? []);
+        unset($accesses[LcomMethodPopulation::ANY_PROPERTY]);
+
+        return array_keys($accesses);
     }
 
     /**
@@ -272,7 +275,7 @@ final class LcomClassData
      *
      * @return int Number of connected components (1 = perfectly cohesive)
      */
-    public function calculateLcom(array $excludeMethods = [], int $unreadTraitCount = 0): int
+    public function calculateLcom(array $excludeMethods, int $unreadTraitCount): int
     {
         $population = new LcomMethodPopulation($this->factState(), $unreadTraitCount);
         $methods = $population->graphMethods($excludeMethods);
@@ -306,7 +309,7 @@ final class LcomClassData
     }
 
     /** @param list<string> $excludeMethods */
-    public function lcomMethodCount(array $excludeMethods = [], int $unreadTraitCount = 0): int
+    public function lcomMethodCount(array $excludeMethods, int $unreadTraitCount): int
     {
         return (new LcomMethodPopulation($this->factState(), $unreadTraitCount))->count($excludeMethods);
     }

@@ -2448,6 +2448,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionOwnCalls": {
+      "path": "src/Analysis/Evidence/Cohesion/CohesionOwnCalls.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Cohesion",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Evidence\\Cohesion\\CohesionTraitComposition": {
       "path": "src/Analysis/Evidence/Cohesion/CohesionTraitComposition.php",
       "kind": "class",

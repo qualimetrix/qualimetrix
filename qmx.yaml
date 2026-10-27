@@ -201,6 +201,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Cohesion\CohesionFactWire'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\CohesionMemberWire'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\CohesionMethodReachability'
+        - 'Qualimetrix\Analysis\Evidence\Cohesion\CohesionOwnCalls'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\CohesionTraitComposition'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\CohesionTraitUses'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\Configuration\LcomCollectionConfigurationResolver'

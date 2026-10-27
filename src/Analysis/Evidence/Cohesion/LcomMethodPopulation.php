@@ -13,22 +13,28 @@ use Qualimetrix\Core\Symbol\TraitComposition\Contract\TraitMethodSource;
  *
  * An initialization helper is a private instance method that constructor or destructor
  * bodies reach through direct calls and that no other method reaches. A method that hands
- * instance state to later code (a property touched inside a closure or bound by reference)
- * registers behaviour instead and is never a candidate. Every method that is neither
+ * instance state to later code (a property touched inside a closure, bound by reference, or
+ * a generator body) registers behaviour instead and is never a candidate. Every method that is neither
  * lifecycle nor a candidate keeps what it calls, and so do the closures and first-class
  * callables that lifecycle bodies and candidates create: every such callable is treated as
  * deferred, including one invoked during construction. Reachability uses effective names
  * after trait composition and never passes through a lifecycle body.
  *
  * No method leaves when the call map may be incomplete: a used trait was not read, or an
- * own call names its target dynamically ({@see self::ANY_METHOD}). Calls on another
- * instance and `parent::` calls are not recorded, so a helper used only through them is
- * treated as an initialization helper.
+ * own method is named only dynamically ({@see self::ANY_METHOD}). Calls on another
+ * instance or an alias of `$this`, nullsafe calls and `parent::` calls are not recorded,
+ * so a helper used only through them is treated as an initialization helper.
  */
 final class LcomMethodPopulation
 {
     /** Callee of an own call whose target the facts cannot name, such as `$this->$name()`. */
     public const string ANY_METHOD = '*';
+
+    /**
+     * Deferred access to own state the facts cannot name: a dynamic property in a closure,
+     * or the body of a generator. It marks a hand-off and is never a shared-property edge.
+     */
+    public const string ANY_PROPERTY = '*';
 
     /** @var array<string, true> */
     private readonly array $methods;
@@ -69,12 +75,15 @@ final class LcomMethodPopulation
      * } $state
      * @param int $unreadTraitCount used traits whose bodies were not read
      */
-    public function __construct(array $state, int $unreadTraitCount = 0)
+    public function __construct(array $state, int $unreadTraitCount)
     {
         $this->methods = $state['methods'];
         $this->staticMethods = $state['staticMethods'];
         $this->statelessMethods = $state['statelessMethods'];
-        $this->propertyAccesses = self::foldCallers($state['propertyAccesses'], $state['deferredPropertyAccesses']);
+        $this->propertyAccesses = array_map(
+            static fn(array $properties): array => array_diff_key($properties, [self::ANY_PROPERTY => true]),
+            self::foldCallers($state['propertyAccesses'], $state['deferredPropertyAccesses']),
+        );
         $this->methodCalls = self::foldCallers($state['methodCalls'], $state['deferredMethodCalls']);
         $names = [];
         foreach (array_keys($this->methods) as $method) {

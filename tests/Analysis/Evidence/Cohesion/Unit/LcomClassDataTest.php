@@ -34,11 +34,11 @@ final class LcomClassDataTest extends TestCase
 
         // Without exclusion: analyze+validate share $data (1 component),
         // getName+getDescription merged into virtual stateless node (1 component) = LCOM 2
-        self::assertSame(2, $classData->calculateLcom());
+        self::assertSame(2, $classData->calculateLcom([], 0));
 
         // With excludeMethods=['getName', 'getDescription']:
         // only analyze+validate remain, they share $data = LCOM 1
-        self::assertSame(1, $classData->calculateLcom(['getName', 'getDescription']));
+        self::assertSame(1, $classData->calculateLcom(['getName', 'getDescription'], 0));
     }
 
     #[Test]
@@ -106,8 +106,8 @@ final class LcomClassDataTest extends TestCase
         $data->addPropertyAccess('write', 'state');
 
         // A phantom virtual stateless node would make this 2 components over 3 counted methods.
-        self::assertSame(1, $data->calculateLcom());
-        self::assertSame(2, $data->lcomMethodCount());
+        self::assertSame(1, $data->calculateLcom([], 0));
+        self::assertSame(2, $data->lcomMethodCount([], 0));
     }
 
     #[Test]
@@ -119,8 +119,8 @@ final class LcomClassDataTest extends TestCase
             $data->addPropertyAccess($method, $method);
         }
 
-        self::assertSame(3, $data->calculateLcom());
-        self::assertSame(1, $data->calculateLcom(['BRIDGE', 'Bridge', 'LABEL']));
+        self::assertSame(3, $data->calculateLcom([], 0));
+        self::assertSame(1, $data->calculateLcom(['BRIDGE', 'Bridge', 'LABEL'], 0));
         self::assertSame(['work', 'bridge', 'label'], $data->getMethods());
     }
 
@@ -136,10 +136,10 @@ final class LcomClassDataTest extends TestCase
         $classData->addPropertyAccess('methodB', 'propB');
 
         // Without exclusion: LCOM 2
-        self::assertSame(2, $classData->calculateLcom());
+        self::assertSame(2, $classData->calculateLcom([], 0));
 
         // Excluding a non-existent method: still LCOM 2
-        self::assertSame(2, $classData->calculateLcom(['nonExistentMethod']));
+        self::assertSame(2, $classData->calculateLcom(['nonExistentMethod'], 0));
     }
 
     #[Test]
@@ -154,6 +154,6 @@ final class LcomClassDataTest extends TestCase
         $classData->addPropertyAccess('methodB', 'propB');
 
         // Excluding all methods: LCOM 0 (no methods in graph)
-        self::assertSame(0, $classData->calculateLcom(['methodA', 'methodB']));
+        self::assertSame(0, $classData->calculateLcom(['methodA', 'methodB'], 0));
     }
 }

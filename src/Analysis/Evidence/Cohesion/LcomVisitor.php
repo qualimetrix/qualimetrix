@@ -6,11 +6,8 @@ namespace Qualimetrix\Analysis\Evidence\Cohesion;
 
 use PhpParser\Node;
 use PhpParser\Node\Expr\Array_;
-use PhpParser\Node\Expr\AssignRef;
 use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Expr\ConstFetch;
-use PhpParser\Node\Expr\PropertyFetch;
-use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
 use PhpParser\Node\Scalar;
@@ -27,12 +24,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterfac
  *
  * For each class, tracks:
  * - List of methods (instance and static)
- * - For each method: set of properties accessed via $this->property, with accesses from
- *   closures, arrow functions and nested functions, and properties bound by reference,
- *   kept apart as deferred accesses
- * - For each method: set of methods called via $this->method(), self:: or static::,
- *   with calls from closures, arrow functions and first-class callables kept apart
- *   as deferred calls
+ * - For each method: properties accessed and own methods called, with what closures,
+ *   arrow functions and nested functions do kept apart as deferred (see {@see CohesionAstFacts})
  * - Static method markers (excluded from LCOM graph)
  *
  * Lifecycle bodies remain available to trait aliases, so every method records its
@@ -145,29 +138,10 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
             return null;
         }
 
-        // Track property access via $this->property
-        $propertyName = $this->ownPropertyName($node);
-        if ($propertyName !== null) {
-            if ($this->closureDepth > 0) {
-                $this->classData[$position]->addDeferredPropertyAccess($currentMethod, $propertyName);
-            } else {
-                $this->classData[$position]->addPropertyAccess($currentMethod, $propertyName);
-            }
-
-            return null;
-        }
-        // A property bound by reference stays reachable from whatever later receives the reference.
-        $boundName = $node instanceof AssignRef ? $this->boundPropertyName($node->expr) : null;
-        if ($boundName !== null) {
-            $this->classData[$position]->addDeferredPropertyAccess($currentMethod, $boundName);
-
-            return null;
-        }
-
         if ($this->closureDepth > 0) {
-            CohesionAstFacts::captureDeferredCall($node, $this->classData[$position], $currentMethod);
+            CohesionAstFacts::captureDeferredBody($node, $this->classData[$position], $currentMethod);
         } else {
-            CohesionAstFacts::captureCall($node, $this->classData[$position], $currentMethod);
+            CohesionAstFacts::captureBody($node, $this->classData[$position], $currentMethod);
         }
 
         return null;
@@ -208,25 +182,6 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
             --$this->closureDepth;
         }
         $this->leaveClassVisitorNode($node);
-
-        return null;
-    }
-
-    /** The own property whose storage a reference binds, including an element or nested member of it. */
-    private function boundPropertyName(Node $bound): ?string
-    {
-        while ($this->ownPropertyName($bound) === null && ($bound instanceof Node\Expr\ArrayDimFetch || $bound instanceof PropertyFetch)) {
-            $bound = $bound->var;
-        }
-
-        return $this->ownPropertyName($bound);
-    }
-
-    private function ownPropertyName(Node $node): ?string
-    {
-        if ($node instanceof PropertyFetch && $node->var instanceof Variable && $node->var->name === 'this') {
-            return $this->extractPropertyName($node);
-        }
 
         return null;
     }

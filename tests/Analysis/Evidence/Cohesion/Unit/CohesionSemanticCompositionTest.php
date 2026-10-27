@@ -551,8 +551,6 @@ PHP;
             'callable array on this' => 'array_map([$this, $name], [])',
             'callable array on self class' => 'array_map([self::class, $name], [])',
             'callable array on static class' => 'array_map([static::class, $name], [])',
-            'call_user_func on this' => '\\call_user_func($this)',
-            'call_user_func_array on this' => 'call_user_func_array($this, [])',
         ] as $form => $call) {
             yield 'unresolvable own call keeps every helper: ' . $form => [
                 'class Candidate { private int $a = 0; private int $b = 0;
@@ -562,6 +560,91 @@ PHP;
                 4, 2,
             ];
         }
+        foreach ([
+            'own short class name' => 'Candidate::load()',
+            'own qualified class name' => '\\App\\Candidate::load()',
+            'this used as a class' => '$this::load()',
+            'literal dynamic method name' => '$this->{"load"}()',
+            'literal dynamic self call' => 'self::{"load"}()',
+            'own class first-class callable' => '$f = Candidate::load(...)',
+            'static first-class callable' => '$f = static::load(...)',
+            'callable array on __CLASS__' => '$f = [__CLASS__, "load"]',
+            'callable array on this class constant' => '$f = [$this::class, "load"]',
+            'callable array on own class constant' => '$f = [Candidate::class, "load"]',
+            'callable array on get_class' => '$f = [get_class($this), "load"]',
+            'callable array on get_called_class' => '$f = [get_called_class(), "load"]',
+            'closure from callable array' => '$f = \\Closure::fromCallable([$this, "load"])',
+            'self callable string' => '$f = "self::load"',
+            'static callable string' => '$f = "static::load"',
+            'own class callable string' => '$f = "App\\\\Candidate::load"',
+            'reflection method' => '$f = new \\ReflectionMethod($this, "load")',
+        ] as $form => $call) {
+            yield 'own call through ' . $form . ' keeps the helper' => [
+                'class Candidate { private int $a = 0; private int $b = 0;
+                    public function __construct() { $this->load(); } private function load(): void { $this->a = 1; $this->b = 1; }
+                    public function again(): void { ' . $call . '; }
+                    public function x(): int { return $this->a; } public function y(): int { return $this->b; } }',
+                4, 1,
+            ];
+        }
+        foreach ([
+            'dynamic call on this as a class' => '$this::$name()',
+            'callable array on __CLASS__ with a dynamic name' => '$f = [__CLASS__, $name]',
+            'reflection method with a dynamic name' => '$f = new \\ReflectionMethod($this, $name)',
+        ] as $form => $call) {
+            yield 'unresolvable own call keeps every helper: ' . $form => [
+                'class Candidate { private int $a = 0; private int $b = 0;
+                    public function __construct() { $this->load(); } private function load(): void { $this->a = 1; $this->b = 1; }
+                    public function dispatch(string $name): void { ' . $call . '; }
+                    public function x(): int { return $this->a; } public function y(): int { return $this->b; } }',
+                4, 2,
+            ];
+        }
+        foreach ([
+            'property bound to a reference' => '$count = 0; $this->count = &$count; $this->callback = static function () use (&$count): void { $count++; };',
+            'property as a by-reference array item' => '$refs = ["count" => &$this->count]; $this->callback = static function () use ($refs): void { $refs["count"]++; };',
+            'by-reference foreach over a property' => 'foreach ($this->slots as &$slot) { $this->callback = static function () use (&$slot): void { $slot++; }; }',
+            'nested member bound by reference' => '$count = &$this->holder->count; $this->callback = static function () use (&$count): void { $count++; };',
+            'dynamic property in a closure' => '$field = "count"; $this->callback = function () use ($field): void { $this->{$field}++; };',
+        ] as $form => $body) {
+            // A dynamic name hands off state without naming it, so it adds no shared-property edge.
+            $lcom = str_contains($form, 'dynamic') ? 2 : 1;
+            yield 'helper handing off state through ' . $form . ' stays' => [
+                'class Candidate { private $callback; private int $count = 0; private array $slots = []; private ?object $holder = null;
+                    public function __construct() { $this->wire(); }
+                    private function wire(): void { ' . $body . ' }
+                    public function run(): void { ($this->callback)(); } public function total(): int { return $this->count + \\count($this->slots) + (int) $this->holder?->count; } }',
+                3, $lcom,
+            ];
+        }
+        yield 'generator helper stays' => [
+            'class Candidate { private iterable $rows; private array $source = []; private int $read = 0;
+                public function __construct() { $this->rows = $this->generate(); }
+                private function generate(): iterable { foreach ($this->source as $row) { $this->read++; yield $row; } }
+                public function next(): mixed { return $this->rows; } public function consumed(): int { return $this->read; } public function replace(array $s): void { $this->source = $s; } }',
+            4, 2,
+        ];
+        yield 'trait helper whose closure touches host state stays' => [
+            'trait Registers { private function register(): void { $this->listeners[] = function (): void { $this->count++; }; } }
+             class Candidate { use Registers; private array $listeners = []; private int $count = 0;
+                public function __construct() { $this->register(); }
+                public function total(): int { return $this->count; } public function dispatch(): int { return \\count($this->listeners); } }',
+            3, 1,
+        ];
+        yield 'invoking the object reaches only its public __invoke' => [
+            'class Candidate { private int $a = 0; private int $b = 0;
+                public function __construct() { $this->load(); } private function load(): void { $this->a = 1; $this->b = 1; }
+                public function __invoke(): void { $this->load(); } public function dispatch(): void { \\call_user_func($this); }
+                public function x(): int { return $this->a; } public function y(): int { return $this->b; } }',
+            5, 2,
+        ];
+        yield 'invoking an object without __invoke keeps no helper' => [
+            'class Candidate { private int $a = 0; private int $b = 0;
+                public function __construct() { $this->load(); } private function load(): void { $this->a = 1; $this->b = 1; }
+                public function dispatch(): void { \\call_user_func_array($this, []); }
+                public function x(): int { return $this->a; } public function y(): int { return $this->b; } }',
+            3, 3,
+        ];
         yield 'static first-class callable passed by the constructor keeps its handler' => [
             'class Candidate { ' . $handler . ' public function __construct() { $this->callback = self::handle(...); } }',
             2, 1,

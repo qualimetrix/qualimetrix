@@ -759,13 +759,13 @@
       {
         "channel": "coupling.cbo",
         "magnitudes": [
-          23
+          25
         ]
       },
       {
         "channel": "size.class-count",
         "magnitudes": [
-          19
+          20
         ]
       }
     ],

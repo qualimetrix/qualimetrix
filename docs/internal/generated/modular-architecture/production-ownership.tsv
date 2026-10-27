@@ -151,6 +151,7 @@ src/Analysis/Evidence/Cohesion/CohesionFactProjectionTrait.php	Qualimetrix\Analy
 src/Analysis/Evidence/Cohesion/CohesionFactWire.php	Qualimetrix\Analysis\Evidence\Cohesion\CohesionFactWire	class	Analysis.Evidence.Cohesion	internal	[]
 src/Analysis/Evidence/Cohesion/CohesionMemberWire.php	Qualimetrix\Analysis\Evidence\Cohesion\CohesionMemberWire	class	Analysis.Evidence.Cohesion	internal	[]
 src/Analysis/Evidence/Cohesion/CohesionMethodReachability.php	Qualimetrix\Analysis\Evidence\Cohesion\CohesionMethodReachability	class	Analysis.Evidence.Cohesion	internal	[]
+src/Analysis/Evidence/Cohesion/CohesionOwnCalls.php	Qualimetrix\Analysis\Evidence\Cohesion\CohesionOwnCalls	class	Analysis.Evidence.Cohesion	internal	[]
 src/Analysis/Evidence/Cohesion/CohesionTraitComposition.php	Qualimetrix\Analysis\Evidence\Cohesion\CohesionTraitComposition	class	Analysis.Evidence.Cohesion	internal	[]
 src/Analysis/Evidence/Cohesion/CohesionTraitUses.php	Qualimetrix\Analysis\Evidence\Cohesion\CohesionTraitUses	class	Analysis.Evidence.Cohesion	internal	[]
 src/Analysis/Evidence/Cohesion/Configuration/LcomCollectionConfigurationResolver.php	Qualimetrix\Analysis\Evidence\Cohesion\Configuration\LcomCollectionConfigurationResolver	class	Analysis.Evidence.Cohesion	internal	"[{""owner"":""Infrastructure.DependencyInjection"",""relation"":""composition_binding"",""source_fqcn"":""Qualimetrix\\Infrastructure\\DependencyInjection\\Cohesion\\CohesionConfigurator"",""operations"":[""service_alias"",""service_registration""]}]"

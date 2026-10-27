@@ -1654,7 +1654,7 @@ PHP);
         self::assertInstanceOf(LcomVisitor::class, $visitor);
         $classes = array_values($visitor->getClassData());
         self::assertCount(2, $classes);
-        self::assertSame([1, 2], array_map(static fn(LcomClassData $class): int => $class->calculateLcom([]), $classes));
+        self::assertSame([1, 2], array_map(static fn(LcomClassData $class): int => $class->calculateLcom([], 0), $classes));
     }
 
     private function collectMetrics(string $code): MetricBag
@@ -1679,8 +1679,8 @@ PHP);
             self::assertInstanceOf(MetricBag::class, $wire);
             $data = CohesionFactWire::lcomFromRows($wire->entries(LcomCollector::FACTS));
             $name = $data->namespace !== null && $data->namespace !== '' ? $data->namespace . '\\' . $data->className : $data->className;
-            if ($data->lcomMethodCount($this->configuration->excludedMethods) > 0) {
-                $metrics = $metrics->with('cohesion.lcom:' . $name, $data->calculateLcom($this->configuration->excludedMethods));
+            if ($data->lcomMethodCount($this->configuration->excludedMethods, 0) > 0) {
+                $metrics = $metrics->with('cohesion.lcom:' . $name, $data->calculateLcom($this->configuration->excludedMethods, 0));
             }
         }
 
