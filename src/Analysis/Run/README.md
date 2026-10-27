@@ -104,7 +104,7 @@ generated filter itself reads a header only). The result is one
 `RemovedCodeNamespaces` in the scope facts (`null` = unknown), carried to
 `ProjectScopeJudgement`. This reads removed source beyond the generated-file
 header; see
-[ADR 0132](../../../docs/adr/0132-removed-code-namespaces-narrow-the-suppression-namespace-audit.md).
+[ADR 0133](../../../docs/adr/0133-removed-code-namespaces-narrow-the-suppression-namespace-audit.md).
 These types share the same inspector and ledger, without another classifier or walk.
 
 ## Phase order

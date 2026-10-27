@@ -1,4 +1,4 @@
-# 0136. Constructor-Only Helpers Leave the LCOM4 Graph
+# 0137. Constructor-Only Helpers Leave the LCOM4 Graph
 
 **Date:** 2026-10-27
 **Status:** Accepted

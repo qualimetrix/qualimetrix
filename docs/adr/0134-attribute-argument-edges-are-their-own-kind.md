@@ -1,4 +1,4 @@
-# 0133. References in Attribute Arguments Are Their Own Edge Kind
+# 0134. References in Attribute Arguments Are Their Own Edge Kind
 
 **Date:** 2026-10-26
 **Status:** Accepted

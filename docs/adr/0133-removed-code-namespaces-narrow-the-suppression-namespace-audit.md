@@ -1,4 +1,4 @@
-# 0132. Removed Code's Namespaces Narrow the Suppression Namespace Audit
+# 0133. Removed Code's Namespaces Narrow the Suppression Namespace Audit
 
 **Date:** 2026-10-26
 **Status:** Accepted

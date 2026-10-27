@@ -1,4 +1,4 @@
-# 0134. Namespace Instability Judges Its Own Declarations
+# 0135. Namespace Instability Judges Its Own Declarations
 
 **Date:** 2026-10-26
 **Status:** Accepted

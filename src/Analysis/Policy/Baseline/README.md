@@ -177,13 +177,13 @@ report it otherwise, and "Baseline with 0 entries written" would read as success
   byte offset, so editing text above a declaration no longer moves its key
 - **Version 14**: Required recorded discovery exclusions and closed document grammar
 - **Version 15**: A closure key names the closure's enclosing declaration
-  (ADR 0137); a version 14 file still loads with its closure entries retired
+  (ADR 0138); a version 14 file still loads with its closure entries retired
 
 An ordinal is a rank, so the three identities that carry a non-trivial one — a
 closure, the members of an anonymous class, and a declaration sharing its logical
 identity with another in the same file (ADR 0026) — move when the siblings they
 are counted against change. A closure is named under its nearest enclosing
-declaration (`App\A::rows::{closure#1}`, ADR 0137) and counted inside that
+declaration (`App\A::rows::{closure#1}`, ADR 0138) and counted inside that
 parent only, so it moves when an anonymous callable is added to the same parent
 or when the parent is renamed; a closure inside an anonymous class's member
 carries that class's rank as well. Such an entry does not become stale: the

@@ -26,7 +26,7 @@ final class BaselineFormatVersion
 
     /**
      * The first version whose closure keys name the closure's enclosing
-     * declaration (ADR 0137). An older closure key is spelled in the same
+     * declaration (ADR 0138). An older closure key is spelled in the same
      * grammar but meant a file-wide rank, and a file-level closure can hold
      * that spelling today, so such an entry is loaded as
      * {@see InertEntryReason::RetiredClosureIdentity} instead of binding to it.
