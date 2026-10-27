@@ -1,7 +1,1 @@
 old	new	reason
-Corpus\Smells\{closure#1}	Corpus\Smells\{anonymous#0}::hidden::{closure#1}	A closure is named under its nearest enclosing declaration and counted inside it, so its file-wide ordinal no longer names it; logical name spelling
-Corpus\Smells::{closure#1}	Corpus\Smells::{anonymous#0}::hidden::{closure#1}	A closure is named under its nearest enclosing declaration and counted inside it, so its file-wide ordinal no longer names it; canonical subject spelling
-Corpus\DirectivePlacement\{closure#1}	Corpus\DirectivePlacement\Placed::apply::{closure#1}	A closure is named under its nearest enclosing declaration and counted inside it, so its file-wide ordinal no longer names it; logical name spelling
-Corpus\DirectivePlacement::{closure#1}	Corpus\DirectivePlacement::Placed::apply::{closure#1}	A closure is named under its nearest enclosing declaration and counted inside it, so its file-wide ordinal no longer names it; canonical subject spelling
-App\F\{closure#1}	App\F\Repo::debugInfo::{closure#1}	A closure is named under its nearest enclosing declaration and counted inside it, so its file-wide ordinal no longer names it; logical name spelling
-App\F::{closure#1}	App\F::Repo::debugInfo::{closure#1}	A closure is named under its nearest enclosing declaration and counted inside it, so its file-wide ordinal no longer names it; canonical subject spelling

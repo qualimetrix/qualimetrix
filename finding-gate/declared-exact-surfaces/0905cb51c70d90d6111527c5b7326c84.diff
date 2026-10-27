@@ -1,8 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -150,1 +150,1 @@
--        "fingerprint": "f8cc85aeaf7c8ce5376f1bfbbd2396ca",
-+        "fingerprint": "752fbea545ccc74f3c19d4316d2f3db1",
-@@ -1737,1 +1737,1 @@
--        "fingerprint": "f8cc85aeaf7c8ce5376f1bfbbd2396ca",
-+        "fingerprint": "752fbea545ccc74f3c19d4316d2f3db1",
