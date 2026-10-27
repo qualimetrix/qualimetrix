@@ -5735,9 +5735,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\MetricInvariantTest::itVerifiesProjectSymbolCountEqualsLeafNsTotal
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\MetricInvariantTest::itVerifiesSymbolClassCountMatchesActual
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\MetricInvariantTest::itVerifiesSymbolMethodCountMatchesActual
- - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\AnonymousCallableIdentityTest::itLeavesClosuresOutOfAClassSelection
- - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\AnonymousCallableIdentityTest::itRollsClosuresUpIntoTheNamespaceButNotIntoTheirClass
- - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\AnonymousCallableIdentityTest::itStoresClosuresUnderTheirEnclosingNames
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itPreservesBothDeclarationsOfOneClassIdentity"Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\UnusedPrivateCollector, braced namespace"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itPreservesBothDeclarationsOfOneClassIdentity"Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\UnusedPrivateCollector, flat namespace"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itPreservesBothDeclarationsOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector, braced namespace"
@@ -5762,6 +5759,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\DeclarationIdentityTest::itKeepsEveryKeyWhenTextAboveTheDeclarationsChanges
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\DeclarationIdentityTest::itNumbersEachFileOnItsOwnAcrossWorkerCounts
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\DeclarationIdentityTest::itRenumbersAnAnonymousClassWhenAnotherIsDeclaredAboveIt
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Visitor\AnonymousCallableIdentityTest::itLeavesClosuresOutOfAClassSelection
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Visitor\AnonymousCallableIdentityTest::itRollsClosuresUpIntoTheNamespaceButNotIntoTheirClass
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Visitor\AnonymousCallableIdentityTest::itStoresClosuresUnderTheirEnclosingNames
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\AggregationHelperTest::itComputesThe5thPercentileOfAValueList"100 values 1..100"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\AggregationHelperTest::itComputesThe5thPercentileOfAValueList"MI-like distribution"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\AggregationHelperTest::itComputesThe5thPercentileOfAValueList"all same values"

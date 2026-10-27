@@ -2,10 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity;
+namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Visitor;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\CallableToClassAggregator;
+use Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorLexicalScope;
 
 /**
  * A closure's name says where it is, and naming it changes nothing about who
@@ -14,6 +17,8 @@ use PHPUnit\Framework\TestCase;
  * Run through the real executable, because the collision guards of the
  * collection merge and the class and namespace roll-ups only meet there.
  */
+#[CoversClass(VisitorLexicalScope::class)]
+#[CoversClass(CallableToClassAggregator::class)]
 final class AnonymousCallableIdentityTest extends TestCase
 {
     private const string CONFIG = <<<'YAML'
