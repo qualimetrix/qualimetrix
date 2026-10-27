@@ -897,7 +897,7 @@ The project maintains a `CHANGELOG.md` following the [Keep a Changelog](https://
 3. Update the comparison links at the bottom of the file
 4. Commit: `chore: release vX.Y.Z`
 5. Tag and push: `git tag vX.Y.Z && git push origin vX.Y.Z`
-6. CI workflow (`.github/workflows/release.yml`) creates a GitHub Release automatically, extracting notes from CHANGELOG
+6. CI workflow (`.github/workflows/release.yml`) creates a GitHub Release automatically; its notes are the version's CHANGELOG section, install commands and a compare link to the previous tag
 7. Monitor CI runs on the tag to confirm all checks pass — the release should be green
 
 ---
