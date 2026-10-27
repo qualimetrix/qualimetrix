@@ -9249,6 +9249,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itListsRetiredClosureEntriesAndWritesOnlyOnceAllOfThemAreRemoved
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itListsSeveralManualRepairsAndRemovesOnlyTheirNamedSelectors
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itReKeysADuplicateWhoseMatchedTokensChangeInEveryCopy
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itRemovesDuplicatedRetiredClosureEntriesWithTheirSharedSelector
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itReportsANewCopyOfAnAcceptedDuplicateBlock
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itReportsARepairedCopyAsStaleAndKeepsTheOtherCopiesAccepted
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itRoundTripsARepositoryShapedProjectWithAnIgnoredGroupMember
@@ -9474,6 +9475,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itPrefersChannelNotDeclaredOverStaleWhenBothApply
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itRemovesAnInertEntryAddressedByItsSelector
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itRemovesEveryInertContenderOfOneDuplicateIdentity
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itRemovesEveryRetiredContenderOfOneClosureIdentity
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itRemovesExactlyTheNamedEntryAndLeavesItsNeighbours
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itRemovesOneOfTwoEntriesDifferingOnlyByEdge
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itReportsASelectorThatNamesNothing
@@ -9741,6 +9743,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\Contract\RunScopeTest::itRefusesARunNarrowerThanTheRecordedScope
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\Contract\RunScopeTest::itTreatsTheFilesystemRootAsCoveringEveryPath
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\Contract\RunScopeTest::itTreatsTheProjectRootAsCoveringEveryProjectRelativePath
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryBinding\UnusedEntryAuditTest::itAdvisesRemovingEveryRetiredClosureEntryInOneCall
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryBinding\UnusedEntryAuditTest::itDeclaresAnEnabledWarningProjectRuleThatEmitsNothingDuringMeasurement
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryBinding\UnusedEntryAuditTest::itHonoursTheCommittedAuditSelection
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryBinding\UnusedEntryAuditTest::itReportsOneFindingForAllInertContendersOfADuplicateIdentity

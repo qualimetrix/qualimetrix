@@ -416,6 +416,28 @@ final class BaselineCleanerTest extends TestCase
     }
 
     #[Test]
+    public function itRemovesEveryRetiredContenderOfOneClosureIdentity(): void
+    {
+        $identity = new BaselineIdentity('declaration:func::{closure#2}@src/routes.php', self::gotoChannel());
+        $first = InertBaselineEntry::forIdentity($identity, InertEntryReason::RetiredClosureIdentity, 'first contender', ['count' => 1]);
+        $second = InertBaselineEntry::forIdentity($identity, InertEntryReason::RetiredClosureIdentity, 'second contender', ['count' => 2]);
+        $baseline = new Baseline(
+            generated: new DateTimeImmutable(),
+            scope: ['src'],
+            entries: [],
+            inertEntries: [$first, $second],
+            exclusions: self::fixtureExclusions(),
+        );
+
+        $selector = $identity->selector();
+        $result = $this->cleaner()->remove($baseline, [$selector]);
+
+        self::assertSame([$selector], $result->removed);
+        self::assertSame([], $result->ambiguous);
+        self::assertSame([], $result->baseline->inertEntries);
+    }
+
+    #[Test]
     public function itKeepsAValidAndInertEntryWithTheSameSelectorAmbiguous(): void
     {
         $identity = new BaselineIdentity('file:src/Legacy.php', self::gotoChannel());

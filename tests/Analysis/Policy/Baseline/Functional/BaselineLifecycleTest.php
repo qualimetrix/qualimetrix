@@ -381,6 +381,36 @@ final class BaselineLifecycleTest extends TestCase
         });
     }
 
+    /** Two branches that both accepted one closure finding merge into two entries of one identity. */
+    #[Test]
+    public function itRemovesDuplicatedRetiredClosureEntriesWithTheirSharedSelector(): void
+    {
+        $this->inClosureProject(function (): void {
+            self::writeClosureBaseline(14, [self::REUSED_CLOSURE, self::REUSED_CLOSURE, self::VACATED_CLOSURE, self::SERVICE_METHOD]);
+
+            $check = self::command(CheckCommand::class, ['--baseline' => 'baseline.json', '--format' => 'json', '--only-rule' => [self::DEBUG_CODE, 'baseline.unused-entry']]);
+            $audit = array_values(array_filter(self::violations($check), static fn(array $finding): bool => $finding['channel'] === 'baseline.unused-entry'));
+            self::assertCount(2, $audit, $check->getDisplay());
+            $duplicated = array_values(array_filter($audit, static fn(array $finding): bool => str_contains($finding['message'], self::REUSED_CLOSURE)));
+            self::assertCount(1, $duplicated);
+            self::assertStringContainsString('2 contenders', $duplicated[0]['message']);
+
+            $cleanup = self::command(BaselineCleanupCommand::class, ['baseline' => 'baseline.json']);
+            preg_match_all('/^  ([0-9a-f]{12})  .*retired closure identity/m', $cleanup->getDisplay(), $matches);
+            $selectors = array_values(array_unique($matches[1]));
+            self::assertCount(2, $selectors, $cleanup->getDisplay());
+            foreach ($audit as $finding) {
+                self::assertStringContainsString('--remove=' . $selectors[0] . ' --remove=' . $selectors[1], $finding['recommendation']);
+            }
+
+            $removal = self::command(BaselineCleanupCommand::class, ['baseline' => 'baseline.json', '--remove' => $selectors]);
+            self::assertSame(Command::SUCCESS, $removal->getStatusCode(), $removal->getDisplay());
+            $written = json_decode((string) file_get_contents('baseline.json'), true, flags: \JSON_THROW_ON_ERROR);
+            self::assertSame(15, $written['version']);
+            self::assertSame([self::SERVICE_METHOD], array_keys($written['entries']));
+        });
+    }
+
     private const string DEBUG_CODE = 'code-smell.debug-code';
     private const string REUSED_CLOSURE = 'declaration:func::{closure#2}@src/routes.php';
     private const string VACATED_CLOSURE = 'declaration:func::{closure#4}@src/routes.php';
@@ -429,13 +459,14 @@ final class BaselineLifecycleTest extends TestCase
     /** @param list<string> $subjects */
     private static function writeClosureBaseline(int $version, array $subjects): void
     {
+        $counts = array_count_values($subjects);
         $blocks = [];
-        foreach ($subjects as $subject) {
-            $blocks[] = \sprintf(
-                "    %s: [\n      {\"channel\":\"%s\",\"occurrence\":\"9d9a9bef4ea8a01f\",\"count\":1}\n    ]",
-                json_encode($subject, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR),
-                self::DEBUG_CODE,
-            );
+        foreach ($counts as $subject => $repeats) {
+            $lines = [];
+            for ($count = 1; $count <= $repeats; ++$count) {
+                $lines[] = \sprintf('      {"channel":"%s","occurrence":"9d9a9bef4ea8a01f","count":%d}', self::DEBUG_CODE, $count);
+            }
+            $blocks[] = '    ' . json_encode((string) $subject, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . ": [\n" . implode(",\n", $lines) . "\n    ]";
         }
         file_put_contents('baseline.json', "{\n  \"version\": {$version},\n  \"generated\": \"2026-10-01T00:00:00+00:00\",\n"
             . "  \"scope\": [\"src\"],\n  \"exclusions\": {\"patterns\":[],\"generated\":\"excluded\"},\n"

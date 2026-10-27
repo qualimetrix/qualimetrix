@@ -55,6 +55,34 @@ final class UnusedEntryAuditTest extends TestCase
     }
 
     #[Test]
+    public function itAdvisesRemovingEveryRetiredClosureEntryInOneCall(): void
+    {
+        $duplicated = new BaselineIdentity('declaration:func::{closure#2}@src/routes.php', new FindingChannel('code-smell.debug-code'));
+        $other = new BaselineIdentity('declaration:func::{closure#4}@src/routes.php', new FindingChannel('code-smell.debug-code'));
+        $retired = [
+            InertBaselineEntry::forIdentity($duplicated, InertEntryReason::RetiredClosureIdentity, 'retired', ['count' => 1]),
+            InertBaselineEntry::forIdentity($duplicated, InertEntryReason::RetiredClosureIdentity, 'retired', ['count' => 2]),
+            InertBaselineEntry::forIdentity($other, InertEntryReason::RetiredClosureIdentity, 'retired', ['count' => 1]),
+        ];
+        $malformed = InertBaselineEntry::forRaw('file:tests/Old.php', null, InertEntryReason::Malformed, 'invalid count', ['count' => -1]);
+        $execution = self::createMock(RulePublicationInterface::class);
+        $execution->expects(self::once())->method('publishable')->willReturnCallback(static fn(array $findings): array => $findings);
+
+        $findings = (new UnusedEntryAudit($execution))->auditResult(new CeilingOutcome(
+            new FindingFilterStageResult(FindingFilterStage::Baseline, [], []),
+            [],
+            [...$retired, $malformed],
+        ), 'baseline.json', self::populationPublication())['findings'];
+
+        self::assertCount(3, $findings);
+        self::assertStringContainsString('2 contenders', $findings[0]->message);
+        $together = '--remove=' . $duplicated->selector()->value . ' --remove=' . $other->selector()->value;
+        self::assertStringContainsString($together, $findings[0]->recommendation ?? '');
+        self::assertStringContainsString($together, $findings[1]->recommendation ?? '');
+        self::assertStringNotContainsString('--remove=' . $duplicated->selector()->value, $findings[2]->recommendation ?? '');
+    }
+
+    #[Test]
     public function itReportsOnlyStaleAndInertEntriesWithTheirOwnReasons(): void
     {
         $stale = self::entry('file:src/Gone.php');

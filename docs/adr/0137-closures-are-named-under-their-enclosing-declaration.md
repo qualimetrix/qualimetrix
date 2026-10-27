@@ -136,16 +136,22 @@ over the narrower set of renamings above.
   exactly like the old file-wide rank: an old entry would silently re-attach to
   whichever closure holds that number instead of going stale. The version number
   is the only marker of old keys. Version 14 still loads; its closure entries
-  become inert (`retired closure identity`) under their unchanged selector; every
-  write refuses while any remains; `baseline:rename-channels` keeps the version it
-  read.
+  become inert (`retired closure identity`) under their unchanged selector, and
+  retired contenders of one duplicated identity share a selector that removes all
+  of them. Every command that writes version 15 from such a file
+  (`baseline:update`, `baseline:cleanup --remove`) refuses while any remains;
+  `baseline:generate` reads no previous file; `baseline:rename-channels` writes
+  the version it read, so its output stays version 14 with the entries retired.
+  Editing the number from 14 to 15 by hand is not a migration: it turns the old
+  keys back into live ones and restores the silent re-attachment.
 - **One migration procedure.** List the retired entries with
   `baseline:cleanup <baseline> <paths...>`; remove all of them in one call with
   `baseline:cleanup <baseline> <paths...> --remove=<selector> ...`, which writes
   version 15 and keeps every other entry; fix or accept the closure findings now
   reported as new with `baseline:update <baseline> <paths...>
   --accept-new=<channel>` (it accepts every new identity of the channel, so the
-  diff is reviewed). Never `baseline:generate --force`.
+  diff is reviewed). Never `baseline:generate --force`, never a hand edit of the
+  version number. The hand conversion of a version 13 file stops at 14.
 - **Rejected for the version-14 file:** refusing the whole document (more
   friction, hand edits); dropping retired entries silently on write (an
   unrequested deletion); rewriting old keys (the file-wide rank cannot recover the

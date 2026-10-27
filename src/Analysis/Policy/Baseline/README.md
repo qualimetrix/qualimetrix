@@ -190,25 +190,37 @@ carries that class's rank as well. Such an entry does not become stale: the
 vacated rank is reused, so its acceptance silently rebinds to whatever holds that
 number now.
 
-Version 15 is current, and version 14 still loads; every write produces
-version 15. A version 14 closure key (a subject key whose symbol, before `@`,
+Version 15 is current, and version 14 still loads. A version 14 closure key (a subject key whose symbol, before `@`,
 contains `{closure#`) counted the closure among all closures of the file. A
 file-level closure still spells `App\{closure#N}`, so such a key would bind to
 whichever closure holds that number now and never go stale. The loader therefore
 makes every entry under such a key inert as `retired-closure-identity`, whatever
 its own state, under its unchanged selector: it accepts nothing, `check` reports
 it through `baseline.unused-entry`, and `baseline:cleanup` lists it. Every other
-version 14 entry loads exactly as under version 15. A writer refuses (exit 3,
-nothing written) while any retired entry remains, naming every retired selector,
-because the same line under version 15 would bind by name. `baseline:cleanup
---remove` naming all of them in one invocation is therefore the only way such a
-file reaches version 15 with its other entries kept; `baseline:rename-channels`
-keeps the version it read. Dropping them silently would be removal nobody asked
-for.
+version 14 entry loads exactly as under version 15. Retired contenders of one
+duplicated identity share one selector, which removes all of them, exactly as
+duplicate contenders do; `check` reports them in one warning, and its advice for
+any retired entry names every retired selector.
 
-For a v13 file, retain entries, scope and generated
+`BaselineWriter` writes version 15 and refuses (exit 3, nothing written) while
+any retired entry remains, naming every retired selector, because the same line
+under version 15 would bind by name. So `baseline:update` and `baseline:cleanup
+--remove` refuse until one `baseline:cleanup --remove` call names all of them;
+that call is the only conversion to version 15 that keeps the other entries.
+`baseline:generate` reads no previous file. `baseline:rename-channels` is the one
+writer that keeps the version it read: it writes version 14 and exits 0, and the
+closure entries stay retired. Dropping them silently would be removal nobody
+asked for.
+
+Do not convert a version 14 file by editing its number to 15. The number is the
+only marker of the old closure keys: under version 15 they load as live keys and
+re-attach to whichever closure holds their number, without any entry going
+stale.
+
+For a v13 file only, retain entries, scope and generated
 time, change version to 14 and explicitly add the original discovery exclusion
-definition, so its closure entries are retired as above. Do not infer an old
+definition, so its closure entries are retired as above; then follow the
+version 14 procedure, never a second hand edit to 15. Do not infer an old
 definition from new configuration. Earlier formats also require deliberate
 identity migration; regenerating is a new acceptance.
 

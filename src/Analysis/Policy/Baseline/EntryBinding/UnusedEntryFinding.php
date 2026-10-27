@@ -14,7 +14,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 
 final class UnusedEntryFinding
 {
-    public static function of(string $cause, string $selector, string $entry, string $reason, string $baselinePath): Finding
+    /** @param list<string> $removedTogether selectors that must leave in the same invocation as this one, itself included */
+    public static function of(string $cause, string $selector, string $entry, string $reason, string $baselinePath, array $removedTogether = []): Finding
     {
         return new Finding(
             location: new Location(\Qualimetrix\Core\Path\PathFactory::tryProjectRelative($baselinePath, \Qualimetrix\Core\Path\AbsolutePath::fromString((string) getcwd()))),
@@ -24,13 +25,20 @@ final class UnusedEntryFinding
             code: BaselineAuditChannels::UNUSED_ENTRY,
             message: \sprintf('Baseline entry %s [%s] is %s: %s.', $entry, $selector, $cause, $reason),
             severity: Severity::Warning,
-            recommendation: \sprintf(
-                'Remove baseline entry [%s] with qmx baseline:cleanup %s --remove=%s.%s',
-                $selector,
-                escapeshellarg($baselinePath),
-                $selector,
-                $cause === 'stale' ? ' Or run baseline:update after an intentional change to accepted debt.' : '',
-            ),
+            recommendation: \count($removedTogether) > 1
+                ? \sprintf(
+                    'Remove baseline entry [%s] together with every other retired closure entry in one call: qmx baseline:cleanup %s --remove=%s.',
+                    $selector,
+                    escapeshellarg($baselinePath),
+                    implode(' --remove=', $removedTogether),
+                )
+                : \sprintf(
+                    'Remove baseline entry [%s] with qmx baseline:cleanup %s --remove=%s.%s',
+                    $selector,
+                    escapeshellarg($baselinePath),
+                    $selector,
+                    $cause === 'stale' ? ' Or run baseline:update after an intentional change to accepted debt.' : '',
+                ),
             occurrenceKey: OccurrenceKey::semantic('baseline-unused-entry', ['cause' => $cause, 'selector' => $selector]),
         );
     }
