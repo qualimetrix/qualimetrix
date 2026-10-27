@@ -46,6 +46,45 @@ jobs:
           # Write to file for gh release
           echo "$notes" > /tmp/release-notes.md
 
+      # The checkout is shallow and tagless, so tags are listed from the remote.
+      # versionsort.suffix places v1.0.0-rc1 before v1.0.0; without it git
+      # sorts the pre-release after the release, and v1.0.1 would compare
+      # against the rc instead of v1.0.0.
+      - name: Append installation and comparison to release notes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          previous=$(git -c versionsort.suffix=- ls-remote --tags --refs --sort=v:refname origin 'v*' \
+            | sed 's#.*refs/tags/##' \
+            | awk -v cur="$GITHUB_REF_NAME" '$0 == cur { print prev; exit } { prev = $0 }')
+          repo_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
+
+          cat >> /tmp/release-notes.md <<EOF
+
+          ---
+
+          ### Installation
+
+          Composer:
+
+          \`\`\`bash
+          composer require --dev qualimetrix/qualimetrix:$VERSION
+          \`\`\`
+
+          Standalone PHAR (PHP 8.4+):
+
+          \`\`\`bash
+          curl -LO $repo_url/releases/download/$GITHUB_REF_NAME/qmx.phar
+          chmod +x qmx.phar
+          ./qmx.phar check src/
+          \`\`\`
+          EOF
+
+          if [ -n "$previous" ]; then
+            printf '\n**Full changelog**: %s/compare/%s...%s\n' \
+              "$repo_url" "$previous" "$GITHUB_REF_NAME" >> /tmp/release-notes.md
+          fi
+
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
