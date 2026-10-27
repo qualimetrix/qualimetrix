@@ -122,8 +122,10 @@ final class CompositeCollector implements FileMeasurementCollectorInterface
     }
 
     /**
-     * The registrar goes in first so that every producer asking about the node
-     * it is entering finds that node already registered.
+     * The registrar registers the whole file in its own walk from
+     * `beforeTraverse()`, so every rank is final before any producer asks.
+     * It goes in first so that walk also precedes every other visitor's
+     * `beforeTraverse()`.
      */
     private function configureTraverser(NodeTraverser $traverser, RelativePath $filePath): void
     {
