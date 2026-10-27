@@ -2512,6 +2512,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0134-namespace-instability-judges-its-own-declarations.md' => 'Analysis.Evidence.Coupling',
         'docs/adr/0135-a-constructor-has-one-parameter-count-owner.md' => 'Analysis.Evidence.CodeSmell',
         'docs/adr/0136-constructor-only-helpers-leave-the-lcom4-graph.md' => 'Analysis.Evidence.Cohesion',
+        'docs/adr/0137-closures-are-named-under-their-enclosing-declaration.md' => 'Analysis.Evidence.Measurement',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/ProjectManifest/README.md' => 'Analysis.ProjectManifest',

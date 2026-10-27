@@ -128,6 +128,7 @@ docs/adr/0133-attribute-argument-edges-are-their-own-kind.md	Analysis.Evidence.D
 docs/adr/0134-namespace-instability-judges-its-own-declarations.md	Analysis.Evidence.Coupling	"Move or update atomically with the named subject owner."
 docs/adr/0135-a-constructor-has-one-parameter-count-owner.md	Analysis.Evidence.CodeSmell	"Move or update atomically with the named subject owner."
 docs/adr/0136-constructor-only-helpers-leave-the-lcom4-graph.md	Analysis.Evidence.Cohesion	"Move or update atomically with the named subject owner."
+docs/adr/0137-closures-are-named-under-their-enclosing-declaration.md	Analysis.Evidence.Measurement	"Move or update atomically with the named subject owner."
 docs/adr/README.md	Architecture.Governance	"Repository-wide governance documentation; review with the manifest and generated topology."
 docs/internal/CLI_CONVENTIONS.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/COMPETITOR_COMPARISON.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."
