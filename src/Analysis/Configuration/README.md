@@ -103,6 +103,8 @@ Configuration/
 │   ├── CommandLineValue.php
 │   ├── ConfigLoaderInterface.php
 │   ├── DocumentKeyNormalizer.php
+│   ├── ImportChain.php
+│   ├── ImportListSchema.php
 │   ├── LoadedDocument.php
 │   ├── RootContainerShapes.php
 │   ├── SectionNormalizationPolicy.php
@@ -139,8 +141,8 @@ facts depend on neither operation.
 it is not the authority for value form or merge semantics. `ConfigurationRoot`
 declares Configuration-owned roots, and a capability declares its own root
 through `DocumentSectionSchemaInterface`. The precedence order, lowest first,
-is defaults, Composer discovery, presets, the configuration file, and CLI
-options — the stage priorities 0, 10, 15, 20 and 30. Stages preserve each
+is defaults, Composer discovery, presets, the configuration file with the
+files it imports, and CLI options — the stage priorities 0, 10, 15, 20 and 30. Stages preserve each
 source contribution in that order; the document engine merges each declared
 root by its `NodeSchema`. A scalar normally takes the last writer, while the
 declared collection policy determines whether a list replaces or a set
@@ -197,11 +199,46 @@ An unlistable search directory refuses instead of inferring that no config exist
 The loader reads the physical file while auto-discovered `qmx.yaml` or
 `qmx.yml` is named by its filename in authored origins, diagnostics and
 refusals. An explicit `--config` keeps the supplied path as its source name;
-presets keep their resolved file path. Directory discovery refusals name `.`
+a preset is named as it was written (`preset "strict"`, `preset "./team.yaml"`),
+including when its file cannot be read. Directory discovery refusals name `.`
 and near-file diagnostics name the observed directory entry.
 Every document-reading command uses this same stage and judges the complete
 context-free document before consuming its own values. Console's closed
 preflight profile controls CLI ingress and actual consumers, not the schema.
+
+## Configuration imports
+
+The root configuration file — the discovered one or `--config` — may list
+other files under `imports`. `ConfigFileStage` hands the root's physical path
+and origin to `Loader/ImportChain`, which returns the layers of the
+configuration-file band: each entry in written order, then the root, each
+entry's origin `importedThrough()` the root. Refusals and `-v`
+(`appliedSources()`, one entry per file) therefore name every file with its
+importer, and JSON publishes the chain under `source[].imported_by`.
+
+- **Flat.** Only the root is read for `imports`. An imported file that writes
+  the key is refused at that key; so is a preset (`PresetStage`). Nested
+  imports are a recorded extension path (ADR 0139), not built.
+- **Identity.** Files are compared by `Core\FileTarget\FileIdentity`
+  (device, inode, type), so two spellings or a symlink of one file are one
+  file. An entry naming the root or a file an earlier entry placed is refused
+  at that entry, naming both positions. A target that cannot be stat'ed, reports inode 0 or is not a regular
+  file is refused before it is read.
+- **Path bases.** An entry resolves against the directory of the file that
+  writes it, as that file was opened; its display name joins the root's
+  locator directory with the entry, lexically normalized. Every other path in
+  any file keeps the request's working directory as its base.
+- **Read per file, never composed.** `ConfigurationRoot::Imports` declares the
+  key and `Loader/ImportListSchema` its grammar (non-empty local `.yaml`/`.yml`
+  paths, no URL, no glob, judged in each layer). The chain reads the entries
+  by composing a one-key slice of the root, then hands every layer on without
+  the key. `ConfigSchema::PER_FILE_ROOTS` names such roots: they join
+  `allowedRootKeys()` but have no `ENTRIES` row and are not `DOCUMENT_ROOTS`;
+  `ConfigurationPipeline` refuses to compose a layer that still carries one
+  (a programmer error), and the merge-table generator describes them as read
+  per file. `ResolvedDocument::get('imports')` is therefore always null.
+  Helpers that compose directly, without the pipeline, merge the key as a
+  plain list under the same grammar.
 
 ## Document engine
 
@@ -542,8 +579,10 @@ Use `--rule-opt=RULE:OPTION=VALUE` for every option without a short alias.
 
 ## Document and transport contracts
 
-`ConfigLoaderInterface::read(physicalPath, sourceName)` returns `LoadedDocument`
+`ConfigLoaderInterface::read(physicalPath, origin)` returns `LoadedDocument`
 containing the positioned `AuthoredNode`, not a normalized rule contribution.
+Every whole-document refusal it raises carries that origin, importer chain
+included, and words its subject through `origin->describe()`.
 The source stage carries its real origin in `ConfigurationLayer::authored` and
 passes source diagnostics independently. `ConfigurationPipeline` composes those
 layers against Configuration-owned roots and the registered owner sections.
