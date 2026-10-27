@@ -227,6 +227,9 @@ rename and explanation retain their own command operations. The configured
 threshold reader belongs to explanation.
 
 `Invocation/CommandDefinition` owns declared command forms and help visibility;
+`AnalysisReportCommandDefinition` also declares the cache, worker and memory-limit options once
+for `check`, `directives`, `graph:export` and `baseline:*` (`--cache-dir` only on
+`check` and `directives`);
 `RuleOptions` preserves authored rule-option occurrences and binds them to
 document writes; `Configuration` constructs the configuration request, including
 workers parsing. Common scalar spelling and selectors stay in `Invocation`.

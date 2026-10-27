@@ -20,7 +20,7 @@ use Symfony\Component\Console\Input\InputOption;
  * Extracted from CheckCommand::configure() to keep the command class focused
  * on orchestration logic.
  *
-  * @qmx-threshold coupling.instability 0.800001 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
+  * @qmx-threshold coupling.instability 0.818182 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
  */
 final class CheckCommandDefinition
 {
@@ -159,19 +159,7 @@ final class CheckCommandDefinition
 
     private static function addCacheOptions(Command $command): void
     {
-        $command
-            ->addOption(
-                'no-cache',
-                null,
-                InputOption::VALUE_NONE,
-                'Disable caching',
-            )
-            ->addOption(
-                'cache-dir',
-                null,
-                InputOption::VALUE_REQUIRED,
-                'Writable private cache directory outside the project root (default: user cache directory)',
-            )
+        AnalysisReportCommandDefinition::addCacheOptions($command)
             ->addOption(
                 'clear-cache',
                 null,
@@ -242,13 +230,10 @@ final class CheckCommandDefinition
 
     private static function addRuntimeOptions(Command $command): void
     {
+        AnalysisReportCommandDefinition::addWorkersOption($command);
+        AnalysisReportCommandDefinition::addMemoryLimitOption($command);
+
         $command
-            ->addOption(
-                'workers',
-                'w',
-                InputOption::VALUE_REQUIRED,
-                'Number of parallel workers (0 = disable parallel, default: auto-detect)',
-            )
             ->addOption(
                 'log-file',
                 null,
@@ -268,12 +253,6 @@ final class CheckCommandDefinition
                 null,
                 InputOption::VALUE_NONE,
                 'Disable progress bar',
-            )
-            ->addOption(
-                'memory-limit',
-                null,
-                InputOption::VALUE_REQUIRED,
-                'PHP memory limit (e.g., 512M, 1G, -1 for unlimited)',
             );
     }
 

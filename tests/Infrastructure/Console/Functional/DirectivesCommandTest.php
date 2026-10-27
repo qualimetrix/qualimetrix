@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 
+use FilesystemIterator;
 use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -27,9 +28,12 @@ use Qualimetrix\Infrastructure\Console\Directives\DirectivesCommand;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\RunSetup\Input\AnalysisPreflight;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use ReflectionMethod;
 use ReflectionProperty;
 use RuntimeException;
+use SplFileInfo;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -83,6 +87,9 @@ final class DirectivesCommandTest extends TestCase
 
     private string $tempDir;
 
+    /** @var list<string> */
+    private array $cacheDirectories = [];
+
     protected function setUp(): void
     {
         // `uniqid()` is unique within a process and not between them, and
@@ -97,6 +104,10 @@ final class DirectivesCommandTest extends TestCase
     protected function tearDown(): void
     {
         self::removeDirectory($this->tempDir);
+        foreach ($this->cacheDirectories as $directory) {
+            self::removeDirectory($directory);
+        }
+        $this->cacheDirectories = [];
     }
 
     #[Test]
@@ -1591,6 +1602,58 @@ final class DirectivesCommandTest extends TestCase
         self::assertCount(1, $lines);
         self::assertStringEndsWith('  @qmx-threshold', $lines[0]);
         self::assertStringContainsString('refused: annotation.unresolved-directive:', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itWritesTheAstCacheToTheGivenCacheDirectory(): void
+    {
+        $cacheDir = $this->privateCacheDirectory();
+        $this->writeSource('Plain.php', "<?php\nnamespace Fixture;\nclass Plain {}\n");
+
+        $audit = $this->audit(['paths' => [$this->tempDir . '/src'], '--cache-dir' => $cacheDir, '--workers' => '0']);
+
+        self::assertSame(0, $audit->getStatusCode(), $audit->getDisplay() . $audit->getErrorOutput());
+        self::assertNotSame([], self::filesUnder($cacheDir), 'The audit must put its cache entries under --cache-dir.');
+    }
+
+    #[Test]
+    public function itWritesNothingToTheCacheDirectoryUnderNoCache(): void
+    {
+        $cacheDir = $this->privateCacheDirectory();
+        $this->writeSource('Plain.php', "<?php\nnamespace Fixture;\nclass Plain {}\n");
+
+        $audit = $this->audit([
+            'paths' => [$this->tempDir . '/src'],
+            '--no-cache' => true,
+            '--cache-dir' => $cacheDir,
+            '--workers' => '0',
+            '--memory-limit' => '-1',
+        ]);
+
+        self::assertSame(0, $audit->getStatusCode(), $audit->getDisplay() . $audit->getErrorOutput());
+        self::assertSame([], self::filesUnder($cacheDir));
+    }
+
+    private function privateCacheDirectory(): string
+    {
+        $dir = sys_get_temp_dir() . '/qmx-directives-cache-' . bin2hex(random_bytes(6));
+        mkdir($dir, 0o700);
+        $this->cacheDirectories[] = $dir;
+
+        return $dir;
+    }
+
+    /** @return list<string> */
+    private static function filesUnder(string $directory): array
+    {
+        $files = [];
+        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS)) as $file) {
+            if ($file instanceof SplFileInfo && $file->isFile()) {
+                $files[] = $file->getPathname();
+            }
+        }
+
+        return $files;
     }
 
     /**

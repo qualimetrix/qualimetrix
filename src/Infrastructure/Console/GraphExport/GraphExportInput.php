@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Run\Contract\DependencyGraph\DependencyGraphAnalysisRes
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Invocation\CliSelectorDecoder;
+use Qualimetrix\Infrastructure\Console\Invocation\CommandDefinition\AnalysisReportCommandDefinition;
 use Qualimetrix\Infrastructure\Console\Invocation\CommandLineSpelling;
 use Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphDirection;
@@ -26,16 +27,17 @@ final readonly class GraphExportInput
 
     public function configure(Command $command): void
     {
+        AnalysisReportCommandDefinition::addNoCacheOption($command);
+        AnalysisReportCommandDefinition::addWorkersOption($command);
+        AnalysisReportCommandDefinition::addMemoryLimitOption($command);
+
         $command
             ->addOption('config', 'c', InputOption::VALUE_REQUIRED, 'Path to configuration file')
             ->addOption('preset', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Apply a named preset or preset file', [])
             ->addOption('exclude', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Directories to exclude', [])
             ->addOption('include-generated', null, InputOption::VALUE_NONE, 'Include generated files')
             ->addOption('include-autoload-dev', null, InputOption::VALUE_NONE, 'Include composer autoload-dev files')
-            ->addOption('no-cache', null, InputOption::VALUE_NONE, 'Disable caching')
             ->addOption('no-progress', null, InputOption::VALUE_NONE, 'Disable progress bar')
-            ->addOption('workers', 'w', InputOption::VALUE_REQUIRED, 'Number of parallel workers')
-            ->addOption('memory-limit', null, InputOption::VALUE_REQUIRED, 'PHP memory limit')
             ->addArgument(
                 'paths',
                 InputArgument::IS_ARRAY | InputArgument::OPTIONAL,
