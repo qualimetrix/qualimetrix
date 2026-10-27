@@ -2444,6 +2444,7 @@ Qualimetrix\Core\Environment\EnvironmentFailureInterface	Core.Environment	Qualim
 Qualimetrix\Core\Environment\EnvironmentFailureInterface	Core.Environment	Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession	Infrastructure.Console	src/Infrastructure/Console/RunTarget/RunTargetSession.php	ast-name
 Qualimetrix\Core\Environment\EnvironmentFailureInterface	Core.Environment	Qualimetrix\Infrastructure\Git\GitUnavailable	Infrastructure.Git	src/Infrastructure/Git/GitUnavailable.php	ast-name
 Qualimetrix\Core\Environment\EnvironmentFailureInterface	Core.Environment	Qualimetrix\Infrastructure\Parallel\WorkerStartFailure	Infrastructure.Parallel	src/Infrastructure/Parallel/WorkerStartFailure.php	ast-name
+Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	Qualimetrix\Analysis\Configuration\Loader\ImportChain	Analysis.Configuration	src/Analysis/Configuration/Loader/ImportChain.php	ast-name
 Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader	Analysis.Policy.Baseline	src/Analysis/Policy/Baseline/DocumentAccess/BaselineDocumentReader.php	ast-name
 Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	Qualimetrix\Infrastructure\Console\Hook\HookEntryAccess	Infrastructure.Console	src/Infrastructure/Console/Hook/HookEntryAccess.php	ast-name
 Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	Qualimetrix\Infrastructure\Console\RunTarget\ProcessStreams	Infrastructure.Console	src/Infrastructure/Console/RunTarget/ProcessStreams.php	ast-name
@@ -2469,6 +2470,7 @@ Qualimetrix\Core\FileTarget\FileTargetFailureKind	Core.FileTarget	Qualimetrix\In
 Qualimetrix\Core\FileTarget\FileTargetFailureKind	Core.FileTarget	Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction	Infrastructure.Console	src/Infrastructure/Console/Hook/HookFileTransaction.php	ast-name
 Qualimetrix\Core\FileTarget\FileTargetFailureKind	Core.FileTarget	Qualimetrix\Infrastructure\Console\Refusal\FileTargetRefusal	Infrastructure.Console	src/Infrastructure/Console/Refusal/FileTargetRefusal.php	ast-name
 Qualimetrix\Core\FileTarget\FileTargetFailureKind	Core.FileTarget	Qualimetrix\Infrastructure\Console\RunTarget\TargetAccess	Infrastructure.Console	src/Infrastructure/Console/RunTarget/TargetAccess.php	ast-name
+Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	Qualimetrix\Analysis\Configuration\Loader\ImportChain	Analysis.Configuration	src/Analysis/Configuration/Loader/ImportChain.php	ast-name
 Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader	Analysis.Policy.Baseline	src/Analysis/Policy/Baseline/DocumentAccess/BaselineDocumentReader.php	ast-name
 Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	Qualimetrix\Infrastructure\Cache\CacheLayout	Infrastructure.Cache	src/Infrastructure/Cache/CacheLayout.php	ast-name
 Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	Qualimetrix\Infrastructure\Git\GitRepositoryLocator	Infrastructure.Git	src/Infrastructure/Git/GitRepositoryLocator.php	ast-name

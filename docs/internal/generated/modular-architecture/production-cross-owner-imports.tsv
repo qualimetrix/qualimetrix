@@ -2,6 +2,8 @@ consumer	consumer_owner	dependency	dependency_owner	dependency_visibility
 Qualimetrix\Analysis\Configuration\ConfigurationRoot	Analysis.Configuration	Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	contract
 Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest	Analysis.Configuration	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
+Qualimetrix\Analysis\Configuration\Loader\ImportChain	Analysis.Configuration	Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	contract
+Qualimetrix\Analysis\Configuration\Loader\ImportChain	Analysis.Configuration	Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	contract
 Qualimetrix\Analysis\Configuration\Pipeline\Stage\ComposerDiscoveryStage	Analysis.Configuration	Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface	Analysis.ProjectManifest	contract
 Qualimetrix\Analysis\Configuration\SelectorYamlDecoder	Analysis.Configuration	Qualimetrix\Core\Pattern\NamespacePattern	Core.Neutral	contract
 Qualimetrix\Analysis\Configuration\SelectorYamlDecoder	Analysis.Configuration	Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	contract

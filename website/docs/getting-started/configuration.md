@@ -42,6 +42,9 @@ You can also specify a file explicitly:
 vendor/bin/qmx check src/ --config=my-config.yaml
 ```
 
+The file found or named this way is the **root configuration file**. It can
+build on other files through [`imports`](#splitting-a-configuration).
+
 ---
 
 ## Configuration Sections
@@ -742,6 +745,75 @@ vendor/bin/qmx check src/ --preset=./my-preset.yaml
 
 ---
 
+## Splitting a configuration {#splitting-a-configuration}
+
+The root configuration file can list the files it builds on under `imports`:
+
+```yaml
+# qmx.yaml
+imports:
+  - config/architecture.yaml
+  - config/thresholds.yaml
+
+fail_on: error
+```
+
+Each imported file is a layer of its own, written like any configuration file.
+The layers are the entries in the order written, then the root file:
+`config/architecture.yaml`, `config/thresholds.yaml`, `qmx.yaml`. A later entry
+overrides an earlier one, and the root file overrides them all — each key by
+the policy described in [How layers combine](#how-layers-combine). The whole
+chain sits where `qmx.yaml` sits: above every preset, below the command line.
+`-v` names every file in that order (`Configuration loaded from: defaults,
+config/architecture.yaml, config/thresholds.yaml, qmx.yaml, cli`).
+
+**Paths.** An `imports` entry is resolved against the directory of the file
+that writes it, so `--config=sub/qmx.yaml` with `imports: [base.yaml]` reads
+`sub/base.yaml`. When the root file is a symlink, that is the directory of the
+file it points to: a configuration linked into a project reads the bases
+beside it. Every other path, in any file of the chain — `paths`, `exclude`,
+`cache.dir` — keeps the working directory as its base, exactly as in the root
+file. Refusals and `-v` name an imported file by that path as seen from the
+root file's name (`./` dropped, `..` kept) — or by its full path when the root
+file is a symlink — together with the file that imported it.
+
+**Only the root imports.** An imported file that writes `imports` — even
+`imports: []` — is refused: list the files it builds on in the root file
+instead, in the order they should apply. A preset that writes `imports` is
+refused too; the same file can still be given as `--preset` and imported, and
+then it is placed in both bands.
+
+Also refused, before the file is read: the same file twice in the list (two
+spellings or a symlink of one file count as the same), the root file itself, a
+directory or other non-regular file, a URL, a glob (`*`, `?`, `[`), and a file
+that is not `.yaml` or `.yml` (in any letter case). `imports` is a list even
+for one file; `imports: ~` and `imports: []` import nothing.
+
+**What a later file can change.** Override follows the merge policy of each
+key, so some edits have no spelling:
+
+| Node kind                                                                   | A later file…                                                           |
+| --------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| scalar (`fail_on`, `memory_limit`, thresholds)                              | replaces the value                                                      |
+| map (`cache`, `coupling`, one rule's options)                               | merges key by key                                                       |
+| named map (`rules`, `computed_metrics`, `architecture.allow`)               | merges entry by entry                                                   |
+| list (`paths`, `only_rules`, `architecture.layers`, `framework_namespaces`) | **replaces the whole list** — cannot append                             |
+| set (`exclude`, `suppress_*`, `disabled_rules`, `exclude_health`)           | **adds** — cannot remove a base's entry                                 |
+| shorthand (`threshold`)                                                     | expands in the writing file: a later `warning` keeps the base's `error` |
+| `~` / `{}`                                                                  | "not written" / "changes nothing" — never a reset                       |
+
+Keep what a project may want to change — `paths`, `exclude`, `suppress_*` — in
+the root file rather than in a shared base, since a base's set entry cannot be
+taken back.
+
+!!! note "Baselines and `architecture.unmatched-type`"
+    The identity of an `architecture.unmatched-type` finding includes the file
+    that wrote the type and its position among the layers. Moving that
+    criterion into an imported file — like adding a preset — re-identifies the
+    finding, and its baseline entry goes stale.
+
+---
+
 <!-- llms:skip-begin -->
 ## Full Example
 
@@ -824,8 +896,9 @@ This makes it easy to experiment without editing the config file.
 ## How layers combine {#how-layers-combine}
 
 Every source of configuration is a **layer**: the built-in defaults, what
-`composer.json` discovery finds, each preset in the order given, `qmx.yaml`, and
-the command line — each one above the ones before it.
+`composer.json` discovery finds, each preset in the order given, the files
+`qmx.yaml` [imports](#splitting-a-configuration), `qmx.yaml`, and the command
+line — each one above the ones before it.
 
 Each layer is read as it was written. Its keys are recognised and the form of
 every value it writes is judged in that layer, before anything is merged, so a
@@ -1023,6 +1096,7 @@ reports at the namespace level.
 | `exclude_health`                                                                  | list (item: string)                                                                 | Every layer adds its elements; duplicates collapse.                                                                                                                                                                | Not written: the layer below stands. An item written `~` is refused.                     | Adds nothing.                                                                                   |
 | `fail_on`                                                                         | string                                                                              | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |
 | `format`                                                                          | string                                                                              | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |
+| `imports`                                                                         | list (item: string)                                                                 | Read per file, in the root configuration file only; never merged across layers.                                                                                                                                    | Not written: the file imports nothing. An item written `~` is refused.                   | The file imports nothing.                                                                       |
 | `include_autoload_dev`                                                            | boolean                                                                             | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |
 | `include_generated`                                                               | boolean                                                                             | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |
 | `memory_limit`                                                                    | string or integer                                                                   | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |

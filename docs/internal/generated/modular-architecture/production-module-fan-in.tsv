@@ -351,10 +351,10 @@ Qualimetrix\Core\Ast\ParseException	Core.Neutral	3	2
 Qualimetrix\Core\Ast\ResolvedName	Core.Neutral	10	7
 Qualimetrix\Core\Ast\SuperglobalRead	Core.Neutral	2	2
 Qualimetrix\Core\Environment\EnvironmentFailureInterface	Core.Environment	12	6
-Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	4	2
+Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	5	3
 Qualimetrix\Core\FileTarget\FileTargetFailure	Core.FileTarget	14	4
 Qualimetrix\Core\FileTarget\FileTargetFailureKind	Core.FileTarget	7	3
-Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	4	4
+Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	5	5
 Qualimetrix\Core\FileTarget\PrivateGroup\ProcessOwner	Core.FileTarget	1	1
 Qualimetrix\Core\FileTarget\Publication\FileReplacement	Core.FileTarget	4	3
 Qualimetrix\Core\FileTarget\Publication\HeldLock	Core.FileTarget	1	1

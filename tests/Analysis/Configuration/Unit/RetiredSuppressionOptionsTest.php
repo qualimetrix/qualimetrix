@@ -65,7 +65,7 @@ final class RetiredSuppressionOptionsTest extends TestCase
         try {
             RetiredSuppressionOptions::refuseRootKey(
                 ['excludePaths'],
-                '/tmp/qmx.yaml',
+                ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/tmp/qmx.yaml'),
                 ['excludePaths' => 'exclude_paths'],
             );
             self::fail('The retired root key was accepted.');

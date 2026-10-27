@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration\Pipeline;
 
+use LogicException;
 use Qualimetrix\Analysis\Configuration\ConfigurationRoot;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredShape;
 use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
 
@@ -43,14 +46,33 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
             $authored = [...$authored, ...$layer->authored];
             $diagnostics = [...$diagnostics, ...$layer->diagnostics];
 
-            foreach ($layer->authored === [] ? [null] : $layer->authored as $_) {
-                $documents[] = ['source' => $layer->source, 'values' => $layer->values];
+            foreach ($layer->authored === [] ? [null] : $layer->authored as $file) {
+                // An imported file is a source of its own; the stage's name is its root's.
+                $documents[] = ['source' => $file?->origin->importer() === null ? $layer->source : (string) $file->origin->locator(), 'values' => $layer->values];
             }
         }
 
+        self::assertNoPerFileRoots($authored);
         $resolved = DocumentComposer::compose(new DocumentSchema([...ConfigurationRoot::cases(), ...$this->sections]), $authored);
 
         return new ConfigurationDocument($documents, $request->workingDirectory, $resolved, $diagnostics);
+    }
+
+    /**
+     * A per-file root reaching the composer would merge as a plain list and
+     * vanish without effect; every stage that reads one must take it out.
+     *
+     * @param list<AuthoredLayer> $authored
+     */
+    private static function assertNoPerFileRoots(array $authored): void
+    {
+        foreach ($authored as $layer) {
+            foreach (ConfigurationRoot::perFile() as $root) {
+                if ($layer->root->shape === AuthoredShape::Mapping && \array_key_exists($root->value, $layer->root->children)) {
+                    throw new LogicException(\sprintf('The layer of %s still carries "%s" at composition; its stage must read and remove it.', $layer->origin->describe(), $root->value));
+                }
+            }
+        }
     }
 
     public function addSection(DocumentSectionSchemaInterface $section): void

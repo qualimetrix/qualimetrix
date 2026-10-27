@@ -13,8 +13,8 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
-use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
 use Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface;
+use Qualimetrix\Analysis\Configuration\Loader\ImportChain;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
@@ -23,7 +23,8 @@ use UnexpectedValueException;
 /**
  * Loads configuration from config file (priority: 20).
  *
- * Searches for qmx.yaml or qmx.yml in working directory.
+ * Searches for qmx.yaml or qmx.yml in working directory. The files its
+ * `imports` list names share this band, below the file itself.
  */
 final class ConfigFileStage implements ConfigurationStageInterface
 {
@@ -55,12 +56,11 @@ final class ConfigFileStage implements ConfigurationStageInterface
         }
 
         $sourceName = $request->configFilePath ?? basename($configPath);
-        $loaded = $this->loader->read($configPath, $sourceName);
 
         return new ConfigurationLayer(
-            basename($configPath),
+            $sourceName,
             [],
-            authored: [new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $sourceName), $loaded->authored)],
+            authored: (new ImportChain($this->loader))->expand($configPath, ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $sourceName)),
             diagnostics: $diagnostics,
         );
     }
@@ -79,7 +79,7 @@ final class ConfigFileStage implements ConfigurationStageInterface
             if (!file_exists($request->configFilePath)) {
                 throw ConfigurationRefusal::aboutConfigFileDocument(
                     $request->configFilePath,
-                    \sprintf('Configuration file not found: %s', $request->configFilePath),
+                    \sprintf('Configuration file "%s" was not found or is not accessible.', $request->configFilePath),
                 );
             }
 

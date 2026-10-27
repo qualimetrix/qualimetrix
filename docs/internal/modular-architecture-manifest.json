@@ -1880,6 +1880,20 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportListSchema": {
+      "path": "src/Analysis/Configuration/Loader/ImportListSchema.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportChain": {
+      "path": "src/Analysis/Configuration/Loader/ImportChain.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Configuration\\Loader\\CommandLineLayer": {
       "path": "src/Analysis/Configuration/Loader/CommandLineLayer.php",
       "kind": "class",
@@ -19265,6 +19279,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Hook\\HookEntryAccess"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportChain"
         }
       ]
     },
@@ -19374,6 +19392,10 @@
       "owner": "Core.FileTarget",
       "visibility": "contract",
       "consumers": [
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportChain"
+        },
         {
           "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\DocumentAccess\\BaselineDocumentReader"

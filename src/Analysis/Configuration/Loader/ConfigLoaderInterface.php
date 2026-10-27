@@ -4,20 +4,16 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration\Loader;
 
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 
 interface ConfigLoaderInterface
 {
     /**
-     * Read the physical document as written for the declared schema;
-     * sourceName identifies that document in refusals.
+     * Read the physical document as written for the declared schema; every
+     * refusal names `$origin`, importer chain included.
      *
      * @throws ConfigurationRefusal If the document cannot be read as a whole
      */
-    public function read(string $physicalPath, string $sourceName): LoadedDocument;
-
-    /**
-     * Returns whether this loader supports the given path.
-     */
-    public function supports(string $path): bool;
+    public function read(string $physicalPath, ConfigurationOrigin $origin): LoadedDocument;
 }

@@ -1839,6 +1839,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"[] on a rule"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"[] on an open named map"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"[] on the rules"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a bare import"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a block merge key beside a plain one"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a camel-case root spelling"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a canonical word"
@@ -1885,8 +1886,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"a ~ shorthand beside its target"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an alternative root spelling"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an empty file"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an empty import"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an empty list for the whole document"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an empty list its owner refuses"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an import list"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an import naming a URL"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an import of another format"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an import that is not text"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an import with a glob"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an inline merge key"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an integer where both forms are allowed"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itNeverRefusesWhatTheEngineAccepts"an owner-judged value"
@@ -1913,6 +1920,35 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itRefusesARetiredKeyAsRetiredInEverySpelling"excludePaths"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\EditorSchema\EditorSchemaEngineAgreementTest::itRefusesARetiredKeyAsRetiredInEverySpelling"exclude_paths"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\FullPipelineIntegrationTest::itLetsEachOwnerFoldTheSameOrderedDocumentWithItsOwnSemantics
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itAcceptsAnUpperCaseExtension
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itAddsNothingAndSaysNothingForAnEmptyImport"empty imported file"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itAddsNothingAndSaysNothingForAnEmptyImport"empty list"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itAddsNothingAndSaysNothingForAnEmptyImport"null"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itComposesEachCollectionByItsOwnPolicyAcrossFiles
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itExpandsAShorthandInTheFileThatWroteIt
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itJudgesARelationBetweenFilesAfterTheMerge
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itKeepsTheChainInTheConfigurationFileBand
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itLetsALaterImportOverrideAnEarlierOneAndTheRootOverrideBoth
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itNamesEachFileAsAnAppliedSourceAndNeverResolvesImports
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itNamesEveryFileOfARefusedMergedValueInPrecedenceOrder
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itPlacesAFileGivenAsAPresetAndImportedInBothBands
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itRefusesABareImportsValue
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itRefusesAPresetThatWritesImports
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itRefusesAnEntryOutsideTheGrammarAtItsPosition"bracket"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itRefusesAnEntryOutsideTheGrammarAtItsPosition"empty"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itRefusesAnEntryOutsideTheGrammarAtItsPosition"extension"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itRefusesAnEntryOutsideTheGrammarAtItsPosition"glob"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itRefusesAnEntryOutsideTheGrammarAtItsPosition"integer"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itRefusesAnEntryOutsideTheGrammarAtItsPosition"null"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itRefusesAnEntryOutsideTheGrammarAtItsPosition"url"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itRefusesAnInvalidValueEvenWhenTheRootOverridesIt
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itRefusesAnotherSpellingOfImportsAtTheRoot"capitalized"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itRefusesAnotherSpellingOfImportsAtTheRoot"near miss"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itRefusesAnotherSpellingOfImportsAtTheRoot"upper case"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itRefusesAnotherSpellingOfImportsInAnImportedFileAsAtTheRoot"capitalized"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itRefusesAnotherSpellingOfImportsInAnImportedFileAsAtTheRoot"near miss"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itRefusesToComposeALayerThatStillCarriesImports
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itResolvesAPathAnImportedFileWritesAgainstTheWorkingDirectory
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Pipeline\ContainerConfigurationStagesTest::itComposesTheDocumentAgainstEveryAutoconfiguredSection
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Pipeline\ContainerConfigurationStagesTest::itRegistersAllStagesWithTheCorrectPriorities
  - Qualimetrix\Tests\Analysis\Configuration\Integration\PresetIntegrationTest::itDeduplicatesPresetNamesBeforeLoading
@@ -2261,6 +2297,31 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\CommandLineValueTest::itParsesBooleanIntegerFloatAndStringThroughTheirDeclaredForms
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\CommandLineValueTest::itReadsOnlyFlowListsAndPreservesQuotedCommas
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\CommandLineValueTest::itRefusesNullAndMappingsAtTheCliDoor
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itHandsTheLoaderTheImportedOriginSoItsRefusalsNameTheImporter"not a mapping"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itHandsTheLoaderTheImportedOriginSoItsRefusalsNameTheImporter"retired root key"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itHandsTheLoaderTheImportedOriginSoItsRefusalsNameTheImporter"unparseable"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itHandsTheRootAloneWhenItImportsNothing"empty list"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itHandsTheRootAloneWhenItImportsNothing"no key"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itHandsTheRootAloneWhenItImportsNothing"null"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itKeepsParentSegmentsInTheNameSoTwoFilesNeverShareOne
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itNamesEveryImportOfAnAbsoluteRootByAPathThatLeadsToIt
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itPlacesTheEntriesInWrittenOrderBelowTheRootAndReadsEachOnce
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesAMissingImportBeforeReadingIt
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesATargetThatIsNotARegularFileWithoutReadingIt"directory"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesATargetThatIsNotARegularFileWithoutReadingIt"fifo"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesAnEntryNamingTheRootItself"dot segment"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesAnEntryNamingTheRootItself"its name"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesAnEntryNamingTheRootItself"symlink"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesAnImportedFileThatWritesImportsAtThatKey"a list"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesAnImportedFileThatWritesImportsAtThatKey"an empty list"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesAnImportedFileThatWritesImportsAtThatKey"null"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesTheEntryGrammarAtItsPosition
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesTheSameFileTwiceNamingBothPositions"dot segment"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesTheSameFileTwiceNamingBothPositions"not adjacent"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesTheSameFileTwiceNamingBothPositions"parent segment"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesTheSameFileTwiceNamingBothPositions"symlink"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itResolvesAnEntryAgainstTheImportingFilesDirectoryAndNamesItFromTheRootsName
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itResolvesEntriesBesideTheRealFileOfASymlinkedRoot
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderKeySpellingTest::itKeepsSiblingSpellingsAndRefusesAKeyOutsideItsDeclaredSlot
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderKeySpellingTest::itListsCanonicalSectionKeysBesideTheAuthorsSpelling"camel"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderKeySpellingTest::itListsCanonicalSectionKeysBesideTheAuthorsSpelling"kebab"
@@ -2282,7 +2343,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itAcceptsNullRuleConfig
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itAcceptsParallelSection
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itCarriesTheWrittenDocumentUntilTheEngineJudgesIt
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itDoesNotSupportOtherExtensions
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itLoadsEmptyFile
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itLoadsProjectQmxYamlExampleWithoutErrors
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itLoadsProjectQmxYamlWithoutErrors
@@ -2342,7 +2402,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itShowsNoSuggestionForDistantKey
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itStillAcceptsTheWellShapedFormOfEveryShapedRoot
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itSuggestsCorrectRootKeyForTypo
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itSupportsYamlExtension
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itThrowsForInvalidYaml
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itThrowsForScalarValue
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itThrowsWhenFileIsNotReadable
@@ -2353,6 +2412,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itUsesOneCanonicalNameForEverySpellingOfAnOwnerRoot#3
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itUsesOneCanonicalNameForEverySpellingOfAnOwnerRoot#4
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itUsesOneCanonicalNameForEverySpellingOfAnOwnerRoot#5
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itWordsEveryWholeDocumentRefusalThroughTheOriginItWasGiven"imported missing"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itWordsEveryWholeDocumentRefusalThroughTheOriginItWasGiven"imported not a mapping"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itWordsEveryWholeDocumentRefusalThroughTheOriginItWasGiven"imported retired root key"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itWordsEveryWholeDocumentRefusalThroughTheOriginItWasGiven"imported unparseable"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itWordsEveryWholeDocumentRefusalThroughTheOriginItWasGiven"preset missing"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itWordsEveryWholeDocumentRefusalThroughTheOriginItWasGiven"preset not a mapping"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itWordsEveryWholeDocumentRefusalThroughTheOriginItWasGiven"preset unparseable"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itComposesTheAuthoredLayers
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itExpandsMultiDocumentLayersWithoutCollapsingThem
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itJudgesEachAuthoredLayerWithoutAParallelRefusalTransport
@@ -2399,7 +2465,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Preset\PresetResolverTest::itDoesNotRecognizeUnknownNamesAsBuiltIn
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Preset\PresetResolverTest::itListsAvailablePresetNamesAlphabetically
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Preset\PresetResolverTest::itRecognizesKnownPresetNamesAsBuiltIn
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Preset\PresetResolverTest::itRefusesAFilePathThatDoesNotExist
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Preset\PresetResolverTest::itRefusesAFilePathThatDoesNotExistNamingThePresetAsWritten
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Preset\PresetResolverTest::itRefusesAnUnknownPresetNameListingAvailablePresets
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Preset\PresetResolverTest::itResolvesAnAbsoluteFilePathUnchanged
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Preset\PresetResolverTest::itResolvesTheBuiltInCiPresetToItsYamlFile
@@ -9325,6 +9391,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnmatchedTypeDiagnosticTest::itKeepsAnUnmetMemberAttributeBesideAKnownPositiveType
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnmatchedTypeDiagnosticTest::itKeepsSeparateAuthoredPositionsWhileCollapsingTemplateCopies
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnmatchedTypeDiagnosticTest::itPreservesTheImporterChainInTheAuthoredOccurrenceIdentity
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnmatchedTypeDiagnosticTest::itReidentifiesAnOccurrenceWhoseCriterionMovesIntoAnImportedFile
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnmatchedTypeDiagnosticTest::itReportsEachUnmetPositiveAndExcludeTypeBesideAKnownType
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnmatchedTypeDiagnosticTest::itWithholdsFindingsWhenScopeOrInstallCannotJudgeAbsence"both"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnmatchedTypeDiagnosticTest::itWithholdsFindingsWhenScopeOrInstallCannotJudgeAbsence"install not read"
@@ -12046,6 +12113,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandBaselineTest::itPromotesAMeasuredBreachToErrorAndFailsTheRun
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandBaselineTest::itPublishesUnusedEntriesInEightFormatsAndGatesAllElevenFormats
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandBaselineTest::itWritesNoEntryForAnAnnotatedFindingAndRefusesToBeAskedTo
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandConfigurationImportsTest::itNamesTheImporterOfAMissingFileInTheJsonEnvelope
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandConfigurationImportsTest::itReadsTheImportBesideTheConfigFileAndItsPathsFromTheWorkingDirectory
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandDrillDownFormatTest::itBindsAndSelectsANamespaceOpenedOnlyByADeclarationFreeFile
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandDrillDownFormatTest::itPublishesAndSelectsLexicalNamespacesOfFileFindings
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandDrillDownFormatTest::itRefusesASelectionTheFormatCannotMarkBeforeAnalysis"checkstyle --class"
@@ -13150,6 +13219,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itNeverPrintsATraceForARefusal
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itOmitsTheTraceBelowVerboseVerbosity
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itPrintsTheTraceFromVerboseUpwardsForAnInternalErrorOnly
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itPublishesAnImporterChainTwoLevelsDeep
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itPublishesEverySourceARefusalNames
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itPublishesTheRefusedPositionInTheEnvelope
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itReportsAJsonRefusalOnStderrWhenStdoutCannotBeWritten

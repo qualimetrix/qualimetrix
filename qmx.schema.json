@@ -202,6 +202,14 @@
                 null
             ]
         },
+        "imports": {
+            "description": "Configuration files this one builds on, lowest precedence first; this file overrides them all. Read only in the root configuration file. Each entry is resolved against the directory of the file that writes it (of its target, when that file is a symlink); every other path keeps the working directory as its base.",
+            "allOf": [
+                {
+                    "$ref": "#/definitions/7a60024335a3"
+                }
+            ]
+        },
         "include_autoload_dev": {
             "type": [
                 "boolean",

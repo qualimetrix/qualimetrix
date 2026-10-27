@@ -110,7 +110,7 @@ final class ConfigDataNormalizerTest extends TestCase
     #[Test]
     public function itRefusesAnUnknownRootWithItsOriginalSpelling(): void
     {
-        $this->assertRefusal(['unknownKey' => 'value'], 'Unknown key "unknownKey" in configuration file "/project/qmx.yaml". Accepted keys: exclude, suppress_paths, suppress_namespaces, include_generated, include_autoload_dev, cache, parallel, coupling, computed_metrics, exclude_health, rules, only_rules, disabled_rules, architecture, fail_on, memory_limit, paths, format.', ['unknownKey']);
+        $this->assertRefusal(['unknownKey' => 'value'], 'Unknown key "unknownKey" in configuration file "/project/qmx.yaml". Accepted keys: imports, exclude, suppress_paths, suppress_namespaces, include_generated, include_autoload_dev, cache, parallel, coupling, computed_metrics, exclude_health, rules, only_rules, disabled_rules, architecture, fail_on, memory_limit, paths, format.', ['unknownKey']);
     }
 
     #[Test]

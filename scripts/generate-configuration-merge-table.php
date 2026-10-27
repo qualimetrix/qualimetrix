@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace Qualimetrix\ConfigurationMergeTable;
 
 use LogicException;
+use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
@@ -312,9 +313,26 @@ function policy(MergePolicy $policy, string $language): string
     };
 }
 
+/**
+ * A root the import chain reads from each file and takes out before the
+ * merge: its node's policy describes nothing that happens to it.
+ *
+ * @param array{path: string, node: NodeSchema, kind: string, shorthand: ?Shorthand, parent: string, inItem: bool} $row
+ */
+function perFileRoot(array $row): bool
+{
+    return \in_array($row['path'], ConfigSchema::PER_FILE_ROOTS, true);
+}
+
 /** @param array{path: string, node: NodeSchema, kind: string, shorthand: ?Shorthand, parent: string, inItem: bool} $row */
 function acrossCell(array $row, string $language): string
 {
+    if (perFileRoot($row)) {
+        return $language === 'ru'
+            ? 'Читается из каждого файла отдельно, только в корневом файле конфигурации; между слоями не сливается.'
+            : 'Read per file, in the root configuration file only; never merged across layers.';
+    }
+
     $shorthand = $row['shorthand'];
 
     if ($row['inItem'] && $shorthand === null) {
@@ -338,6 +356,9 @@ function acrossCell(array $row, string $language): string
 function tildeCell(array $row, string $language): string
 {
     $ru = $language === 'ru';
+    if (perFileRoot($row)) {
+        return $ru ? 'Не записано: файл ничего не импортирует. Элемент `~` — отказ.' : 'Not written: the file imports nothing. An item written `~` is refused.';
+    }
     $cell = match (true) {
         $row['inItem'] => $ru ? 'Не записано: как если бы ключа не было.' : 'Not written: as if the key were absent.',
         $row['kind'] === ENTRY => $ru ? 'Имя проверяется; тело остаётся за нижним слоем.' : 'The name is judged; the body stays with the layer below.',
@@ -359,6 +380,10 @@ function emptyCell(array $row, string $language): string
 {
     $node = $row['node'];
     $ru = $language === 'ru';
+
+    if (perFileRoot($row)) {
+        return $ru ? 'Файл ничего не импортирует.' : 'The file imports nothing.';
+    }
 
     if ($row['inItem']) {
         return match ($node->policy) {
