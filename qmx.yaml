@@ -7,11 +7,11 @@
 # intentional contract popularity or structural inapplicability. Keep other
 # accepted quality signals under a finite @qmx-threshold or ratchet ceiling.
 
-# The architecture section lives in its own file, generated from the internal
-# manifest; its header says how. Keys written here override it, and a list
-# replaces a list whole: writing `architecture.layers` or one
-# `architecture.allow.<layer>` here drops the generated list instead of
-# extending it.
+# qmx.architecture.yaml is generated from the internal manifest and checked
+# whole by `composer architecture:check`. A key written here overrides it
+# outside that check, and a list replaces a list whole: writing
+# `architecture.layers` or one `architecture.allow.<layer>` here drops the
+# generated list instead of extending it.
 imports: [qmx.architecture.yaml]
 
 # Direct invocations default to error; composer selfcheck judges warnings too.

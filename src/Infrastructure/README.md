@@ -15,8 +15,9 @@ Infrastructure contains external adapters and entry points:
 
 ## Internal Dependency Layers
 
-Infrastructure sub-packages are declared as `infrastructure-*` sub-layers in the project's
-own `qmx.yaml` to prevent circular dependencies (see
+Infrastructure sub-packages are `infrastructure-*` owner layers, generated from the internal
+manifest into `qmx.architecture.yaml` (imported by the project's `qmx.yaml`), to prevent
+circular dependencies (see
 [ADR 0014](../../docs/adr/0014-deptrac-retirement.md)):
 
 - **Leaf** (no Infrastructure siblings): Cache, Logging, Profiler, Rule, Git, Composer
