@@ -5735,6 +5735,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\MetricInvariantTest::itVerifiesProjectSymbolCountEqualsLeafNsTotal
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\MetricInvariantTest::itVerifiesSymbolClassCountMatchesActual
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\MetricInvariantTest::itVerifiesSymbolMethodCountMatchesActual
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\AnonymousCallableIdentityTest::itLeavesClosuresOutOfAClassSelection
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\AnonymousCallableIdentityTest::itRollsClosuresUpIntoTheNamespaceButNotIntoTheirClass
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\AnonymousCallableIdentityTest::itStoresClosuresUnderTheirEnclosingNames
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itPreservesBothDeclarationsOfOneClassIdentity"Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\UnusedPrivateCollector, braced namespace"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itPreservesBothDeclarationsOfOneClassIdentity"Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivate\UnusedPrivateCollector, flat namespace"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itPreservesBothDeclarationsOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector, braced namespace"
@@ -5853,6 +5856,20 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\TreeAwareNamespaceAggregatorTest::itLeavesTheRepositoryUnchangedWhenNoParentNamespaceExists
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\TreeAwareNamespaceAggregatorTest::itPropagatesALeafsMetricsThroughEveryAncestorInADeepHierarchy
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\TreeAwareNamespaceAggregatorTest::itSumsMetricsFromDescendantLeafNamespacesIntoTheParent
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itKeepsAClosureNameWhenAClosureIsAddedToAnotherMethod
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itKeepsAnonymousCallablesOutOfClassOwnership
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"class declared inside a function owns the closure in its constant"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"closure and arrow function in methods"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"closure in a closure in an anonymous class method"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"closure in an anonymous class property default inside a method"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"closures in class constant, property default and attribute arguments"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"file-level counter spans braced namespaces"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"global namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"nested closures count inside their own parent"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"property hook and function declared inside a method"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"top-level function and file top-level code"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itProjectsOneNameIntoEveryIdentityOfACallable
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itTellsSameNamedConditionalParentsApartByOrdinal
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousClassContextRegressionTest::itAttributesDependenciesToTheOuterClassAcrossAnAnonymousClass
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousClassContextRegressionTest::itKeepsTheCognitiveVisitorsClassContextAfterAnAnonymousClass
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousClassContextRegressionTest::itKeepsTheCorrectFqnInCognitiveComplexitiesAfterAnAnonymousClass

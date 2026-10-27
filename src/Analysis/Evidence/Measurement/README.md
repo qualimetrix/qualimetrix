@@ -116,6 +116,15 @@ turns that position into the key a declaration is grouped under, and
 subject is *current* follows from the traversal and lives with the scope; what a
 subject is made of moves with the wire grammar and lives with the registry.
 
+A closure or arrow function is named by the scope under its nearest enclosing
+frame — a callable or a class-like declaration — and counted inside that frame:
+`App\A::rows::{closure#1}`, `App\A::rows::{closure#1}::{closure#1}`; outside
+every frame, `App\{closure#N}` counts across the file. The composite name is the
+callable's member, so its path stays function-shaped (`func:`) and it rolls up
+into its namespace, never into a class. `DeclarationNumbering::callablePath()`
+is the one rule every projection of a callable reads — numbering key, stored
+declaration, wire subject and per-visitor metric-map key.
+
 The position itself does not disappear; it stops being an identity.
 `CallableWithMetrics` and `ClassWithMetrics` carry it as `startFilePos`, the
 in-run key that joins what several producers said about one declaration, and
