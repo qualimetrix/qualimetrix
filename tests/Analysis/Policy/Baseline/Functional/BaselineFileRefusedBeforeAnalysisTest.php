@@ -340,7 +340,7 @@ final class BaselineFileRefusedBeforeAnalysisTest extends TestCase
         $valid = (string) file_get_contents($path);
         $broken = match ($defect) {
             'json' => '{ not json',
-            'version' => preg_replace('/"version"\s*:\s*14/', '"version": 13', $valid),
+            'version' => preg_replace('/"version"\s*:\s*\d+/', '"version": 13', $valid),
             'key' => preg_replace('/^\{\n/', "{\n  \"mystery\": true,\n", $valid),
             default => throw new LogicException('Unknown test defect'),
         };

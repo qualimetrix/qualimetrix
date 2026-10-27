@@ -58,7 +58,7 @@ an uncovered project class fail even when it has no dependency edges.
 
 Every test, support file, and fixture directory is governed by the same
 manifest; `test-topology.tsv` in the generated directory reports how many of
-each. Self-analysis runs against the versioned v14 root baseline, whose
+each. Self-analysis runs against the versioned v15 root baseline, whose
 residual rows accept warnings only, apart from the exact temporary
 namespace-CBO exceptions documented in ADR 0126. Class and method model
 limitations use finite symbol-local thresholds; intentional public readership
@@ -169,7 +169,7 @@ over `Analysis/Evidence/*`.
 
 ### 6. Baseline Ceiling
 
-The version 14 baseline compares complete compatible identity groups after
+The version 15 baseline compares complete compatible identity groups after
 source/configuration suppression and before Git projection. Baseline-owned
 RunCoverage and one CeilingOutcome distinguish stale, unmeasured, outside and
 not-compared entries. A measured breach promotes to Error; present incomparable

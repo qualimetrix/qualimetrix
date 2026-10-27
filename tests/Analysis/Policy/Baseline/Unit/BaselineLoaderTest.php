@@ -26,6 +26,17 @@ use stdClass;
 #[CoversClass(CanonicalBaselineReader::class)]
 final class BaselineLoaderTest extends TestCase
 {
+    private const string CLOSURE_METHOD_OWNER = 'declaration:callable:App\\A::rows@src/A.php';
+
+    private const string CLOSURE_FILE_LITERAL = 'file:src/{closure#1}.php';
+
+    /** Sorted: a file-level spelling, a composite spelling with an ordinal, and one already inert for another reason. */
+    private const array CLOSURE_KEYS = [
+        'declaration:func:App::A::rows::{closure#1}@src/A.php#2',
+        'declaration:func:App::{closure#1}@src/A.php',
+        'declaration:func:App::{closure#3}@src/A.php',
+    ];
+
     private BaselineLoader $loader;
     private string $tempDir;
 
@@ -60,7 +71,7 @@ final class BaselineLoaderTest extends TestCase
 
         $baseline = $this->loadJson(<<<'JSON'
             {
-                "version": 14,
+                "version": 15,
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": ["src", "tests"],
                 "exclusions": {"patterns": [], "generated": "excluded"},
@@ -103,7 +114,7 @@ final class BaselineLoaderTest extends TestCase
         $this->expectExceptionMessage(
             'Baseline version 10 cannot be converted automatically because declaration identity cannot be inferred '
             . 'from a logical symbol key. Run a fresh analysis, deliberately map or split accepted entries, then '
-            . 'write a new version 14 baseline (or regenerate and review the accepted state).',
+            . 'write a new version 15 baseline (or regenerate and review the accepted state).',
         );
 
         $this->loadJson('{"version": 10, "entries": "never parsed"}');
@@ -121,7 +132,7 @@ final class BaselineLoaderTest extends TestCase
         $this->expectExceptionMessage(
             'Baseline version 11 cannot be converted automatically: version 12 drops the redundant "count" field '
             . 'and shortens the occurrence key, and there is no converter for either change. Run a fresh analysis '
-            . 'and write a new version 14 baseline (or regenerate and review the accepted state).',
+            . 'and write a new version 15 baseline (or regenerate and review the accepted state).',
         );
 
         $this->loadJson('{"version": 11, "entries": "never parsed"}');
@@ -134,7 +145,7 @@ final class BaselineLoaderTest extends TestCase
         $this->expectExceptionMessage(
             'Baseline version 12 cannot be converted automatically: version 13 replaces the file position in a '
             . 'declaration key with an assigned ordinal, and no converter can recover which declaration a stored '
-            . 'position meant. Run a fresh analysis and write a new version 14 baseline (or regenerate and review '
+            . 'position meant. Run a fresh analysis and write a new version 15 baseline (or regenerate and review '
             . 'the accepted state).',
         );
 
@@ -146,9 +157,9 @@ final class BaselineLoaderTest extends TestCase
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage(
-            'This baseline is version 5, a historical format that cannot be loaded or converted to version 14 '
+            'This baseline is version 5, a historical format that cannot be loaded or converted to version 15 '
             . 'because declaration identity cannot be inferred from a logical symbol key. Run a fresh analysis, '
-            . 'deliberately map or split accepted entries, review every mapping, then write a new version 14 '
+            . 'deliberately map or split accepted entries, review every mapping, then write a new version 15 '
             . 'baseline (or regenerate and review the accepted state).',
         );
 
@@ -579,6 +590,90 @@ final class BaselineLoaderTest extends TestCase
 
         self::assertNotNull($reader->read((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($this->put($canonical, 'canonical.json'))));
         self::assertNull($reader->read((new \Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader())->preflight($this->put($reflowed, 'reflowed.json'))));
+    }
+
+    #[Test]
+    #[TestWith([true])]
+    #[TestWith([false])]
+    public function itRetiresEveryClosureEntryOfAVersionFourteenDocumentUnderTheSelectorItHadBefore(bool $canonical): void
+    {
+        $this->loader = new BaselineLoader(new BaselineEntryParser(self::closureDeclarations()));
+        $legacy = $this->loadJson(self::closureDocument(14, $canonical), 'legacy.json');
+        $current = $this->loadJson(self::closureDocument(15, $canonical), 'current.json');
+
+        self::assertSame(
+            [self::CLOSURE_METHOD_OWNER, self::CLOSURE_FILE_LITERAL],
+            array_map(static fn($entry): string => $entry->identity->subjectKey, $legacy->entries),
+        );
+        $retired = [];
+        foreach ($legacy->inertEntries as $entry) {
+            self::assertSame(InertEntryReason::RetiredClosureIdentity, $entry->reason, $entry->subjectKey);
+            self::assertStringContainsString('version 14', $entry->detail);
+            $retired[$entry->subjectKey] = $entry->selector->value;
+        }
+        ksort($retired);
+
+        $applicable = [];
+        foreach ($current->entries as $entry) {
+            $applicable[$entry->identity->subjectKey] = $entry->selector()->value;
+        }
+        self::assertCount(1, $current->inertEntries);
+        self::assertSame(InertEntryReason::UndeclaredChannel, $current->inertEntries[0]->reason);
+        $applicable[$current->inertEntries[0]->subjectKey] = $current->inertEntries[0]->selector->value;
+        $closures = array_intersect_key($applicable, array_flip(self::CLOSURE_KEYS));
+        ksort($closures);
+
+        self::assertSame(self::CLOSURE_KEYS, array_keys($retired));
+        self::assertSame($closures, $retired);
+    }
+
+    #[Test]
+    public function itLoadsAVersionFourteenDocumentWithoutClosureEntriesAsItsCurrentVersionTwin(): void
+    {
+        $legacy = $this->loadJson(self::canonicalDocument(), 'legacy.json');
+        $current = $this->loadJson(str_replace('"version": 14', '"version": 15', self::canonicalDocument()), 'current.json');
+
+        self::assertNotSame([], $legacy->entries);
+        self::assertNotSame([], $legacy->inertEntries);
+        self::assertSame(self::describe($current), self::describe($legacy));
+    }
+
+    private static function closureDeclarations(): StubChannelDeclarationRegistry
+    {
+        $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $declarations->declare('code-smell.goto', ChannelDeclaration::occurrence(SymbolLevel::File));
+
+        return $declarations;
+    }
+
+    private static function closureDocument(int $version, bool $canonical): string
+    {
+        $entries = [
+            self::CLOSURE_METHOD_OWNER => [['channel' => 'complexity.ccn', 'magnitudes' => [30]]],
+            self::CLOSURE_KEYS[0] => [['channel' => 'complexity.ccn', 'magnitudes' => [9]]],
+            self::CLOSURE_KEYS[1] => [['channel' => 'complexity.ccn', 'magnitudes' => [12]]],
+            self::CLOSURE_KEYS[2] => [['channel' => 'nonsense.not-a-channel', 'count' => 1]],
+            self::CLOSURE_FILE_LITERAL => [['channel' => 'code-smell.goto', 'count' => 1]],
+        ];
+        if (!$canonical) {
+            return json_encode([
+                'version' => $version,
+                'generated' => '2026-08-05T12:00:00+03:00',
+                'scope' => ['src'],
+                'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
+                'entries' => $entries,
+            ], \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR);
+        }
+        ksort($entries, \SORT_STRING);
+        $blocks = [];
+        foreach ($entries as $subject => $payloads) {
+            $blocks[] = '    ' . json_encode($subject, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . ": [\n      "
+                . json_encode($payloads[0], \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n    ]";
+        }
+
+        return "{\n  \"version\": {$version},\n  \"generated\": \"2026-08-05T12:00:00+03:00\",\n  \"scope\": [\"src\"],\n"
+            . "  \"exclusions\": {\"patterns\":[],\"generated\":\"excluded\"},\n  \"entries\": {\n"
+            . implode(",\n", $blocks) . "\n  }\n}\n";
     }
 
     private function put(string $json, string $name): string

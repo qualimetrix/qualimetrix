@@ -1,6 +1,6 @@
 # Baseline
 
-A version 14 baseline records accepted groups as reported-magnitude ceilings.
+A version 15 baseline records accepted groups as reported-magnitude ceilings.
 It preserves a deliberate acceptance, including its discovery exclusions.
 
 ## Create and use a baseline
@@ -139,7 +139,7 @@ sibling publication. File modes, locking and content-hash CAS are preserved.
 
 ### Replace an older baseline
 
-Only v14 is loadable. For v13 retain entries, scope and generated time, change
+v15 is current and v14 still loads (its closure entries are retired, see the migration note below). For v13 retain entries, scope and generated time, change
 version to 14 and explicitly add the original exclusion definition:
 
 ```json

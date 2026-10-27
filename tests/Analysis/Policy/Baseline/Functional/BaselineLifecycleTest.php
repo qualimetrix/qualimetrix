@@ -6,8 +6,14 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Functional;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Console\Baseline\Maintenance\BaselineCleanupCommand;
+use Qualimetrix\Infrastructure\Console\Baseline\Maintenance\BaselineUpdateCommand;
+use Qualimetrix\Infrastructure\Console\Check\CheckCommand;
+use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Fixtures\BaselineCliFixture;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Tester\CommandTester;
 
 /**
  * End-to-end baseline lifecycle checks over repository-shaped projects.
@@ -316,6 +322,174 @@ final class BaselineLifecycleTest extends TestCase
         } finally {
             $project->remove();
         }
+    }
+
+    /**
+     * A version 14 file named closures by their rank among all closures of the
+     * file. `{closure#2}` was the closure nested in the first group; the second
+     * group's own closure holds that name now.
+     */
+    #[Test]
+    public function itStopsAVersionFourteenClosureEntryFromAcceptingTheClosureThatHoldsItsNameNow(): void
+    {
+        $this->inClosureProject(function (): void {
+            self::writeClosureBaseline(15, [self::REUSED_CLOSURE, self::SERVICE_METHOD]);
+            self::assertSame(['src/routes.php:4'], self::reportedClosures(), 'the same key under the current version binds by name');
+
+            self::writeClosureBaseline(14, [self::REUSED_CLOSURE, self::SERVICE_METHOD]);
+            $check = self::command(CheckCommand::class, ['--baseline' => 'baseline.json', '--format' => 'json', '--only-rule' => [self::DEBUG_CODE, 'baseline.unused-entry']]);
+            self::assertSame(2, $check->getStatusCode(), $check->getDisplay());
+            $violations = self::violations($check);
+            self::assertSame(['src/routes.php:4', 'src/routes.php:7'], self::locations($violations, self::DEBUG_CODE));
+            $audit = array_values(array_filter($violations, static fn(array $finding): bool => $finding['channel'] === 'baseline.unused-entry'));
+            self::assertCount(1, $audit);
+            self::assertStringContainsString(self::REUSED_CLOSURE, $audit[0]['message']);
+            self::assertStringContainsString('retired closure identity', $audit[0]['message']);
+        });
+    }
+
+    #[Test]
+    public function itListsRetiredClosureEntriesAndWritesOnlyOnceAllOfThemAreRemoved(): void
+    {
+        $this->inClosureProject(function (): void {
+            self::writeClosureBaseline(14, [self::REUSED_CLOSURE, self::VACATED_CLOSURE, self::SERVICE_METHOD]);
+            $before = (string) file_get_contents('baseline.json');
+
+            $cleanup = self::command(BaselineCleanupCommand::class, ['baseline' => 'baseline.json']);
+            self::assertSame(Command::SUCCESS, $cleanup->getStatusCode(), $cleanup->getDisplay());
+            preg_match_all('/^  ([0-9a-f]{12})  .*retired closure identity/m', $cleanup->getDisplay(), $matches);
+            $selectors = $matches[1];
+            self::assertCount(2, $selectors, $cleanup->getDisplay());
+            self::assertSame($before, file_get_contents('baseline.json'));
+
+            $update = self::command(BaselineUpdateCommand::class, ['baseline' => 'baseline.json', '--accept-new' => [self::DEBUG_CODE]]);
+            self::assertSame(3, $update->getStatusCode(), $update->getDisplay());
+            self::assertStringContainsString('--remove=' . $selectors[0] . ' --remove=' . $selectors[1], $update->getDisplay());
+            self::assertSame($before, file_get_contents('baseline.json'));
+
+            $partial = self::command(BaselineCleanupCommand::class, ['baseline' => 'baseline.json', '--remove' => [$selectors[0]]]);
+            self::assertSame(3, $partial->getStatusCode(), $partial->getDisplay());
+            self::assertStringContainsString('--remove=' . $selectors[1], $partial->getDisplay());
+            self::assertSame($before, file_get_contents('baseline.json'));
+
+            $removal = self::command(BaselineCleanupCommand::class, ['baseline' => 'baseline.json', '--remove' => $selectors]);
+            self::assertSame(Command::SUCCESS, $removal->getStatusCode(), $removal->getDisplay());
+            $written = json_decode((string) file_get_contents('baseline.json'), true, flags: \JSON_THROW_ON_ERROR);
+            self::assertSame(15, $written['version']);
+            self::assertSame([self::SERVICE_METHOD], array_keys($written['entries']));
+            self::assertSame(['src/routes.php:4', 'src/routes.php:7'], self::reportedClosures());
+        });
+    }
+
+    private const string DEBUG_CODE = 'code-smell.debug-code';
+    private const string REUSED_CLOSURE = 'declaration:func::{closure#2}@src/routes.php';
+    private const string VACATED_CLOSURE = 'declaration:func::{closure#4}@src/routes.php';
+    private const string SERVICE_METHOD = 'declaration:callable:App\\Service::run@src/Service.php';
+
+    /** @param callable(): void $scenario */
+    private function inClosureProject(callable $scenario): void
+    {
+        $directory = TempDirectory::create('qmx-closure-migration-');
+        $cwd = getcwd();
+        self::assertIsString($cwd);
+        try {
+            mkdir($directory . '/src', 0o700);
+            file_put_contents($directory . '/src/routes.php', <<<'PHP'
+                <?php
+
+                Route::group(function () {
+                    Route::get('/a', function () { var_dump(1); });
+                });
+                Route::group(function () {
+                    var_dump(2);
+                    Route::get('/b', function () { return 2; });
+                });
+                PHP);
+            file_put_contents($directory . '/src/Service.php', <<<'PHP'
+                <?php
+
+                namespace App;
+
+                final class Service
+                {
+                    public function run(): void
+                    {
+                        var_dump(3);
+                    }
+                }
+                PHP);
+            chdir($directory);
+            $scenario();
+        } finally {
+            chdir($cwd);
+            TempDirectory::remove($directory);
+        }
+    }
+
+    /** @param list<string> $subjects */
+    private static function writeClosureBaseline(int $version, array $subjects): void
+    {
+        $blocks = [];
+        foreach ($subjects as $subject) {
+            $blocks[] = \sprintf(
+                "    %s: [\n      {\"channel\":\"%s\",\"occurrence\":\"9d9a9bef4ea8a01f\",\"count\":1}\n    ]",
+                json_encode($subject, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR),
+                self::DEBUG_CODE,
+            );
+        }
+        file_put_contents('baseline.json', "{\n  \"version\": {$version},\n  \"generated\": \"2026-10-01T00:00:00+00:00\",\n"
+            . "  \"scope\": [\"src\"],\n  \"exclusions\": {\"patterns\":[],\"generated\":\"excluded\"},\n"
+            . "  \"entries\": {\n" . implode(",\n", $blocks) . "\n  }\n}\n");
+    }
+
+    /** @return list<string> */
+    private static function reportedClosures(): array
+    {
+        $check = self::command(CheckCommand::class, ['--baseline' => 'baseline.json', '--format' => 'json', '--only-rule' => [self::DEBUG_CODE]]);
+        self::assertSame(2, $check->getStatusCode(), $check->getDisplay());
+
+        return self::locations(self::violations($check), self::DEBUG_CODE);
+    }
+
+    /** @return list<array<string, mixed>> */
+    private static function violations(CommandTester $check): array
+    {
+        $report = json_decode($check->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($report);
+
+        return $report['violations'];
+    }
+
+    /**
+     * @param list<array<string, mixed>> $violations
+     *
+     * @return list<string>
+     */
+    private static function locations(array $violations, string $channel): array
+    {
+        $locations = [];
+        foreach ($violations as $finding) {
+            if ($finding['channel'] === $channel) {
+                $locations[] = $finding['file'] . ':' . $finding['line'];
+            }
+        }
+        sort($locations);
+
+        return $locations;
+    }
+
+    /**
+     * @param class-string<Command> $class
+     * @param array<string, mixed> $options
+     */
+    private static function command(string $class, array $options): CommandTester
+    {
+        $command = (new ContainerFactory())->create()->get($class);
+        self::assertInstanceOf(Command::class, $command);
+        $tester = new CommandTester($command);
+        $tester->execute(['paths' => ['src'], '--no-cache' => true, '--workers' => '0', ...$options]);
+
+        return $tester;
     }
 
     private const string NOTHING_REPORTED = 'nothing reported for this identity';

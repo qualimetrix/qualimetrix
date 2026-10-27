@@ -5857,18 +5857,21 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\TreeAwareNamespaceAggregatorTest::itPropagatesALeafsMetricsThroughEveryAncestorInADeepHierarchy
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\TreeAwareNamespaceAggregatorTest::itSumsMetricsFromDescendantLeafNamespacesIntoTheParent
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itKeepsAClosureNameWhenAClosureIsAddedToAnotherMethod
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itKeepsATopLevelClosureNameWhenAnotherNamespaceGainsOne
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itKeepsAnonymousCallablesOutOfClassOwnership
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"class declared inside a function owns the closure in its constant"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"closure and arrow function in methods"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"closure in a closure in an anonymous class method"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"closure in an anonymous class property default inside a method"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"closures in class constant, property default and attribute arguments"
- - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"file-level counter spans braced namespaces"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"file-level code counts per namespace"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"global namespace"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"nested closures count inside their own parent"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"property hook and function declared inside a method"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNamesAnonymousCallablesUnderTheirNearestEnclosingFrame"top-level function and file top-level code"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itNumbersSameNamedDeclarationsMetOutOfSourceOrderOnce
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itProjectsOneNameIntoEveryIdentityOfACallable
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itTellsASameNamedClassAndFunctionApartByOrdinal
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousCallableNameTest::itTellsSameNamedConditionalParentsApartByOrdinal
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousClassContextRegressionTest::itAttributesDependenciesToTheOuterClassAcrossAnAnonymousClass
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\AnonymousClassContextRegressionTest::itKeepsTheCognitiveVisitorsClassContextAfterAnAnonymousClass
@@ -9243,6 +9246,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineIncompleteAnalysisTest::itLeavesEveryExistingDestinationByteUnchangedOnIncompleteAnalysis"baseline:update partial"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineIncompleteAnalysisTest::itRefusesAllBaselineLifecycleOperationsAfterARealLateDuplicationReadFailure
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itKeepsTheBuildGreenAfterDeletingOneOfTwoBaselinedDuplicateBlocks
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itListsRetiredClosureEntriesAndWritesOnlyOnceAllOfThemAreRemoved
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itListsSeveralManualRepairsAndRemovesOnlyTheirNamedSelectors
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itReKeysADuplicateWhoseMatchedTokensChangeInEveryCopy
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itReportsANewCopyOfAnAcceptedDuplicateBlock
@@ -9250,6 +9254,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itRoundTripsARepositoryShapedProjectWithAnIgnoredGroupMember
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itSaysAnEntryWasNotMeasuredWhenASelectorSwitchedItsLevelOff
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itSaysAnEntryWasNotMeasuredWhenConfigurationSwitchedItsLevelOff
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itStopsAVersionFourteenClosureEntryFromAcceptingTheClosureThatHoldsItsNameNow
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMeasuredSetSeamTest::itAppliesDiscoveryExclusionBeforeEveryBaselineLifecycleMeasurement
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMeasuredSetSeamTest::itCapturesExactlyWhatCheckMeasuresOverTheSamePaths
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMeasuredSetSeamTest::itReadsBackACapturedComputedEntryAsAnApplicableOne
@@ -9300,6 +9305,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itCarriesHeldBytesAndRefusesChangedTargetOnWrite
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itChangesNothingButTheChannelValuesItWasToldTo
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itDropsAnEmptySubjectBlock
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itKeepsTheVersionOfTheDocumentItCarries
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itLeavesTheFileByteIdenticalUnderAnEmptyMap
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itLeavesTheFileTheProductWouldHaveWritten
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itPlacesADeclaredEntryWhereTheWriterWouldWithoutRerenderingIt
@@ -9355,6 +9361,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRefusesATargetThatIsADirectoryWithoutAPhpDiagnostic
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRefusesRawNonUtf8DiscoveryDefinitionWithoutReplacingTheDestination#0
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRefusesRawNonUtf8DiscoveryDefinitionWithoutReplacingTheDestination#1
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRefusesToCarryARetiredClosureEntryIntoTheCurrentVersion
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRefusesToOverwriteAFileThatChangedSinceItWasRead
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRefusesToWriteTwoIdentitiesThatCollapseOnRelativization
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRefusesToWriteWhileAnotherProcessHoldsTheLock
@@ -9363,6 +9370,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRelativizesAbsoluteFileKeysAgainstTheProjectRoot
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRelativizesEncodedFileKeysAgainstTheRawProjectRoot
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRewritesAFileItJustReadWithoutMovingAByte
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRewritesALoadedVersionFourteenDocumentAsTheCurrentVersionWithItsEntriesUnchanged
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRoundTripsEdgesAndMultiElementMagnitudes
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRoundTripsMagnitudesExactlyAtEverySerializePrecision
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itWritesAFreshBaselineOverAnyExistingFile
@@ -9561,6 +9569,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itHashesTheFileTheSameWayOnEitherRoute
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itKeepsLoadingWhenOneEntryIsUnusable
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itKeepsTwoEntriesUnderOneSymbolThatDifferOnlyByEdge
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itLoadsAVersionFourteenDocumentWithoutClosureEntriesAsItsCurrentVersionTwin
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itLoadsOnlyThePreflightBytesAfterSourceReplacement
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itLoadsTheContractOfTheCurrentVersion
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itNamesVersionThirteenAsTheOrdinalIdentityBreakForVersionTwelve
@@ -9592,6 +9601,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionTenBeforeReadingEntriesAndGivesManualV14Guidance
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRetainsNativeLastKeyBehaviorForCanonicalEntryObjects
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRetainsTheDocumentedRepeatedKeyLimitForNoncanonicalFallback
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRetiresEveryClosureEntryOfAVersionFourteenDocumentUnderTheSelectorItHadBefore#0
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRetiresEveryClosureEntryOfAVersionFourteenDocumentUnderTheSelectorItHadBefore#1
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itSpendsTheSameNestingBudgetOnAnEntryAsTheWholeDocumentPath
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itTurnsAMalformedSymbolBucketInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itTurnsAnEntryWhoseComponentsCarryTheKeySeparatorInert
@@ -11960,8 +11971,11 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"check paths"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"debug:layer-assignment --format"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"debug:layer-assignment fqn"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"directives --cache-dir"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"directives --format"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"directives --memory-limit"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"directives --sweep"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"directives --workers"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"graph:export --direction"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"graph:export --exclude-namespace"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"graph:export --format"
@@ -12098,6 +12112,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itReportsIdenticalDirectivesFromTwoCommentsOnOneLineAsTwoSites
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itSaysTheSameThingInBothFormats
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itStillJudgesSuppressionsWhenTheDirectiveRuleIsDisabled
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itWritesNothingToTheCacheDirectoryUnderNoCache
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itWritesTheAstCacheToTheGivenCacheDirectory
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itDrawsTheFrameBelowEveryLineWrittenBeforeIt
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itDropsDiagnosticsWhenTheOutputHasNoErrorChannel
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itKeepsALoggerLineAboveTheFrame
