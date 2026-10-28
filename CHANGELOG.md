@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.30.0] - 2026-10-28
+
 ### Breaking
 
 - References inside attribute arguments (`Foo::class`, `Foo::BAR`, enum cases, `new Foo()`, closures) are recorded as the new dependency kind `attribute_argument` instead of `class_const_fetch`, `new` and the like; it joins no `relations:` alias, and graph export `types` shows it; coupling values do not change. A layer policy that admitted such references through `static_access`, `new` or another kind now reports `architecture.layer-violation` ("uses in attribute argument"): add `attribute_argument` to its `relations:` list. Baseline `architecture.layer-violation` entries for these edges change identity (stale plus new): review the new violations first, then accept them with `baseline:update --accept-new=architecture.layer-violation`; `baseline:cleanup` lists the stale entries and `baseline:cleanup --remove=<selector>` removes them (#196).
@@ -1813,7 +1815,8 @@ Initial release.
 [0.9.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.0...v0.7.1
-[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.29.0...HEAD
+[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.30.0...HEAD
+[0.30.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.29.0...v0.30.0
 [0.29.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.28.2...v0.29.0
 [0.28.2]: https://github.com/qualimetrix/qualimetrix/compare/v0.28.1...v0.28.2
 [0.28.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.28.0...v0.28.1
