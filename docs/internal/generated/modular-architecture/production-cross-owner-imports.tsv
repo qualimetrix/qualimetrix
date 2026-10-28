@@ -1,9 +1,14 @@
 consumer	consumer_owner	dependency	dependency_owner	dependency_visibility
 Qualimetrix\Analysis\Configuration\ConfigurationRoot	Analysis.Configuration	Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	contract
+Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	contract
 Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest	Analysis.Configuration	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
+Qualimetrix\Analysis\Configuration\Document\AuthoredLayer	Analysis.Configuration	Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	contract
 Qualimetrix\Analysis\Configuration\Loader\ImportChain	Analysis.Configuration	Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	contract
 Qualimetrix\Analysis\Configuration\Loader\ImportChain	Analysis.Configuration	Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	contract
+Qualimetrix\Analysis\Configuration\Loader\LoadedDocument	Analysis.Configuration	Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	contract
+Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader	Analysis.Configuration	Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	contract
+Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader	Analysis.Configuration	Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	contract
 Qualimetrix\Analysis\Configuration\Pipeline\Stage\ComposerDiscoveryStage	Analysis.Configuration	Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface	Analysis.ProjectManifest	contract
 Qualimetrix\Analysis\Configuration\SelectorYamlDecoder	Analysis.Configuration	Qualimetrix\Core\Pattern\NamespacePattern	Core.Neutral	contract
 Qualimetrix\Analysis\Configuration\SelectorYamlDecoder	Analysis.Configuration	Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	contract
@@ -2657,7 +2662,6 @@ Qualimetrix\Infrastructure\Console\Baseline\Measurement\BaselineRun	Infrastructu
 Qualimetrix\Infrastructure\Console\Baseline\Measurement\BaselineRun	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Baseline\Measurement\BaselineRun	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\Contract\RunScope	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Baseline\Measurement\BaselineRun	Infrastructure.Console	Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface	Analysis.ProjectManifest	contract
-Qualimetrix\Infrastructure\Console\Baseline\Measurement\BaselineRun	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship	Analysis.Run	contract
 Qualimetrix\Infrastructure\Console\Baseline\Measurement\BaselineRun	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisCoverage	Analysis.Run	contract
 Qualimetrix\Infrastructure\Console\Baseline\Measurement\BaselineRun	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Coverage\IncompleteAnalysisException	Analysis.Run	contract
 Qualimetrix\Infrastructure\Console\Baseline\Measurement\BaselineRun	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface	Analysis.Run	contract
@@ -2745,7 +2749,6 @@ Qualimetrix\Infrastructure\Console\CheckReport\Projection\FindingProjection	Infr
 Qualimetrix\Infrastructure\Console\CheckReport\Projection\FindingProjection	Infrastructure.Console	Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionResult	Reporting	contract
 Qualimetrix\Infrastructure\Console\CheckReport\Projection\FindingProjection	Infrastructure.Console	Qualimetrix\Reporting\FindingProjection\FindingProjector	Reporting	contract
 Qualimetrix\Infrastructure\Console\CheckScope\CheckScopeResolver	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	contract
-Qualimetrix\Infrastructure\Console\CheckScope\CheckScopeResolver	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship	Analysis.Run	contract
 Qualimetrix\Infrastructure\Console\CheckScope\CheckScopeResolver	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	contract
 Qualimetrix\Infrastructure\Console\CheckScope\CheckScopeResolver	Infrastructure.Console	Qualimetrix\Infrastructure\Git\GitScopeResolver	Infrastructure.Git	contract
 Qualimetrix\Infrastructure\Console\CheckScope\CheckScopeResolver	Infrastructure.Console	Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions	Reporting	contract
@@ -2985,7 +2988,6 @@ Qualimetrix\Infrastructure\Console\RunSetup\Input\AnalysisInputPathValidator	Inf
 Qualimetrix\Infrastructure\Console\RunSetup\Input\AnalysisInputPathValidator	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource	Analysis.Configuration	contract
 Qualimetrix\Infrastructure\Console\RunSetup\Input\AnalysisInputPathValidator	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship	Analysis.Run	contract
 Qualimetrix\Infrastructure\Console\RunSetup\Input\AnalysisInputPathValidator	Infrastructure.Console	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
-Qualimetrix\Infrastructure\Console\RunSetup\Input\AnalysisPreflight	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship	Analysis.Run	contract
 Qualimetrix\Infrastructure\Console\RunSetup\Input\PreparedAnalysisInput	Infrastructure.Console	Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration	Analysis.Finding	contract
 Qualimetrix\Infrastructure\Console\RunSetup\Input\PreparedAnalysisInput	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	contract
 Qualimetrix\Infrastructure\Console\RunSetup\ProjectSourceConfigurator	Infrastructure.Console	Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceSourceControlInterface	Analysis.Evidence.Measurement	contract

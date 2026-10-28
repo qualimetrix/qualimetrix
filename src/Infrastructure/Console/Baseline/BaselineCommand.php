@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Baseline;
 
+use Closure;
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface;
@@ -97,6 +98,36 @@ abstract class BaselineCommand extends Command
     }
 
     abstract protected function doExecute(InputInterface $input, OutputInterface $output): int;
+
+    /**
+     * What a command writing `$baseline` hands {@see BaselineRunInterface::measure()}: the refusal of a
+     * baseline file that is one the configuration was read from.
+     *
+     * @return Closure(Closure(?\Qualimetrix\Core\FileTarget\FileIdentity): ?string): void
+     */
+    protected static function refusingConfigurationFile(ResolvedTarget $baseline): Closure
+    {
+        return static function (Closure $configurationFileReadAs) use ($baseline): void {
+            $read = $configurationFileReadAs($baseline->identity);
+            if ($read !== null) {
+                throw ConfigurationRefusal::aboutCommandLineInput('baseline', \sprintf(
+                    'Baseline "%s" is %s; a baseline cannot replace a file the configuration was read from.',
+                    $baseline->spelling,
+                    $read,
+                ));
+            }
+        };
+    }
+
+    /**
+     * What a command that writes no file hands {@see BaselineRunInterface::measure()}.
+     *
+     * @return Closure(Closure(?\Qualimetrix\Core\FileTarget\FileIdentity): ?string): void
+     */
+    protected static function writesNoBaseline(): Closure
+    {
+        return static function (): void {};
+    }
 
     /** @param callable(PreparedTarget, ?StagedSignalGuard): int $action */
     protected function withPreparedTarget(ResolvedTarget $target, callable $action): int
@@ -216,7 +247,7 @@ abstract class BaselineCommand extends Command
     ): LoadedBaselineRun {
         $force = $input->getOption('force') === true;
 
-        $context = $baselineRun->measure($input, $output);
+        $context = $baselineRun->measure($input, $output, self::refusingConfigurationFile($document->target));
         $baseline = $loader->load($document);
 
         $this->assertScopeCovers($context->scope, $baseline->scope, $force, $output);

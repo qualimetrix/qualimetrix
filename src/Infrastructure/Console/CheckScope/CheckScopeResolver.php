@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\CheckScope;
 
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
-use Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Infrastructure\Console\Invocation\CommandLineSpelling;
 use Qualimetrix\Infrastructure\Console\RunSetup\Input\AnalysisInputPathValidator;
@@ -35,7 +34,7 @@ final readonly class CheckScopeResolver
         $this->pathValidator->validate(
             $scope->paths,
             $document,
-            $configuration->projectScope->universe->pathsAuthored ? PathsAuthorship::Authored : PathsAuthorship::Inferred,
+            $configuration->projectScope->universe->pathsAuthorship(),
         );
         foreach ($warnings as $warning) {
             $this->errorStream->write($output, \sprintf('<comment>Warning: %s</comment>', $warning));

@@ -29,6 +29,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Evaluation\ComputedMetricExpre
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
+use Qualimetrix\Core\FileTarget\FileIdentity;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -303,6 +304,30 @@ final class ImportedConfigurationTest extends TestCase
 
         self::assertSame(['defaults', 'cfg/a.yaml', 'cfg/b.yaml', 'qmx.yaml'], $document->appliedSources());
         self::assertNull($document->resolved()->get('imports'));
+    }
+
+    #[Test]
+    public function itNamesEveryFileItReadByIdentity(): void
+    {
+        $this->write('cfg/a.yaml', '');
+        $this->write('team.yaml', '');
+        $this->write('other.yaml', '');
+        $this->write('qmx.yaml', "imports: [cfg/a.yaml]\n");
+
+        $document = $this->resolve(presets: ['strict', './team.yaml', './cfg/a.yaml']);
+
+        $named = [
+            'team.yaml' => 'preset "./team.yaml"',
+            'cfg/a.yaml' => 'preset "./cfg/a.yaml"',
+            'qmx.yaml' => 'configuration file "qmx.yaml"',
+            'other.yaml' => null,
+        ];
+        foreach ($named as $path => $name) {
+            $stat = stat($this->directory . '/' . $path);
+            self::assertNotFalse($stat);
+            self::assertSame($name, $document->fileReadAs(FileIdentity::fromStat($stat)), $path);
+        }
+        self::assertNull($document->fileReadAs(null));
     }
 
     #[Test]

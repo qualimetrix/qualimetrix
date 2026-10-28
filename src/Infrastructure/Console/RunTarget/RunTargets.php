@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\RunTarget;
 
+use Closure;
+use Qualimetrix\Core\FileTarget\FileIdentity;
 use Qualimetrix\Core\FileTarget\FileTargetFailure;
 use Qualimetrix\Core\FileTarget\Resolution\ResolvedTarget;
+use Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal;
 use Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint;
 use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
 use Throwable;
@@ -73,9 +76,21 @@ final class RunTargets
         $this->claims->assertCacheClearSafe($this->judged, $directory);
     }
 
-    public function claim(): void
+    /**
+     * `$configurationFileReadAs` names the file this run's configuration was
+     * read from with an identity; a target that is one is refused.
+     *
+     * @param Closure(?FileIdentity): ?string $configurationFileReadAs
+     */
+    public function claim(Closure $configurationFileReadAs): void
     {
         $this->claims->beginClaim();
+        foreach ($this->judged as $subject => $target) {
+            $read = $configurationFileReadAs(TargetCollisions::identityOf($target));
+            if ($read !== null) {
+                throw EnvironmentRefusal::aboutFile($target->spelling, 'use', \sprintf('%s and %s name the same input target', $subject, $read));
+            }
+        }
         TargetCollisions::assertBeforeClaim(
             $this->judged,
             $this->reportOnStandardOutput ? ProcessStreams::identity(1) : null,

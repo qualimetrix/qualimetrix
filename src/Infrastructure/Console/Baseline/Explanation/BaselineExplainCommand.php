@@ -110,7 +110,7 @@ final class BaselineExplainCommand extends BaselineCommand
         $baselinePath = self::baselinePath($input);
         $document = $baselinePath !== null ? $this->documentReader->preflight($baselinePath) : null;
 
-        $context = $this->baselineRun->measure($input, $output);
+        $context = $this->baselineRun->measure($input, $output, self::writesNoBaseline());
         if ($context->result()->measured->coverage->isIntentionallyEmpty()) {
             BaselineExplanationRenderer::renderEmptyScope($output);
 

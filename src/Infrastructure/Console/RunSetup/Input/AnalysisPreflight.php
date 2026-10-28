@@ -57,9 +57,7 @@ final readonly class AnalysisPreflight
         $this->pathValidator->validate(
             $runConfiguration->paths,
             $document,
-            $runConfiguration->projectScope->universe->pathsAuthored
-                ? \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored
-                : \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Inferred,
+            $runConfiguration->projectScope->universe->pathsAuthorship(),
         );
         $findingConfiguration = $profile->requiresFindingConfiguration
             ? $this->ruleInputValidator->resolve($document)
@@ -78,6 +76,7 @@ final readonly class AnalysisPreflight
         return new PreparedAnalysisInput(
             $runConfiguration,
             $findingConfiguration,
+            $document->fileReadAs(...),
         );
     }
 

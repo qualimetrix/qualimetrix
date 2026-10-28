@@ -43,10 +43,11 @@ final class ImportChain
      */
     public function expand(string $rootPhysicalPath, ConfigurationOrigin $rootOrigin): array
     {
-        $root = $this->loader->read($rootPhysicalPath, $rootOrigin)->authored;
+        $loadedRoot = $this->loader->read($rootPhysicalPath, $rootOrigin);
+        $root = $loadedRoot->authored;
         $entries = self::entries($root, $rootOrigin);
         if ($entries === []) {
-            return [new AuthoredLayer($rootOrigin, self::withoutImports($root))];
+            return [new AuthoredLayer($rootOrigin, self::withoutImports($root), file: $loadedRoot->file)];
         }
 
         $placed = [-1 => [self::identify($rootPhysicalPath, $rootOrigin), (string) $rootOrigin->locator()]];
@@ -60,7 +61,8 @@ final class ImportChain
                 ->importedThrough($rootOrigin);
             $placed = self::placed($placed, $index, self::identify($physical, $origin), $entry, $rootOrigin);
 
-            $document = $this->loader->read($physical, $origin)->authored;
+            $loaded = $this->loader->read($physical, $origin);
+            $document = $loaded->authored;
             if (self::writesImports($document)) {
                 throw ConfigurationRefusal::at(
                     $origin,
@@ -73,9 +75,9 @@ final class ImportChain
                 );
             }
 
-            $layers[] = new AuthoredLayer($origin, $document);
+            $layers[] = new AuthoredLayer($origin, $document, file: $loaded->file);
         }
-        $layers[] = new AuthoredLayer($rootOrigin, self::withoutImports($root));
+        $layers[] = new AuthoredLayer($rootOrigin, self::withoutImports($root), file: $loadedRoot->file);
 
         return $layers;
     }

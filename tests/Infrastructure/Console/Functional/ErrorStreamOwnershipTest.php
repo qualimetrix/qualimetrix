@@ -72,7 +72,7 @@ final class ErrorStreamOwnershipTest extends TestCase
         $target = sys_get_temp_dir() . '/qmx-profile-frame-' . bin2hex(random_bytes(6)) . '.json';
         $targets = new RunTargets(new LoggerFactory(), \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register());
         $targets->judge('--profile', $target);
-        $targets->claim();
+        $targets->claim(static fn(): null => null);
 
         try {
             (new ProfilePresenter(

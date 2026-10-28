@@ -226,7 +226,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
         $baselineRun = new BaselineRun($runtime, self::withoutConstructor(MeasuredFindingSet::class), self::ruleInputValidator(self::createStub(RuleRegistryInterface::class)), self::configurationInputAdapter($pipeline), new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\RunConfigurationPreparation(self::createStub(RunConfigurationResolverInterface::class), self::createStub(CacheConfigurationResolverInterface::class), self::createStub(ParallelConfigurationResolverInterface::class)), self::createStub(ConfiguredFindingExclusionsResolverInterface::class), new ErrorStream(), self::createStub(\Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface::class), self::createStub(\Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface::class));
 
         try {
-            $baselineRun->measure(new ArrayInput([]), new BufferedOutput());
+            $baselineRun->measure(new ArrayInput([]), new BufferedOutput(), static function (): void {});
             self::fail('Configuration loading must fail.');
         } catch (ConfigurationRefusal) {
             self::assertNull($ruleOptions->enablement());

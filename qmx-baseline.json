@@ -1029,14 +1029,6 @@
         ]
       }
     ],
-    "ns:Qualimetrix\\Infrastructure\\Console\\Baseline\\Measurement": [
-      {
-        "channel": "health.maintainability",
-        "magnitudes": [
-          45.3
-        ]
-      }
-    ],
     "ns:Qualimetrix\\Infrastructure\\Console\\Check": [
       {
         "channel": "health.cohesion",

@@ -91,7 +91,7 @@ final class TargetCollisions
             || ($path !== null && $path === $otherPath);
     }
 
-    private static function identityOf(ResolvedTarget $target): ?FileIdentity
+    public static function identityOf(ResolvedTarget $target): ?FileIdentity
     {
         if ($target->kind === TargetKind::Descriptor) {
             return ProcessStreams::identity($target->descriptor ?? -1);

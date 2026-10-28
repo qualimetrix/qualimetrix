@@ -413,7 +413,7 @@ final class ReportAssemblerTest extends TestCase
                 $finding = $method('finding', \Qualimetrix\Analysis\Finding\Contract\Severity::Error);
                 $targets = $method('targets');
                 $targets->judge('--output', $argv[3]);
-                $targets->claim();
+                $targets->claim(static fn(): null => null);
                 try {
                     $exit = $method('publishRenderedResults', $method('presenter', $registry),
                         [$finding],

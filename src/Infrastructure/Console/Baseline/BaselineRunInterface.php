@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Baseline;
 
+use Closure;
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Symfony\Component\Console\Input\InputInterface;
@@ -29,8 +30,16 @@ interface BaselineRunInterface
      * Resolves configuration from the command's input, prepares the runtime,
      * and analyses the configured paths.
      *
-     * @throws ConfigurationRefusal when the configuration cannot be read or prepared
+     * `$beforeAnalysis` is called once the configuration resolves, before
+     * anything is analysed, with the question which file that configuration was
+     * read from has an identity — where a command that writes refuses a
+     * destination it must not replace.
+     *
+     * @param Closure(Closure(?\Qualimetrix\Core\FileTarget\FileIdentity): ?string): void $beforeAnalysis
+     *
+     * @throws ConfigurationRefusal when the configuration cannot be read or prepared, or when
+     *                              `$beforeAnalysis` refuses the command's baseline file
      * @throws InvalidArgumentException when a requested path does not exist
      */
-    public function measure(InputInterface $input, OutputInterface $output): BaselineRunContext;
+    public function measure(InputInterface $input, OutputInterface $output, Closure $beforeAnalysis): BaselineRunContext;
 }

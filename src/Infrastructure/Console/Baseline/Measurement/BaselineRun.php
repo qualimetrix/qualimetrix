@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Baseline\Measurement;
 
+use Closure;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineAuditChannels;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
@@ -64,10 +65,11 @@ final readonly class BaselineRun implements BaselineRunInterface
         private ComposerManifestReaderInterface $composerReader,
     ) {}
 
-    public function measure(InputInterface $input, OutputInterface $output): BaselineRunContext
+    public function measure(InputInterface $input, OutputInterface $output, Closure $beforeAnalysis): BaselineRunContext
     {
         $this->runtimeConfigurator->resetRunState();
         $document = $this->configurationInputAdapter->resolve($input);
+        $beforeAnalysis($document->fileReadAs(...));
         $runConfiguration = $this->runConfigurationPreparation->resolve($document);
         $configuration = $runConfiguration->runConfiguration;
         $findingConfiguration = $this->ruleInputValidator->resolve($document);
@@ -88,9 +90,7 @@ final readonly class BaselineRun implements BaselineRunInterface
         (new AnalysisInputPathValidator())->validate(
             $configuration->paths,
             $document,
-            $configuration->projectScope->universe->pathsAuthored
-                ? \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored
-                : \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Inferred,
+            $configuration->projectScope->universe->pathsAuthorship(),
         );
 
         self::validateAcceptNew($input, $findingConfiguration);
@@ -103,16 +103,7 @@ final readonly class BaselineRun implements BaselineRunInterface
             ),
         );
 
-        // A partial measured set is not evidence about what disappeared or
-        // improved. Stop before deriving a claimed scope or letting any
-        // lifecycle command interpret, report candidates from, or mutate a
-        // baseline. --force only overrides the recorded-scope guard; it must
-        // never turn analysis failure into accepted state.
-        if (!$run->result->measured->coverage->isComplete()) {
-            throw new IncompleteAnalysisException($run->result->measured->coverage);
-        }
-
-        $coverage = $run->result->measured->coverage;
+        $coverage = self::complete($run->result->measured->coverage);
         $this->narrateIntentionallyEmpty($coverage, $output);
 
         $projectRoot = $configuration->projectRoot;
@@ -129,6 +120,18 @@ final readonly class BaselineRun implements BaselineRunInterface
         );
 
         return new BaselineRunContext($run, $scope, $projectRoot, $configuration, $runCoverage);
+    }
+
+    /**
+     * A partial measured set is not evidence about what disappeared or
+     * improved. Stop before deriving a claimed scope or letting any
+     * lifecycle command interpret, report candidates from, or mutate a
+     * baseline. --force only overrides the recorded-scope guard; it must
+     * never turn analysis failure into accepted state.
+     */
+    private static function complete(AnalysisCoverage $coverage): AnalysisCoverage
+    {
+        return $coverage->isComplete() ? $coverage : throw new IncompleteAnalysisException($coverage);
     }
 
     private static function validateAcceptNew(InputInterface $input, FindingConfiguration $findingConfiguration): void
