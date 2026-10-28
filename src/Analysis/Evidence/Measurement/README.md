@@ -223,6 +223,12 @@ registered class names and receives that value before file processing,
 preventing a worker from receiving a container service or state from a prior
 run.
 
+Per-file collection costs time linear in the file's AST nodes: one traversal
+dispatches every node to every registered visitor, and inline-policy
+extraction and trait resolution add their own `NodeFinder` passes. No single
+visitor dominates, so a large literal table is slow to collect only in
+proportion to its node count.
+
 ## Aggregation
 
 `MeasurementAggregationService` owns initial aggregation, ordered global
