@@ -206,7 +206,6 @@ condition. When an issue closes, drop its line here.
 - [#166](https://github.com/qualimetrix/qualimetrix/issues/166) Duplication can report one copy in two overlapping groups
 - [#190](https://github.com/qualimetrix/qualimetrix/issues/190) HTML report shows file findings of class-free files on the project root
 - [#209](https://github.com/qualimetrix/qualimetrix/issues/209) `suppress_paths` on a file that failed to parse is reported as unmatched
-- [#223](https://github.com/qualimetrix/qualimetrix/issues/223) `--output` can replace `composer.json` and analysed sources
 
 ### Product improvements
 
