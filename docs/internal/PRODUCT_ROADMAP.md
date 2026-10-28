@@ -206,7 +206,7 @@ condition. When an issue closes, drop its line here.
 - [#166](https://github.com/qualimetrix/qualimetrix/issues/166) Duplication can report one copy in two overlapping groups
 - [#190](https://github.com/qualimetrix/qualimetrix/issues/190) HTML report shows file findings of class-free files on the project root
 - [#209](https://github.com/qualimetrix/qualimetrix/issues/209) `suppress_paths` on a file that failed to parse is reported as unmatched
-- [#212](https://github.com/qualimetrix/qualimetrix/issues/212) Single large files analyse slowly: duplication and collection dominate
+- [#223](https://github.com/qualimetrix/qualimetrix/issues/223) `--output` can replace `composer.json` and analysed sources
 
 ### Product improvements
 
@@ -217,6 +217,7 @@ condition. When an issue closes, drop its line here.
 - [#173](https://github.com/qualimetrix/qualimetrix/issues/173) New-findings-only CI gate against a base revision
 - [#174](https://github.com/qualimetrix/qualimetrix/issues/174) Phar as a required check and the Docker image built from it
 - [#211](https://github.com/qualimetrix/qualimetrix/issues/211) `--cache-dir` missing from `graph:export` and `baseline:*`, `--exclude` from `directives`
+- [#216](https://github.com/qualimetrix/qualimetrix/issues/216) Configuration: removing from a set and appending to a list a lower layer wrote
 
 ### Internal debt
 
