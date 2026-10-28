@@ -209,7 +209,7 @@ final class CheckCommand extends Command
 
         $resolvedScope = $this->checkScopeResolver->resolve($input, $runConfiguration, $document, $output, $findingExclusions);
         $projectionOptions = $resolvedScope->projectionOptions;
-        $this->claimRunTargets($input, $output, $document->fileReadAs(...));
+        $this->claimRunTargets($input, $output, $resolved->run->fileReadAs(...));
 
         $this->clearCacheIfRequested($input, $output, $resolved->run->cacheConfiguration->directory?->value());
 
@@ -242,7 +242,7 @@ final class CheckCommand extends Command
 
     }
 
-    private function claimRunTargets(InputInterface $input, OutputInterface $output, Closure $configurationFileReadAs): void
+    private function claimRunTargets(InputInterface $input, OutputInterface $output, Closure $inputFileReadAs): void
     {
         $profile = $input->hasOption('profile') ? $input->getOption('profile') : false;
         if ($profile !== false && $profile !== null && $profile !== true) {
@@ -257,7 +257,7 @@ final class CheckCommand extends Command
             $this->writeWarning($output, 'Warning: ' . \Symfony\Component\Console\Formatter\OutputFormatter::escape($warning));
         }
 
-        $this->runTargetSession->targets()->claim($configurationFileReadAs);
+        $this->runTargetSession->targets()->claim($inputFileReadAs);
     }
 
     /**

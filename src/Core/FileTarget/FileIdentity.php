@@ -14,9 +14,27 @@ final readonly class FileIdentity
         return new self($stat['dev'], $stat['ino'], $stat['mode'] & 0170000);
     }
 
+    /**
+     * The identity of a regular file, or null for a failed stat, another file
+     * type or inode 0, which some filesystems report for every file.
+     *
+     * @param array<string|int, int>|false $stat
+     */
+    public static function ofRegularFile(array|false $stat): ?self
+    {
+        $identity = $stat === false ? null : self::fromStat($stat);
+
+        return $identity !== null && $identity->inode !== 0 && $identity->isRegularFile() ? $identity : null;
+    }
+
     public function sameAs(self $other): bool
     {
         return $this->device === $other->device && $this->inode === $other->inode && $this->type === $other->type;
+    }
+
+    public function isRegularFile(): bool
+    {
+        return $this->type === 0100000;
     }
 
     public function isCharacterDevice(): bool

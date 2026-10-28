@@ -147,6 +147,7 @@ rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Ru
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Severity.php	Qualimetrix\Analysis\Finding\Contract\Severity	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Policy/Baseline/Contract/Entry/Baseline.php	Qualimetrix\Analysis\Policy\Baseline\Contract\Entry\Baseline	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Run/Contract/Configuration/RunConfiguration.php	Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	error	1
+rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/FileTarget/FileIdentity.php	Qualimetrix\Core\FileTarget\FileIdentity	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/FileTarget/FileTargetFailure.php	Qualimetrix\Core\FileTarget\FileTargetFailure	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/FileTarget/Resolution/ResolvedTarget.php	Qualimetrix\Core\FileTarget\Resolution\ResolvedTarget	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/Path/AbsolutePath.php	Qualimetrix\Core\Path\AbsolutePath	error	1
@@ -174,6 +175,7 @@ rule-path-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Findi
 rule-path-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Contract/Rule/OptionLanguage/ResolvedRuleOptionValues.php	Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOptionValues	warning	1
 rule-path-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Contract/Rule/OptionLanguage/RuleOptionKeySet.php	Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet	warning	1
 rule-path-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Contract/Rule/OptionLanguage/RuleOptionShape.php	Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionShape	warning	1
+rule-path-suppression	coupling.class-rank	coupling.class-rank	src/Core/FileTarget/FileIdentity.php	Qualimetrix\Core\FileTarget\FileIdentity	warning	1
 rule-path-suppression	coupling.class-rank	coupling.class-rank	src/Core/Path/AbsolutePath.php	Qualimetrix\Core\Path\AbsolutePath	error	1
 rule-path-suppression	coupling.class-rank	coupling.class-rank	src/Core/Path/RelativePath.php	Qualimetrix\Core\Path\RelativePath	error	1
 rule-path-suppression	coupling.class-rank	coupling.class-rank	src/Core/Pattern/SelectorDefinition.php	Qualimetrix\Core\Pattern\SelectorDefinition	warning	1

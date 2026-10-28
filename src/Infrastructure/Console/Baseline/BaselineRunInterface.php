@@ -30,10 +30,10 @@ interface BaselineRunInterface
      * Resolves configuration from the command's input, prepares the runtime,
      * and analyses the configured paths.
      *
-     * `$beforeAnalysis` is called once the configuration resolves, before
-     * anything is analysed, with the question which file that configuration was
-     * read from has an identity — where a command that writes refuses a
-     * destination it must not replace.
+     * `$beforeAnalysis` is called once the run resolves, before anything is
+     * analysed, with the question which file the run reads — a configuration
+     * file, the Composer manifest or an analysed source — has an identity:
+     * where a command that writes refuses a destination it must not replace.
      *
      * @param Closure(Closure(?\Qualimetrix\Core\FileTarget\FileIdentity): ?string): void $beforeAnalysis
      *

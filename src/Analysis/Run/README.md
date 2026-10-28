@@ -126,6 +126,9 @@ receive that same value; development roots locate values even when excluded
 from the coverage denominator.
 
 `ProjectFilesInterface::discover(RunConfiguration)` returns `DiscoveredProjectFiles`.
+`select(RunConfiguration)` returns the files the same walk selects — eligible or
+generated — before the generated-file filter reads any of them; a command asks
+it to refuse writing over a source file.
 One `ProjectWalk` and `EntryInspector` own entry inspection and listing. Eligible
 files, generated exclusions, named authored exclusions, skips, scope facts and
 selector facts travel together. Binding happens before pruning for all matching

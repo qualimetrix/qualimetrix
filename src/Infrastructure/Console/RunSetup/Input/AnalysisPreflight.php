@@ -76,7 +76,7 @@ final readonly class AnalysisPreflight
         return new PreparedAnalysisInput(
             $runConfiguration,
             $findingConfiguration,
-            $document->fileReadAs(...),
+            $run->fileReadAs(...),
         );
     }
 

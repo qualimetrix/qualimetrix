@@ -159,6 +159,9 @@ rules:
       - exact: src/Core/FileTarget/FileTargetFailure.php
       # ResolvedTarget retains judged path membership and identity facts.
       - exact: src/Core/FileTarget/Resolution/ResolvedTarget.php
+      # FileIdentity is the one identity every input reader records and every
+      # writer compares against; each such reader and writer must name it.
+      - exact: src/Core/FileTarget/FileIdentity.php
       # NamespacePattern binds the shared selector definition to namespace separators
       # for authored configuration, finding exclusion and reporting drill-down.
       - exact: src/Core/Pattern/NamespacePattern.php
@@ -204,6 +207,8 @@ rules:
       - exact: src/Core/Path/RelativePath.php
       - exact: src/Core/Symbol/MetricSubject.php
       - exact: src/Core/Symbol/SymbolPath.php
+      # The identity every input reader records and every writer compares against.
+      - exact: src/Core/FileTarget/FileIdentity.php
       # Shared document provenance is a contract hub consumed across capabilities.
       - exact: src/Analysis/Configuration/Contract/Document/Provenance.php
       # Shared document schema is a contract hub consumed across capabilities.

@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface;
 use Qualimetrix\Core\Environment\EnvironmentFailureInterface;
 use Qualimetrix\Infrastructure\Console\CacheLifecycle\CacheRunLifecycle;
 use Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode;
+use Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
@@ -92,6 +93,9 @@ final class RunTargetSession
     ): int {
         if ($primary === null && $cleanup === null) {
             return $result ?? throw new LogicException('Console action returned no exit code');
+        }
+        if ($primary instanceof EnvironmentRefusal && $primary->isAboutStandardOutput()) {
+            $format = null;
         }
         if ($primary === null) {
             return $this->presentCleanupFailure($output, $format, $cleanup ?? throw new LogicException('Cleanup failure is missing'));

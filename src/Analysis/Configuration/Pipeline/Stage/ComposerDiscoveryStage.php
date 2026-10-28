@@ -8,7 +8,11 @@ use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestReadState;
+use Qualimetrix\Core\FileTarget\FileIdentity;
+use Qualimetrix\Core\FileTarget\NativeCall;
 
 /**
  * Auto-discovers paths from composer.json autoload (priority: 10).
@@ -21,6 +25,9 @@ use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterfac
  * {@see \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage}
  * judges scope against, so a run over the defaults covers what it is judged
  * against whatever autoload form declared the code.
+ *
+ * A manifest that was read is a source even when it declares no targets: its
+ * identity is how a written target is refused as the manifest.
  */
 final class ComposerDiscoveryStage implements ConfigurationStageInterface
 {
@@ -45,14 +52,30 @@ final class ComposerDiscoveryStage implements ConfigurationStageInterface
         $facts = $this->composerReader->read($request->workingDirectory);
         $production = $facts->productionTargets();
         $development = $facts->developmentTargets();
+        $file = self::identityOfRead($facts);
 
         if ($production === [] && $development === []) {
-            return null;
+            return $file === null ? null : new ConfigurationLayer('composer.json', file: $file);
         }
 
         return new ConfigurationLayer('composer.json', [
             ConfigSchema::DISCOVERED_AUTOLOAD_PATHS => $production,
             ConfigSchema::DISCOVERED_AUTOLOAD_DEV_PATHS => $development,
-        ]);
+        ], file: $file);
+    }
+
+    /**
+     * The manifest is stated just after the invocation's only read of it, by
+     * path: every later reader is served that snapshot, not the file.
+     */
+    private static function identityOfRead(ComposerManifestFacts $facts): ?FileIdentity
+    {
+        if ($facts->state !== ManifestReadState::Read && $facts->state !== ManifestReadState::Invalid) {
+            return null;
+        }
+        $source = $facts->source();
+        [$stat] = NativeCall::attempt(static fn(): array|false => stat($source));
+
+        return FileIdentity::ofRegularFile($stat);
     }
 }

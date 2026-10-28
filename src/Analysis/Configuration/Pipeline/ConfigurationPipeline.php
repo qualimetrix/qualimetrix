@@ -66,7 +66,7 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
     private static function source(ConfigurationLayer $layer, ?AuthoredLayer $file): array
     {
         if ($file === null) {
-            return ['source' => $layer->source, 'values' => $layer->values, 'file' => null, 'name' => $layer->source];
+            return ['source' => $layer->source, 'values' => $layer->values, 'file' => $layer->file, 'name' => $layer->source];
         }
 
         return [

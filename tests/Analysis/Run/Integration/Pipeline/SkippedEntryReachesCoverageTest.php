@@ -122,6 +122,11 @@ final class SkippedEntryReachesCoverageTest extends TestCase
                     1,
                 );
             }
+
+            public function select(RunConfiguration $configuration): array
+            {
+                return [$this->file];
+            }
         };
 
         $root = AbsolutePath::fromString($this->root);

@@ -278,6 +278,7 @@ final class RuntimeConfiguratorTest extends TestCase
             $this->runConfigurationFor($document),
             new CacheConfiguration(AbsolutePath::fromString($this->projectRoot . '/cache'), false, $reason),
             (new ParallelConfigurationResolver())->resolve($document),
+            static fn(): ?string => null,
         );
 
         $configurator->configure($document, $run, $this->findingConfigurationFor($document), $this->input(), new BufferedOutput());
@@ -302,7 +303,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $configurator = $this->createConfigurator(loggerFactoryOverride: $factory);
         $document = $this->customDocument();
         $root = AbsolutePath::fromString($this->projectRoot);
-        $run = new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, $root), (new ParallelConfigurationResolver())->resolve($document));
+        $run = new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, $root), (new ParallelConfigurationResolver())->resolve($document), static fn(): ?string => null);
         $configurator->configure($document, $run, $this->findingConfigurationFor($document), $this->input(), new BufferedOutput());
         $directory = $this->projectRoot . '/cache';
         $this->cacheFactory->replaceConfiguration(new CacheConfiguration(AbsolutePath::fromString($directory)));
@@ -325,7 +326,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $configurator = $this->createConfigurator(loggerFactoryOverride: $factory);
         $document = $this->customDocument();
         $root = AbsolutePath::fromString($this->projectRoot);
-        $run = new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, $root), (new ParallelConfigurationResolver())->resolve($document));
+        $run = new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, $root), (new ParallelConfigurationResolver())->resolve($document), static fn(): ?string => null);
         $configurator->configure($document, $run, $this->findingConfigurationFor($document), $this->input(), new BufferedOutput());
         self::assertSame($logger, (new ReflectionProperty($this->cacheFactory, 'logger'))->getValue($this->cacheFactory));
         $configurator->resetRunState();
@@ -744,7 +745,7 @@ PHP, var_export(\dirname(__DIR__, 4) . '/vendor/autoload.php', true));
         $this->configurator->resetRunState();
 
         $document = $this->customDocument();
-        $this->configurator->configure($document, new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, AbsolutePath::fromString($this->projectRoot)), (new ParallelConfigurationResolver())->resolve($document)), $this->findingConfigurationFor($document), $input, $output);
+        $this->configurator->configure($document, new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, AbsolutePath::fromString($this->projectRoot)), (new ParallelConfigurationResolver())->resolve($document), static fn(): ?string => null), $this->findingConfigurationFor($document), $input, $output);
     }
 
     private function configure(
@@ -753,7 +754,7 @@ PHP, var_export(\dirname(__DIR__, 4) . '/vendor/autoload.php', true));
         ArrayInput $input,
         BufferedOutput $output,
     ): void {
-        $this->configurator->configure($document, new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, $projectRoot), (new ParallelConfigurationResolver())->resolve($document)), $this->findingConfigurationFor($document), $input, $output);
+        $this->configurator->configure($document, new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, $projectRoot), (new ParallelConfigurationResolver())->resolve($document), static fn(): ?string => null), $this->findingConfigurationFor($document), $input, $output);
     }
 
     private function customDocument(): ConfigurationDocument

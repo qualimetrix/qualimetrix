@@ -172,7 +172,9 @@ physical file an authored layer was read from — root, imports, presets — has
 given identity, named as refusals name it, or null. The identity is the one the
 loader took from the handle it read through (none for another stream wrapper
 than the plain filesystem, or inode 0), so a command that writes can refuse a
-target that is one of those files without depending on a Configuration type. Architecture reads its registered
+target that is one of those files without depending on a Configuration type.
+The `composer.json` the composer stage read is a source of its own with its
+file identity, also when it declares no autoload target. Architecture reads its registered
 `architecture` section from the resolved document after the Console logger
 exists, then returns typed warnings through its own contract. ComputedMetrics
 likewise reads its registered `computed_metrics` and `exclude_health` sections

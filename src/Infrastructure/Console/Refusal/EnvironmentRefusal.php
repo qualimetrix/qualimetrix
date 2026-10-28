@@ -12,14 +12,28 @@ use Throwable;
 
 final class EnvironmentRefusal extends RuntimeException implements RefusalInterface
 {
-    private function __construct(private readonly string $summary, ?Throwable $previous = null)
-    {
+    private function __construct(
+        private readonly string $summary,
+        ?Throwable $previous = null,
+        private readonly bool $aboutStandardOutput = false,
+    ) {
         parent::__construct($summary, 0, $previous);
     }
 
     public static function aboutFile(string $path, string $operation, string $reason): self
     {
         return new self(\sprintf('Cannot %s file "%s": %s', $operation, $path, $reason));
+    }
+
+    /** Refuses standard output itself, so the refusal must not be written there. */
+    public static function aboutStandardOutput(string $reason): self
+    {
+        return new self(\sprintf('Cannot write the report to standard output: %s', $reason), null, true);
+    }
+
+    public function isAboutStandardOutput(): bool
+    {
+        return $this->aboutStandardOutput;
     }
 
     public static function aboutDirectory(string $path, string $operation, string $detail): self

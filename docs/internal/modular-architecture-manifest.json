@@ -17393,6 +17393,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeUniverse"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Pipeline\\Stage\\ComposerDiscoveryStage"
         }
       ]
     },
@@ -17653,6 +17657,10 @@
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeUniverse",
           "carrier_fqcn": "Qualimetrix\\Analysis\\ProjectManifest\\Contract\\ComposerManifestFacts"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Pipeline\\Stage\\ComposerDiscoveryStage"
         }
       ]
     },
@@ -18320,6 +18328,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckReport\\CheckResponse"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunSetup\\Execution\\RunConfigurationPreparation"
         }
       ]
     },
@@ -18422,6 +18434,10 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Run\\DiscoveryConfigurator"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunSetup\\Execution\\RunConfigurationPreparation"
         }
       ]
     },
@@ -19308,6 +19324,22 @@
         {
           "owner": "Analysis.Configuration",
           "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Contract\\ConfigurationDocument"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Pipeline\\ConfigurationLayer"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Pipeline\\Stage\\ComposerDiscoveryStage"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunSetup\\Execution\\ResolvedRunConfiguration"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunSetup\\Execution\\RunConfigurationPreparation"
         }
       ]
     },
@@ -19440,6 +19472,14 @@
         {
           "owner": "Analysis.Configuration",
           "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\YamlConfigLoader"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Pipeline\\Stage\\ComposerDiscoveryStage"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunSetup\\Execution\\RunConfigurationPreparation"
         }
       ]
     },

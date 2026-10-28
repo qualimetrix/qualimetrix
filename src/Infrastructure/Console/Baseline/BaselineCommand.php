@@ -101,17 +101,17 @@ abstract class BaselineCommand extends Command
 
     /**
      * What a command writing `$baseline` hands {@see BaselineRunInterface::measure()}: the refusal of a
-     * baseline file that is one the configuration was read from.
+     * baseline file that is one the run reads.
      *
      * @return Closure(Closure(?\Qualimetrix\Core\FileTarget\FileIdentity): ?string): void
      */
-    protected static function refusingConfigurationFile(ResolvedTarget $baseline): Closure
+    protected static function refusingInputFile(ResolvedTarget $baseline): Closure
     {
-        return static function (Closure $configurationFileReadAs) use ($baseline): void {
-            $read = $configurationFileReadAs($baseline->identity);
+        return static function (Closure $inputFileReadAs) use ($baseline): void {
+            $read = $inputFileReadAs($baseline->identity);
             if ($read !== null) {
                 throw ConfigurationRefusal::aboutCommandLineInput('baseline', \sprintf(
-                    'Baseline "%s" is %s; a baseline cannot replace a file the configuration was read from.',
+                    'Baseline "%s" is %s; a baseline cannot replace a file the run reads.',
                     $baseline->spelling,
                     $read,
                 ));
@@ -247,7 +247,7 @@ abstract class BaselineCommand extends Command
     ): LoadedBaselineRun {
         $force = $input->getOption('force') === true;
 
-        $context = $baselineRun->measure($input, $output, self::refusingConfigurationFile($document->target));
+        $context = $baselineRun->measure($input, $output, self::refusingInputFile($document->target));
         $baseline = $loader->load($document);
 
         $this->assertScopeCovers($context->scope, $baseline->scope, $force, $output);
