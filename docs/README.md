@@ -91,7 +91,7 @@ Quick reference for key concepts:
 - **Testing:** PHPUnit ^12.0
 - **Static Analysis:** PHPStan ^2.0 (level 8)
 - **Code Style:** PHP-CS-Fixer ^3.0 (PER-CS 2.0)
-- **Architecture:** enforced by Qualimetrix itself (`architecture.layer-violation` + `qmx.yaml`) — deptrac was dropped in [ADR 0014](adr/0014-deptrac-retirement.md)
+- **Architecture:** enforced by Qualimetrix itself (`architecture.layer-violation` + the generated `qmx.architecture.yaml` that `qmx.yaml` imports) — deptrac was dropped in [ADR 0014](adr/0014-deptrac-retirement.md)
 
 ---
 
@@ -107,7 +107,7 @@ XDEBUG_MODE=coverage composer test:coverage   # HTML + clover; needs an active d
 
 # Static analysis
 composer phpstan              # Run PHPStan level 8
-composer selfcheck            # Analyze this codebase with itself (enforces qmx.yaml layers)
+composer selfcheck            # Analyze this codebase with itself (enforces the qmx.architecture.yaml layers)
 composer cs-fix               # Fix code style
 
 # Full validation

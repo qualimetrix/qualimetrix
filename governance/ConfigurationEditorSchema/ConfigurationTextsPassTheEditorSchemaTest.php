@@ -37,6 +37,7 @@ final class ConfigurationTextsPassTheEditorSchemaTest extends TestCase
     /** Texts the engine must accept, so a moved or broken one cannot leave the population unnoticed. */
     private const array REQUIRED = [
         'qmx.yaml',
+        'qmx.architecture.yaml',
         'qmx.yaml.example',
         'src/Analysis/Configuration/Preset/ci.yaml',
         'src/Analysis/Configuration/Preset/legacy.yaml',
@@ -164,7 +165,7 @@ final class ConfigurationTextsPassTheEditorSchemaTest extends TestCase
         $files = [];
         foreach ($tracked as $path) {
             $name = basename($path);
-            $configuration = preg_match('/^(?:qmx|preset)\.ya?ml$/', $name) === 1 && !str_starts_with($path, self::WORKFLOWS);
+            $configuration = preg_match('/^(?:qmx|qmx\.architecture|preset)\.ya?ml$/', $name) === 1 && !str_starts_with($path, self::WORKFLOWS);
             if ($configuration || $path === 'qmx.yaml.example' || (str_starts_with($path, self::BUILT_IN_PRESETS) && str_ends_with($path, '.yaml'))) {
                 $files[$path] = self::read($path);
             }

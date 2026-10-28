@@ -23,7 +23,10 @@
 /html-report/report.css  -export-ignore
 /html-report/dist        -export-ignore
 
-# Generated ratchet snapshot: collapse its diff by default in both forges
+# Generated ratchet snapshot and architecture configuration: collapse their
+# diffs by default in both forges
 qmx-baseline.json linguist-generated
 qmx-baseline.json gitlab-generated
+qmx.architecture.yaml linguist-generated
+qmx.architecture.yaml gitlab-generated
 

@@ -320,10 +320,11 @@ When documenting deviations: use `!!! info "Deviation from original spec"` block
 - The internal manifest is the current exact owner/visibility/import authority.
   Its checker runs through `composer architecture:check` before selfcheck and
   rejects unlisted exact imports even when a coarse qmx owner edge permits them.
-- Generated `qmx.yaml` contains one semantic-owner layer per owner, no singleton
-  enforcement seams and final `external`; `coverage-gap: error` keeps isolated
-  and edge-connected project declarations fail-closed. The qmx graph is coarse
-  and does not replace the manifest checker.
+- The generated `qmx.architecture.yaml`, which `qmx.yaml` imports, contains
+  one semantic-owner layer per owner, no singleton enforcement seams and final
+  `external`; `coverage-gap: error` keeps isolated and edge-connected project
+  declarations fail-closed. The qmx graph is coarse and does not replace the
+  manifest checker.
 
 ### 2. Stateless Rules, Stateful-per-file Collectors
 
