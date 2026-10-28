@@ -77,24 +77,27 @@ final class RunTargets
     }
 
     /**
-     * `$configurationFileReadAs` names the file this run's configuration was
-     * read from with an identity; a target that is one is refused.
+     * `$inputFileReadAs` names the file this run reads with an identity; a
+     * target that is one is refused, and so is a report on standard output
+     * the shell opened on one.
      *
-     * @param Closure(?FileIdentity): ?string $configurationFileReadAs
+     * @param Closure(?FileIdentity): ?string $inputFileReadAs
      */
-    public function claim(Closure $configurationFileReadAs): void
+    public function claim(Closure $inputFileReadAs): void
     {
         $this->claims->beginClaim();
         foreach ($this->judged as $subject => $target) {
-            $read = $configurationFileReadAs(TargetCollisions::identityOf($target));
+            $read = $inputFileReadAs(TargetCollisions::identityOf($target));
             if ($read !== null) {
                 throw EnvironmentRefusal::aboutFile($target->spelling, 'use', \sprintf('%s and %s name the same input target', $subject, $read));
             }
         }
-        TargetCollisions::assertBeforeClaim(
-            $this->judged,
-            $this->reportOnStandardOutput ? ProcessStreams::identity(1) : null,
-        );
+        $standardOutput = $this->reportOnStandardOutput ? ProcessStreams::identity(1) : null;
+        $read = $inputFileReadAs($standardOutput);
+        if ($read !== null) {
+            throw EnvironmentRefusal::aboutStandardOutput(\sprintf('standard output and %s name the same input target', $read));
+        }
+        TargetCollisions::assertBeforeClaim($this->judged, $standardOutput);
 
         try {
             $this->claims->claim($this->judged, $this->reportOnStandardOutput);

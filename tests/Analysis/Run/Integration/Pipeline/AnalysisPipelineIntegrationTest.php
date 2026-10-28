@@ -655,7 +655,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
                 $document = LayeredDocument::of([['source' => 'test', 'values' => $values]], $projectRoot, ...$pipelineSections);
             }
             $findingConfiguration = $ruleInputValidator->resolve($document);
-            $runtimeConfigurator->configure($document, new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\ResolvedRunConfiguration(self::runConfigurationFor($document), new CacheConfiguration(PathFactory::fromCliArgument('.qmx-cache', $projectRoot), true), new ParallelConfiguration()), $findingConfiguration, $input, new BufferedOutput());
+            $runtimeConfigurator->configure($document, new \Qualimetrix\Infrastructure\Console\RunSetup\Execution\ResolvedRunConfiguration(self::runConfigurationFor($document), new CacheConfiguration(PathFactory::fromCliArgument('.qmx-cache', $projectRoot), true), new ParallelConfiguration(), static fn(): ?string => null), $findingConfiguration, $input, new BufferedOutput());
             $result = $pipeline->analyze(new RunConfiguration(
                 pathExcludes: [],
                 projectRoot: AbsolutePath::fromString($fixtureRoot),

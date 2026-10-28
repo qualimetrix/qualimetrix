@@ -19,6 +19,11 @@ final readonly class FileIdentity
         return $this->device === $other->device && $this->inode === $other->inode && $this->type === $other->type;
     }
 
+    public function isRegularFile(): bool
+    {
+        return $this->type === 0100000;
+    }
+
     public function isCharacterDevice(): bool
     {
         return $this->type === 0020000;

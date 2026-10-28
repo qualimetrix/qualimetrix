@@ -17,15 +17,16 @@ use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
  * configuration but builds its own discovery has two answers to "which files"
  * and no way to notice.
  *
- * `configurationFileReadAs` names the file that document was read from with a
- * given identity — one a command writing a target must not replace.
+ * `inputFileReadAs` names the file the run reads with a given identity — a
+ * configuration file, the Composer manifest or an analysed source — one a
+ * command writing a target must not replace.
  */
 final readonly class PreparedAnalysisInput
 {
-    /** @param Closure(?\Qualimetrix\Core\FileTarget\FileIdentity): ?string $configurationFileReadAs */
+    /** @param Closure(?\Qualimetrix\Core\FileTarget\FileIdentity): ?string $inputFileReadAs */
     public function __construct(
         public RunConfiguration $runConfiguration,
         public ?FindingConfiguration $findingConfiguration,
-        public Closure $configurationFileReadAs,
+        public Closure $inputFileReadAs,
     ) {}
 }

@@ -69,8 +69,8 @@ final readonly class BaselineRun implements BaselineRunInterface
     {
         $this->runtimeConfigurator->resetRunState();
         $document = $this->configurationInputAdapter->resolve($input);
-        $beforeAnalysis($document->fileReadAs(...));
         $runConfiguration = $this->runConfigurationPreparation->resolve($document);
+        $beforeAnalysis($runConfiguration->fileReadAs(...));
         $configuration = $runConfiguration->runConfiguration;
         $findingConfiguration = $this->ruleInputValidator->resolve($document);
         $exclusions = $this->findingExclusionsResolver->resolve($document);

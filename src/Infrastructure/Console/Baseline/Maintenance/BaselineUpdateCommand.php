@@ -104,7 +104,7 @@ final class BaselineUpdateCommand extends BaselineCommand
     private function updatePrepared(InputInterface $input, OutputInterface $output, string $baselinePath, BaselineUpdateInvocation $invocation, PreparedTarget $prepared, ?StagedSignalGuard $guard): int
     {
         $measured = $invocation->recordsExclusions()
-            ? new LoadedBaselineRun($this->baselineRun->measure($input, $output, self::refusingConfigurationFile($invocation->document->target)), $this->loader->load($invocation->document))
+            ? new LoadedBaselineRun($this->baselineRun->measure($input, $output, self::refusingInputFile($invocation->document->target)), $this->loader->load($invocation->document))
             : $this->measureAgainstBaseline($this->baselineRun, $this->loader, $input, $output, $invocation->document);
 
         $context = $measured->context;

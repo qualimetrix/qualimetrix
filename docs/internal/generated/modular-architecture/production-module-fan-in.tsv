@@ -306,11 +306,11 @@ Qualimetrix\Analysis\Policy\Inline\Threshold\RuleValidatorMapFactory	Analysis.Po
 Qualimetrix\Analysis\Policy\Inline\Threshold\ThresholdOverrideExtractor	Analysis.Policy.Inline	3	2
 Qualimetrix\Analysis\ProjectManifest\Contract\ComposerAutoloadSection	Analysis.ProjectManifest	1	1
 Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestDecoder	Analysis.ProjectManifest	2	2
-Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts	Analysis.ProjectManifest	6	3
+Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts	Analysis.ProjectManifest	7	4
 Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface	Analysis.ProjectManifest	10	6
 Qualimetrix\Analysis\ProjectManifest\Contract\ManifestIssue	Analysis.ProjectManifest	2	2
 Qualimetrix\Analysis\ProjectManifest\Contract\ManifestIssueKind	Analysis.ProjectManifest	2	1
-Qualimetrix\Analysis\ProjectManifest\Contract\ManifestReadState	Analysis.ProjectManifest	4	3
+Qualimetrix\Analysis\ProjectManifest\Contract\ManifestReadState	Analysis.ProjectManifest	5	4
 Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface	Analysis.ProjectManifest	4	3
 Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage	Analysis.Run	2	1
 Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface	Analysis.Run	3	2
@@ -326,7 +326,7 @@ Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement	Analysis
 Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReason	Analysis.Run	2	2
 Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReasonKind	Analysis.Run	1	1
 Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse	Analysis.Run	1	1
-Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	15	3
+Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	16	3
 Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface	Analysis.Run	2	2
 Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisCoverage	Analysis.Run	3	2
 Qualimetrix\Analysis\Run\Contract\Coverage\AnalysisFailure	Analysis.Run	1	1
@@ -337,7 +337,7 @@ Qualimetrix\Analysis\Run\Contract\DirectiveAudit\DirectiveAuditInterface	Analysi
 Qualimetrix\Analysis\Run\Contract\DirectiveAudit\DirectiveAuditReport	Analysis.Run	3	1
 Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface	Analysis.Run	1	1
 Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence	Analysis.Run	6	1
-Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface	Analysis.Run	5	2
+Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface	Analysis.Run	6	2
 Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface	Analysis.Run	4	3
 Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeSnapshot	Analysis.Run	1	1
 Qualimetrix\Analysis\Run\Contract\FileSetInspectionFailure	Analysis.Run	2	1
@@ -351,10 +351,10 @@ Qualimetrix\Core\Ast\ParseException	Core.Neutral	3	2
 Qualimetrix\Core\Ast\ResolvedName	Core.Neutral	10	7
 Qualimetrix\Core\Ast\SuperglobalRead	Core.Neutral	2	2
 Qualimetrix\Core\Environment\EnvironmentFailureInterface	Core.Environment	12	6
-Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	9	3
+Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	13	3
 Qualimetrix\Core\FileTarget\FileTargetFailure	Core.FileTarget	14	4
 Qualimetrix\Core\FileTarget\FileTargetFailureKind	Core.FileTarget	7	3
-Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	6	5
+Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	8	6
 Qualimetrix\Core\FileTarget\PrivateGroup\ProcessOwner	Core.FileTarget	1	1
 Qualimetrix\Core\FileTarget\Publication\FileReplacement	Core.FileTarget	4	3
 Qualimetrix\Core\FileTarget\Publication\HeldLock	Core.FileTarget	1	1

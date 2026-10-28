@@ -53,6 +53,11 @@ final readonly class ProjectFiles implements ProjectFilesInterface
         );
     }
 
+    public function select(RunConfiguration $run): array
+    {
+        return $this->walk->walk(new WalkRequest($run, RemovedNamespaceSurvey::unfunded()))->candidates;
+    }
+
     /**
      * @param list<SplFileInfo> $candidates
      *
