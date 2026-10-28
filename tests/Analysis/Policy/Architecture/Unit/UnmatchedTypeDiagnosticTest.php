@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -52,12 +53,12 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class UnmatchedTypeDiagnosticTest extends TestCase
 {
     /**
-     * The identity carries the write's provenance: moving the criterion into
-     * a file the root imports re-identifies the finding, as adding a preset
-     * below it does. Pinned so a change to that is a decision, not a drift.
+     * The identity is the type and the authored path: moving the criterion
+     * into a file the root imports, or adding a preset below the file that
+     * shifts its layer index, keeps the finding and its baseline entry.
      */
     #[Test]
-    public function itReidentifiesAnOccurrenceWhoseCriterionMovesIntoAnImportedFile(): void
+    public function itKeepsTheIdentityOfAnOccurrenceWhoseCriterionMovesIntoAnImportedFile(): void
     {
         $root = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml');
         $path = ['architecture', 'layers', '0', 'implements', '0'];
@@ -68,12 +69,24 @@ final class UnmatchedTypeDiagnosticTest extends TestCase
             3,
             7,
         ));
+        $belowAPreset = new NamedType('App\\Missing', new Provenance($root, $path, 4, 9));
 
-        self::assertNotSame(UnmatchedTypeOccurrence::identityOf($inRoot), UnmatchedTypeOccurrence::identityOf($imported));
+        self::assertSame(UnmatchedTypeOccurrence::identityOf($inRoot), UnmatchedTypeOccurrence::identityOf($imported));
+        self::assertSame(UnmatchedTypeOccurrence::identityOf($inRoot), UnmatchedTypeOccurrence::identityOf($belowAPreset));
         self::assertSame(
-            ['origin_0_source' => 'file', 'origin_0_locator' => 'cfg/architecture.yaml', 'origin_1_source' => 'file', 'origin_1_locator' => 'qmx.yaml'],
-            array_intersect_key((new UnmatchedTypeOccurrence($imported, null))->identityEvidence(), array_flip(['origin_0_source', 'origin_0_locator', 'origin_1_source', 'origin_1_locator'])),
+            ['fqn' => 'App\\Missing', 'path' => '["architecture","layers","0","implements","0"]'],
+            (new UnmatchedTypeOccurrence($imported, null))->identityEvidence(),
         );
+    }
+
+    #[Test]
+    public function itTellsApartTheSameTypeAtTwoAuthoredPaths(): void
+    {
+        $origin = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml');
+        $first = new NamedType('App\\Missing', new Provenance($origin, ['architecture', 'layers', '0', 'extends', '0'], 0));
+        $second = new NamedType('App\\Missing', new Provenance($origin, ['architecture', 'layers', '0', 'exclude', 'extends', '0'], 0));
+
+        self::assertNotSame(UnmatchedTypeOccurrence::identityOf($first), UnmatchedTypeOccurrence::identityOf($second));
     }
 
     #[Test]
@@ -169,23 +182,42 @@ final class UnmatchedTypeDiagnosticTest extends TestCase
         yield 'both' => [[ProjectScopeDoor::Paths], false];
     }
 
+    /**
+     * `layers` has one writer per run, so two writes of one type at one path
+     * cannot both reach the configuration; if they ever do, an identity
+     * without the writer would merge them, and that is refused, not merged.
+     */
     #[Test]
-    public function itPreservesTheImporterChainInTheAuthoredOccurrenceIdentity(): void
+    public function itRefusesTwoWritersOfOneTypeAtOneAuthoredPath(): void
     {
         $origin = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'layers.yaml');
-        $one = new NamedType('App\Missing', new Provenance($origin->importedThrough(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'one.yaml')), ['architecture', 'layers', '0', 'extends', '0'], 2, 17));
-        $two = new NamedType('App\Missing', new Provenance($origin->importedThrough(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'two.yaml')), ['architecture', 'layers', '0', 'extends', '0'], 2, 17));
+        $one = new NamedType('App\\Missing', new Provenance($origin->importedThrough(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'one.yaml')), ['architecture', 'layers', '0', 'extends', '0'], 2, 17));
+        $two = new NamedType('App\\Missing', new Provenance($origin->importedThrough(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'two.yaml')), ['architecture', 'layers', '0', 'extends', '0'], 2, 17));
         $evidence = $this->evidence([
             new LayerDefinition('one', new MembershipSpec(extends: [$one->fqn], namedTypes: [$one])),
             new LayerDefinition('two', new MembershipSpec(extends: [$two->fqn], namedTypes: [$two])),
         ]);
 
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('architecture.layers[0].extends[0]');
+
+        $evidence->architecture->namedTypes();
+    }
+
+    #[Test]
+    public function itNamesTheImporterOfTheFileThatWroteTheType(): void
+    {
+        $type = new NamedType('App\\Missing', new Provenance(
+            ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'layers.yaml')->importedThrough(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml')),
+            ['architecture', 'layers', '0', 'extends', '0'],
+            0,
+        ));
+        $evidence = $this->evidence([new LayerDefinition('one', new MembershipSpec(extends: [$type->fqn], namedTypes: [$type]))]);
+
         $findings = UnmatchedTypeDiagnostic::forEvidence($evidence, new ProjectScopeJudgement(), new AnalysisContext(new InMemoryMetricRepository()), LayerDeclarationRule::channelDeclarations()[ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME]);
 
-        self::assertCount(2, $findings);
-        self::assertNotEquals($findings[0]->occurrenceKey, $findings[1]->occurrenceKey);
-        self::assertStringContainsString('imported by configuration file "one.yaml"', $findings[0]->message);
-        self::assertStringContainsString('imported by configuration file "two.yaml"', $findings[1]->message);
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('configuration file "layers.yaml" (imported by configuration file "qmx.yaml")', $findings[0]->message);
     }
 
     #[Test]

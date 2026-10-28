@@ -53,8 +53,9 @@ final class UnmatchedTypeIntegrationTest extends TestCase
             YAML);
 
         self::assertCount(2, $findings);
-        self::assertStringContainsString('architecture.layers[0].implements[1]', $findings[0]['message']);
-        self::assertStringContainsString('architecture.layers[0].exclude.extends[0]', $findings[1]['message']);
+        $messages = implode("\n", array_column($findings, 'message'));
+        self::assertSame(1, substr_count($messages, 'architecture.layers[0].implements[1]'));
+        self::assertSame(1, substr_count($messages, 'architecture.layers[0].exclude.extends[0]'));
         foreach ($findings as $finding) {
             self::assertStringContainsString('qmx.yaml', $finding['message']);
             self::assertStringContainsString('Vendor\Missing', $finding['message']);
