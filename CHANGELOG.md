@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.31.0] - 2026-10-28
+
 ### Breaking
 
 - `architecture.unmatched-type` findings are identified by the type and its authored path alone (`architecture.layers[0].implements[1]`); the file that wrote the type, its importer, its layer index and its line no longer count, so moving the criterion into an imported file, adding a `--preset` or an import keeps the finding, and a symlinked root configuration no longer gives its imported criteria a different identity in each checkout directory. Stored identities change once: baseline keys, finding fingerprints, GitLab Code Quality and SARIF fingerprints. Migration: list the stale `architecture.unmatched-type` entries with `baseline:cleanup <baseline> <paths...>` and remove them with `--remove=<selector>`, then accept the findings with `baseline:update <baseline> <paths...> --accept-new=architecture.unmatched-type` (#214).
@@ -1824,7 +1826,8 @@ Initial release.
 [0.9.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.0...v0.7.1
-[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.30.0...HEAD
+[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.31.0...HEAD
+[0.31.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.30.0...v0.31.0
 [0.30.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.29.0...v0.30.0
 [0.29.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.28.2...v0.29.0
 [0.28.2]: https://github.com/qualimetrix/qualimetrix/compare/v0.28.1...v0.28.2
