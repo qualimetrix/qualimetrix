@@ -71,10 +71,7 @@ final class PublishedOrder
      *
      * @var list<string>
      */
-    public const SURFACES = ['format:json', ...self::BASELINE_SURFACES];
-
-    /** @var list<string> */
-    private const BASELINE_SURFACES = ['baseline-file', 'baseline:cleanup:file', 'baseline:rename-channels:file', 'baseline:update:file'];
+    public const SURFACES = ['format:json', ...ReportViews::BASELINE_FILE_SURFACES];
 
     /**
      * The identity fields this class knows how to turn into key components.
@@ -207,7 +204,7 @@ final class PublishedOrder
             return self::jsonBlocks($text, $complete);
         }
 
-        if (!\in_array($surfaceClass, self::BASELINE_SURFACES, true)) {
+        if (!\in_array($surfaceClass, ReportViews::BASELINE_FILE_SURFACES, true)) {
             return [];
         }
 
@@ -622,7 +619,7 @@ final class PublishedOrder
         $type = \is_array($edge) && \is_string($edge['type'] ?? null) ? $edge['type'] : '';
         $target = \is_array($edge) && \is_string($edge['target'] ?? null) ? $edge['target'] : '';
 
-        if (\in_array($surfaceClass, self::BASELINE_SURFACES, true)) {
+        if (\in_array($surfaceClass, ReportViews::BASELINE_FILE_SURFACES, true)) {
             return '0' . $channel . "\x1F" . $occurrence . "\x1F"
                 . (\is_array($edge) ? $target . '|' . $type : '');
         }
