@@ -19,6 +19,8 @@ use Qualimetrix\Subprocess\ChildProcess;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
+require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
+
 /**
  * A command that writes a file refuses, before it writes, a target that is the
  * Composer manifest or a source the run analyses, and a report on standard
