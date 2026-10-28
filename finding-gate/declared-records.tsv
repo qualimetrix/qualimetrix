@@ -1,1 +1,3 @@
 change	case	report	view	selector	reason
+withdrawn	layers	json	format:json	{"channel":"architecture.unmatched-type"}	Identify an unmatched layer type by its type and authored path alone, without the layer index, line and importer chain of its write.
+introduced	layers	json	format:json	{"channel":"architecture.unmatched-type"}	Identify an unmatched layer type by its type and authored path alone, without the layer index, line and importer chain of its write.
