@@ -11,6 +11,8 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Duplication\Index\PackedPosition;
 use Qualimetrix\Analysis\Evidence\Duplication\Matching\AnchoredPrefixLengths;
 use Qualimetrix\Analysis\Evidence\Duplication\Token\TokenStream;
+use Random\Engine\Mt19937;
+use Random\Randomizer;
 
 #[CoversClass(AnchoredPrefixLengths::class)]
 final class AnchoredPrefixLengthsTest extends TestCase
@@ -33,7 +35,7 @@ final class AnchoredPrefixLengthsTest extends TestCase
         }
 
         self::assertNotSame([], $members);
-        [$lengths] = AnchoredPrefixLengths::of($streams, $members, 1);
+        $lengths = (new AnchoredPrefixLengths($streams))->of($members, 1);
 
         $anchor = $files[0];
         $expected = array_map(static function (int $packed) use ($files, $anchor): int {
@@ -49,19 +51,31 @@ final class AnchoredPrefixLengthsTest extends TestCase
         self::assertSame($expected, $lengths);
     }
 
+    #[Test]
+    public function itEndsALaterAnchorOnAKeptDiagonalWhereTheKeptMatchEnds(): void
+    {
+        $run = 'x' . str_repeat('ab', 400) . 'c';
+        $lengths = new AnchoredPrefixLengths([self::stream($run . 'd'), self::stream($run . 'e')]);
+
+        self::assertSame([803, 802], $lengths->of([PackedPosition::pack(0, 0), PackedPosition::pack(1, 0)], 1));
+        $measured = $lengths->comparisons();
+        self::assertSame([801, 800], $lengths->of([PackedPosition::pack(0, 2), PackedPosition::pack(1, 2)], 1));
+        self::assertSame($measured + 1, $lengths->comparisons(), 'The second pair must not be compared again');
+    }
+
     /** @return iterable<string, array{list<string>}> */
     public static function provideStreams(): iterable
     {
         yield 'one periodic run' => [['abababababababababc']];
         yield 'nested periods' => [['aabaabaabaacaabaab']];
         yield 'runs in other files' => [['ababababx', 'yabababababab', 'abababab']];
-        mt_srand(212);
+        $random = new Randomizer(new Mt19937(212));
         for ($case = 0; $case < 20; $case++) {
             $files = [];
-            for ($file = 0, $count = mt_rand(1, 3); $file < $count; $file++) {
+            for ($file = 0, $count = $random->getInt(1, 3); $file < $count; $file++) {
                 $text = 'a';
-                for ($i = 0, $length = mt_rand(5, 60); $i < $length; $i++) {
-                    $text .= 'ab'[mt_rand(0, 9) < 8 ? $i % 2 : mt_rand(0, 1)];
+                for ($i = 0, $length = $random->getInt(5, 60); $i < $length; $i++) {
+                    $text .= 'ab'[$random->getInt(0, 9) < 8 ? $i % 2 : $random->getInt(0, 1)];
                 }
                 $files[] = $text;
             }

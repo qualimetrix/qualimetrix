@@ -57,6 +57,7 @@ final class DuplicateBlockFinder
 
     private DuplicateMatchCandidates $candidates;
     private DataRuns $dataRuns;
+    private AnchoredPrefixLengths $prefixLengths;
     private int $work = 0;
 
     /**
@@ -67,6 +68,7 @@ final class DuplicateBlockFinder
         $this->request = $request;
         $this->hintExtractor = new ContentHintExtractor();
         $this->dataRuns = new DataRuns($request->retokenized->streams);
+        $this->prefixLengths = new AnchoredPrefixLengths($request->retokenized->streams);
         $this->work = 0;
 
         try {
@@ -75,6 +77,7 @@ final class DuplicateBlockFinder
             foreach ($request->hashIndex as $positions) {
                 $this->evaluateBucket($positions);
             }
+            $this->work += $this->prefixLengths->comparisons();
 
             $segments = new DuplicateMatchCandidates();
             $reportable = $this->reportableCopies(...);
@@ -100,7 +103,7 @@ final class DuplicateBlockFinder
             );
         } finally {
             // Exceptions must also release the dataset held by this long-lived instance.
-            unset($this->request, $this->hintExtractor, $this->candidates, $this->dataRuns);
+            unset($this->request, $this->hintExtractor, $this->candidates, $this->dataRuns, $this->prefixLengths);
         }
     }
 
@@ -238,11 +241,12 @@ final class DuplicateBlockFinder
      */
     private function chainOf(array $members, int $known): AnchorChain
     {
-        $streams = $this->request->retokenized->streams;
-        [$lengths, $comparisons] = AnchoredPrefixLengths::of($streams, $members, $known);
-        $this->work += $comparisons;
-
-        return new AnchorChain($streams, $members, $lengths, $this->dataRuns);
+        return new AnchorChain(
+            $this->request->retokenized->streams,
+            $members,
+            $this->prefixLengths->of($members, $known),
+            $this->dataRuns,
+        );
     }
 
     /**

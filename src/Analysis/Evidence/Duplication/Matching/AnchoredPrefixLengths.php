@@ -16,52 +16,62 @@ use Qualimetrix\Analysis\Evidence\Duplication\Token\TokenStream;
  * member that starts inside the span already matched by an earlier member of
  * its file reuses that match through the anchor's own Z-array (Gusfield's
  * Z-box), so a file costs its matched span plus the anchor's self-similar
- * prefix. Members outside every span are compared token by token, which is
- * what an isolated copy costs anyway.
+ * prefix.
+ *
+ * Two copies of one run split into a side group per period, each anchored
+ * one period later on the same file pair and shift. A long match is
+ * therefore kept per diagonal for the whole search: a later pair starting
+ * inside it ends where it ends. Members reached by neither are compared
+ * token by token, which is what an isolated copy costs anyway.
+ *
+ * One instance serves one search; it is not reentrant.
  */
 final class AnchoredPrefixLengths
 {
+    /** Shorter matches are cheaper to compare again than to keep. */
+    private const int KEPT_MATCH_FLOOR = 256;
+
+    /** Nested runs across many files yield millions of long diagonals; only recent ones pay off. */
+    private const int KEPT_DIAGONALS = 4096;
+
+    /** @var array<string, array{int, int}> "anchor file:file:shift" → anchor-side start and exclusive end of a maximal match */
+    private array $diagonals = [];
+    private int $comparisons = 0;
+
+    /** @var list<string> */
+    private array $pattern = [];
+    private int $anchorFile = 0;
+    private int $base = 0;
+    private int $length = 0;
+
     /** @var array<int, int> Z-array of the anchor suffix, computed lazily from index 1 */
     private array $selfPrefix = [];
     private int $computed = 0;
     private int $zLeft = 0;
     private int $zRight = 0;
-    private int $comparisons = 0;
-
-    /**
-     * @param list<string> $pattern
-     */
-    private function __construct(
-        private readonly array $pattern,
-        private readonly int $base,
-        private readonly int $length,
-    ) {}
 
     /**
      * @param array<int, TokenStream> $streams
+     */
+    public function __construct(private readonly array $streams) {}
+
+    /**
      * @param non-empty-list<int> $members packed positions in file/offset order
      * @param int $known tokens every member is known to share with the anchor
      *
-     * @return array{list<int>, int} Lengths indexed like `$members`, and the token comparisons made
+     * @return list<int> lengths indexed like `$members`
      */
-    public static function of(array $streams, array $members, int $known): array
+    public function of(array $members, int $known): array
     {
-        $anchor = $members[0];
-        $pattern = $streams[PackedPosition::fileIndex($anchor)]->values;
-        $base = PackedPosition::offset($anchor);
-        $lengths = new self($pattern, $base, \count($pattern) - $base);
+        $this->anchorFile = PackedPosition::fileIndex($members[0]);
+        $this->pattern = $this->streams[$this->anchorFile]->values;
+        $this->base = PackedPosition::offset($members[0]);
+        $this->length = \count($this->pattern) - $this->base;
+        $this->selfPrefix = [];
+        $this->computed = 0;
+        $this->zLeft = 0;
+        $this->zRight = 0;
 
-        return [$lengths->measure($streams, $members, $known), $lengths->comparisons];
-    }
-
-    /**
-     * @param array<int, TokenStream> $streams
-     * @param non-empty-list<int> $members
-     *
-     * @return list<int>
-     */
-    private function measure(array $streams, array $members, int $known): array
-    {
         $result = [$this->length];
         $file = -1;
         $text = [];
@@ -73,7 +83,7 @@ final class AnchoredPrefixLengths
             $offset = PackedPosition::offset($members[$i]);
             if ($fileIndex !== $file) {
                 $file = $fileIndex;
-                $text = $streams[$fileIndex]->values;
+                $text = $this->streams[$fileIndex]->values;
                 $spanEnd = 0;
             }
 
@@ -89,7 +99,8 @@ final class AnchoredPrefixLengths
                 $matched = max($matched, $spanEnd - $offset);
             }
 
-            $matched = $this->extend($text, $offset, $matched);
+            $diagonal = "{$this->anchorFile}:{$fileIndex}:" . ($offset - $this->base);
+            $matched = $this->keptEnd($diagonal) ?? $this->keep($diagonal, $this->extend($text, $offset, $matched));
             $result[] = $matched;
             if ($offset + $matched > $spanEnd) {
                 $spanStart = $offset;
@@ -98,6 +109,36 @@ final class AnchoredPrefixLengths
         }
 
         return $result;
+    }
+
+    /** Token comparisons made since construction. */
+    public function comparisons(): int
+    {
+        return $this->comparisons;
+    }
+
+    /** The anchor's exact match on a diagonal, when a kept match there covers the anchor. */
+    private function keptEnd(string $diagonal): ?int
+    {
+        $kept = $this->diagonals[$diagonal] ?? null;
+        if ($kept === null || $kept[0] > $this->base || $this->base >= $kept[1]) {
+            return null;
+        }
+        $this->comparisons++;
+
+        return $kept[1] - $this->base;
+    }
+
+    private function keep(string $diagonal, int $matched): int
+    {
+        if ($matched >= self::KEPT_MATCH_FLOOR) {
+            if (\count($this->diagonals) >= self::KEPT_DIAGONALS) {
+                $this->diagonals = [];
+            }
+            $this->diagonals[$diagonal] = [$this->base, $this->base + $matched];
+        }
+
+        return $matched;
     }
 
     /**
@@ -115,16 +156,25 @@ final class AnchoredPrefixLengths
         return $matched;
     }
 
+    private function extendSelf(int $shift, int $matched): int
+    {
+        $start = $matched;
+        while ($shift + $matched < $this->length && $this->pattern[$this->base + $matched] === $this->pattern[$this->base + $shift + $matched]) {
+            $matched++;
+        }
+        $this->comparisons += $matched - $start + 1;
+
+        return $matched;
+    }
+
     private function selfPrefixAt(int $index): int
     {
         while ($this->computed < $index) {
             $i = ++$this->computed;
             $z = $i < $this->zRight ? min($this->zRight - $i, $this->selfPrefix[$i - $this->zLeft]) : 0;
-            $start = $z;
-            while ($i + $z < $this->length && $this->pattern[$this->base + $z] === $this->pattern[$this->base + $i + $z]) {
-                $z++;
+            if ($i + $z >= $this->zRight) {
+                $z = $this->extendSelf($i, $z);
             }
-            $this->comparisons += $z - $start + 1;
             $this->selfPrefix[$i] = $z;
             if ($i + $z > $this->zRight) {
                 $this->zLeft = $i;

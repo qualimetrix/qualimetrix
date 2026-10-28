@@ -20,8 +20,8 @@ use Qualimetrix\Analysis\Evidence\Duplication\Token\TokenStream;
  * members whose data run is shorter than the node.
  *
  * Chains wait under their side groups, nested as deep as the group's
- * structure, so per-member state stays at two integers and is compacted once
- * a quarter of it has departed.
+ * structure, so per-member state stays at two integers, plus two for a member
+ * inside a data run, and is compacted once a quarter of it has departed.
  */
 final class AnchorChain
 {

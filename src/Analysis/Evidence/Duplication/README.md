@@ -109,7 +109,11 @@ contains `PackedPositionTest` and `SaturatingCandidateFilterTest`.
 display hints, connected coverage, block finding, candidate storage and copy
 identity. `DuplicateBlockFinderTest` bounds the extension work of one long
 literal, as a data table and as executable code, by a multiple of its token
-count; the bound is an operation count, not a time. `Unit/Normalization/` owns
+count; the bound is an operation count, not a time.
+
+> **Limitation:** the bound covers the token comparisons and member steps the
+> extension counts itself. Work added outside those counters, such as a
+> rescan of the data mask per node, passes it unseen. `Unit/Normalization/` owns
 data tagging and normalization. `Unit/Token/` owns packed coordinate alignment.
 `CodeDuplicationRuleTest` stays directly under `Unit/` because the rule stays
 in the root. These tests run in memory.
@@ -223,7 +227,10 @@ A group is extended as a chain anchored at its first member.
 `AnchoredPrefixLengths` measures every member's exact common prefix with the
 anchor, reusing an earlier member's matched span through the anchor's
 Z-array, so overlapping members of a periodic run cost their file's matched
-span instead of the run length each. `AnchorChain` then lets members leave
+span instead of the run length each. Long matches are also kept per file pair
+and shift for the whole search, in a bounded table, because two copies of one
+table split into a side group per row whose pairs share that diagonal.
+`AnchorChain` then lets members leave
 in that order and answers each node from incremental state; side groups that
 leave the anchor are explored before its continuation, because insertion
 order breaks ties among candidates and so reaches the reported order. `DataRuns` answers data-table containment from

@@ -5783,6 +5783,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Index\PackedPositionTest::itRoundTripsTheFullPackedPositionRange#2
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Index\SaturatingCandidateFilterTest::itNeverDemotesATrueCandidateWhenACollisionOccurs
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Index\SaturatingCandidateFilterTest::itPromotesRepeatedHashesWithoutRetainingTheirPositions
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itEndsALaterAnchorOnAKeptDiagonalWhereTheKeptMatchEnds
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itMatchesTokenByTokenComparisonWithTheAnchor"nested periods"
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itMatchesTokenByTokenComparisonWithTheAnchor"one periodic run"
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itMatchesTokenByTokenComparisonWithTheAnchor"random 0"

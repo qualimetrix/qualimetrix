@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- `duplication.clone` analyses a large literal table in time linear in its length instead of quadratic (cubic for a constant or property table): one generated parser file with large tables drops from 1.4 s to 0.2 s of clone detection, a 16,000-token table from 54 s to under 0.1 s; reported clones are unchanged (#212).
+- `duplication.clone` no longer slows down superlinearly on large constant and property tables: a generated parser file drops from 1.4 s to 0.2 s of clone detection, a 16,000-token table from 54 s to under 0.1 s, and the same file twice from 63 s to 2 s. Other long literals, such as `return [...]` translation files, get faster too but still cost quadratic time, because each still reports one nested block per row. Reported clones are unchanged (#212).
 
 ## [0.30.0] - 2026-10-28
 

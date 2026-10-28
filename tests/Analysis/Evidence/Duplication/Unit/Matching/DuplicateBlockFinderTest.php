@@ -127,8 +127,8 @@ final class DuplicateBlockFinderTest extends TestCase
     /**
      * One literal of 1000 elements is a 2000-token periodic run whose ~1000
      * window-equal positions all overlap. Re-reading every remaining member
-     * at every extension step costs about a million operations here and took
-     * seconds per file; the bound is linear in the run.
+     * at every extension step costs about a million operations here; the
+     * bound is linear in the run. It sees only the work the extension counts.
      */
     #[Test]
     #[DataProvider('provideLongLiteralRuns')]
