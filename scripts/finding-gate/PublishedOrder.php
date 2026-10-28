@@ -54,8 +54,11 @@ final class PublishedOrder
      *
      * Measured, not assumed: `format:json` is the only formatter that goes
      * through {@see \Qualimetrix\Reporting\Formatter\Json\JsonFindingSection::sort()},
-     * and the baseline file is laid out by
-     * {@see \Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineEntryOrder}. Under the
+     * and every baseline file view is laid out by
+     * {@see \Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineEntryOrder}:
+     * `baseline:generate`, `baseline:cleanup` and `baseline:update` write
+     * through {@see \Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineWriter},
+     * and `baseline:rename-channels` lays its file out the same way. Under the
      * the observed six-name rename set, no other corpus surface moves a record
      * because none of their keys is the channel code. Checkstyle and the verbose text report
      * group by file; the default text report and the summary's top issues sort
@@ -68,7 +71,10 @@ final class PublishedOrder
      *
      * @var list<string>
      */
-    public const SURFACES = ['format:json', 'baseline-file'];
+    public const SURFACES = ['format:json', ...self::BASELINE_SURFACES];
+
+    /** @var list<string> */
+    private const BASELINE_SURFACES = ['baseline-file', 'baseline:cleanup:file', 'baseline:rename-channels:file', 'baseline:update:file'];
 
     /**
      * The identity fields this class knows how to turn into key components.
@@ -178,10 +184,18 @@ final class PublishedOrder
 
     /**
      * The record blocks of one artifact: for `format:json` the `violations`
-     * array, and for the baseline file the entry list under each subject key,
-     * which is where {@see \Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineWriter}
-     * sorts. Subject keys themselves are not touched: they are sorted by
-     * `ksort` and no rename in this vocabulary moves one.
+     * array, and for a baseline file the subject keys of `entries` and the
+     * entry list under each of them, which is where
+     * {@see \Qualimetrix\Analysis\Policy\Baseline\DocumentWriting\BaselineWriter}
+     * sorts. A subject key is ordered by byte comparison, as its
+     * `ksort(SORT_STRING)` does, and a symbol rename moves it: a closure renamed
+     * from `App\F\{closure#1}` to `App\F\Repo::debugInfo::{closure#1}` passes
+     * `App\F\debug`.
+     *
+     * The subject-key block comes first. {@see reorder()} rewrites blocks back to
+     * front, so each entry list is permuted while its offsets are still those
+     * of the published text; a permutation keeps every length, so the member
+     * spans the subject-key block holds stay valid after it.
      *
      * @param list<array<string,mixed>>|null $complete validated physical authority for the tally
      *
@@ -193,7 +207,7 @@ final class PublishedOrder
             return self::jsonBlocks($text, $complete);
         }
 
-        if ($surfaceClass !== 'baseline-file') {
+        if (!\in_array($surfaceClass, self::BASELINE_SURFACES, true)) {
             return [];
         }
 
@@ -203,15 +217,26 @@ final class PublishedOrder
             return [];
         }
 
+        $members = self::elements($text, $open);
+        $subjects = ['label' => 'the subject keys of entries', 'elements' => [], 'keys' => []];
         $blocks = [];
 
-        foreach (self::elements($text, $open) as $member) {
+        foreach ($members as $member) {
             $memberText = substr($text, $member[0], $member[1]);
             $colon = self::memberColon($memberText);
 
             if ($colon === null) {
-                continue;
+                throw new GateError('A member of the baseline entries does not parse as JSON.');
             }
+
+            $subject = json_decode(trim(substr($memberText, 0, $colon)));
+
+            if (!\is_string($subject)) {
+                throw new GateError('A member name of the baseline entries does not parse as a JSON string.');
+            }
+
+            $subjects['elements'][] = $member;
+            $subjects['keys'][] = $subject;
 
             $valueAt = $member[0] + $colon + 1;
 
@@ -230,7 +255,7 @@ final class PublishedOrder
                 'elements' => $spans,
                 'keys' => array_map(
                     static fn(array $span): array|string => self::identityKey(
-                        'baseline-file',
+                        $surfaceClass,
                         self::record($text, $span, $label),
                         $label,
                     ),
@@ -239,7 +264,7 @@ final class PublishedOrder
             ];
         }
 
-        return $blocks;
+        return [$subjects, ...$blocks];
     }
 
     /**
@@ -597,7 +622,7 @@ final class PublishedOrder
         $type = \is_array($edge) && \is_string($edge['type'] ?? null) ? $edge['type'] : '';
         $target = \is_array($edge) && \is_string($edge['target'] ?? null) ? $edge['target'] : '';
 
-        if ($surfaceClass === 'baseline-file') {
+        if (\in_array($surfaceClass, self::BASELINE_SURFACES, true)) {
             return '0' . $channel . "\x1F" . $occurrence . "\x1F"
                 . (\is_array($edge) ? $target . '|' . $type : '');
         }

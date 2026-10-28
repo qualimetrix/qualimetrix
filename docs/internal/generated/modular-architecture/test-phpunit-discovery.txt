@@ -496,6 +496,7 @@ Available tests:
  - QmxFindingGate\Tests\ProductProbeTypesTest::itSelectsTheNativeExistingType"current only"
  - QmxFindingGate\Tests\ProductProbeTypesTest::itSelectsTheNativeExistingType"previous only"
  - QmxFindingGate\Tests\PublishedOrderTest::itClassifiesEveryCaptureKeyByItsSurface
+ - QmxFindingGate\Tests\PublishedOrderTest::itReordersBaselineSubjectKeysAndRefusesASideWhoseKeysAreOutOfOrder
  - QmxFindingGate\Tests\PublishedOrderTest::itReordersRecordsByTheirPublishedIdentityAndRefusesASideOutOfItsOwnOrder
  - QmxFindingGate\Tests\RankingCheckTest::itChecksHealthyFullRankingAndZeroSlicesThroughThePublicGate
  - QmxFindingGate\Tests\RankingCheckTest::itChecksSummaryRoundingAdviceProjectLocationTagAndDebt
