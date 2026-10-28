@@ -73,7 +73,7 @@ final readonly class StubBaselineRun implements BaselineRunInterface
         private ?MetricRepositoryInterface $metrics = null,
     ) {}
 
-    public function measure(InputInterface $input, OutputInterface $output): BaselineRunContext
+    public function measure(InputInterface $input, OutputInterface $output, Closure $beforeAnalysis): BaselineRunContext
     {
         ($this->onMeasure ?? static fn(): null => null)();
 

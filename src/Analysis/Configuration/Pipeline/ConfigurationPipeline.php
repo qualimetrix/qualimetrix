@@ -47,8 +47,7 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
             $diagnostics = [...$diagnostics, ...$layer->diagnostics];
 
             foreach ($layer->authored === [] ? [null] : $layer->authored as $file) {
-                // An imported file is a source of its own; the stage's name is its root's.
-                $documents[] = ['source' => $file?->origin->importer() === null ? $layer->source : (string) $file->origin->locator(), 'values' => $layer->values];
+                $documents[] = self::source($layer, $file);
             }
         }
 
@@ -56,6 +55,26 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
         $resolved = DocumentComposer::compose(new DocumentSchema([...ConfigurationRoot::cases(), ...$this->sections]), $authored);
 
         return new ConfigurationDocument($documents, $request->workingDirectory, $resolved, $diagnostics);
+    }
+
+    /**
+     * One applied source: an imported file is a source of its own, while the
+     * stage's name is its root's.
+     *
+     * @return array{source: string, values: array<string, mixed>, file: ?\Qualimetrix\Core\FileTarget\FileIdentity, name: string}
+     */
+    private static function source(ConfigurationLayer $layer, ?AuthoredLayer $file): array
+    {
+        if ($file === null) {
+            return ['source' => $layer->source, 'values' => $layer->values, 'file' => null, 'name' => $layer->source];
+        }
+
+        return [
+            'source' => $file->origin->importer() === null ? $layer->source : (string) $file->origin->locator(),
+            'values' => $layer->values,
+            'file' => $file->file,
+            'name' => $file->origin->describe(),
+        ];
     }
 
     /**

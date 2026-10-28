@@ -126,7 +126,7 @@ final class BaselineGenerateCommand extends BaselineCommand
         $this->reportExposure($destination['target'], $output);
 
         return $this->withPreparedTarget($destination['target'], function ($prepared, $guard) use ($input, $output, $mode, $destination, $baselinePath): int {
-            $context = $this->baselineRun->measure($input, $output);
+            $context = $this->baselineRun->measure($input, $output, self::refusingConfigurationFile($destination['target']));
             $capture = $this->generator->generate(
                 $context->findings(),
                 $context->scope->paths(),

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
+use LogicException;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
@@ -176,7 +177,11 @@ final readonly class ArchitectureConfiguration
             $membership = $entry instanceof TemplateLayerDefinition ? $entry->membership : $entry->membership();
             foreach ([$membership->namedTypes, $membership->exclude->namedTypes ?? []] as $declared) {
                 foreach ($declared as $type) {
-                    $types[UnmatchedTypeOccurrence::identityOf($type)] = $type;
+                    $identity = UnmatchedTypeOccurrence::identityOf($type);
+                    if (isset($types[$identity]) && serialize($types[$identity]->provenance) !== serialize($type->provenance)) {
+                        throw new LogicException(\sprintf('Two writes of "%s" share the authored path %s; an occurrence identity without the writer would merge them.', $type->fqn, $type->provenance->displayPath()));
+                    }
+                    $types[$identity] = $type;
                 }
             }
         }

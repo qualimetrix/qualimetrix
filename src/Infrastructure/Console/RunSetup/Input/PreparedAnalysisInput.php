@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\RunSetup\Input;
 
+use Closure;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 
@@ -15,11 +16,16 @@ use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
  * document and disagree the moment they are not. A caller that keeps the run
  * configuration but builds its own discovery has two answers to "which files"
  * and no way to notice.
+ *
+ * `configurationFileReadAs` names the file that document was read from with a
+ * given identity — one a command writing a target must not replace.
  */
 final readonly class PreparedAnalysisInput
 {
+    /** @param Closure(?\Qualimetrix\Core\FileTarget\FileIdentity): ?string $configurationFileReadAs */
     public function __construct(
         public RunConfiguration $runConfiguration,
         public ?FindingConfiguration $findingConfiguration,
+        public Closure $configurationFileReadAs,
     ) {}
 }

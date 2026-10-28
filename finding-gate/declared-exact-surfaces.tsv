@@ -1,1 +1,4 @@
 case	surface	file	reason
+layers	format:sarif	declared-exact-surfaces/f6cd94974dd5e73771825505b5bfedd7.diff	Identify an unmatched layer type by its type and authored path alone, without the layer index, line and importer chain of its write: the occurrence and the fingerprints derived from it change.
+layers	format:gitlab	declared-exact-surfaces/85eb82713d181f80259763d3b2685b71.diff	Identify an unmatched layer type by its type and authored path alone, without the layer index, line and importer chain of its write: the occurrence and the fingerprints derived from it change.
+layers	explain:project:	declared-exact-surfaces/a2c3ac8f5ecad0a1e65050d913ed8032.diff	Identify an unmatched layer type by its type and authored path alone, without the layer index, line and importer chain of its write: the occurrence and the fingerprints derived from it change.

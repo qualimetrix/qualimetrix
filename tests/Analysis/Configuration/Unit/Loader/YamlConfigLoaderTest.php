@@ -1370,6 +1370,60 @@ YAML);
         self::assertSame(5, $lawful->get('rules', 'complexity.ccn', 'callable', 'warning')?->plain());
     }
 
+    #[Test]
+    public function itIdentifiesTheFileItRead(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, "format: json\n");
+        $stat = stat($path);
+        self::assertNotFalse($stat);
+
+        $file = $this->loader->read($path, self::configFile('config.yaml'))->file;
+
+        self::assertNotNull($file);
+        self::assertTrue($file->sameAs(\Qualimetrix\Core\FileTarget\FileIdentity::fromStat($stat)));
+        self::assertNotNull($this->loader->read('file://' . $path, self::configFile('config.yaml'))->file);
+    }
+
+    #[Test]
+    public function itIdentifiesAPlainFileWhosePathLooksLikeAUrl(): void
+    {
+        mkdir($this->tempDir . '/a:');
+        file_put_contents($this->tempDir . '/a:/config.yaml', "format: json\n");
+        $cwd = getcwd();
+        self::assertNotFalse($cwd);
+        chdir($this->tempDir);
+
+        try {
+            self::assertNotNull($this->loader->read('a://config.yaml', self::configFile('a://config.yaml'))->file);
+        } finally {
+            chdir($cwd);
+        }
+    }
+
+    #[Test]
+    public function itGivesNoIdentityToAFileBehindAnotherStreamWrapper(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, "format: json\n");
+        stream_wrapper_register('qmxloadertest', ProxyStream::class);
+
+        try {
+            self::assertNull($this->loader->read('qmxloadertest://' . $path, self::configFile('config.yaml'))->file);
+        } finally {
+            stream_wrapper_unregister('qmxloadertest');
+        }
+    }
+
+    #[Test]
+    public function itRefusesADirectoryAsNotARegularFile(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('Configuration file "dir" is not a regular file.');
+
+        $this->loader->read($this->tempDir, self::configFile('dir'));
+    }
+
     /** @return array<string, mixed> */
     private function authoredValues(string $path): array
     {
@@ -1430,5 +1484,57 @@ YAML);
         }
 
         rmdir($dir);
+    }
+}
+
+/**
+ * A stream wrapper over a real file, reporting that file's own stat, as the
+ * phar wrapper does for a built-in preset.
+ *
+ * @internal
+ */
+final class ProxyStream
+{
+    /** @var resource|null */
+    public $context;
+
+    /** @var resource|null */
+    private $handle;
+
+    public function stream_open(string $path, string $mode): bool
+    {
+        $handle = fopen(substr($path, \strlen('qmxloadertest://')), $mode);
+        $this->handle = $handle === false ? null : $handle;
+
+        return $this->handle !== null;
+    }
+
+    public function stream_read(int $count): string|false
+    {
+        return $this->handle === null ? false : fread($this->handle, max(1, $count));
+    }
+
+    public function stream_eof(): bool
+    {
+        return $this->handle === null || feof($this->handle);
+    }
+
+    /** @return array<int|string, int>|false */
+    public function stream_stat(): array|false
+    {
+        return $this->handle === null ? false : fstat($this->handle);
+    }
+
+    /** @return array<int|string, int>|false */
+    public function url_stat(string $path, int $flags): array|false
+    {
+        return @stat(substr($path, \strlen('qmxloadertest://')));
+    }
+
+    public function stream_close(): void
+    {
+        if ($this->handle !== null) {
+            fclose($this->handle);
+        }
     }
 }

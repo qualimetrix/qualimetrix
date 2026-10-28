@@ -807,10 +807,10 @@ the root file rather than in a shared base, since a base's set entry cannot be
 taken back.
 
 !!! note "Baselines and `architecture.unmatched-type`"
-    The identity of an `architecture.unmatched-type` finding includes the file
-    that wrote the type and its position among the layers. Moving that
-    criterion into an imported file — like adding a preset — re-identifies the
-    finding, and its baseline entry goes stale.
+    An `architecture.unmatched-type` finding is identified by the type and
+    its authored path, such as `architecture.layers[0].implements[1]`. Moving
+    that criterion into an imported file, or adding a preset, keeps the finding
+    and its baseline entry; moving it to another path re-identifies it.
 
 ---
 

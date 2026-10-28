@@ -8,6 +8,7 @@ use LogicException;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ConfigurationDiagnostic;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument;
+use Qualimetrix\Core\FileTarget\FileIdentity;
 use Qualimetrix\Core\Path\AbsolutePath;
 
 /**
@@ -19,7 +20,11 @@ final readonly class ConfigurationDocument
 {
     private ResolvedDocument $resolved;
 
-    /** @param list<array{source: string, values: array<string, mixed>}> $sources */
+    /**
+     * `file` is the identity of the file a source was read from, `name` its description.
+     *
+     * @param list<array{source: string, values: array<string, mixed>, file?: ?FileIdentity, name?: string}> $sources
+     */
     public function __construct(
         private array $sources,
         private AbsolutePath $workingDirectory,
@@ -58,6 +63,25 @@ final readonly class ConfigurationDocument
     public function appliedSources(): array
     {
         return array_values(array_unique(array_column($this->sources, 'source')));
+    }
+
+    /**
+     * The file this configuration was read from that has the given identity,
+     * as a refusal names it (`configuration file "base.yaml" (imported by …)`),
+     * or null; the lowest-precedence source wins when a file is in two bands.
+     */
+    public function fileReadAs(?FileIdentity $identity): ?string
+    {
+        if ($identity === null) {
+            return null;
+        }
+        foreach ($this->sources as $source) {
+            if (($source['file'] ?? null)?->sameAs($identity) === true) {
+                return $source['name'] ?? $source['source'];
+            }
+        }
+
+        return null;
     }
 
     public function workingDirectory(): AbsolutePath

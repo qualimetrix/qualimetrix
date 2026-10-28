@@ -50,7 +50,7 @@ final class ProfilePresenterTest extends TestCase
                 $target = $argv[2];
                 $targets = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargets(new \Qualimetrix\Infrastructure\Logging\LoggerFactory(), \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register());
                 $targets->judge('--profile', $target);
-                $targets->claim();
+                $targets->claim(static fn(): null => null);
                 $report = new class implements \Qualimetrix\Infrastructure\Profiler\Contract\ProfileReportInterface {
                     public function isEnabled(): bool { return true; }
                     public function summary(): \Qualimetrix\Infrastructure\Profiler\Contract\ProfileSummary { throw new \LogicException('Summary is not requested.'); }
@@ -100,7 +100,7 @@ final class ProfilePresenterTest extends TestCase
 
         try {
             $targets->judge('--profile', $target);
-            $targets->claim();
+            $targets->claim(static fn(): null => null);
             $presenter->present($this->input($target), new BufferedOutput(), $targets);
 
             self::assertSame('{"format":"json"}', file_get_contents($target));

@@ -27,6 +27,11 @@ final readonly class ProjectScopeUniverse
         public ComposerManifestFacts $manifestFacts,
     ) {}
 
+    public function pathsAuthorship(): PathsAuthorship
+    {
+        return $this->pathsAuthored ? PathsAuthorship::Authored : PathsAuthorship::Inferred;
+    }
+
     /**
      * @param list<AbsolutePath> $paths
      *

@@ -537,8 +537,12 @@ third ordinary channel, `architecture.layer-overlap`, at fixed info for partial
 non-pattern precedence losses. `UnmatchedTypeDiagnostic` emits `architecture.unmatched-type` at fixed warning
 for each authored positive or exclude type this complete run did not meet,
 provided the analysed project's Composer install was read. A known neighbour
-never conceals a missing type. Occurrences retain source kind, locator and
-importer chain, authored key path, document layer index, line and exact FQN;
+never conceals a missing type. An occurrence is the exact FQN and the
+authored key path alone: `layers` has one writer per run, so the writing file,
+its importers, layer index and line would only re-identify the finding when the
+criterion moves into an imported file or a preset is added (ADR 0139). Two
+writes of one type at one path reaching `namedTypes()` are refused as a
+programmer error rather than merged;
 expanded template copies share the original occurrence, and an empty template
 still has its authored types judged. Messages name the configuration writer and
 position. An undecidable exclusion cannot be

@@ -56,7 +56,7 @@ $session = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession(
 );
 $exit = $session->run(new \Symfony\Component\Console\Output\BufferedOutput(), 'json', static function () use ($targets, $argv): int {
     $targets->judge('--output', $argv[2]);
-    $targets->claim();
+    $targets->claim(static fn(): null => null);
     fwrite(STDOUT, "READY\n");
     fflush(STDOUT);
     if ($argv[3] === 'amp') {
@@ -150,7 +150,7 @@ $exit = $session->run(new \Symfony\Component\Console\Output\BufferedOutput(), 'j
     if ($argv[4] === 'staged') {
         $targets->judge('--output', $argv[2]);
     }
-    $targets->claim();
+    $targets->claim(static fn(): null => null);
     $strategy->execute(
         [new \SplFileInfo($argv[3] . '/SourceA.php'), new \SplFileInfo($argv[3] . '/SourceB.php')],
         static fn(): never => throw new \LogicException('Parallel execution must not use the fallback.'),

@@ -1,0 +1,8 @@
+--- candidate
++++ reference (mapped)
+@@ -193,1 +193,1 @@
+-                        "primaryLocationLineHash": "architecture.unmatched-type:project::78a2268895c200f1"
++                        "primaryLocationLineHash": "architecture.unmatched-type:project::d479f199c42740ae"
+@@ -541,1 +541,1 @@
+-                        "primaryLocationLineHash": "architecture.unmatched-type:project::78a2268895c200f1"
++                        "primaryLocationLineHash": "architecture.unmatched-type:project::d479f199c42740ae"

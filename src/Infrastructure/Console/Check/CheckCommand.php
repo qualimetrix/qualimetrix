@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Check;
 
+use Closure;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
@@ -208,7 +209,7 @@ final class CheckCommand extends Command
 
         $resolvedScope = $this->checkScopeResolver->resolve($input, $runConfiguration, $document, $output, $findingExclusions);
         $projectionOptions = $resolvedScope->projectionOptions;
-        $this->claimRunTargets($input, $output);
+        $this->claimRunTargets($input, $output, $document->fileReadAs(...));
 
         $this->clearCacheIfRequested($input, $output, $resolved->run->cacheConfiguration->directory?->value());
 
@@ -241,7 +242,7 @@ final class CheckCommand extends Command
 
     }
 
-    private function claimRunTargets(InputInterface $input, OutputInterface $output): void
+    private function claimRunTargets(InputInterface $input, OutputInterface $output, Closure $configurationFileReadAs): void
     {
         $profile = $input->hasOption('profile') ? $input->getOption('profile') : false;
         if ($profile !== false && $profile !== null && $profile !== true) {
@@ -250,19 +251,13 @@ final class CheckCommand extends Command
         if (CommandLineSpelling::option($input, 'output') === null) {
             $this->runTargetSession->targets()->reportOnStandardOutput();
         }
-        $inputs = [];
-        foreach (['config', 'baseline'] as $name) {
-            $spelling = CommandLineSpelling::option($input, $name);
-            if ($spelling !== null) {
-                $inputs['--' . $name] = $spelling;
-            }
-        }
-        $this->runTargetSession->targets()->assertSeparateFromInputs($inputs);
+        $baseline = CommandLineSpelling::option($input, 'baseline');
+        $this->runTargetSession->targets()->assertSeparateFromInputs($baseline === null ? [] : ['--baseline' => $baseline]);
         foreach ($this->runTargetSession->targets()->exposureWarnings() as $warning) {
             $this->writeWarning($output, 'Warning: ' . \Symfony\Component\Console\Formatter\OutputFormatter::escape($warning));
         }
 
-        $this->runTargetSession->targets()->claim();
+        $this->runTargetSession->targets()->claim($configurationFileReadAs);
     }
 
     /**

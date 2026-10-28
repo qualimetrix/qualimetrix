@@ -439,7 +439,12 @@ its closed set and a `--profile` target the export cannot be written to, and
 analysis. `RunTargets` owns report, profile and log target judgement, collision
 checks. Its private `RunTargetClaimLifecycle` owns held resources, staged
 publication, signal ownership and teardown; `TargetCollisions` judges target
-identities and names. Core resolves target components and trusted links;
+identities and names. `claim()` takes the configuration's `fileReadAs(...)`
+question as an argument and refuses any report, profile or log target that is
+a file the configuration was read from, by identity; `graph:export` gets the
+question from `PreparedAnalysisInput`. The baseline commands hand
+`BaselineRunInterface::measure()` a closure refusing their baseline file, which
+it calls with the same question before analysis. Core resolves target components and trusted links;
 unknown wrappers, exposed links and unsupported targets refuse. Pure preflight
 checks writable regular targets and writable/searchable parents without opening
 them. Descriptor existence is checked on both platforms; Linux fdinfo also

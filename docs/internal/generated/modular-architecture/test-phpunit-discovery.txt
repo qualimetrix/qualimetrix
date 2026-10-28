@@ -1930,6 +1930,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itKeepsTheChainInTheConfigurationFileBand
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itLetsALaterImportOverrideAnEarlierOneAndTheRootOverrideBoth
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itNamesEachFileAsAnAppliedSourceAndNeverResolvesImports
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itNamesEveryFileItReadByIdentity
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itNamesEveryFileOfARefusedMergedValueInPrecedenceOrder
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itPlacesAFileGivenAsAPresetAndImportedInBothBands
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itRefusesABareImportsValue
@@ -2343,6 +2344,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itAcceptsNullRuleConfig
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itAcceptsParallelSection
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itCarriesTheWrittenDocumentUntilTheEngineJudgesIt
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itGivesNoIdentityToAFileBehindAnotherStreamWrapper
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itIdentifiesAPlainFileWhosePathLooksLikeAUrl
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itIdentifiesTheFileItRead
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itLoadsEmptyFile
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itLoadsProjectQmxYamlExampleWithoutErrors
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itLoadsProjectQmxYamlWithoutErrors
@@ -2362,6 +2366,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesTheChannelKeysOfAnExclusionMap
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesWrittenOptionKeysBesideAChannelMap
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itPreservesWrittenRootKeysBesideArchitecture
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRefusesADirectoryAsNotARegularFile
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRefusesAListRootWrittenAsAMap#0
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRefusesAListRootWrittenAsAMap#1
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRefusesAListRootWrittenAsAMap#2
@@ -9417,9 +9422,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnmatchedTypeDiagnosticTest::itJudgesAnAuthoredTypeEvenWhenItsTemplateProducedNoInstance
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnmatchedTypeDiagnosticTest::itKeepsAnUnmetMemberAttributeBesideAKnownPositiveType
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnmatchedTypeDiagnosticTest::itKeepsSeparateAuthoredPositionsWhileCollapsingTemplateCopies
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnmatchedTypeDiagnosticTest::itPreservesTheImporterChainInTheAuthoredOccurrenceIdentity
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnmatchedTypeDiagnosticTest::itReidentifiesAnOccurrenceWhoseCriterionMovesIntoAnImportedFile
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnmatchedTypeDiagnosticTest::itKeepsTheIdentityOfAnOccurrenceWhoseCriterionMovesIntoAnImportedFile
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnmatchedTypeDiagnosticTest::itNamesTheImporterOfTheFileThatWroteTheType
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnmatchedTypeDiagnosticTest::itRefusesTwoWritersOfOneTypeAtOneAuthoredPath
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnmatchedTypeDiagnosticTest::itReportsEachUnmetPositiveAndExcludeTypeBesideAKnownType
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnmatchedTypeDiagnosticTest::itTellsApartTheSameTypeAtTwoAuthoredPaths
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnmatchedTypeDiagnosticTest::itWithholdsFindingsWhenScopeOrInstallCannotJudgeAbsence"both"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnmatchedTypeDiagnosticTest::itWithholdsFindingsWhenScopeOrInstallCannotJudgeAbsence"install not read"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnmatchedTypeDiagnosticTest::itWithholdsFindingsWhenScopeOrInstallCannotJudgeAbsence"narrowed"
@@ -12345,6 +12352,34 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationDiagnosticsChannelTest::itWritesTheWarningToStderrFromEveryCommandThatReadsTheDocument"directives"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationDiagnosticsChannelTest::itWritesTheWarningToStderrFromEveryCommandThatReadsTheDocument"graph"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationDiagnosticsChannelTest::itWritesTheWarningToStderrFromEveryCommandThatReadsTheDocument"rules"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"baseline:generate over the discovered file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"baseline:generate over the explicit file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"baseline:generate over the imported file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"baseline:generate over the preset also imported file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"baseline:generate over the preset file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"check --log-file over the discovered file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"check --log-file over the explicit file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"check --log-file over the imported file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"check --log-file over the preset also imported file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"check --log-file over the preset file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"check --output over the discovered file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"check --output over the explicit file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"check --output over the imported file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"check --output over the preset also imported file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"check --output over the preset file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"check --profile over the discovered file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"check --profile over the explicit file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"check --profile over the imported file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"check --profile over the preset also imported file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"check --profile over the preset file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"graph:export --output over the discovered file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"graph:export --output over the explicit file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"graph:export --output over the imported file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"graph:export --output over the preset also imported file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"graph:export --output over the preset file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAnotherNameOfTheDiscoveredConfiguration"hard link"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAnotherNameOfTheDiscoveredConfiguration"symlink"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itWritesAReportBesideTheConfigurationFiles
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAcceptsAnExplicitFullSweep
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnalysesTheSameFilesAsCheckUnderTheSameExcludes
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itAnswersAnImpossiblePairAboutTheLevelRatherThanTheBan"a group that covers it"

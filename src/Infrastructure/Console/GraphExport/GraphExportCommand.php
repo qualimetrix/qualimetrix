@@ -89,7 +89,7 @@ final class GraphExportCommand extends Command
                 . \Symfony\Component\Console\Formatter\OutputFormatter::escape($warning) . '</comment>');
         }
 
-        $this->runTargetSession->targets()->claim();
+        $this->runTargetSession->targets()->claim($prepared->configurationFileReadAs);
 
         $this->logger->info('Starting dependency graph export', [
             'paths' => array_map(static fn(AbsolutePath $p): string => $p->value(), $prepared->runConfiguration->paths),

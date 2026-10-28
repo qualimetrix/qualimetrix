@@ -17978,18 +17978,6 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunSetup\\Input\\AnalysisInputPathValidator"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunSetup\\Input\\AnalysisPreflight"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Baseline\\Measurement\\BaselineRun"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckScope\\CheckScopeResolver"
         }
       ]
     },
@@ -19304,6 +19292,22 @@
         {
           "owner": "Analysis.Configuration",
           "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportChain"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Document\\AuthoredLayer"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\LoadedDocument"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\YamlConfigLoader"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Contract\\ConfigurationDocument"
         }
       ]
     },
@@ -19432,6 +19436,10 @@
         {
           "owner": "Infrastructure.Parallel",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\WorkerContextFactory"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\YamlConfigLoader"
         }
       ]
     },

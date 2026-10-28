@@ -45,7 +45,7 @@ final class RunTargetsTest extends TestCase
 
         $targets = self::targets();
         $targets->judge('--output', $target);
-        $targets->claim();
+        $targets->claim(static fn(): null => null);
         self::assertSame('old and longer', file_get_contents($target));
         $targets->write('--output', 'new');
         $targets->abandon();
@@ -64,7 +64,7 @@ final class RunTargetsTest extends TestCase
         $target = $this->directory . '/late-report.json';
         $targets = self::targets();
         $targets->judge('--output', $target);
-        $targets->claim();
+        $targets->claim(static fn(): null => null);
 
         try {
             self::assertFileDoesNotExist($target, 'A claimed report must stay private before analysis finishes.');
@@ -85,7 +85,7 @@ final class RunTargetsTest extends TestCase
         $oldInode = fileinode($target);
         $targets = self::targets();
         $targets->judge('--output', $target);
-        $targets->claim();
+        $targets->claim(static fn(): null => null);
 
         try {
             self::assertSame('old bytes', file_get_contents($target));
@@ -106,7 +106,7 @@ final class RunTargetsTest extends TestCase
         $target = $this->directory . '/new.json';
         $targets = self::targets();
         $targets->judge('--output', $target);
-        $targets->claim();
+        $targets->claim(static fn(): null => null);
         try {
             self::assertFileDoesNotExist($target);
             self::assertCount(1, $this->entries());
@@ -116,7 +116,7 @@ final class RunTargetsTest extends TestCase
         self::assertSame([], $this->entries());
 
         $targets->judge('--output', $target);
-        $targets->claim();
+        $targets->claim(static fn(): null => null);
         $targets->write('--output', 'complete');
         $targets->abandon();
         self::assertSame('complete', file_get_contents($target));
@@ -131,7 +131,7 @@ final class RunTargetsTest extends TestCase
         $factory->create(new \Symfony\Component\Console\Output\BufferedOutput(), $path, null);
         $targets = new RunTargets($factory, \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register());
         $targets->judge('--log-file', $path);
-        $targets->claim();
+        $targets->claim(static fn(): null => null);
         $targets->abandon();
 
         self::assertFileExists($path);
@@ -153,7 +153,7 @@ $targets = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargets(
     \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register(),
 );
 $targets->judge('--output', $directory . '/report.json');
-$targets->claim();
+$targets->claim(static fn(): null => null);
 $entries = static fn(): array => array_values(array_diff((array) scandir($directory), ['.', '..']));
 $before = $entries();
 $pid = pcntl_fork();
@@ -189,7 +189,7 @@ PHP;
         $async = pcntl_async_signals();
         $targets = self::targets();
         $targets->judge('--output', $this->directory . '/report.json');
-        $targets->claim();
+        $targets->claim(static fn(): null => null);
         try {
             \Amp\delay(0.001);
             self::assertNotSame($int, pcntl_signal_get_handler(\SIGINT));
@@ -216,7 +216,7 @@ PHP;
         $targets = self::targets();
         try {
             $targets->judge('--output', $this->directory . '/report.json');
-            $targets->claim();
+            $targets->claim(static fn(): null => null);
             self::assertSame($handler, pcntl_signal_get_handler(\SIGTERM));
             $targets->write('--output', 'COMPLETE');
             self::assertSame('COMPLETE', file_get_contents($this->directory . '/report.json'));
@@ -236,7 +236,7 @@ PHP;
         $targets = self::targets();
         try {
             $targets->judge('--output', $this->directory . '/report.json');
-            $targets->claim();
+            $targets->claim(static fn(): null => null);
             self::assertContains($watcher, \Revolt\EventLoop::getIdentifiers());
             $targets->write('--output', 'COMPLETE');
             self::assertSame('COMPLETE', file_get_contents($this->directory . '/report.json'));
@@ -255,7 +255,7 @@ $directory = $argv[2];
 $targets = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargets(new \Qualimetrix\Infrastructure\Logging\LoggerFactory(), \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register());
 $targets->judge('--output', $directory . '/report.json');
 $targets->judge('--profile', $directory . '/profile.json');
-$targets->claim();
+$targets->claim(static fn(): null => null);
 if (file_exists($directory . '/report.json') || file_exists($directory . '/profile.json')) { exit(6); }
 $targets->write('--output', 'COMPLETE REPORT');
 $targets->write('--profile', 'COMPLETE PROFILE');
@@ -278,7 +278,7 @@ PHP;
         $factory->expects(self::once())->method('reset');
         $targets = new RunTargets($factory, \Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint::register());
         $targets->judge('--output', $this->directory . '/report.json');
-        $targets->claim();
+        $targets->claim(static fn(): null => null);
 
         $targets->abandon();
 
@@ -293,7 +293,7 @@ PHP;
         symlink('real/report.json', $this->directory . '/current.json');
         $targets = self::targets();
         $targets->judge('--output', $this->directory . '/current.json');
-        $targets->claim();
+        $targets->claim(static fn(): null => null);
         $targets->write('--output', 'new');
         $targets->abandon();
 
@@ -325,7 +325,7 @@ PHP;
         }
         $targets = self::targets();
         $targets->judge('--output', $this->directory . '/links/current.json');
-        $targets->claim();
+        $targets->claim(static fn(): null => null);
         $targets->write('--output', 'new');
         $targets->abandon();
 
@@ -402,7 +402,7 @@ PHP;
         chmod($parent, 0o555);
 
         try {
-            $targets->claim();
+            $targets->claim(static fn(): null => null);
             self::fail('A parent sealed after judgement must be refused.');
         } catch (EnvironmentRefusal $refusal) {
             self::assertStringContainsString('--output', $refusal->summary());
@@ -435,7 +435,7 @@ PHP;
         try {
             $targets = self::targets();
             $targets->judge('--output', $this->directory . '/' . $name);
-            $targets->claim();
+            $targets->claim(static fn(): null => null);
             $targets->write('--output', 'changed');
             self::fail('The link cannot name a writable file.');
         } catch (RefusalInterface $refusal) {
@@ -458,7 +458,7 @@ PHP;
         $this->expectException(EnvironmentRefusal::class);
         $this->expectExceptionMessage('same output target');
         try {
-            $targets->claim();
+            $targets->claim(static fn(): null => null);
         } finally {
             self::assertSame('KEEP', file_get_contents($target));
         }
@@ -473,7 +473,7 @@ PHP;
 
         $this->expectException(EnvironmentRefusal::class);
         $this->expectExceptionMessage('standard output');
-        $targets->claim();
+        $targets->claim(static fn(): null => null);
     }
 
     #[Test]
@@ -482,7 +482,7 @@ PHP;
         $path = $this->directory . '/report.json';
         $targets = self::targets();
         $targets->judge('--output', 'file://' . $path);
-        $targets->claim();
+        $targets->claim(static fn(): null => null);
         $targets->write('--output', 'file url');
         $targets->abandon();
         self::assertSame('file url', file_get_contents($path));
@@ -497,7 +497,7 @@ PHP;
     {
         $targets = self::targets();
         $targets->judge('--output', '/dev/null');
-        $targets->claim();
+        $targets->claim(static fn(): null => null);
         $targets->write('--output', 'discarded');
         $targets->abandon();
         self::assertSame('char', filetype('/dev/null'));
@@ -516,7 +516,7 @@ PHP;
         $targets = self::targets();
         try {
             $targets->judge('--output', $fifo);
-            $targets->claim();
+            $targets->claim(static fn(): null => null);
             $targets->write('--output', 'through the pipe');
             stream_set_blocking($reader, false);
             self::assertSame('through the pipe', fread($reader, 8192));
@@ -590,7 +590,7 @@ PHP;
     {
         return \sprintf(
             'require %s; %s $targets = new \\%s(new \\%s(), \\%s::register());'
-            . ' try { $targets->judge("--output", %s); $targets->claim(); $targets->write("--output", %s); $targets->abandon(); }'
+            . ' try { $targets->judge("--output", %s); $targets->claim(static fn(): null => null); $targets->write("--output", %s); $targets->abandon(); }'
             . ' catch (\\Throwable $failure) { fwrite(STDERR, $failure->getMessage()); exit(3); }',
             var_export(\dirname(__DIR__, 5) . '/vendor/autoload.php', true),
             $before,
