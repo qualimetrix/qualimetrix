@@ -10,7 +10,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
-use Qualimetrix\Reporting\FindingProjection\FindingNamespaces;
 use Qualimetrix\Reporting\FindingPublication\FindingRecord;
 
 /**
@@ -23,8 +22,9 @@ use Qualimetrix\Reporting\FindingPublication\FindingRecord;
  * - a global function finding on its namespace node;
  * - a namespace finding on its namespace node;
  * - a file finding on the class node of the one class that file declares,
- *   otherwise on the node of the namespace its record names — the same
- *   attribution JSON and text group it by;
+ *   when its record names only that class's namespace, and otherwise on the
+ *   node of the namespace its record names — the same attribution JSON and
+ *   text group it by;
  * - and whatever has no such node — a project finding, a symbol whose node
  *   the metrics never produced — on the nearest enclosing node, the project
  *   root at the latest.
@@ -42,7 +42,8 @@ final readonly class HtmlFindingPartitioner
     /** The project root's node path. */
     public const string ROOT = '';
 
-    private const string NO_NAMESPACE = '(no namespace)';
+    /** The node path of the global namespace. */
+    public const string NO_NAMESPACE = '(no namespace)';
 
     public function __construct(private FindingRecord $record) {}
 
@@ -72,7 +73,7 @@ final readonly class HtmlFindingPartitioner
 
     /**
      * @param array<string, HtmlTreeNode> $nodesByPath
-     * @param array<string, string> $soleClassByFile
+     * @param array<string, array{node: string, namespace: string}> $soleClassByFile
      * @param array<string, string> $classByCallable
      */
     private function nodePathOf(Finding $finding, array $nodesByPath, FileNamespaceIndex $fileNamespaces, array $soleClassByFile, array $classByCallable): string
@@ -94,11 +95,11 @@ final readonly class HtmlFindingPartitioner
     }
 
     /**
-     * File path -> class node path, for files declaring exactly one named
-     * class: the one place a file-level finding can be shown more precisely
-     * than on the project root.
+     * File path -> the class node path and namespace, for files declaring
+     * exactly one named class: the one place a file-level finding can be
+     * shown more precisely than on a namespace.
      *
-     * @return array<string, string>
+     * @return array<string, array{node: string, namespace: string}>
      */
     private static function soleClassByFile(?MetricRepositoryInterface $metrics): array
     {
@@ -112,12 +113,15 @@ final readonly class HtmlFindingPartitioner
                 continue;
             }
 
-            $classesByFile[$symbolInfo->file->value()][] = $symbolInfo->subject?->toCanonical()
-                ?? throw new LogicException('HTML class file binding requires an exact declaration subject');
+            $classesByFile[$symbolInfo->file->value()][] = [
+                'node' => $symbolInfo->subject?->toCanonical()
+                    ?? throw new LogicException('HTML class file binding requires an exact declaration subject'),
+                'namespace' => $symbolInfo->symbolPath->namespace ?? '',
+            ];
         }
 
         return array_map(
-            static fn(array $classes): string => $classes[0],
+            static fn(array $classes): array => $classes[0],
             array_filter($classesByFile, static fn(array $classes): bool => \count($classes) === 1),
         );
     }
@@ -141,7 +145,7 @@ final readonly class HtmlFindingPartitioner
     /**
      * Node paths to try, most specific first.
      *
-     * @param array<string, string> $soleClassByFile
+     * @param array<string, array{node: string, namespace: string}> $soleClassByFile
      * @param array<string, string> $classByCallable
      *
      * @return list<string>
@@ -156,22 +160,23 @@ final readonly class HtmlFindingPartitioner
             SymbolType::Method => [$classByCallable[$finding->subject->toCanonical()] ?? '', $namespaceNode],
             SymbolType::Class_ => [$finding->subject->toCanonical(), $namespaceNode],
             SymbolType::Function_, SymbolType::Namespace_ => [$namespaceNode],
-            SymbolType::File => [
-                ...self::fileCandidatePaths($symbolPath->toString(), $soleClassByFile),
-                ...self::enclosingNamespacePaths(FindingNamespaces::of($finding, $fileNamespaces)),
-            ],
+            SymbolType::File => self::fileCandidatePaths($symbolPath->toString(), $soleClassByFile, $this->record->namespaces($finding, $fileNamespaces)),
             default => [],
         };
     }
 
     /**
-     * @param array<string, string> $soleClassByFile
+     * @param array<string, array{node: string, namespace: string}> $soleClassByFile
+     * @param list<string> $namespaces the namespaces the finding's record names
      *
      * @return list<string>
      */
-    private static function fileCandidatePaths(string $filePath, array $soleClassByFile): array
+    private static function fileCandidatePaths(string $filePath, array $soleClassByFile, array $namespaces): array
     {
-        return isset($soleClassByFile[$filePath]) ? [$soleClassByFile[$filePath]] : [];
+        $soleClass = $soleClassByFile[$filePath] ?? null;
+        $classPath = $soleClass !== null && $namespaces === [$soleClass['namespace']] ? [$soleClass['node']] : [];
+
+        return [...$classPath, ...self::enclosingNamespacePaths($namespaces)];
     }
 
     /**
@@ -194,8 +199,9 @@ final readonly class HtmlFindingPartitioner
         $common = explode('\\', $namespaces[0]);
         foreach (\array_slice($namespaces, 1) as $namespace) {
             $parts = explode('\\', $namespace);
+            $limit = min(\count($common), \count($parts));
             $depth = 0;
-            while ($depth < \count($common) && $depth < \count($parts) && $common[$depth] === $parts[$depth]) {
+            while ($depth < $limit && $common[$depth] === $parts[$depth]) {
                 ++$depth;
             }
             $common = \array_slice($common, 0, $depth);

@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\Coverage
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
@@ -984,14 +985,17 @@ final class HtmlTreeBuilderTest extends TestCase
 
     /**
      * The summary counts every finding of the report, so the tree has to hold
-     * every one of them: a finding with no class or namespace node of its own
-     * lands on the nearest node that does exist, down to the project root.
+     * every one of them: a finding with no class node of its own lands on the
+     * namespace its file opens, and one with no namespace either on the
+     * project root.
      */
     #[Test]
     public function itAttachesEveryFindingSoTheTreeCountsWhatTheSummaryCounts(): void
     {
         $metrics = self::repository();
         $metrics->add(SymbolPath::forNamespace('App'), MetricBag::fromArray([]), null, null);
+        $helpers = RelativePath::fromString('src/helpers.php');
+        $metrics->add(SymbolPath::forFile($helpers), (new MetricBag())->withEntry(FileNamespaceIndex::LEXICAL_NAMESPACE_ENTRY, ['namespace' => 'App']), $helpers, 1);
         self::addClass(
             $metrics,
             'App',
@@ -1028,8 +1032,8 @@ final class HtmlTreeBuilderTest extends TestCase
 
         self::assertSame(5, $result['summary']['totalViolations']);
         self::assertSame(5, $tree['violationCountTotal']);
-        self::assertSame(['in a classless file', 'on the project'], array_column($tree['violations'], 'message'));
-        self::assertSame(['on a function'], array_column($namespace['violations'], 'message'));
+        self::assertSame(['on the project'], array_column($tree['violations'], 'message'));
+        self::assertSame(['in a classless file', 'on a function'], array_column($namespace['violations'], 'message'));
         self::assertSame(['on the class', 'in the class file'], array_column($class['violations'], 'message'));
     }
 

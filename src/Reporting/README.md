@@ -1125,7 +1125,7 @@ bin/qmx check src/ --format=html > report.html
 - `Html/HtmlFindingPartitioner` — puts every finding on exactly one node: a
   callable or class finding on its class, a global function or namespace
   finding on its namespace, a file finding on the one class its file declares
-  or else on the namespace `FindingNamespaces` attributes it to (several
+  when the file opens only that class's namespace, or else on the namespace `FindingNamespaces` attributes it to (several
   namespaces: their deepest common one), and anything without such a node (a
   project finding, a namespace with no node) on the nearest enclosing node, the
   project root at the latest. So

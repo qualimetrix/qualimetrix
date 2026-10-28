@@ -29,8 +29,6 @@ use Qualimetrix\Reporting\Formatter\Health\HealthCoverageNarrator;
  */
 final class HtmlTreeBuilder
 {
-    private const string NO_NAMESPACE_LABEL = '(no namespace)';
-
     private readonly HtmlFindingPartitioner $findingPartitioner;
     private readonly HtmlDebtCalculator $htmlDebtCalculator;
 
@@ -202,14 +200,14 @@ final class HtmlTreeBuilder
      */
     private function getNoNamespaceNode(HtmlTreeNode $root, array &$nodesByPath, MetricRepositoryInterface $metrics): HtmlTreeNode
     {
-        if (isset($nodesByPath[self::NO_NAMESPACE_LABEL])) {
-            return $nodesByPath[self::NO_NAMESPACE_LABEL];
+        if (isset($nodesByPath[HtmlFindingPartitioner::NO_NAMESPACE])) {
+            return $nodesByPath[HtmlFindingPartitioner::NO_NAMESPACE];
         }
 
-        $node = new HtmlTreeNode(self::NO_NAMESPACE_LABEL, self::NO_NAMESPACE_LABEL, SymbolLevel::Namespace_->value);
+        $node = new HtmlTreeNode(HtmlFindingPartitioner::NO_NAMESPACE, HtmlFindingPartitioner::NO_NAMESPACE, SymbolLevel::Namespace_->value);
         $node->metrics = $this->filterMetrics($metrics->get(SymbolPath::forNamespace(''))->all());
         $root->children[] = $node;
-        $nodesByPath[self::NO_NAMESPACE_LABEL] = $node;
+        $nodesByPath[HtmlFindingPartitioner::NO_NAMESPACE] = $node;
 
         return $node;
     }

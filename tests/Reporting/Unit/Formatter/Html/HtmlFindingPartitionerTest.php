@@ -187,11 +187,19 @@ final class HtmlFindingPartitionerTest extends TestCase
 
         self::assertSame(['' => [$finding]], $result);
         $subject = MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'Service'), RelativePath::fromString('src/helpers.php'), DeclarationOrdinal::fromRank(0)))->toCanonical();
+        $soleClass = $this->soleClassIn('src/helpers.php', 'App', 'Service');
         $exactNode = new HtmlTreeNode('Service', 'App\\Service', 'class', $subject);
         self::assertSame(
             [$subject => [$finding]],
-            $this->partitioner->partition([$finding], [$subject => $exactNode, '' => $root], FileNamespaceIndex::fromRepository(null), $this->soleClassIn('src/helpers.php', 'App', 'Service')),
+            $this->partitioner->partition([$finding], [$subject => $exactNode, '' => $root], FileNamespaceIndex::fromRepository($soleClass), $soleClass),
             'a file declaring one class shows its file findings on that class',
+        );
+        $helpers = RelativePath::fromString('src/helpers.php');
+        $soleClass->add(SymbolPath::forFile($helpers), (new MetricBag())->withEntry(FileNamespaceIndex::LEXICAL_NAMESPACE_ENTRY, ['namespace' => 'App\\B']), $helpers, 1);
+        self::assertSame(
+            ['' => [$finding]],
+            $this->partitioner->partition([$finding], [$subject => $exactNode, '' => $root], FileNamespaceIndex::fromRepository($soleClass), $soleClass),
+            'a file that also opens another namespace is not narrowed to its one class',
         );
     }
 
