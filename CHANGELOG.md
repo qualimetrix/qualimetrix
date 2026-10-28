@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking
+
+- `architecture.unmatched-type` findings are identified by the type and its authored path alone (`architecture.layers[0].implements[1]`); the file that wrote the type, its importer, its layer index and its line no longer count, so moving the criterion into an imported file, adding a `--preset` or an import keeps the finding, and a symlinked root configuration no longer gives its imported criteria a different identity in each checkout directory. Stored identities change once: baseline keys, finding fingerprints, GitLab Code Quality and SARIF fingerprints. Migration: list the stale `architecture.unmatched-type` entries with `baseline:cleanup <baseline> <paths...>` and remove them with `--remove=<selector>`, then accept the findings with `baseline:update <baseline> <paths...> --accept-new=architecture.unmatched-type` (#214).
+
 ### Fixed
 
 - `duplication.clone` no longer slows down superlinearly on a large constant or property table: a generated parser file drops from 1.4 s to 0.2 s of clone detection and a 16,000-token table from 54 s to under 0.1 s. Two copies of one such file get much faster (63 s to 2 s) but stay quadratic when the table's rows are irregular, and other long literals, such as `return [...]` translation files, still cost quadratic time because each reports one nested block per row. Reported clones are unchanged (#212).
+- `check --output`, `--profile` and `--log-file`, `graph:export --output` and the baseline file of `baseline:generate` refuse (exit 3), before analysis, a target that is a file the configuration was read from — the auto-discovered `qmx.yaml`/`qmx.yml`, `--config`, every imported file and every preset file — compared by file identity, so another spelling, a symlink or a hard link refuses alike; `qmx check src/ --output=qmx.yaml` replaced the configuration with the report. A configuration path naming a directory is refused as `… is not a regular file.` instead of a parse error (#215).
 
 ## [0.30.0] - 2026-10-28
 

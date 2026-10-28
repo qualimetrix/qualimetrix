@@ -244,9 +244,16 @@ expose that original access flag, so an unknown mode is left to the actual write
 and its environment refusal. Descriptor and stream writes use blocking mode.
 
 Report, profile and log targets are judged together. Two targets for one
-ordinary inode, or one absent name, refuse before analysis, including collisions
-with the explicit configuration or baseline input. A shell-inherited `2>&1` is
-not a second authored destination. Character devices such as a terminal or
+ordinary inode, or one absent name, refuse before analysis, as does a target
+naming the baseline input. A target that is a file the configuration was read
+from — the auto-discovered `qmx.yaml`/`qmx.yml` or the `--config` file, each
+file it imports, each preset file — refuses before analysis too. Files are
+compared by identity, so another spelling, a symbolic link or a hard link of
+one refuses alike. `graph:export --output` and the baseline file written by
+`baseline:generate`, `baseline:update` and `baseline:cleanup` follow the same
+rule. Standard output the shell redirects into such a file (`>`, `>>`,
+`1<>`) is not judged: the shell opens it before qmx starts. A shell-inherited `2>&1` is not a
+second authored destination. Character devices such as a terminal or
 `/dev/null` may coincide. Missing parents, directories, inaccessible paths,
 closed descriptors and write failures exit 3; the reason distinguishes
 configuration input from an environment failure. A report write failure with

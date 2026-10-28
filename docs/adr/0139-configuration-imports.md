@@ -198,3 +198,105 @@ near-config-name diagnostic and at imports in presets.
 - The chain lives in `Loader/` beside the file reader rather than in a sibling
   namespace of its own: measured, a separate namespace raised the
   `Analysis\Configuration` namespace's coupling above its accepted ceiling.
+
+## Amendment, 2026-10-28: an unmatched type is its type and its path
+
+The second **Consequences** bullet, and §4's remark that a physical name
+reaches `architecture.unmatched-type` identity, record what was decided then.
+The identity of an `architecture.unmatched-type` occurrence is now the type
+and its authored path (`architecture.layers[0].implements[1]`) alone; the
+writing file, its importer chain, its layer index and its line are named in the
+message and no longer identify it (issue
+[#214](https://github.com/qualimetrix/qualimetrix/issues/214)).
+
+Measured on one project with the same missing type at
+`architecture.layers[0].implements[0]`, before the change: three keys for one
+finding — in the root, moved into an imported file, and in the root with a
+`--preset` below it — and the root's key also changed when the root merely
+gained an import that writes no `architecture`. After it, one key for all four.
+
+Dropping the writer cannot merge two findings. `architecture.layers` is
+replaced whole by the last layer that writes it, so every criterion of one run
+comes from one file and the path names one value of it. Measured: a root and an
+import, or a root and a preset, that both write the type at the same path give
+one finding, the root's. The line carries nothing either — the YAML loader
+records none, so it was a constant. What is kept: an occurrence at another path
+— a layer inserted above, a criterion moved to another key — is another
+occurrence, as an edit of the authored position should be.
+
+The single-writer premise is checked where identities are formed:
+`ArchitectureConfiguration::namedTypes()` refuses, as a programmer error, two
+writes of one type at one path with different provenance. A list that appends
+across files (issue [#216](https://github.com/qualimetrix/qualimetrix/issues/216))
+breaks the premise and must add the writer back to the identity then; until it
+does, such a configuration reaches that refusal instead of merging two
+findings silently.
+
+`composer gate -- --reference=15b9a9456dfa576d6a4a7d7ec6b673541ba86866`
+was RED without declarations: the `layers` corpus case's one
+`architecture.unmatched-type` record changed occurrence, and with it the JSON,
+SARIF, GitLab and `baseline:explain` surfaces. It is GREEN with the record
+withdrawn and introduced and the three whole-invocation surfaces declared as
+exact surfaces — identity tokens only (exit 0, at this change's head, with the
+write guard of the next amendment in place).
+
+The baseline consequence is one-time: every accepted `architecture.unmatched-type`
+entry goes stale once and the finding is reported anew, as with any identity
+change (see `CHANGELOG.md`).
+
+## Amendment, 2026-10-28: a written file is never a file the configuration was read from
+
+The third **Consequences** bullet records the guard as it was. A command that
+writes now refuses, before analysis, a target that is any physical file an
+authored layer was read from — the root (discovered or `--config`), each
+import, each preset — compared by `FileIdentity` (issue
+[#215](https://github.com/qualimetrix/qualimetrix/issues/215)).
+
+The set is not a list of option names. The YAML loader reads the bytes and
+`fstat()`s the same handle, so the identity is that of the file parsed, not of
+whatever the path names a moment later. `AuthoredLayer` carries it into the
+document's applied sources, and `ConfigurationDocument::fileReadAs(?FileIdentity)`
+answers which file read has a given identity, named as refusals name it
+(`configuration file "base.yaml" (imported by configuration file "qmx.yaml")`).
+Configuration answers the question; the writers ask it without depending on a
+Configuration type. A file read through another stream wrapper than the plain
+filesystem — a built-in preset inside the phar — gets no identity: its
+synthetic device and inode could equal a real file's, and no written target can
+be a wrapper path. The handle, not the spelling, decides: `a://q.yaml` names a
+plain file. A plain file reporting inode 0 gets none either and is not guarded;
+unlike an import (§3), refusing to read it would make such a filesystem
+unusable for the root configuration.
+
+The writing commands, enumerated by their write path rather than by name:
+
+| Command                                                                            | Writes                                | Reads configuration | Guarded by                                                       |
+| ---------------------------------------------------------------------------------- | ------------------------------------- | ------------------- | ---------------------------------------------------------------- |
+| `check`                                                                            | `--output`, `--profile`, `--log-file` | yes                 | `RunTargets::claim($document->fileReadAs(...))`                  |
+| `graph:export`                                                                     | `--output`                            | yes                 | `RunTargets::claim()`, the question from `PreparedAnalysisInput` |
+| `baseline:generate`                                                                | the baseline argument                 | yes                 | `BaselineRunInterface::measure()`                                |
+| `baseline:update`, `baseline:cleanup`                                              | the baseline argument                 | yes                 | `BaselineRunInterface::measure()`, behind the baseline grammar   |
+| `baseline:rename-channels`                                                         | the baseline argument                 | no                  | —                                                                |
+| `hook:install`, `hook:uninstall`                                                   | the Git hook and its backup           | no                  | —                                                                |
+| `baseline:explain`, `directives`, `debug:layer-assignment`, `rules`, `hook:status` | standard output only                  | some                | —                                                                |
+
+The question is an explicit argument at every guarded write, not state left on
+a shared service: `RunTargets::claim()` takes it as a required parameter and refuses as `--output and configuration file
+"qmx.yaml" name the same input target`. `BaselineRunInterface::measure()` takes
+a closure it calls with the question once the configuration resolves and
+before anything is analysed; the baseline commands pass one refusing their
+baseline file as a configuration error (`Baseline "qmx.yaml" is configuration
+file "qmx.yaml"; a baseline cannot replace …`), like their other refusals of
+the baseline argument. A first version registered the files on `RunTargets`
+from the shared runtime setup; review found that an unregistered list could not
+be told from an empty one and that a list outlived the command that set it, and
+tests that give a command its own `RunTargets` showed the coupling was real.
+For `baseline:update` and `baseline:cleanup` the baseline is read before the
+configuration, so a configuration file is refused first as an invalid baseline;
+the guard stands behind that grammar.
+
+Not covered: standard output redirected by the shell into a configuration
+file (`>`, `>>`, `1<>`) — the shell opens it before qmx starts, `>` has
+already truncated it, and a refusal printed to standard output would land in
+it too; `composer.json`, which `ComposerDiscoveryStage` reads through the
+project-manifest snapshot rather than as an authored layer; and the analysed
+sources. The last two are the same harm over a different input set.

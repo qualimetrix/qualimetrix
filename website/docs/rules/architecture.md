@@ -972,6 +972,9 @@ Different authored positions have distinct occurrences; expansion of one
 template value does not multiply it, even when the template creates no instance.
 The message names the configuration source, path and available line, with a
 case-only did-you-mean when observed or exactly placed spelling is available.
+The occurrence is identified by the type and its path alone: the file that
+wrote it, its importer and its line do not identify it, so moving the criterion
+into an imported file or adding a preset keeps a baseline entry valid.
 
 Absence requires complete measured declaration scope and a read Composer
 install. With narrowed scope or an unread install there is no finding; when
