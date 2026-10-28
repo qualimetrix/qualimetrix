@@ -48,9 +48,8 @@ final readonly class FindingProjection
         return $this->unboundSuppressionAudit->auditResult(
             $options->suppressPaths,
             $options->suppressNamespaces,
-            $result->measured->coverage->analyzedFiles,
+            $result->measured->coverage->fileUniverse(),
             $result->measured->namespaceTree?->getAllNamespaces(),
-            $result->measured->coverage->failedFilesCount(),
             $valueScope,
             $result->populationPublication ?? throw new LogicException('Suppression accounting requires captured channel publication'),
         );

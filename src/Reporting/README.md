@@ -1124,9 +1124,11 @@ bin/qmx check src/ --format=html > report.html
 - `Html/HtmlTreeNode` — mutable VO for tree construction
 - `Html/HtmlFindingPartitioner` — puts every finding on exactly one node: a
   callable or class finding on its class, a global function or namespace
-  finding on its namespace, a file finding on the one class its file declares,
-  and anything without such a node (a project finding, a file with no class or
-  several) on the nearest enclosing node, the project root at the latest. So
+  finding on its namespace, a file finding on the one class its file declares
+  when the file opens only that class's namespace, or else on the namespace `FindingNamespaces` attributes it to (several
+  namespaces: their deepest common one), and anything without such a node (a
+  project finding, a namespace with no node) on the nearest enclosing node, the
+  project root at the latest. So
   `summary.totalViolations` and the root's `violationCountTotal` count the same
   findings, and the root's `debtMinutes` is the report's debt bottom-up. A
   finding the partitioner cannot place fails the run instead of disappearing.

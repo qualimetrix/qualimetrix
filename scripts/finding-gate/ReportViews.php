@@ -7,9 +7,12 @@ namespace QmxFindingGate;
 /** A report publication has exact invocation provenance, even when its records are identical. */
 final class ReportViews
 {
+    /** Every captured baseline file: the generated one and each maintenance command's output. */
+    public const array BASELINE_FILE_SURFACES = ['baseline-file', 'baseline:cleanup:file', 'baseline:rename-channels:file', 'baseline:update:file'];
+
     /** Captured finding reports, baseline entries and baseline explanations. */
     private const array RECORD_BEARING_SURFACES = [
-        'baseline-file', 'baseline:cleanup:file', 'baseline:rename-channels:file', 'baseline:update:file',
+        ...self::BASELINE_FILE_SURFACES,
         'check:baseline', 'check:baseline-source', 'check:output:file', 'check:parallel', 'directives',
         'format:json', 'format:metrics', 'format:suppressed',
     ];

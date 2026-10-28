@@ -17,7 +17,8 @@ use Qualimetrix\Core\Pattern\SelectorKind;
  * namespace claims and a declared production autoload. A complete named PHP
  * roster can provide the same measured completeness as a directory selection.
  * Generated removal closes namespace claims while leaving selector completeness
- * open, so it does not by itself withhold path regex judgement. Literal
+ * open, so it does not by itself withhold path regex judgement; `PathBinding`
+ * still withholds a path regex that matches a generated-excluded file. Literal
  * namespaces ask the narrower literal question instead: removal of PHP files
  * withholds only a value the removed code could have declared.
  *

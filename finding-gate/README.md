@@ -479,9 +479,13 @@ An unmapped channel change remains visible on those whole invocations.
 ## What publication order is compared by
 
 The ordinary JSON finding array and baseline entries must already obey their
-producer's identity order on the raw publication. A violation is
-`published-order-drift`. Reference translation then re-establishes that
-identity order; the gate never repairs a raw producer-order defect.
+producer's identity order on the raw publication. In every baseline file view
+(`baseline-file` and the `cleanup`, `rename-channels` and `update` files) that
+order covers both the subject keys of `entries`, in byte order, and the entry
+list under each key. A violation is `published-order-drift`. Reference
+translation then re-establishes that identity order, so a rename that moves a
+subject key or an entry needs only its map row; the gate never repairs a raw
+producer-order defect.
 Ranking order is judged separately by the occurrence-preserving rule above.
 
 ## Normalization and residual diffs

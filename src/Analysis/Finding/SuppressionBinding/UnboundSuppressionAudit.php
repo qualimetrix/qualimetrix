@@ -9,17 +9,13 @@ use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
-
 use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
-use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
 use Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression;
-use Qualimetrix\Analysis\Finding\Population\PopulationSession;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Pattern\PathPattern;
-use Qualimetrix\Core\SourceText\SourceBytes;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
@@ -60,7 +56,16 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * that way is named by {@see unjudgedValues()} instead, so the skip reaches the
  * report rather than reading as a value judged and bound.
  *
+ * A file the run discovered but failed to analyse, or left out as generated,
+ * is outside both universes, and a path value it may hold is not judged
+ * either: it is named in
+ * {@see unjudgedValues()}, never reported as unbound. A namespace value is
+ * withheld on any failure, a path value only when it binds no analysed file
+ * and an unanalysed entry (failed or generated-excluded) may hold what it names.
+ *
   * @qmx-threshold coupling.instability 0.900001 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
+ *
+ * @phpstan-type FileUniverse array{analysed: list<RelativePath>, failedFiles: list<RelativePath>, failedDirectories: list<RelativePath>, generatedExcluded: list<RelativePath>}
  */
 final readonly class UnboundSuppressionAudit
 {
@@ -78,8 +83,9 @@ final readonly class UnboundSuppressionAudit
      * than reporting every configured namespace as unbound — naming each such
      * value in {@see unjudgedValues()} instead. A file that failed analysis
      * leaves the tree without whatever it declares, so any failure silences
-     * the namespace half the same way. The path half is unaffected: its
-     * universe is the coverage, which always exists.
+     * the namespace half the same way. The path half keeps its universe, the
+     * coverage, which always exists; only a value an unanalysed entry may hold is
+     * left unjudged (see {@see PathBinding::unanalysedMayHold()}).
      *
      * The findings are passed through `publishable()` here rather than at the
      * seam: `--disable-rule`, `--only-rule`, the baseline and `--fail-on` must
@@ -88,9 +94,8 @@ final readonly class UnboundSuppressionAudit
      *
      * @param list<PathPattern> $suppressPaths global `suppress_paths`, `--suppress-path` included
      * @param list<NamespacePattern> $suppressNamespaces global `suppress_namespaces`, `--suppress-namespace` included
-     * @param list<RelativePath> $analyzedFiles the run's own file universe
+     * @param FileUniverse $files the files the run analysed and the entries it left unanalysed
      * @param ?list<string> $declaredNamespaces every namespace the run declared, or `null` if it built no tree
-     * @param int $failedFiles how many discovered files the run failed to analyse
      * @param ValueScopeJudgement $scope the run's shape, asked of every value before it is judged
      *
      * @return array{findings: list<Finding>, population: JudgedPopulation}
@@ -98,9 +103,8 @@ final readonly class UnboundSuppressionAudit
     public function auditResult(
         array $suppressPaths,
         array $suppressNamespaces,
-        array $analyzedFiles,
+        array $files,
         ?array $declaredNamespaces,
-        int $failedFiles,
         ValueScopeJudgement $scope,
         ChannelPublication $publication,
     ): array {
@@ -113,26 +117,22 @@ final readonly class UnboundSuppressionAudit
             return ['findings' => [], 'population' => JudgedPopulation::empty()];
         }
         $findings = [];
-        $session = new PopulationSession(($publication)->publishes(...));
+        $population = new UnboundSuppressionPopulation($publication->publishes(...), $declarations);
 
         foreach ($this->configuredValues($suppressPaths, $suppressNamespaces) as $ordinal => $value) {
             $channel = new FindingChannel($value['channel']);
             if (!$publication->publishes(UnboundSuppressionRule::NAME, $channel, SymbolLevel::Project)) {
                 continue;
             }
-            $judged = $this->judges($value, $declaredNamespaces, $failedFiles, $scope);
-            $input = GateInput::context($value['pattern'] instanceof PathPattern ? 'suppressionPathJudged' : 'suppressionNamespaceJudged', $judged);
-            $identity = PopulationIdentity::occurrence(json_encode([$value['channel'], $value['rule'], $value['option'], SourceBytes::framed($value['pattern']->definition->display())], \JSON_THROW_ON_ERROR), $ordinal, 'configured-suppression-value-occurrence');
-            $declaration = $declarations[$channel->code];
-            self::record($session, $channel, $declaration, $identity, $input);
-            unset($identity, $input);
-            if ($judged && !self::binds($value, $analyzedFiles, $declaredNamespaces)) {
+            $judged = $this->judges($value, $files, $declaredNamespaces, $scope);
+            $population->record($value, $ordinal, GateInput::context($value['pattern'] instanceof PathPattern ? 'suppressionPathJudged' : 'suppressionNamespaceJudged', $judged));
+            if ($judged && !self::binds($value, $files, $declaredNamespaces)) {
                 $findings[] = UnboundSuppressionFinding::forValue($value);
             }
         }
 
         unset($value);
-        return ['findings' => $this->rulePublication->publishable($findings), 'population' => $session->freeze()];
+        return ['findings' => $this->rulePublication->publishable($findings), 'population' => $population->freeze()];
     }
 
     /**
@@ -152,6 +152,7 @@ final readonly class UnboundSuppressionAudit
      *
      * @param list<PathPattern> $suppressPaths
      * @param list<NamespacePattern> $suppressNamespaces
+     * @param FileUniverse $files
      * @param ?list<string> $declaredNamespaces
      *
      * @return list<array{channel: string, option: string, pattern: string}>
@@ -159,14 +160,14 @@ final readonly class UnboundSuppressionAudit
     public function unjudgedValues(
         array $suppressPaths,
         array $suppressNamespaces,
+        array $files,
         ?array $declaredNamespaces,
-        int $failedFiles,
         ValueScopeJudgement $scope,
     ): array {
         $unjudged = [];
 
         foreach ($this->configuredValues($suppressPaths, $suppressNamespaces) as $value) {
-            if (!$this->judges($value, $declaredNamespaces, $failedFiles, $scope)) {
+            if (!$this->judges($value, $files, $declaredNamespaces, $scope)) {
                 $unjudged[] = self::published($value);
             }
         }
@@ -186,6 +187,7 @@ final readonly class UnboundSuppressionAudit
      *
      * @param list<PathPattern> $suppressPaths
      * @param list<NamespacePattern> $suppressNamespaces
+     * @param FileUniverse $files
      * @param ?list<string> $declaredNamespaces
      *
      * @return list<array{channel: string, option: string, pattern: string}>
@@ -193,11 +195,11 @@ final readonly class UnboundSuppressionAudit
     public function withheldForRemovedCode(
         array $suppressPaths,
         array $suppressNamespaces,
+        array $files,
         ?array $declaredNamespaces,
-        int $failedFiles,
         ValueScopeJudgement $scope,
     ): array {
-        if (!self::namespaceUniverseComplete($declaredNamespaces, $failedFiles)) {
+        if (!self::namespaceUniverseComplete($declaredNamespaces, $files)) {
             return [];
         }
 
@@ -229,15 +231,16 @@ final readonly class UnboundSuppressionAudit
     /**
      * @param list<PathPattern> $suppressPaths
      * @param list<NamespacePattern> $suppressNamespaces
+     * @param FileUniverse $files
      * @param ?list<string> $declaredNamespaces
      *
      * @return list<string>
      */
-    public function judgedChannels(array $suppressPaths, array $suppressNamespaces, ?array $declaredNamespaces, int $failedFiles, ValueScopeJudgement $scope): array
+    public function judgedChannels(array $suppressPaths, array $suppressNamespaces, array $files, ?array $declaredNamespaces, ValueScopeJudgement $scope): array
     {
         $channels = [];
         foreach ($this->configuredValues($suppressPaths, $suppressNamespaces) as $value) {
-            if ($this->judges($value, $declaredNamespaces, $failedFiles, $scope)) {
+            if ($this->judges($value, $files, $declaredNamespaces, $scope)) {
                 $channels[$value['channel']] = true;
             }
         }
@@ -308,21 +311,24 @@ final readonly class UnboundSuppressionAudit
 
     /**
      * Whether this run can judge the value at all: its shape reaches the place
-     * the value names, and — for a namespace — the run built the whole universe
-     * it is judged against.
+     * the value names, no unanalysed entry may hold what an unbound path value
+     * names, and — for a namespace — the run built the whole universe it is
+     * judged against.
      *
      * @param array{channel: string, rule: ?string, option: string, pattern: PathPattern|NamespacePattern} $value
+     * @param FileUniverse $files
      * @param ?list<string> $declaredNamespaces
      */
-    private function judges(array $value, ?array $declaredNamespaces, int $failedFiles, ValueScopeJudgement $scope): bool
+    private function judges(array $value, array $files, ?array $declaredNamespaces, ValueScopeJudgement $scope): bool
     {
         $pattern = $value['pattern'];
 
         if ($pattern instanceof PathPattern) {
-            return $scope->judgesPathValue($pattern);
+            return $scope->judgesPathValue($pattern)
+                && (!PathBinding::unanalysedMayHold($pattern, $files) || PathBinding::binds($pattern, $files['analysed']));
         }
 
-        if (!self::namespaceUniverseComplete($declaredNamespaces, $failedFiles)) {
+        if (!self::namespaceUniverseComplete($declaredNamespaces, $files)) {
             return false;
         }
 
@@ -332,29 +338,26 @@ final readonly class UnboundSuppressionAudit
             || ($scope->withholdsOnlyForRemovedCode($pattern) && self::bindsNamespace($pattern, $declaredNamespaces));
     }
 
-    /** @param ?list<string> $declaredNamespaces */
-    private static function namespaceUniverseComplete(?array $declaredNamespaces, int $failedFiles): bool
+    /**
+     * @param ?list<string> $declaredNamespaces
+     * @param FileUniverse $files
+     */
+    private static function namespaceUniverseComplete(?array $declaredNamespaces, array $files): bool
     {
-        return $declaredNamespaces !== null && $failedFiles === 0;
+        return $declaredNamespaces !== null && $files['failedFiles'] === [] && $files['failedDirectories'] === [];
     }
 
     /**
      * @param array{channel: string, rule: ?string, option: string, pattern: PathPattern|NamespacePattern} $value
-     * @param list<RelativePath> $analyzedFiles
+     * @param FileUniverse $files
      * @param ?list<string> $declaredNamespaces
      */
-    private static function binds(array $value, array $analyzedFiles, ?array $declaredNamespaces): bool
+    private static function binds(array $value, array $files, ?array $declaredNamespaces): bool
     {
         $pattern = $value['pattern'];
 
         if ($pattern instanceof PathPattern) {
-            foreach ($analyzedFiles as $file) {
-                if ($pattern->matches($file)) {
-                    return true;
-                }
-            }
-
-            return false;
+            return PathBinding::binds($pattern, $files['analysed']);
         }
 
         return self::bindsNamespace($pattern, $declaredNamespaces);
@@ -370,12 +373,5 @@ final readonly class UnboundSuppressionAudit
     private static function hasSelectedChannel(ChannelPublication $publication, array $declarations): bool
     {
         return array_any(array_keys($declarations), static fn(string $code): bool => $publication->publishes(UnboundSuppressionRule::NAME, new FindingChannel($code), SymbolLevel::Project));
-    }
-
-    private static function record(PopulationSession $session, FindingChannel $channel, ChannelDeclaration $declaration, PopulationIdentity $identity, GateInput $input): void
-    {
-        $inputs = $channel->code === UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER ? [$input, $input] : [$input];
-        $failed = $declaration->populationFailure($channel, SymbolLevel::Project, $identity, $inputs);
-        $session->record(UnboundSuppressionRule::NAME, $channel, SymbolLevel::Project, $identity, $declaration, $failed['gate'] ?? null, $failed['reason'] ?? null, $failed['dataGap'] ?? true);
     }
 }

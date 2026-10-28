@@ -372,9 +372,9 @@ Qualimetrix\Core\Path\RelativePath	Core.Path	105	22
 Qualimetrix\Core\Pattern\NamespaceMatcher	Core.Neutral	9	4
 Qualimetrix\Core\Pattern\NamespacePattern	Core.Neutral	20	7
 Qualimetrix\Core\Pattern\PathMatcher	Core.Neutral	4	2
-Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	13	6
+Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	14	6
 Qualimetrix\Core\Pattern\SelectorDefinition	Core.Neutral	11	7
-Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	9	5
+Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	10	5
 Qualimetrix\Core\ProductIdentity	Core.Neutral	26	4
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	23	8
 Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	13	7
@@ -392,7 +392,7 @@ Qualimetrix\Core\Symbol\MixedSpelling	Core.Symbol	3	2
 Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy	Core.Symbol	5	2
 Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	6	3
 Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	32	12
-Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	166	22
+Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	167	22
 Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	6	4
 Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	91	21
 Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	43	13

@@ -75,8 +75,6 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * channel, measured, while the other two keep speaking.
  *
  * **Statelessness:** trivially — `analyze()` does nothing at all.
- *
- * @qmx-threshold coupling.instability 0.818183 -- Hosted suppression metadata consumes its channel and option vocabulary through a narrow composition boundary.
  */
 final class UnboundSuppressionRule extends AbstractRule
 {

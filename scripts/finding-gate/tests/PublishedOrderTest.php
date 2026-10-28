@@ -158,6 +158,34 @@ final class PublishedOrderTest extends TestCase
         );
     }
 
+    /**
+     * A symbol rename moves a whole subject in every baseline file view: the
+     * subject keys are put back in byte order, each entry list travels with its
+     * key and is still sorted within it, and a side whose keys are out of order
+     * is refused rather than sorted.
+     */
+    #[Test]
+    public function itReordersBaselineSubjectKeysAndRefusesASideWhoseKeysAreOutOfOrder(): void
+    {
+        $baseline = static fn(string ...$members): string => "{\n    \"version\": 13,\n    \"entries\": {\n        "
+            . implode(",\n        ", $members) . "\n    }\n}\n";
+        $closure = '"aggregate:file:App\\\\F\\\\Repo::debugInfo::{closure#1}": [{"channel":"code-smell.debug-code","count":1}]';
+        $renamedUnordered = '"aggregate:file:App\\\\F\\\\Repo::debugInfo::{closure#1}": [{"channel":"complexity.cognitive","count":1}, {"channel":"complexity.ccn","count":1}]';
+        $renamedOrdered = '"aggregate:file:App\\\\F\\\\Repo::debugInfo::{closure#1}": [{"channel":"complexity.ccn","count":1}, {"channel":"complexity.cognitive","count":1}]';
+        $function = '"aggregate:file:App\\\\F\\\\debug": {}';
+
+        foreach (['baseline-file', 'baseline:cleanup:file', 'baseline:rename-channels:file', 'baseline:update:file'] as $surface) {
+            self::assertTrue(PublishedOrder::handles($surface), $surface . ' is handled');
+            self::assertSame(null, PublishedOrder::disorder($surface, $baseline($closure, $function)), $surface . ': keys in byte order are accepted');
+            self::assertSame(
+                $baseline($renamedOrdered, $function),
+                PublishedOrder::reorder($surface, $baseline($function, $renamedUnordered)),
+                $surface . ': a moved subject key is put back in byte order with its entries, which are sorted too',
+            );
+            self::assertNotNull(PublishedOrder::disorder($surface, $baseline($function, $closure)), $surface . ': keys out of byte order are refused');
+        }
+    }
+
     #[Test]
     public function itClassifiesEveryCaptureKeyByItsSurface(): void
     {

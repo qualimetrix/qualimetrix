@@ -92,6 +92,33 @@ final readonly class AnalysisCoverage
         return \count($this->failures);
     }
 
+    /**
+     * The analysed files beside the entries the run could not analyse, those
+     * that may be a directory whose contents it never saw kept apart, and the
+     * files it discovered but left out as generated.
+     *
+     * @return array{analysed: list<RelativePath>, failedFiles: list<RelativePath>, failedDirectories: list<RelativePath>, generatedExcluded: list<RelativePath>}
+     */
+    public function fileUniverse(): array
+    {
+        return [
+            'analysed' => $this->analyzedFiles,
+            'failedFiles' => self::pathsOf(array_filter($this->failures, static fn(AnalysisFailure $failure): bool => !$failure->kind->hidesEntriesBeneath())),
+            'failedDirectories' => self::pathsOf(array_filter($this->failures, static fn(AnalysisFailure $failure): bool => $failure->kind->hidesEntriesBeneath())),
+            'generatedExcluded' => $this->generatedExcludedFiles,
+        ];
+    }
+
+    /**
+     * @param array<int, AnalysisFailure> $failures
+     *
+     * @return list<RelativePath>
+     */
+    private static function pathsOf(array $failures): array
+    {
+        return array_values(array_map(static fn(AnalysisFailure $failure): RelativePath => $failure->path, $failures));
+    }
+
     public function excludedCount(): int
     {
         return \count($this->excluded);

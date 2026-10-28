@@ -496,6 +496,7 @@ Available tests:
  - QmxFindingGate\Tests\ProductProbeTypesTest::itSelectsTheNativeExistingType"current only"
  - QmxFindingGate\Tests\ProductProbeTypesTest::itSelectsTheNativeExistingType"previous only"
  - QmxFindingGate\Tests\PublishedOrderTest::itClassifiesEveryCaptureKeyByItsSurface
+ - QmxFindingGate\Tests\PublishedOrderTest::itReordersBaselineSubjectKeysAndRefusesASideWhoseKeysAreOutOfOrder
  - QmxFindingGate\Tests\PublishedOrderTest::itReordersRecordsByTheirPublishedIdentityAndRefusesASideOutOfItsOwnOrder
  - QmxFindingGate\Tests\RankingCheckTest::itChecksHealthyFullRankingAndZeroSlicesThroughThePublicGate
  - QmxFindingGate\Tests\RankingCheckTest::itChecksSummaryRoundingAdviceProjectLocationTagAndDebt
@@ -7351,6 +7352,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itKeepsAProjectFindingThatAPerRuleNamespacePatternCannotName
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itKeepsAProjectFindingUnderABroadPerRuleRegex
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itLeavesANamespaceValueUnjudgedWhereTheProjectDeclaresNoAutoload
+ - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itLeavesAPathValueNamingAFileThatFailedToParseUnjudged
+ - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itLeavesAPathValueNamingAGeneratedExcludedFileUnjudged
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itLeavesPerRuleNamespaceEntriesUnjudgedWhereTheProjectDeclaresNoAutoload
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itLeavesTheRunGreenUnderFailOnNone
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itNamesEverySkippedValueOnACoveredRun
@@ -8311,6 +8314,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itReplacesTheTypedSuppressionUniverseBetweenInvocations
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itStaysSilentOnAChannelSuppressionPatternThatBinds
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itStillNamesAnAnchoredNamespaceValueOnThatSameRun
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itWithholdsOnlyThePathValuesAFailedEntryMayHold
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itWithholdsOnlyThePathValuesAGeneratedExcludedFileMayHold
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itAnchorsAValueOnACharacterOnlyTheJudgeUsedToCallAGlob
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itAnswersTheSameForRegexPathValue
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itBlamesNothingWhereTheProjectDeclaresNoAutoload
@@ -10844,6 +10849,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Coverage\AnalysisCoverageTest::itModelsEveryDiscoveredFileInExactlyOneTerminalState
  - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Coverage\AnalysisCoverageTest::itRefusesASkipForAPathThatAlreadyHasATerminalState
  - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Coverage\AnalysisCoverageTest::itRejectsMoreThanOneTerminalStateForTheSamePath
+ - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Coverage\AnalysisCoverageTest::itSeparatesFailedFilesFromFailedDirectories
  - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Coverage\AnalysisCoverageTest::itTreatsGeneratedExclusionsAsCompleteCoverage
  - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Discovery\SkippedEntryTest::itKeepsTheLinksOwnNameWhenTheTreeIsInsideTheProjectRoot
  - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Discovery\SkippedEntryTest::itRefusesALinkOutsideTheProjectRoot
@@ -14590,6 +14596,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itPreservesCanonicalSubjectAndOccurrenceInHtmlPayload
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itPublishesNullFileWhenAttachingLocationNoneLikeTheJsonReport
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itPublishesTheSameFindingRecordAsJson
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itPutsAFileFindingOfAClassFreeFileOnTheNamespaceItsRecordNames
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itPutsAFileFindingWithoutASoleClassOnTheRoot
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itPutsAMethodFindingWithoutClassOrNamespaceNodeOnTheRoot
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itRefusesToAttachToAPathThatIsNotANode

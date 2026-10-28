@@ -65,7 +65,7 @@ final class PublicationForms
             'directives' => 'directives',
             default => null,
         };
-        $baseline = \in_array($surface, ['baseline-file', 'baseline:cleanup:file', 'baseline:rename-channels:file', 'baseline:update:file'], true);
+        $baseline = \in_array($surface, ReportViews::BASELINE_FILE_SURFACES, true);
         if (!ReportViews::recordBearingSurface($surface)) {
             if ((str_starts_with($surface, 'format:') && \in_array(substr($surface, 7), Surfaces::FORMATS, true))
                 || \in_array($surface, ['show-suppressed', 'explain'], true)) {
@@ -116,7 +116,7 @@ final class PublicationForms
     {
         $publication = $this->publicationKey($key);
         $surface = Surfaces::surfaceClass($publication);
-        if (!\in_array($surface, ['format:json', 'check:baseline-source', 'check:baseline', 'check:output:file', 'check:parallel', 'format:metrics', 'format:suppressed', 'directives', 'baseline-file', 'baseline:cleanup:file', 'baseline:rename-channels:file', 'baseline:update:file'], true)) {
+        if (!ReportViews::recordBearingSurface($surface)) {
             return false;
         }
         foreach (['candidate', 'reference'] as $side) {

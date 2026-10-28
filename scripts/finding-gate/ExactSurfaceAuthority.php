@@ -69,13 +69,13 @@ final class ExactSurfaceAuthority
                 }
             }
             $sources['case:' . $case . '|format:json'][] = 'outcome';
-            if ($surface !== 'baseline-file' && !\in_array($surface, ['baseline:cleanup:file', 'baseline:rename-channels:file', 'baseline:update:file'], true)) {
+            if (!\in_array($surface, ReportViews::BASELINE_FILE_SURFACES, true)) {
                 $sources[$key] = array_values(array_unique([...($sources[$key] ?? []), 'records']));
             }
             if (\in_array($surface, ['check:output:file', 'check:parallel'], true)) {
                 $schemaViews['json-document' . "\0" . $surface] = true;
             }
-            if (\in_array($surface, ['baseline-file', 'baseline:cleanup:file', 'baseline:rename-channels:file', 'baseline:update:file'], true)) {
+            if (\in_array($surface, ReportViews::BASELINE_FILE_SURFACES, true)) {
                 $schemaViews['json' . "\0" . 'format:json'] = true;
                 $schemaViews['json' . "\0" . 'ranking'] = true;
             }
@@ -657,7 +657,7 @@ final class ExactSurfaceAuthority
 
     private static function source(string $surface, string $case): ?string
     {
-        if (\in_array($surface, ['baseline-file', 'baseline:cleanup:file', 'baseline:rename-channels:file', 'baseline:update:file'], true)) {
+        if (\in_array($surface, ReportViews::BASELINE_FILE_SURFACES, true)) {
             return null;
         }
         if (\in_array($surface, ['format:metrics', 'format:suppressed', 'directives'], true)) {

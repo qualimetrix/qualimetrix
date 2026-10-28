@@ -21,10 +21,21 @@ final readonly class FindingRecord
         private JsonSanitizer $sanitizer,
     ) {}
 
+    /**
+     * The namespaces a finding's record names, for a view that places the
+     * finding by them and must agree with the record.
+     *
+     * @return list<string>
+     */
+    public function namespaces(Finding $finding, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces): array
+    {
+        return \Qualimetrix\Reporting\FindingProjection\FindingNamespaces::of($finding, $fileNamespaces);
+    }
+
     /** @return PublishedRecord */
     public function of(Finding $finding, FormatterContext $context, \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces): array
     {
-        $namespaces = \Qualimetrix\Reporting\FindingProjection\FindingNamespaces::of($finding, $fileNamespaces);
+        $namespaces = $this->namespaces($finding, $fileNamespaces);
         $file = $finding->location->file === null
             ? null
             : $context->relativizePath($finding->location->file);

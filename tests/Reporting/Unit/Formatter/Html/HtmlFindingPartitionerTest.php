@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
@@ -44,7 +45,7 @@ final class HtmlFindingPartitionerTest extends TestCase
         $global = new HtmlTreeNode('(no namespace)', '(no namespace)', 'namespace');
         $namespace = self::finding(Location::none(), SymbolPath::forNamespace(''), 'size.class-count', 'size.class-count', 'Global count', Severity::Warning);
         $function = self::finding(Location::none(), SymbolPath::forGlobalFunction('', 'work'), 'complexity.ccn', 'complexity.ccn', 'Global function', Severity::Warning);
-        $result = $this->partitioner->partition([$namespace, $function], ['' => $root, '(no namespace)' => $global]);
+        $result = $this->partitioner->partition([$namespace, $function], ['' => $root, '(no namespace)' => $global], FileNamespaceIndex::fromRepository(null));
 
         self::assertSame(['(no namespace)' => [$namespace, $function]], $result);
     }
@@ -55,10 +56,10 @@ final class HtmlFindingPartitionerTest extends TestCase
         $node = new HtmlTreeNode('Shop', 'Shop', 'namespace');
         $finding = self::finding(Location::none(), SymbolPath::forNamespace('Shop'), 'computed', 'health.cohesion', 'Low cohesion', Severity::Warning, 20, recommendation: 'Split the namespace.', threshold: 30);
         $finding = $finding->reportedAsBreach(new \Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel([25], 1));
-        $this->partitioner->attach(['Shop' => $node], ['Shop' => [$finding]], new FormatterContext(), \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
+        $this->partitioner->attach(['Shop' => $node], ['Shop' => [$finding]], new FormatterContext(), FileNamespaceIndex::fromRepository(null));
         $registry = new \Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry(\Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry::alwaysHigherMagnitude(), \Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes::withRealValues());
         $json = new \Qualimetrix\Reporting\Formatter\Json\JsonFindingSection($registry, new \Qualimetrix\Reporting\Formatter\Json\JsonSanitizer());
-        $expected = $json->format([$finding], new FormatterContext(), \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null))[0];
+        $expected = $json->format([$finding], new FormatterContext(), FileNamespaceIndex::fromRepository(null))[0];
 
         self::assertSame($expected, $node->findings[0]);
     }
@@ -69,7 +70,7 @@ final class HtmlFindingPartitionerTest extends TestCase
         $node = new HtmlTreeNode('(project)', '(project)', 'project');
         $base = self::finding(location: Location::none(), symbolPath: SymbolPath::forProject(), ruleName: 'computed', code: 'health.overall', message: 'low health', severity: Severity::Warning, metricValue: 20);
         $accepted = new \Qualimetrix\Analysis\Finding\Contract\Channel\AcceptedLevel([30], 1);
-        $this->partitioner->attach(['(project)' => $node], ['(project)' => [$base, $base->reportedAsBreach($accepted), $base->reportedUncompared($accepted, 'exclusions-differ')]], new FormatterContext(), \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
+        $this->partitioner->attach(['(project)' => $node], ['(project)' => [$base, $base->reportedAsBreach($accepted), $base->reportedUncompared($accepted, 'exclusions-differ')]], new FormatterContext(), FileNamespaceIndex::fromRepository(null));
         self::assertNull($node->findings[0]['acceptedLevel']);
         self::assertNull($node->findings[0]['baselineVerdict']);
         self::assertNull($node->findings[0]['baselineReason']);
@@ -87,7 +88,7 @@ final class HtmlFindingPartitionerTest extends TestCase
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
-        $result = $this->partitioner->partition([], ['App\\Service' => $node]);
+        $result = $this->partitioner->partition([], ['App\\Service' => $node], FileNamespaceIndex::fromRepository(null));
 
         self::assertSame([], $result);
     }
@@ -107,7 +108,7 @@ final class HtmlFindingPartitionerTest extends TestCase
             severity: Severity::Warning,
         );
 
-        $result = $this->partitioner->partition([$finding], [$id => $node]);
+        $result = $this->partitioner->partition([$finding], [$id => $node], FileNamespaceIndex::fromRepository(null));
 
         self::assertCount(1, $result);
         self::assertArrayHasKey($id, $result);
@@ -140,7 +141,7 @@ final class HtmlFindingPartitionerTest extends TestCase
             $owner,
             new MetricBag(),
         ));
-        $result = $this->partitioner->partition([$finding], [$classId => $classNode], $metrics);
+        $result = $this->partitioner->partition([$finding], [$classId => $classNode], FileNamespaceIndex::fromRepository(null), $metrics);
 
         self::assertCount(1, $result);
         self::assertArrayHasKey($classId, $result);
@@ -161,7 +162,7 @@ final class HtmlFindingPartitionerTest extends TestCase
             severity: Severity::Warning,
         );
 
-        $result = $this->partitioner->partition([$finding], ['App\\Service' => $nsNode]);
+        $result = $this->partitioner->partition([$finding], ['App\\Service' => $nsNode], FileNamespaceIndex::fromRepository(null));
 
         self::assertCount(1, $result);
         self::assertArrayHasKey('App\\Service', $result);
@@ -182,16 +183,73 @@ final class HtmlFindingPartitionerTest extends TestCase
             severity: Severity::Warning,
         );
 
-        $result = $this->partitioner->partition([$finding], ['App\\Service' => $classNode, '' => $root]);
+        $result = $this->partitioner->partition([$finding], ['App\\Service' => $classNode, '' => $root], FileNamespaceIndex::fromRepository(null));
 
         self::assertSame(['' => [$finding]], $result);
         $subject = MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'Service'), RelativePath::fromString('src/helpers.php'), DeclarationOrdinal::fromRank(0)))->toCanonical();
+        $soleClass = $this->soleClassIn('src/helpers.php', 'App', 'Service');
         $exactNode = new HtmlTreeNode('Service', 'App\\Service', 'class', $subject);
         self::assertSame(
             [$subject => [$finding]],
-            $this->partitioner->partition([$finding], [$subject => $exactNode, '' => $root], $this->soleClassIn('src/helpers.php', 'App', 'Service')),
+            $this->partitioner->partition([$finding], [$subject => $exactNode, '' => $root], FileNamespaceIndex::fromRepository($soleClass), $soleClass),
             'a file declaring one class shows its file findings on that class',
         );
+        $helpers = RelativePath::fromString('src/helpers.php');
+        $soleClass->add(SymbolPath::forFile($helpers), (new MetricBag())->withEntry(FileNamespaceIndex::LEXICAL_NAMESPACE_ENTRY, ['namespace' => 'App\\B']), $helpers, 1);
+        self::assertSame(
+            ['' => [$finding]],
+            $this->partitioner->partition([$finding], [$subject => $exactNode, '' => $root], FileNamespaceIndex::fromRepository($soleClass), $soleClass),
+            'a file that also opens another namespace is not narrowed to its one class',
+        );
+    }
+
+    /**
+     * A file finding in a class-free file lands where its record says it
+     * belongs: on the one namespace the file opens, as JSON groups it. A file
+     * opening two namespaces lands on their common ancestor, and a namespace
+     * with no node of its own on its nearest ancestor that has one.
+     */
+    #[Test]
+    public function itPutsAFileFindingOfAClassFreeFileOnTheNamespaceItsRecordNames(): void
+    {
+        $root = new HtmlTreeNode('<project>', HtmlFindingPartitioner::ROOT, 'project');
+        $app = new HtmlTreeNode('App', 'App', 'namespace');
+        $svc = new HtmlTreeNode('Svc', 'App\\Svc', 'namespace');
+        $global = new HtmlTreeNode('(no namespace)', '(no namespace)', 'namespace');
+        $nodes = ['' => $root, 'App' => $app, 'App\\Svc' => $svc, '(no namespace)' => $global];
+        $index = self::lexicalNamespaces([
+            'src/script.php' => ['App\\Svc'],
+            'src/two.php' => ['App\\Svc', 'App\\Other'],
+            'src/deep.php' => ['App\\Svc\\Deep'],
+            'src/apart.php' => ['App\\Svc', 'Lib'],
+            'src/mixed.php' => ['App\\Svc', ''],
+        ]);
+        $findings = [];
+        foreach (['script', 'two', 'deep', 'apart', 'mixed', 'bare'] as $name) {
+            $file = RelativePath::fromString("src/{$name}.php");
+            $findings[$name] = self::finding(new Location($file, 4), SymbolPath::forFile($file), 'code-smell.eval', 'code-smell.eval', 'eval', Severity::Error);
+        }
+
+        self::assertSame(
+            ['App\\Svc' => [$findings['script'], $findings['deep']], 'App' => [$findings['two']], '' => [$findings['apart'], $findings['mixed']], '(no namespace)' => [$findings['bare']]],
+            $this->partitioner->partition(array_values($findings), $nodes, $index),
+        );
+    }
+
+    /** @param array<string, list<string>> $namespacesByFile */
+    private static function lexicalNamespaces(array $namespacesByFile): FileNamespaceIndex
+    {
+        $repository = new InMemoryMetricRepository();
+        foreach ($namespacesByFile as $path => $namespaces) {
+            $bag = new MetricBag();
+            foreach ($namespaces as $namespace) {
+                $bag = $bag->withEntry(FileNamespaceIndex::LEXICAL_NAMESPACE_ENTRY, ['namespace' => $namespace]);
+            }
+            $file = RelativePath::fromString($path);
+            $repository->add(SymbolPath::forFile($file), $bag, $file, 1);
+        }
+
+        return FileNamespaceIndex::fromRepository($repository);
     }
 
     #[Test]
@@ -209,7 +267,7 @@ final class HtmlFindingPartitionerTest extends TestCase
         );
 
         // No class node exists, only the namespace node
-        $result = $this->partitioner->partition([$finding], ['App' => $nsNode]);
+        $result = $this->partitioner->partition([$finding], ['App' => $nsNode], FileNamespaceIndex::fromRepository(null));
 
         self::assertCount(1, $result);
         self::assertArrayHasKey('App', $result);
@@ -230,7 +288,7 @@ final class HtmlFindingPartitionerTest extends TestCase
             severity: Severity::Warning,
         );
 
-        $result = $this->partitioner->partition([$finding], ['App' => $nsNode]);
+        $result = $this->partitioner->partition([$finding], ['App' => $nsNode], FileNamespaceIndex::fromRepository(null));
 
         self::assertCount(1, $result);
         self::assertArrayHasKey('App', $result);
@@ -264,7 +322,7 @@ final class HtmlFindingPartitionerTest extends TestCase
 
         $root = new HtmlTreeNode('<project>', HtmlFindingPartitioner::ROOT, 'project');
 
-        self::assertSame(['' => [$finding]], $this->partitioner->partition([$finding], ['' => $root]));
+        self::assertSame(['' => [$finding]], $this->partitioner->partition([$finding], ['' => $root], FileNamespaceIndex::fromRepository(null)));
     }
 
     #[Test]
@@ -281,7 +339,7 @@ final class HtmlFindingPartitionerTest extends TestCase
 
         $this->expectException(LogicException::class);
 
-        $this->partitioner->partition([$finding], []);
+        $this->partitioner->partition([$finding], [], FileNamespaceIndex::fromRepository(null));
     }
 
     #[Test]
@@ -331,7 +389,7 @@ final class HtmlFindingPartitionerTest extends TestCase
             new MetricBag(),
         ));
 
-        $result = $this->partitioner->partition([$v1, $v2, $v3], $nodes, $metrics);
+        $result = $this->partitioner->partition([$v1, $v2, $v3], $nodes, FileNamespaceIndex::fromRepository(null), $metrics);
 
         self::assertCount(2, $result);
         self::assertCount(2, $result[$classASubject->toCanonical()]); // v1 (class) + v2 (method -> class)
@@ -349,7 +407,7 @@ final class HtmlFindingPartitionerTest extends TestCase
             ['App\\Service' => $node],
             [],
             new FormatterContext(),
-            \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            FileNamespaceIndex::fromRepository(null),
         );
 
         self::assertSame([], $node->findings);
@@ -378,7 +436,7 @@ final class HtmlFindingPartitionerTest extends TestCase
             ['App\\Service' => $node],
             ['App\\Service' => [$finding]],
             new FormatterContext(),
-            \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            FileNamespaceIndex::fromRepository(null),
         );
 
         self::assertCount(1, $node->findings);
@@ -403,7 +461,7 @@ final class HtmlFindingPartitionerTest extends TestCase
         $occurrence = OccurrenceKey::semantic('test', ['id' => 1]);
         $finding = self::finding(new Location(RelativePath::fromString('src/Service.php'), 10), $logical, 'r', 'r', 'message', Severity::Warning, occurrenceKey: $occurrence, subject: $subject);
 
-        $this->partitioner->attach(['App\\Service' => $node], ['App\\Service' => [$finding]], new FormatterContext(), \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null));
+        $this->partitioner->attach(['App\\Service' => $node], ['App\\Service' => [$finding]], new FormatterContext(), FileNamespaceIndex::fromRepository(null));
 
         self::assertSame($subject->toCanonical(), $node->findings[0]['subject']);
         self::assertSame($occurrence->value, $node->findings[0]['occurrence']);
@@ -445,7 +503,7 @@ final class HtmlFindingPartitionerTest extends TestCase
                 ),
             ]],
             new FormatterContext(),
-            \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            FileNamespaceIndex::fromRepository(null),
         );
 
         self::assertCount(2, $node->findings);
@@ -485,7 +543,7 @@ final class HtmlFindingPartitionerTest extends TestCase
             ['App\\Service' => $node],
             ['App\\Service' => [$nanFinding, $infFinding]],
             new FormatterContext(),
-            \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            FileNamespaceIndex::fromRepository(null),
         );
 
         self::assertCount(2, $node->findings);
@@ -513,7 +571,7 @@ final class HtmlFindingPartitionerTest extends TestCase
             ['App\\Service' => $node],
             ['App\\Other' => [$finding]],
             new FormatterContext(),
-            \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            FileNamespaceIndex::fromRepository(null),
         );
     }
 
@@ -535,7 +593,7 @@ final class HtmlFindingPartitionerTest extends TestCase
             ['App' => $node],
             ['App' => [$finding]],
             new FormatterContext(),
-            \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex::fromRepository(null),
+            FileNamespaceIndex::fromRepository(null),
         );
 
         self::assertCount(1, $node->findings);

@@ -204,8 +204,6 @@ condition. When an issue closes, drop its line here.
 - [#161](https://github.com/qualimetrix/qualimetrix/issues/161) Health coupling reports zero coverage while publishing a score
 - [#164](https://github.com/qualimetrix/qualimetrix/issues/164) hardcoded-credentials misses lowercase dotted secret phrases
 - [#166](https://github.com/qualimetrix/qualimetrix/issues/166) Duplication can report one copy in two overlapping groups
-- [#190](https://github.com/qualimetrix/qualimetrix/issues/190) HTML report shows file findings of class-free files on the project root
-- [#209](https://github.com/qualimetrix/qualimetrix/issues/209) `suppress_paths` on a file that failed to parse is reported as unmatched
 
 ### Product improvements
 
@@ -224,7 +222,6 @@ condition. When an issue closes, drop its line here.
 - [#176](https://github.com/qualimetrix/qualimetrix/issues/176) Self-analysis: method and class complexity and code-smell ceilings
 - [#177](https://github.com/qualimetrix/qualimetrix/issues/177) Testing and validation harness: size and speed
 - [#191](https://github.com/qualimetrix/qualimetrix/issues/191) Gate process-group signalling fails with EPERM under load on macOS
-- [#210](https://github.com/qualimetrix/qualimetrix/issues/210) Gate compares `baseline-file` records positionally after mapping
 
 ### Unscheduled candidates
 

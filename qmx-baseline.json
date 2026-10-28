@@ -491,14 +491,6 @@
         ]
       }
     ],
-    "declaration:class:Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionAudit@src/Analysis/Finding/SuppressionBinding/UnboundSuppressionAudit.php": [
-      {
-        "channel": "coupling.cbo",
-        "magnitudes": [
-          20
-        ]
-      }
-    ],
     "declaration:class:Qualimetrix\\Analysis\\Policy\\Architecture\\Allow\\ParseCapturedState@src/Analysis/Policy/Architecture/Allow/ParseCapturedState.php": [
       {
         "channel": "design.data-class",

@@ -14611,6 +14611,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\PathBinding": {
+      "path": "src/Analysis/Finding/SuppressionBinding/PathBinding.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionAudit": {
       "path": "src/Analysis/Finding/SuppressionBinding/UnboundSuppressionAudit.php",
       "kind": "class",
@@ -14656,6 +14663,13 @@
           ]
         }
       ]
+    },
+    "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionPopulation": {
+      "path": "src/Analysis/Finding/SuppressionBinding/UnboundSuppressionPopulation.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "consumers": []
     },
     "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\ValueScopeJudgement": {
       "path": "src/Analysis/Finding/SuppressionBinding/ValueScopeJudgement.php",
@@ -21027,6 +21041,10 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\ProjectScope\\ExcludeSelectorVerdict"
         },
         {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\PathBinding"
+        },
+        {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\RunConfigurationResolver"
         },
@@ -21161,6 +21179,10 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\ProjectScope\\ExcludeSelectorVerdict"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\PathBinding"
         },
         {
           "owner": "Analysis.Run",
@@ -21455,7 +21477,7 @@
         },
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionAudit"
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionPopulation"
         }
       ]
     },
@@ -23136,6 +23158,10 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Rule\\RulePopulationDeclarations"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionPopulation"
         }
       ]
     },

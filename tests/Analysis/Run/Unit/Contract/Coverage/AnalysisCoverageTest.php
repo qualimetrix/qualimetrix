@@ -41,6 +41,30 @@ final class AnalysisCoverageTest extends TestCase
         self::assertSame(['src/A.php', 'src/B.php'], self::pathValues($coverage->analyzedFiles));
     }
 
+    /**
+     * A failure that may be a directory hides whatever lies beneath it; any
+     * other is one known file.
+     */
+    #[Test]
+    public function itSeparatesFailedFilesFromFailedDirectories(): void
+    {
+        $failures = [];
+        foreach (AnalysisFailureKind::cases() as $kind) {
+            $failures[] = new AnalysisFailure(RelativePath::fromString('src/' . $kind->value), $kind, 'failed');
+        }
+        $coverage = new AnalysisCoverage([RelativePath::fromString('src/Ok.php')], [RelativePath::fromString('src/Gen.php')], $failures);
+
+        self::assertSame(['src/Gen.php'], self::pathValues($coverage->fileUniverse()['generatedExcluded']));
+        self::assertSame(
+            ['src/directory-symlink', 'src/unreadable-directory', 'src/unreadable-entry'],
+            self::pathValues($coverage->fileUniverse()['failedDirectories']),
+        );
+        self::assertSame(
+            ['src/file-symlink', 'src/not-regular-file', 'src/parse', 'src/processing', 'src/unreadable-file'],
+            self::pathValues($coverage->fileUniverse()['failedFiles']),
+        );
+    }
+
     #[Test]
     public function itTreatsGeneratedExclusionsAsCompleteCoverage(): void
     {
