@@ -341,12 +341,23 @@ logs before it discovers, so a refusal after discovery would already have
 appended to a source.
 
 **Standard output.** When `check` or `graph:export` reports on standard output,
-`RunTargets::claim()` asks the same question about descriptor 1. A match is
-refused with `EnvironmentRefusal::aboutStandardOutput()`, which
-`RunTargetSession` presents with no envelope format, so the refusal goes to
-stderr and nothing reaches the input. `>>` and `1<>` are prevented; `>` has
-already emptied the file before qmx starts, and the refusal then says which
-input the shell destroyed.
+`RunTargets::claim()` asks the same question about descriptor 1, before any
+other target: a target refusal raised first would be written to that input in
+the requested format. A match is refused with
+`EnvironmentRefusal::aboutStandardOutput()`, which `RunTargetSession` presents
+with no envelope format, so the refusal goes to stderr and nothing reaches the
+input. `>>` and `1<>` are prevented; `>` has already emptied the file before
+qmx starts, and the refusal then says which input the shell destroyed. A
+refusal reached before the inputs are known — an invalid option value, a
+configuration that does not resolve — is still presented in the requested
+format on standard output: which file standard output is cannot be judged
+against inputs nobody has read yet.
+
+A `composer.json` that declares no autoload target is now an applied source,
+so `check -v` lists it under "Configuration loaded from". The selection walk is
+measured against a cold analysis; with a warm AST cache the analysis is
+shorter and the walk a larger share of it, still paid only when a target or
+redirected standard output is an existing regular file.
 
 Still not covered: Composer files read at other roots —
 `ComposerAutoloadMap` asks `InstallLocator` for manifests up to twelve levels

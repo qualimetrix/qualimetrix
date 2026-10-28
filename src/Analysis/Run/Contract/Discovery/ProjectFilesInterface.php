@@ -13,7 +13,8 @@ interface ProjectFilesInterface
 
     /**
      * The files the walk of {@see discover()} accepts — eligible, excluded as
-     * generated, or a second name of either — without reading any of them.
+     * generated, skipped for an unreadable header, or a second name of any —
+     * without reading any of them. It refuses as that walk does.
      *
      * @return list<SplFileInfo>
      */

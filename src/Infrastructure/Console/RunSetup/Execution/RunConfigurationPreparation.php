@@ -38,31 +38,40 @@ final readonly class RunConfigurationPreparation
     }
 
     /**
-     * The run's files are walked once, when first asked about a regular file:
-     * no other identity can be a source, so a run whose targets do not exist
-     * yet walks nothing.
+     * The run's files are walked and stated once, when first asked about a
+     * regular file: no other identity can be a source, so a run whose targets
+     * do not exist yet walks nothing.
      *
      * @return Closure(?FileIdentity): ?string
      */
     private function sourceReadAs(RunConfiguration $run): Closure
     {
-        $selected = null;
-        $root = rtrim($run->projectScope->universe->projectRoot->value(), '/') . '/';
+        $sources = null;
 
-        return function (?FileIdentity $identity) use ($run, $root, &$selected): ?string {
-            if ($identity === null || $identity->inode === 0 || !$identity->isRegularFile()) {
+        return function (?FileIdentity $identity) use ($run, &$sources): ?string {
+            if ($identity === null || !$identity->isRegularFile()) {
                 return null;
             }
-            $selected ??= $this->projectFiles->select($run);
-            foreach ($selected as $file) {
-                $path = $file->getPathname();
-                [$stat] = NativeCall::attempt(static fn(): array|false => stat($path));
-                if (\is_array($stat) && FileIdentity::fromStat($stat)->sameAs($identity)) {
-                    return \sprintf('source file "%s"', str_starts_with($path, $root) ? substr($path, \strlen($root)) : $path);
-                }
-            }
+            $sources ??= $this->sourcesByIdentity($run);
 
-            return null;
+            return $sources[$identity->device . ':' . $identity->inode] ?? null;
         };
+    }
+
+    /** @return array<string, string> each selected file's description, keyed by device and inode */
+    private function sourcesByIdentity(RunConfiguration $run): array
+    {
+        $root = rtrim($run->projectScope->universe->projectRoot->value(), '/') . '/';
+        $sources = [];
+        foreach ($this->projectFiles->select($run) as $file) {
+            $path = $file->getPathname();
+            [$stat] = NativeCall::attempt(static fn(): array|false => stat($path));
+            $identity = FileIdentity::ofRegularFile($stat);
+            if ($identity !== null) {
+                $sources[$identity->device . ':' . $identity->inode] ??= \sprintf('source file "%s"', str_starts_with($path, $root) ? substr($path, \strlen($root)) : $path);
+            }
+        }
+
+        return $sources;
     }
 }

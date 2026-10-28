@@ -86,16 +86,17 @@ final class RunTargets
     public function claim(Closure $inputFileReadAs): void
     {
         $this->claims->beginClaim();
+        // First: any refusal below would otherwise be written to that input.
+        $standardOutput = $this->reportOnStandardOutput ? ProcessStreams::identity(1) : null;
+        $read = $inputFileReadAs($standardOutput);
+        if ($read !== null) {
+            throw EnvironmentRefusal::aboutStandardOutput(\sprintf('standard output and %s name the same input target', $read));
+        }
         foreach ($this->judged as $subject => $target) {
             $read = $inputFileReadAs(TargetCollisions::identityOf($target));
             if ($read !== null) {
                 throw EnvironmentRefusal::aboutFile($target->spelling, 'use', \sprintf('%s and %s name the same input target', $subject, $read));
             }
-        }
-        $standardOutput = $this->reportOnStandardOutput ? ProcessStreams::identity(1) : null;
-        $read = $inputFileReadAs($standardOutput);
-        if ($read !== null) {
-            throw EnvironmentRefusal::aboutStandardOutput(\sprintf('standard output and %s name the same input target', $read));
         }
         TargetCollisions::assertBeforeClaim($this->judged, $standardOutput);
 

@@ -260,8 +260,10 @@ link of one refuses alike. A new file among the analysed sources, such as
 baseline file written by `baseline:generate`, `baseline:update` and
 `baseline:cleanup` follow the same rule. When the `check` or `graph:export`
 report goes to standard output and the shell opened standard output on such a
-file (`>>`, `1<>`), the run refuses too, on stderr only; with `>` the shell has
-already emptied the file before qmx starts. Selecting the sources costs one
+file (`>>`, `1<>`), the run refuses too, before any other target, on stderr
+only; with `>` the shell has already emptied the file before qmx starts. A
+refusal raised earlier, while options and configuration are still being read,
+is written to standard output in the requested format as usual. Selecting the sources costs one
 extra walk of the analysed paths, without reading any file, and only when a
 target or redirected standard output is an existing regular file.
 

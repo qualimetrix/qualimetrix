@@ -10,7 +10,11 @@ use Qualimetrix\Core\FileTarget\FileIdentity;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfiguration;
 
-/** Owner-accepted run, root-dependent cache and parallel values from one document. */
+/**
+ * Owner-accepted run, root-dependent cache and parallel values from one
+ * document, and the question which file that run reads; answering it about a
+ * regular file walks the run's paths once.
+ */
 final readonly class ResolvedRunConfiguration
 {
     /** @param Closure(?FileIdentity): ?string $fileReadAs */

@@ -75,8 +75,7 @@ final class ComposerDiscoveryStage implements ConfigurationStageInterface
         }
         $source = $facts->source();
         [$stat] = NativeCall::attempt(static fn(): array|false => stat($source));
-        $identity = \is_array($stat) ? FileIdentity::fromStat($stat) : null;
 
-        return $identity === null || $identity->inode === 0 || !$identity->isRegularFile() ? null : $identity;
+        return FileIdentity::ofRegularFile($stat);
     }
 }

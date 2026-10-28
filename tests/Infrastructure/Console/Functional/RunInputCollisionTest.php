@@ -15,6 +15,7 @@ use Qualimetrix\Infrastructure\Console\GraphExport\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\RunSetup\Execution\RunConfigurationPreparation;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Subprocess\ChildProcess;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -30,6 +31,7 @@ final class RunInputCollisionTest extends TestCase
 {
     private const string MANIFEST = '{"name": "demo/app", "autoload": {"psr-4": {"Demo\\\\": "src/"}}}';
     private const string SOURCE = "<?php\n\nnamespace Demo;\n\nfinal class Source {}\n";
+    private const string GENERATED = "<?php\n\n// @generated\n\nnamespace Demo;\n\nfinal class Generated {}\n";
 
     private string $directory;
     private string $originalCwd;
@@ -43,7 +45,9 @@ final class RunInputCollisionTest extends TestCase
         mkdir($this->directory . '/src', 0o777, true);
         file_put_contents($this->directory . '/composer.json', self::MANIFEST);
         file_put_contents($this->directory . '/src/Source.php', self::SOURCE);
+        file_put_contents($this->directory . '/src/Generated.php', self::GENERATED);
         link($this->directory . '/src/Source.php', $this->directory . '/Alias.php');
+        symlink('src/Source.php', $this->directory . '/Link.php');
         file_put_contents($this->directory . '/qmx.yaml', "paths: [src]\n");
         chdir($this->directory);
     }
@@ -77,7 +81,11 @@ final class RunInputCollisionTest extends TestCase
         $kinds = [
             'Composer manifest' => ['composer.json', 'composer.json'],
             'analysed source' => ['src/Source.php', 'source file "src/Source.php"'],
+            'analysed source under another spelling' => ['./src/../src/Source.php', 'source file "src/Source.php"'],
+            'symlink to an analysed source' => ['Link.php', 'source file "src/Source.php"'],
             'hard link of an analysed source' => ['Alias.php', 'source file "src/Source.php"'],
+            'manifest under another spelling' => ['src/../composer.json', 'composer.json'],
+            'source excluded as generated' => ['src/Generated.php', 'source file "src/Generated.php"'],
         ];
         $check = ['--format' => 'json', '--workers' => '0', '--no-cache' => true];
         foreach ($kinds as $kind => [$file, $named]) {
@@ -117,19 +125,13 @@ final class RunInputCollisionTest extends TestCase
     public function itRefusesAReportOnStandardOutputOpenedOnAFileTheRunReads(array $arguments, string $file, string $named): void
     {
         $before = (string) file_get_contents($this->directory . '/' . $file);
-        $process = proc_open(
-            [\PHP_BINARY, \dirname(__DIR__, 4) . '/bin/qmx', ...$arguments, '--workers=0', '--no-cache'],
-            [1 => ['file', $this->directory . '/' . $file, 'a'], 2 => ['pipe', 'w']],
-            $pipes,
+        $run = ChildProcess::run(
+            ['/bin/sh', '-c', 'file=$1; shift; exec "$@" >> "$file"', 'sh', $file, \PHP_BINARY, \dirname(__DIR__, 4) . '/bin/qmx', ...$arguments, '--workers=0', '--no-cache'],
             $this->directory,
         );
-        self::assertIsResource($process);
-        $error = (string) stream_get_contents($pipes[2]);
-        fclose($pipes[2]);
-        $exit = proc_close($process);
 
-        self::assertSame(3, $exit, $error);
-        self::assertStringContainsString('standard output and ' . $named . ' name the same input target', $error);
+        self::assertSame(3, $run['exitCode'], $run['stderr']);
+        self::assertStringContainsString('standard output and ' . $named . ' name the same input target', $run['stderr']);
         self::assertSame($before, file_get_contents($this->directory . '/' . $file), 'Nothing, not even the refusal, reaches standard output');
     }
 
@@ -140,12 +142,14 @@ final class RunInputCollisionTest extends TestCase
         yield 'check report appended to the manifest' => [['check'], 'composer.json', 'composer.json'];
         yield 'check report appended to an analysed source' => [['check', '--format=json'], 'src/Source.php', 'source file "src/Source.php"'];
         yield 'graph appended to an analysed source' => [['graph:export'], 'src/Source.php', 'source file "src/Source.php"'];
+        yield 'check report appended to a source, with a colliding profile' => [['check', '--format=json', '--profile=composer.json'], 'src/Source.php', 'source file "src/Source.php"'];
     }
 
     private function assertInputsIntact(): void
     {
         self::assertSame(self::MANIFEST, file_get_contents($this->directory . '/composer.json'));
         self::assertSame(self::SOURCE, file_get_contents($this->directory . '/src/Source.php'));
+        self::assertSame(self::GENERATED, file_get_contents($this->directory . '/src/Generated.php'));
     }
 
     /**
