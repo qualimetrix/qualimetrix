@@ -68,6 +68,10 @@ What is still withheld:
 - `regex` values, as before.
 - Every namespace value, when a file failed analysis: the run did not see all
   declared namespaces.
+- A path value that binds no analysed file, when a failed entry may hold what it
+  names: a file that did not parse matched by the value, a failed directory its
+  literal lies beneath, or any failure for a `regex` value. It is listed as
+  unjudged, not reported as spelled wrong.
 - Every other withholding cause (omitted PHP paths, an unknown project universe, a
   missing PSR-4 map) withholds all values, as before.
 - The architecture and cohesion/coupling namespace audits

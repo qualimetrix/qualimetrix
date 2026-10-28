@@ -20780,6 +20780,10 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\ProjectScope\\SubjectCoverageObservation"
         },
         {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionAudit"
+        },
+        {
           "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\EntryAbsenceProof"
         },
@@ -21161,6 +21165,10 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\ProjectScope\\ExcludeSelectorVerdict"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionAudit"
         },
         {
           "owner": "Analysis.Run",

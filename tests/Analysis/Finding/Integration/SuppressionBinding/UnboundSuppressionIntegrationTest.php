@@ -81,7 +81,7 @@ final class UnboundSuppressionIntegrationTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (['/src/Service.php', '/src/Deep/Old.php', '/src/Deep/Loose.php', '/composer.json', '/qmx.yaml'] as $file) {
+        foreach (['/src/Service.php', '/src/Broken.php', '/src/Deep/Old.php', '/src/Deep/Loose.php', '/composer.json', '/qmx.yaml'] as $file) {
             @unlink($this->fixture . $file);
         }
 
@@ -106,6 +106,28 @@ final class UnboundSuppressionIntegrationTest extends TestCase
     public function itStaysSilentWhenTheConfiguredSuppressPathNamedSomething(): void
     {
         self::assertSame([], $this->onChannel($this->check("suppress_paths:\n  - {subtree: src/Deep}\n"), UnboundSuppressionOptions::UNMATCHED_PATH));
+    }
+
+    /**
+     * A file the run discovered but could not parse is outside the analysed
+     * files, yet a value naming it is spelled correctly: it is named as not
+     * judged instead of reported. Its twin names a file that does not exist
+     * beside the same failure and is still reported.
+     */
+    #[Test]
+    public function itLeavesAPathValueNamingAFileThatFailedToParseUnjudged(): void
+    {
+        file_put_contents($this->fixture . '/src/Broken.php', "<?php\nclass Broken {\n  public function x( {\n}\n");
+
+        $failed = $this->check("suppress_paths:\n  - {exact: src/Broken.php}\n");
+        $missing = $this->check("suppress_paths:\n  - {exact: src/Missing.php}\n");
+
+        self::assertSame([], $this->onChannel($failed, UnboundSuppressionOptions::UNMATCHED_PATH));
+        self::assertSame(
+            [['channel' => UnboundSuppressionOptions::UNMATCHED_PATH, 'option' => 'suppress_paths', 'pattern' => 'exact:src/Broken.php']],
+            $this->projectScope($failed)['unjudgedValues'] ?? null,
+        );
+        self::assertCount(1, $this->onChannel($missing, UnboundSuppressionOptions::UNMATCHED_PATH));
     }
 
     /** The same pair for `suppress_namespaces`, whose universe is the declared namespaces rather than the files. */

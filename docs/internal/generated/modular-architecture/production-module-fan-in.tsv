@@ -368,13 +368,13 @@ Qualimetrix\Core\FileTarget\TemporarySibling	Core.FileTarget	2	1
 Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	10	8
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	97	14
 Qualimetrix\Core\Path\PathFactory	Core.Path	19	7
-Qualimetrix\Core\Path\RelativePath	Core.Path	105	22
+Qualimetrix\Core\Path\RelativePath	Core.Path	106	22
 Qualimetrix\Core\Pattern\NamespaceMatcher	Core.Neutral	9	4
 Qualimetrix\Core\Pattern\NamespacePattern	Core.Neutral	20	7
 Qualimetrix\Core\Pattern\PathMatcher	Core.Neutral	4	2
 Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	13	6
 Qualimetrix\Core\Pattern\SelectorDefinition	Core.Neutral	11	7
-Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	9	5
+Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	10	5
 Qualimetrix\Core\ProductIdentity	Core.Neutral	26	4
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	23	8
 Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	13	7

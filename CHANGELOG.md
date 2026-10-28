@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - The write guard of `check --output`, `--profile` and `--log-file`, `graph:export --output` and the baseline file now also refuses (exit 3), before analysis, the working directory's `composer.json` and every PHP file the run selects, compared by file identity; `qmx check src/ --output=composer.json` or `--output=src/Foo.php` replaced the manifest or a source with the report. A `check` or `graph:export` report on standard output that the shell opened on the configuration, the manifest or a source (`>>`, `1<>`) is refused the same way and before any other target refusal, with the refusal on stderr only; a refusal reached earlier, while the options and configuration are still being read, is still written to standard output in the requested format (#223).
+- `suppress_paths`, `--suppress-path` and per-rule `suppress_paths` values that name a file the run discovered but could not parse (or one beneath a directory it could not list) are listed in `projectScope.unjudgedValues` instead of being reported as `suppression.unmatched-path`; a `regex` value that binds nothing is withheld the same way whenever any file failed (#209).
 
 ## [0.31.0] - 2026-10-28
 

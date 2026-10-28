@@ -26,10 +26,12 @@ final readonly class ProjectScopePresenter
         $facts = $measurement->universe->manifestFacts;
         $reasons = $this->observedProjectScopeReasons->forMainSource($facts->source(), $facts->state, $measurement->universe->projectRoot);
         $namespaces = $result->measured->namespaceTree?->getAllNamespaces();
-        $failedFiles = $result->measured->coverage->failedFilesCount();
+        $analyzedFiles = $result->measured->coverage->analyzedFiles;
+        $failedFiles = $result->measured->coverage->failedPaths();
         $unjudged = $this->unboundSuppressionAudit->unjudgedValues(
             $options->suppressPaths,
             $options->suppressNamespaces,
+            $analyzedFiles,
             $namespaces,
             $failedFiles,
             $valueScope,
@@ -46,6 +48,7 @@ final readonly class ProjectScopePresenter
         $judgedChannels = $this->unboundSuppressionAudit->judgedChannels(
             $options->suppressPaths,
             $options->suppressNamespaces,
+            $analyzedFiles,
             $namespaces,
             $failedFiles,
             $valueScope,
@@ -72,7 +75,7 @@ final readonly class ProjectScopePresenter
             $options->suppressPaths,
             $options->suppressNamespaces,
             $result->measured->namespaceTree?->getAllNamespaces(),
-            $result->measured->coverage->failedFilesCount(),
+            $result->measured->coverage->failedPaths(),
             $measurement->valueScopeJudgement(),
         );
         if ($withheld === []) {

@@ -204,8 +204,10 @@ withhold only a value the removed code could have declared, as
 `RemovedCodeNamespaces` (`mayDeclare()` / `mayDeclareWithin()`) records, and they
 are consulted even when no door is open. `ValueScopeJudgement::withholdsOnlyForRemovedCode()`
 and `UnboundSuppressionAudit::withheldForRemovedCode()` name the values removed
-code alone kept unjudged; any file that failed analysis (`$failedFiles`, taken by
-every public audit method) leaves every namespace value unjudged. A literal value
+code alone kept unjudged; any entry that failed analysis (`$failedPaths`, taken by
+every public audit method) leaves every namespace value unjudged, and a path value
+that binds no analysed file unjudged when a failed entry may hold what it names
+(`failureMayHold()`). A literal value
 the analysed namespace tree already binds is judged and bound beside removed code,
 since removed code can only add namespaces. A `ProjectScopeJudgement` without
 removed-code namespaces treats them as unknown (`removedCodeIsKnown()` is false);

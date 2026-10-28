@@ -92,6 +92,12 @@ final readonly class AnalysisCoverage
         return \count($this->failures);
     }
 
+    /** @return list<RelativePath> */
+    public function failedPaths(): array
+    {
+        return array_map(static fn(AnalysisFailure $failure): RelativePath => $failure->path, $this->failures);
+    }
+
     public function excludedCount(): int
     {
         return \count($this->excluded);

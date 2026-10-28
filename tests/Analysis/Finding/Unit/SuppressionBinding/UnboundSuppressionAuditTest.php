@@ -58,18 +58,52 @@ final class UnboundSuppressionAuditTest extends TestCase
 
         foreach ($runs as $label => $judgement) {
             $scope = $this->scope($judgement, [$this->tempDir]);
-            $failed = $this->audit()->auditResult($paths, $values, [RelativePath::fromString('src/Service.php')], ['Sample'], 1, $scope, self::populationPublication())['findings'];
-            $complete = $this->audit()->auditResult($paths, $values, [RelativePath::fromString('src/Service.php')], ['Sample'], 0, $scope, self::populationPublication())['findings'];
+            $failed = $this->audit()->auditResult($paths, $values, [RelativePath::fromString('src/Service.php')], ['Sample'], [RelativePath::fromString('src/Broken.php')], $scope, self::populationPublication())['findings'];
+            $complete = $this->audit()->auditResult($paths, $values, [RelativePath::fromString('src/Service.php')], ['Sample'], [], $scope, self::populationPublication())['findings'];
 
             self::assertSame([UnboundSuppressionOptions::UNMATCHED_PATH], $this->channelsOf($failed), $label);
             self::assertContains(UnboundSuppressionOptions::UNMATCHED_NAMESPACE, $this->channelsOf($complete), $label);
             self::assertSame(
                 ['exact:Sample\\Broken', 'regex:.*Broken'],
-                array_column($this->audit()->unjudgedValues($paths, $values, ['Sample'], 1, $scope), 'pattern'),
+                array_column($this->audit()->unjudgedValues($paths, $values, [], ['Sample'], [RelativePath::fromString('src/Broken.php')], $scope), 'pattern'),
                 $label,
             );
-            self::assertSame([UnboundSuppressionOptions::UNMATCHED_PATH], $this->audit()->judgedChannels($paths, $values, ['Sample'], 1, $scope), $label);
+            self::assertSame([UnboundSuppressionOptions::UNMATCHED_PATH], $this->audit()->judgedChannels($paths, $values, [], ['Sample'], [RelativePath::fromString('src/Broken.php')], $scope), $label);
         }
+    }
+
+    /**
+     * A path value is withheld only when a failed entry may hold what it
+     * names and no analysed file binds it: a failed file it matches, a failed
+     * directory its literal anchor lies beneath, or any failure for a regex.
+     * Each case has a twin the failure does not reach, which is still judged.
+     */
+    #[Test]
+    public function itWithholdsOnlyThePathValuesAFailedEntryMayHold(): void
+    {
+        $scope = $this->scope(new ProjectScopeJudgement(removedCode: RemovedCodeNamespaces::none()), [$this->tempDir]);
+        $analyzed = [RelativePath::fromString('src/Service.php')];
+        $failed = [RelativePath::fromString('src/Broken.php'), RelativePath::fromString('src/Unreadable')];
+        $paths = [
+            $this->path(SelectorKind::Exact, 'src/Broken.php'),
+            $this->path(SelectorKind::Subtree, 'src/Unreadable/Deep'),
+            $this->path(SelectorKind::Regex, '.*Gone\\.php'),
+            $this->path(SelectorKind::Subtree, 'src'),
+            $this->path(SelectorKind::Exact, 'src/Missing.php'),
+        ];
+
+        self::assertSame(
+            ['exact:src/Broken.php', 'subtree:src/Unreadable/Deep', 'regex:.*Gone\\.php'],
+            array_column($this->audit()->unjudgedValues($paths, [], $analyzed, ['Sample'], $failed, $scope), 'pattern'),
+        );
+        $findings = $this->audit()->auditResult($paths, [], $analyzed, ['Sample'], $failed, $scope, self::populationPublication())['findings'];
+        self::assertSame([UnboundSuppressionOptions::UNMATCHED_PATH], $this->channelsOf($findings));
+        self::assertStringContainsString('src/Missing.php', $findings[0]->message);
+        self::assertSame(
+            [UnboundSuppressionOptions::UNMATCHED_PATH, UnboundSuppressionOptions::UNMATCHED_PATH, UnboundSuppressionOptions::UNMATCHED_PATH],
+            $this->channelsOf($this->audit()->auditResult(\array_slice($paths, 0, 3), [], $analyzed, ['Sample'], [], $scope, self::populationPublication())['findings']),
+            'without the failures every unbound value is reported',
+        );
     }
 
     /**
@@ -95,11 +129,11 @@ final class UnboundSuppressionAuditTest extends TestCase
                 ['channel' => UnboundSuppressionOptions::UNMATCHED_NAMESPACE, 'option' => 'suppress_namespaces', 'pattern' => 'exact:Sample\\Removed'],
                 ['channel' => UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER, 'option' => 'rules.complexity.ccn.suppress_namespaces', 'pattern' => 'exact:Sample\\Removed'],
             ],
-            $audit->withheldForRemovedCode($paths, $namespaces, ['Sample'], 0, $this->scope($judgement)),
+            $audit->withheldForRemovedCode($paths, $namespaces, ['Sample'], [], $this->scope($judgement)),
         );
-        self::assertCount(4, $audit->unjudgedValues($paths, $namespaces, ['Sample'], 0, $this->scope($judgement)), 'the other withheld values are still named as unjudged');
-        self::assertSame([], $audit->withheldForRemovedCode($paths, $namespaces, ['Sample'], 1, $this->scope($judgement)), 'a failure withholds them too');
-        self::assertSame([], $audit->withheldForRemovedCode($paths, $namespaces, null, 0, $this->scope($judgement)), 'so does a missing namespace tree');
+        self::assertCount(4, $audit->unjudgedValues($paths, $namespaces, [], ['Sample'], [], $this->scope($judgement)), 'the other withheld values are still named as unjudged');
+        self::assertSame([], $audit->withheldForRemovedCode($paths, $namespaces, ['Sample'], [RelativePath::fromString('src/Broken.php')], $this->scope($judgement)), 'a failure withholds them too');
+        self::assertSame([], $audit->withheldForRemovedCode($paths, $namespaces, null, [], $this->scope($judgement)), 'so does a missing namespace tree');
     }
 
     /**
@@ -120,13 +154,13 @@ final class UnboundSuppressionAuditTest extends TestCase
         ];
         $declared = ['Sample', 'Sample\\Legacy'];
 
-        self::assertSame(['exact:Sample\\Legacy\\Old'], array_column($audit->unjudgedValues([], $namespaces, $declared, 0, $this->scope($judgement)), 'pattern'));
-        self::assertSame(['exact:Sample\\Legacy\\Old'], array_column($audit->withheldForRemovedCode([], $namespaces, $declared, 0, $this->scope($judgement)), 'pattern'));
+        self::assertSame(['exact:Sample\\Legacy\\Old'], array_column($audit->unjudgedValues([], $namespaces, [], $declared, [], $this->scope($judgement)), 'pattern'));
+        self::assertSame(['exact:Sample\\Legacy\\Old'], array_column($audit->withheldForRemovedCode([], $namespaces, $declared, [], $this->scope($judgement)), 'pattern'));
         self::assertSame(
             [UnboundSuppressionOptions::UNMATCHED_NAMESPACE, UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER],
-            $audit->judgedChannels([], $namespaces, $declared, 0, $this->scope($judgement)),
+            $audit->judgedChannels([], $namespaces, [], $declared, [], $this->scope($judgement)),
         );
-        self::assertSame([], $audit->auditResult([], $namespaces, [], $declared, 0, $this->scope($judgement), self::populationPublication())['findings']);
+        self::assertSame([], $audit->auditResult([], $namespaces, [], $declared, [], $this->scope($judgement), self::populationPublication())['findings']);
     }
 
     private static function removedPhpFile(): ExcludeSelectorVerdict
@@ -158,7 +192,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             [$this->namespace(SelectorKind::Subtree, 'Sample\\Gone')],
             [RelativePath::fromString('src/Service.php')],
             null,
-            0,
+            [],
             $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::none())),
             self::populationPublication(),
         )['findings']);
@@ -178,7 +212,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             [$this->namespace(SelectorKind::Subtree, 'Sample\\Gone')],
             [],
             [],
-            0,
+            [],
             $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::none())),
             self::populationPublication(),
         )['findings']);
@@ -206,7 +240,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             ],
             [RelativePath::fromString('src/UserService.php')],
             ['Sample\\Deep'],
-            0,
+            [],
             $this->scope(new ProjectScopeJudgement(removedCode: RemovedCodeNamespaces::none()), [$this->tempDir . '/src', $this->tempDir . '/tests']),
             self::populationPublication(),
         )['findings'];
@@ -223,7 +257,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             [],
             [RelativePath::fromString('src/Service/User.php')],
             [],
-            0,
+            [],
             $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::none())),
             self::populationPublication(),
         )['findings'];
@@ -242,7 +276,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             [$this->namespace(SelectorKind::Subtree, 'Sample\\Gone')],
             [],
             [],
-            0,
+            [],
             $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::none())),
             self::populationPublication(),
         )['findings']);
@@ -272,7 +306,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             [],
             [RelativePath::fromString('src/Service.php')],
             [],
-            0,
+            [],
             $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::none())),
             self::populationPublication(),
         )['findings'];
@@ -300,7 +334,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             'coupling.cbo' => ['coupling.cbo:namespace' => [$this->namespace(SelectorKind::Subtree, 'Sample\\Gone')]],
         ]);
 
-        $findings = $audit->auditResult([], [], [], ['Sample'], 0, $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::none())), self::populationPublication())['findings'];
+        $findings = $audit->auditResult([], [], [], ['Sample'], [], $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::none())), self::populationPublication())['findings'];
 
         self::assertSame([UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER], $this->channelsOf($findings));
         self::assertStringContainsString(
@@ -320,7 +354,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             'coupling.cbo' => ['coupling.cbo:namespace' => [$this->namespace(SelectorKind::Subtree, 'Sample')]],
         ]);
 
-        self::assertSame([], $this->channelsOf($audit->auditResult([], [], [], ['Sample'], 0, $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::none())), self::populationPublication())['findings']));
+        self::assertSame([], $this->channelsOf($audit->auditResult([], [], [], ['Sample'], [], $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::none())), self::populationPublication())['findings']));
     }
 
     /**
@@ -337,7 +371,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             [$this->namespace(SelectorKind::Subtree, 'Sample\\Tests\\Gone')],
             [RelativePath::fromString('src/Service.php')],
             ['Sample'],
-            0,
+            [],
             $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::none())),
             self::populationPublication(),
         )['findings'];
@@ -358,7 +392,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             [$this->namespace(SelectorKind::Subtree, 'Sample\\Tests\\Gone')],
             [RelativePath::fromString('src/Service.php'), RelativePath::fromString('tests/ServiceTest.php')],
             ['Sample', 'Sample\\Tests'],
-            0,
+            [],
             $this->scope(new ProjectScopeJudgement(removedCode: RemovedCodeNamespaces::none()), [$this->tempDir]),
             self::populationPublication(),
         )['findings'];
@@ -381,7 +415,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             [],
             [RelativePath::fromString('src/Service.php')],
             [],
-            0,
+            [],
             $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::none())),
             self::populationPublication(),
         )['findings'];
@@ -401,7 +435,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             [$this->namespace(SelectorKind::Regex, '.*\\\\Gone')],
             [RelativePath::fromString('src/Service.php'), RelativePath::fromString('tests/ServiceTest.php')],
             ['Sample', 'Sample\\Tests'],
-            0,
+            [],
             $this->scope(new ProjectScopeJudgement(removedCode: RemovedCodeNamespaces::none()), [$this->tempDir]),
             self::populationPublication(),
         )['findings'];
@@ -421,7 +455,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             [$this->namespace(SelectorKind::Subtree, 'Sample\\Gone')],
             [RelativePath::fromString('src/Service.php'), RelativePath::fromString('tests/ServiceTest.php')],
             ['Sample', 'Sample\\Tests'],
-            0,
+            [],
             $this->scope(new ProjectScopeJudgement(removedCode: RemovedCodeNamespaces::none()), [$this->tempDir . '/src', $this->tempDir . '/tests']),
             self::populationPublication(),
         )['findings'];
@@ -442,7 +476,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             [],
             [RelativePath::fromString('src/Service.php'), RelativePath::fromString('tests/ServiceTest.php')],
             [],
-            0,
+            [],
             $this->scope(new ProjectScopeJudgement(removedCode: RemovedCodeNamespaces::none()), [$this->tempDir]),
             self::populationPublication(),
         )['findings'];
@@ -473,7 +507,7 @@ final class UnboundSuppressionAuditTest extends TestCase
                 [$namespace],
                 [RelativePath::fromString("src/\xFF.php")],
                 null,
-                0,
+                [],
                 $this->scope(new ProjectScopeJudgement(removedCode: RemovedCodeNamespaces::none())),
                 self::populationPublication(),
             );
@@ -511,7 +545,7 @@ final class UnboundSuppressionAuditTest extends TestCase
                 [],
                 [RelativePath::fromString('src/Service.php')],
                 null,
-                0,
+                [],
                 $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::none())),
                 self::populationPublication(),
             )['findings'];
@@ -538,7 +572,7 @@ final class UnboundSuppressionAuditTest extends TestCase
         $execution = self::createStub(RulePublicationInterface::class);
         $execution->method('publishable')->willReturnArgument(0);
         $audit = new UnboundSuppressionAudit($execution, $configuration);
-        $findings = $audit->auditResult([], [], [], null, 0, $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::none())), self::populationPublication())['findings'];
+        $findings = $audit->auditResult([], [], [], null, [], $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::none())), self::populationPublication())['findings'];
         self::assertCount(1, $findings);
         self::assertStringContainsString('rule "computed.health"', $findings[0]->message);
 
@@ -546,7 +580,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             [$producer => $options[$producer]],
             [$producer => new \Qualimetrix\Analysis\Finding\Contract\RuleSuppression()],
         );
-        self::assertSame([], $audit->auditResult([], [], [], null, 0, $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::none())), self::populationPublication())['findings']);
+        self::assertSame([], $audit->auditResult([], [], [], null, [], $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths], [], RemovedCodeNamespaces::none())), self::populationPublication())['findings']);
     }
 
     /**
