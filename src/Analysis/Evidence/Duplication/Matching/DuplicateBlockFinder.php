@@ -56,6 +56,9 @@ final class DuplicateBlockFinder
     private ContentHintExtractor $hintExtractor;
 
     private DuplicateMatchCandidates $candidates;
+    private DataRuns $dataRuns;
+    private AnchoredPrefixLengths $prefixLengths;
+    private int $work = 0;
 
     /**
      * @return list<DuplicateBlock>
@@ -64,6 +67,9 @@ final class DuplicateBlockFinder
     {
         $this->request = $request;
         $this->hintExtractor = new ContentHintExtractor();
+        $this->dataRuns = new DataRuns($request->retokenized->streams);
+        $this->prefixLengths = new AnchoredPrefixLengths($request->retokenized->streams);
+        $this->work = 0;
 
         try {
             $this->candidates = new DuplicateMatchCandidates();
@@ -71,6 +77,7 @@ final class DuplicateBlockFinder
             foreach ($request->hashIndex as $positions) {
                 $this->evaluateBucket($positions);
             }
+            $this->work += $this->prefixLengths->comparisons();
 
             $segments = new DuplicateMatchCandidates();
             $reportable = $this->reportableCopies(...);
@@ -96,8 +103,17 @@ final class DuplicateBlockFinder
             );
         } finally {
             // Exceptions must also release the dataset held by this long-lived instance.
-            unset($this->request, $this->hintExtractor, $this->candidates);
+            unset($this->request, $this->hintExtractor, $this->candidates, $this->dataRuns, $this->prefixLengths);
         }
+    }
+
+    /**
+     * Token comparisons and member steps the last {@see find()} spent
+     * extending groups: a deterministic measure of its matching cost.
+     */
+    public function extensionWork(): int
+    {
+        return $this->work;
     }
 
     /**
@@ -180,63 +196,57 @@ final class DuplicateBlockFinder
     }
 
     /**
-     * Extends a group token by token while all members agree. Where they
-     * stop agreeing, the group so far becomes a block and every subgroup of
-     * two or more members that still agrees continues on its own, so a
-     * copy that diverges early never shortens the match of the others.
+     * Extends a group while all members agree. Where they stop agreeing, the
+     * group so far becomes a block and every subgroup of two or more members
+     * that still agrees continues on its own, so a copy that diverges early
+     * never shortens the match of the others. Subgroups that leave the
+     * anchor are explored before the anchor's own continuation: insertion
+     * order breaks ties among candidates and so reaches the reported order.
      *
-     * @param list<int> $group members that agree on the first minTokens tokens
+     * @param non-empty-list<int> $group members that agree on the first minTokens tokens
      */
     private function extendGroup(array $group): void
     {
+        /** @var list<AnchorChain|array{non-empty-list<int>, int}> $pending */
         $pending = [[$group, $this->request->minTokens]];
 
         while ($pending !== []) {
-            [$members, $length] = array_pop($pending);
-            $memberCount = \count($members);
+            $entry = array_pop($pending);
+            $chain = $entry instanceof AnchorChain ? $entry : $this->chainOf(...$entry);
+            $length = $chain->length();
 
-            while (true) {
-                $next = $this->groupByTokenAt($members, $length);
-                if (\count($next) !== 1 || \count($next[0]) !== $memberCount) {
-                    break;
+            if (!$chain->isData()) {
+                $copies = $chain->distinctCopies();
+                if ($this->reachesMinLines($copies, $length)) {
+                    $this->candidates->add($length, $copies);
                 }
-                $length++;
             }
 
-            $copies = $this->reportableCopies($members, $length);
-            if ($copies !== null) {
-                $this->candidates->add($length, $copies);
+            [$sides, $continues] = $chain->split();
+            if ($continues) {
+                $pending[] = $chain;
+            } else {
+                $this->work += $chain->work();
             }
-
-            foreach ($next as $subgroup) {
-                if (\count($subgroup) >= 2) {
-                    $pending[] = [$subgroup, $length + 1];
-                }
+            // A finished chain must not outlive the construction of the next one.
+            unset($chain, $entry);
+            foreach ($sides as $side) {
+                $pending[] = [$side, $length + 1];
             }
         }
     }
 
     /**
-     * Groups members by the token at `offset + $length`; a member whose
-     * stream ends there belongs to no group.
-     *
-     * @param list<int> $members
-     *
-     * @return list<list<int>>
+     * @param non-empty-list<int> $members
      */
-    private function groupByTokenAt(array $members, int $length): array
+    private function chainOf(array $members, int $known): AnchorChain
     {
-        $groups = [];
-
-        foreach ($members as $packed) {
-            $tokens = $this->tokensAt($packed);
-            $position = PackedPosition::offset($packed) + $length;
-            if (isset($tokens->values[$position])) {
-                $groups[$tokens->values[$position]][] = $packed;
-            }
-        }
-
-        return array_values($groups);
+        return new AnchorChain(
+            $this->request->retokenized->streams,
+            $members,
+            $this->prefixLengths->of($members, $known),
+            $this->dataRuns,
+        );
     }
 
     /**
@@ -256,8 +266,20 @@ final class DuplicateBlockFinder
         }
 
         $copies = $this->distinctCopies($members, $length);
+
+        return $this->reachesMinLines($copies, $length) ? $copies : null;
+    }
+
+    /**
+     * Two or more distinct copies, the longest reaching `minLines`; that copy
+     * admits every other, a copy shorter than `minLines` included.
+     *
+     * @param list<int> $copies
+     */
+    private function reachesMinLines(array $copies, int $length): bool
+    {
         if (\count($copies) < 2) {
-            return null;
+            return false;
         }
 
         $longest = 0;
@@ -265,7 +287,7 @@ final class DuplicateBlockFinder
             $longest = max($longest, $this->tokensAt($copy)->coveredLines(PackedPosition::offset($copy), $length));
         }
 
-        return $longest < $this->request->minLines ? null : $copies;
+        return $longest >= $this->request->minLines;
     }
 
     /**
@@ -349,10 +371,7 @@ final class DuplicateBlockFinder
     private function isSuppressedAsData(array $members, int $length): bool
     {
         foreach ($members as $packed) {
-            $tokens = $this->tokensAt($packed);
-            $offset = PackedPosition::offset($packed);
-
-            if (strspn($tokens->dataMask, '1', $offset, $length) !== $length) {
+            if ($this->dataRuns->endAt($packed) < PackedPosition::offset($packed) + $length) {
                 return false;
             }
         }

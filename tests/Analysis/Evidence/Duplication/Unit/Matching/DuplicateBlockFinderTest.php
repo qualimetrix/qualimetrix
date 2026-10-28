@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Duplication\Index\PackedPosition;
@@ -121,6 +122,60 @@ final class DuplicateBlockFinderTest extends TestCase
         self::assertNotSame($blocks[0]->contentHash, $blocks[1]->contentHash);
         self::assertSame('first($a);', $blocks[0]->locations[0]->hint);
         self::assertSame('second($a);', $blocks[1]->locations[0]->hint);
+    }
+
+    /**
+     * One literal of 1000 elements is a 2000-token periodic run whose ~1000
+     * window-equal positions all overlap. Re-reading every remaining member
+     * at every extension step costs about a million operations here; the
+     * bound is linear in the run. It sees only the work the extension counts.
+     */
+    #[Test]
+    #[DataProvider('provideLongLiteralRuns')]
+    public function itExtendsALongLiteralRunInLinearWork(string $source, bool $reported): void
+    {
+        $request = $this->exactWindowRequest($source, minTokens: 70);
+        $tokens = $request->retokenized->streams[0]->count();
+        $finder = new DuplicateBlockFinder();
+
+        $blocks = $finder->find($request);
+
+        self::assertSame($reported, $blocks !== []);
+        self::assertGreaterThanOrEqual($tokens, $finder->extensionWork(), 'Extension work must be counted');
+        self::assertLessThanOrEqual(12 * $tokens, $finder->extensionWork());
+    }
+
+    /** @return iterable<string, array{string, bool}> */
+    public static function provideLongLiteralRuns(): iterable
+    {
+        $rows = implode(",\n", array_map(
+            static fn(array $row): string => implode(', ', $row),
+            array_chunk(range(0, 999), 10),
+        ));
+
+        yield 'data table' => ["<?php\nfinal class T\n{\n    protected array \$t = [\n{$rows}\n    ];\n}\n", false];
+        yield 'executable literal' => ["<?php\nfunction t(): array\n{\n    return [\n{$rows}\n    ];\n}\n", true];
+    }
+
+    /**
+     * Indexes every window of one source by its exact tokens, standing in for
+     * the rolling-hash index without its collisions.
+     */
+    private function exactWindowRequest(string $source, int $minTokens): DuplicateSearchRequest
+    {
+        $stream = (new TokenNormalizer())->normalize($source);
+        $windows = [];
+        for ($offset = 0; $offset + $minTokens <= $stream->count(); $offset++) {
+            $windows[implode("\0", \array_slice($stream->values, $offset, $minTokens))][] = PackedPosition::pack(0, $offset);
+        }
+
+        return new DuplicateSearchRequest(
+            hashIndex: array_values(array_filter($windows, static fn(array $positions): bool => \count($positions) >= 2)),
+            retokenized: new RetokenizedFiles([$stream], [$source]),
+            filePaths: ['t.php'],
+            minTokens: $minTokens,
+            minLines: 5,
+        );
     }
 
     /**

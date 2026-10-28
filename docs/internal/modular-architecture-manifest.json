@@ -5150,6 +5150,20 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\Matching\\AnchorChain": {
+      "path": "src/Analysis/Evidence/Duplication/Matching/AnchorChain.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Duplication",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\Matching\\AnchoredPrefixLengths": {
+      "path": "src/Analysis/Evidence/Duplication/Matching/AnchoredPrefixLengths.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Duplication",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Evidence\\Duplication\\Matching\\BalancedSegments": {
       "path": "src/Analysis/Evidence/Duplication/Matching/BalancedSegments.php",
       "kind": "class",
@@ -5166,6 +5180,13 @@
     },
     "Qualimetrix\\Analysis\\Evidence\\Duplication\\Matching\\CopyCoverIndex": {
       "path": "src/Analysis/Evidence/Duplication/Matching/CopyCoverIndex.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Duplication",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\Matching\\DataRuns": {
+      "path": "src/Analysis/Evidence/Duplication/Matching/DataRuns.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",

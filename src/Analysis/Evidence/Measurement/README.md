@@ -223,6 +223,11 @@ registered class names and receives that value before file processing,
 preventing a worker from receiving a container service or state from a prior
 run.
 
+A large literal table costs collection time in proportion to its AST node
+count: measured on a generated parser file, the time doubled with the node
+count and was spread over the registered visitors, with no single one
+dominating.
+
 ## Aggregation
 
 `MeasurementAggregationService` owns initial aggregation, ordered global

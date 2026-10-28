@@ -5783,6 +5783,30 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Index\PackedPositionTest::itRoundTripsTheFullPackedPositionRange#2
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Index\SaturatingCandidateFilterTest::itNeverDemotesATrueCandidateWhenACollisionOccurs
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Index\SaturatingCandidateFilterTest::itPromotesRepeatedHashesWithoutRetainingTheirPositions
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itEndsALaterAnchorOnAKeptDiagonalWhereTheKeptMatchEnds
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itMatchesTokenByTokenComparisonWithTheAnchor"nested periods"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itMatchesTokenByTokenComparisonWithTheAnchor"one periodic run"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itMatchesTokenByTokenComparisonWithTheAnchor"random 0"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itMatchesTokenByTokenComparisonWithTheAnchor"random 1"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itMatchesTokenByTokenComparisonWithTheAnchor"random 10"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itMatchesTokenByTokenComparisonWithTheAnchor"random 11"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itMatchesTokenByTokenComparisonWithTheAnchor"random 12"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itMatchesTokenByTokenComparisonWithTheAnchor"random 13"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itMatchesTokenByTokenComparisonWithTheAnchor"random 14"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itMatchesTokenByTokenComparisonWithTheAnchor"random 15"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itMatchesTokenByTokenComparisonWithTheAnchor"random 16"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itMatchesTokenByTokenComparisonWithTheAnchor"random 17"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itMatchesTokenByTokenComparisonWithTheAnchor"random 18"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itMatchesTokenByTokenComparisonWithTheAnchor"random 19"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itMatchesTokenByTokenComparisonWithTheAnchor"random 2"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itMatchesTokenByTokenComparisonWithTheAnchor"random 3"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itMatchesTokenByTokenComparisonWithTheAnchor"random 4"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itMatchesTokenByTokenComparisonWithTheAnchor"random 5"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itMatchesTokenByTokenComparisonWithTheAnchor"random 6"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itMatchesTokenByTokenComparisonWithTheAnchor"random 7"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itMatchesTokenByTokenComparisonWithTheAnchor"random 8"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itMatchesTokenByTokenComparisonWithTheAnchor"random 9"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\AnchoredPrefixLengthsTest::itMatchesTokenByTokenComparisonWithTheAnchor"runs in other files"
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\BalancedSegmentsTest::itKeepsAnUnclosedOpenerAtTheEndOfTheRequestedRange
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\BalancedSegmentsTest::itSplitsUnmatchedClosersAndSkipsLeadingPunctuation
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itCapsTheHintAtThreeMeaningfulLines
@@ -5803,7 +5827,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itTruncatesASingleLineThatExceedsTheHintLength
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itTruncatesAtTheLastWordBoundaryInsideTheUnicodeLimit
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\CopyCoverIndexTest::itFindsOnlyWholeTokenCoversInTheRequestedFile
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DataRunsTest::itEndsEachPositionAtItsFirstFollowingCodeToken
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockFinderTest::itCountsARepeatedPositionOnce
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockFinderTest::itExtendsALongLiteralRunInLinearWork"data table"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockFinderTest::itExtendsALongLiteralRunInLinearWork"executable literal"
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockFinderTest::itKeepsDifferentMatchesWithTheSamePhysicalLineSpan
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockFinderTest::itLeavesAWindowThatContinuesAnEarlierMatchToThatMatch
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockFinderTest::itReportsEveryCopyInALargeBucketAsOneBlock

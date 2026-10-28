@@ -28,9 +28,12 @@ Duplication/
 │   ├── PackedPosition.php
 │   └── SaturatingCandidateFilter.php
 ├── Matching/
+│   ├── AnchorChain.php
+│   ├── AnchoredPrefixLengths.php
 │   ├── BalancedSegments.php
 │   ├── ContentHintExtractor.php
 │   ├── CopyCoverIndex.php
+│   ├── DataRuns.php
 │   ├── DuplicateBlock.php
 │   ├── DuplicateBlockFinder.php
 │   ├── DuplicateContentMerger.php
@@ -102,11 +105,18 @@ The module owns test classes at three levels, and the level is decided by what
 the body does. Unit tests live below `Unit/`, where the owning test root is
 `Duplication`; subject folders group the classes within that root. `Unit/Index/`
 contains `PackedPositionTest` and `SaturatingCandidateFilterTest`.
-`Unit/Matching/` owns balanced segments, display hints, connected coverage,
-block finding, candidate storage and copy identity. `Unit/Normalization/` owns
+`Unit/Matching/` owns anchored prefix lengths, balanced segments, data runs,
+display hints, connected coverage, block finding, candidate storage and copy
+identity. `DuplicateBlockFinderTest` bounds the extension work of one long
+literal, as a data table and as executable code, by a multiple of its token
+count; the bound is an operation count, not a time. `Unit/Normalization/` owns
 data tagging and normalization. `Unit/Token/` owns packed coordinate alignment.
 `CodeDuplicationRuleTest` stays directly under `Unit/` because the rule stays
 in the root. These tests run in memory.
+
+> **Limitation:** the bound covers the token comparisons and member steps the
+> extension counts itself. Work added outside those counters, such as a
+> rescan of the data mask per node, passes it unseen.
 
 Two Integration classes under `tests/Analysis/Evidence/Duplication/Integration/`,
 both writing real files into a temporary directory:
@@ -212,6 +222,38 @@ ordering preserves descending length, descending copy count and insertion
 order without retaining a sorting workspace. There is no candidate cutoff.
 Work within one exact token-sequence group does not promise linear work over
 all nested matches in a varied corpus.
+
+A group is extended as a chain anchored at its first member.
+`AnchoredPrefixLengths` measures every member's exact common prefix with the
+anchor, reusing an earlier member's matched span through the anchor's
+Z-array, so overlapping members of a periodic run cost their file's matched
+span instead of the run length each. Long matches are also kept per file pair
+and shift for the whole search, in a bounded table, because two copies of one
+table split into a side group per row whose pairs share that diagonal.
+`AnchorChain` then lets members leave
+in that order and answers each node from incremental state; side groups that
+leave the anchor are explored before its continuation, because insertion
+order breaks ties among candidates and so reaches the reported order. `DataRuns` answers data-table containment from
+each stream's declaration runs.
+
+Within one file, extension is linear in a literal's tokens. Two costs remain
+superlinear:
+
+- A long periodic run in executable code still reports the nested family of
+  blocks described above, one per period. Connected-coverage reduction
+  visits every retained cover containing each copy, and every block's content
+  digest hashes its tokens, so both grow with the square of the run. The
+  digests are part of what is reported; the coverage visits could only shrink
+  with an output-sensitive cover index.
+- Many runs of one repeated statement with lengths one apart nest a side
+  group per run. Each side group measures its members afresh, which is
+  quadratic in the number of runs; the 60-file memory benchmark is this
+  shape. Sharing that work across side groups needs a suffix structure over
+  the retokenized streams.
+- Two copies of a table whose rows differ here and there also split into a
+  side group per row, and each side group's anchor rebuilds its Z-array along
+  the rest of the table: quadratic in the table. A generated parser file
+  analysed twice costs an order of magnitude more than one copy.
 
 `CopyCoverIndex` owns retained token intervals and reusable flat connectivity
 state. `BalancedSegments` admits eligible structural segments through the
