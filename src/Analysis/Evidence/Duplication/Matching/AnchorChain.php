@@ -135,21 +135,39 @@ final class AnchorChain
     public function split(): array
     {
         $length = $this->length();
-        $leavingCount = \count($this->leaving);
+        $end = $this->leavingEnd($length);
+        $continues = $end < \count($this->leaving);
+        if ($continues) {
+            // A finished chain is never read again; skipping its bookkeeping keeps its peak flat.
+            $this->departThrough($end);
+        }
+        $groups = $this->leave($end, $length);
+        if ($continues && \count($this->members) > self::COMPACTION_FLOOR && \count($this->departed) * 4 > \count($this->members)) {
+            $this->compact();
+        }
+
+        return [array_values(array_filter($groups, static fn(array $group): bool => \count($group) >= 2)), $continues];
+    }
+
+    private function leavingEnd(int $length): int
+    {
+        $count = \count($this->leaving);
         $end = $this->leavingCursor;
-        while ($end < $leavingCount && $this->leaving[$end] >> self::INDEX_BITS === $length) {
+        while ($end < $count && $this->leaving[$end] >> self::INDEX_BITS === $length) {
             $end++;
         }
-        $continues = $end < $leavingCount;
 
+        return $end;
+    }
+
+    /**
+     * @return array<array-key, non-empty-list<int>> leaving members by their next token, in first-appearance order
+     */
+    private function leave(int $end, int $length): array
+    {
         $groups = [];
         for (; $this->leavingCursor < $end; $this->leavingCursor++) {
-            $index = $this->leaving[$this->leavingCursor] & self::INDEX_MASK;
-            if ($continues) {
-                // A finished chain is never read again; skipping its bookkeeping keeps its peak flat.
-                $this->depart($index);
-            }
-            $packed = $this->members[$index];
+            $packed = $this->members[$this->leaving[$this->leavingCursor] & self::INDEX_MASK];
             $tokens = $this->streams[PackedPosition::fileIndex($packed)]->values;
             $position = PackedPosition::offset($packed) + $length;
             if (isset($tokens[$position])) {
@@ -158,18 +176,7 @@ final class AnchorChain
             $this->work++;
         }
 
-        $sides = [];
-        foreach ($groups as $group) {
-            if (\count($group) >= 2) {
-                $sides[] = $group;
-            }
-        }
-
-        if ($continues && \count($this->members) > self::COMPACTION_FLOOR && \count($this->departed) * 4 > \count($this->members)) {
-            $this->compact();
-        }
-
-        return [$sides, $continues];
+        return $groups;
     }
 
     /** Member steps spent by this chain, construction included. */
@@ -178,11 +185,14 @@ final class AnchorChain
         return $this->work;
     }
 
-    private function depart(int $index): void
+    private function departThrough(int $end): void
     {
-        $this->departed[$index] = $index + 1;
-        if (($this->dataLengths[$index] ?? 0) < $this->countedBelow) {
-            $this->remainingCode--;
+        for ($cursor = $this->leavingCursor; $cursor < $end; $cursor++) {
+            $index = $this->leaving[$cursor] & self::INDEX_MASK;
+            $this->departed[$index] = $index + 1;
+            if (($this->dataLengths[$index] ?? 0) < $this->countedBelow) {
+                $this->remainingCode--;
+            }
         }
     }
 

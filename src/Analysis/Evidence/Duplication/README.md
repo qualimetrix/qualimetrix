@@ -109,14 +109,14 @@ contains `PackedPositionTest` and `SaturatingCandidateFilterTest`.
 display hints, connected coverage, block finding, candidate storage and copy
 identity. `DuplicateBlockFinderTest` bounds the extension work of one long
 literal, as a data table and as executable code, by a multiple of its token
-count; the bound is an operation count, not a time.
-
-> **Limitation:** the bound covers the token comparisons and member steps the
-> extension counts itself. Work added outside those counters, such as a
-> rescan of the data mask per node, passes it unseen. `Unit/Normalization/` owns
+count; the bound is an operation count, not a time. `Unit/Normalization/` owns
 data tagging and normalization. `Unit/Token/` owns packed coordinate alignment.
 `CodeDuplicationRuleTest` stays directly under `Unit/` because the rule stays
 in the root. These tests run in memory.
+
+> **Limitation:** the bound covers the token comparisons and member steps the
+> extension counts itself. Work added outside those counters, such as a
+> rescan of the data mask per node, passes it unseen.
 
 Two Integration classes under `tests/Analysis/Evidence/Duplication/Integration/`,
 both writing real files into a temporary directory:
@@ -250,6 +250,10 @@ superlinear:
   quadratic in the number of runs; the 60-file memory benchmark is this
   shape. Sharing that work across side groups needs a suffix structure over
   the retokenized streams.
+- Two copies of a table whose rows differ here and there also split into a
+  side group per row, and each side group's anchor rebuilds its Z-array along
+  the rest of the table: quadratic in the table. A generated parser file
+  analysed twice costs an order of magnitude more than one copy.
 
 `CopyCoverIndex` owns retained token intervals and reusable flat connectivity
 state. `BalancedSegments` admits eligible structural segments through the
