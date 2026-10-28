@@ -245,15 +245,30 @@ and its environment refusal. Descriptor and stream writes use blocking mode.
 
 Report, profile and log targets are judged together. Two targets for one
 ordinary inode, or one absent name, refuse before analysis, as does a target
-naming the baseline input. A target that is a file the configuration was read
-from — the auto-discovered `qmx.yaml`/`qmx.yml` or the `--config` file, each
-file it imports, each preset file — refuses before analysis too. Files are
-compared by identity, so another spelling, a symbolic link or a hard link of
-one refuses alike. `graph:export --output` and the baseline file written by
-`baseline:generate`, `baseline:update` and `baseline:cleanup` follow the same
-rule. Standard output the shell redirects into such a file (`>`, `>>`,
-`1<>`) is not judged: the shell opens it before qmx starts. A shell-inherited `2>&1` is not a
-second authored destination. Character devices such as a terminal or
+naming the baseline input. A target that is a file the run reads refuses
+before analysis too:
+
+- a configuration file — the auto-discovered `qmx.yaml`/`qmx.yml` or the
+  `--config` file, each file it imports, each preset file;
+- the working directory's `composer.json`, whether or not it declares autoload
+  paths;
+- a PHP file the run selects, analysed or excluded as generated.
+
+Files are compared by identity, so another spelling, a symbolic link or a hard
+link of one refuses alike. A new file among the analysed sources, such as
+`--output=src/report.json`, is written. `graph:export --output` and the
+baseline file written by `baseline:generate`, `baseline:update` and
+`baseline:cleanup` follow the same rule. When the `check` or `graph:export`
+report goes to standard output and the shell opened standard output on such a
+file (`>>`, `1<>`), the run refuses too, on stderr only; with `>` the shell has
+already emptied the file before qmx starts. Selecting the sources costs one
+extra walk of the analysed paths, without reading any file, and only when a
+target or redirected standard output is an existing regular file.
+
+Not judged: other Composer files the run reads (a `composer.json` above the
+working directory or beside an analysed package, `vendor/composer/installed.json`,
+vendor class files), and the standard output of the baseline commands. A
+shell-inherited `2>&1` is not a second authored destination. Character devices such as a terminal or
 `/dev/null` may coincide. Missing parents, directories, inaccessible paths,
 closed descriptors and write failures exit 3; the reason distinguishes
 configuration input from an environment failure. A report write failure with

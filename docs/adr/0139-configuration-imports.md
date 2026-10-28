@@ -300,3 +300,57 @@ already truncated it, and a refusal printed to standard output would land in
 it too; `composer.json`, which `ComposerDiscoveryStage` reads through the
 project-manifest snapshot rather than as an authored layer; and the analysed
 sources. The last two are the same harm over a different input set.
+
+## Amendment, 2026-10-28: a written file is never a file the run reads
+
+The previous amendment's **Not covered** paragraph named three gaps; two are
+closed and the third is narrowed. The question the writers ask is now
+`ResolvedRunConfiguration::fileReadAs(?FileIdentity)`, built once by
+`RunConfigurationPreparation` — the step `check`, the `graph:export`
+preflight and `BaselineRun` already share — so no writer gained a type.
+`FileIdentity`'s inbound coupling rose above the class threshold with it and is
+an exact exception in `qmx.yaml`: every reader that records an input and every
+writer comparing one must name it. It answers for three input kinds:
+
+- **Configuration files**, as before, through `ConfigurationDocument::fileReadAs()`.
+- **The project manifest.** `ComposerDiscoveryStage` contributes a layer
+  carrying the identity of the `composer.json` it read whenever the manifest
+  was read (valid or not), also when it declares no autoload target, so the
+  document answers `composer.json`. The stage states the file by path just
+  after the reader's only read of it in the invocation: every later reader is
+  served that snapshot, not the file, and all of them — the stage, the scope
+  coverage, the project source binding, the baseline coverage and the HTML
+  metadata — read the document's working directory. Recording the identity
+  inside the reader was measured first and rejected: it added a Core type to
+  the Composer adapter namespace and a parameter to `ComposerManifestFacts`,
+  both above their accepted ceilings.
+- **Source files.** `ProjectFilesInterface::select()` returns the files the
+  walk of `discover()` accepts — analysed, excluded as generated (whose headers
+  are read), or a second name of either — without reading a file. The answer is
+  lazy and asked only for a regular-file identity, so a target that does not
+  exist yet, a terminal or a pipe walks nothing. Measured on 41,390 files, warm:
+  the whole question takes 1.2–1.4 s, of which the walk is 1.1 s and the
+  identity comparison 0.13 s; `discover()` would add 2.2–3 s of header reads,
+  which is why the selection stops before the generated-file filter. The
+  analysis of the same tree took 687 s. The question asks the unscoped run: a
+  Git report scope narrows the reported paths, not the walk.
+
+The check must run before the targets are claimed, not after discovery inside
+the pipeline: `--log-file` is opened for appending at claim, and the pipeline
+logs before it discovers, so a refusal after discovery would already have
+appended to a source.
+
+**Standard output.** When `check` or `graph:export` reports on standard output,
+`RunTargets::claim()` asks the same question about descriptor 1. A match is
+refused with `EnvironmentRefusal::aboutStandardOutput()`, which
+`RunTargetSession` presents with no envelope format, so the refusal goes to
+stderr and nothing reaches the input. `>>` and `1<>` are prevented; `>` has
+already emptied the file before qmx starts, and the refusal then says which
+input the shell destroyed.
+
+Still not covered: Composer files read at other roots —
+`ComposerAutoloadMap` asks `InstallLocator` for manifests up to twelve levels
+above each analysed path and reads `vendor/composer/installed.json`, the
+generated classmap and vendor class files, lazily after claim; the standard
+output of the baseline commands, which print their outcome and some refusals
+there; and standard error.
