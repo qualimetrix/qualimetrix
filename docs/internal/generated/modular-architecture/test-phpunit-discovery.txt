@@ -14592,6 +14592,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itPreservesCanonicalSubjectAndOccurrenceInHtmlPayload
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itPublishesNullFileWhenAttachingLocationNoneLikeTheJsonReport
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itPublishesTheSameFindingRecordAsJson
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itPutsAFileFindingOfAClassFreeFileOnTheNamespaceItsRecordNames
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itPutsAFileFindingWithoutASoleClassOnTheRoot
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itPutsAMethodFindingWithoutClassOrNamespaceNodeOnTheRoot
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itRefusesToAttachToAPathThatIsNotANode

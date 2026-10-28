@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter\Html;
 
 use LogicException;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Reporting\Contract\Formatting\FormatterContext;
+use Qualimetrix\Reporting\FindingProjection\FindingNamespaces;
 use Qualimetrix\Reporting\FindingPublication\FindingRecord;
 
 /**
@@ -20,10 +22,18 @@ use Qualimetrix\Reporting\FindingPublication\FindingRecord;
  * - a callable finding on its class node, a class finding on its own;
  * - a global function finding on its namespace node;
  * - a namespace finding on its namespace node;
- * - a file finding on the class node of the one class that file declares;
- * - and whatever has no such node — a project finding, a file declaring no
- *   class or several, a symbol whose node the metrics never produced — on the
- *   nearest enclosing node, the project root at the latest.
+ * - a file finding on the class node of the one class that file declares,
+ *   otherwise on the node of the namespace its record names — the same
+ *   attribution JSON and text group it by;
+ * - and whatever has no such node — a project finding, a symbol whose node
+ *   the metrics never produced — on the nearest enclosing node, the project
+ *   root at the latest.
+ *
+ * A file finding whose namespace has no node of its own (a namespace only
+ * class-free files open) lands on its nearest ancestor namespace that has one.
+ * A file opening several namespaces lands on their deepest common ancestor,
+ * and on the project root when they share none or one of them is the global
+ * namespace.
  *
  * @internal
  */
@@ -32,6 +42,8 @@ final readonly class HtmlFindingPartitioner
     /** The project root's node path. */
     public const string ROOT = '';
 
+    private const string NO_NAMESPACE = '(no namespace)';
+
     public function __construct(private FindingRecord $record) {}
 
     /**
@@ -39,11 +51,12 @@ final readonly class HtmlFindingPartitioner
      *
      * @param list<Finding> $findings
      * @param array<string, HtmlTreeNode> $nodesByPath
+     * @param FileNamespaceIndex $fileNamespaces the index the finding records are attributed by
      * @param ?MetricRepositoryInterface $metrics where the classes each file declares are read from
      *
      * @return array<string, list<Finding>> node path -> findings
      */
-    public function partition(array $findings, array $nodesByPath, ?MetricRepositoryInterface $metrics = null): array
+    public function partition(array $findings, array $nodesByPath, FileNamespaceIndex $fileNamespaces, ?MetricRepositoryInterface $metrics = null): array
     {
         /** @var array<string, list<Finding>> $result */
         $result = [];
@@ -51,7 +64,7 @@ final readonly class HtmlFindingPartitioner
         $classByCallable = self::classByCallable($metrics);
 
         foreach ($findings as $finding) {
-            $result[$this->nodePathOf($finding, $nodesByPath, $soleClassByFile, $classByCallable)][] = $finding;
+            $result[$this->nodePathOf($finding, $nodesByPath, $fileNamespaces, $soleClassByFile, $classByCallable)][] = $finding;
         }
 
         return $result;
@@ -62,9 +75,9 @@ final readonly class HtmlFindingPartitioner
      * @param array<string, string> $soleClassByFile
      * @param array<string, string> $classByCallable
      */
-    private function nodePathOf(Finding $finding, array $nodesByPath, array $soleClassByFile, array $classByCallable): string
+    private function nodePathOf(Finding $finding, array $nodesByPath, FileNamespaceIndex $fileNamespaces, array $soleClassByFile, array $classByCallable): string
     {
-        foreach ($this->candidatePaths($finding, $soleClassByFile, $classByCallable) as $candidate) {
+        foreach ($this->candidatePaths($finding, $fileNamespaces, $soleClassByFile, $classByCallable) as $candidate) {
             if (isset($nodesByPath[$candidate])) {
                 return $candidate;
             }
@@ -133,17 +146,20 @@ final readonly class HtmlFindingPartitioner
      *
      * @return list<string>
      */
-    private function candidatePaths(Finding $finding, array $soleClassByFile, array $classByCallable): array
+    private function candidatePaths(Finding $finding, FileNamespaceIndex $fileNamespaces, array $soleClassByFile, array $classByCallable): array
     {
         $symbolPath = $finding->symbolPath;
         $namespace = $symbolPath->namespace ?? '';
-        $namespaceNode = $namespace === '' ? '(no namespace)' : $namespace;
+        $namespaceNode = $namespace === '' ? self::NO_NAMESPACE : $namespace;
 
         return match ($symbolPath->getType()) {
             SymbolType::Method => [$classByCallable[$finding->subject->toCanonical()] ?? '', $namespaceNode],
             SymbolType::Class_ => [$finding->subject->toCanonical(), $namespaceNode],
             SymbolType::Function_, SymbolType::Namespace_ => [$namespaceNode],
-            SymbolType::File => self::fileCandidatePaths($symbolPath->toString(), $soleClassByFile),
+            SymbolType::File => [
+                ...self::fileCandidatePaths($symbolPath->toString(), $soleClassByFile),
+                ...self::enclosingNamespacePaths(FindingNamespaces::of($finding, $fileNamespaces)),
+            ],
             default => [],
         };
     }
@@ -159,6 +175,41 @@ final readonly class HtmlFindingPartitioner
     }
 
     /**
+     * The deepest namespace enclosing all of `$namespaces`, then its
+     * ancestors.
+     *
+     * @param list<string> $namespaces
+     *
+     * @return list<string>
+     */
+    private static function enclosingNamespacePaths(array $namespaces): array
+    {
+        if ($namespaces === ['']) {
+            return [self::NO_NAMESPACE];
+        }
+        if ($namespaces === [] || \in_array('', $namespaces, true)) {
+            return [];
+        }
+
+        $common = explode('\\', $namespaces[0]);
+        foreach (\array_slice($namespaces, 1) as $namespace) {
+            $parts = explode('\\', $namespace);
+            $depth = 0;
+            while ($depth < \count($common) && $depth < \count($parts) && $common[$depth] === $parts[$depth]) {
+                ++$depth;
+            }
+            $common = \array_slice($common, 0, $depth);
+        }
+
+        $paths = [];
+        for ($depth = \count($common); $depth > 0; --$depth) {
+            $paths[] = implode('\\', \array_slice($common, 0, $depth));
+        }
+
+        return $paths;
+    }
+
+    /**
      * Attaches formatted finding data to tree nodes.
      *
      * @param array<string, HtmlTreeNode> $nodesByPath
@@ -168,7 +219,7 @@ final readonly class HtmlFindingPartitioner
         array $nodesByPath,
         array $findingsByNode,
         FormatterContext $context,
-        \Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex $fileNamespaces,
+        FileNamespaceIndex $fileNamespaces,
     ): void {
         foreach ($findingsByNode as $nodePath => $findings) {
             $node = $nodesByPath[$nodePath] ?? throw new LogicException(\sprintf(

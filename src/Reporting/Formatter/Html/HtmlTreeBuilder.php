@@ -61,6 +61,7 @@ final class HtmlTreeBuilder
         $findingsByNode = $this->findingPartitioner->partition(
             $report->findings,
             $nodesByPath,
+            $report->fileNamespaces,
             $report->metrics,
         );
         $this->findingPartitioner->attach($nodesByPath, $findingsByNode, $context, $report->fileNamespaces);
