@@ -136,17 +136,17 @@ final class HostedPopulationTest extends TestCase
         $scope = new \Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement(__DIR__, [], [__DIR__], true, new ProjectScopeJudgement());
         $declarations = \Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::channelDeclarations();
         $publication = self::publication($producer, $declarations);
-        $unknown = $audit->auditResult([$path, $path], [$namespace], ['analysed' => [\Qualimetrix\Core\Path\RelativePath::fromString('src/Healthy.php')], 'failedFiles' => [], 'failedDirectories' => []], null, $scope, $publication);
+        $unknown = $audit->auditResult([$path, $path], [$namespace], ['analysed' => [\Qualimetrix\Core\Path\RelativePath::fromString('src/Healthy.php')], 'failedFiles' => [], 'failedDirectories' => [], 'generatedExcluded' => []], null, $scope, $publication);
         self::assertSame(4, $unknown['population']->judgedCount());
         self::assertSame(2, $unknown['population']->unjudgedCount());
         self::assertSame([], $unknown['findings']);
         self::assertSame([1, 1], array_column($unknown['population']->abstentions(), 'count'));
-        $known = $audit->auditResult([$path, $path], [$namespace], ['analysed' => [], 'failedFiles' => [], 'failedDirectories' => []], [], $scope, $publication);
+        $known = $audit->auditResult([$path, $path], [$namespace], ['analysed' => [], 'failedFiles' => [], 'failedDirectories' => [], 'generatedExcluded' => []], [], $scope, $publication);
         self::assertSame(6, $known['population']->judgedCount());
         self::assertSame(0, $known['population']->unjudgedCount());
         self::assertCount(6, $known['findings']);
         self::assertSame(4, $unknown['population']->merge($unknown['population'])->judgedCount());
-        $disabled = $audit->auditResult([$path], [$namespace], ['analysed' => [], 'failedFiles' => [], 'failedDirectories' => []], null, $scope, self::publication($producer, $declarations, false));
+        $disabled = $audit->auditResult([$path], [$namespace], ['analysed' => [], 'failedFiles' => [], 'failedDirectories' => [], 'generatedExcluded' => []], null, $scope, self::publication($producer, $declarations, false));
         self::assertTrue($disabled['population']->isEmpty());
         self::assertSame([], $disabled['findings']);
     }

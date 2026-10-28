@@ -42,8 +42,8 @@ Path/ledger regex is unjudged with incomplete paths or authored removal that cou
 hide a match; namespace regex also requires complete declaration evidence. This
 conservative answer can withhold an unrelated stale regex: rerun without the
 exclusion. A path value that binds no analysed file is not judged either when an
-entry the run discovered but could not analyse may hold what it names: a failed
-file the value matches, or a directory the run could not list or did not follow
+entry the run discovered but did not analyse may hold what it names: a failed
+file or a file excluded as `@generated` that the value matches, or a directory the run could not list or did not follow
 that the value's literal lies beneath (a `regex` value, beneath any such
 directory). Reports name every skipped `{channel, option, pattern}` value,
 including on a `covered` run.
@@ -60,6 +60,8 @@ declared namespace also makes its ancestors undecidable: a file in `App\Foo\Bar`
 withholds `exact: App\Foo`. Deciding whether removed code could declare a namespace
 ignores ASCII case; the value itself is still matched case-sensitively, as
 configured.
+
+A path value (`suppress_paths`) naming a file excluded as `@generated` is not judged either: the file was found and intentionally not analysed, so the spelling is not in doubt (see [Scope and severity](#scope-and-severity)).
 
 What is still withheld:
 

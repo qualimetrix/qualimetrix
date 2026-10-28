@@ -52,8 +52,9 @@ final class AnalysisCoverageTest extends TestCase
         foreach (AnalysisFailureKind::cases() as $kind) {
             $failures[] = new AnalysisFailure(RelativePath::fromString('src/' . $kind->value), $kind, 'failed');
         }
-        $coverage = new AnalysisCoverage([RelativePath::fromString('src/Ok.php')], [], $failures);
+        $coverage = new AnalysisCoverage([RelativePath::fromString('src/Ok.php')], [RelativePath::fromString('src/Gen.php')], $failures);
 
+        self::assertSame(['src/Gen.php'], self::pathValues($coverage->fileUniverse()['generatedExcluded']));
         self::assertSame(
             ['src/directory-symlink', 'src/unreadable-directory', 'src/unreadable-entry'],
             self::pathValues($coverage->fileUniverse()['failedDirectories']),

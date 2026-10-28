@@ -121,7 +121,7 @@ Finding/
 │   ├── PopulationSession.php # selected publication, declaration validation and one freeze
 │   └── PopulationTrace.php # unit counts and bounded canonical examples
 ├── SuppressionBinding/   # Whether a configured suppression value named anything the run holds
-│   ├── PathBinding.php   # Path values against the analysed and the failed files and directories
+│   ├── PathBinding.php   # Path values against the analysed, failed and generated-excluded files and directories
 │   ├── UnboundSuppressionFinding.php # Messages for values that bind to nothing
 │   └── UnboundSuppressionPopulation.php # The judged population of one audit call
 ├── RuleExecution.php     # Selects producers, executes them, and returns what happened as a value
@@ -210,10 +210,10 @@ and `UnboundSuppressionAudit::withheldForRemovedCode()` name the values removed
 code alone kept unjudged; any entry that failed analysis (the `FileUniverse`
 shape every public audit method takes, `AnalysisCoverage::fileUniverse()`)
 leaves every namespace value unjudged, and a path value that binds no analysed
-file unjudged when a failed entry may hold what it names
-(`PathBinding::failureMayHold()`: a
-failed file the value matches, a failed directory its literal lies beneath, any
-failed directory for a regex). A literal value
+file unjudged when an unanalysed entry may hold what it names
+(`PathBinding::unanalysedMayHold()`: a failed or `@generated`-excluded file the
+value matches, a failed directory its literal lies beneath, any failed
+directory for a regex). A literal value
 the analysed namespace tree already binds is judged and bound beside removed code,
 since removed code can only add namespaces. A `ProjectScopeJudgement` without
 removed-code namespaces treats them as unknown (`removedCodeIsKnown()` is false);
@@ -234,7 +234,8 @@ Run constructs this immutable answer once in its final scope measurement from
 the captured manifest facts. Console uses that same answer for suppression
 findings and the report's skipped values; neither reader reconstructs it.
 Namespace regex also needs complete declaration evidence. Generated removal
-withholds that namespace question while leaving path completeness open. This
+withholds that namespace question while leaving path completeness open (a path
+regex matching a generated-excluded file is still withheld by `PathBinding`). This
 conservative rule may leave an unrelated stale regex unjudged; rerun without the exclusion to settle it. The audit opens
 no source or manifest. Reports publish skipped `{channel, option, pattern}`
 values even on a `covered` run.

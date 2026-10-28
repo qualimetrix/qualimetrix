@@ -56,15 +56,16 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * that way is named by {@see unjudgedValues()} instead, so the skip reaches the
  * report rather than reading as a value judged and bound.
  *
- * A file the run discovered but failed to analyse is outside both universes,
- * and a value it may hold is not judged either: it is named in
+ * A file the run discovered but failed to analyse, or left out as generated,
+ * is outside both universes, and a path value it may hold is not judged
+ * either: it is named in
  * {@see unjudgedValues()}, never reported as unbound. A namespace value is
  * withheld on any failure, a path value only when it binds no analysed file
- * and a failed entry may hold what it names.
+ * and an unanalysed entry (failed or generated-excluded) may hold what it names.
  *
   * @qmx-threshold coupling.instability 0.900001 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
  *
- * @phpstan-type FileUniverse array{analysed: list<RelativePath>, failedFiles: list<RelativePath>, failedDirectories: list<RelativePath>}
+ * @phpstan-type FileUniverse array{analysed: list<RelativePath>, failedFiles: list<RelativePath>, failedDirectories: list<RelativePath>, generatedExcluded: list<RelativePath>}
  */
 final readonly class UnboundSuppressionAudit
 {
@@ -83,8 +84,8 @@ final readonly class UnboundSuppressionAudit
      * value in {@see unjudgedValues()} instead. A file that failed analysis
      * leaves the tree without whatever it declares, so any failure silences
      * the namespace half the same way. The path half keeps its universe, the
-     * coverage, which always exists; only a value a failed entry may hold is
-     * left unjudged (see {@see PathBinding::failureMayHold()}).
+     * coverage, which always exists; only a value an unanalysed entry may hold is
+     * left unjudged (see {@see PathBinding::unanalysedMayHold()}).
      *
      * The findings are passed through `publishable()` here rather than at the
      * seam: `--disable-rule`, `--only-rule`, the baseline and `--fail-on` must
@@ -93,7 +94,7 @@ final readonly class UnboundSuppressionAudit
      *
      * @param list<PathPattern> $suppressPaths global `suppress_paths`, `--suppress-path` included
      * @param list<NamespacePattern> $suppressNamespaces global `suppress_namespaces`, `--suppress-namespace` included
-     * @param FileUniverse $files the files the run analysed and the entries it failed to analyse
+     * @param FileUniverse $files the files the run analysed and the entries it left unanalysed
      * @param ?list<string> $declaredNamespaces every namespace the run declared, or `null` if it built no tree
      * @param ValueScopeJudgement $scope the run's shape, asked of every value before it is judged
      *
@@ -310,7 +311,7 @@ final readonly class UnboundSuppressionAudit
 
     /**
      * Whether this run can judge the value at all: its shape reaches the place
-     * the value names, no failed entry may hold what an unbound path value
+     * the value names, no unanalysed entry may hold what an unbound path value
      * names, and — for a namespace — the run built the whole universe it is
      * judged against.
      *
@@ -324,7 +325,7 @@ final readonly class UnboundSuppressionAudit
 
         if ($pattern instanceof PathPattern) {
             return $scope->judgesPathValue($pattern)
-                && (!PathBinding::failureMayHold($pattern, $files) || PathBinding::binds($pattern, $files['analysed']));
+                && (!PathBinding::unanalysedMayHold($pattern, $files) || PathBinding::binds($pattern, $files['analysed']));
         }
 
         if (!self::namespaceUniverseComplete($declaredNamespaces, $files)) {
