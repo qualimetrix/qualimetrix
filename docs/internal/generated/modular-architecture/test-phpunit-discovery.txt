@@ -10847,6 +10847,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Coverage\AnalysisCoverageTest::itModelsEveryDiscoveredFileInExactlyOneTerminalState
  - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Coverage\AnalysisCoverageTest::itRefusesASkipForAPathThatAlreadyHasATerminalState
  - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Coverage\AnalysisCoverageTest::itRejectsMoreThanOneTerminalStateForTheSamePath
+ - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Coverage\AnalysisCoverageTest::itSeparatesFailedFilesFromFailedDirectories
  - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Coverage\AnalysisCoverageTest::itTreatsGeneratedExclusionsAsCompleteCoverage
  - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Discovery\SkippedEntryTest::itKeepsTheLinksOwnNameWhenTheTreeIsInsideTheProjectRoot
  - Qualimetrix\Tests\Analysis\Run\Unit\Contract\Discovery\SkippedEntryTest::itRefusesALinkOutsideTheProjectRoot

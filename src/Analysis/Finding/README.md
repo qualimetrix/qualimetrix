@@ -121,7 +121,9 @@ Finding/
 │   ├── PopulationSession.php # selected publication, declaration validation and one freeze
 │   └── PopulationTrace.php # unit counts and bounded canonical examples
 ├── SuppressionBinding/   # Whether a configured suppression value named anything the run holds
-│   └── UnboundSuppressionFinding.php # Messages for values that bind to nothing
+│   ├── PathBinding.php   # Path values against the analysed and the failed files and directories
+│   ├── UnboundSuppressionFinding.php # Messages for values that bind to nothing
+│   └── UnboundSuppressionPopulation.php # The judged population of one audit call
 ├── RuleExecution.php     # Selects producers, executes them, and returns what happened as a value
 ├── RuleMaterialization.php # Ordered deferred rules and validators for one snapshot identity
 ├── FindingPublication.php # Exclusion accounting and channel-selection projection behind RulePublicationInterface
@@ -187,7 +189,8 @@ so it says "this suppressor removed nothing", which an honest, paid-down
 suppression also reaches; binding-zero says "this suppressor named nothing",
 which no repaired code can cause. `UnboundSuppressionRule` gives the three
 `suppression.unmatched-*` channels their identity, options and place in
-`qmx rules`; `UnboundSuppressionAudit` — the namespace's only published type —
+`qmx rules`; `UnboundSuppressionAudit` — published beside `ValueScopeJudgement`,
+the run shape it is called with —
 builds the findings and passes them through `publishable()` itself, and is
 called by `FindingProjection` at the reporting seam, the one place the
 configured values and the run's universes are both in hand.
@@ -204,10 +207,13 @@ withhold only a value the removed code could have declared, as
 `RemovedCodeNamespaces` (`mayDeclare()` / `mayDeclareWithin()`) records, and they
 are consulted even when no door is open. `ValueScopeJudgement::withholdsOnlyForRemovedCode()`
 and `UnboundSuppressionAudit::withheldForRemovedCode()` name the values removed
-code alone kept unjudged; any entry that failed analysis (`$failedPaths`, taken by
-every public audit method) leaves every namespace value unjudged, and a path value
-that binds no analysed file unjudged when a failed entry may hold what it names
-(`failureMayHold()`). A literal value
+code alone kept unjudged; any entry that failed analysis (the `FileUniverse`
+shape every public audit method takes, `AnalysisCoverage::fileUniverse()`)
+leaves every namespace value unjudged, and a path value that binds no analysed
+file unjudged when a failed entry may hold what it names
+(`PathBinding::failureMayHold()`: a
+failed file the value matches, a failed directory its literal lies beneath, any
+failed directory for a regex). A literal value
 the analysed namespace tree already binds is judged and bound beside removed code,
 since removed code can only add namespaces. A `ProjectScopeJudgement` without
 removed-code namespaces treats them as unknown (`removedCodeIsKnown()` is false);

@@ -2727,7 +2727,6 @@ Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Finding\Contra
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Finding\Exclusion\RulePathExclusionProvider	Analysis.Finding	src/Analysis/Finding/Exclusion/RulePathExclusionProvider.php	ast-name
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Finding\FindingExclusionLedger	Analysis.Finding	src/Analysis/Finding/FindingExclusionLedger.php	ast-name
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry	Analysis.Finding	src/Analysis/Finding/RuleConfiguration/RuleOptionsRegistry.php	ast-name
-Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit	Analysis.Finding	src/Analysis/Finding/SuppressionBinding/UnboundSuppressionAudit.php	ast-name
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Policy\Baseline\Ceiling\EntryAbsenceProof	Analysis.Policy.Baseline	src/Analysis/Policy/Baseline/Ceiling/EntryAbsenceProof.php	ast-name
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Policy\Baseline\Ceiling\EntryComparability	Analysis.Policy.Baseline	src/Analysis/Policy/Baseline/Ceiling/EntryComparability.php	ast-name
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Policy\Baseline\Ceiling\ExclusionDelta	Analysis.Policy.Baseline	src/Analysis/Policy/Baseline/Ceiling/ExclusionDelta.php	ast-name
@@ -2808,6 +2807,7 @@ Qualimetrix\Core\Pattern\PathMatcher	Core.Neutral	Qualimetrix\Reporting\FindingP
 Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	Qualimetrix\Analysis\Configuration\SelectorYamlDecoder	Analysis.Configuration	src/Analysis/Configuration/SelectorYamlDecoder.php	ast-name
 Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorVerdict	Analysis.Finding	src/Analysis/Finding/Contract/ProjectScope/ExcludeSelectorVerdict.php	ast-name
 Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	Qualimetrix\Analysis\Finding\RuleConfiguration\RuleSuppressionSelectorDecoder	Analysis.Finding	src/Analysis/Finding/RuleConfiguration/RuleSuppressionSelectorDecoder.php	ast-name
+Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	Qualimetrix\Analysis\Finding\SuppressionBinding\PathBinding	Analysis.Finding	src/Analysis/Finding/SuppressionBinding/PathBinding.php	ast-name
 Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit	Analysis.Finding	src/Analysis/Finding/SuppressionBinding/UnboundSuppressionAudit.php	ast-name
 Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionFinding	Analysis.Finding	src/Analysis/Finding/SuppressionBinding/UnboundSuppressionFinding.php	ast-name
 Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement	Analysis.Finding	src/Analysis/Finding/SuppressionBinding/ValueScopeJudgement.php	ast-name
@@ -2831,7 +2831,7 @@ Qualimetrix\Core\Pattern\SelectorDefinition	Core.Neutral	Qualimetrix\Infrastruct
 Qualimetrix\Core\Pattern\SelectorDefinition	Core.Neutral	Qualimetrix\Reporting\GraphProjection\NamespaceSelection	Reporting.GraphProjection	src/Reporting/GraphProjection/NamespaceSelection.php	ast-name
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Analysis\Configuration\ConfigurationRoot	Analysis.Configuration	src/Analysis/Configuration/ConfigurationRoot.php	ast-name
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorVerdict	Analysis.Finding	src/Analysis/Finding/Contract/ProjectScope/ExcludeSelectorVerdict.php	ast-name
-Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit	Analysis.Finding	src/Analysis/Finding/SuppressionBinding/UnboundSuppressionAudit.php	ast-name
+Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Analysis\Finding\SuppressionBinding\PathBinding	Analysis.Finding	src/Analysis/Finding/SuppressionBinding/PathBinding.php	ast-name
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement	Analysis.Finding	src/Analysis/Finding/SuppressionBinding/ValueScopeJudgement.php	ast-name
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver	Analysis.Run	src/Analysis/Run/Configuration/RunConfigurationResolver.php	ast-name
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	src/Analysis/Run/Contract/Configuration/RunConfiguration.php	ast-name
@@ -2891,7 +2891,7 @@ Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	Qualimetrix\I
 Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateContentMerger	Analysis.Evidence.Duplication	src/Analysis/Evidence/Duplication/Matching/DuplicateContentMerger.php	ast-name
 Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	Qualimetrix\Analysis\Finding\Contract\OccurrenceKey	Analysis.Finding	src/Analysis/Finding/Contract/OccurrenceKey.php	ast-name
 Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity	Analysis.Finding	src/Analysis/Finding/Contract/Population/PopulationIdentity.php	ast-name
-Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit	Analysis.Finding	src/Analysis/Finding/SuppressionBinding/UnboundSuppressionAudit.php	ast-name
+Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionPopulation	Analysis.Finding	src/Analysis/Finding/SuppressionBinding/UnboundSuppressionPopulation.php	ast-name
 Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	Qualimetrix\Analysis\Policy\Baseline\Explanation\BoundaryExplanationService	Analysis.Policy.Baseline	src/Analysis/Policy/Baseline/Explanation/BoundaryExplanationService.php	ast-name
 Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsagePopulation	Analysis.Policy.Inline	src/Analysis/Policy/Inline/Directive/Audit/DirectiveUsagePopulation.php	ast-name
 Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	Qualimetrix\Core\Symbol\DeclarationPath	Core.Symbol	src/Core/Symbol/DeclarationPath.php	ast-name
@@ -3256,6 +3256,7 @@ Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	Qualimetrix\Analysis\Finding\Rul
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	Qualimetrix\Analysis\Finding\Selection\EnablementIndex	Analysis.Finding	src/Analysis/Finding/Selection/EnablementIndex.php	ast-name
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	Qualimetrix\Analysis\Finding\Selection\SelectionSpecificity	Analysis.Finding	src/Analysis/Finding/Selection/SelectionSpecificity.php	ast-name
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit	Analysis.Finding	src/Analysis/Finding/SuppressionBinding/UnboundSuppressionAudit.php	ast-name
+Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionPopulation	Analysis.Finding	src/Analysis/Finding/SuppressionBinding/UnboundSuppressionPopulation.php	ast-name
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule	Analysis.Finding	src/Analysis/Finding/SuppressionBinding/UnboundSuppressionRule.php	ast-name
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationRule	Analysis.Policy.Architecture	src/Analysis/Policy/Architecture/LayerDeclaration/LayerDeclarationRule.php	ast-name
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator	Analysis.Policy.Architecture	src/Analysis/Policy/Architecture/LayerDeclaration/LayerDeclarationValidator.php	ast-name

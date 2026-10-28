@@ -29,4 +29,16 @@ enum AnalysisFailureKind: string
     case FileSymlink = 'file-symlink';
     case UnreadableFile = 'unreadable-file';
     case UnreadableEntry = 'unreadable-entry';
+
+    /**
+     * Whether the failed entry may be a directory whose contents the run never
+     * saw. An unreadable entry is of unknown type, so it counts as one.
+     */
+    public function hidesEntriesBeneath(): bool
+    {
+        return match ($this) {
+            self::DirectorySymlink, self::UnreadableDirectory, self::UnreadableEntry => true,
+            self::Parse, self::Processing, self::NotRegularFile, self::FileSymlink, self::UnreadableFile => false,
+        };
+    }
 }
