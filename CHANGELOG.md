@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.32.0] - 2026-10-30
+
 ### Breaking
 
 - An `exclude`, `suppress_paths` or `suppress_namespaces` entry, or a value of a rule's `suppress_namespace_channels` entry, that matches nothing and that only a file in the project's Composer install directory wrote (a base imported from `vendor/`) is no longer reported by `discovery.unmatched-exclude` or `suppression.*`, since the project can neither edit nor remove it; it is listed in `projectScope.unjudgedValues` with an `installed-configuration` reason naming the file. Values that bind, and values the project can replace (a rule's `suppress_paths`/`suppress_namespaces`, `coupling.framework_namespaces`, `exclude_methods`, `architecture.layers`), are judged as before. Migration: a baseline that accepted such a finding now reports the entry as `baseline.unused-entry`; list it with `baseline:cleanup <baseline> <paths...>` and remove it with `--remove=<selector>` (ADR 0142).
@@ -1845,7 +1847,8 @@ Initial release.
 [0.9.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.0...v0.7.1
-[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.31.0...HEAD
+[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.32.0...HEAD
+[0.32.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.31.0...v0.32.0
 [0.31.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.30.0...v0.31.0
 [0.30.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.29.0...v0.30.0
 [0.29.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.28.2...v0.29.0
