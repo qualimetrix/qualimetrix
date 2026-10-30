@@ -34,6 +34,7 @@ final class ConfigurationPipelineIntegrationTest extends TestCase
     {
         @unlink($this->directory . '/composer.json');
         @unlink($this->directory . '/qmx.yaml');
+        @unlink($this->directory . '/qmx.yaml.bak');
         @rmdir($this->directory);
     }
 
@@ -70,6 +71,19 @@ final class ConfigurationPipelineIntegrationTest extends TestCase
         self::assertNull($document->resolved()->get('paths'));
         self::assertSame([], $document->discoveredProductionAutoloadTargets());
         self::assertSame([], $document->discoveredDevelopmentAutoloadTargets());
+    }
+
+    /** A notice about an ignored near name applies no source of its own. */
+    #[Test]
+    public function itListsNoSourceForANearNameNotice(): void
+    {
+        touch($this->directory . '/qmx.yaml.bak');
+
+        $document = $this->pipeline()->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString($this->directory)));
+
+        self::assertSame(['defaults'], $document->appliedSources());
+        self::assertCount(1, $document->diagnostics());
+        self::assertStringContainsString('qmx.yaml.bak', $document->diagnostics()[0]->message);
     }
 
     private function pipeline(): ConfigurationPipeline
