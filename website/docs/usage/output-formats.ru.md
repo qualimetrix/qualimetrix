@@ -1403,8 +1403,9 @@ hider, отсутствующие среди источников селекто
 Недоступные метаданные поиска внутри реально снятой run entry также удерживают
 только отсутствие деклараций, сохраняя фактическое свидетельство `unlistable`.
 
-Запись `exclude`, `suppress_paths` или `suppress_namespaces`, которую записали
-только файлы, установленные пакетом Composer, сохраняет три ключа в
+Запись `exclude`, `suppress_paths`, `suppress_namespaces` или `suppress_namespace_channels`,
+которая ничему не соответствует и которую записали только файлы, установленные
+пакетом Composer, сохраняет три ключа в
 `unjudgedValues`, а по одной причине `installed-configuration` на каждый такой файл
 называют его в `source` с поясняющей фразой `detail` (см.
 [правила подавления](../rules/suppression.md#scope-and-severity)).

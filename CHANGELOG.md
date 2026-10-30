@@ -7,9 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking
+
+- An `exclude`, `suppress_paths` or `suppress_namespaces` entry, or a value of a rule's `suppress_namespace_channels` entry, that matches nothing and that only a file in the project's Composer install directory wrote (a base imported from `vendor/`) is no longer reported by `discovery.unmatched-exclude` or `suppression.*`, since the project can neither edit nor remove it; it is listed in `projectScope.unjudgedValues` with an `installed-configuration` reason naming the file. Values that bind, and values the project can replace (a rule's `suppress_paths`/`suppress_namespaces`, `coupling.framework_namespaces`, `exclude_methods`, `architecture.layers`), are judged as before. Migration: a baseline that accepted such a finding now reports the entry as `baseline.unused-entry`; list it with `baseline:cleanup <baseline> <paths...>` and remove it with `--remove=<selector>` (ADR 0142).
+
 ### Changed
 
-- A finding that a configured value matches nothing — `discovery.unmatched-exclude`, `suppression.*`, `coupling.unmatched-framework-namespace`, `cohesion.unmatched-exclude-method`, `architecture.unmatched-exclude`, `architecture.unreachable-layer`, `architecture.empty-template` — ends by naming the configuration that wrote the value (`Written by configuration file "vendor/acme/std/qmx.yaml" (imported by configuration file "qmx.yaml").`); an `exclude`, global `suppress_paths` or `suppress_namespaces` entry that only a file in the project's Composer install directory wrote is no longer reported, since the project can neither edit nor remove it, and is listed in `projectScope.unjudgedValues` with an `installed-configuration` reason (ADR 0142).
+- A finding that a configured value matches nothing — `discovery.unmatched-exclude`, `suppression.*`, `coupling.unmatched-framework-namespace`, `cohesion.unmatched-exclude-method`, `architecture.unmatched-exclude`, `architecture.unreachable-layer`, `architecture.empty-template` — ends by naming the configuration that wrote the value (`Written by configuration file "vendor/acme/std/qmx.yaml" (imported by configuration file "qmx.yaml").`); finding identities and baseline keys do not change.
 
 ### Fixed
 

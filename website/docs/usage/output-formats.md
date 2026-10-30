@@ -1398,8 +1398,9 @@ withholding without turning it into a finding or proof of remediation.
 Unavailable search metadata inside an actual removed run entry also withholds
 only declaration absence, with the actual `unlistable` evidence retained.
 
-An `exclude`, `suppress_paths` or `suppress_namespaces` entry that only files a
-Composer package installed wrote keeps its three keys in `unjudgedValues`, and one
+An `exclude`, `suppress_paths`, `suppress_namespaces` or `suppress_namespace_channels`
+entry that matches nothing and that only files a Composer package installed wrote
+keeps its three keys in `unjudgedValues`, and one
 `installed-configuration` reason per such file names it as `source` with a
 `detail` sentence (see [Suppression rules](../rules/suppression.md#scope-and-severity)).
 ## Comparison table
