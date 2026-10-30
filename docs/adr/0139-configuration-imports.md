@@ -1,7 +1,7 @@
 # 0139. Configuration Imports
 
 **Date:** 2026-10-27
-**Status:** Accepted
+**Status:** Accepted; §2's flat rule, §5's glob refusal and §7's extension path are replaced by [ADR 0140](0140-built-in-preset-glob-and-nested-imports.md)
 
 **Builds on:** [ADR 0086](0086-one-configuration-document-merged-by-declared-policy.md),
 whose extension point said importing a file would be "a layer like any other".

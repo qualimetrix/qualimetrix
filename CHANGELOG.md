@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `imports:` entries may name a built-in preset: `imports: [strict]` applies it from the configuration file, so the pre-commit hook and the GitHub Action, which pass no `--preset`, judge by the same preset as a local `--preset=strict`. A bare name that is not built-in is refused with the list of presets.
+- `imports:` entries may be globs over directory levels (`config/qmx/*.yaml`, `*`, `?`, `[...]`; no `**` or braces): the matches are imported in byte order unless their own imports demand another, a pattern that matches nothing is accepted, and an unreadable directory is refused.
+- Imported files may import in turn, ordered by C3 linearization; a cycle and contradictory precedence are refused naming the files, while a file given to `--preset` still cannot import. See [ADR 0140](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0140-built-in-preset-glob-and-nested-imports.md).
+
 ### Fixed
 
 - The write guard of `check --output`, `--profile` and `--log-file`, `graph:export --output` and the baseline file now also refuses (exit 3), before analysis, the working directory's `composer.json` and every PHP file the run selects, compared by file identity; `qmx check src/ --output=composer.json` or `--output=src/Foo.php` replaced the manifest or a source with the report. A `check` or `graph:export` report on standard output that the shell opened on the configuration, the manifest or a source (`>>`, `1<>`) is refused the same way and before any other target refusal, with the refusal on stderr only; a refusal reached earlier, while the options and configuration are still being read, is still written to standard output in the requested format (#223).

@@ -329,8 +329,8 @@ function acrossCell(array $row, string $language): string
 {
     if (perFileRoot($row)) {
         return $language === 'ru'
-            ? 'Читается из каждого файла отдельно, только в корневом файле конфигурации; между слоями не сливается.'
-            : 'Read per file, in the root configuration file only; never merged across layers.';
+            ? 'Читается из каждого файла отдельно, в любом файле, прочитанном через `imports`; между слоями не сливается.'
+            : 'Read per file, in the root file and in any file read through `imports`; never merged across layers.';
     }
 
     $shorthand = $row['shorthand'];

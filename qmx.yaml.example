@@ -25,10 +25,13 @@
 # -----------------------------------------------------------------------------
 
 # Files this configuration builds on, lowest precedence first; this file
-# overrides them all. Only the root configuration file may import. Entries are
-# relative to this file's directory; paths written inside the imported files
-# stay relative to the working directory.
+# overrides them all. An entry is a file path, a glob over one directory level
+# (config/qmx/*.yaml, matched in byte order), or the name of a built-in preset
+# (strict, legacy, ci). Imported files may import in turn. Entries are relative
+# to the directory of the file that writes them; paths written inside the
+# imported files stay relative to the working directory.
 # imports:
+#   - strict
 #   - config/architecture.yaml
 #   - config/thresholds.yaml
 

@@ -104,8 +104,13 @@ Configuration/
 │   ├── ConfigLoaderInterface.php
 │   ├── DocumentKeyNormalizer.php
 │   ├── ImportChain.php
+│   ├── ImportEntries.php
+│   ├── ImportGlob.php
+│   ├── ImportLinearization.php
 │   ├── ImportListSchema.php
+│   ├── ImportTarget.php
 │   ├── LoadedDocument.php
+│   ├── ResolvedImportEntry.php
 │   ├── RootContainerShapes.php
 │   ├── SectionNormalizationPolicy.php
 │   └── YamlConfigLoader.php
@@ -216,34 +221,55 @@ preflight profile controls CLI ingress and actual consumers, not the schema.
 ## Configuration imports
 
 The root configuration file — the discovered one or `--config` — may list
-other files under `imports`. `ConfigFileStage` hands the root's physical path
-and origin to `Loader/ImportChain`, which returns the layers of the
-configuration-file band: each entry in written order, then the root, each
-entry's origin `importedThrough()` the root. Refusals and `-v`
+other files under `imports`, and any file read through `imports` may do the
+same. `ConfigFileStage` hands the root's physical path and origin to
+`Loader/ImportChain`, which returns the layers of the configuration-file band
+in the C3 order of the import graph, the root last. Each layer's origin is
+`importedThrough()` the file that named it. Refusals and `-v`
 (`appliedSources()`, one entry per file) therefore name every file with its
-importer, and JSON publishes the chain under `source[].imported_by`.
+importer chain, and JSON publishes it, nested, under `source[].imported_by`.
+ADR 0139 records the flat chain and ADR 0140 the three extensions below.
 
-- **Flat.** Only the root is read for `imports`. An imported file that writes
-  the key is refused at that key; so is a preset (`PresetStage`). Nested
-  imports are a recorded extension path (ADR 0139), not built.
+- **Entries.** `Loader/ImportEntries` turns one list into
+  `ResolvedImportEntry` values, each a position and the `ImportTarget`s it
+  leads to. An entry holding `*`, `?` or `[` is a glob; else one with no
+  directory part and no extension is a built-in preset name
+  (`PresetResolver::builtInPath()`); else a file path. A preset's origin is
+  `Preset(name)` imported through the file, and its applied-source name is the
+  bare name, distinct from the `preset:<name>` of `--preset`.
+- **Globs.** `Loader/ImportGlob` owns the grammar (`*`, `?`, `[...]` within a
+  segment; no `**`, braces or escapes) and walks directories itself, because
+  PHP's `glob()` skips an unreadable directory without saying so. A directory
+  that must be listed or entered and cannot is refused; no match is accepted
+  silently. The matches of one glob form a group the linearization does not
+  order internally.
+- **Walk and order.** `ImportChain` walks depth-first with a stack keyed by
+  target identity (a cycle is refused at the closing entry), reads each file
+  once and names it by the first chain reaching it. `Loader/ImportLinearization`
+  is pure C3: each list is given reversed as bases, groups as unordered
+  members, and an unsolvable merge is refused on the stuck file naming the
+  cycle of constraints. A `--preset` file still refuses `imports` (`PresetStage`).
 - **Identity.** Files are compared by `Core\FileTarget\FileIdentity`
   (device, inode, type), so two spellings or a symlink of one file are one
-  file. An entry naming the root or a file an earlier entry placed is refused
-  at that entry, naming both positions. A target that cannot be stat'ed
-  ("not found or not accessible": PHP reports no reason), reports inode 0 or
-  is not a regular file is refused before it is read, on the imported origin.
+  file. An entry naming its own file or a file an earlier entry placed is
+  refused at that entry, naming both positions. A target that cannot be
+  stat'ed ("not found or not accessible": PHP reports no reason), reports
+  inode 0 or is not a regular file is refused before it is read, on the
+  imported origin (`ImportTarget::ofFile()`). A built-in preset read from
+  inside the phar has no identity and is keyed by name.
 - **Path bases.** An entry resolves against the real directory of the file
-  that writes it (a symlinked root resolves to its target's directory). Its
-  display name is a path that leads to that file: the root's locator
-  directory joined with the entry, dropping only `.` segments — `x/..` stays —
-  or, when the root file is a symlink, the physical path. Two files therefore
-  never share a name. Every other path in any file keeps the request's
-  working directory as its base.
+  that writes it (a symlink resolves to its target's directory). Its display
+  name is a path that leads to that file: the writing file's locator directory
+  joined with the entry, dropping only `.` segments — `x/..` stays — or, when
+  that file is a symlink, the physical path. Two files therefore never share a
+  name. Every other path in any file keeps the request's working directory as
+  its base.
 - **Read per file, never composed.** `ConfigurationRoot::Imports` declares the
-  key and `Loader/ImportListSchema` its grammar (non-empty local `.yaml`/`.yml`
-  paths, no URL, no glob, judged in each layer). The chain reads the entries
-  by composing a one-key slice of the root, then hands every layer on without
-  the key. `ConfigSchema::PER_FILE_ROOTS` names such roots: they join
+  key and `Loader/ImportListSchema` its grammar (non-empty strings, no URL,
+  a glob within the grammar above, a preset name, or a local `.yaml`/`.yml`
+  path, judged in each layer). The chain reads the entries by composing a
+  one-key slice of each file, then hands every layer on without the key.
+  `ConfigSchema::PER_FILE_ROOTS` names such roots: they join
   `allowedRootKeys()` but have no `ENTRIES` row and are not `DOCUMENT_ROOTS`;
   `ConfigurationPipeline` refuses to compose a layer that still carries one
   (a programmer error), and the merge-table generator describes them as read

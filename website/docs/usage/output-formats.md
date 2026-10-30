@@ -1201,6 +1201,13 @@ key when known, otherwise `null`. `source` is `null` for an internal error or a
 refusal raised without a configuration source. Text refusals name the same
 authored layers in their message or a separate `Source:` line, including under
 `--quiet`; a synthetic merged origin is not labeled as an author.
+
+`imported_by` is `null` for a layer that was not imported. For a file or a
+built-in preset named by `imports` it is an object of the same shape — the file
+that imported it — and it nests: a file imported by a file imported by
+`qmx.yaml` carries two levels. A built-in preset imported by name is
+`{"kind": "preset", "name": "strict", "imported_by": {"kind": "file", "name": "qmx.yaml", "imported_by": null}}`;
+the same preset given with `--preset` has no importer.
 The baseline
 file — written by `baseline:generate`, `update`, `cleanup`, and rewritten in
 place by `baseline:rename-channels` — is a versioned input artifact the tool

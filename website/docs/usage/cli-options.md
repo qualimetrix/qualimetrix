@@ -177,6 +177,8 @@ Available built-in presets: `strict`, `legacy`, `ci`.
 
 Presets are applied after `composer.json` auto-detection but before `qmx.yaml`, so your config file always takes precedence. See [Configuration > Presets](../getting-started/configuration.md#presets) for details.
 
+A built-in preset can also be imported from the configuration file — `imports: [strict]` — which applies it to every run that reads the file, including the pre-commit hook and the GitHub Action, neither of which passes `--preset`. An imported preset sits in the configuration-file band, above `--preset` presets. See [Configuration > Built-in presets](../getting-started/configuration.md#built-in-presets).
+
 ---
 
 ## Output options
