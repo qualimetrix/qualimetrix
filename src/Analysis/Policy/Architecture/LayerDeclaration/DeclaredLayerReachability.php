@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
@@ -270,14 +271,15 @@ final class DeclaredLayerReachability
             }
 
             $cause = self::observedRemovalCause($layerName, $evidence, $contests[$layerName]['matchedOutside']);
+            $message = $cause === null ? \sprintf(
+                'Layer "%s" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier in the declaration order, (2) the declared criteria (%s) match no class in the analysed codebase.%s Run "qmx debug:layer-assignment <class>" to inspect specific classes.',
+                $layerName,
+                $definition->membership()->describe(),
+                self::uncountedContest($contests[$layerName]),
+            ) : $cause['message'] . self::uncountedContest($contests[$layerName]);
             $findings[] = self::projectDiagnostic(
                 ArchitectureChannels::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
-                $cause === null ? \sprintf(
-                    'Layer "%s" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier in the declaration order, (2) the declared criteria (%s) match no class in the analysed codebase.%s Run "qmx debug:layer-assignment <class>" to inspect specific classes.',
-                    $layerName,
-                    $definition->membership()->describe(),
-                    self::uncountedContest($contests[$layerName]),
-                ) : $cause['message'] . self::uncountedContest($contests[$layerName]),
+                $message . $evidence->architecture->layerWritersSentence(),
                 $cause['recommendation'] ?? 'Move the layer above any broader layer that captures its classes, remove the layer if its pattern intentionally covers no class, or declare "pending: true" if the code it describes has not been written yet.',
             );
         }
@@ -430,15 +432,13 @@ final class DeclaredLayerReachability
      * a {@see \Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface}'s
      * channels name.
      *
-     * @param list<string> $emptyTemplateNames
-     *
      * @return list<Finding>
      */
-    public static function emptyTemplates(array $emptyTemplateNames): array
+    public static function emptyTemplates(ArchitectureConfiguration $architecture): array
     {
         $findings = [];
 
-        foreach ($emptyTemplateNames as $template) {
+        foreach ($architecture->emptyTemplateNames() as $template) {
             $findings[] = self::projectDiagnostic(
                 ArchitectureChannels::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
                 \sprintf(
@@ -447,8 +447,9 @@ final class DeclaredLayerReachability
                     . 'pattern, (2) matching classes were filtered out by file discovery (`suppress_paths` / '
                     . '`suppress_namespaces` at top level or in rule options), (3) the module disappeared in a '
                     . 'recent refactor, or (4) a single-segment capture `{var}` is used where the binding spans '
-                    . 'multiple namespace segments — try `{var:**}` for cross-segment captures.',
+                    . 'multiple namespace segments — try `{var:**}` for cross-segment captures.%s',
                     $template,
+                    $architecture->layerWritersSentence(),
                 ),
                 'Verify the template patterns against the project structure, or remove the template if no longer relevant.',
             );

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
 use LogicException;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
@@ -96,6 +97,13 @@ final readonly class ArchitectureConfiguration
      *                                         rule layer into
      *                                         {@code architecture.empty-template}
      *                                         warnings).
+     * @param ConfiguredValueWriters|null $layerWriters The sources that wrote the
+     *                                                  {@code layers} list. A list
+     *                                                  is replaced whole by the last
+     *                                                  layer that writes it, so one
+     *                                                  set serves every declaration.
+     *                                                  Null when unknown: the
+     *                                                  findings then name no author.
      */
     public function __construct(
         private LayerRegistry $registry,
@@ -104,6 +112,7 @@ final readonly class ArchitectureConfiguration
         ?array $entries = null,
         public int $maxExpandedLayers = self::DEFAULT_MAX_EXPANDED_LAYERS,
         public array $emptyTemplateNames = [],
+        public ?ConfiguredValueWriters $layerWriters = null,
     ) {
         $this->entries = $entries ?? $registry->definitions();
     }
@@ -162,6 +171,15 @@ final readonly class ArchitectureConfiguration
     public function emptyTemplateNames(): array
     {
         return $this->emptyTemplateNames;
+    }
+
+    /**
+     * The closing sentence of a finding about a layer declaration: who wrote
+     * the layers, led by a space, or nothing when that is unknown.
+     */
+    public function layerWritersSentence(): string
+    {
+        return $this->layerWriters === null ? '' : ' ' . $this->layerWriters->sentence();
     }
 
     /**
@@ -242,6 +260,7 @@ final readonly class ArchitectureConfiguration
             entries: $this->entries,
             maxExpandedLayers: $this->maxExpandedLayers,
             emptyTemplateNames: $emptyTemplateNames,
+            layerWriters: $this->layerWriters,
         );
     }
 }

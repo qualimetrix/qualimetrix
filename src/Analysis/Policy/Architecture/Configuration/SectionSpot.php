@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaqueInterface
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters;
 
 /**
  * One spot of the resolved `architecture` section: the value written there,
@@ -122,6 +123,18 @@ final readonly class SectionSpot
         return $writer->path === null || $this->below === []
             ? $writer
             : new Provenance($writer->origin, [...$writer->path, ...$this->below], $writer->layerIndex, $writer->line);
+    }
+
+    /**
+     * Every source whose writing survives in the node written here — the one
+     * source that replaced a list, or each that merged into a map.
+     */
+    public function writers(): ConfiguredValueWriters
+    {
+        $anchor = $this->anchor
+            ?? throw new LogicException(\sprintf('Nothing is written at "%s".', $this->display()));
+
+        return ConfiguredValueWriters::fromProvenance($anchor->contributors());
     }
 
     /**

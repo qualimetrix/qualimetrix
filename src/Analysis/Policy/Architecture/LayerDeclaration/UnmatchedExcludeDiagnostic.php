@@ -203,7 +203,7 @@ final class UnmatchedExcludeDiagnostic
             ruleName: $channelName,
             code: $channelName,
             message: \sprintf(
-                'The "exclude" clause of layer "%s" (%s) removed no class from %s, while the layer\'s own criteria (%s) matched %d symbol(s). The layer is therefore wider than the declaration asks for, and every verdict about it is drawn from that wider set.',
+                'The "exclude" clause of layer "%s" (%s) removed no class from %s, while the layer\'s own criteria (%s) matched %d symbol(s). The layer is therefore wider than the declaration asks for, and every verdict about it is drawn from that wider set.%s',
                 $declaration,
                 self::describe($exclude, $evidence),
                 $clause['instances'] > 1
@@ -211,6 +211,7 @@ final class UnmatchedExcludeDiagnostic
                     : 'it',
                 $definition->membership()->describe(),
                 $clause['matched'],
+                $evidence->architecture->layerWritersSentence(),
             ),
             severity: self::SEVERITY,
             recommendation: \sprintf(

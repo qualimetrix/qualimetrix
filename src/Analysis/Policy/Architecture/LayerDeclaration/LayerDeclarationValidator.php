@@ -130,7 +130,7 @@ final class LayerDeclarationValidator implements ConfigurationValidatorInterface
             ...($judgesAbsence ? DeclaredLayerReachability::unreachableLayers($evidence) : []),
             ...DeclaredLayerReachability::pendingLayersMatched($definitions, $evidence->matchedCounts()),
             ...PotentialShadowDiagnostic::forShadows($evidence->shadowEvidence),
-            ...($judgesAbsence ? DeclaredLayerReachability::emptyTemplates($evidence->architecture->emptyTemplateNames()) : []),
+            ...($judgesAbsence ? DeclaredLayerReachability::emptyTemplates($evidence->architecture) : []),
         ];
     }
 }

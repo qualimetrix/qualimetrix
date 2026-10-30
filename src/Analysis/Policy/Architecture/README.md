@@ -547,6 +547,12 @@ expanded template copies share the original occurrence, and an empty template
 still has its authored types judged. Messages name the configuration writer and
 position. An undecidable exclusion cannot be
 called inert. These are ordinary occurrence findings a baseline may accept.
+`unmatched-exclude`, `unreachable-layer` and `empty-template` end with the
+`Written by ...` sentence of `ConfiguredValueWriters`: `layers` is replaced
+whole by its last writer, so `ArchitectureConfiguration::$layerWriters` holds
+one set per run and `withExpansion()` carries it into the expanded copy. It
+never enters an occurrence key, and a configuration built without it names no
+author.
 The validator belongs to `architecture.layer-declaration` and emits five
 configuration-error occurrences: `architecture.coverage-gap`,
 `architecture.unreachable-layer`, `architecture.pending-layer-matched`,
