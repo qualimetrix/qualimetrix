@@ -84,7 +84,6 @@ src/Analysis/Configuration/Loader/ImportGlob.php	Qualimetrix\Analysis\Configurat
 src/Analysis/Configuration/Loader/ImportLinearization.php	Qualimetrix\Analysis\Configuration\Loader\ImportLinearization	class	Analysis.Configuration	internal	[]
 src/Analysis/Configuration/Loader/ImportListSchema.php	Qualimetrix\Analysis\Configuration\Loader\ImportListSchema	class	Analysis.Configuration	internal	[]
 src/Analysis/Configuration/Loader/ImportTarget.php	Qualimetrix\Analysis\Configuration\Loader\ImportTarget	class	Analysis.Configuration	internal	[]
-src/Analysis/Configuration/Loader/ImportingFile.php	Qualimetrix\Analysis\Configuration\Loader\ImportingFile	class	Analysis.Configuration	internal	[]
 src/Analysis/Configuration/Loader/LoadedDocument.php	Qualimetrix\Analysis\Configuration\Loader\LoadedDocument	class	Analysis.Configuration	internal	[]
 src/Analysis/Configuration/Loader/ResolvedImportEntry.php	Qualimetrix\Analysis\Configuration\Loader\ResolvedImportEntry	class	Analysis.Configuration	internal	[]
 src/Analysis/Configuration/Loader/RootContainerShapes.php	Qualimetrix\Analysis\Configuration\Loader\RootContainerShapes	class	Analysis.Configuration	internal	[]

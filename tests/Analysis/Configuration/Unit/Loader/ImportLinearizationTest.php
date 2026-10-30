@@ -387,6 +387,7 @@ final class ImportLinearizationTest extends TestCase
 
                 throw new LogicException('not imported');
             },
+            'imports',
         );
     }
 

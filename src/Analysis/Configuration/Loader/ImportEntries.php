@@ -40,8 +40,10 @@ final class ImportEntries
      *
      * @return list<ResolvedImportEntry> in written order
      */
-    public function resolve(array $entries, ImportingFile $from): array
+    public function resolve(array $entries, ImportTarget $from): array
     {
+        $real = $from->realDirectory();
+        $shown = $from->displayDirectory();
         $resolved = [];
         $placed = [$from->key => [-1, (string) $from->origin->locator()]];
         foreach ($entries as $position => $entry) {
@@ -51,7 +53,7 @@ final class ImportEntries
             }
             $target = self::namesPreset($written)
                 ? $this->presetTarget($written, $entry, $position, $from)
-                : ImportTarget::ofFile(self::joined($from->realDirectory, $written), self::originOf(self::normalize(self::joined($from->displayDirectory, $written)), $from));
+                : ImportTarget::ofFile(self::joined($real, $written), self::originOf(self::normalize(self::joined($shown, $written)), $from));
             $placed = self::place($placed, $position, $target->key, $entry, $from);
             $resolved[$position] = new ResolvedImportEntry($position, $entry, false, [$target]);
         }
@@ -63,7 +65,7 @@ final class ImportEntries
                 continue;
             }
             $targets = [];
-            foreach (ImportGlob::matches($written, $from->realDirectory, $from->displayDirectory, self::refusing($entry, $position, $written)) as [$physical, $display]) {
+            foreach (ImportGlob::matches($written, $real, $shown, self::refusing($entry, $position, $written)) as [$physical, $display]) {
                 $target = ImportTarget::ofFile($physical, self::originOf($display, $from));
                 if (!isset($taken[$target->key])) {
                     $taken[$target->key] = true;
@@ -77,7 +79,7 @@ final class ImportEntries
         return array_values($resolved);
     }
 
-    private function presetTarget(string $name, ResolvedValueInterface $entry, int $position, ImportingFile $from): ImportTarget
+    private function presetTarget(string $name, ResolvedValueInterface $entry, int $position, ImportTarget $from): ImportTarget
     {
         $path = $this->presets->builtInPath($name) ?? $entry->refuse(\sprintf(
             'Unknown preset "%s". Available presets: %s. A file needs a .yaml or .yml extension.',
@@ -95,7 +97,7 @@ final class ImportEntries
      *
      * @return array<string, array{int, string}>
      */
-    private static function place(array $placed, int $position, string $key, ResolvedValueInterface $entry, ImportingFile $from): array
+    private static function place(array $placed, int $position, string $key, ResolvedValueInterface $entry, ImportTarget $from): array
     {
         $written = (string) $entry->plain();
         if (isset($placed[$key])) {
@@ -122,7 +124,7 @@ final class ImportEntries
         return static fn(string $problem): never => $entry->refuse(\sprintf('Import "%s" (imports[%d]) %s.', $written, $position, $problem));
     }
 
-    private static function originOf(string $display, ImportingFile $from): ConfigurationOrigin
+    private static function originOf(string $display, ImportTarget $from): ConfigurationOrigin
     {
         return ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $display)->importedThrough($from->origin);
     }

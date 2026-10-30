@@ -60,21 +60,42 @@ final class ImportGlob
         $candidates = [[$physical, $display]];
         $last = \count($segments) - 1;
         for ($index = $first; $index <= $last; ++$index) {
-            $next = [];
-            foreach ($candidates as [$directory, $shown]) {
-                foreach (self::children($segments[$index], $directory, $shown, $refuse) as $name) {
-                    $path = self::child($directory, $name);
-                    if ($index === $last ? file_exists($path) || is_link($path) : is_dir($path)) {
-                        $next[] = [$path, self::child($shown, $name)];
-                    }
-                }
-            }
-            $candidates = $next;
+            $candidates = self::descend($candidates, $segments[$index], $index === $last, $refuse);
         }
 
         usort($candidates, static fn(array $a, array $b): int => strcmp($a[1], $b[1]));
 
         return $candidates;
+    }
+
+    /**
+     * One level of the walk: every candidate directory's children matching the
+     * segment, which must be a file or link at the last level and a directory
+     * before it.
+     *
+     * @param list<array{string, string}> $candidates [physical path, display path]
+     * @param Closure(string): never $refuse
+     *
+     * @return list<array{string, string}>
+     */
+    private static function descend(array $candidates, string $segment, bool $isLast, Closure $refuse): array
+    {
+        $next = [];
+        foreach ($candidates as [$directory, $shown]) {
+            foreach (self::children($segment, $directory, $shown, $refuse) as $name) {
+                $path = self::child($directory, $name);
+                if (self::fitsLevel($path, $isLast)) {
+                    $next[] = [$path, self::child($shown, $name)];
+                }
+            }
+        }
+
+        return $next;
+    }
+
+    private static function fitsLevel(string $path, bool $isLast): bool
+    {
+        return $isLast ? file_exists($path) || is_link($path) : is_dir($path);
     }
 
     /**

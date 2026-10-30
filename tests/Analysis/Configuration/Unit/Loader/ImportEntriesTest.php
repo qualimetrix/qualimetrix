@@ -19,7 +19,6 @@ use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
 use Qualimetrix\Analysis\Configuration\Loader\ImportEntries;
 use Qualimetrix\Analysis\Configuration\Loader\ImportGlob;
-use Qualimetrix\Analysis\Configuration\Loader\ImportingFile;
 use Qualimetrix\Analysis\Configuration\Loader\ImportTarget;
 use Qualimetrix\Analysis\Configuration\Loader\ResolvedImportEntry;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
@@ -286,7 +285,7 @@ final class ImportEntriesTest extends TestCase
 
         $entries = (new ImportEntries())->resolve(
             $this->values(['cfg/*.yaml', $this->directory . '/cfg/*.yaml']),
-            new ImportingFile(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'sub/qmx.yaml'), $this->directory, 'sub', ImportTarget::ofFile($this->directory . '/qmx.yaml', ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml'))->key),
+            ImportTarget::ofFile($this->directory . '/qmx.yaml', ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'sub/qmx.yaml')),
         );
 
         self::assertSame(['sub/cfg/a.yaml'], self::locators($entries[0]));
@@ -345,7 +344,7 @@ final class ImportEntriesTest extends TestCase
 
         return (new ImportEntries())->resolve(
             $this->values($entries),
-            new ImportingFile($origin, $this->directory, '.', ImportTarget::ofFile($this->directory . '/qmx.yaml', $origin)->key),
+            ImportTarget::ofFile($this->directory . '/qmx.yaml', $origin),
         );
     }
 

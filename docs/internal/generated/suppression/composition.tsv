@@ -149,6 +149,7 @@ rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Policy/Baseline/Con
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Run/Contract/Configuration/RunConfiguration.php	Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/FileTarget/FileIdentity.php	Qualimetrix\Core\FileTarget\FileIdentity	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/FileTarget/FileTargetFailure.php	Qualimetrix\Core\FileTarget\FileTargetFailure	warning	1
+rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/FileTarget/NativeCall.php	Qualimetrix\Core\FileTarget\NativeCall	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/FileTarget/Resolution/ResolvedTarget.php	Qualimetrix\Core\FileTarget\Resolution\ResolvedTarget	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/Path/AbsolutePath.php	Qualimetrix\Core\Path\AbsolutePath	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/Path/RelativePath.php	Qualimetrix\Core\Path\RelativePath	error	1
@@ -167,7 +168,7 @@ rule-path-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Confi
 rule-path-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Configuration/Contract/Document/Schema/NodeSchema.php	Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema	warning	1
 rule-path-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Configuration/Contract/Refusal/ConfigurationOrigin.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	warning	1
 rule-path-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	warning	1
-rule-path-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Configuration/Contract/Refusal/RefusedPosition.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	warning	1
+rule-path-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Configuration/Contract/Refusal/RefusedPosition.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	error	1
 rule-path-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Evidence/Measurement/Contract/MetricBag.php	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag	error	1
 rule-path-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Contract/Channel/FindingChannel.php	Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel	error	1
 rule-path-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Contract/Finding.php	Qualimetrix\Analysis\Finding\Contract\Finding	warning	1

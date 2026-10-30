@@ -101,7 +101,6 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\Loader\ImportLinearization'
         - 'Qualimetrix\Analysis\Configuration\Loader\ImportListSchema'
         - 'Qualimetrix\Analysis\Configuration\Loader\ImportTarget'
-        - 'Qualimetrix\Analysis\Configuration\Loader\ImportingFile'
         - 'Qualimetrix\Analysis\Configuration\Loader\LoadedDocument'
         - 'Qualimetrix\Analysis\Configuration\Loader\ResolvedImportEntry'
         - 'Qualimetrix\Analysis\Configuration\Loader\RootContainerShapes'

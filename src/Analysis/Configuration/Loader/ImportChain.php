@@ -9,7 +9,6 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
 use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
 use Qualimetrix\Analysis\Configuration\Document\AuthoredShape;
@@ -24,27 +23,26 @@ use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
  *
  * One depth-first walk reads each file once and names it by the first chain
  * that reaches it; an entry that leads back to a file still being walked is
- * refused where it is written, naming the cycle. The walk's state lives in
- * the properties below and is reset by every {@see expand()}.
+ * refused where it is written, naming the cycle. The walk's record is passed
+ * down the walk, so one instance serves any number of expansions.
+ *
+ * Walk keys: `layers` file key => its layer without `imports`; `groups` file key =>
+ * its entries as groups of keys, once the file is finished; `positions` importer
+ * key => imported key => `imports[N]`.
+ *
+ * @phpstan-type Walk array{
+ *     layers: array<string, AuthoredLayer>,
+ *     groups: array<string, list<list<string>>>,
+ *     origins: array<string, ConfigurationOrigin>,
+ *     positions: array<string, array<string, string>>,
+ * }
  */
-final class ImportChain
+final readonly class ImportChain
 {
-    /** @var array<string, AuthoredLayer> file key => its layer without `imports`, for every file reached */
-    private array $layers = [];
-
-    /** @var array<string, list<list<string>>> file key => its entries as groups of keys, for every file finished */
-    private array $groups = [];
-
-    /** @var array<string, ConfigurationOrigin> */
-    private array $origins = [];
-
-    /** @var array<string, array<string, string>> importer key => imported key => `imports[N]` */
-    private array $positions = [];
-
-    private readonly ImportEntries $entries;
+    private ImportEntries $entries;
 
     public function __construct(
-        private readonly ConfigLoaderInterface $loader,
+        private ConfigLoaderInterface $loader,
     ) {
         $this->entries = new ImportEntries();
     }
@@ -56,73 +54,76 @@ final class ImportChain
      */
     public function expand(string $rootPhysicalPath, ConfigurationOrigin $rootOrigin): array
     {
-        $this->layers = $this->groups = $this->origins = $this->positions = [];
-
         $loaded = $this->loader->read($rootPhysicalPath, $rootOrigin);
         $entries = self::entries($loaded->authored, $rootOrigin);
         if ($entries === []) {
             return [new AuthoredLayer($rootOrigin, self::withoutImports($loaded->authored), file: $loaded->file)];
         }
 
+        /** @var Walk $walk */
+        $walk = ['layers' => [], 'groups' => [], 'origins' => [], 'positions' => []];
         $root = ImportTarget::ofFile($rootPhysicalPath, $rootOrigin);
-        $this->admit($root, $loaded);
-        $this->visit($root, $entries, [$root->key => $rootOrigin]);
+        self::admit($walk, $root, $loaded);
+        $this->visit($walk, $root, $entries, [$root->key => $rootOrigin]);
 
         $order = ImportLinearization::of(
             $root->key,
-            $this->groups,
-            fn(string $key): ConfigurationOrigin => $this->origins[$key],
-            fn(string $importer, string $imported): string => $this->positions[$importer][$imported],
+            $walk['groups'],
+            static fn(string $key): ConfigurationOrigin => $walk['origins'][$key],
+            static fn(string $importer, string $imported): string => $walk['positions'][$importer][$imported],
+            ConfigurationRoot::Imports->value,
         );
 
-        return [...array_map(fn(string $key): AuthoredLayer => $this->layers[$key], \array_slice($order, 0, -1)), $this->layers[$root->key]];
+        return [...array_map(static fn(string $key): AuthoredLayer => $walk['layers'][$key], \array_slice($order, 0, -1)), $walk['layers'][$root->key]];
     }
 
     /**
+     * @param Walk $walk
      * @param list<ResolvedValueInterface> $entries
      * @param array<string, ConfigurationOrigin> $stack the files being walked, root first
      *
      * @throws ConfigurationRefusal
      */
-    private function visit(ImportTarget $file, array $entries, array $stack): void
+    private function visit(array &$walk, ImportTarget $file, array $entries, array $stack): void
     {
-        $from = $this->importingFile($file);
         $groups = [];
-        foreach ($this->entries->resolve($entries, $from) as $entry) {
+        foreach ($this->entries->resolve($entries, $file) as $entry) {
             $keys = [];
             foreach ($entry->targets as $target) {
                 if (isset($stack[$target->key])) {
-                    $this->refuseCycle($entry, $target, $from, $stack);
+                    self::refuseCycle($entry, $target, $file, $stack);
                 }
                 $keys[] = $target->key;
-                $this->positions[$file->key][$target->key] = \sprintf('imports[%d]', $entry->position);
-                if (!isset($this->layers[$target->key])) {
-                    $this->descend($target, $stack);
+                $walk['positions'][$file->key][$target->key] = \sprintf('imports[%d]', $entry->position);
+                if (!isset($walk['layers'][$target->key])) {
+                    $this->descend($walk, $target, $stack);
                 }
             }
             if ($keys !== []) {
                 $groups[] = $keys;
             }
         }
-        $this->groups[$file->key] = $groups;
+        $walk['groups'][$file->key] = $groups;
     }
 
     /**
+     * @param Walk $walk
      * @param array<string, ConfigurationOrigin> $stack
      *
      * @throws ConfigurationRefusal
      */
-    private function descend(ImportTarget $target, array $stack): void
+    private function descend(array &$walk, ImportTarget $target, array $stack): void
     {
         $loaded = $this->loader->read($target->physicalPath, $target->origin);
-        $this->admit($target, $loaded);
-        $this->visit($target, self::entries($loaded->authored, $target->origin), $stack + [$target->key => $target->origin]);
+        self::admit($walk, $target, $loaded);
+        $this->visit($walk, $target, self::entries($loaded->authored, $target->origin), $stack + [$target->key => $target->origin]);
     }
 
-    private function admit(ImportTarget $file, LoadedDocument $loaded): void
+    /** @param Walk $walk */
+    private static function admit(array &$walk, ImportTarget $file, LoadedDocument $loaded): void
     {
-        $this->origins[$file->key] = $file->origin;
-        $this->layers[$file->key] = new AuthoredLayer($file->origin, self::withoutImports($loaded->authored), file: $loaded->file);
+        $walk['origins'][$file->key] = $file->origin;
+        $walk['layers'][$file->key] = new AuthoredLayer($file->origin, self::withoutImports($loaded->authored), file: $loaded->file);
     }
 
     /**
@@ -130,7 +131,7 @@ final class ImportChain
      *
      * @throws ConfigurationRefusal
      */
-    private function refuseCycle(ResolvedImportEntry $entry, ImportTarget $target, ImportingFile $from, array $stack): never
+    private static function refuseCycle(ResolvedImportEntry $entry, ImportTarget $target, ImportTarget $from, array $stack): never
     {
         $cycle = [];
         foreach ($stack as $key => $origin) {
@@ -152,23 +153,6 @@ final class ImportChain
     private static function label(ConfigurationOrigin $origin): string
     {
         return '"' . ($origin->locator() ?? $origin->describe()) . '"';
-    }
-
-    /**
-     * Each file names its entries from its own directory: the directory of
-     * its name, or its real directory when the file is a symlink or has no
-     * path of its own (a built-in preset).
-     *
-     * @throws ConfigurationRefusal
-     */
-    private function importingFile(ImportTarget $file): ImportingFile
-    {
-        $directory = $file->realDirectory();
-        $named = $file->isSymlink || $file->origin->source() === ConfigurationSource::Preset
-            ? $directory
-            : \dirname($file->origin->locator() ?? '.');
-
-        return new ImportingFile($file->origin, $directory, $named, $file->key);
     }
 
     /**

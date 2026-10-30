@@ -6,7 +6,6 @@ namespace Qualimetrix\Analysis\Configuration\Loader;
 
 use Closure;
 use LogicException;
-use Qualimetrix\Analysis\Configuration\ConfigurationRoot;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
@@ -29,15 +28,16 @@ final class ImportLinearization
      * @param array<string, list<list<string>>> $imports key => its entries as written, lowest first, each a group of keys: one for an explicit entry, a glob's matches in byte order; every reachable key is present
      * @param Closure(string): ConfigurationOrigin $origin the refusal is raised on the origin of the file whose merge is stuck
      * @param Closure(string, string): string $position (importer key, imported key) => the entry as written, e.g. `imports[1]`
+     * @param string $listKey the key of the list in the file, where the refusal points
      *
      * @throws ConfigurationRefusal
      *
      * @return list<string>
      */
-    public static function of(string $root, array $imports, Closure $origin, Closure $position): array
+    public static function of(string $root, array $imports, Closure $origin, Closure $position, string $listKey): array
     {
         $memo = [];
-        $highestFirst = self::linearize($root, $imports, $origin, $position, $memo, []);
+        $highestFirst = self::linearize($root, $imports, $origin, $position, $listKey, $memo, []);
 
         return array_reverse($highestFirst);
     }
@@ -51,7 +51,7 @@ final class ImportLinearization
      *
      * @return list<string> highest first
      */
-    private static function linearize(string $key, array $imports, Closure $origin, Closure $position, array &$memo, array $inProgress): array
+    private static function linearize(string $key, array $imports, Closure $origin, Closure $position, string $listKey, array &$memo, array $inProgress): array
     {
         if (isset($memo[$key])) {
             return $memo[$key];
@@ -66,11 +66,11 @@ final class ImportLinearization
         $sequences = [];
         foreach ($groups as $group) {
             foreach ($group as $base) {
-                $sequences[] = ['owner' => $base, 'items' => self::linearize($base, $imports, $origin, $position, $memo, $inProgress)];
+                $sequences[] = ['owner' => $base, 'items' => self::linearize($base, $imports, $origin, $position, $listKey, $memo, $inProgress)];
             }
         }
 
-        $merged = self::merge($sequences, $groups, $key, $memo, $origin, $position);
+        $merged = self::merge($sequences, $groups, $key, $memo, $origin, $position, $listKey);
 
         return $memo[$key] = [$key, ...$merged];
     }
@@ -84,7 +84,7 @@ final class ImportLinearization
      *
      * @return list<string>
      */
-    private static function merge(array $sequences, array $groups, string $key, array $memo, Closure $origin, Closure $position): array
+    private static function merge(array $sequences, array $groups, string $key, array $memo, Closure $origin, Closure $position, string $listKey): array
     {
         $result = [];
         while (true) {
@@ -96,7 +96,7 @@ final class ImportLinearization
 
             $head = self::admissibleHead($sequences, $groups);
             if ($head === null) {
-                throw self::stuck($key, $sequences, $groups, $memo, $origin, $position);
+                throw self::stuck($key, $sequences, $groups, $memo, $origin, $position, $listKey);
             }
             $result[] = $head;
             foreach ($sequences as $index => $sequence) {
@@ -139,57 +139,29 @@ final class ImportLinearization
     }
 
     /**
-     * Every remaining element has a predecessor (a file in a linearization's
-     * tail has one in its own sequence, a file of a later group has one in the
-     * group before; a head blocked by either is such a file), so walking
-     * predecessors back from any element must close a cycle.
-     *
      * @param list<array{owner: string, items: non-empty-list<string>}> $sequences
      * @param list<non-empty-list<string>> $groups
      * @param array<string, list<string>> $memo
      * @param Closure(string): ConfigurationOrigin $origin
      * @param Closure(string, string): string $position
      */
-    private static function stuck(string $key, array $sequences, array $groups, array $memo, Closure $origin, Closure $position): ConfigurationRefusal
+    private static function stuck(string $key, array $sequences, array $groups, array $memo, Closure $origin, Closure $position, string $listKey): ConfigurationRefusal
     {
-        $predecessor = [];
-        foreach ($sequences as $sequence) {
-            $items = $sequence['items'];
-            for ($i = 1, $count = \count($items); $i < $count; ++$i) {
-                $predecessor[$items[$i]] ??= [$items[$i - 1], $sequence['owner']];
-            }
-        }
-        foreach ($groups as $index => $group) {
-            if ($index === 0) {
-                continue;
-            }
-            foreach ($group as $member) {
-                $predecessor[$member] ??= [$groups[$index - 1][0], null];
-            }
-        }
-
-        $at = $sequences[0]['items'][0] ?? $groups[0][0];
-        $visited = [];
-        while (!isset($visited[$at])) {
-            $visited[$at] = \count($visited);
-            $at = $predecessor[$at][0] ?? throw new LogicException('A stuck C3 merge must contain a constraint cycle.');
-        }
-
-        $steps = [];
-        $reached = [];
-        $current = $at;
-        do {
-            [$above, $owner] = $predecessor[$current];
-            $steps[] = self::describeEdge($above, $current, $owner === null ? null : $memo[$owner], $key, $origin, $position);
-            $reached[] = $origin($current)->describe();
-            $current = $above;
-        } while ($current !== $at);
+        $predecessor = self::predecessors($sequences, $groups);
+        $cycle = self::cycleOf($predecessor, $sequences[0]['items'][0] ?? $groups[0][0]);
 
         $label = static fn(string $file): string => self::label($file, $origin);
+        $steps = [];
+        $reached = [];
+        foreach ($cycle as $current) {
+            [$above, $owner] = $predecessor[$current];
+            $steps[] = self::describeEdge($above, $current, $owner === null ? null : $memo[$owner], $key, $label, $position);
+            $reached[] = $origin($current)->describe();
+        }
 
         return ConfigurationRefusal::at(
             $origin($key),
-            RefusedPosition::open([ConfigurationRoot::Imports->value], ConfigurationRoot::Imports->value),
+            RefusedPosition::open([$listKey], $listKey),
             \sprintf(
                 'The imports of %s cannot be ordered: the files it builds on demand contradictory precedence (%s). The files were reached as %s. Reorder the entries or drop one of them.',
                 $label($key),
@@ -200,13 +172,68 @@ final class ImportLinearization
     }
 
     /**
+     * What each remaining element must come after: a file in a linearization's
+     * tail has its neighbour above it in that sequence (and the sequence's
+     * owner), a file of a later group has the first member of the group before
+     * it (and no owner). A head blocked by either is such a file.
+     *
+     * @param list<array{owner: string, items: non-empty-list<string>}> $sequences
+     * @param list<non-empty-list<string>> $groups
+     *
+     * @return array<string, array{string, ?string}> file => [the file above it, the owner of the sequence demanding it, or null for the written list]
+     */
+    private static function predecessors(array $sequences, array $groups): array
+    {
+        $predecessor = [];
+        foreach ($sequences as $sequence) {
+            $items = $sequence['items'];
+            for ($i = 1, $count = \count($items); $i < $count; ++$i) {
+                $predecessor[$items[$i]] ??= [$items[$i - 1], $sequence['owner']];
+            }
+        }
+        foreach (\array_slice($groups, 1, null, true) as $index => $group) {
+            foreach ($group as $member) {
+                $predecessor[$member] ??= [$groups[$index - 1][0], null];
+            }
+        }
+
+        return $predecessor;
+    }
+
+    /**
+     * Every remaining element has a predecessor, so walking predecessors back
+     * from any element must close a cycle.
+     *
+     * @param array<string, array{string, ?string}> $predecessor
+     *
+     * @return non-empty-list<string> the files of the cycle, each followed by the one above it
+     */
+    private static function cycleOf(array $predecessor, string $from): array
+    {
+        $visited = [];
+        $at = $from;
+        while (!isset($visited[$at])) {
+            $visited[$at] = true;
+            $at = $predecessor[$at][0] ?? throw new LogicException('A stuck C3 merge must contain a constraint cycle.');
+        }
+
+        $cycle = [];
+        $current = $at;
+        do {
+            $cycle[] = $current;
+            $current = $predecessor[$current][0];
+        } while ($current !== $at);
+
+        return $cycle;
+    }
+
+    /**
      * @param ?list<string> $derived highest first: the linearization that demands $above over $below, or null for the written list
-     * @param Closure(string): ConfigurationOrigin $origin
+     * @param Closure(string): string $label
      * @param Closure(string, string): string $position
      */
-    private static function describeEdge(string $above, string $below, ?array $derived, string $key, Closure $origin, Closure $position): string
+    private static function describeEdge(string $above, string $below, ?array $derived, string $key, Closure $label, Closure $position): string
     {
-        $label = static fn(string $file): string => self::label($file, $origin);
         if ($derived === null) {
             return \sprintf(
                 '%s above %s, as %s writes %s after %s',

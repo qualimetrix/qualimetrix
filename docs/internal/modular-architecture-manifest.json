@@ -1922,13 +1922,6 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportingFile": {
-      "path": "src/Analysis/Configuration/Loader/ImportingFile.php",
-      "kind": "class",
-      "owner": "Analysis.Configuration",
-      "visibility": "internal",
-      "consumers": []
-    },
     "Qualimetrix\\Analysis\\Configuration\\Loader\\ResolvedImportEntry": {
       "path": "src/Analysis/Configuration/Loader/ResolvedImportEntry.php",
       "kind": "class",

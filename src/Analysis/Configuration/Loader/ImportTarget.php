@@ -6,12 +6,15 @@ namespace Qualimetrix\Analysis\Configuration\Loader;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Core\FileTarget\FileIdentity;
 use Qualimetrix\Core\FileTarget\NativeCall;
 
 /**
  * One file an import entry leads to, already known to be a regular file with
- * an identity of its own, and the name a refusal about it uses.
+ * an identity of its own, and the name a refusal about it uses. The root
+ * configuration file is one too: the target whose `imports` list is resolved
+ * is the importing file.
  */
 final readonly class ImportTarget
 {
@@ -79,5 +82,19 @@ final readonly class ImportTarget
         return $real === false
             ? throw ConfigurationRefusal::aboutDocument($this->origin, \sprintf('%s cannot be resolved to a file path.', ucfirst($this->origin->describe())))
             : \dirname($real);
+    }
+
+    /**
+     * What its own entries are named from: the directory of its name, or its
+     * real directory when the file is a symlink or has no path of its own
+     * (a built-in preset).
+     *
+     * @throws ConfigurationRefusal
+     */
+    public function displayDirectory(): string
+    {
+        return $this->isSymlink || $this->origin->source() === ConfigurationSource::Preset
+            ? $this->realDirectory()
+            : \dirname($this->origin->locator() ?? '.');
     }
 }
