@@ -6,9 +6,9 @@ namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
 
 use InvalidArgumentException;
 use LogicException;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
-use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionRefusal;

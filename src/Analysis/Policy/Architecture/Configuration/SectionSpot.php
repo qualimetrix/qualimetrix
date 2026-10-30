@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
 use LogicException;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface;
@@ -12,7 +13,6 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaqueInterface
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
-use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters;
 
 /**
  * One spot of the resolved `architecture` section: the value written there,

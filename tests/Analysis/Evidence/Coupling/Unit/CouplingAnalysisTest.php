@@ -127,13 +127,13 @@ final class CouplingAnalysisTest extends TestCase
             ['coupling' => ['frameworkNamespaces' => [['subtree' => 'Psr']]]],
         ])));
 
-        self::assertSame('Written by configuration file "test".', $analysis->frameworkWriters()?->sentence());
+        self::assertSame('Written by configuration file "test".', $analysis->framework()->writtenBy);
     }
 
     #[Test]
     public function itHasNoWritersForACarrierNotBuiltFromADocument(): void
     {
-        self::assertNull((new CouplingAnalysis())->frameworkWriters());
+        self::assertNull((new CouplingAnalysis())->framework()->writtenBy);
     }
 
     #[Test]

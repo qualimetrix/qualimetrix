@@ -165,6 +165,27 @@ final class InstalledConfigurationSourcesTest extends TestCase
         self::assertSame([], $this->installed());
     }
 
+    /** @return iterable<string, array{string}> */
+    public static function provideManifestsWhoseInstallDirectoryIsNoEvidence(): iterable
+    {
+        yield 'an install directory naming a file' => ['{"config": {"vendor-dir": "qmx.yaml"}}'];
+        yield 'the fallback after an invalid install directory' => ['{"config": {"vendor-dir": []}}'];
+        yield 'the fallback after an invalid config section' => ['{"config": 3}'];
+    }
+
+    #[Test]
+    #[DataProvider('provideManifestsWhoseInstallDirectoryIsNoEvidence')]
+    public function itEstablishesNothingFromAnInstallDirectoryTheManifestDoesNotState(string $manifest): void
+    {
+        $this->put('project/' . self::BASE, "exclude: [{subtree: legacy}]\n");
+        $this->put('project/qmx.yaml', "imports: [" . self::BASE . "]\nexclude: [{subtree: own}]\n");
+        self::assertSame([self::BASE_NAME], $this->installed(), 'control: the default install directory');
+
+        $this->put('project/composer.json', $manifest);
+
+        self::assertSame([], $this->installed());
+    }
+
     #[Test]
     public function itEstablishesNothingWithoutAReadableManifest(): void
     {
@@ -250,6 +271,17 @@ final class InstalledConfigurationSourcesTest extends TestCase
     }
 
     #[Test]
+    public function itRecognisesOneInstalledFileGivenUnderTwoPresetSpellings(): void
+    {
+        $this->put('project/' . self::BASE, "exclude: [{subtree: legacy}]\n");
+
+        $installed = $this->installed(presets: [self::BASE, './' . self::BASE]);
+
+        sort($installed);
+        self::assertSame(['preset "./' . self::BASE . '"', 'preset "' . self::BASE . '"'], $installed);
+    }
+
+    #[Test]
     public function itDoesNotRecogniseALocatorThatLeadsToAnotherFileTheConfigurationWasReadFrom(): void
     {
         $this->put('project/' . self::BASE, '');
@@ -326,8 +358,9 @@ final class InstalledConfigurationSourcesTest extends TestCase
         $resolved = (new RunConfigurationResolver($coverage))->resolve($document);
         $withoutDocument = $coverage->measure($root, [$root], AutoloadDevPolicy::Exclude, PathsAuthorship::Inferred);
 
-        self::assertSame([self::BASE_NAME], $resolved->projectScope->universe->installedConfigurationSources);
-        self::assertSame([], $withoutDocument->universe->installedConfigurationSources);
+        self::assertSame([self::BASE_NAME], $resolved->projectScope->installedConfigurationSources);
+        self::assertSame([self::BASE_NAME], $resolved->projectScope->narrowTo([$root])->installedConfigurationSources, 'a final path keeps the sources');
+        self::assertSame([], $withoutDocument->installedConfigurationSources);
     }
 
     /**

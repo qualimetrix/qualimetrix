@@ -8,11 +8,12 @@ use Closure;
 use LogicException;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedWriteHistoryInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\SelectorYamlDecoder;
-use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters;
+use Qualimetrix\Analysis\Finding\Contract\GlobalValueWriters;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions;
@@ -27,8 +28,10 @@ final class ConfiguredFindingExclusionsResolver implements ConfiguredFindingExcl
         return new ConfiguredFindingExclusions(
             $this->unique($this->suppressedPaths($document)),
             $this->unique($this->suppressedNamespaces($document)),
-            $this->writers($document, ConfigSchema::SUPPRESS_PATHS, $this->decoder->decodePath(...)),
-            $this->writers($document, ConfigSchema::SUPPRESS_NAMESPACES, $this->decoder->decodeNamespace(...)),
+            new GlobalValueWriters(
+                $this->writers($document, ConfigSchema::SUPPRESS_PATHS, $this->decoder->decodePath(...)),
+                $this->writers($document, ConfigSchema::SUPPRESS_NAMESPACES, $this->decoder->decodeNamespace(...)),
+            ),
         );
     }
 

@@ -229,9 +229,9 @@ produced byte-identical reports — the classification is only observable throug
 `UnmatchedFrameworkFinding` owns the message and stable occurrence projection;
 the rule retains selector enumeration and eligibility. The message ends with the
 sources that wrote `coupling.framework_namespaces`: the list is replaced whole, so
-`FrameworkNamespaces` carries one writer set for every selector. A carrier not
-built from a document has no writers and the sentence is omitted; the occurrence
-key never depends on them.
+`FrameworkNamespaces` carries one sentence for every selector
+(`ConfigurationDocument::writtenBy()`). A carrier not built from a document has
+none and the sentence is omitted; the occurrence key never depends on it.
 
 Two facts about the shape, both measured rather than chosen:
 

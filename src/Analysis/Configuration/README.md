@@ -42,6 +42,7 @@ Configuration/
 │   │   │   ├── TextRequirement.php
 │   │   │   └── WordComparison.php
 │   │   ├── ConfigurationDiagnostic.php
+│   │   ├── ConfiguredValueWriters.php
 │   │   ├── Provenance.php
 │   │   ├── ResolvedBareNameInterface.php
 │   │   ├── ResolvedDocument.php
@@ -173,6 +174,14 @@ given identity, named as refusals name it, or null. The identity is the one the
 loader took from the handle it read through (none for another stream wrapper
 than the plain filesystem, or inode 0), so a command that writes can refuse a
 target that is one of those files without depending on a Configuration type.
+`regularFileReadAs(string)` asks the same of the regular file a path leads to
+now, and `writtenBy(...)` returns the sentence naming the sources that wrote the
+value at a resolved path. `ResolvedDocument::origins()` lists every distinct
+origin the resolved nodes still record (winners, write histories and opaque
+contributions). `Document\ConfiguredValueWriters` is the provenance of one
+configured value as a finding names it — distinct origins, the
+`Written by ...` sentence, `commandLine(option)` for a value given as an
+option, and `writtenOnlyBy(sources)` for the installed-writer question.
 The `composer.json` the composer stage read is a source of its own with its
 file identity, also when it declares no autoload target. Architecture reads its registered
 `architecture` section from the resolved document after the Console logger

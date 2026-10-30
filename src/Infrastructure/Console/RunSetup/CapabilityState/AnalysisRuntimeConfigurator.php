@@ -23,7 +23,7 @@ use Qualimetrix\Infrastructure\Console\Profile\ProfilePresenter;
 use Symfony\Component\Console\Input\InputInterface;
 
 /** Configures the analysis engine's per-run rule, collector, and feature state.
- * @qmx-threshold coupling.instability 0.882354 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
+ * @qmx-threshold coupling.instability 0.888889 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
  */
 final readonly class AnalysisRuntimeConfigurator
 {

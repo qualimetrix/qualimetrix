@@ -7,7 +7,6 @@ namespace Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFramework;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
-use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -23,8 +22,8 @@ final readonly class UnmatchedFrameworkFinding
      */
     private const string OCCURRENCE_KIND = 'unmatched-framework-prefix';
 
-    /** @param ConfiguredValueWriters|null $writers null when the selectors were not built from a document */
-    public static function of(NamespacePattern $selector, string $channel, ?ConfiguredValueWriters $writers = null): Finding
+    /** @param string|null $writtenBy the sentence naming who wrote the selectors; null when they were not built from a document */
+    public static function of(NamespacePattern $selector, string $channel, ?string $writtenBy = null): Finding
     {
         $display = $selector->definition->display();
         $message = \sprintf(
@@ -40,7 +39,7 @@ final readonly class UnmatchedFrameworkFinding
             symbolPath: SymbolPath::forProject(),
             ruleName: $channel,
             code: $channel,
-            message: $writers === null ? $message : $message . ' ' . $writers->sentence(),
+            message: $writtenBy === null ? $message : $message . ' ' . $writtenBy,
             severity: Severity::Warning,
             recommendation: \sprintf(
                 'Check "%s" against the names the code really imports. Use exact for one name, subtree for a namespace'

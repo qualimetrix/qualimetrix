@@ -163,19 +163,15 @@ final readonly class ProjectScopeJudgement
     }
 
     /**
-     * Whether the project answers for a value these sources wrote: false only
-     * when every one is established as installed, and so can be neither edited
-     * nor removed by the project. Nothing established fails closed.
+     * The configuration sources established as installed by Composer, as
+     * `describe()` words them: the project can neither edit nor remove what
+     * only they wrote. Nothing established fails closed.
+     *
+     * @return list<string>
      */
-    public function judgesValueWrittenBy(ConfiguredValueWriters $writers): bool
+    public function installedConfigurationSources(): array
     {
-        foreach ($writers->origins as $origin) {
-            if (!\in_array($origin->describe(), $this->installedConfigurationSources, true)) {
-                return true;
-            }
-        }
-
-        return false;
+        return $this->installedConfigurationSources;
     }
 
     /** @return list<ProjectScopeDoor> */

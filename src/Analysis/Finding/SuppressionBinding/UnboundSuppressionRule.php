@@ -140,6 +140,7 @@ final class UnboundSuppressionRule extends AbstractRule
                 ->withGates(
                     new PopulationGate('suppressionPathJudged', new FindingChannel(UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER), SymbolLevel::Project, 'configured-suppression-value-occurrence', new ContextGuard('suppressionPathJudged', true), 'Suppression value scope was not judged.'),
                     new PopulationGate('suppressionNamespaceJudged', new FindingChannel(UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER), SymbolLevel::Project, 'configured-suppression-value-occurrence', new ContextGuard('suppressionNamespaceJudged', true), 'Suppression value scope was not judged.'),
+                    self::installedWriterGate(UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER),
                 )
                 ->describedAs('Reports a suppression value configured under a rule that names nothing the run contains.'),
         ];

@@ -80,16 +80,21 @@ and autoload-development policy. `ProjectScopeCoverage` retains the one reader,
 path IO and universe construction; defaults retain their refusal contract.
 
 `InstalledConfigurationSources::of()` classifies, once per resolution, which file
-sources of the configuration document lie in the Composer install directory
-(`config.vendor-dir`, default `vendor`) and returns their `describe()` words; the
-list rides `ProjectScopeUniverse` and reaches `ProjectScopeJudgement`.
-Only positive evidence counts: the manifest was read, the install directory
-exists and is neither the project root nor an ancestor of it, and the origin's
-file locator leads, through the links above the install directory but not
-through any below it, to a regular file the document was read from under that
-name. Any other source (command line, built-in preset, project file) is not
-installed, and an empty list means every value is judged.
-`judgesValueWrittenBy()` answers false only when every writer is in the list.
+sources of the configuration document (`ResolvedDocument::origins()`) lie in the
+Composer install directory (`config.vendor-dir`, default `vendor`) and returns
+their `describe()` words; the list rides `ProjectScopeMeasurement` (across
+`narrowTo()` and `withDiscoveredFiles()`) and reaches `ProjectScopeJudgement`.
+Only positive evidence counts: the manifest was read with no issue at or under
+`config` (the decoder's `vendor` fallback after a refused field is not
+evidence), the install directory is an existing directory that is neither the
+project root nor an ancestor of it, and the origin's file locator leads, through
+the links above the install directory but not through any below it, to a
+regular file the document was read under that very name — or under a preset
+name, the lowest band, which names a file given both as a preset and otherwise
+or under two preset spellings. Any other source (command line, built-in preset,
+project file) is not installed, and an empty list means every value is judged.
+`ConfiguredValueWriters::writtenOnlyBy()` answers true only when every writer is
+in the list.
 `ProjectScopeMeasurement` then turns an `Unmatched` or `CoveredBySameSource`
 exclude selector whose writers are all installed into `InstalledWriter`
 (after the open-door downgrade to `NotJudged`; `Unjudgeable`, `Removed` and

@@ -1965,6 +1965,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\ConfigSchemaTest::itReturnsOnlyListTypeKeys
  - Qualimetrix\Tests\Analysis\Configuration\Unit\ConfigurationHolderTest::itDoesNotProvideMutableReplacementOperations
  - Qualimetrix\Tests\Analysis\Configuration\Unit\ConfigurationHolderTest::itTracksAppliedSourcesInPrecedenceOrder
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\ConfigurationDocumentRegularFileTest::itNamesNothingForAPathThatLeadsToNoFileItRead
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\ConfigurationDocumentRegularFileTest::itNamesTheFileAPathLeadsTo
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\ConfiguredValueWritersTest::itJoinsTwoWritersWithAnd
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\ConfiguredValueWritersTest::itKeepsOneOriginPerWriterInOrderWhenBuiltFromProvenance
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\ConfiguredValueWritersTest::itNamesOneWriter
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\ConfiguredValueWritersTest::itNamesTheCommandLineAndAnImportersChain
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\ConfiguredValueWritersTest::itRefusesNoWriters
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\ConfiguredValueWritersTest::itRefusesTheSameWriterTwiceEvenAsAnotherInstance
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\ConfiguredValueWritersTest::itSeparatesThreeWritersWithCommasAndAnd
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\ConfiguredValueWritersTest::itUnitesWritersKeepingOneEntryPerOrigin
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NameVocabularyTest::itAdmitsEveryMemberOfAClosedVocabulary
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NameVocabularyTest::itExposesTheNamesOfAClosedVocabularyOnly
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NameVocabularyTest::itKeepsAClosedVocabularyAPredicateForTheEngine
@@ -1995,6 +2005,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRetainsTheDescriptionAcrossEveryModifier"withWording(emptyOverrideNotice)"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRetainsTheDescriptionAcrossEveryModifier"withWording(hint)"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRetainsTheDescriptionAcrossEveryModifier"words"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\ResolvedDocumentOriginsTest::itKeepsTheWriterOfAReplacedScalarAndAReplacedList
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\ResolvedDocumentOriginsTest::itNamesEachOriginOnce
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\ResolvedDocumentOriginsTest::itNamesNoOriginForAnEmptyDocument
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\ResolvedDocumentOriginsTest::itReachesEveryLayerAnOpaqueValueKeeps
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\ResolvedDocumentOriginsTest::itReachesMapEntriesListItemsAndAccumulatedSets
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itCarriesTheSourceAndLocatorItWasBuiltWith
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDefaultsTheLocatorToNull
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDescribesEverySourceKind
@@ -7356,9 +7371,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesVoErrorViaRuleOptKebabSpelling
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itRefusesAGenuinelyUnknownOption
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\InstalledSuppressionValuesIntegrationTest::itDoesNotJudgeGlobalValuesOnlyAnInstalledFileWrote
+ - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\InstalledSuppressionValuesIntegrationTest::itJudgesABoundValueAnInstalledFileWrote
+ - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\InstalledSuppressionValuesIntegrationTest::itJudgesAChannelEntryTheProjectWrote
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\InstalledSuppressionValuesIntegrationTest::itJudgesAValueAnInstalledFileAndTheProjectBothWrote
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\InstalledSuppressionValuesIntegrationTest::itJudgesTheSameValueWhereverTheProjectWroteIt
- - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\InstalledSuppressionValuesIntegrationTest::itKeepsJudgingPerRuleValuesAnInstalledFileWrote
+ - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\InstalledSuppressionValuesIntegrationTest::itKeepsJudgingPerRuleListsAnInstalledFileWroteButNotAChannelEntry
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\InstalledSuppressionValuesIntegrationTest::itReportsAnInstalledExcludeSelectorAsNotJudged
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itDoesNotSuppressItsOwnFindingWithTheSuppressionItReportsOn
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itFailsTheRunUnderFailOnWarning
@@ -7599,18 +7616,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationSelectionTest::itRejectsAnOrdinaryFailureWithAnInvocationIdentityInEveryAccountingMode
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationSelectionTest::itStopsBeforeAdvancingInputsPastTheFirstFailureInEveryAccountingMode
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationSelectionTest::itUsesTheFailedGateUnitAfterAPassingOrdinaryPrefix
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ConfiguredValueWritersTest::itJoinsTwoWritersWithAnd
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ConfiguredValueWritersTest::itKeepsOneOriginPerWriterInOrderWhenBuiltFromProvenance
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ConfiguredValueWritersTest::itNamesOneWriter
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ConfiguredValueWritersTest::itNamesTheCommandLineAndAnImportersChain
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ConfiguredValueWritersTest::itRefusesNoWriters
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ConfiguredValueWritersTest::itRefusesTheSameWriterTwiceEvenAsAnotherInstance
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ConfiguredValueWritersTest::itSeparatesThreeWritersWithCommasAndAnd
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ConfiguredValueWritersTest::itUnitesWritersKeepingOneEntryPerOrigin
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\InstalledWriterJudgementTest::itAcceptsAnInstalledWriterSelectorWhetherTheQuestionIsOpenOrClosed
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\InstalledWriterJudgementTest::itDoesNotJudgeAValueEveryWriterOfWhichIsInstalled
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\InstalledWriterJudgementTest::itJudgesAValueAProjectFileAlsoWrote
- - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\InstalledWriterJudgementTest::itJudgesEveryValueWhenNothingIsEstablishedAsInstalled
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\InstalledWriterJudgementTest::itDoesNotFindAValueAProjectFileAlsoWrote
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\InstalledWriterJudgementTest::itEstablishesNoSourceByDefault
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\InstalledWriterJudgementTest::itFindsAValueEveryWriterOfWhichIsInstalled
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\InstalledWriterJudgementTest::itKeepsEveryOtherConclusion"covered by another source"
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\InstalledWriterJudgementTest::itKeepsEveryOtherConclusion"not judged"
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\InstalledWriterJudgementTest::itKeepsEveryOtherConclusion"removed"
@@ -8355,9 +8364,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionWritersTest::itAsksTheScopeQuestionBeforeTheWritersQuestion
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionWritersTest::itDoesNotAdviseNarrowingTheExclusionForAnInstalledValue
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionWritersTest::itDoesNotJudgeAGlobalValueOnlyInstalledFilesWrote
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionWritersTest::itJudgesABoundValueOnlyInstalledFilesWrote
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionWritersTest::itJudgesAChannelEntryTheProjectWroteOrThatBinds
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionWritersTest::itJudgesAGlobalValueAnInstalledFileAndTheProjectBothWrote
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionWritersTest::itJudgesTheSameValueWhateverProjectFileOrOptionWroteIt
- - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionWritersTest::itKeepsJudgingAPerRuleValueAnInstalledFileWrote
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionWritersTest::itKeepsJudgingPerRuleListsAnInstalledFileWroteButNotAChannelEntry
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itAnchorsAValueOnACharacterOnlyTheJudgeUsedToCallAGlob
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itAnswersTheSameForRegexPathValue
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itBlamesNothingWhereTheProjectDeclaresNoAutoload
@@ -10829,6 +10840,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itEstablishesNothingFromAnInstallDirectoryThatCannotBeTrusted"a directory that does not exist"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itEstablishesNothingFromAnInstallDirectoryThatCannotBeTrusted"above the project root"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itEstablishesNothingFromAnInstallDirectoryThatCannotBeTrusted"the project root"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itEstablishesNothingFromAnInstallDirectoryTheManifestDoesNotState"an install directory naming a file"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itEstablishesNothingFromAnInstallDirectoryTheManifestDoesNotState"the fallback after an invalid config section"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itEstablishesNothingFromAnInstallDirectoryTheManifestDoesNotState"the fallback after an invalid install directory"
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itEstablishesNothingFromAnUnreadableManifest
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itEstablishesNothingWithoutAReadableManifest
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itFollowsAConfiguredRelativeInstallDirectory
@@ -10843,6 +10857,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itRecognisesAPresetFileFromTheInstallDirectory
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itRecognisesAnImportFromTheInstallDirectory
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itRecognisesAnImportSpelledThroughAProjectDirectoryAndBackIntoTheInstallDirectory
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itRecognisesOneInstalledFileGivenUnderTwoPresetSpellings
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itRecognisesOneInstalledFileUsedAsAPresetAndAsAnImport
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itRecognisesTheRootConfigurationWhenItIsItselfInstalled
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itRefusesAnImportThatLeavesTheInstallDirectoryThroughDotDot

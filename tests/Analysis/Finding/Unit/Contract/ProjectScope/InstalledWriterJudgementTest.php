@@ -8,9 +8,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
-use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorOutcome;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorVerdict;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor;
@@ -20,31 +20,33 @@ use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Qualimetrix\Core\Pattern\SelectorKind;
 
 #[CoversClass(ProjectScopeJudgement::class)]
+#[CoversClass(ConfiguredValueWriters::class)]
 #[CoversClass(ExcludeSelectorVerdict::class)]
 final class InstalledWriterJudgementTest extends TestCase
 {
     private const string INSTALLED = 'configuration file "vendor/acme/std/base.yaml" (imported by configuration file "qmx.yaml")';
 
     #[Test]
-    public function itJudgesEveryValueWhenNothingIsEstablishedAsInstalled(): void
+    public function itEstablishesNoSourceByDefault(): void
     {
-        self::assertTrue((new ProjectScopeJudgement())->judgesValueWrittenBy(self::writers(self::installed())));
+        self::assertSame([], (new ProjectScopeJudgement())->installedConfigurationSources());
+        self::assertFalse(self::writers(self::installed())->writtenOnlyBy((new ProjectScopeJudgement())->installedConfigurationSources()));
     }
 
     #[Test]
-    public function itDoesNotJudgeAValueEveryWriterOfWhichIsInstalled(): void
+    public function itFindsAValueEveryWriterOfWhichIsInstalled(): void
     {
         $scope = new ProjectScopeJudgement(installedConfigurationSources: [self::INSTALLED]);
 
-        self::assertFalse($scope->judgesValueWrittenBy(self::writers(self::installed())));
+        self::assertTrue(self::writers(self::installed())->writtenOnlyBy($scope->installedConfigurationSources()));
     }
 
     #[Test]
-    public function itJudgesAValueAProjectFileAlsoWrote(): void
+    public function itDoesNotFindAValueAProjectFileAlsoWrote(): void
     {
         $scope = new ProjectScopeJudgement(installedConfigurationSources: [self::INSTALLED]);
 
-        self::assertTrue($scope->judgesValueWrittenBy(self::writers(self::installed(), self::project())));
+        self::assertFalse(self::writers(self::installed(), self::project())->writtenOnlyBy($scope->installedConfigurationSources()));
     }
 
     /** @return iterable<string, array{ExcludeSelectorOutcome}> */

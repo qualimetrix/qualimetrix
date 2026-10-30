@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Finding\Contract\ProjectScope;
 
 use InvalidArgumentException;
 use LogicException;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Pattern\SelectorKind;

@@ -14,8 +14,9 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
- * A suppression value that only a file Composer installed wrote is not judged,
- * and the same value written by the project is, with its writers named.
+ * An unbound suppression value that only a file Composer installed wrote, and
+ * no later layer can take away, is not judged; the same value written by the
+ * project is, with its writers named.
  *
  * Run through the real command: the writers are read from the resolved
  * document, and a carrier built by hand would show none of the places where
@@ -90,8 +91,12 @@ final class InstalledSuppressionValuesIntegrationTest extends TestCase
         self::assertStringEndsWith(' Written by ' . self::VENDOR . ' and configuration file "qmx.yaml".', (string) $findings[0]['message']);
     }
 
+    /**
+     * A per-rule list can be emptied by a later layer and stays judged; a
+     * channel entry cannot be dropped, so only its writers decide.
+     */
     #[Test]
-    public function itKeepsJudgingPerRuleValuesAnInstalledFileWrote(): void
+    public function itKeepsJudgingPerRuleListsAnInstalledFileWroteButNotAChannelEntry(): void
     {
         $this->put('vendor/acme/std/base.yaml', <<<'YAML'
             rules:
@@ -103,12 +108,51 @@ final class InstalledSuppressionValuesIntegrationTest extends TestCase
             YAML);
 
         $tester = $this->check("imports: [vendor/acme/std/base.yaml]\n");
+        $scope = $this->projectScope($tester);
 
         $findings = $this->onChannel($tester, UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER);
-        self::assertCount(3, $findings);
+        self::assertCount(2, $findings);
         foreach ($findings as $finding) {
             self::assertStringEndsWith(' Written by ' . self::VENDOR . '.', (string) $finding['message']);
+            self::assertStringNotContainsString('suppress_namespace_channels', (string) $finding['message']);
         }
+        self::assertContains(
+            ['channel' => UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER, 'option' => 'rules.size.class-count.suppress_namespace_channels.size.class-count:namespace', 'pattern' => 'exact:Sample\\Other'],
+            $scope['unjudgedValues'] ?? [],
+        );
+        self::assertSame([self::VENDOR], array_values(array_column(array_filter($scope['reasons'] ?? [], static fn(array $reason): bool => ($reason['kind'] ?? null) === 'installed-configuration'), 'source')));
+    }
+
+    #[Test]
+    public function itJudgesAChannelEntryTheProjectWrote(): void
+    {
+        $tester = $this->check(<<<'YAML'
+            rules:
+              size.class-count:
+                suppress_namespace_channels:
+                  size.class-count:namespace: [{exact: Sample\Other}]
+            YAML);
+
+        $findings = $this->onChannel($tester, UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER);
+        self::assertCount(1, $findings);
+        self::assertStringEndsWith(' Written by configuration file "qmx.yaml".', (string) $findings[0]['message']);
+    }
+
+    /** A bound value is judged whoever wrote it: the scope reads as it does without the writers question. */
+    #[Test]
+    public function itJudgesABoundValueAnInstalledFileWrote(): void
+    {
+        $this->put('vendor/acme/std/base.yaml', "suppress_paths: [{subtree: src}]\nsuppress_namespaces: [{exact: Sample}]\n");
+
+        $tester = $this->check("imports: [vendor/acme/std/base.yaml]\n");
+        $scope = $this->projectScope($tester);
+
+        self::assertSame([], $this->onChannel($tester, UnboundSuppressionOptions::UNMATCHED_PATH));
+        self::assertSame([], $this->onChannel($tester, UnboundSuppressionOptions::UNMATCHED_NAMESPACE));
+        self::assertSame([], array_values(array_filter($scope['unjudgedValues'] ?? [], static fn(array $value): bool => str_starts_with((string) $value['channel'], 'suppression.'))));
+        self::assertNotContains(UnboundSuppressionOptions::UNMATCHED_PATH, $scope['unjudgedChannels'] ?? []);
+        self::assertNotContains(UnboundSuppressionOptions::UNMATCHED_NAMESPACE, $scope['unjudgedChannels'] ?? []);
+        self::assertNotContains('installed-configuration', array_column($scope['reasons'] ?? [], 'kind'));
     }
 
     /** The exclude walk has its own outcome for an installed writer, and the report counts it as not judged. */

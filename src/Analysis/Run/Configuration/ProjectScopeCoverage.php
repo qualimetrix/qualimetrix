@@ -42,10 +42,15 @@ final readonly class ProjectScopeCoverage
             $evidence->hasDeclaredNamespaces(),
             ProjectScopePaths::captureResolutions($projectRoot, $root, $analyzedPaths),
             $manifestFacts,
-            $document === null ? [] : InstalledConfigurationSources::of($document, $manifestFacts),
         );
         $uncovered = $universe->uncoveredBy($analyzedPaths);
 
-        return new ProjectScopeMeasurement($universe, $analyzedPaths, $evidence->initialState($universe, $analyzedPaths, $reachable), $uncovered);
+        return new ProjectScopeMeasurement(
+            $universe,
+            $analyzedPaths,
+            $evidence->initialState($universe, $analyzedPaths, $reachable),
+            $uncovered,
+            installedConfigurationSources: $document === null ? [] : InstalledConfigurationSources::of($document, $manifestFacts),
+        );
     }
 }

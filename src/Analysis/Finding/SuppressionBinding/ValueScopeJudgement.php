@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\SuppressionBinding;
 
-use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Pattern\PathPattern;
@@ -53,13 +52,15 @@ final readonly class ValueScopeJudgement
     ) {}
 
     /**
-     * Whether the project answers for a value these sources wrote — a question
-     * apart from where the value points: {@see judgesPathValue()} and
+     * The sources the project can neither edit nor remove — a question apart
+     * from where a value points: {@see judgesPathValue()} and
      * {@see judgesNamespaceValue()} never ask it.
+     *
+     * @return list<string>
      */
-    public function judgesValueWrittenBy(ConfiguredValueWriters $writers): bool
+    public function installedConfigurationSources(): array
     {
-        return $this->scope->judgesValueWrittenBy($writers);
+        return $this->scope->installedConfigurationSources();
     }
 
     /**

@@ -7,14 +7,15 @@ namespace Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelSelectionRole;
 use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
+use Qualimetrix\Analysis\Finding\Contract\GlobalValueWriters;
 use Qualimetrix\Analysis\Finding\Contract\Population\RuleAbstention;
-use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorVerdict;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
@@ -28,7 +29,7 @@ use Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision;
 use Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission;
 use Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch;
 use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress;
-use Qualimetrix\Analysis\Finding\SuppressionBinding\GlobalValueWriters;
+use Qualimetrix\Analysis\Finding\SuppressionBinding\ConfiguredValueJudge;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule;
@@ -41,10 +42,12 @@ use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
 
 /**
- * A global suppression value only installed files wrote is not judged; the
- * same value written by any file of the project is, and says who wrote it.
+ * An unbound suppression value only installed files wrote, and no later layer
+ * can take away, is not judged; the same value written by any file of the
+ * project is, and says who wrote it.
  */
 #[CoversClass(UnboundSuppressionAudit::class)]
+#[CoversClass(ConfiguredValueJudge::class)]
 #[CoversClass(GlobalValueWriters::class)]
 final class UnboundSuppressionWritersTest extends TestCase
 {
@@ -88,6 +91,32 @@ final class UnboundSuppressionWritersTest extends TestCase
         self::assertSame(2, $result['population']->unjudgedCount());
         self::assertSame(['installed-writer', 'installed-writer'], array_map(static fn(RuleAbstention $absence): string => $absence->gate, $result['population']->abstentions()));
         self::assertSame([false, false], array_map(static fn(RuleAbstention $absence): bool => $absence->dataGap, $result['population']->abstentions()), 'a boundary of the project, not a gap in the data');
+        foreach ($result['population']->abstentions() as $absence) {
+            self::assertStringEndsWith('The value lies outside what this project can change.', $absence->reason);
+        }
+    }
+
+    /**
+     * Only a value that would be reported is withheld for its writers: one that
+     * binds is judged and bound, as it is when the project writes it.
+     */
+    #[Test]
+    public function itJudgesABoundValueOnlyInstalledFilesWrote(): void
+    {
+        $path = $this->path('src');
+        $namespace = $this->namespace('Sample');
+        $writers = new GlobalValueWriters([$path->definition->display() => self::writtenBy(self::vendor())], [$namespace->definition->display() => self::writtenBy(self::vendor())]);
+        $audit = $this->audit();
+        $scope = $this->scope();
+        $files = self::files();
+
+        $result = $audit->auditResult([$path], [$namespace], $files, ['Sample'], $scope, self::publication(), $writers);
+
+        self::assertSame([], $result['findings']);
+        self::assertSame([], $audit->unjudgedValues([$path], [$namespace], $files, ['Sample'], $scope, $writers));
+        self::assertSame([UnboundSuppressionOptions::UNMATCHED_PATH, UnboundSuppressionOptions::UNMATCHED_NAMESPACE], $audit->judgedChannels([$path], [$namespace], $files, ['Sample'], $scope, $writers));
+        self::assertSame([], $audit->installedConfigurationSources([$path], [$namespace], $files, ['Sample'], $scope, $writers));
+        self::assertSame(0, $result['population']->unjudgedCount());
     }
 
     #[Test]
@@ -145,34 +174,45 @@ final class UnboundSuppressionWritersTest extends TestCase
         self::assertTrue($result['population']->abstentions()[0]->dataGap);
     }
 
+    /**
+     * A per-rule list is replaced whole, `[]` included, so the project can take
+     * an installed one away; a `suppress_namespace_channels` entry cannot be
+     * dropped by a later layer, so it is treated like a global value.
+     */
     #[Test]
-    public function itKeepsJudgingAPerRuleValueAnInstalledFileWrote(): void
+    public function itKeepsJudgingPerRuleListsAnInstalledFileWroteButNotAChannelEntry(): void
     {
-        $producer = UnboundSuppressionRule::NAME;
-        $vendor = self::writtenBy(self::vendor());
-        $snapshot = new ResolvedRuleOptions(
-            [$producer => new UnboundSuppressionOptions(), 'complexity.ccn' => new UnboundSuppressionOptions()],
-            [
-                $producer => new RuleSuppression(),
-                'complexity.ccn' => new RuleSuppression(
-                    paths: [$this->path('src/Gone')],
-                    namespaces: [$this->namespace('Sample\\Gone')],
-                    namespaceChannels: ['coupling.cbo:namespace' => [$this->namespace('Sample\\Other')]],
-                    pathWriters: $vendor,
-                    namespaceWriters: $vendor,
-                    namespaceChannelWriters: ['coupling.cbo:namespace' => $vendor],
-                ),
-            ],
-        );
+        $snapshot = $this->ledgerSnapshot(self::writtenBy(self::vendor()), 'Sample\\Other');
+        $audit = $this->audit($snapshot);
 
-        $result = $this->audit($snapshot)->auditResult([], [], self::files(), ['Sample'], $this->scope(), self::publication());
+        $result = $audit->auditResult([], [], self::files(), ['Sample'], $this->scope(), self::publication());
 
-        self::assertCount(3, $result['findings']);
+        self::assertSame(['The suppress_paths pattern', 'The suppress_namespaces pattern'], array_map(static fn($finding): string => implode(' ', \array_slice(explode(' ', $finding->message), 0, 3)), $result['findings']));
         foreach ($result['findings'] as $finding) {
             self::assertStringEndsWith(' Written by ' . self::vendor()->describe() . '.', $finding->message);
         }
-        self::assertSame(0, $result['population']->unjudgedCount());
-        self::assertSame([], $this->audit($snapshot)->installedConfigurationSources([], [], self::files(), ['Sample'], $this->scope(), new GlobalValueWriters()));
+        $entry = ['channel' => UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER, 'option' => 'rules.complexity.ccn.suppress_namespace_channels.coupling.cbo:namespace', 'pattern' => 'exact:Sample\\Other'];
+        self::assertSame([$entry], $audit->unjudgedValues([], [], self::files(), ['Sample'], $this->scope()));
+        self::assertSame([self::vendor()->describe()], $audit->installedConfigurationSources([], [], self::files(), ['Sample'], $this->scope(), new GlobalValueWriters()));
+        self::assertSame(['installed-writer'], array_map(static fn(RuleAbstention $absence): string => $absence->gate, $result['population']->abstentions()));
+        self::assertFalse($result['population']->abstentions()[0]->dataGap);
+    }
+
+    #[Test]
+    public function itJudgesAChannelEntryTheProjectWroteOrThatBinds(): void
+    {
+        $own = $this->audit($this->ledgerSnapshot(self::writtenBy(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml')), 'Sample\\Other'));
+        $bound = $this->audit($this->ledgerSnapshot(self::writtenBy(self::vendor()), 'Sample'));
+
+        $ownResult = $own->auditResult([], [], self::files(), ['Sample'], $this->scope(), self::publication());
+        $boundResult = $bound->auditResult([], [], self::files(), ['Sample'], $this->scope(), self::publication());
+
+        self::assertCount(3, $ownResult['findings'], 'the project wrote the entry');
+        self::assertSame(0, $ownResult['population']->unjudgedCount());
+        self::assertCount(2, $boundResult['findings'], 'a bound entry is judged and bound');
+        self::assertSame(0, $boundResult['population']->unjudgedCount());
+        self::assertSame([], $bound->unjudgedValues([], [], self::files(), ['Sample'], $this->scope()));
+        self::assertSame([], $bound->installedConfigurationSources([], [], self::files(), ['Sample'], $this->scope(), new GlobalValueWriters()));
     }
 
     #[Test]
@@ -206,6 +246,28 @@ final class UnboundSuppressionWritersTest extends TestCase
     private static function writtenBy(ConfigurationOrigin $origin): ConfiguredValueWriters
     {
         return new ConfiguredValueWriters([$origin]);
+    }
+
+    /** Every per-rule option under `complexity.ccn`, the lists unbound and written by the vendor. */
+    private function ledgerSnapshot(ConfiguredValueWriters $channelWriters, string $channelNamespace): ResolvedRuleOptions
+    {
+        $producer = UnboundSuppressionRule::NAME;
+        $vendor = self::writtenBy(self::vendor());
+
+        return new ResolvedRuleOptions(
+            [$producer => new UnboundSuppressionOptions(), 'complexity.ccn' => new UnboundSuppressionOptions()],
+            [
+                $producer => new RuleSuppression(),
+                'complexity.ccn' => new RuleSuppression(
+                    paths: [$this->path('src/Gone')],
+                    namespaces: [$this->namespace('Sample\\Gone')],
+                    namespaceChannels: ['coupling.cbo:namespace' => [$this->namespace($channelNamespace)]],
+                    pathWriters: $vendor,
+                    namespaceWriters: $vendor,
+                    namespaceChannelWriters: ['coupling.cbo:namespace' => $channelWriters],
+                ),
+            ],
+        );
     }
 
     private function audit(?ResolvedRuleOptions $snapshot = null): UnboundSuppressionAudit

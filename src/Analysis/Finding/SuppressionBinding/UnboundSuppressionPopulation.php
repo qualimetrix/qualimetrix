@@ -10,10 +10,7 @@ use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
 use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
-use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Finding\Population\PopulationSession;
-use Qualimetrix\Core\Pattern\NamespacePattern;
-use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\SourceText\SourceBytes;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
@@ -21,6 +18,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * The judged population of one {@see UnboundSuppressionAudit::auditResult()}
  * call: every published configured value, each identified by its occurrence
  * and gated on whether the run could judge it.
+ *
+ * @phpstan-import-type ConfiguredValue from ConfiguredValueJudge
  */
 final readonly class UnboundSuppressionPopulation
 {
@@ -36,7 +35,7 @@ final readonly class UnboundSuppressionPopulation
     }
 
     /**
-     * @param array{channel: string, rule: ?string, option: string, pattern: PathPattern|NamespacePattern, writers: ?ConfiguredValueWriters} $value
+     * @param ConfiguredValue $value
      * @param list<GateInput> $inputs one per declared gate of the value's channel, in order
      */
     public function record(array $value, int $ordinal, array $inputs): void

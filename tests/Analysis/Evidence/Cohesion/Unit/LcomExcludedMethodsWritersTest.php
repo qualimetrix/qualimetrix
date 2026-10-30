@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\CommandLinePathWrite;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
@@ -15,7 +16,6 @@ use Qualimetrix\Analysis\Evidence\Cohesion\LcomOptions;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
@@ -31,7 +31,7 @@ final class LcomExcludedMethodsWritersTest extends TestCase
     {
         $options = self::optionsFromDocument(['rules' => ['cohesion.lcom' => ['exclude-methods' => ['nope']]]]);
 
-        self::assertSame('Written by configuration file "/project/qmx.yaml".', $options->excludeMethodsWriters?->sentence());
+        self::assertSame('Written by configuration file "/project/qmx.yaml".', $options->excludeMethodsWrittenBy);
     }
 
     #[Test]
@@ -51,14 +51,14 @@ final class LcomExcludedMethodsWritersTest extends TestCase
         $options = self::optionsFromDocument([], [$write]);
 
         self::assertSame(['nope'], $options->excludeMethods);
-        self::assertSame('Written by option --lcom-exclude-methods (written as --lcom-exclude-methods=nope).', $options->excludeMethodsWriters?->sentence());
+        self::assertSame('Written by option --lcom-exclude-methods (written as --lcom-exclude-methods=nope).', $options->excludeMethodsWrittenBy);
     }
 
     #[Test]
     public function itNamesNoWritersWhenTheListWasNotWritten(): void
     {
-        self::assertNull(self::optionsFromDocument(['rules' => ['cohesion.lcom' => ['enabled' => true]]])->excludeMethodsWriters);
-        self::assertNull((new LcomOptions(excludeMethods: ['nope']))->excludeMethodsWriters);
+        self::assertNull(self::optionsFromDocument(['rules' => ['cohesion.lcom' => ['enabled' => true]]])->excludeMethodsWrittenBy);
+        self::assertNull((new LcomOptions(excludeMethods: ['nope']))->excludeMethodsWrittenBy);
     }
 
     #[Test]
@@ -68,8 +68,8 @@ final class LcomExcludedMethodsWritersTest extends TestCase
 
         $overridden = $options->withOverride(4, 6);
 
-        self::assertEquals($options->excludeMethodsWriters, $overridden->excludeMethodsWriters);
-        self::assertNotNull($overridden->excludeMethodsWriters);
+        self::assertEquals($options->excludeMethodsWrittenBy, $overridden->excludeMethodsWrittenBy);
+        self::assertNotNull($overridden->excludeMethodsWrittenBy);
     }
 
     #[Test]
@@ -78,8 +78,8 @@ final class LcomExcludedMethodsWritersTest extends TestCase
         $root = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml');
         $imported = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'vendor/acme/std/base.yaml')->importedThrough($root);
 
-        $fromRoot = $this->only(new LcomOptions(excludeMethods: ['Nope'], excludeMethodsWriters: new ConfiguredValueWriters([$root])));
-        $fromImport = $this->only(new LcomOptions(excludeMethods: ['Nope'], excludeMethodsWriters: new ConfiguredValueWriters([$imported])));
+        $fromRoot = $this->only(new LcomOptions(excludeMethods: ['Nope'], excludeMethodsWrittenBy: (new ConfiguredValueWriters([$root]))->sentence()));
+        $fromImport = $this->only(new LcomOptions(excludeMethods: ['Nope'], excludeMethodsWrittenBy: (new ConfiguredValueWriters([$imported]))->sentence()));
         $unknown = $this->only(new LcomOptions(excludeMethods: ['Nope']));
 
         self::assertSame('The exclude_methods name "Nope" matched no method declared in this project. Written by configuration file "qmx.yaml".', $fromRoot->message);

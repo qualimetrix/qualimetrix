@@ -7,8 +7,10 @@ namespace Qualimetrix\Analysis\Configuration\Contract;
 use LogicException;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ConfigurationDiagnostic;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument;
 use Qualimetrix\Core\FileTarget\FileIdentity;
+use Qualimetrix\Core\FileTarget\NativeCall;
 use Qualimetrix\Core\Path\AbsolutePath;
 
 /**
@@ -82,6 +84,22 @@ final readonly class ConfigurationDocument
         }
 
         return null;
+    }
+
+    /** The sentence a finding ends with to name the sources that wrote the value at this path; null when none did. */
+    public function writtenBy(string $root, string ...$path): ?string
+    {
+        $node = $this->resolved->get($root, ...$path);
+
+        return $node === null ? null : ConfiguredValueWriters::fromProvenance($node->contributors())->sentence();
+    }
+
+    /** {@see fileReadAs()} for the regular file `$path` leads to now; null when it leads to none. */
+    public function regularFileReadAs(string $path): ?string
+    {
+        [$stat] = NativeCall::attempt(static fn(): array|false => stat($path));
+
+        return $this->fileReadAs(FileIdentity::ofRegularFile($stat));
     }
 
     public function workingDirectory(): AbsolutePath

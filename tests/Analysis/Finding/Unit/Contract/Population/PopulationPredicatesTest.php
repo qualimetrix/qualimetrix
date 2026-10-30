@@ -130,9 +130,10 @@ final class PopulationPredicatesTest extends TestCase
         $boundary = new PopulationGate('installed-writer', $channel, SymbolLevel::Project, 'occurrence', new ContextGuard('configuredValueWrittenHere'), 'Written only by an installed file.');
         $dataGap = new PopulationGate('judged', $channel, SymbolLevel::Project, 'occurrence', new ContextGuard('excludeVerdictJudged'), 'Not judged.');
 
-        self::assertNotNull($boundary->evaluate($input));
+        self::assertSame('Written only by an installed file. The value lies outside what this project can change.', $boundary->evaluate($input));
         self::assertFalse($boundary->isDataGap($input));
         self::assertTrue($dataGap->isDataGap(GateInput::context('excludeVerdictJudged', false)));
+        self::assertSame('Not judged. Required population context was not judged.', $dataGap->evaluate(GateInput::context('excludeVerdictJudged', false)), 'every other fact keeps its wording');
         self::assertNull($boundary->evaluate(GateInput::context('configuredValueWrittenHere', true)));
     }
 }

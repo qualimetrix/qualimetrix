@@ -165,6 +165,12 @@ rules:
       # NamespacePattern binds the shared selector definition to namespace separators
       # for authored configuration, finding exclusion and reporting drill-down.
       - exact: src/Core/Pattern/NamespacePattern.php
+      # The closed vocabulary of configuration source kinds: every owner that
+      # creates an origin or classifies one by kind must name it.
+      - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationSource.php
+      # The one wrapper that turns a native filesystem call's warning into a typed
+      # result; every owner making such a call is meant to go through it.
+      - exact: src/Core/FileTarget/NativeCall.php
       # AST visitors depend on many php-parser node types (not actionable coupling).
       # Exact capability roots preserve the visitor exclusion without enrolling
       # a future Analysis/Evidence sibling.

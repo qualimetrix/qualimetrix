@@ -22,6 +22,8 @@ final readonly class ProjectScopeMeasurement
      * @param list<AbsolutePath> $paths
      * @param list<string> $uncoveredRoots
      * @param list<ProjectScopeReason> $measuredReasons
+     * @param list<string> $installedConfigurationSources `describe()` of each configuration source
+     *                                                    established as installed by Composer
      */
     public function __construct(
         public ProjectScopeUniverse $universe,
@@ -30,6 +32,7 @@ final readonly class ProjectScopeMeasurement
         public array $uncoveredRoots,
         private ?ProjectScopeJudgement $judgement = null,
         private array $measuredReasons = [],
+        public array $installedConfigurationSources = [],
     ) {
         $this->valueScopeJudgement = $judgement !== null
             ? new ValueScopeJudgement(
@@ -74,7 +77,7 @@ final readonly class ProjectScopeMeasurement
         if ($facts->generatedExcluded > 0) {
             $namespaceDoors[] = ProjectScopeDoor::Generated;
         }
-        [$selectors, $selectorReasons, $excludeDoors] = self::selectorMeasurements($files, $selectorDoors, $this->universe->installedConfigurationSources);
+        [$selectors, $selectorReasons, $excludeDoors] = self::selectorMeasurements($files, $selectorDoors, $this->installedConfigurationSources);
         $namespaceDoors = [...$namespaceDoors, ...$excludeDoors];
         $reasons = [...$selectorReasons, ...$this->selectionReasons($files, $pathsMissing, $unknownDenominator)];
 
@@ -83,8 +86,9 @@ final readonly class ProjectScopeMeasurement
             $this->paths,
             $state,
             $pathsMissing ? $this->universe->uncoveredBy($this->paths) : [],
-            new ProjectScopeJudgement(self::uniqueDoors($namespaceDoors), self::uniqueDoors($selectorDoors), $selectors, $facts->removedCode, $this->universe->installedConfigurationSources),
+            new ProjectScopeJudgement(self::uniqueDoors($namespaceDoors), self::uniqueDoors($selectorDoors), $selectors, $facts->removedCode, $this->installedConfigurationSources),
             $reasons,
+            $this->installedConfigurationSources,
         );
     }
 
@@ -127,8 +131,6 @@ final readonly class ProjectScopeMeasurement
         $namespaceDoors = [];
         $reasons = [];
         $selectors = [];
-        $installed = new ProjectScopeJudgement(installedConfigurationSources: $installedSources);
-        $unjudgedSources = [];
         foreach ($files->selectorVerdicts as $selector) {
             if ($selector->phpEvidence !== null) {
                 $namespaceDoors[] = ProjectScopeDoor::Exclude;
@@ -141,24 +143,35 @@ final readonly class ProjectScopeMeasurement
             if ($selectorDoors !== []) {
                 $selector = $selector->withoutSelectorJudgement();
             }
-            if (!$installed->judgesValueWrittenBy($selector->writers())) {
+            if ($selector->writers()->writtenOnlyBy($installedSources)) {
                 $selector = $selector->withInstalledWriter();
             }
             if ($selector->outcome === ExcludeSelectorOutcome::CoveredByOtherSource) {
                 $reasons[] = self::otherSourceReason($selector);
             }
-            if ($selector->outcome === ExcludeSelectorOutcome::InstalledWriter) {
-                foreach ($selector->writers()->origins as $origin) {
-                    $unjudgedSources[$origin->describe()] = true;
-                }
-            }
             $selectors[] = $selector;
         }
-        foreach (array_keys($unjudgedSources) as $source) {
-            $reasons[] = ProjectScopeReason::installedConfiguration($source);
+
+        return [$selectors, [...$reasons, ...self::installedWriterReasons($selectors)], $namespaceDoors];
+    }
+
+    /**
+     * One reason per installed file that wrote a selector left unjudged for it.
+     *
+     * @param list<ExcludeSelectorVerdict> $selectors
+     *
+     * @return list<ProjectScopeReason>
+     */
+    private static function installedWriterReasons(array $selectors): array
+    {
+        $sources = [];
+        foreach ($selectors as $selector) {
+            if ($selector->outcome === ExcludeSelectorOutcome::InstalledWriter) {
+                $sources = [...$sources, ...array_map(static fn($origin): string => $origin->describe(), $selector->writers()->origins)];
+            }
         }
 
-        return [$selectors, $reasons, $namespaceDoors];
+        return array_map(ProjectScopeReason::installedConfiguration(...), array_values(array_unique($sources)));
     }
 
     private static function otherSourceReason(ExcludeSelectorVerdict $selector): ProjectScopeReason
@@ -227,6 +240,6 @@ final readonly class ProjectScopeMeasurement
             }
         }
 
-        return new self($this->universe, $finalPaths, $state, $uncovered);
+        return new self($this->universe, $finalPaths, $state, $uncovered, installedConfigurationSources: $this->installedConfigurationSources);
     }
 }

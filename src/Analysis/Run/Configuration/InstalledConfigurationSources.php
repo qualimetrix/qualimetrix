@@ -5,17 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Run\Configuration;
 
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaqueInterface;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedWriteHistoryInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestReadState;
-use Qualimetrix\Core\FileTarget\FileIdentity;
-use Qualimetrix\Core\FileTarget\NativeCall;
 
 /**
  * Which file sources of a configuration document Composer installed into the
@@ -46,70 +39,55 @@ final class InstalledConfigurationSources
 
     /**
      * A project whose install directory is its root or above it would make its own
-     * configuration "installed", so such a directory establishes nothing.
+     * configuration "installed", so such a directory establishes nothing. Nor does one
+     * that is not a directory, or the decoder's `vendor` fallback after it refused the
+     * `config` section: that name is a default, not what the manifest says.
      */
     private static function installDirectory(ComposerManifestFacts $facts): ?string
     {
-        if ($facts->state !== ManifestReadState::Read) {
+        if ($facts->state !== ManifestReadState::Read || self::configRefused($facts)) {
             return null;
         }
         $root = $facts->root->value();
         $vendor = $facts->vendorDirectory;
         $install = realpath(str_starts_with($vendor, '/') ? $vendor : rtrim($root, '/') . '/' . $vendor);
         $realRoot = realpath($root);
-        if ($install === false || $realRoot === false || self::isWithin($realRoot, $install)) {
+        if ($install === false || $realRoot === false || !is_dir($install) || self::isWithin($realRoot, $install)) {
             return null;
         }
 
         return $install;
     }
 
+    /** A whole-manifest issue counts: it may hide what `config` said. */
+    private static function configRefused(ComposerManifestFacts $facts): bool
+    {
+        foreach ($facts->issues as $issue) {
+            if ($issue->location === [] || $issue->location[0] === 'config') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /** @return list<ConfigurationOrigin> every file or preset origin the resolved document names, once each */
     private static function fileOrigins(ConfigurationDocument $document): array
     {
-        $found = [];
-        foreach ($document->resolved()->roots() as $root) {
-            self::collect($root, $found);
-        }
-
         return array_values(array_filter(
-            $found,
+            $document->resolved()->origins(),
             static fn(ConfigurationOrigin $origin): bool => $origin->locator() !== null
                 && ($origin->source() === ConfigurationSource::ConfigFile || $origin->source() === ConfigurationSource::Preset),
         ));
     }
 
-    /** @param array<string, ConfigurationOrigin> $found */
-    private static function collect(ResolvedValueInterface $node, array &$found): void
-    {
-        foreach ($node->contributors() as $provenance) {
-            $found[serialize($provenance->origin)] = $provenance->origin;
-        }
-        if ($node instanceof ResolvedWriteHistoryInterface) {
-            foreach ($node->writes() as $write) {
-                $found[serialize($write['provenance']->origin)] = $write['provenance']->origin;
-            }
-        }
-        if ($node instanceof ResolvedOpaqueInterface) {
-            foreach ($node->contributions() as $contribution) {
-                $found[serialize($contribution['provenance']->origin)] = $contribution['provenance']->origin;
-            }
-        }
-        $children = match (true) {
-            $node instanceof ResolvedMapInterface => $node->entries(),
-            $node instanceof ResolvedListInterface => $node->items(),
-            default => [],
-        };
-        foreach ($children as $child) {
-            self::collect($child, $found);
-        }
-    }
-
     /**
      * The origin's name must lead to a regular file inside the install directory that the
      * configuration was read from under this very name. The lowest-precedence source with a
-     * file's identity names it, so a different name is legitimate only for a file that also
-     * sits in the preset band; any other mismatch means the locator reaches another file.
+     * file's identity names it, so a different name is legitimate only when that source is a
+     * preset — the band below every file — whatever this origin is: one file given as two
+     * preset spellings, or as a preset and an import, is read under the first preset's name.
+     * Any other mismatch means the locator reaches another file.
      */
     private static function isInstalled(ConfigurationOrigin $origin, ConfigurationDocument $document, string $install): bool
     {
@@ -118,12 +96,9 @@ final class InstalledConfigurationSources
         if (!self::leadsInto($path, $install)) {
             return false;
         }
-        [$stat] = NativeCall::attempt(static fn(): array|false => stat($path));
-        $name = $document->fileReadAs(FileIdentity::ofRegularFile($stat));
+        $name = $document->regularFileReadAs($path);
 
-        return $name !== null
-            && ($name === $origin->describe()
-                || (str_starts_with($name, 'preset "') && $origin->source() !== ConfigurationSource::Preset));
+        return $name !== null && ($name === $origin->describe() || str_starts_with($name, 'preset "'));
     }
 
     /**

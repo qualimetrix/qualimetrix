@@ -8,13 +8,11 @@ use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Channel\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
+use Qualimetrix\Analysis\Finding\Contract\GlobalValueWriters;
 use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
-use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RulePublicationInterface;
 use Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression;
-use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -57,14 +55,12 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * that way is named by {@see unjudgedValues()} instead, so the skip reaches the
  * report rather than reading as a value judged and bound.
  *
- * **A second question is asked of a global value, apart from the first.** A
- * value every one of whose writers is a file an installed Composer package
- * provides cannot be edited or removed by the project
- * ({@see ValueScopeJudgement::judgesValueWrittenBy()}), so it is not judged:
- * it is named in {@see unjudgedValues()} and its sources in
- * {@see installedConfigurationSources()}. A per-rule value is a list replaced
- * whole, and keeps being judged. Writers are evidence about a value, never a
- * precondition for judging it: a value of unknown writers is judged.
+ * **A second question is asked apart from the first**
+ * ({@see ConfiguredValueJudge::installedOnly()}): an unbound value the project
+ * can neither edit nor take away, because only installed files wrote it, is
+ * not judged. It is named in {@see unjudgedValues()} and its sources in
+ * {@see installedConfigurationSources()}. Writers are evidence about a value,
+ * never a precondition for judging it: a value of unknown writers is judged.
  *
  * A file the run discovered but failed to analyse, or left out as generated,
  * is outside both universes, and a path value it may hold is not judged
@@ -75,8 +71,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  *
   * @qmx-threshold coupling.instability 0.900001 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
  *
- * @phpstan-type FileUniverse array{analysed: list<RelativePath>, failedFiles: list<RelativePath>, failedDirectories: list<RelativePath>, generatedExcluded: list<RelativePath>}
- * @phpstan-type ConfiguredValue array{channel: string, rule: ?string, option: string, pattern: PathPattern|NamespacePattern, writers: ?ConfiguredValueWriters}
+ * @phpstan-import-type FileUniverse from ConfiguredValueJudge
+ * @phpstan-import-type ConfiguredValue from ConfiguredValueJudge
  */
 final readonly class UnboundSuppressionAudit
 {
@@ -131,16 +127,14 @@ final readonly class UnboundSuppressionAudit
         }
         $findings = [];
         $population = new UnboundSuppressionPopulation($publication->publishes(...), $declarations);
+        $judge = new ConfiguredValueJudge($files, $declaredNamespaces, $scope);
 
         foreach ($this->configuredValues($suppressPaths, $suppressNamespaces, $writers) as $ordinal => $value) {
-            $channel = new FindingChannel($value['channel']);
-            if (!$publication->publishes(UnboundSuppressionRule::NAME, $channel, SymbolLevel::Project)) {
+            if (!$publication->publishes(UnboundSuppressionRule::NAME, new FindingChannel($value['channel']), SymbolLevel::Project)) {
                 continue;
             }
-            $inScope = $this->judgesScope($value, $files, $declaredNamespaces, $scope);
-            $writtenHere = self::writtenHere($value, $scope);
-            $population->record($value, $ordinal, self::populationInputs($value, $inScope, $writtenHere));
-            if ($inScope && $writtenHere && !self::binds($value, $files, $declaredNamespaces)) {
+            $population->record($value, $ordinal, $judge->populationInputs($value));
+            if ($judge->judges($value) && !$judge->binds($value)) {
                 $findings[] = UnboundSuppressionFinding::forValue($value);
             }
         }
@@ -180,9 +174,10 @@ final readonly class UnboundSuppressionAudit
         GlobalValueWriters $writers = new GlobalValueWriters(),
     ): array {
         $unjudged = [];
+        $judge = new ConfiguredValueJudge($files, $declaredNamespaces, $scope);
 
         foreach ($this->configuredValues($suppressPaths, $suppressNamespaces, $writers) as $value) {
-            if (!$this->judges($value, $files, $declaredNamespaces, $scope)) {
+            if (!$judge->judges($value)) {
                 $unjudged[] = self::published($value);
             }
         }
@@ -191,9 +186,9 @@ final readonly class UnboundSuppressionAudit
     }
 
     /**
-     * The sources, as `describe()` words them, of every global value that only
-     * the writers question kept from being judged: this run's shape reaches
-     * the value, and every file that wrote it is installed by Composer.
+     * The sources, as `describe()` words them, of every value that only the
+     * writers question kept from being judged: this run's shape reaches the
+     * value, it binds nothing, and every file that wrote it is installed.
      *
      * A value another question already withholds names no source here, so a
      * source is reported only when it changed the answer.
@@ -214,16 +209,14 @@ final readonly class UnboundSuppressionAudit
         GlobalValueWriters $writers,
     ): array {
         $sources = [];
+        $judge = new ConfiguredValueJudge($files, $declaredNamespaces, $scope);
         foreach ($this->configuredValues($suppressPaths, $suppressNamespaces, $writers) as $value) {
-            if ($value['writers'] === null || self::writtenHere($value, $scope) || !$this->judgesScope($value, $files, $declaredNamespaces, $scope)) {
-                continue;
-            }
-            foreach ($value['writers']->origins as $origin) {
-                $sources[$origin->describe()] = true;
+            if ($value['writers'] !== null && $judge->reaches($value) && $judge->installedOnly($value)) {
+                $sources = [...$sources, ...array_map(static fn($origin): string => $origin->describe(), $value['writers']->origins)];
             }
         }
 
-        return array_keys($sources);
+        return array_values(array_unique($sources));
     }
 
     /**
@@ -233,10 +226,8 @@ final readonly class UnboundSuppressionAudit
      * A value withheld for any other reason as well — an unanalysed PSR-4
      * root, no production autoload, no complete namespace tree, a regex with
      * no literal anchor — is not named, because narrowing the removal would
-     * not judge it. Nor is one the analysed tree already binds: removed code
-     * can only add namespaces, so that value is judged and bound. A value only
-     * installed files wrote is not named either: the project cannot act on the
-     * advice that would judge it.
+     * not judge it. Nor is one the analysed tree already binds, or one only
+     * installed files wrote ({@see ConfiguredValueJudge::withheldOnlyForRemovedCode()}).
      *
      * @param list<PathPattern> $suppressPaths
      * @param list<NamespacePattern> $suppressNamespaces
@@ -253,14 +244,10 @@ final readonly class UnboundSuppressionAudit
         ValueScopeJudgement $scope,
         GlobalValueWriters $writers = new GlobalValueWriters(),
     ): array {
-        if (!self::namespaceUniverseComplete($declaredNamespaces, $files)) {
-            return [];
-        }
-
         $withheld = [];
+        $judge = new ConfiguredValueJudge($files, $declaredNamespaces, $scope);
         foreach ($this->configuredValues($suppressPaths, $suppressNamespaces, $writers) as $value) {
-            $pattern = $value['pattern'];
-            if ($pattern instanceof NamespacePattern && $scope->withholdsOnlyForRemovedCode($pattern) && self::writtenHere($value, $scope) && !self::bindsNamespace($pattern, $declaredNamespaces)) {
+            if ($judge->withheldOnlyForRemovedCode($value)) {
                 $withheld[] = self::published($value);
             }
         }
@@ -293,8 +280,9 @@ final readonly class UnboundSuppressionAudit
     public function judgedChannels(array $suppressPaths, array $suppressNamespaces, array $files, ?array $declaredNamespaces, ValueScopeJudgement $scope, GlobalValueWriters $writers = new GlobalValueWriters()): array
     {
         $channels = [];
+        $judge = new ConfiguredValueJudge($files, $declaredNamespaces, $scope);
         foreach ($this->configuredValues($suppressPaths, $suppressNamespaces, $writers) as $value) {
-            if ($this->judges($value, $files, $declaredNamespaces, $scope)) {
+            if ($judge->judges($value)) {
                 $channels[$value['channel']] = true;
             }
         }
@@ -334,11 +322,11 @@ final readonly class UnboundSuppressionAudit
         $values = [];
 
         foreach ($suppressPaths as $pattern) {
-            $values[] = ['channel' => UnboundSuppressionOptions::UNMATCHED_PATH, 'rule' => null, 'option' => ConfiguredSuppression::PATHS, 'pattern' => $pattern, 'writers' => $writers->forPath($pattern)];
+            $values[] = ['channel' => UnboundSuppressionOptions::UNMATCHED_PATH, 'rule' => null, 'option' => ConfiguredSuppression::PATHS, 'pattern' => $pattern, 'writers' => $writers->for($pattern)];
         }
 
         foreach ($suppressNamespaces as $pattern) {
-            $values[] = ['channel' => UnboundSuppressionOptions::UNMATCHED_NAMESPACE, 'rule' => null, 'option' => ConfiguredSuppression::NAMESPACES, 'pattern' => $pattern, 'writers' => $writers->forNamespace($pattern)];
+            $values[] = ['channel' => UnboundSuppressionOptions::UNMATCHED_NAMESPACE, 'rule' => null, 'option' => ConfiguredSuppression::NAMESPACES, 'pattern' => $pattern, 'writers' => $writers->for($pattern)];
         }
 
         $snapshot = $this->ruleConfiguration->resolvedOptions();
@@ -361,108 +349,6 @@ final readonly class UnboundSuppressionAudit
         }
 
         return $values;
-    }
-
-    /**
-     * Whether the value is judged: this run can reach what it names, and the
-     * project answers for the files that wrote it.
-     *
-     * @param ConfiguredValue $value
-     * @param FileUniverse $files
-     * @param ?list<string> $declaredNamespaces
-     */
-    private function judges(array $value, array $files, ?array $declaredNamespaces, ValueScopeJudgement $scope): bool
-    {
-        return $this->judgesScope($value, $files, $declaredNamespaces, $scope) && self::writtenHere($value, $scope);
-    }
-
-    /**
-     * Whether the project answers for the files that wrote a global value. A
-     * per-rule value is a list replaced whole and is always answered for, and
-     * so is a value whose writers are not known.
-     *
-     * @param ConfiguredValue $value
-     */
-    private static function writtenHere(array $value, ValueScopeJudgement $scope): bool
-    {
-        return $value['rule'] !== null || $value['writers'] === null || $scope->judgesValueWrittenBy($value['writers']);
-    }
-
-    /**
-     * The gate inputs of a value's population, one per declared gate of its
-     * channel. A global value is asked the two questions apart, so that a
-     * value out of reach is a gap in the data and an installed one is a
-     * boundary of what the project can judge.
-     *
-     * @param ConfiguredValue $value
-     *
-     * @return list<GateInput>
-     */
-    private static function populationInputs(array $value, bool $inScope, bool $writtenHere): array
-    {
-        $scope = GateInput::context($value['pattern'] instanceof PathPattern ? 'suppressionPathJudged' : 'suppressionNamespaceJudged', $inScope);
-
-        return $value['rule'] === null ? [$scope, GateInput::context('configuredValueWrittenHere', $writtenHere)] : [$scope, $scope];
-    }
-
-    /**
-     * Whether this run can judge the value at all: its shape reaches the place
-     * the value names, no unanalysed entry may hold what an unbound path value
-     * names, and — for a namespace — the run built the whole universe it is
-     * judged against.
-     *
-     * @param ConfiguredValue $value
-     * @param FileUniverse $files
-     * @param ?list<string> $declaredNamespaces
-     */
-    private function judgesScope(array $value, array $files, ?array $declaredNamespaces, ValueScopeJudgement $scope): bool
-    {
-        $pattern = $value['pattern'];
-
-        if ($pattern instanceof PathPattern) {
-            return $scope->judgesPathValue($pattern)
-                && (!PathBinding::unanalysedMayHold($pattern, $files) || PathBinding::binds($pattern, $files['analysed']));
-        }
-
-        if (!self::namespaceUniverseComplete($declaredNamespaces, $files)) {
-            return false;
-        }
-
-        // Removed code can only add namespaces, so a value the analysed tree
-        // already binds stays bound whatever that code declares.
-        return $scope->judgesNamespaceValue($pattern)
-            || ($scope->withholdsOnlyForRemovedCode($pattern) && self::bindsNamespace($pattern, $declaredNamespaces));
-    }
-
-    /**
-     * @param ?list<string> $declaredNamespaces
-     * @param FileUniverse $files
-     */
-    private static function namespaceUniverseComplete(?array $declaredNamespaces, array $files): bool
-    {
-        return $declaredNamespaces !== null && $files['failedFiles'] === [] && $files['failedDirectories'] === [];
-    }
-
-    /**
-     * @param ConfiguredValue $value
-     * @param FileUniverse $files
-     * @param ?list<string> $declaredNamespaces
-     */
-    private static function binds(array $value, array $files, ?array $declaredNamespaces): bool
-    {
-        $pattern = $value['pattern'];
-
-        if ($pattern instanceof PathPattern) {
-            return PathBinding::binds($pattern, $files['analysed']);
-        }
-
-        return self::bindsNamespace($pattern, $declaredNamespaces);
-    }
-
-    /** @param ?list<string> $declaredNamespaces */
-    private static function bindsNamespace(NamespacePattern $pattern, ?array $declaredNamespaces): bool
-    {
-        return array_any($declaredNamespaces ?? [], static fn(string $namespace): bool => $pattern->matches($namespace));
     }
 
     /** @param array<string, ChannelDeclaration> $declarations */

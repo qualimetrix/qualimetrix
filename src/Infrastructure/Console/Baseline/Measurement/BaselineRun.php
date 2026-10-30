@@ -97,12 +97,7 @@ final readonly class BaselineRun implements BaselineRunInterface
 
         $run = $this->measuredFindingSet->run(
             $configuration,
-            new FindingProjectionOptions(
-                suppressPaths: $exclusions->suppressPaths,
-                suppressNamespaces: $exclusions->suppressNamespaces,
-                pathWriters: $exclusions->pathWriters,
-                namespaceWriters: $exclusions->namespaceWriters,
-            ),
+            new FindingProjectionOptions(exclusions: $exclusions),
         );
 
         $coverage = self::complete($run->result->measured->coverage);

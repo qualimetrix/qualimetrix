@@ -7,7 +7,6 @@ namespace Qualimetrix\Analysis\Finding\SuppressionBinding;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
-use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression;
 use Qualimetrix\Core\Pattern\NamespacePattern;
@@ -16,6 +15,7 @@ use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
+/** @phpstan-import-type ConfiguredValue from ConfiguredValueJudge */
 final readonly class UnboundSuppressionFinding
 {
     /**
@@ -30,26 +30,21 @@ final readonly class UnboundSuppressionFinding
     private const string OCCURRENCE_KIND = 'unbound-suppression-value';
 
     /**
-     * @param array{channel: string, rule: ?string, option: string, pattern: PathPattern|NamespacePattern, writers: ?ConfiguredValueWriters} $value
+     * @param ConfiguredValue $value
      */
     public static function forValue(array $value): Finding
     {
         $pattern = $value['pattern'];
+        $writtenBy = $value['writers'] === null ? '' : ' ' . $value['writers']->sentence();
 
         if ($value['rule'] !== null) {
-            return self::ledgerFinding($value['rule'], $value['option'], $pattern->definition, $value['writers']);
+            return self::ledgerFinding($value['rule'], $value['option'], $pattern->definition, $writtenBy);
         }
 
-        return $pattern instanceof PathPattern ? self::pathFinding($pattern, $value['writers']) : self::namespaceFinding($pattern, $value['writers']);
+        return $pattern instanceof PathPattern ? self::pathFinding($pattern, $writtenBy) : self::namespaceFinding($pattern, $writtenBy);
     }
 
-    /** The message's closing sentence: who wrote the value, when that is known. */
-    private static function writtenBy(?ConfiguredValueWriters $writers): string
-    {
-        return $writers === null ? '' : ' ' . $writers->sentence();
-    }
-
-    private static function pathFinding(PathPattern $pattern, ?ConfiguredValueWriters $writers): Finding
+    private static function pathFinding(PathPattern $pattern, string $writtenBy): Finding
     {
         return self::finding(
             UnboundSuppressionOptions::UNMATCHED_PATH,
@@ -59,7 +54,7 @@ final readonly class UnboundSuppressionFinding
                 . ' and could not have. If the code it was written for still exists under another spelling, its'
                 . ' findings are being reported.%s',
                 $pattern->definition->display(),
-                self::writtenBy($writers),
+                $writtenBy,
             ),
             \sprintf(
                 'Check "%s" against the tree. %s Drop the entry if the code it names is gone, or correct its'
@@ -70,7 +65,7 @@ final readonly class UnboundSuppressionFinding
         );
     }
 
-    private static function namespaceFinding(NamespacePattern $pattern, ?ConfiguredValueWriters $writers): Finding
+    private static function namespaceFinding(NamespacePattern $pattern, string $writtenBy): Finding
     {
         return self::finding(
             UnboundSuppressionOptions::UNMATCHED_NAMESPACE,
@@ -80,7 +75,7 @@ final readonly class UnboundSuppressionFinding
                 . ' nothing and could not have. If the code it was written for still exists under another'
                 . ' spelling, its findings are being reported.%s',
                 $pattern->definition->display(),
-                self::writtenBy($writers),
+                $writtenBy,
             ),
             \sprintf(
                 'Check "%s" against the code. %s Drop the entry if the namespace is gone, or correct its spelling.',
@@ -105,7 +100,7 @@ final readonly class UnboundSuppressionFinding
         };
     }
 
-    private static function ledgerFinding(string $ruleName, string $option, SelectorDefinition $pattern, ?ConfiguredValueWriters $writers): Finding
+    private static function ledgerFinding(string $ruleName, string $option, SelectorDefinition $pattern, string $writtenBy): Finding
     {
         return self::finding(
             UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER,
@@ -116,7 +111,7 @@ final readonly class UnboundSuppressionFinding
                 $option,
                 $pattern->display(),
                 $ruleName,
-                self::writtenBy($writers),
+                $writtenBy,
             ),
             \sprintf(
                 'Check "%s" under rules.%s.%s against the tree, and drop it if what it names is gone.',

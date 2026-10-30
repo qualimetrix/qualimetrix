@@ -9,21 +9,18 @@ use Qualimetrix\Analysis\Evidence\Coupling\Configuration\CouplingSection;
 use Qualimetrix\Analysis\Evidence\Coupling\Configuration\FrameworkNamespaceSelectorParser;
 use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface;
 use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\FrameworkNamespaces;
-use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters;
 use Qualimetrix\Core\Pattern\NamespaceMatcher;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 
 final class CouplingAnalysis implements CouplingConfiguratorInterface
 {
-    /** @var list<NamespacePattern> */
-    private array $frameworkNamespaces = [];
-
-    private ?ConfiguredValueWriters $frameworkWriters = null;
+    private FrameworkNamespaces $framework;
 
     private NamespaceMatcher $frameworkMatcher;
 
     public function __construct()
     {
+        $this->framework = new FrameworkNamespaces();
         $this->frameworkMatcher = new NamespaceMatcher([]);
     }
 
@@ -34,20 +31,19 @@ final class CouplingAnalysis implements CouplingConfiguratorInterface
             return new FrameworkNamespaces();
         }
 
-        return FrameworkNamespaceSelectorParser::parseDeclared($selectors);
+        return new FrameworkNamespaces(FrameworkNamespaceSelectorParser::parseList($selectors), $document->writtenBy(CouplingSection::KEY, 'framework_namespaces'));
     }
 
     public function replace(FrameworkNamespaces $frameworkNamespaces): void
     {
-        $this->frameworkNamespaces = $frameworkNamespaces->patterns;
-        $this->frameworkWriters = $frameworkNamespaces->writers;
+        $this->framework = $frameworkNamespaces;
         $this->frameworkMatcher = new NamespaceMatcher($frameworkNamespaces->patterns);
     }
 
-    /** The sources that wrote the selector list; null when the list was not built from a document. */
-    public function frameworkWriters(): ?ConfiguredValueWriters
+    /** The selectors in force, with the sources that wrote them. */
+    public function framework(): FrameworkNamespaces
     {
-        return $this->frameworkWriters;
+        return $this->framework;
     }
 
     public function isFramework(string $fqcn): bool
@@ -72,7 +68,7 @@ final class CouplingAnalysis implements CouplingConfiguratorInterface
     public function unboundSelectors(iterable $fqcns): array
     {
         $unbound = [];
-        foreach ($this->frameworkNamespaces as $pattern) {
+        foreach ($this->framework->patterns as $pattern) {
             $unbound[$pattern->definition->display()] = $pattern;
         }
 
@@ -92,7 +88,6 @@ final class CouplingAnalysis implements CouplingConfiguratorInterface
 
     public function isEmpty(): bool
     {
-        return $this->frameworkNamespaces === [];
+        return $this->framework->patterns === [];
     }
-
 }

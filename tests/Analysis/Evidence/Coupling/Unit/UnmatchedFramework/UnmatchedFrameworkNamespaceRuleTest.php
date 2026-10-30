@@ -8,6 +8,7 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Evidence\Coupling\Configuration\CouplingSection;
@@ -20,7 +21,6 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -219,8 +219,8 @@ final class UnmatchedFrameworkNamespaceRuleTest extends TestCase
     public function itKeepsTheOccurrenceKeyWhoeverWroteTheList(): void
     {
         $selector = new NamespacePattern(SelectorDefinition::fromKindAndValue('subtree', 'Nope\\Missing'));
-        $imported = new ConfiguredValueWriters([ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'vendor/acme/std/base.yaml')->importedThrough(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml'))]);
-        $root = new ConfiguredValueWriters([ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml')]);
+        $imported = (new ConfiguredValueWriters([ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'vendor/acme/std/base.yaml')->importedThrough(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml'))]))->sentence();
+        $root = (new ConfiguredValueWriters([ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml')]))->sentence();
 
         $fromImport = UnmatchedFrameworkFinding::of($selector, 'coupling.unmatched-framework-namespace', $imported);
         $fromRoot = UnmatchedFrameworkFinding::of($selector, 'coupling.unmatched-framework-namespace', $root);
