@@ -199,7 +199,7 @@ final class ImportEntriesTest extends TestCase
 
         self::assertSame(['vendor/a.yaml'], self::locators($this->resolve([['regex' => 'vendor/.*\.yaml']])[0]));
         self::assertSame(
-            'Import "regex:.*\.yaml" (imports[0]) needs the contents of the directory "locked", which cannot be listed.',
+            'Import {regex: .*\.yaml} (imports[0]) needs the contents of the directory "locked", which cannot be listed.',
             $this->refusal([['regex' => '.*\.yaml']])->summary(),
         );
     }
@@ -221,6 +221,8 @@ final class ImportEntriesTest extends TestCase
         yield 'a top-level alternation' => [SelectorKind::Regex, 'vendor/a/x|other/y', ''];
         yield 'a group first' => [SelectorKind::Regex, '(?:vendor/)?x\.yaml', ''];
         yield 'a leading anchor' => [SelectorKind::Regex, '^vendor/x', ''];
+        yield 'a closing parenthesis' => [SelectorKind::Regex, 'a/b)?(c\.yaml', ''];
+        yield 'a group after a literal run' => [SelectorKind::Regex, 'a/(b)c', ''];
     }
 
     #[Test]
@@ -236,10 +238,10 @@ final class ImportEntriesTest extends TestCase
         $this->write('file.yaml', '');
         $this->write('notes', '');
 
-        self::assertSame('Import "subtree:nowhere" (imports[0]) names the directory "nowhere", which does not exist.', $this->refusal([['subtree' => 'nowhere']])->summary());
-        self::assertSame('Import "subtree:file.yaml" (imports[0]) names "file.yaml", which is not a directory; write a file as a plain string.', $this->refusal([['subtree' => 'file.yaml']])->summary());
-        self::assertSame('Import "regex:nowhere/.*\.yaml" (imports[0]) names the directory "nowhere", which does not exist.', $this->refusal([['regex' => 'nowhere/.*\.yaml']])->summary());
-        self::assertSame('Import "regex:notes/.*" (imports[0]) names "notes", which is not a directory.', $this->refusal([['regex' => 'notes/.*']])->summary());
+        self::assertSame('Import {subtree: nowhere} (imports[0]) names the directory "nowhere", which does not exist.', $this->refusal([['subtree' => 'nowhere']])->summary());
+        self::assertSame('Import {subtree: file.yaml} (imports[0]) names "file.yaml", which is not a directory; write a file as a plain string.', $this->refusal([['subtree' => 'file.yaml']])->summary());
+        self::assertSame('Import {regex: nowhere/.*\.yaml} (imports[0]) names the directory "nowhere", which does not exist.', $this->refusal([['regex' => 'nowhere/.*\.yaml']])->summary());
+        self::assertSame('Import {regex: notes/.*} (imports[0]) names "notes", which is not a directory.', $this->refusal([['regex' => 'notes/.*']])->summary());
     }
 
     #[Test]
@@ -249,7 +251,7 @@ final class ImportEntriesTest extends TestCase
 
         $refusal = $this->refusal([['subtree' => 'locked']]);
 
-        self::assertSame('Import "subtree:locked" (imports[0]) needs the contents of the directory "locked", which cannot be listed.', $refusal->summary());
+        self::assertSame('Import {subtree: locked} (imports[0]) needs the contents of the directory "locked", which cannot be listed.', $refusal->summary());
     }
 
     /** A directory readable but not searchable lists its names yet hides what they stand for. */
@@ -267,8 +269,8 @@ final class ImportEntriesTest extends TestCase
             chmod($this->directory . '/cfg/inner', 0o755);
         }
 
-        self::assertSame('Import "subtree:cfg" (imports[0]) needs to enter the directory "cfg/inner", which cannot be entered.', $inner);
-        self::assertSame('Import "subtree:cfg/inner" (imports[0]) needs to enter the directory "cfg/inner", which cannot be entered.', $root);
+        self::assertSame('Import {subtree: cfg} (imports[0]) needs to enter the directory "cfg/inner", which cannot be entered.', $inner);
+        self::assertSame('Import {subtree: cfg/inner} (imports[0]) needs to enter the directory "cfg/inner", which cannot be entered.', $root);
     }
 
     #[Test]
@@ -283,7 +285,37 @@ final class ImportEntriesTest extends TestCase
             chmod($this->directory . '/vendor', 0o755);
         }
 
-        self::assertSame('Import "subtree:vendor/a" (imports[0]) needs to enter the directory "vendor", which cannot be entered.', $refusal->summary());
+        self::assertSame('Import {subtree: vendor/a} (imports[0]) needs to enter the directory "vendor", which cannot be entered.', $refusal->summary());
+    }
+
+    #[Test]
+    public function itFindsAPackageUnderTheNameOfItsLinkWhateverTheRegexStartsWith(): void
+    {
+        $this->write('packages/pkg/qmx-extension.yaml', '');
+        mkdir($this->directory . '/vendor/acme', 0o777, true);
+        symlink($this->directory . '/packages/pkg', $this->directory . '/vendor/acme/pkg');
+
+        self::assertSame(['vendor/acme/pkg/qmx-extension.yaml'], self::locators($this->resolve([['regex' => '(?:vendor|lib)/[^/]+/[^/]+/qmx-extension\.yaml']])[0]));
+        self::assertSame(['vendor/acme/pkg/qmx-extension.yaml'], self::locators($this->resolve([['regex' => 'vendor/[^/]+/[^/]+/qmx-extension\.yaml']])[0]));
+    }
+
+    #[Test]
+    public function itEndsALinkBackToAnAncestor(): void
+    {
+        $this->write('cfg/a/x.yaml', '');
+        symlink('..', $this->directory . '/cfg/a/loop');
+
+        self::assertSame(['cfg/a/x.yaml'], self::locators($this->resolve([['subtree' => 'cfg']])[0]));
+    }
+
+    #[Test]
+    public function itTreatsTheNamesOfTheWalkRootAsTheListingGivesThem(): void
+    {
+        $this->write('a/x.yaml', '');
+
+        self::assertSame('Import {subtree: A} (imports[0]) names the directory "A", which does not exist.', $this->refusal([['subtree' => 'A']])->summary());
+        self::assertSame('Import {regex: A/x\.yaml} (imports[0]) names the directory "A", which does not exist.', $this->refusal([['regex' => 'A/x\.yaml']])->summary());
+        self::assertSame(['a/x.yaml'], self::locators($this->resolve([['regex' => 'a/x\.yaml']])[0]));
     }
 
     #[Test]
@@ -406,7 +438,7 @@ final class ImportEntriesTest extends TestCase
     {
         $this->lock();
 
-        self::assertStringStartsWith('Import "subtree:locked" (imports[0])', $this->refusal([['subtree' => 'locked'], 'missing.yaml'])->summary());
+        self::assertStringStartsWith('Import {subtree: locked} (imports[0])', $this->refusal([['subtree' => 'locked'], 'missing.yaml'])->summary());
         self::assertStringStartsWith('Configuration file "missing.yaml"', $this->refusal(['missing.yaml', ['subtree' => 'locked']])->summary());
     }
 

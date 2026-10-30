@@ -83,21 +83,31 @@ macOS), so a silently shorter list would change what is enforced.
   starts in the literal directory prefix of its fragment: the leading run of
   characters that are not regex metacharacters, less its last character when a
   quantifier follows (`acme?` may omit the `e`), cut after its last `/`; none
-  when the fragment holds `|` anywhere. An empty prefix walks the importing
-  file's directory. The prefix only bounds the walk and must exist as a
-  directory; matching is always the full-subject match.
+  when the fragment holds `|` or `)` anywhere (a `)` can close the group the
+  fragment is wrapped in, so what follows it need not share the prefix). An
+  empty prefix walks the importing file's directory. The prefix bounds the
+  walk, which is why it must exist: a missing one is refused, where the same
+  regex without a prefix would find nothing. The root is entered by the names
+  each parent lists, compared byte for byte, never by the author's spelling:
+  on a case- or normalization-insensitive filesystem `A` does not open `a`, so
+  `subtree`, `regex` and a regex without a prefix agree on every platform, and
+  every path the selector sees is built from listed names.
 - Every directory entered must be listable **and** searchable, checked before
   it is listed. A directory with read but no search permission lists its names
   yet hides what they stand for (`stat` of each child fails), so a check on the
   listing alone yields an empty selector without an error — the defect the
   first implementation shipped with and review found. It is refused, as is one
   that cannot be listed.
-- A symlinked directory is followed; each real directory is visited once, by
-  identity, so a link loop ends. A file reachable under two names is named by
-  the first in byte order of the walk.
+- A symlinked directory is followed and walked under every name that leads to
+  it, so a regex sees `vendor/acme/pkg` when Composer links it to
+  `packages/pkg`. Only a directory that is its own ancestor on the current path
+  ends the descent. A file reachable under several names is placed once, at the
+  first in byte order of its path.
 - A matched `.yaml`/`.yml` name that is not a regular file (a pipe, a broken
-  link) is refused like an explicit entry. A name the selector does not match is
-  never judged, so a fixture in `vendor/` cannot fail an unrelated selector.
+  link) is refused like an explicit entry. A file name the selector does not
+  match is never judged, so a fixture in `vendor/` cannot fail an unrelated
+  selector. Directories are different: every directory the walk reaches must be
+  listable and searchable, matched or not.
   This narrows the first reading of "a yaml-named entry that is not a regular
   file is refused", which would make a regex over `vendor/` unusable.
 - Matches are sorted by byte order of the relative path. A selector skips a
@@ -190,10 +200,13 @@ number or an empty string at that position (the engine still does).
   directory; and a nested file whose selector matches the file that imported it
   (both in one directory) is refused as a cycle, while a match of the importing
   file itself is skipped.
-- **Walk cost is bounded by the literal prefix only.** A fragment without one
-  walks the importing file's whole directory, `vendor/` and `node_modules/`
-  included. A directory reached through two names is walked under the first
-  name only, so a fragment that matches only the second name finds nothing.
+- **Walk cost and reach are bounded by the literal prefix only.** A fragment
+  without one walks the importing file's whole directory, `vendor/` and
+  `node_modules/` included, and is refused by any directory below it that
+  cannot be listed or entered (a bind-mounted data directory owned by another
+  user, say), whatever the fragment could match. Start the regex with a literal
+  directory (`config/qmx/…`) to limit the walk and avoid this. A directory
+  reached through several names is walked under each, which costs time only.
 - **A selector over `vendor/` hands every matching package the power to change
   the configuration**, the fail threshold included, and one over a name
   packages use for their own configuration (`qmx.yaml`) imports files written

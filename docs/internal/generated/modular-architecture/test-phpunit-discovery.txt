@@ -2352,7 +2352,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itResolvesEntriesBesideTheRealFileOfASymlinkedRoot
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itSkipsTheImportingFileInANestedSelectorAndOrdersTheRestByBytes
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportEntriesTest::itAcceptsASelectorThatMatchesNothing
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportEntriesTest::itBoundsTheWalkByTheDirectoryARegexCannotLeave"a closing parenthesis"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportEntriesTest::itBoundsTheWalkByTheDirectoryARegexCannotLeave"a counted repeat"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportEntriesTest::itBoundsTheWalkByTheDirectoryARegexCannotLeave"a group after a literal run"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportEntriesTest::itBoundsTheWalkByTheDirectoryARegexCannotLeave"a group first"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportEntriesTest::itBoundsTheWalkByTheDirectoryARegexCannotLeave"a hyphenated file name"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportEntriesTest::itBoundsTheWalkByTheDirectoryARegexCannotLeave"a leading anchor"
@@ -2368,6 +2370,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportEntriesTest::itBoundsTheWalkByTheDirectoryARegexCannotLeave"optional whole directory"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportEntriesTest::itDescendsADirectoryNamedLikeAConfigurationFile
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportEntriesTest::itDoesNotEnterADirectoryOutsideTheLiteralPrefixOfARegex
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportEntriesTest::itEndsALinkBackToAnAncestor
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportEntriesTest::itFindsAPackageUnderTheNameOfItsLinkWhateverTheRegexStartsWith
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportEntriesTest::itJudgesEntriesInWrittenOrder
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportEntriesTest::itKeepsTheListsWrittenOrderBetweenEntries
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportEntriesTest::itKeysABuiltInPresetInsideAPharByItsNameWithoutReadingIt
@@ -2413,6 +2417,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportEntriesTest::itTellsAPresetNameFromAPath"with a backslash"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportEntriesTest::itTellsAPresetNameFromAPath"with a directory"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportEntriesTest::itTellsAPresetNameFromAPath"with extension"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportEntriesTest::itTreatsTheNamesOfTheWalkRootAsTheListingGivesThem
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportEntriesTest::itWalksARealDirectoryOnceWhateverNumberOfNamesLeadToIt
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportEntriesTest::itWalksFromTheImportingDirectoryWhenARegexHasNoLiteralDirectory
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportLinearizationTest::itKeepsTheConstraintsOfEveryAcceptedGraphOfUpToFourFiles

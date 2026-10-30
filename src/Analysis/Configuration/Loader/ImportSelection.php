@@ -19,8 +19,11 @@ use Qualimetrix\Core\Pattern\SelectorKind;
  *
  * The walk is our own: it refuses a directory it cannot list or enter, where
  * an ignored one would silently shorten the list and change what is enforced.
- * The literal directory a regex starts with only bounds the walk; matching is
- * always the whole-path match of {@see PathPattern}.
+ * The literal directory a regex starts with bounds the walk and must exist;
+ * every path offered to the selector is built from names read from listings,
+ * so matching is the whole-path match of {@see PathPattern} on any filesystem,
+ * whatever its case or Unicode folding. A directory is walked under every
+ * name that leads to it; only a link back to one of its own ancestors ends.
  */
 final class ImportSelection
 {
@@ -29,9 +32,6 @@ final class ImportSelection
 
     /** A quantifier makes the character before it optional or repeated, so it is not a literal. */
     private const string QUANTIFIERS = '?*+{';
-
-    /** @var array<string, true> real directories already walked */
-    private array $seen = [];
 
     /** @var list<array{string, string}> */
     private array $found = [];
@@ -78,7 +78,7 @@ final class ImportSelection
     {
         $walk = new self($selector, $displayBase, $refuse);
         [$physical, $relative] = $walk->enterRoot($physicalBase);
-        $walk->descend($physical, $relative);
+        $walk->descend($physical, $relative, []);
 
         usort($walk->found, static fn(array $a, array $b): int => strcmp($a[1], $b[1]));
 
@@ -87,12 +87,13 @@ final class ImportSelection
 
     /**
      * The leading run of literal characters, less the last one when a
-     * quantifier follows it, up to its last slash. An alternation anywhere
-     * makes every part optional, so none is a bound.
+     * quantifier follows it, up to its last slash. An alternation makes every
+     * part optional, and a ")" may close the group the pattern is wrapped in,
+     * so a fragment holding either has no bound.
      */
     private static function literalDirectory(string $fragment): string
     {
-        if (str_contains($fragment, '|')) {
+        if (strpbrk($fragment, '|)') !== false) {
             return '';
         }
 
@@ -107,8 +108,10 @@ final class ImportSelection
     }
 
     /**
-     * Steps from the importing directory down to the walk root, every
-     * directory on the way entered, and requires the root to be a directory.
+     * Steps from the importing directory down to the walk root through the
+     * names its parents list, compared byte for byte, so a filesystem that
+     * opens `A` for `a` cannot change what the selector sees. Every directory
+     * on the way is entered and the root must be a directory.
      *
      * @return array{string, string} [physical path, path relative to the importing directory]
      */
@@ -117,25 +120,31 @@ final class ImportSelection
         $physical = $physicalBase;
         $relative = '';
         foreach (array_filter(explode('/', self::walkRoot($this->selector)), static fn(string $segment): bool => $segment !== '') as $segment) {
-            $this->assertEnterable($physical, self::child($this->displayBase, $relative));
+            $shown = self::child($this->displayBase, self::child($relative, $segment));
+            if (!\in_array($segment, $this->names($physical, self::child($this->displayBase, $relative)), true)) {
+                ($this->refuse)(\sprintf('names the directory "%s", which does not exist', $shown));
+            }
             $physical = self::child($physical, $segment);
             $relative = self::child($relative, $segment);
-        }
-        if (!is_dir($physical)) {
-            ($this->refuse)(\sprintf(
-                file_exists($physical)
-                    ? 'names "%s", which is not a directory%s'
-                    : 'names the directory "%s", which does not exist%s',
-                self::child($this->displayBase, $relative),
-                file_exists($physical) && $this->selector->definition->kind === SelectorKind::Subtree ? '; write a file as a plain string' : '',
-            ));
+            if (!is_dir($physical)) {
+                ($this->refuse)(\sprintf(
+                    'names "%s", which is not a directory%s',
+                    $shown,
+                    $this->selector->definition->kind === SelectorKind::Subtree ? '; write a file as a plain string' : '',
+                ));
+            }
         }
 
         return [$physical, $relative];
     }
 
-    /** Every directory once, by identity of its real directory, so a link loop ends. */
-    private function descend(string $physical, string $relative): void
+    /**
+     * Every directory under every name that leads to it; only a directory that
+     * is its own ancestor on the current path (a link back up) ends the descent.
+     *
+     * @param array<string, true> $ancestors real directories on the path from the walk root
+     */
+    private function descend(string $physical, string $relative, array $ancestors): void
     {
         $shown = self::child($this->displayBase, $relative);
         [$stat] = NativeCall::attempt(static fn(): array|false => stat($physical));
@@ -144,28 +153,38 @@ final class ImportSelection
         }
         $identity = FileIdentity::fromStat($stat);
         $key = $identity->device . ':' . $identity->inode;
-        if (isset($this->seen[$key])) {
+        if (isset($ancestors[$key])) {
             return;
         }
-        $this->seen[$key] = true;
+        $ancestors[$key] = true;
 
-        $this->assertEnterable($physical, $shown);
-        [$names] = NativeCall::attempt(static fn(): array|false => scandir($physical, \SCANDIR_SORT_NONE));
+        foreach ($this->names($physical, $shown) as $name) {
+            $path = self::child($physical, $name);
+            $at = self::child($relative, $name);
+            if (is_dir($path)) {
+                $this->descend($path, $at, $ancestors);
+            } elseif (self::isConfigurationName($name) && $this->selects($at)) {
+                $this->found[] = [$path, self::child($this->displayBase, $at)];
+            }
+        }
+    }
+
+    /**
+     * The names in a directory, in byte order.
+     *
+     * @return list<string>
+     */
+    private function names(string $directory, string $shown): array
+    {
+        $this->assertEnterable($directory, $shown);
+        [$names] = NativeCall::attempt(static fn(): array|false => scandir($directory, \SCANDIR_SORT_NONE));
         if ($names === false) {
             ($this->refuse)(\sprintf('needs the contents of the directory "%s", which cannot be listed', $shown));
         }
         $names = array_map(strval(...), array_diff($names, ['.', '..']));
         sort($names, \SORT_STRING);
 
-        foreach ($names as $name) {
-            $path = self::child($physical, $name);
-            $at = self::child($relative, $name);
-            if (is_dir($path)) {
-                $this->descend($path, $at);
-            } elseif (self::isConfigurationName($name) && $this->selects($at)) {
-                $this->found[] = [$path, self::child($this->displayBase, $at)];
-            }
-        }
+        return $names;
     }
 
     private function selects(string $relative): bool

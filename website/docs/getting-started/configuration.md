@@ -835,9 +835,12 @@ imports:
   importing file's directory (`config/teams/a.yaml`, not `a.yaml`), the same
   way as in `suppress_paths`. The literal directory it starts with bounds the
   walk: `vendor/[^/]+/qmx\.yaml` looks only inside `vendor/`, and that
-  directory must exist. A fragment that starts with a metacharacter, or holds
-  `|` anywhere, walks the importing file's whole directory — `vendor/`
-  and `node_modules/` included. Prefer a literal prefix.
+  directory must exist and is matched by the names on disk, letter for letter.
+  A fragment that starts with a metacharacter, or holds `|` or `)` anywhere,
+  walks the importing file's whole directory — `vendor/` and `node_modules/`
+  included — and is refused by any directory below it that cannot be listed or
+  entered, even one the pattern could never match. Start the regex with a
+  literal directory (`config/qmx/…`) to limit the walk and avoid that.
 - **Order.** The files one selector stands for have no order among themselves
   except what their own imports and the other entries of the list demand (see
   [Nested imports](#nested-imports)); where nothing decides, byte order of the
@@ -845,13 +848,14 @@ imports:
   the order you need as separate entries when it matters.
 - **Skipped, not refused.** A file named as a string anywhere in the same list,
   a file an earlier selector already stands for, and the importing file itself.
-  A directory reached through several names (a symlink) is walked once, under
-  the first name in byte order.
+  A directory reached through several names (a symlink) is walked under each
+  name; a file found twice is imported once, under the first path in byte
+  order.
 - **Refused.** A directory the walk must list or enter and cannot (a missing
   read or search permission is refused, not skipped); a `.yaml` / `.yml` name
   that the selector matches but that is not a regular file (a broken link, a
   pipe); a `subtree` or a regex prefix that is not an existing directory.
-  Names the selector does not match are never judged.
+  File names the selector does not match are never judged; directories are always entered.
 - **No match is accepted** and not reported — that is the point of a selector
   over files that may be absent. The price is that a typo in the pattern
   matches nothing and says nothing (a regex after its literal prefix; `.yml`

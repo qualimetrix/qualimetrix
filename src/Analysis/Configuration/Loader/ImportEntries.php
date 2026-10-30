@@ -105,7 +105,7 @@ final class ImportEntries
     {
         $selector = ImportListSchema::selectorOf($entry);
         $targets = [];
-        $matches = ImportSelection::matches($selector, $from->realDirectory(), $from->displayDirectory(), self::refusing($entry, $position, $selector->definition->display()));
+        $matches = ImportSelection::matches($selector, $from->realDirectory(), $from->displayDirectory(), self::refusing($entry, $position));
         foreach ($matches as [$physical, $display]) {
             $target = ImportTarget::ofFile($physical, self::originOf($display, $from));
             if (!isset($taken[$target->key])) {
@@ -157,9 +157,9 @@ final class ImportEntries
     }
 
     /** @return Closure(string): never */
-    private static function refusing(ResolvedValueInterface $entry, int $position, string $written): Closure
+    private static function refusing(ResolvedValueInterface $entry, int $position): Closure
     {
-        return static fn(string $problem): never => $entry->refuse(\sprintf('Import "%s" (imports[%d]) %s.', $written, $position, $problem));
+        return static fn(string $problem): never => $entry->refuse(\sprintf('Import %s (imports[%d]) %s.', ImportListSchema::shown(ImportListSchema::written($entry)), $position, $problem));
     }
 
     private static function originOf(string $display, ImportTarget $from): ConfigurationOrigin
