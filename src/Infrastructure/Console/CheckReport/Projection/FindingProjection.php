@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\CheckReport\Projection;
 
 use LogicException;
+use Qualimetrix\Analysis\Finding\SuppressionBinding\GlobalValueWriters;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
@@ -52,6 +53,7 @@ final readonly class FindingProjection
             $result->measured->namespaceTree?->getAllNamespaces(),
             $valueScope,
             $result->populationPublication ?? throw new LogicException('Suppression accounting requires captured channel publication'),
+            new GlobalValueWriters($options->pathWriters, $options->namespaceWriters),
         );
     }
 }

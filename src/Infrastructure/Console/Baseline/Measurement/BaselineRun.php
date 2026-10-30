@@ -100,6 +100,8 @@ final readonly class BaselineRun implements BaselineRunInterface
             new FindingProjectionOptions(
                 suppressPaths: $exclusions->suppressPaths,
                 suppressNamespaces: $exclusions->suppressNamespaces,
+                pathWriters: $exclusions->pathWriters,
+                namespaceWriters: $exclusions->namespaceWriters,
             ),
         );
 

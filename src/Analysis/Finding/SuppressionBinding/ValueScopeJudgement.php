@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\SuppressionBinding;
 
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Pattern\PathPattern;
@@ -50,6 +51,16 @@ final readonly class ValueScopeJudgement
         private bool $projectDeclared,
         private ProjectScopeJudgement $scope,
     ) {}
+
+    /**
+     * Whether the project answers for a value these sources wrote — a question
+     * apart from where the value points: {@see judgesPathValue()} and
+     * {@see judgesNamespaceValue()} never ask it.
+     */
+    public function judgesValueWrittenBy(ConfiguredValueWriters $writers): bool
+    {
+        return $this->scope->judgesValueWrittenBy($writers);
+    }
 
     /**
      * Whether a path-shaped value — `suppress_paths`, a per-rule ledger

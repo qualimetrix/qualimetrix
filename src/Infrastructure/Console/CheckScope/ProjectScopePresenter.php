@@ -7,7 +7,9 @@ namespace Qualimetrix\Infrastructure\Console\CheckScope;
 use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorOutcome;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels;
+use Qualimetrix\Analysis\Finding\SuppressionBinding\GlobalValueWriters;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReason;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Reporting\Contract\Report\ReportProjectScope;
 use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionOptions;
@@ -27,15 +29,20 @@ final readonly class ProjectScopePresenter
         $reasons = $this->observedProjectScopeReasons->forMainSource($facts->source(), $facts->state, $measurement->universe->projectRoot);
         $namespaces = $result->measured->namespaceTree?->getAllNamespaces();
         $files = $result->measured->coverage->fileUniverse();
+        $writers = self::writers($options);
         $unjudged = $this->unboundSuppressionAudit->unjudgedValues(
             $options->suppressPaths,
             $options->suppressNamespaces,
             $files,
             $namespaces,
             $valueScope,
+            $writers,
         );
+        foreach ($this->unboundSuppressionAudit->installedConfigurationSources($options->suppressPaths, $options->suppressNamespaces, $files, $namespaces, $valueScope, $writers) as $source) {
+            $reasons[] = ProjectScopeReason::installedConfiguration($source);
+        }
         foreach ($judgement->excludeSelectors() as $selector) {
-            if (\in_array($selector->outcome, [ExcludeSelectorOutcome::NotJudged, ExcludeSelectorOutcome::CoveredByOtherSource], true)) {
+            if (\in_array($selector->outcome, [ExcludeSelectorOutcome::NotJudged, ExcludeSelectorOutcome::CoveredByOtherSource, ExcludeSelectorOutcome::InstalledWriter], true)) {
                 $unjudged[] = [
                     'channel' => ProjectScopeChannels::WALK_CHANNEL,
                     'option' => 'exclude',
@@ -49,6 +56,7 @@ final readonly class ProjectScopePresenter
             $files,
             $namespaces,
             $valueScope,
+            $writers,
         );
         foreach ($judgement->excludeSelectors() as $selector) {
             if (\in_array($selector->outcome, [ExcludeSelectorOutcome::Removed, ExcludeSelectorOutcome::Unmatched, ExcludeSelectorOutcome::CoveredBySameSource], true)) {
@@ -58,6 +66,11 @@ final readonly class ProjectScopePresenter
         }
 
         return ReportProjectScope::measured($measurement, $unjudged, $judgedChannels)->withReasons($reasons);
+    }
+
+    private static function writers(FindingProjectionOptions $options): GlobalValueWriters
+    {
+        return new GlobalValueWriters($options->pathWriters, $options->namespaceWriters);
     }
 
     /**
@@ -74,6 +87,7 @@ final readonly class ProjectScopePresenter
             $result->measured->coverage->fileUniverse(),
             $result->measured->namespaceTree?->getAllNamespaces(),
             $measurement->valueScopeJudgement(),
+            self::writers($options),
         );
         if ($withheld === []) {
             return null;

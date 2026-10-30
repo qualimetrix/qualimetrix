@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\CheckScope;
 
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader;
+use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Infrastructure\Console\Invocation\CliSelectorDecoder;
 use Qualimetrix\Infrastructure\Console\Invocation\CommandLineSpelling;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
@@ -26,9 +31,13 @@ final readonly class FindingProjectionOptionsResolver
         $cliExcludePaths = CommandLineSpelling::options($input, 'suppress-path');
         $cliExcludeNamespaces = CommandLineSpelling::options($input, 'suppress-namespace');
         $decoder = new CliSelectorDecoder();
+        $cliPaths = array_map(fn(string $value) => $decoder->decodePath($value, '--suppress-path'), $cliExcludePaths);
+        $cliNamespaces = array_map(fn(string $value) => $decoder->decodeNamespace($value, '--suppress-namespace'), $cliExcludeNamespaces);
         $exclusions = $configuredExclusions->withAdditional(
-            array_map(fn(string $value) => $decoder->decodePath($value, '--suppress-path'), $cliExcludePaths),
-            array_map(fn(string $value) => $decoder->decodeNamespace($value, '--suppress-namespace'), $cliExcludeNamespaces),
+            $cliPaths,
+            $cliNamespaces,
+            self::writtenOnCommandLine($cliPaths, '--suppress-path'),
+            self::writtenOnCommandLine($cliNamespaces, '--suppress-namespace'),
         );
 
         $gitScope = null;
@@ -50,6 +59,20 @@ final readonly class FindingProjectionOptionsResolver
             suppressNamespaces: $exclusions->suppressNamespaces,
             annotationSuppressionDisabled: (bool) $input->getOption('no-suppression-annotations'),
             gitScope: $gitScope,
+            pathWriters: $exclusions->pathWriters,
+            namespaceWriters: $exclusions->namespaceWriters,
         );
+    }
+
+    /**
+     * @param list<PathPattern|NamespacePattern> $patterns
+     *
+     * @return array<string, ConfiguredValueWriters>
+     */
+    private static function writtenOnCommandLine(array $patterns, string $option): array
+    {
+        $writers = new ConfiguredValueWriters([ConfigurationOrigin::of(ConfigurationSource::CommandLine, $option)]);
+
+        return array_fill_keys(array_map(static fn(PathPattern|NamespacePattern $pattern): string => $pattern->definition->display(), $patterns), $writers);
     }
 }

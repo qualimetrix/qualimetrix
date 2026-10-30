@@ -121,6 +121,7 @@ Finding/
 │   ├── PopulationSession.php # selected publication, declaration validation and one freeze
 │   └── PopulationTrace.php # unit counts and bounded canonical examples
 ├── SuppressionBinding/   # Whether a configured suppression value named anything the run holds
+│   ├── GlobalValueWriters.php # Who wrote each global suppress_paths / suppress_namespaces value
 │   ├── PathBinding.php   # Path values against the analysed, failed and generated-excluded files and directories
 │   ├── UnboundSuppressionFinding.php # Messages for values that bind to nothing
 │   └── UnboundSuppressionPopulation.php # The judged population of one audit call
@@ -636,6 +637,22 @@ freezes one session after the whole native audit. Unknown namespace evidence
 withholds namespace values while leaving independently judged paths measurable.
 Selector displays are reversibly byte-framed before internal JSON identity
 encoding; a CLI source byte and its literal percent spelling stay distinct.
+
+Every value carries its writers (`ConfiguredValueWriters`), and the last
+sentence of each finding names them. A global value's writers are every layer
+whose list wrote that spelling plus `--suppress-path` / `--suppress-namespace`
+for a command-line value; a per-rule value's are the contributors of its list,
+or of its own entry for `suppress_namespace_channels`. Unknown writers (a
+carrier built without them) are judged and worded without a sentence. A
+*global* value is asked a second question apart from where it points
+(`ValueScopeJudgement::judgesValueWrittenBy()`): when every writer is a file an
+installed Composer package provides, the project can neither edit nor remove
+it, so it is not judged. The population fails at the `installed-writer` gate,
+declared a boundary rather than a data gap; `auditResult()`, `unjudgedValues()`,
+`judgedChannels()` and `withheldForRemovedCode()` all go through the one
+enumeration, and `installedConfigurationSources()` names the sources the second
+question alone withheld. A per-rule value is a list replaced whole and keeps
+being judged. Occurrence keys do not include writers.
 
 ## Locality
 
