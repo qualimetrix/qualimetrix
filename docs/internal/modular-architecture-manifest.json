@@ -1894,6 +1894,41 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportEntries": {
+      "path": "src/Analysis/Configuration/Loader/ImportEntries.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportSelection": {
+      "path": "src/Analysis/Configuration/Loader/ImportSelection.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportLinearization": {
+      "path": "src/Analysis/Configuration/Loader/ImportLinearization.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportTarget": {
+      "path": "src/Analysis/Configuration/Loader/ImportTarget.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Loader\\ResolvedImportEntry": {
+      "path": "src/Analysis/Configuration/Loader/ResolvedImportEntry.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Configuration\\Loader\\CommandLineLayer": {
       "path": "src/Analysis/Configuration/Loader/CommandLineLayer.php",
       "kind": "class",
@@ -19321,7 +19356,7 @@
         },
         {
           "owner": "Analysis.Configuration",
-          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportChain"
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportTarget"
         },
         {
           "owner": "Analysis.Configuration",
@@ -19354,6 +19389,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunSetup\\Execution\\RunConfigurationPreparation"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportSelection"
         }
       ]
     },
@@ -19465,7 +19504,11 @@
       "consumers": [
         {
           "owner": "Analysis.Configuration",
-          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportChain"
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportTarget"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportSelection"
         },
         {
           "owner": "Analysis.Policy.Baseline",
@@ -20840,6 +20883,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Preparation\\DiscoveryResult"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportSelection"
         }
       ]
     },
@@ -21067,6 +21114,14 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionFinding"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportListSchema"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportSelection"
         }
       ]
     },
@@ -21199,6 +21254,14 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\RunConfiguration"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportListSchema"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportSelection"
         }
       ]
     },

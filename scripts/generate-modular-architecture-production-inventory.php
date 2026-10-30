@@ -2492,6 +2492,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0137-constructor-only-helpers-leave-the-lcom4-graph.md' => 'Analysis.Evidence.Cohesion',
         'docs/adr/0138-closures-are-named-under-their-enclosing-declaration.md' => 'Analysis.Evidence.Measurement',
         'docs/adr/0139-configuration-imports.md' => 'Analysis.Configuration',
+        'docs/adr/0140-built-in-preset-glob-and-nested-imports.md' => 'Analysis.Configuration',
         'docs/adr/0141-committed-dist-configuration-discovery.md' => 'Analysis.Configuration',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',

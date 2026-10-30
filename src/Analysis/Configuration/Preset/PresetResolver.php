@@ -84,6 +84,12 @@ final class PresetResolver
         return __DIR__ . '/' . $name . '.yaml';
     }
 
+    /** The bundled file of a built-in preset, or null for any other name. */
+    public function builtInPath(string $name): ?string
+    {
+        return $this->isBuiltIn($name) ? __DIR__ . '/' . $name . '.yaml' : null;
+    }
+
     /**
      * Returns true if the name matches a built-in preset.
      */

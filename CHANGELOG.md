@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `imports:` entries may name a built-in preset: `imports: [strict]` applies it from the configuration file, so the pre-commit hook and the GitHub Action, which pass no `--preset`, judge by the same preset as a local `--preset=strict`. A bare name that is not built-in is refused with the list of presets.
+- `imports:` entries may be `{subtree: dir}` or `{regex: fragment}` selectors over the `.yaml` / `.yml` files below the importing file's directory (same shape as `suppress_paths`; no glob): the matches are imported in byte order unless their own imports demand another, a selector that matches nothing is accepted, and a directory that cannot be listed or entered is refused.
+- Imported files may import in turn, ordered by C3 linearization; a cycle and contradictory precedence are refused naming the files, while a file given to `--preset` still cannot import. See [ADR 0140](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0140-built-in-preset-glob-and-nested-imports.md).
 - Automatic discovery reads a committed `qmx.dist.yaml` or `qmx.dist.yml` when the working directory has no `qmx.yaml`/`qmx.yml`; a local `qmx.yaml` wins and builds on it only through `imports: [qmx.dist.yaml]`, and a run warns when an auto-discovered local file does not import the dist file beside it. Both dist names together are refused (exit 3), as both `qmx.yaml` and `qmx.yml` are, also beside a local file. `--config` help names the discovered files.
 
 ### Fixed

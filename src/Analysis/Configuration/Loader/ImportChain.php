@@ -9,32 +9,43 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
 use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
 use Qualimetrix\Analysis\Configuration\Document\AuthoredShape;
 use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
-use Qualimetrix\Core\FileTarget\FileIdentity;
-use Qualimetrix\Core\FileTarget\NativeCall;
 
 /**
- * The root configuration file and the files its `imports` list names, as the
- * layers the composer merges: the entries in written order, then the root.
+ * The root configuration file and every file reachable through `imports`, as
+ * the layers the composer merges: the C3 linearization of the import graph
+ * ({@see ImportLinearization}), lowest precedence first, the root last. Any
+ * file read through `imports` may import in turn.
  *
- * Imports are flat: only the root file is read for `imports`, and an imported
- * file writing the key is refused rather than followed. Files are told apart
- * by identity (device, inode, type), never by the path written, so `./a.yaml`,
- * `a.yaml` and a symlink to it are one file.
+ * One depth-first walk reads each file once and names it by the first chain
+ * that reaches it; an entry that leads back to a file still being walked is
+ * refused where it is written, naming the cycle. The walk's record is passed
+ * down the walk, so one instance serves any number of expansions.
+ *
+ * Walk keys: `layers` file key => its layer without `imports`; `groups` file key =>
+ * its entries as groups of keys, once the file is finished; `positions` importer
+ * key => imported key => `imports[N]`.
+ *
+ * @phpstan-type Walk array{
+ *     layers: array<string, AuthoredLayer>,
+ *     groups: array<string, list<list<string>>>,
+ *     origins: array<string, ConfigurationOrigin>,
+ *     positions: array<string, array<string, string>>,
+ * }
  */
-final class ImportChain
+final readonly class ImportChain
 {
-    private const int REGULAR_FILE = 0100000;
+    private ImportEntries $entries;
 
     public function __construct(
-        private readonly ConfigLoaderInterface $loader,
-    ) {}
+        private ConfigLoaderInterface $loader,
+    ) {
+        $this->entries = new ImportEntries();
+    }
 
     /**
      * @throws ConfigurationRefusal
@@ -43,43 +54,105 @@ final class ImportChain
      */
     public function expand(string $rootPhysicalPath, ConfigurationOrigin $rootOrigin): array
     {
-        $loadedRoot = $this->loader->read($rootPhysicalPath, $rootOrigin);
-        $root = $loadedRoot->authored;
-        $entries = self::entries($root, $rootOrigin);
+        $loaded = $this->loader->read($rootPhysicalPath, $rootOrigin);
+        $entries = self::entries($loaded->authored, $rootOrigin);
         if ($entries === []) {
-            return [new AuthoredLayer($rootOrigin, self::withoutImports($root), file: $loadedRoot->file)];
+            return [new AuthoredLayer($rootOrigin, self::withoutImports($loaded->authored), file: $loaded->file)];
         }
 
-        $placed = [-1 => [self::identify($rootPhysicalPath, $rootOrigin), (string) $rootOrigin->locator()]];
-        $directory = self::realDirectory($rootPhysicalPath, $rootOrigin);
-        $displayDirectory = is_link($rootPhysicalPath) ? $directory : \dirname($rootOrigin->locator() ?? '.');
-        $layers = [];
-        foreach ($entries as $index => $entry) {
-            $written = (string) $entry->plain();
-            $physical = self::joined($directory, $written);
-            $origin = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, self::normalize(self::joined($displayDirectory, $written)))
-                ->importedThrough($rootOrigin);
-            $placed = self::placed($placed, $index, self::identify($physical, $origin), $entry, $rootOrigin);
+        /** @var Walk $walk */
+        $walk = ['layers' => [], 'groups' => [], 'origins' => [], 'positions' => []];
+        $root = ImportTarget::ofFile($rootPhysicalPath, $rootOrigin);
+        self::admit($walk, $root, $loaded);
+        $this->visit($walk, $root, $entries, [$root->key => $rootOrigin]);
 
-            $loaded = $this->loader->read($physical, $origin);
-            $document = $loaded->authored;
-            if (self::writesImports($document)) {
-                throw ConfigurationRefusal::at(
-                    $origin,
-                    RefusedPosition::open([ConfigurationRoot::Imports->value], ConfigurationRoot::Imports->value),
-                    \sprintf(
-                        '"imports" in %s is refused: only the root configuration file may import files. List the files it builds on in the "imports" of %s instead.',
-                        $origin->describe(),
-                        $rootOrigin->describe(),
-                    ),
-                );
+        $order = ImportLinearization::of(
+            $root->key,
+            $walk['groups'],
+            static fn(string $key): ConfigurationOrigin => $walk['origins'][$key],
+            static fn(string $importer, string $imported): string => $walk['positions'][$importer][$imported],
+            ConfigurationRoot::Imports->value,
+        );
+
+        return [...array_map(static fn(string $key): AuthoredLayer => $walk['layers'][$key], \array_slice($order, 0, -1)), $walk['layers'][$root->key]];
+    }
+
+    /**
+     * @param Walk $walk
+     * @param list<ResolvedValueInterface> $entries
+     * @param array<string, ConfigurationOrigin> $stack the files being walked, root first
+     *
+     * @throws ConfigurationRefusal
+     */
+    private function visit(array &$walk, ImportTarget $file, array $entries, array $stack): void
+    {
+        $groups = [];
+        foreach ($this->entries->resolve($entries, $file) as $entry) {
+            $keys = [];
+            foreach ($entry->targets as $target) {
+                if (isset($stack[$target->key])) {
+                    self::refuseCycle($entry, $target, $file, $stack);
+                }
+                $keys[] = $target->key;
+                $walk['positions'][$file->key][$target->key] = \sprintf('imports[%d]', $entry->position);
+                if (!isset($walk['layers'][$target->key])) {
+                    $this->descend($walk, $target, $stack);
+                }
             }
-
-            $layers[] = new AuthoredLayer($origin, $document, file: $loaded->file);
+            if ($keys !== []) {
+                $groups[] = $keys;
+            }
         }
-        $layers[] = new AuthoredLayer($rootOrigin, self::withoutImports($root), file: $loadedRoot->file);
+        $walk['groups'][$file->key] = $groups;
+    }
 
-        return $layers;
+    /**
+     * @param Walk $walk
+     * @param array<string, ConfigurationOrigin> $stack
+     *
+     * @throws ConfigurationRefusal
+     */
+    private function descend(array &$walk, ImportTarget $target, array $stack): void
+    {
+        $loaded = $this->loader->read($target->physicalPath, $target->origin);
+        self::admit($walk, $target, $loaded);
+        $this->visit($walk, $target, self::entries($loaded->authored, $target->origin), $stack + [$target->key => $target->origin]);
+    }
+
+    /** @param Walk $walk */
+    private static function admit(array &$walk, ImportTarget $file, LoadedDocument $loaded): void
+    {
+        $walk['origins'][$file->key] = $file->origin;
+        $walk['layers'][$file->key] = new AuthoredLayer($file->origin, self::withoutImports($loaded->authored), file: $loaded->file);
+    }
+
+    /**
+     * @param array<string, ConfigurationOrigin> $stack
+     *
+     * @throws ConfigurationRefusal
+     */
+    private static function refuseCycle(ResolvedImportEntry $entry, ImportTarget $target, ImportTarget $from, array $stack): never
+    {
+        $cycle = [];
+        foreach ($stack as $key => $origin) {
+            if ($key === $target->key || $cycle !== []) {
+                $cycle[] = self::label($origin);
+            }
+        }
+        $cycle[] = self::label($target->origin);
+
+        $entry->value->refuse(\sprintf(
+            'Entry imports[%d] (%s) of %s closes an import cycle: %s.',
+            $entry->position,
+            ImportListSchema::shown(ImportListSchema::written($entry->value)),
+            $from->origin->describe(),
+            implode(' imports ', $cycle),
+        ));
+    }
+
+    private static function label(ConfigurationOrigin $origin): string
+    {
+        return '"' . ($origin->locator() ?? $origin->describe()) . '"';
     }
 
     /**
@@ -93,22 +166,22 @@ final class ImportChain
     }
 
     /**
-     * The entries the root wrote, judged by the declaration's own grammar on
-     * a one-key slice of the root, so nothing else in the file is read here.
+     * The entries a file wrote, judged by the declaration's own grammar on
+     * a one-key slice of it, so nothing else in the file is read here.
      *
      * @throws ConfigurationRefusal
      *
      * @return list<ResolvedValueInterface>
      */
-    private static function entries(AuthoredNode $root, ConfigurationOrigin $origin): array
+    private static function entries(AuthoredNode $document, ConfigurationOrigin $origin): array
     {
-        if (!self::writesImports($root)) {
+        if (!self::writesImports($document)) {
             return [];
         }
 
         $key = ConfigurationRoot::Imports->value;
         $list = DocumentComposer::compose(new DocumentSchema([ConfigurationRoot::Imports]), [
-            new AuthoredLayer($origin, AuthoredNode::mapping([$key => $root->children[$key]], $root->line, $root->locator, $root->authoredExpression)),
+            new AuthoredLayer($origin, AuthoredNode::mapping([$key => $document->children[$key]], $document->line, $document->locator, $document->authoredExpression)),
         ])->get($key);
 
         return $list instanceof ResolvedListInterface ? $list->items() : [];
@@ -129,98 +202,5 @@ final class ImportChain
             $document->locator,
             $document->authoredExpression,
         );
-    }
-
-    /**
-     * The files placed so far, with this entry's; the root sits at -1.
-     *
-     * @param array<int, array{FileIdentity, string}> $placed index => identity and the entry as written
-     *
-     * @throws ConfigurationRefusal
-     *
-     * @return array<int, array{FileIdentity, string}>
-     */
-    private static function placed(array $placed, int $index, FileIdentity $identity, ResolvedValueInterface $entry, ConfigurationOrigin $rootOrigin): array
-    {
-        $written = (string) $entry->plain();
-        foreach ($placed as $earlier => [$earlierIdentity, $earlierWritten]) {
-            if (!$identity->sameAs($earlierIdentity)) {
-                continue;
-            }
-
-            $entry->refuse($earlier === -1
-                ? \sprintf('Entry imports[%d] ("%s") of %s names that file itself; a file cannot import itself.', $index, $written, $rootOrigin->describe())
-                : \sprintf(
-                    'Entries imports[%d] ("%s") and imports[%d] ("%s") of %s name the same file; list each file once.',
-                    $earlier,
-                    $earlierWritten,
-                    $index,
-                    $written,
-                    $rootOrigin->describe(),
-                ));
-        }
-        $placed[$index] = [$identity, $written];
-
-        return $placed;
-    }
-
-    /**
-     * The directory entries resolve against: the root file's own, through a
-     * symlink to it, so a configuration linked into a project reads the files
-     * beside its target. An entry is named from the root's name, which leads
-     * to the same file because `..` is kept as written — unless the root is
-     * itself a symlink, whose name leads to the link's directory: its imports
-     * are then named by this directory.
-     *
-     * @throws ConfigurationRefusal
-     */
-    private static function realDirectory(string $rootPhysicalPath, ConfigurationOrigin $rootOrigin): string
-    {
-        $real = realpath($rootPhysicalPath);
-
-        return $real === false
-            ? throw ConfigurationRefusal::aboutDocument($rootOrigin, \sprintf('%s cannot be resolved to a file path.', ucfirst($rootOrigin->describe())))
-            : \dirname($real);
-    }
-
-    /**
-     * Refused before the file is read: a target that cannot be stat'ed or
-     * reports inode 0 has no identity to compare, and a directory or a FIFO
-     * would fail or block the read.
-     *
-     * @throws ConfigurationRefusal
-     */
-    private static function identify(string $physicalPath, ConfigurationOrigin $origin): FileIdentity
-    {
-        // The warning names no reason: a missing file and an untraversable directory read alike.
-        [$stat] = NativeCall::attempt(static fn(): array|false => stat($physicalPath));
-        $identity = $stat === false ? null : FileIdentity::fromStat($stat);
-        $problem = match (true) {
-            $identity === null => 'was not found or is not accessible',
-            $identity->type !== self::REGULAR_FILE => 'is not a regular file',
-            $identity->inode === 0 => 'reports no file identity (inode 0), so it cannot be told apart from the other files',
-            default => null,
-        };
-
-        return $problem === null && $identity !== null
-            ? $identity
-            : throw ConfigurationRefusal::aboutDocument($origin, \sprintf('%s %s.', ucfirst($origin->describe()), $problem ?? 'was not found or is not accessible'));
-    }
-
-    private static function joined(string $directory, string $entry): string
-    {
-        return $directory === '.' || str_starts_with($entry, '/') ? $entry : rtrim($directory, '/') . '/' . $entry;
-    }
-
-    /**
-     * Drops `.` and empty segments only. `x/..` is kept as written: through a
-     * symlinked directory it leads elsewhere than collapsing it would say, so
-     * a name always leads to the file read and two files never share one.
-     */
-    private static function normalize(string $path): string
-    {
-        $kept = array_diff(explode('/', $path), ['', '.']);
-
-        return (str_starts_with($path, '/') ? '/' : '') . implode('/', $kept);
     }
 }
