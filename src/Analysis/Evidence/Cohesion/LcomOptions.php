@@ -34,6 +34,7 @@ final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAware
     /**
      * @param int $minMethods Minimum number of LCOM graph vertices after exclusions and stateless merging
      * @param list<string>|null $excludeMethods Method names to exclude from LCOM graph (e.g., lifecycle hooks)
+     * @param string|null $excludeMethodsWrittenBy The sentence naming the sources that wrote the list; null when the options were not built from a document
      */
     public function __construct(
         public bool $enabled = true,
@@ -42,6 +43,7 @@ final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAware
         public bool $excludeReadonly = true,
         public int $minMethods = 3,
         public ?array $excludeMethods = null,
+        public ?string $excludeMethodsWrittenBy = null,
     ) {}
 
     public static function fromResolved(ResolvedRuleOptionValues $config): self
@@ -54,6 +56,7 @@ final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAware
             excludeReadonly: $config->boolean('exclude-readonly', true),
             minMethods: $config->integer('min-methods', 3),
             excludeMethods: $config->list('exclude-methods') === null ? null : $config->strings('exclude-methods', []),
+            excludeMethodsWrittenBy: $config->writtenBy('exclude-methods'),
         );
     }
 
@@ -66,6 +69,7 @@ final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAware
             excludeReadonly: $this->excludeReadonly,
             minMethods: $this->minMethods,
             excludeMethods: $this->excludeMethods,
+            excludeMethodsWrittenBy: $this->excludeMethodsWrittenBy,
         );
     }
 

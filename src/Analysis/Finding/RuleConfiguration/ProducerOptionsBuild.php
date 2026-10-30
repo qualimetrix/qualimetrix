@@ -6,6 +6,8 @@ namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
 
 use InvalidArgumentException;
 use LogicException;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ConfiguredValueWriters;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOptionValues;
@@ -55,11 +57,23 @@ final readonly class ProducerOptionsBuild
 
     private function suppression(string $ruleName, ResolvedRuleOptionValues $values): RuleSuppression
     {
+        $paths = $values->list(FrameworkOptionKeys::PATHS);
+        $namespaces = $values->list(FrameworkOptionKeys::NAMESPACES);
+        $channels = $values->map(FrameworkOptionKeys::NAMESPACE_CHANNELS);
+
         return new RuleSuppression(
-            paths: $this->suppressionSelectors->optionalPaths($ruleName, 'suppress_paths', $values->list(FrameworkOptionKeys::PATHS)),
-            namespaces: $this->suppressionSelectors->optionalNamespaces($ruleName, 'suppress_namespaces', $values->list(FrameworkOptionKeys::NAMESPACES)),
-            namespaceChannels: $this->suppressionSelectors->channels($ruleName, $values->map(FrameworkOptionKeys::NAMESPACE_CHANNELS)),
+            paths: $this->suppressionSelectors->optionalPaths($ruleName, 'suppress_paths', $paths),
+            namespaces: $this->suppressionSelectors->optionalNamespaces($ruleName, 'suppress_namespaces', $namespaces),
+            namespaceChannels: $this->suppressionSelectors->channels($ruleName, $channels),
+            pathWriters: $paths === null ? null : self::writersOf($paths),
+            namespaceWriters: $namespaces === null ? null : self::writersOf($namespaces),
+            namespaceChannelWriters: array_map(self::writersOf(...), $channels?->entries() ?? []),
         );
+    }
+
+    private static function writersOf(ResolvedValueInterface $node): ConfiguredValueWriters
+    {
+        return ConfiguredValueWriters::fromProvenance($node->contributors());
     }
 
     private static function refuseValue(FindingConfiguration $configuration, string $ruleName, RuleOptionRefusal $refusal): never

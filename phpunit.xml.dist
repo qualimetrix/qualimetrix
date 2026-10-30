@@ -68,6 +68,7 @@
             <directory>tests/Analysis/Configuration/Integration</directory>
             <directory>tests/Analysis/Evidence/Measurement/Integration</directory>
             <directory>tests/Analysis/Evidence/CodeSmell/Integration</directory>
+            <directory>tests/Analysis/Evidence/Cohesion/Integration</directory>
             <directory>tests/Analysis/Evidence/Complexity/Integration</directory>
             <directory>tests/Analysis/Evidence/Coupling/Integration</directory>
             <directory>tests/Analysis/Evidence/Design/Integration</directory>

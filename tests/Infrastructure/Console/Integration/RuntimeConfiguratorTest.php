@@ -137,7 +137,7 @@ final class RuntimeConfiguratorTest extends TestCase
             $computedMetrics = $computedMetricsOverride;
         }
         $coupling = self::createStub(CouplingConfiguratorInterface::class);
-        $coupling->method('resolve')->willReturn([]);
+        $coupling->method('resolve')->willReturn(new \Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\FrameworkNamespaces());
         $failure = new InvalidArgumentException('late ' . ($failingOwner ?? 'owner') . ' resolution failure');
         if ($failingOwner === 'architecture') {
             $architecture->method('resolve')->willThrowException($failure);

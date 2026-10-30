@@ -25,6 +25,7 @@ Finding/
 │   │   └── ProducerDeclaration.php
 │   ├── ThresholdCrossing.php # Raw value against selected effective threshold
 │   ├── RulePublicationInterface.php # External selection and activity projection
+│   ├── GlobalValueWriters.php # Who wrote each global suppress_paths / suppress_namespaces value
 │   ├── Configuration/    # completed carrier and public typed options construction
 │   │   ├── FindingConfiguration.php
 │   │   └── RuleOptionsBuild.php
@@ -121,6 +122,7 @@ Finding/
 │   ├── PopulationSession.php # selected publication, declaration validation and one freeze
 │   └── PopulationTrace.php # unit counts and bounded canonical examples
 ├── SuppressionBinding/   # Whether a configured suppression value named anything the run holds
+│   ├── ConfiguredValueJudge.php # Reach, binding and the installed-writer question for one value
 │   ├── PathBinding.php   # Path values against the analysed, failed and generated-excluded files and directories
 │   ├── UnboundSuppressionFinding.php # Messages for values that bind to nothing
 │   └── UnboundSuppressionPopulation.php # The judged population of one audit call
@@ -636,6 +638,31 @@ freezes one session after the whole native audit. Unknown namespace evidence
 withholds namespace values while leaving independently judged paths measurable.
 Selector displays are reversibly byte-framed before internal JSON identity
 encoding; a CLI source byte and its literal percent spelling stay distinct.
+
+Every value carries its writers (`ConfiguredValueWriters`), and the last
+sentence of each finding names them. A global value's writers
+(`Contract\GlobalValueWriters`, carried by Reporting's
+`ConfiguredFindingExclusions`) are every layer whose list wrote that spelling
+plus `--suppress-path` / `--suppress-namespace` for a command-line value; a
+per-rule value's are the contributors of its list, or of its own entry for
+`suppress_namespace_channels`. Unknown writers (a carrier built without them)
+are judged and worded without a sentence.
+
+`ConfiguredValueJudge` asks each value, apart from where it points, whether the
+project answers for it (`installedOnly()`): a value is not judged when it binds
+nothing, no later layer can take it away, and every writer is a file an
+installed Composer package provides. Global values and each
+`suppress_namespace_channels` entry accumulate (a later layer merges a channel
+key but cannot drop it, and an empty entry is refused at load); a per-rule
+`suppress_paths` or `suppress_namespaces` list is replaced whole, `[]`
+included, and stays judged. A value that binds is judged whoever wrote it, as
+`discovery.unmatched-exclude` converts only unanswered selectors. The
+population fails at the `installed-writer` gate (last on every channel,
+`suppression.unmatched-rule-ledger` included), declared a boundary rather than a
+data gap and worded so; `auditResult()`, `unjudgedValues()`,
+`judgedChannels()`, `withheldForRemovedCode()` and
+`installedConfigurationSources()` all go through the one enumeration and the
+one judge. Occurrence keys do not include writers.
 
 ## Locality
 

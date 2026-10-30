@@ -87,6 +87,7 @@ final class UnmatchedFrameworkNamespaceIntegrationTest extends TestCase
         self::assertSame('warning', $findings[0]['severity'] ?? null);
         self::assertStringContainsString('Nope\Missing', (string) ($findings[0]['message'] ?? ''));
         self::assertStringContainsString('coupling.cbo-app', (string) ($findings[0]['message'] ?? ''));
+        self::assertStringEndsWith('Written by configuration file "qmx.yaml".', (string) ($findings[0]['message'] ?? ''));
     }
 
     /** Half two: the same option with a prefix the code really uses, silence. */

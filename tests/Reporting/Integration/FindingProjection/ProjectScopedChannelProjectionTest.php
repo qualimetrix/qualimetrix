@@ -36,6 +36,7 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Git\ReportingGitScopeQuery;
+use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions;
 use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
@@ -96,17 +97,21 @@ final class ProjectScopedChannelProjectionTest extends TestCase
     #[Test]
     public function itSurvivesPathExclusionCoveringTheFile(): void
     {
-        $this->assertEveryDeclaredChannelSurvives(new FindingProjectionOptions(suppressPaths: [
-            new PathPattern(SelectorDefinition::fromKindAndValue(SelectorKind::Subtree->value, 'src')),
-        ]));
+        $this->assertEveryDeclaredChannelSurvives(new FindingProjectionOptions(
+            exclusions: new ConfiguredFindingExclusions([
+                new PathPattern(SelectorDefinition::fromKindAndValue(SelectorKind::Subtree->value, 'src')),
+            ]),
+        ));
     }
 
     #[Test]
     public function itSurvivesNamespaceExclusionCoveringTheNamespace(): void
     {
-        $this->assertEveryDeclaredChannelSurvives(new FindingProjectionOptions(suppressNamespaces: [
-            new NamespacePattern(SelectorDefinition::fromKindAndValue(SelectorKind::Subtree->value, 'App')),
-        ]));
+        $this->assertEveryDeclaredChannelSurvives(new FindingProjectionOptions(
+            exclusions: new ConfiguredFindingExclusions(suppressNamespaces: [
+                new NamespacePattern(SelectorDefinition::fromKindAndValue(SelectorKind::Subtree->value, 'App')),
+            ]),
+        ));
     }
 
     #[Test]

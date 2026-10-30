@@ -13,17 +13,17 @@ use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationS
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface;
+use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\FrameworkNamespaces;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface;
-use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Infrastructure\Console\Profile\ProfilePresenter;
 use Symfony\Component\Console\Input\InputInterface;
 
 /** Configures the analysis engine's per-run rule, collector, and feature state.
- * @qmx-threshold coupling.instability 0.882354 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
+ * @qmx-threshold coupling.instability 0.888889 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies.
  */
 final readonly class AnalysisRuntimeConfigurator
 {
@@ -46,8 +46,7 @@ final readonly class AnalysisRuntimeConfigurator
         return $this->computedMetricConfigurator->resolve($document);
     }
 
-    /** @return list<NamespacePattern> */
-    public function resolveCoupling(ConfigurationDocument $document): array
+    public function resolveCoupling(ConfigurationDocument $document): FrameworkNamespaces
     {
         return $this->couplingConfigurator->resolve($document);
     }
@@ -86,10 +85,7 @@ final readonly class AnalysisRuntimeConfigurator
         $this->lcomConfigurationStore->replace($configuration->lcomConfiguration);
     }
 
-    /**
-     * @param list<NamespacePattern> $frameworkNamespaces
-     */
-    public function replaceCoupling(array $frameworkNamespaces): void
+    public function replaceCoupling(FrameworkNamespaces $frameworkNamespaces): void
     {
         $this->couplingConfigurator->replace($frameworkNamespaces);
     }

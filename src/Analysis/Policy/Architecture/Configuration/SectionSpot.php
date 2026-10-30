@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
 use LogicException;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface;
@@ -122,6 +123,18 @@ final readonly class SectionSpot
         return $writer->path === null || $this->below === []
             ? $writer
             : new Provenance($writer->origin, [...$writer->path, ...$this->below], $writer->layerIndex, $writer->line);
+    }
+
+    /**
+     * Every source whose writing survives in the node written here — the one
+     * source that replaced a list, or each that merged into a map.
+     */
+    public function writers(): ConfiguredValueWriters
+    {
+        $anchor = $this->anchor
+            ?? throw new LogicException(\sprintf('Nothing is written at "%s".', $this->display()));
+
+        return ConfiguredValueWriters::fromProvenance($anchor->contributors());
     }
 
     /**

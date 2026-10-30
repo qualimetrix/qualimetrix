@@ -26,9 +26,11 @@ final readonly class FindingProjectionOptionsResolver
         $cliExcludePaths = CommandLineSpelling::options($input, 'suppress-path');
         $cliExcludeNamespaces = CommandLineSpelling::options($input, 'suppress-namespace');
         $decoder = new CliSelectorDecoder();
-        $exclusions = $configuredExclusions->withAdditional(
+        $exclusions = $configuredExclusions->withCommandLine(
             array_map(fn(string $value) => $decoder->decodePath($value, '--suppress-path'), $cliExcludePaths),
+            '--suppress-path',
             array_map(fn(string $value) => $decoder->decodeNamespace($value, '--suppress-namespace'), $cliExcludeNamespaces),
+            '--suppress-namespace',
         );
 
         $gitScope = null;
@@ -46,8 +48,7 @@ final readonly class FindingProjectionOptionsResolver
             baselineDocument: $baselinePath !== null && $baselinePath !== ''
                 ? $this->documentReader->preflight($baselinePath)
                 : null,
-            suppressPaths: $exclusions->suppressPaths,
-            suppressNamespaces: $exclusions->suppressNamespaces,
+            exclusions: $exclusions,
             annotationSuppressionDisabled: (bool) $input->getOption('no-suppression-annotations'),
             gitScope: $gitScope,
         );

@@ -52,6 +52,18 @@ final readonly class ValueScopeJudgement
     ) {}
 
     /**
+     * The sources the project can neither edit nor remove — a question apart
+     * from where a value points: {@see judgesPathValue()} and
+     * {@see judgesNamespaceValue()} never ask it.
+     *
+     * @return list<string>
+     */
+    public function installedConfigurationSources(): array
+    {
+        return $this->scope->installedConfigurationSources();
+    }
+
+    /**
      * Whether a path-shaped value — `suppress_paths`, a per-rule ledger
      * entry — names a place this run analysed.
      */

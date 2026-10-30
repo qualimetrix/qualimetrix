@@ -2494,6 +2494,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0139-configuration-imports.md' => 'Analysis.Configuration',
         'docs/adr/0140-built-in-preset-glob-and-nested-imports.md' => 'Analysis.Configuration',
         'docs/adr/0141-committed-dist-configuration-discovery.md' => 'Analysis.Configuration',
+        'docs/adr/0142-installed-configuration-values.md' => 'Analysis.Finding',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/ProjectManifest/README.md' => 'Analysis.ProjectManifest',

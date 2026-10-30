@@ -1,0 +1,19 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 4862
++visible 4810
+@@ -31,5 +31,5 @@
+-    <error line="1" severity="warning" message="The exclude_methods name &quot;brigde&quot; matched no method declared in this project. Written by configuration file &quot;qmx.yaml&quot;." source="qmx.cohesion.unmatched-exclude-method"/>
+-  </file>
+-</checkstyle>
+-
+-invocation-format:checkstyle 4862
++    <error line="1" severity="warning" message="The exclude_methods name &quot;brigde&quot; matched no method declared in this project." source="qmx.cohesion.unmatched-exclude-method"/>
++  </file>
++</checkstyle>
++
++invocation-format:checkstyle 4810
+@@ -65,1 +65,1 @@
+-    <error line="1" severity="warning" message="The exclude_methods name &quot;brigde&quot; matched no method declared in this project. Written by configuration file &quot;qmx.yaml&quot;." source="qmx.cohesion.unmatched-exclude-method"/>
++    <error line="1" severity="warning" message="The exclude_methods name &quot;brigde&quot; matched no method declared in this project." source="qmx.cohesion.unmatched-exclude-method"/>

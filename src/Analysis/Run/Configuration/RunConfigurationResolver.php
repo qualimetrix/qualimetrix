@@ -42,7 +42,7 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
         $excludes = self::list($resolved->get(ConfigurationRoot::Exclude->value));
         $authoredExcludes = $excludes === null ? [] : $this->pathPatterns($excludes);
 
-        $scope = $this->projectScopeCoverage->measure($root, $pathList, $autoloadDev, $pathsAuthorship);
+        $scope = $this->projectScopeCoverage->measure($root, $pathList, $autoloadDev, $pathsAuthorship, $document);
 
         return new RunConfiguration(
             projectScope: $scope,

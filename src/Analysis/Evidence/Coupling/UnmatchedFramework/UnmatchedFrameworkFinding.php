@@ -22,9 +22,16 @@ final readonly class UnmatchedFrameworkFinding
      */
     private const string OCCURRENCE_KIND = 'unmatched-framework-prefix';
 
-    public static function of(NamespacePattern $selector, string $channel): Finding
+    /** @param string|null $writtenBy the sentence naming who wrote the selectors; null when they were not built from a document */
+    public static function of(NamespacePattern $selector, string $channel, ?string $writtenBy = null): Finding
     {
         $display = $selector->definition->display();
+        $message = \sprintf(
+            'The framework namespace selector "%s" matched no class the run analysed or depends on. Nothing was moved'
+            . ' out of the application scope for it, so "coupling.cbo-app" still counts every class it was'
+            . ' written to exclude and "coupling.ce-framework" counts none of them.',
+            $display,
+        );
 
         return new Finding(
             location: Location::none(),
@@ -32,12 +39,7 @@ final readonly class UnmatchedFrameworkFinding
             symbolPath: SymbolPath::forProject(),
             ruleName: $channel,
             code: $channel,
-            message: \sprintf(
-                'The framework namespace selector "%s" matched no class the run analysed or depends on. Nothing was moved'
-                . ' out of the application scope for it, so "coupling.cbo-app" still counts every class it was'
-                . ' written to exclude and "coupling.ce-framework" counts none of them.',
-                $display,
-            ),
+            message: $writtenBy === null ? $message : $message . ' ' . $writtenBy,
             severity: Severity::Warning,
             recommendation: \sprintf(
                 'Check "%s" against the names the code really imports. Use exact for one name, subtree for a namespace'

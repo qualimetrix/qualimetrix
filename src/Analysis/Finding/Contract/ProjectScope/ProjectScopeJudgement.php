@@ -16,12 +16,15 @@ final readonly class ProjectScopeJudgement
      * @param RemovedCodeNamespaces|null $removedCode null means the removed code's namespaces were not
      *                                                established, which counts as unknown: a caller that
      *                                                knows nothing was removed passes `none()`
+     * @param list<string> $installedConfigurationSources the `describe()` words of each configuration
+     *                                                    source established as installed by Composer
      */
     public function __construct(
         private array $namespaceWithheldBy = [],
         private array $selectorsWithheldBy = [],
         private array $excludeSelectors = [],
         private ?RemovedCodeNamespaces $removedCode = null,
+        private array $installedConfigurationSources = [],
     ) {
         self::assertDistinctDoors($namespaceWithheldBy);
         self::assertDistinctDoors($selectorsWithheldBy);
@@ -157,6 +160,18 @@ final readonly class ProjectScopeJudgement
         }
 
         return $phpFile;
+    }
+
+    /**
+     * The configuration sources established as installed by Composer, as
+     * `describe()` words them: the project can neither edit nor remove what
+     * only they wrote. Nothing established fails closed.
+     *
+     * @return list<string>
+     */
+    public function installedConfigurationSources(): array
+    {
+        return $this->installedConfigurationSources;
     }
 
     /** @return list<ProjectScopeDoor> */

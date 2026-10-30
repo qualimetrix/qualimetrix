@@ -36,6 +36,7 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\BaselineCommand\MeasuredFindingSet;
+use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions;
 use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
@@ -77,8 +78,7 @@ final class MeasuredFindingSetTest extends TestCase
         $reported = self::finding('src/Service/UserService.php', 'App\\Service', 'UserService');
 
         $options = new FindingProjectionOptions(
-            suppressPaths: [self::path('generated')],
-            suppressNamespaces: [self::namespace('App\\Vendor')],
+            exclusions: new ConfiguredFindingExclusions([self::path('generated')], [self::namespace('App\\Vendor')]),
         );
         $set = $this->createSet(
             [$excludedByPath, $excludedByNamespace, $reported],
@@ -113,7 +113,7 @@ final class MeasuredFindingSetTest extends TestCase
         // run — it just does not redefine what the baseline measures.
         self::assertSame([], $set->forRun(
             $this->configuration(),
-            options: new FindingProjectionOptions(suppressPaths: [self::path('vendor')]),
+            options: new FindingProjectionOptions(exclusions: new ConfiguredFindingExclusions([self::path('vendor')])),
         ));
     }
 

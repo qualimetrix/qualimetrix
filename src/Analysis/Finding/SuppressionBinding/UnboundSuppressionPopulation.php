@@ -11,8 +11,6 @@ use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
 use Qualimetrix\Analysis\Finding\Contract\Population\JudgedPopulation;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
 use Qualimetrix\Analysis\Finding\Population\PopulationSession;
-use Qualimetrix\Core\Pattern\NamespacePattern;
-use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\SourceText\SourceBytes;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
@@ -20,6 +18,8 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * The judged population of one {@see UnboundSuppressionAudit::auditResult()}
  * call: every published configured value, each identified by its occurrence
  * and gated on whether the run could judge it.
+ *
+ * @phpstan-import-type ConfiguredValue from ConfiguredValueJudge
  */
 final readonly class UnboundSuppressionPopulation
 {
@@ -35,15 +35,14 @@ final readonly class UnboundSuppressionPopulation
     }
 
     /**
-     * @param array{channel: string, rule: ?string, option: string, pattern: PathPattern|NamespacePattern} $value
-     * @param GateInput $input whether the run could judge the value
+     * @param ConfiguredValue $value
+     * @param list<GateInput> $inputs one per declared gate of the value's channel, in order
      */
-    public function record(array $value, int $ordinal, GateInput $input): void
+    public function record(array $value, int $ordinal, array $inputs): void
     {
         $channel = new FindingChannel($value['channel']);
         $identity = PopulationIdentity::occurrence(json_encode([$value['channel'], $value['rule'], $value['option'], SourceBytes::framed($value['pattern']->definition->display())], \JSON_THROW_ON_ERROR), $ordinal, 'configured-suppression-value-occurrence');
         $declaration = $this->declarations[$channel->code];
-        $inputs = $channel->code === UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER ? [$input, $input] : [$input];
         $failed = $declaration->populationFailure($channel, SymbolLevel::Project, $identity, $inputs);
         $this->session->record(UnboundSuppressionRule::NAME, $channel, SymbolLevel::Project, $identity, $declaration, $failed['gate'] ?? null, $failed['reason'] ?? null, $failed['dataGap'] ?? true);
     }

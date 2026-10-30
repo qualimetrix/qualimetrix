@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage;
 
 use LogicException;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface;
@@ -95,6 +96,14 @@ final readonly class ResolvedRuleOptionValues
     {
         $node = $this->node($key);
         return $node === null || $node instanceof ResolvedMapInterface ? $node : self::wrongType($key);
+    }
+
+    /** The sentence a finding ends with to name the sources that wrote the option; null when none did. */
+    public function writtenBy(string $key): ?string
+    {
+        $node = $this->node($key);
+
+        return $node === null ? null : ConfiguredValueWriters::fromProvenance($node->contributors())->sentence();
     }
 
     /**

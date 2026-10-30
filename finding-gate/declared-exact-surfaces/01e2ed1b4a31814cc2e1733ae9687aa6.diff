@@ -1,0 +1,12 @@
+--- candidate
++++ reference (mapped)
+@@ -1,2 +1,2 @@
+-visible 411
+-[project]: warning[discovery.unmatched-exclude]: The exclude pattern "subtree:NoSuchDir" matched no entry in the project, so it leaves nothing out. Written by configuration file "qmx.yaml".
++visible 369
++[project]: warning[discovery.unmatched-exclude]: The exclude pattern "subtree:NoSuchDir" matched no entry in the project, so it leaves nothing out.
+@@ -9,2 +9,2 @@
+-invocation-format:text 411
+-[project]: warning[discovery.unmatched-exclude]: The exclude pattern "subtree:NoSuchDir" matched no entry in the project, so it leaves nothing out. Written by configuration file "qmx.yaml".
++invocation-format:text 369
++[project]: warning[discovery.unmatched-exclude]: The exclude pattern "subtree:NoSuchDir" matched no entry in the project, so it leaves nothing out.

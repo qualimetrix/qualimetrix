@@ -36,7 +36,10 @@ final readonly class UnmatchedExcludeAudit
             foreach ($scope->excludeSelectors() as $verdict) {
                 yield [
                     'identity' => PopulationIdentity::selector($verdict->display, 'configured-discovery-selector'),
-                    'inputs' => [GateInput::context('excludeVerdictJudged', \in_array($verdict->outcome, [ExcludeSelectorOutcome::Removed, ExcludeSelectorOutcome::Unmatched, ExcludeSelectorOutcome::CoveredBySameSource], true))],
+                    'inputs' => [
+                        GateInput::context('excludeVerdictJudged', \in_array($verdict->outcome, [ExcludeSelectorOutcome::Removed, ExcludeSelectorOutcome::Unmatched, ExcludeSelectorOutcome::CoveredBySameSource, ExcludeSelectorOutcome::InstalledWriter], true)),
+                        GateInput::context('configuredValueWrittenHere', $verdict->outcome !== ExcludeSelectorOutcome::InstalledWriter),
+                    ],
                 ];
             }
         })();
@@ -56,32 +59,20 @@ final readonly class UnmatchedExcludeAudit
                 throw new LogicException('Expected measured exclude selector verdict');
             }
             if ($verdict->outcome === ExcludeSelectorOutcome::Unmatched) {
-                $findings[] = UnmatchedExcludeFinding::forPattern($verdict->display);
+                $findings[] = UnmatchedExcludeFinding::forPattern($verdict->display, $verdict->writers());
             } elseif ($verdict->outcome === ExcludeSelectorOutcome::CoveredBySameSource) {
-                $findings[] = UnmatchedExcludeFinding::forPattern($verdict->display, $verdict->coveredBy);
+                $findings[] = UnmatchedExcludeFinding::forPattern($verdict->display, $verdict->writers(), $verdict->coveredBy);
             } elseif ($verdict->outcome === ExcludeSelectorOutcome::Unjudgeable) {
                 $directory = $projectRoot->value() . '/' . $verdict->blockedAt;
                 $findings[] = UnjudgedExcludeFinding::forPattern(
                     $verdict->display,
                     AbsolutePath::fromString($directory),
                     $projectRoot,
+                    $verdict->writers(),
                 );
             }
         }
 
         return $findings;
-    }
-
-    /** @return list<array{channel: string, option: string, pattern: string}> */
-    public function unjudgedValues(ProjectScopeJudgement $scope): array
-    {
-        $values = [];
-        foreach ($scope->excludeSelectors() as $verdict) {
-            if ($verdict->outcome === ExcludeSelectorOutcome::NotJudged || $verdict->outcome === ExcludeSelectorOutcome::CoveredByOtherSource) {
-                $values[] = ['channel' => 'discovery.unmatched-exclude', 'option' => 'exclude', 'pattern' => $verdict->display];
-            }
-        }
-
-        return $values;
     }
 }

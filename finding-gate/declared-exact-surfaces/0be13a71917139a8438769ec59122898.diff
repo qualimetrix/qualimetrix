@@ -1,0 +1,26 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 5538
++visible 5406
+@@ -67,1 +67,1 @@
+-                        "text": "The suppress_paths pattern \"subtree:src/NoSuchDir\" matched no file analysed by this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported. Written by configuration file \"qmx.yaml\"."
++                        "text": "The suppress_paths pattern \"subtree:src/NoSuchDir\" matched no file analysed by this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported."
+@@ -78,1 +78,1 @@
+-                        "text": "The suppress_namespaces pattern \"subtree:Corpus\\Suppression\\Gone\" matched no namespace declared in this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported. Written by configuration file \"qmx.yaml\"."
++                        "text": "The suppress_namespaces pattern \"subtree:Corpus\\Suppression\\Gone\" matched no namespace declared in this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported."
+@@ -89,1 +89,1 @@
+-                        "text": "The suppress_paths pattern \"subtree:src/AlsoGone\" configured under rule \"complexity.ccn\" matched nothing this run analysed, so it suppressed nothing and could not have. Written by configuration file \"qmx.yaml\"."
++                        "text": "The suppress_paths pattern \"subtree:src/AlsoGone\" configured under rule \"complexity.ccn\" matched nothing this run analysed, so it suppressed nothing and could not have."
+@@ -110,1 +110,1 @@
+-invocation-format:sarif 5538
++invocation-format:sarif 5406
+@@ -176,1 +176,1 @@
+-                        "text": "The suppress_paths pattern \"subtree:src/NoSuchDir\" matched no file analysed by this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported. Written by configuration file \"qmx.yaml\"."
++                        "text": "The suppress_paths pattern \"subtree:src/NoSuchDir\" matched no file analysed by this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported."
+@@ -187,1 +187,1 @@
+-                        "text": "The suppress_namespaces pattern \"subtree:Corpus\\Suppression\\Gone\" matched no namespace declared in this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported. Written by configuration file \"qmx.yaml\"."
++                        "text": "The suppress_namespaces pattern \"subtree:Corpus\\Suppression\\Gone\" matched no namespace declared in this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported."
+@@ -198,1 +198,1 @@
+-                        "text": "The suppress_paths pattern \"subtree:src/AlsoGone\" configured under rule \"complexity.ccn\" matched nothing this run analysed, so it suppressed nothing and could not have. Written by configuration file \"qmx.yaml\"."
++                        "text": "The suppress_paths pattern \"subtree:src/AlsoGone\" configured under rule \"complexity.ccn\" matched nothing this run analysed, so it suppressed nothing and could not have."

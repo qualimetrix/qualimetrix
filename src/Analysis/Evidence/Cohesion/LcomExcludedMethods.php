@@ -56,7 +56,7 @@ final class LcomExcludedMethods
             if (isset($methods[$normalized])) {
                 continue;
             }
-            $findings[] = self::unmatchedFinding($authored, $normalized);
+            $findings[] = self::unmatchedFinding($authored, $normalized, $options->excludeMethodsWrittenBy);
         }
 
         return $findings;
@@ -88,15 +88,17 @@ final class LcomExcludedMethods
         return $methods;
     }
 
-    private static function unmatchedFinding(string $authored, string $normalized): Finding
+    private static function unmatchedFinding(string $authored, string $normalized, ?string $writtenBy): Finding
     {
+        $message = \sprintf('The exclude_methods name "%s" matched no method declared in this project.', $authored);
+
         return new Finding(
             location: Location::none(),
             subject: MetricSubject::aggregate(SymbolPath::forProject()),
             symbolPath: SymbolPath::forProject(),
             ruleName: 'cohesion.unmatched-exclude-method',
             code: 'cohesion.unmatched-exclude-method',
-            message: \sprintf('The exclude_methods name "%s" matched no method declared in this project.', $authored),
+            message: $writtenBy === null ? $message : $message . ' ' . $writtenBy,
             severity: Severity::Warning,
             metricValue: 1,
             occurrenceKey: OccurrenceKey::semantic('unmatched-exclude-method', ['method' => $normalized]),

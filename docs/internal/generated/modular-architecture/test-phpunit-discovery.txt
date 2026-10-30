@@ -1996,6 +1996,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\ConfigSchemaTest::itReturnsOnlyListTypeKeys
  - Qualimetrix\Tests\Analysis\Configuration\Unit\ConfigurationHolderTest::itDoesNotProvideMutableReplacementOperations
  - Qualimetrix\Tests\Analysis\Configuration\Unit\ConfigurationHolderTest::itTracksAppliedSourcesInPrecedenceOrder
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\ConfigurationDocumentRegularFileTest::itNamesNothingForAPathThatLeadsToNoFileItRead
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\ConfigurationDocumentRegularFileTest::itNamesTheFileAPathLeadsTo
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\ConfiguredValueWritersTest::itJoinsTwoWritersWithAnd
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\ConfiguredValueWritersTest::itKeepsOneOriginPerWriterInOrderWhenBuiltFromProvenance
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\ConfiguredValueWritersTest::itNamesOneWriter
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\ConfiguredValueWritersTest::itNamesTheCommandLineAndAnImportersChain
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\ConfiguredValueWritersTest::itRefusesNoWriters
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\ConfiguredValueWritersTest::itRefusesTheSameWriterTwiceEvenAsAnotherInstance
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\ConfiguredValueWritersTest::itSeparatesThreeWritersWithCommasAndAnd
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\ConfiguredValueWritersTest::itUnitesWritersKeepingOneEntryPerOrigin
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NameVocabularyTest::itAdmitsEveryMemberOfAClosedVocabulary
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NameVocabularyTest::itExposesTheNamesOfAClosedVocabularyOnly
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NameVocabularyTest::itKeepsAClosedVocabularyAPredicateForTheEngine
@@ -2026,6 +2036,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRetainsTheDescriptionAcrossEveryModifier"withWording(emptyOverrideNotice)"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRetainsTheDescriptionAcrossEveryModifier"withWording(hint)"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRetainsTheDescriptionAcrossEveryModifier"words"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\ResolvedDocumentOriginsTest::itKeepsTheWriterOfAReplacedScalarAndAReplacedList
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\ResolvedDocumentOriginsTest::itNamesEachOriginOnce
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\ResolvedDocumentOriginsTest::itNamesNoOriginForAnEmptyDocument
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\ResolvedDocumentOriginsTest::itReachesEveryLayerAnOpaqueValueKeeps
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\ResolvedDocumentOriginsTest::itReachesMapEntriesListItemsAndAccumulatedSets
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itCarriesTheSourceAndLocatorItWasBuiltWith
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDefaultsTheLocatorToNull
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDescribesEverySourceKind
@@ -3497,6 +3512,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivate\UnusedPrivateRuleTest::itReturnsNoFindingsWhenNoPrivateMemberIsUnused
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivate\UnusedPrivateRuleTest::itSkipsDeclarationLookupAndReturnsNoFindingsWhenDisabled
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivate\UnusedPrivateRuleTest::itSkipsTypedNonClassDeclarationsBeforeReadingMetrics
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Integration\UnmatchedExcludeMethodWritersIntegrationTest::itNamesTheConfigurationFileThatWroteTheList
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionCompositionCollectorTest::itKeepsSerializedSameNameDeclarationsSeparate
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionCompositionCollectorTest::itRefusesTruncatedRawFacts
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\CohesionCompositionCollectorTest::itRejectsNonBooleanLcomFacts"abstract"
@@ -3708,6 +3724,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itTreatsReturnArrayOfConstantsAsStateless
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itTreatsReturnForeignClassConstantAsStateless
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itTreatsReturnSelfConstantAsStateless
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomExcludedMethodsWritersTest::itCarriesTheFileThatWroteTheListBuiltFromADocument
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomExcludedMethodsWritersTest::itCarriesTheOptionThatWroteTheList
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomExcludedMethodsWritersTest::itEndsTheFindingWithItsWritersWithoutMovingItsKey
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomExcludedMethodsWritersTest::itKeepsTheWritersThroughAThresholdOverride
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomExcludedMethodsWritersTest::itNamesNoWritersWhenTheListWasNotWritten
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomRuleTest::itAccountsEachNormalizedMethodSelectorIncludingHealthyMatchesAndUnknownScope
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomRuleTest::itCountsMeasuredZeroBeforeSeverityAndDistinguishesMissingPublication
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomRuleTest::itGeneratesError
@@ -4932,6 +4953,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CoupledNamespacesTest::itTreatsTheGlobalNamespaceAsItsOwnRegion
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itAppliesExactAndRegexFrameworkSelectorsWithoutReparsingThem
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itBindsOnTheSameBoundaryIsFrameworkMatchesOn
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itCarriesTheSourcesThatWroteTheListBuiltFromADocument
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itHasNoWritersForACarrierNotBuiltFromADocument
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itIsEmptyWhenNoFrameworkPrefixesAreConfigured
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itIsNotEmptyWhenFrameworkPrefixesAreConfigured
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CouplingAnalysisTest::itKeepsDeclarationOrderAmongTheUnboundPrefixes
@@ -5272,8 +5295,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFramework\UnmatchedFrameworkNamespaceRuleTest::itCountsASourceOnceTheTargetIsMeasuredToo
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFramework\UnmatchedFrameworkNamespaceRuleTest::itDistinguishesScopeSelectorsUnknownGraphAndKnownEmptyClassification
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFramework\UnmatchedFrameworkNamespaceRuleTest::itDoesNotCountASourceTheCollectorNeverClassifies
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFramework\UnmatchedFrameworkNamespaceRuleTest::itEndsTheFindingWithTheSourcesThatWroteTheList
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFramework\UnmatchedFrameworkNamespaceRuleTest::itKeepsTheOccurrenceKeyWhoeverWroteTheList
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFramework\UnmatchedFrameworkNamespaceRuleTest::itNamesItselfAfterItsChannel
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFramework\UnmatchedFrameworkNamespaceRuleTest::itReportsOneFindingPerUnboundPrefix
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFramework\UnmatchedFrameworkNamespaceRuleTest::itSaysNothingAboutWritersOfAListNotBuiltFromADocument
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFramework\UnmatchedFrameworkNamespaceRuleTest::itSaysNothingWhenNoPrefixesAreDeclared
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFramework\UnmatchedFrameworkNamespaceRuleTest::itSaysNothingWhenTheGraphCarriesNoDependency
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\UnmatchedFramework\UnmatchedFrameworkNamespaceRuleTest::itSaysNothingWhenTheRuleIsDisabled
@@ -7492,6 +7518,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesVoErrorViaRuleOptCamelSpelling
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itAppliesVoErrorViaRuleOptKebabSpelling
  - Qualimetrix\Tests\Analysis\Finding\Integration\RuleOptionKeyNormalizationTest::itRefusesAGenuinelyUnknownOption
+ - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\InstalledSuppressionValuesIntegrationTest::itDoesNotJudgeGlobalValuesOnlyAnInstalledFileWrote
+ - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\InstalledSuppressionValuesIntegrationTest::itJudgesABoundValueAnInstalledFileWrote
+ - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\InstalledSuppressionValuesIntegrationTest::itJudgesAChannelEntryTheProjectWrote
+ - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\InstalledSuppressionValuesIntegrationTest::itJudgesAValueAnInstalledFileAndTheProjectBothWrote
+ - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\InstalledSuppressionValuesIntegrationTest::itJudgesTheSameValueWhereverTheProjectWroteIt
+ - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\InstalledSuppressionValuesIntegrationTest::itKeepsJudgingPerRuleListsAnInstalledFileWroteButNotAChannelEntry
+ - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\InstalledSuppressionValuesIntegrationTest::itReportsAnInstalledExcludeSelectorAsNotJudged
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itDoesNotSuppressItsOwnFindingWithTheSuppressionItReportsOn
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itFailsTheRunUnderFailOnWarning
  - Qualimetrix\Tests\Analysis\Finding\Integration\SuppressionBinding\UnboundSuppressionIntegrationTest::itIsNotWrittenIntoAGeneratedBaseline
@@ -7709,6 +7742,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\HostedPopulationTest::itSeparatesUnknownGraphFromKnownEmptyNativeArchitectureAndUnavailablePreparation
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationPredicatesTest::itBypassesInactiveFlagsBeforeReadingTheirMetric
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationPredicatesTest::itBypassesOnlyTheOppositeDeclaredSuppressionTag
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationPredicatesTest::itDeclaresAnInstalledWriterGateABoundaryAndNotADataGap
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationPredicatesTest::itDistinguishesMissingFromMeasuredZeroAndAppliesEffectiveOption
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationPredicatesTest::itKeepsExactClassKindSeparateFromLogicalSymbolKind
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationPredicatesTest::itRefusesInvalidCountInsteadOfCallingItHealthy
@@ -7730,6 +7764,17 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationSelectionTest::itRejectsAnOrdinaryFailureWithAnInvocationIdentityInEveryAccountingMode
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationSelectionTest::itStopsBeforeAdvancingInputsPastTheFirstFailureInEveryAccountingMode
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Population\PopulationSelectionTest::itUsesTheFailedGateUnitAfterAPassingOrdinaryPrefix
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\InstalledWriterJudgementTest::itAcceptsAnInstalledWriterSelectorWhetherTheQuestionIsOpenOrClosed
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\InstalledWriterJudgementTest::itDoesNotFindAValueAProjectFileAlsoWrote
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\InstalledWriterJudgementTest::itEstablishesNoSourceByDefault
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\InstalledWriterJudgementTest::itFindsAValueEveryWriterOfWhichIsInstalled
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\InstalledWriterJudgementTest::itKeepsEveryOtherConclusion"covered by another source"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\InstalledWriterJudgementTest::itKeepsEveryOtherConclusion"not judged"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\InstalledWriterJudgementTest::itKeepsEveryOtherConclusion"removed"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\InstalledWriterJudgementTest::itKeepsEveryOtherConclusion"unjudgeable"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\InstalledWriterJudgementTest::itReportsTheSourcesOfASelectorAsItsWriters
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\InstalledWriterJudgementTest::itTurnsAnUnansweredSelectorIntoAnInstalledWriterOne"covered by the same source"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\InstalledWriterJudgementTest::itTurnsAnUnansweredSelectorIntoAnInstalledWriterOne"unmatched"
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itConsultsRemovedCodeWhenNoDoorWithholds
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itJudgesALiteralTheRemovedCodeCannotReach
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope\ProjectScopeJudgementLiteralTest::itJudgesEveryLiteralWhenNoDoorWithholdsAndNothingWasRemoved
@@ -8464,6 +8509,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itStillNamesAnAnchoredNamespaceValueOnThatSameRun
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itWithholdsOnlyThePathValuesAFailedEntryMayHold
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionAuditTest::itWithholdsOnlyThePathValuesAGeneratedExcludedFileMayHold
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionWritersTest::itAsksTheScopeQuestionBeforeTheWritersQuestion
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionWritersTest::itDoesNotAdviseNarrowingTheExclusionForAnInstalledValue
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionWritersTest::itDoesNotJudgeAGlobalValueOnlyInstalledFilesWrote
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionWritersTest::itJudgesABoundValueOnlyInstalledFilesWrote
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionWritersTest::itJudgesAChannelEntryTheProjectWroteOrThatBinds
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionWritersTest::itJudgesAGlobalValueAnInstalledFileAndTheProjectBothWrote
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionWritersTest::itJudgesTheSameValueWhateverProjectFileOrOptionWroteIt
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\UnboundSuppressionWritersTest::itKeepsJudgingPerRuleListsAnInstalledFileWroteButNotAChannelEntry
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itAnchorsAValueOnACharacterOnlyTheJudgeUsedToCallAGlob
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itAnswersTheSameForRegexPathValue
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itBlamesNothingWhereTheProjectDeclaresNoAutoload
@@ -8554,6 +8607,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerCriteriaIntegrationTest::itClassifiesEachFixtureClassUnderTheRightLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerCriteriaIntegrationTest::itNamesTheMatchedCriterionInTheFindingMessageWhenItIsNotAPattern
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerCriteriaIntegrationTest::itRequiresEveryDeclaredCriterionUnderMatchAll
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerDeclarationWritersIntegrationTest::itDiffersByTheSentenceAloneBetweenARootAndAnImportedLayersList
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerDeclarationWritersIntegrationTest::itNamesTheRootFileOnEachOfTheThreeChannels
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerDeclarationWritersIntegrationTest::itNamesTheSourceOnTheMessageOfALayerWhoseClassesItsOwnExcludeRemoved
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerExcludeIntegrationTest::itAppliesTheSameExclusionsAfterYamlConfigLoaderNormalization
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerExcludeIntegrationTest::itDropsATemplateModuleWhoseEveryCandidateIsExcludedDuringObservation
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerExcludeIntegrationTest::itFiltersAnExcludedStaticLayerSubtreeOutOfMembership
@@ -8686,6 +8742,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureConfigurationTest::itExposesTheConstructorArgumentsThroughItsGetters
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureConfigurationTest::itIsEmptyWhenNoLayerIsDeclared
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureConfigurationTest::itIsNotEmptyWhenAtLeastOneLayerIsDeclared
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureConfigurationTest::itKeepsTheLayerWritersThroughExpansion
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureConfigurationTest::itNamesNoWriterByDefault
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureProcessorTest::itClearsThePreparedStateOnReplace
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureProcessorTest::itImplementsTheLayerPolicyPreparationContract
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\ArchitectureProcessorTest::itIsIdempotentWhenResetIsCalledRepeatedly
@@ -8807,12 +8865,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itAcceptsAGlobAllowSelectorThatMatchesNoCurrentRegistryLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itAcceptsAnExactDirectedAcyclicGraph
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itAssemblesLayersAllowAndCoverageIntoOneConfiguration
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itCarriesTheFileThatWroteTheLayersAsTheirWriters
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itKeepsPresetLayersWhileMergingAllowAndCoverageAcrossContributions
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itKeepsTheLayersListWhenAnOverlayOmitsIt
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itMatchesACapturedSelectorOnlyWhenTheSubstitutionBindingAgrees
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itMatchesAGlobAllowSourceAgainstMultipleConcreteLayers
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itMatchesAGlobAllowTargetAgainstConcreteLayers
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itMergesAllowMapsFromMultipleContributionsBySource
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itNamesNoWriterWhenNoLayerIsDeclared
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itNamesOnlyTheLayerThatReplacedTheListAsItsWriter
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itNamesTheLayerThatWroteTheListNotTheOneThatWroteOnlyAnotherKey
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itNamesTheUnknownKeyWhenATopLevelKeyIsMisspelled
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itNamesTheWritingFileWhenTheAllowValidatorThrows
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\ArchitectureConfigurationFactoryTest::itNamesTheWritingFileWhenTheCoverageValidatorThrows
@@ -10748,7 +10810,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\ProjectManifest\Unit\ComposerManifestDecoderTest::itRejectsMapsAndScalarsWherePlainPathListsAreRequired
  - Qualimetrix\Tests\Analysis\ProjectManifest\Unit\ComposerManifestDecoderTest::itRetainsGoodPathsAndNamesEveryDroppedRecord
  - Qualimetrix\Tests\Analysis\Run\Integration\Contract\Configuration\ProjectScopeDoorsTest::itJudgesADeadSelectorWhileRemovedPhpClosesNamespaceClaims
+ - Qualimetrix\Tests\Analysis\Run\Integration\Contract\Configuration\ProjectScopeDoorsTest::itJudgesASelectorAProjectFileAlsoWroteAndGivesNoReason
+ - Qualimetrix\Tests\Analysis\Run\Integration\Contract\Configuration\ProjectScopeDoorsTest::itJudgesEverySelectorWhenNothingIsEstablishedAsInstalled
+ - Qualimetrix\Tests\Analysis\Run\Integration\Contract\Configuration\ProjectScopeDoorsTest::itKeepsAnOpenDoorSelectorNotJudgedWithoutAnInstalledReason
  - Qualimetrix\Tests\Analysis\Run\Integration\Contract\Configuration\ProjectScopeDoorsTest::itKeepsBothQuestionsClosedForHiddenOutsideDenominatorButRetainsRemoved
+ - Qualimetrix\Tests\Analysis\Run\Integration\Contract\Configuration\ProjectScopeDoorsTest::itLeavesEveryOtherConclusionOfAnInstalledFilesSelectorAlone
+ - Qualimetrix\Tests\Analysis\Run\Integration\Contract\Configuration\ProjectScopeDoorsTest::itMarksAnUnansweredSelectorOnlyAnInstalledFileWroteAndNamesTheFileOnce
  - Qualimetrix\Tests\Analysis\Run\Integration\Contract\Configuration\ProjectScopeDoorsTest::itUsesObservedOutsidePhpToClosePathsEvenWhenInitialTargetsLookCovered
  - Qualimetrix\Tests\Analysis\Run\Integration\Contract\Configuration\ProjectScopeDoorsTest::itWithholdsNamespaceClaimsForUnlistableRemovedCodeWithoutClosingSelectors
  - Qualimetrix\Tests\Analysis\Run\Integration\DirectiveAuditPipelineTest::itMergesRefusedSitesOnceWithMeasuredVerdicts
@@ -10914,6 +10981,35 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itRefusesAnEntryThatIsNotAPath#6
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itStillAcceptsLawfulPaths
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\EmptyAnalysisPathRefusalTest::itStillDefaultsToTheWorkingDirectory
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itAnswersAlikeForASymlinkedPathRepositoryAndItsMirroredCopy
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itDoesNotRecogniseALocatorThatLeadsToAnotherFileTheConfigurationWasReadFrom
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itDoesNotRecogniseAnImportFromTheProject
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itEstablishesNothingFromAnInstallDirectoryThatCannotBeTrusted"a directory spelled with a home shortcut Composer would expand"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itEstablishesNothingFromAnInstallDirectoryThatCannotBeTrusted"a directory that does not exist"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itEstablishesNothingFromAnInstallDirectoryThatCannotBeTrusted"above the project root"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itEstablishesNothingFromAnInstallDirectoryThatCannotBeTrusted"the project root"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itEstablishesNothingFromAnInstallDirectoryTheManifestDoesNotState"an install directory naming a file"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itEstablishesNothingFromAnInstallDirectoryTheManifestDoesNotState"the fallback after an invalid config section"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itEstablishesNothingFromAnInstallDirectoryTheManifestDoesNotState"the fallback after an invalid install directory"
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itEstablishesNothingFromAnUnreadableManifest
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itEstablishesNothingWithoutAReadableManifest
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itFollowsAConfiguredRelativeInstallDirectory
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itFollowsAnAbsoluteInstallDirectoryOutsideTheProject
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itFollowsAnInstallDirectoryThatIsItselfALink
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itKeepsTheBuiltInPresetsFromWritingAnyAccumulatingSet
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itNeverRecognisesABuiltInPresetEvenBesideAnInstalledImport
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itNeverRecognisesABuiltInPresetReachedThroughAnInstalledImporter
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itNeverRecognisesACommandLineOption
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itReachesTheMeasuredUniverseThroughTheResolver
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itRecognisesAFileTheConfigurationWasReadFromUnderItsOwnName
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itRecognisesAPresetFileFromTheInstallDirectory
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itRecognisesAnImportFromTheInstallDirectory
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itRecognisesAnImportSpelledThroughAProjectDirectoryAndBackIntoTheInstallDirectory
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itRecognisesOneInstalledFileGivenUnderTwoPresetSpellings
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itRecognisesOneInstalledFileUsedAsAPresetAndAsAnImport
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itRecognisesTheRootConfigurationWhenItIsItselfInstalled
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itRefusesAnImportThatLeavesTheInstallDirectoryThroughDotDot
+ - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\InstalledConfigurationSourcesTest::itSeesTheRootAnImportAndAPresetFileOfARealDocument
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\PathsNormalizerTest::itAcceptsAnExternalDirectoryAliasIntoTheProjectAndAFileBeneathIt
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\PathsNormalizerTest::itAcceptsRootSpellingsAndAnEquivalentDirectoryAlias
  - Qualimetrix\Tests\Analysis\Run\Unit\Configuration\PathsNormalizerTest::itDefersAnUnresolvedInternalPath
@@ -11192,6 +11288,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\UnjudgedExcludeTest::itNamesTheSelectorItCouldNotJudgeAndTheDirectoryThatStoppedIt
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\UnjudgedExcludeTest::itReportsTheUnjudgedSelectorAsItsOwnFinding
  - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\UnjudgedExcludeTest::itSaysNothingAboutASelectorThatBound
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\UnmatchedExcludeWritersTest::itEndsASameSourceCoveredFindingWithItsWriters
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\UnmatchedExcludeWritersTest::itEndsAnUnjudgedFindingWithItsWriters
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\UnmatchedExcludeWritersTest::itEndsAnUnmatchedFindingWithItsWriters
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\UnmatchedExcludeWritersTest::itFailsTheInstalledWriterGateOfAnInstalledSelectorAsABoundaryNotADataGap
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\UnmatchedExcludeWritersTest::itKeepsTheOccurrenceKeyWhoeverWroteTheValue
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\UnmatchedExcludeWritersTest::itReportsNothingForASelectorOnlyAnInstalledFileWrote
+ - Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding\UnmatchedExcludeWritersTest::itStillJudgesTheSelectorOfAProjectFile
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itAcceptsAnEmptyParticipantSet
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itClearsPriorCapabilityStateOnAnEnabledThenDisabledRun
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itExecutesEnabledParticipantsInCompilerOrder
@@ -14585,9 +14688,11 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itStillAcceptsAnEmptyList
  - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itStillAccumulatesLawfulLists
  - Qualimetrix\Tests\Reporting\Unit\FindingProjection\Configuration\ConfiguredFindingExclusionsResolverTest::itAccumulatesAndDeduplicatesConfiguredExclusions
+ - Qualimetrix\Tests\Reporting\Unit\FindingProjection\Configuration\ConfiguredFindingExclusionsResolverTest::itNamesEveryLayerThatWroteAnAccumulatedValue
  - Qualimetrix\Tests\Reporting\Unit\FindingProjection\Configuration\ConfiguredFindingExclusionsResolverTest::itRefusesABareNumberWhereASelectorBelongs
  - Qualimetrix\Tests\Reporting\Unit\FindingProjection\Configuration\ConfiguredFindingExclusionsResolverTest::itRefusesAMapWhereAListOfEntriesBelongs
  - Qualimetrix\Tests\Reporting\Unit\FindingProjection\Configuration\ConfiguredFindingExclusionsResolverTest::itStillRefusesABareNumberWhereANamespaceBelongs
+ - Qualimetrix\Tests\Reporting\Unit\FindingProjection\Configuration\ConfiguredFindingExclusionsResolverTest::itUnitesTheWritersOfAnEqualValueFromTheCommandLine
  - Qualimetrix\Tests\Reporting\Unit\FindingProjection\SuppressionCompositionBuilderTest::itAttributesALedgerExclusionToItsRecordedProducerEvenWhenTheFindingsOwnRuleNameDiffers
  - Qualimetrix\Tests\Reporting\Unit\FindingProjection\SuppressionCompositionBuilderTest::itAttributesTheBaselineMechanismToTheOccurrenceKeyAndDependencyEdgeWhenPresent
  - Qualimetrix\Tests\Reporting\Unit\FindingProjection\SuppressionCompositionBuilderTest::itAttributesTheBaselineMechanismToTheSubjectAndChannel

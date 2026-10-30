@@ -70,7 +70,7 @@ final class CouplingConfigurationRefusalTest extends TestCase
             new CouplingSection(),
         );
 
-        return (new CouplingAnalysis())->resolve($document);
+        return (new CouplingAnalysis())->resolve($document)->patterns;
     }
 
     /**

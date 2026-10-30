@@ -1,0 +1,14 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 9859
++visible 9815
+@@ -28,1 +28,1 @@
+-        "description": "The exclude_methods name \"brigde\" matched no method declared in this project. Written by configuration file \"qmx.yaml\".",
++        "description": "The exclude_methods name \"brigde\" matched no method declared in this project.",
+@@ -280,1 +280,1 @@
+-invocation-format:gitlab 9859
++invocation-format:gitlab 9815
+@@ -307,1 +307,1 @@
+-        "description": "The exclude_methods name \"brigde\" matched no method declared in this project. Written by configuration file \"qmx.yaml\".",
++        "description": "The exclude_methods name \"brigde\" matched no method declared in this project.",

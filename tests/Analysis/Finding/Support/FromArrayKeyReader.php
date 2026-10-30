@@ -313,7 +313,7 @@ final class FromArrayKeyReader
                 $this->reading->blind('nested-delegation', 'atLevel line ' . $node->getStartLine());
                 return;
             }
-            if (!\in_array($method, ['boolean', 'integer', 'number', 'text', 'list', 'map', 'strings', 'node'], true)) {
+            if (!\in_array($method, ['boolean', 'integer', 'number', 'text', 'list', 'map', 'strings', 'node', 'writtenBy'], true)) {
                 $this->reading->blind('opaque-sink', 'carrier method line ' . $node->getStartLine());
                 return;
             }

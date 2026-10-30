@@ -46,12 +46,13 @@ final readonly class FindingProjection
         ValueScopeJudgement $valueScope,
     ): array {
         return $this->unboundSuppressionAudit->auditResult(
-            $options->suppressPaths,
-            $options->suppressNamespaces,
+            $options->exclusions->suppressPaths,
+            $options->exclusions->suppressNamespaces,
             $result->measured->coverage->fileUniverse(),
             $result->measured->namespaceTree?->getAllNamespaces(),
             $valueScope,
             $result->populationPublication ?? throw new LogicException('Suppression accounting requires captured channel publication'),
+            $options->exclusions->writers,
         );
     }
 }

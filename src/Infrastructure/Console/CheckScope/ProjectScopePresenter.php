@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\CheckScope;
 
 use LogicException;
-use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorOutcome;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReason;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Reporting\Contract\Report\ReportProjectScope;
 use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionOptions;
@@ -27,34 +27,18 @@ final readonly class ProjectScopePresenter
         $reasons = $this->observedProjectScopeReasons->forMainSource($facts->source(), $facts->state, $measurement->universe->projectRoot);
         $namespaces = $result->measured->namespaceTree?->getAllNamespaces();
         $files = $result->measured->coverage->fileUniverse();
-        $unjudged = $this->unboundSuppressionAudit->unjudgedValues(
-            $options->suppressPaths,
-            $options->suppressNamespaces,
-            $files,
-            $namespaces,
-            $valueScope,
-        );
+        $unjudged = $this->unboundSuppressionAudit->unjudgedValues($options->exclusions->suppressPaths, $options->exclusions->suppressNamespaces, $files, $namespaces, $valueScope, $options->exclusions->writers);
         foreach ($judgement->excludeSelectors() as $selector) {
-            if (\in_array($selector->outcome, [ExcludeSelectorOutcome::NotJudged, ExcludeSelectorOutcome::CoveredByOtherSource], true)) {
-                $unjudged[] = [
-                    'channel' => ProjectScopeChannels::WALK_CHANNEL,
-                    'option' => 'exclude',
-                    'pattern' => $selector->display,
-                ];
+            if ($selector->outcome->isLeftUnjudged()) {
+                $unjudged[] = ['channel' => ProjectScopeChannels::WALK_CHANNEL, 'option' => 'exclude', 'pattern' => $selector->display];
             }
         }
-        $judgedChannels = $this->unboundSuppressionAudit->judgedChannels(
-            $options->suppressPaths,
-            $options->suppressNamespaces,
-            $files,
-            $namespaces,
-            $valueScope,
-        );
-        foreach ($judgement->excludeSelectors() as $selector) {
-            if (\in_array($selector->outcome, [ExcludeSelectorOutcome::Removed, ExcludeSelectorOutcome::Unmatched, ExcludeSelectorOutcome::CoveredBySameSource], true)) {
-                $judgedChannels[] = ProjectScopeChannels::WALK_CHANNEL;
-                break;
-            }
+        foreach ($this->unboundSuppressionAudit->installedConfigurationSources($options->exclusions->suppressPaths, $options->exclusions->suppressNamespaces, $files, $namespaces, $valueScope, $options->exclusions->writers) as $source) {
+            $reasons[] = ProjectScopeReason::installedConfiguration($source);
+        }
+        $judgedChannels = $this->unboundSuppressionAudit->judgedChannels($options->exclusions->suppressPaths, $options->exclusions->suppressNamespaces, $files, $namespaces, $valueScope, $options->exclusions->writers);
+        if (array_any($judgement->excludeSelectors(), static fn($selector): bool => $selector->outcome->isJudged())) {
+            $judgedChannels[] = ProjectScopeChannels::WALK_CHANNEL;
         }
 
         return ReportProjectScope::measured($measurement, $unjudged, $judgedChannels)->withReasons($reasons);
@@ -69,11 +53,12 @@ final readonly class ProjectScopePresenter
     {
         $measurement = $result->measured->projectScope ?? throw new LogicException('A pipeline result requires measured project scope');
         $withheld = $this->unboundSuppressionAudit->withheldForRemovedCode(
-            $options->suppressPaths,
-            $options->suppressNamespaces,
+            $options->exclusions->suppressPaths,
+            $options->exclusions->suppressNamespaces,
             $result->measured->coverage->fileUniverse(),
             $result->measured->namespaceTree?->getAllNamespaces(),
             $measurement->valueScopeJudgement(),
+            $options->exclusions->writers,
         );
         if ($withheld === []) {
             return null;

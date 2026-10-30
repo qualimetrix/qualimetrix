@@ -133,6 +133,7 @@ docs/adr/0138-closures-are-named-under-their-enclosing-declaration.md	Analysis.E
 docs/adr/0139-configuration-imports.md	Analysis.Configuration	"Move or update atomically with the named subject owner."
 docs/adr/0140-built-in-preset-glob-and-nested-imports.md	Analysis.Configuration	"Move or update atomically with the named subject owner."
 docs/adr/0141-committed-dist-configuration-discovery.md	Analysis.Configuration	"Move or update atomically with the named subject owner."
+docs/adr/0142-installed-configuration-values.md	Analysis.Finding	"Move or update atomically with the named subject owner."
 docs/adr/README.md	Architecture.Governance	"Repository-wide governance documentation; review with the manifest and generated topology."
 docs/internal/CLI_CONVENTIONS.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/COMPETITOR_COMPARISON.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."

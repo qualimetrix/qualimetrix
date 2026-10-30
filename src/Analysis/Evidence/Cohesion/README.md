@@ -222,6 +222,10 @@ eligibility, thresholds, controls and output identity.
 into `LcomCollectionConfiguration`, never a raw option map or fallback defaults.
 `exclude_methods` is a sequence. PHP method matching folds case, deduplicates
 normalized names and retains the first authored spelling in diagnostics.
+`LcomOptions::excludeMethodsWrittenBy` carries the sentence naming the sources
+that wrote the list (`ResolvedRuleOptionValues::writtenBy()`; the list is
+replaced whole, so one sentence covers every name); the unmatched-name message
+ends with it, and the occurrence key does not depend on it.
 
 `cohesion.unmatched-exclude-method` is a secondary channel of the LCOM producer.
 When measured judgement permits declaration absence, it reports each configured

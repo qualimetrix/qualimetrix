@@ -70,6 +70,48 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     }
 
     #[Test]
+    public function itCarriesTheFileThatWroteTheLayersAsTheirWriters(): void
+    {
+        $result = $this->factory->fromResolved(ArchitectureDocument::file([
+            'layers' => [['name' => 'controller', 'patterns' => ['App\\Controller']]],
+        ]));
+
+        self::assertSame(' Written by configuration file "/project/qmx.yaml".', $result->configuration->layerWritersSentence());
+    }
+
+    #[Test]
+    public function itNamesOnlyTheLayerThatReplacedTheListAsItsWriter(): void
+    {
+        $result = $this->factory->fromResolved(ArchitectureDocument::stacked(
+            ['layers' => [['name' => 'old', 'patterns' => ['App\\Old']]]],
+            ['layers' => [['name' => 'controller', 'patterns' => ['App\\Controller']]]],
+        ));
+
+        self::assertSame(['controller'], $result->configuration->registry()->layerNames());
+        self::assertSame(' Written by configuration file "/project/qmx.yaml".', $result->configuration->layerWritersSentence());
+    }
+
+    #[Test]
+    public function itNamesTheLayerThatWroteTheListNotTheOneThatWroteOnlyAnotherKey(): void
+    {
+        $result = $this->factory->fromResolved(ArchitectureDocument::stacked(
+            ['layers' => [['name' => 'controller', 'patterns' => ['App\\Controller']]]],
+            ['coverage-gap' => 'warn'],
+        ));
+
+        self::assertSame(' Written by preset "preset-0".', $result->configuration->layerWritersSentence());
+    }
+
+    #[Test]
+    public function itNamesNoWriterWhenNoLayerIsDeclared(): void
+    {
+        $result = $this->factory->fromResolved(ArchitectureDocument::file(['coverage-gap' => 'ignore']));
+
+        self::assertNull($result->configuration->layerWriters);
+        self::assertSame('', $result->configuration->layerWritersSentence());
+    }
+
+    #[Test]
     public function itAssemblesLayersAllowAndCoverageIntoOneConfiguration(): void
     {
         // Exercises layers + allow + coverage in one shot.

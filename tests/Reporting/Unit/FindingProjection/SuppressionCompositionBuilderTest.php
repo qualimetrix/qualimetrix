@@ -32,6 +32,7 @@ use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions;
 use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
@@ -101,7 +102,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
             $filterResult,
             $this->ruleExecution(),
             $this->ruleConfiguration([]),
-            new FindingProjectionOptions(suppressPaths: $this->paths(['src/Excluded'])),
+            new FindingProjectionOptions(exclusions: new ConfiguredFindingExclusions($this->paths(['src/Excluded']))),
         );
 
         self::assertCount(1, $composition->all);
@@ -123,7 +124,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
             $filterResult,
             $this->ruleExecution(),
             $this->ruleConfiguration([]),
-            new FindingProjectionOptions(suppressNamespaces: $this->namespaces(['App\\Excluded'])),
+            new FindingProjectionOptions(exclusions: new ConfiguredFindingExclusions(suppressNamespaces: $this->namespaces(['App\\Excluded']))),
         );
 
         self::assertCount(1, $composition->all);
@@ -241,7 +242,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
             ),
             $this->ruleExecution(),
             $this->ruleConfiguration([]),
-            new FindingProjectionOptions(suppressPaths: $this->exactPaths(['src/NeverMatched.php'])),
+            new FindingProjectionOptions(exclusions: new ConfiguredFindingExclusions($this->exactPaths(['src/NeverMatched.php']))),
         );
 
         self::assertCount(1, $composition->neverMatched);
@@ -366,7 +367,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
             $filterResult,
             $this->ruleExecution(),
             $this->ruleConfiguration([]),
-            new FindingProjectionOptions(suppressPaths: $this->paths(['src', 'src/Reporting'])),
+            new FindingProjectionOptions(exclusions: new ConfiguredFindingExclusions($this->paths(['src', 'src/Reporting']))),
         );
 
         self::assertSame([], $composition->neverMatched);
@@ -387,7 +388,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
             $filterResult,
             $this->ruleExecution(),
             $this->ruleConfiguration([]),
-            new FindingProjectionOptions(suppressNamespaces: $this->namespaces(['App', 'App\\Dirty'])),
+            new FindingProjectionOptions(exclusions: new ConfiguredFindingExclusions(suppressNamespaces: $this->namespaces(['App', 'App\\Dirty']))),
         );
 
         self::assertSame([], $composition->neverMatched);

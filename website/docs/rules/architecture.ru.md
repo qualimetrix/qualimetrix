@@ -1008,6 +1008,13 @@ Unreachable-layer и unmatched-exclude сохраняют собственные
 Вместе с `architecture.layer-violation` и `architecture.unassigned-class`
 политика слоёв публикует 11 каналов.
 
+`architecture.unmatched-exclude`, `architecture.unreachable-layer` и
+`architecture.empty-template` заканчивают сообщение указанием конфигурации,
+записавшей `architecture.layers` (`Written by configuration file "…" (imported by
+configuration file "qmx.yaml").`); `architecture.unmatched-type` называет автора и
+путь своими словами. Слои из общей базы, установленной или нет, судятся:
+`architecture.layers`, записанный в вашем файле, целиком заменяет список базы.
+
 | Дверь выбора                                                 | Пять ошибок конфигурации                      | Четыре обычных канала                        |
 | ------------------------------------------------------------ | --------------------------------------------- | -------------------------------------------- |
 | Выключить `architecture.layer-violation`                     | Остаются включены через declaration producer  | Остаются включены через declaration producer |

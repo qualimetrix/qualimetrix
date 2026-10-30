@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Finding\Contract\ProjectScope;
 
 use InvalidArgumentException;
 use LogicException;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Pattern\SelectorKind;
@@ -159,6 +160,26 @@ final readonly class ExcludeSelectorVerdict
         }
 
         return new self($this->display, $this->sources, ExcludeSelectorOutcome::NotJudged);
+    }
+
+    /** Every source that wrote this selector. */
+    public function writers(): ConfiguredValueWriters
+    {
+        return new ConfiguredValueWriters($this->sources);
+    }
+
+    /**
+     * A selector no walk bound, or one only its own sources hid, is not this
+     * project's to answer for when none of its writers is. Every other
+     * conclusion is a fact of the project's tree, or already unsettled.
+     */
+    public function withInstalledWriter(): self
+    {
+        if ($this->outcome !== ExcludeSelectorOutcome::Unmatched && $this->outcome !== ExcludeSelectorOutcome::CoveredBySameSource) {
+            return $this;
+        }
+
+        return new self($this->display, $this->sources, ExcludeSelectorOutcome::InstalledWriter);
     }
 
     /** @param non-empty-list<ConfigurationOrigin> $sources

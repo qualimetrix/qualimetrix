@@ -218,7 +218,7 @@ final class CheckCommand extends Command
         // configuration after the call site was written, silently and once per
         // field.
         $scopedRunConfiguration = $runConfiguration->withProjectScope($resolvedScope->measurement)
-            ->withNamespaceSuppressionValues(array_map(static fn($pattern) => $pattern->definition, $projectionOptions->suppressNamespaces));
+            ->withNamespaceSuppressionValues(array_map(static fn($pattern) => $pattern->definition, $projectionOptions->exclusions->suppressNamespaces));
         return $response->run(
             fn() => $this->runAnalysis($scopedRunConfiguration),
             $resolvedScope,

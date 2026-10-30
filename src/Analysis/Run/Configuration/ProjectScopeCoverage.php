@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\Configuration;
 
+use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship;
@@ -16,8 +17,12 @@ final readonly class ProjectScopeCoverage
 {
     public function __construct(private ComposerManifestReaderInterface $composerReader) {}
 
-    /** @param list<AbsolutePath> $analyzedPaths */
-    public function measure(AbsolutePath $projectRoot, array $analyzedPaths, AutoloadDevPolicy $autoloadDev, PathsAuthorship $authorship): ProjectScopeMeasurement
+    /**
+     * @param list<AbsolutePath> $analyzedPaths
+     * @param ConfigurationDocument|null $document the configuration the run resolved; without it no
+     *                                             source is established as installed
+     */
+    public function measure(AbsolutePath $projectRoot, array $analyzedPaths, AutoloadDevPolicy $autoloadDev, PathsAuthorship $authorship, ?ConfigurationDocument $document = null): ProjectScopeMeasurement
     {
         $manifestFacts = $this->composerReader->read($projectRoot);
         $evidence = new ManifestScopeEvidence($manifestFacts, $autoloadDev);
@@ -40,6 +45,12 @@ final readonly class ProjectScopeCoverage
         );
         $uncovered = $universe->uncoveredBy($analyzedPaths);
 
-        return new ProjectScopeMeasurement($universe, $analyzedPaths, $evidence->initialState($universe, $analyzedPaths, $reachable), $uncovered);
+        return new ProjectScopeMeasurement(
+            $universe,
+            $analyzedPaths,
+            $evidence->initialState($universe, $analyzedPaths, $reachable),
+            $uncovered,
+            installedConfigurationSources: $document === null ? [] : InstalledConfigurationSources::of($document, $manifestFacts),
+        );
     }
 }

@@ -111,7 +111,11 @@ judged" and "to judge them".
 
 They are not written into a generated baseline: `baseline:generate` measures findings on a different seam, and a warning about the author's own configuration should not become accepted debt in the file that author generates with one command.
 
-If a value is correct and cannot be corrected — a `qmx.yaml` shared across repositories, naming a path one of them does not have — there are two ways out, and they are not the same:
+Every finding ends by naming the configuration that wrote the value — `Written by configuration file "vendor/acme/std/qmx.yaml" (imported by configuration file "qmx.yaml").` — so a value that came from a shared base is told apart from one written in the project.
+
+A value that matches nothing and that only files a Composer package installed wrote — a base imported from the analysed project's install directory (`vendor/` unless `config.vendor-dir` says otherwise), whether the package is a copy or a symlinked path repository — is not judged when the project cannot remove it: a global `suppress_paths` or `suppress_namespaces` entry (a later layer adds to these lists and never takes away) or a value of a rule's `suppress_namespace_channels` entry (which cannot be emptied). The value is listed in `projectScope.unjudgedValues`, with an `installed-configuration` reason naming the file. A value that binds, one the project also writes, and one from the command line are judged as usual, and so are a rule's `suppress_paths` and `suppress_namespaces`: writing that rule's list in your own file, `[]` included, replaces the base's.
+
+If a value is correct and cannot be corrected — a `qmx.yaml` shared across repositories some other way than as an installed package, naming a path one of them does not have — there are two ways out, and they are not the same:
 
 - Switch the channel off where that shared configuration lives: `disabled_rules: ['suppression.unmatched-path']` silences that one channel and leaves the other two speaking. `--disable-rule` does the same for one run.
 - Accept it in a baseline you write by hand. A written entry naming the channel and the finding's `occurrence` under `project:` is honoured like any other. Because the value is part of that occurrence, the acceptance names *that* value: replacing it with a different unbound one is reported rather than passing under the accepted entry.

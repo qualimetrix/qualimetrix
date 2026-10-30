@@ -90,14 +90,24 @@ final class UnmatchedExcludeRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)->withGates(new PopulationGate(
-                'selector-verdict',
-                new FindingChannel(self::NAME),
-                SymbolLevel::Project,
-                'configured-discovery-selector',
-                new ContextGuard('excludeVerdictJudged'),
-                'The captured exclude selector verdict is unjudged.',
-            )),
+            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)->withGates(
+                new PopulationGate(
+                    'selector-verdict',
+                    new FindingChannel(self::NAME),
+                    SymbolLevel::Project,
+                    'configured-discovery-selector',
+                    new ContextGuard('excludeVerdictJudged'),
+                    'The captured exclude selector verdict is unjudged.',
+                ),
+                new PopulationGate(
+                    'installed-writer',
+                    new FindingChannel(self::NAME),
+                    SymbolLevel::Project,
+                    'configured-discovery-selector',
+                    new ContextGuard('configuredValueWrittenHere'),
+                    'The selector was written only by a file an installed Composer package provides.',
+                ),
+            ),
         ];
     }
 

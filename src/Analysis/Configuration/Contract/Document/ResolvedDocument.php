@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Configuration\Contract\Document;
 use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 
 /**
  * The configuration after every layer is recognised, shaped and merged: each
@@ -116,5 +117,45 @@ final readonly class ResolvedDocument
     public function diagnostics(): array
     {
         return $this->diagnostics;
+    }
+
+    /**
+     * Every distinct source that wrote anything the document still holds, each
+     * once. A layer whose value was replaced counts: its write survives in the
+     * node's history.
+     *
+     * @return list<ConfigurationOrigin>
+     */
+    public function origins(): array
+    {
+        $found = [];
+        foreach ($this->roots as $root) {
+            self::collectOrigins($root, $found);
+        }
+
+        return array_values($found);
+    }
+
+    /** @param array<string, ConfigurationOrigin> $found */
+    private static function collectOrigins(ResolvedValueInterface $node, array &$found): void
+    {
+        $provenance = $node->contributors();
+        if ($node instanceof ResolvedWriteHistoryInterface) {
+            $provenance = [...$provenance, ...array_column($node->writes(), 'provenance')];
+        }
+        if ($node instanceof ResolvedOpaqueInterface) {
+            $provenance = [...$provenance, ...array_column($node->contributions(), 'provenance')];
+        }
+        foreach ($provenance as $writer) {
+            $found[serialize($writer->origin)] ??= $writer->origin;
+        }
+        $children = match (true) {
+            $node instanceof ResolvedMapInterface => $node->entries(),
+            $node instanceof ResolvedListInterface => $node->items(),
+            default => [],
+        };
+        foreach ($children as $child) {
+            self::collectOrigins($child, $found);
+        }
     }
 }

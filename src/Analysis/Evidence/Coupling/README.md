@@ -35,7 +35,8 @@ Coupling/
 │   └── FrameworkNamespaceSelectorParser.php
 ├── Contract/
 │   └── Configuration/
-│       └── CouplingConfiguratorInterface.php
+│       ├── CouplingConfiguratorInterface.php
+│       └── FrameworkNamespaces.php
 ├── Distance/
 │   ├── DistanceCollector.php
 │   ├── DistanceOptions.php
@@ -226,7 +227,11 @@ produced byte-identical reports — the classification is only observable throug
 `coupling.cbo-app` / `coupling.ce-framework`, never through the finding set.
 
 `UnmatchedFrameworkFinding` owns the message and stable occurrence projection;
-the rule retains selector enumeration and eligibility.
+the rule retains selector enumeration and eligibility. The message ends with the
+sources that wrote `coupling.framework_namespaces`: the list is replaced whole, so
+`FrameworkNamespaces` carries one sentence for every selector
+(`ConfigurationDocument::writtenBy()`). A carrier not built from a document has
+none and the sentence is omitted; the occurrence key never depends on it.
 
 Two facts about the shape, both measured rather than chosen:
 

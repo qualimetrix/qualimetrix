@@ -101,8 +101,9 @@ rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contr
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Document/Provenance.php	Qualimetrix\Analysis\Configuration\Contract\Document\Provenance	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Document/ResolvedValueInterface.php	Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Document/Schema/NodeSchema.php	Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema	error	1
-rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Refusal/ConfigurationOrigin.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	warning	1
+rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Refusal/ConfigurationOrigin.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	error	1
+rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Refusal/ConfigurationSource.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Refusal/RefusedPosition.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/CodeSmell/CodeSmellVisitor.php	Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellVisitor	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Evidence/CodeSmell/UnreachableCode/UnreachableCodeVisitor.php	Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCode\UnreachableCodeVisitor	error	1
@@ -153,6 +154,7 @@ rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/FileTarget/Resolution/R
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/Path/AbsolutePath.php	Qualimetrix\Core\Path\AbsolutePath	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/Path/RelativePath.php	Qualimetrix\Core\Path\RelativePath	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/Pattern/NamespacePattern.php	Qualimetrix\Core\Pattern\NamespacePattern	warning	1
+rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/Pattern/PathPattern.php	Qualimetrix\Core\Pattern\PathPattern	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/ProductIdentity.php	Qualimetrix\Core\ProductIdentity	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/Profiler/Contract/ProfilerInterface.php	Qualimetrix\Core\Profiler\Contract\ProfilerInterface	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/Symbol/ClassNameSpelling.php	Qualimetrix\Core\Symbol\ClassNameSpelling	warning	1

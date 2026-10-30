@@ -128,12 +128,12 @@ final readonly class SuppressionCompositionBuilder
             return '(no file)';
         }
 
-        return (new PathMatcher($options->suppressPaths))->matches($finding->location->file)?->definition->display() ?? '(unresolved pattern)';
+        return (new PathMatcher($options->exclusions->suppressPaths))->matches($finding->location->file)?->definition->display() ?? '(unresolved pattern)';
     }
 
     private function namespaceExclusionSuppressor(Finding $finding, FindingProjectionOptions $options): string
     {
-        return (new NamespaceMatcher($options->suppressNamespaces))
+        return (new NamespaceMatcher($options->exclusions->suppressNamespaces))
             ->matches($this->namespaceOf($finding))?->definition->display() ?? '(unresolved pattern)';
     }
 
@@ -184,19 +184,19 @@ final readonly class SuppressionCompositionBuilder
     {
         $pathHits = $this->pathPatternsThatFired(
             $filterResult->removedBy(FindingFilterStage::PathExclusion),
-            $options->suppressPaths,
+            $options->exclusions->suppressPaths,
             static fn(Finding $f, \Qualimetrix\Core\Pattern\PathPattern $pattern): bool => $f->location->file !== null
                 && $pattern->matches($f->location->file),
         );
         $namespaceHits = $this->namespacePatternsThatFired(
             $filterResult->removedBy(FindingFilterStage::NamespaceExclusion),
-            $options->suppressNamespaces,
+            $options->exclusions->suppressNamespaces,
             fn(Finding $f, \Qualimetrix\Core\Pattern\NamespacePattern $pattern): bool => $pattern->matches($this->namespaceOf($f)),
         );
 
         return [
-            ...$this->inertPatterns(SuppressionMechanism::PathSuppression, $options->suppressPaths, $pathHits),
-            ...$this->inertPatterns(SuppressionMechanism::NamespaceSuppression, $options->suppressNamespaces, $namespaceHits),
+            ...$this->inertPatterns(SuppressionMechanism::PathSuppression, $options->exclusions->suppressPaths, $pathHits),
+            ...$this->inertPatterns(SuppressionMechanism::NamespaceSuppression, $options->exclusions->suppressNamespaces, $namespaceHits),
         ];
     }
 

@@ -23,13 +23,13 @@ final class ConfiguredExclusionProjection
     public static function stages(FindingProjectionOptions $options, ChannelFileScope $fileScope): array
     {
         $stages = [];
-        if ($options->suppressPaths !== []) {
+        if ($options->exclusions->suppressPaths !== []) {
             $stages[] = new PredicateFilterStage(
                 FindingFilterStage::PathExclusion,
-                new PathExclusionFilter(new PathMatcher($options->suppressPaths), $fileScope),
+                new PathExclusionFilter(new PathMatcher($options->exclusions->suppressPaths), $fileScope),
             );
         }
-        $matcher = new NamespaceMatcher($options->suppressNamespaces);
+        $matcher = new NamespaceMatcher($options->exclusions->suppressNamespaces);
         if (!$matcher->isEmpty()) {
             $stages[] = new PredicateFilterStage(
                 FindingFilterStage::NamespaceExclusion,

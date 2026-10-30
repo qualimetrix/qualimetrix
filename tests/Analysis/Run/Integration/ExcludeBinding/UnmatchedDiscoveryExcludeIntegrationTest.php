@@ -99,6 +99,7 @@ final class UnmatchedDiscoveryExcludeIntegrationTest extends TestCase
         self::assertCount(1, $findings);
         self::assertSame('warning', $findings[0]['severity'] ?? null);
         self::assertStringContainsString('NoSuchDir', (string) ($findings[0]['message'] ?? ''));
+        self::assertStringEndsWith('Written by option --exclude.', (string) ($findings[0]['message'] ?? ''));
     }
 
     /**
@@ -129,6 +130,7 @@ final class UnmatchedDiscoveryExcludeIntegrationTest extends TestCase
 
         self::assertCount(1, $miss);
         self::assertStringContainsString('NoSuchDir', (string) ($miss[0]['message'] ?? ''));
+        self::assertStringEndsWith('Written by configuration file "qmx.yaml".', (string) ($miss[0]['message'] ?? ''));
         self::assertSame([], $hit);
     }
 

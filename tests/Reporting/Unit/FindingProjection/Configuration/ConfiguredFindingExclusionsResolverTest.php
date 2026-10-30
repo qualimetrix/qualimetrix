@@ -8,6 +8,9 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Qualimetrix\Reporting\FindingProjection\Configuration\ConfiguredFindingExclusionsResolver;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
@@ -23,6 +26,38 @@ final class ConfiguredFindingExclusionsResolverTest extends TestCase
 
         self::assertSame(['subtree:vendor', 'subtree:build'], array_map(static fn($pattern) => $pattern->definition->display(), $resolved->suppressPaths));
         self::assertSame(['subtree:Legacy', 'subtree:Generated'], array_map(static fn($pattern) => $pattern->definition->display(), $resolved->suppressNamespaces));
+    }
+
+    /**
+     * The set keeps one element per spelling, yet every layer that wrote it is
+     * a writer: a value the project repeats is the project's, whoever else
+     * wrote it first.
+     */
+    #[Test]
+    public function itNamesEveryLayerThatWroteAnAccumulatedValue(): void
+    {
+        $resolved = (new ConfiguredFindingExclusionsResolver())->resolve(LayeredDocument::of([
+            ['source' => 'preset', 'values' => ['suppress_paths' => [['subtree' => 'vendor']], 'suppress_namespaces' => [['subtree' => 'Legacy']]]],
+            ['source' => 'config', 'values' => ['suppress_paths' => [['subtree' => 'vendor'], ['subtree' => 'build']]]],
+        ], AbsolutePath::fromString('/project')));
+
+        self::assertSame('Written by preset "preset" and configuration file "config".', $resolved->writers->for(self::path('vendor'))?->sentence());
+        self::assertSame('Written by configuration file "config".', $resolved->writers->for(self::path('build'))?->sentence());
+        self::assertSame('Written by preset "preset".', $resolved->writers->for(self::namespace('Legacy'))?->sentence());
+        self::assertNull($resolved->writers->for(self::namespace('vendor')), 'a path value names no namespace writer');
+    }
+
+    #[Test]
+    public function itUnitesTheWritersOfAnEqualValueFromTheCommandLine(): void
+    {
+        $resolved = (new ConfiguredFindingExclusionsResolver())->resolve(LayeredDocument::of([
+            ['source' => 'config', 'values' => ['suppress_paths' => [['subtree' => 'vendor']]]],
+        ], AbsolutePath::fromString('/project')));
+        $merged = $resolved->withCommandLine([self::path('vendor')], '--suppress-path', [self::namespace('Cli')], '--suppress-namespace');
+
+        self::assertCount(1, $merged->suppressPaths);
+        self::assertSame('Written by configuration file "config" and option --suppress-path.', $merged->writers->for(self::path('vendor'))?->sentence());
+        self::assertSame('Written by option --suppress-namespace.', $merged->writers->for(self::namespace('Cli'))?->sentence());
     }
 
     /**
@@ -63,5 +98,15 @@ final class ConfiguredFindingExclusionsResolverTest extends TestCase
         (new ConfiguredFindingExclusionsResolver())->resolve(LayeredDocument::of([
             ['source' => 'config', 'values' => ['suppress_paths' => ['a' => 'vendor']]],
         ], AbsolutePath::fromString('/project')));
+    }
+
+    private static function path(string $value): PathPattern
+    {
+        return new PathPattern(SelectorDefinition::fromKindAndValue('subtree', $value));
+    }
+
+    private static function namespace(string $value): NamespacePattern
+    {
+        return new NamespacePattern(SelectorDefinition::fromKindAndValue('subtree', $value));
     }
 }

@@ -136,6 +136,7 @@ final class ArchitectureConfigurationFactory
                 coverage: $coverage,
                 entries: $entries,
                 maxExpandedLayers: $maxExpandedLayers,
+                layerWriters: $layers->isWritten() ? $layers->writers() : null,
             ),
             $warnings,
         );

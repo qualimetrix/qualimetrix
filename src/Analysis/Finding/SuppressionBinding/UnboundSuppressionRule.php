@@ -125,18 +125,31 @@ final class UnboundSuppressionRule extends AbstractRule
     {
         return [
             UnboundSuppressionOptions::UNMATCHED_PATH => ChannelDeclaration::occurrence(SymbolLevel::Project)
-                ->withGates(new PopulationGate('suppressionPathJudged', new FindingChannel(UnboundSuppressionOptions::UNMATCHED_PATH), SymbolLevel::Project, 'configured-suppression-value-occurrence', new ContextGuard('suppressionPathJudged'), 'Suppression value scope was not judged.'))
+                ->withGates(
+                    new PopulationGate('suppressionPathJudged', new FindingChannel(UnboundSuppressionOptions::UNMATCHED_PATH), SymbolLevel::Project, 'configured-suppression-value-occurrence', new ContextGuard('suppressionPathJudged'), 'Suppression value scope was not judged.'),
+                    self::installedWriterGate(UnboundSuppressionOptions::UNMATCHED_PATH),
+                )
                 ->describedAs('Reports a global suppress_paths value that matches no analysed file.'),
             UnboundSuppressionOptions::UNMATCHED_NAMESPACE => ChannelDeclaration::occurrence(SymbolLevel::Project)
-                ->withGates(new PopulationGate('suppressionNamespaceJudged', new FindingChannel(UnboundSuppressionOptions::UNMATCHED_NAMESPACE), SymbolLevel::Project, 'configured-suppression-value-occurrence', new ContextGuard('suppressionNamespaceJudged'), 'Suppression value scope was not judged.'))
+                ->withGates(
+                    new PopulationGate('suppressionNamespaceJudged', new FindingChannel(UnboundSuppressionOptions::UNMATCHED_NAMESPACE), SymbolLevel::Project, 'configured-suppression-value-occurrence', new ContextGuard('suppressionNamespaceJudged'), 'Suppression value scope was not judged.'),
+                    self::installedWriterGate(UnboundSuppressionOptions::UNMATCHED_NAMESPACE),
+                )
                 ->describedAs('Reports a global suppress_namespaces value that matches no declared namespace.'),
             UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER => ChannelDeclaration::occurrence(SymbolLevel::Project)
                 ->withGates(
                     new PopulationGate('suppressionPathJudged', new FindingChannel(UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER), SymbolLevel::Project, 'configured-suppression-value-occurrence', new ContextGuard('suppressionPathJudged', true), 'Suppression value scope was not judged.'),
                     new PopulationGate('suppressionNamespaceJudged', new FindingChannel(UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER), SymbolLevel::Project, 'configured-suppression-value-occurrence', new ContextGuard('suppressionNamespaceJudged', true), 'Suppression value scope was not judged.'),
+                    self::installedWriterGate(UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER),
                 )
                 ->describedAs('Reports a suppression value configured under a rule that names nothing the run contains.'),
         ];
+    }
+
+    /** A boundary of the project, not a gap in the data: only an installed file wrote the value. */
+    private static function installedWriterGate(string $channel): PopulationGate
+    {
+        return new PopulationGate('installed-writer', new FindingChannel($channel), SymbolLevel::Project, 'configured-suppression-value-occurrence', new ContextGuard('configuredValueWrittenHere'), 'The value was written only by a file an installed Composer package provides.');
     }
 
     /**

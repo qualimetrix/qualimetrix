@@ -36,6 +36,7 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Git\ReportingGitScopeQuery;
+use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions;
 use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
@@ -161,9 +162,11 @@ final class ConfigurationErrorProjectionTest extends TestCase
 
         $result = $this->project(
             [$ordinary, $configurationError],
-            new FindingProjectionOptions(suppressPaths: [
-                new PathPattern(SelectorDefinition::fromKindAndValue(SelectorKind::Subtree->value, 'src')),
-            ]),
+            new FindingProjectionOptions(
+                exclusions: new ConfiguredFindingExclusions([
+                    new PathPattern(SelectorDefinition::fromKindAndValue(SelectorKind::Subtree->value, 'src')),
+                ]),
+            ),
         );
 
         self::assertSame([$configurationError], $result->findings);
@@ -178,9 +181,11 @@ final class ConfigurationErrorProjectionTest extends TestCase
 
         $result = $this->project(
             [$ordinary, $configurationError],
-            new FindingProjectionOptions(suppressNamespaces: [
-                new NamespacePattern(SelectorDefinition::fromKindAndValue(SelectorKind::Subtree->value, self::NAMESPACE)),
-            ]),
+            new FindingProjectionOptions(
+                exclusions: new ConfiguredFindingExclusions(suppressNamespaces: [
+                    new NamespacePattern(SelectorDefinition::fromKindAndValue(SelectorKind::Subtree->value, self::NAMESPACE)),
+                ]),
+            ),
         );
 
         self::assertSame([$configurationError], $result->findings);

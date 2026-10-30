@@ -173,7 +173,7 @@ final class UnmatchedFrameworkNamespaceRule extends AbstractRule
         }
         $findings = [];
         foreach ($this->coupling->unboundSelectors($classified) as $selector) {
-            $findings[] = UnmatchedFrameworkFinding::of($selector, self::NAME);
+            $findings[] = UnmatchedFrameworkFinding::of($selector, self::NAME, $this->coupling->framework()->writtenBy);
         }
 
         return $findings;

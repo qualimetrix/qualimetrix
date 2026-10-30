@@ -34,7 +34,8 @@ Run/
 ├── Configuration/              # run resolution, PathsSection, PathsNormalizer,
 │                               # ProjectScopePaths, ProjectScopeDefaults,
 │                               # ManifestScopeEvidence for captured Composer interpretation,
-│                               # and one project scope measurement
+│                               # InstalledConfigurationSources for which file sources
+│                               # Composer installed, and one project scope measurement
 ├── Discovery/                  # ProjectFiles, one walk/inspector and metadata queries
 ├── ExcludeBinding/             # per-walk selector facts and audit publication
 ├── FileSetInspection/          # rule-selected composite
@@ -77,6 +78,28 @@ removed; see [ADR 0094](../../../docs/adr/0094-analysis-results-publish-subject-
 Private `ManifestScopeEvidence` interprets the already captured Composer facts
 and autoload-development policy. `ProjectScopeCoverage` retains the one reader,
 path IO and universe construction; defaults retain their refusal contract.
+
+`InstalledConfigurationSources::of()` classifies, once per resolution, which file
+sources of the configuration document (`ResolvedDocument::origins()`) lie in the
+Composer install directory (`config.vendor-dir`, default `vendor`) and returns
+their `describe()` words; the list rides `ProjectScopeMeasurement` (across
+`narrowTo()` and `withDiscoveredFiles()`) and reaches `ProjectScopeJudgement`.
+Only positive evidence counts: the manifest was read with no issue at or under
+`config` (the decoder's `vendor` fallback after a refused field is not
+evidence), the install directory is an existing directory that is neither the
+project root nor an ancestor of it, and the origin's file locator leads, through
+the links above the install directory but not through any below it, to a
+regular file the document was read under that very name — or under a preset
+name, the lowest band, which names a file given both as a preset and otherwise
+or under two preset spellings. Any other source (command line, built-in preset,
+project file) is not installed, and an empty list means every value is judged.
+`ConfiguredValueWriters::writtenOnlyBy()` answers true only when every writer is
+in the list.
+`ProjectScopeMeasurement` then turns an `Unmatched` or `CoveredBySameSource`
+exclude selector whose writers are all installed into `InstalledWriter`
+(after the open-door downgrade to `NotJudged`; `Unjudgeable`, `Removed` and
+`CoveredByOtherSource` are facts of the project's tree and stay) and adds one
+`installed-configuration` reason per installed file.
 
 Private `RunPathSelection` chooses authored or inferred paths from the captured
 document without rereading Composer. `WalkedEntrySelection` owns admission and
@@ -306,7 +329,10 @@ or invokes this audit. Same-source warnings describe what lies outside the hider
 removal without claiming absolute staleness. Other-source skipped values retain
 `channel`, `option` and `pattern`; a linked Exclude scope reason names the query,
 chosen hider, only its foreign origins and a rerun without that exclusion.
-Occurrence kinds and
+Both
+findings end with the sources that wrote the selector. An `InstalledWriter` verdict
+produces no finding; its population input fails the second gate,
+`installed-writer`, declared a boundary and not a data gap. Occurrence kinds and
 producer identity remain unchanged.
 
 ## Graph discovery

@@ -1,0 +1,15 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 4322
++visible 4280
+@@ -27,3 +27,3 @@
+-::warning title=coupling.unmatched-framework-namespace::The framework namespace selector "subtree:NoSuchVendor\Framework" matched no class the run analysed or depends on. Nothing was moved out of the application scope for it, so "coupling.cbo-app" still counts every class it was written to exclude and "coupling.ce-framework" counts none of them. Written by configuration file "qmx.yaml".
+-
+-invocation-format:github 4322
++::warning title=coupling.unmatched-framework-namespace::The framework namespace selector "subtree:NoSuchVendor\Framework" matched no class the run analysed or depends on. Nothing was moved out of the application scope for it, so "coupling.cbo-app" still counts every class it was written to exclude and "coupling.ce-framework" counts none of them.
++
++invocation-format:github 4280
+@@ -55,1 +55,1 @@
+-::warning title=coupling.unmatched-framework-namespace::The framework namespace selector "subtree:NoSuchVendor\Framework" matched no class the run analysed or depends on. Nothing was moved out of the application scope for it, so "coupling.cbo-app" still counts every class it was written to exclude and "coupling.ce-framework" counts none of them. Written by configuration file "qmx.yaml".
++::warning title=coupling.unmatched-framework-namespace::The framework namespace selector "subtree:NoSuchVendor\Framework" matched no class the run analysed or depends on. Nothing was moved out of the application scope for it, so "coupling.cbo-app" still counts every class it was written to exclude and "coupling.ce-framework" counts none of them.

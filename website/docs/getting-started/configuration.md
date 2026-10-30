@@ -969,7 +969,13 @@ Override follows the merge policy of each key, so some edits have no spelling:
 
 Keep what a project may want to change — `paths`, `exclude`, `suppress_*` — in
 the root file rather than in a shared base, since a base's set entry cannot be
-taken back.
+taken back. A finding that a configured value matches nothing names the file
+that wrote it. When that file is a base in the project's Composer install
+directory (`vendor/`), an `exclude`, `suppress_paths` or `suppress_namespaces`
+entry, or a value of a rule's `suppress_namespace_channels` entry, that matches
+nothing is listed in `projectScope.unjudgedValues` instead of being reported —
+the project could not remove it (see
+[Suppression rules](../rules/suppression.md#excluded-and-generated-code)).
 
 !!! note "Baselines and `architecture.unmatched-type`"
     An `architecture.unmatched-type` finding is identified by the type and

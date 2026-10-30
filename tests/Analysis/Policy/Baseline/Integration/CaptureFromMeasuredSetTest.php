@@ -40,6 +40,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\Baseline\Generation\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions;
 use Qualimetrix\Reporting\FindingProjection\Contract\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
@@ -172,7 +173,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
         $excluded = self::finding('generated/Proxy.php', 'App\\Generated', 'Proxy');
         $reported = self::finding('src/Service/UserService.php', 'App\\Service', 'UserService');
 
-        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressPaths: [self::path('generated')]));
+        $pipeline = $this->createPipeline(new FindingProjectionOptions(exclusions: new ConfiguredFindingExclusions([self::path('generated')])));
 
         $baseline = $this->capture($this->project($pipeline, [$excluded, $reported], new FindingProjectionOptions())->measuredFindings);
 
@@ -190,7 +191,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
         $excluded = self::finding('src/Generated/Proxy.php', 'App\\Generated', 'Proxy');
         $reported = self::finding('src/Service/UserService.php', 'App\\Service', 'UserService');
 
-        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressNamespaces: [self::namespace('App\\Generated')]));
+        $pipeline = $this->createPipeline(new FindingProjectionOptions(exclusions: new ConfiguredFindingExclusions(suppressNamespaces: [self::namespace('App\\Generated')])));
 
         $baseline = $this->capture($this->project($pipeline, [$excluded, $reported], new FindingProjectionOptions())->measuredFindings);
 
@@ -209,7 +210,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
             LayerViolationRule::NAME,
         );
 
-        $pipeline = $this->createPipeline(new FindingProjectionOptions(suppressNamespaces: [self::namespace('App\\Generated')]));
+        $pipeline = $this->createPipeline(new FindingProjectionOptions(exclusions: new ConfiguredFindingExclusions(suppressNamespaces: [self::namespace('App\\Generated')])));
 
         $baseline = $this->capture($this->project($pipeline, [$architecture], new FindingProjectionOptions())->measuredFindings);
 
@@ -338,8 +339,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
     {
         $projectionOptions = new FindingProjectionOptions(
             baselineDocument: $options->baselineDocument,
-            suppressPaths: [...$this->configuredOptions->suppressPaths, ...$options->suppressPaths],
-            suppressNamespaces: [...$this->configuredOptions->suppressNamespaces, ...$options->suppressNamespaces],
+            exclusions: new ConfiguredFindingExclusions([...$this->configuredOptions->exclusions->suppressPaths, ...$options->exclusions->suppressPaths], [...$this->configuredOptions->exclusions->suppressNamespaces, ...$options->exclusions->suppressNamespaces]),
             annotationSuppressionDisabled: $options->annotationSuppressionDisabled,
             gitScope: $options->gitScope,
         );

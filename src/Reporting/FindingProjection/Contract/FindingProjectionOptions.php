@@ -7,20 +7,17 @@ namespace Qualimetrix\Reporting\FindingProjection\Contract;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
 use Qualimetrix\Analysis\Policy\Baseline\RunCoverage\RunRuleCoverage;
-use Qualimetrix\Core\Pattern\NamespacePattern;
-use Qualimetrix\Core\Pattern\PathPattern;
 
-/** What one reporting projection invocation asks the finding pipeline to do. */
+/**
+ * What one reporting projection invocation asks the finding pipeline to do.
+ *
+ * @qmx-threshold coupling.cbo 21 -- Fifteen projection stages and adapters read this request, and each of its five typed parts is a field a stage needs; the finite ceiling still reports a sixth part or a wider readership.
+ */
 final readonly class FindingProjectionOptions
 {
-    /**
-     * @param list<PathPattern> $suppressPaths
-     * @param list<NamespacePattern> $suppressNamespaces
-     */
     public function __construct(
         public ?BaselineDocument $baselineDocument = null,
-        public array $suppressPaths = [],
-        public array $suppressNamespaces = [],
+        public ConfiguredFindingExclusions $exclusions = new ConfiguredFindingExclusions(),
         public bool $annotationSuppressionDisabled = false,
         public ?GitScopeRequest $gitScope = null,
         public ?RunCoverage $runCoverage = null,
@@ -31,8 +28,7 @@ final readonly class FindingProjectionOptions
     {
         return new self(
             baselineDocument: $this->baselineDocument,
-            suppressPaths: $this->suppressPaths,
-            suppressNamespaces: $this->suppressNamespaces,
+            exclusions: $this->exclusions,
             annotationSuppressionDisabled: $this->annotationSuppressionDisabled,
             gitScope: $this->gitScope,
             runCoverage: $coverage,
