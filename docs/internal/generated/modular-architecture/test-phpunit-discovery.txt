@@ -1799,8 +1799,24 @@ Available tests:
  - Qualimetrix\SuppressionSnapshot\Tests\SuppressionSnapshotKeyTest::itRendersAnEmptyInertListAsJustTheHeader
  - Qualimetrix\SuppressionSnapshot\Tests\SuppressionSnapshotKeyTest::itRendersCompositionRowsInTheGivenOrderWithCounts
  - Qualimetrix\SuppressionSnapshot\Tests\SuppressionSnapshotKeyTest::itStripsTheLineFromASuppressionDirectiveLocator
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\ConfigurationPipelineIntegrationTest::itAppliesTheDistFileWhenNoLocalFileExists
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\ConfigurationPipelineIntegrationTest::itListsNoSourceForANearNameNotice
  - Qualimetrix\Tests\Analysis\Configuration\Integration\ConfigurationPipelineIntegrationTest::itProvidesOnlyProvenanceForZeroConfiguration
  - Qualimetrix\Tests\Analysis\Configuration\Integration\ConfigurationPipelineIntegrationTest::itRetainsSourcesAndExposesTheirResolvedAndDiscoveryOutputs
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\DistConfigurationDiscoveryTest::itAdvisesAnImportThatResolvesFromASymlinkedRoot
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\DistConfigurationDiscoveryTest::itAdvisesTheBareNameFromARootLinkedWithinItsDirectory
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\DistConfigurationDiscoveryTest::itDoesNotWarnAboutADistFileNamedAsAPresetBehindALocalFile
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\DistConfigurationDiscoveryTest::itKeepsTheDistFileImportedUnderAnotherSpellingSilent
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\DistConfigurationDiscoveryTest::itKeepsTheImportedDistFileSilent
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\DistConfigurationDiscoveryTest::itLeavesTheDistFileToAnExplicitConfigPath
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\DistConfigurationDiscoveryTest::itLeavesTheDistFileToAnExplicitLocalConfigPath
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\DistConfigurationDiscoveryTest::itNamesTheLocalFileThatPassesTheDistFileOver
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\DistConfigurationDiscoveryTest::itReportsADistFileThatARunWithoutTheLocalFileRefuses"dangling link"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\DistConfigurationDiscoveryTest::itReportsADistFileThatARunWithoutTheLocalFileRefuses"directory"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\DistConfigurationDiscoveryTest::itReportsADistFileThatARunWithoutTheLocalFileRefuses"invalid YAML"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\DistConfigurationDiscoveryTest::itReportsADistFileThatARunWithoutTheLocalFileRefuses"missing import"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\DistConfigurationDiscoveryTest::itReportsADistFileThatARunWithoutTheLocalFileRefuses"unreadable"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\DistConfigurationDiscoveryTest::itWarnsAboutADistFileTheLocalFileDoesNotImport
  - Qualimetrix\Tests\Analysis\Configuration\Integration\DocumentRootsIntegrationTest::itAcceptsAnIntegerMemoryLimit
  - Qualimetrix\Tests\Analysis\Configuration\Integration\DocumentRootsIntegrationTest::itJudgesRegisteredSectionsInAuthoredOrder
  - Qualimetrix\Tests\Analysis\Configuration\Integration\DocumentRootsIntegrationTest::itKeepsTheFalseMigrationHintToTheRetiredValue"empty collection"
@@ -2428,6 +2444,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itComposesTheAuthoredLayers
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itExpandsMultiDocumentLayersWithoutCollapsingThem
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itJudgesEachAuthoredLayerWithoutAParallelRefusalTransport
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itListsNoSourceForALayerOfNoticesOnly
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itPreservesTypedValuesAndEveryAuthoredListWriteInStageOrder
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itRefusesARootNoOneKnowsEvenWhenWrittenNull
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itResolvesAnEmptyDocumentWhenNoStageHandsOverAWrittenLayer
@@ -2443,22 +2460,32 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ComposerDiscoveryStageTest::itKeepsTheProductionAndDevelopmentTargetsApart
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ComposerDiscoveryStageTest::itPublishesDiscoveredPathsFromTheInvocationDirectory
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ComposerDiscoveryStageTest::itReturnsNullWhenComposerDeclaresNoAutoloadTargets
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itAttributesTheDistNameCollisionToBothFiles
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itAttributesTheExactNameCollisionToBothFiles
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itDiscoversTheDistFileWhenNoLocalFileExists"yaml"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itDiscoversTheDistFileWhenNoLocalFileExists"yml"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itDoesNotWarnAboutTheNearNameConsumedAsACustomPreset
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itHandsTheAutoDetectedDocumentToItsDeclaredOwners
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itHandsTheOriginalWrittenValueToTheEngineForJudgement
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itHasConfigFileSourceIdentity
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itKeepsNearConfigNamesSilentWhenAnExactNameExists
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itLeavesADistFileNamedAsAPresetToItsBand"bare name"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itLeavesADistFileNamedAsAPresetToItsBand"dot slash"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itPrefersTheLocalFileOverTheDistFile
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itRefusesAnUnlistableAutoDiscoveryDirectory
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itRefusesTheDistNameCollisionBehindALocalFileOrAPreset
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itRejectsAMissingExplicitConfigPath
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itRejectsBothExactAutoDetectedConfigNames
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itReportsANearConfigNameWithoutLoadingIt"case variant with lowercase extension"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itReportsANearConfigNameWithoutLoadingIt"case variant"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itReportsANearConfigNameWithoutLoadingIt"dist case variant"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itReportsANearConfigNameWithoutLoadingIt"dist suffix variant"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itReportsANearConfigNameWithoutLoadingIt"dot prefix"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itReportsANearConfigNameWithoutLoadingIt"extensionless base"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itReportsANearConfigNameWithoutLoadingIt"middle suffix"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itReportsANearConfigNameWithoutLoadingIt"prefix variant"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itReportsANearConfigNameWithoutLoadingIt"suffix variant"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itReportsANearNameBesideTheDistFile
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itReturnsNullWhenNoConfigFileExists
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itStillWarnsForANearNameWhenThePresetIsElsewhere
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itUsesTheExplicitConfigPathInsteadOfAutoDetection
