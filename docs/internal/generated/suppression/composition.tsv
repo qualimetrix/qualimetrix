@@ -154,6 +154,7 @@ rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/FileTarget/Resolution/R
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/Path/AbsolutePath.php	Qualimetrix\Core\Path\AbsolutePath	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/Path/RelativePath.php	Qualimetrix\Core\Path\RelativePath	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/Pattern/NamespacePattern.php	Qualimetrix\Core\Pattern\NamespacePattern	warning	1
+rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/Pattern/PathPattern.php	Qualimetrix\Core\Pattern\PathPattern	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/ProductIdentity.php	Qualimetrix\Core\ProductIdentity	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/Profiler/Contract/ProfilerInterface.php	Qualimetrix\Core\Profiler\Contract\ProfilerInterface	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/Symbol/ClassNameSpelling.php	Qualimetrix\Core\Symbol\ClassNameSpelling	warning	1
