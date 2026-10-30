@@ -205,8 +205,10 @@ local name, a near name produces a document diagnostic rather than being
 loaded, also beside a loaded dist file; a local name beside a near name is
 loaded without that warning. A local file never merges a dist file
 implicitly: when the local file's import chain reads no file with the dist
-file's identity, a diagnostic names the dist file as unused, and one that is
-not a regular file as refused by a run without the local file. A dist file
+file's identity, a diagnostic names the dist file as unused. The dist file is
+read through the same import chain a run without the local file would use, so
+a refusal there (unreadable, not a regular file, invalid YAML, an unreadable
+import) is reported with that run's words instead. A dist file
 that is a selected preset is left to the preset band, neither discovered nor
 reported. A layer carrying only diagnostics is not an applied source.
 Explicit `--config` selects its named file directly.

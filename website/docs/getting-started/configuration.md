@@ -33,10 +33,12 @@ fail_on: warning
 
 When an auto-discovered `qmx.yaml` or `qmx.yml` does not import a
 `qmx.dist.yaml` or `qmx.dist.yml` beside it, the run warns that the dist file
-is not used, since the local run then differs from CI — and says so too when
-the dist file is not a regular file a run without the local file could read.
-The advice names the dist file by its full path when the local file is a
-symlink, whose imports resolve beside its target. A dist file selected
+is not used, since the local run then differs from CI. When a run without the
+local file would refuse the dist file — it is not a readable regular file, is
+not valid YAML, or names an import that cannot be read — the warning gives
+that refusal instead. The advice names the dist file by its full path when the
+local file is a symlink into another directory, whose imports resolve beside
+its target. A dist file selected
 with `--preset` is read in the preset band only: it is neither discovered nor
 warned about.
 

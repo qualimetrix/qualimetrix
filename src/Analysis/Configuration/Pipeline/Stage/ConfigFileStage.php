@@ -19,8 +19,6 @@ use Qualimetrix\Analysis\Configuration\Loader\ImportChain;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
-use Qualimetrix\Core\FileTarget\FileIdentity;
-use Qualimetrix\Core\FileTarget\NativeCall;
 use UnexpectedValueException;
 
 /**
@@ -71,7 +69,7 @@ final class ConfigFileStage implements ConfigurationStageInterface
 
         $authored = (new ImportChain($this->loader))->expand($configPath, ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $sourceName));
         if ($passedOver !== null) {
-            $diagnostics = [...$diagnostics, ...self::passedOver($passedOver, $configPath, $sourceName, $authored)];
+            $diagnostics = [...$diagnostics, ...$this->passedOver($passedOver, $configPath, $sourceName, $authored)];
         }
 
         return new ConfigurationLayer($sourceName, [], authored: $authored, diagnostics: $diagnostics);
@@ -79,35 +77,43 @@ final class ConfigFileStage implements ConfigurationStageInterface
 
     /**
      * What a run without the local file would read differently: a dist file
-     * the local import chain does not read, or one that run would refuse.
+     * the local import chain does not read, or one that run would refuse. The
+     * dist file is read through the chain that run would use, so its verdict
+     * is that run's.
      *
      * @param list<AuthoredLayer> $authored
      *
      * @return list<ConfigurationDiagnostic>
      */
-    private static function passedOver(string $dist, string $configPath, string $sourceName, array $authored): array
+    private function passedOver(string $dist, string $configPath, string $sourceName, array $authored): array
     {
         $name = basename($dist);
-        [$stat] = NativeCall::attempt(static fn(): array|false => stat($dist));
-        if ($stat === false || !FileIdentity::fromStat($stat)->isRegularFile()) {
-            $message = \sprintf('Configuration file "%s" is not a regular file or cannot be accessed, so a run without "%s" refuses it.', $name, $sourceName);
-        } else {
-            // Inode 0 cannot be told apart from the files read, so it is not judged.
-            $identity = FileIdentity::ofRegularFile($stat);
-            if ($identity === null) {
-                return [];
-            }
-            foreach ($authored as $layer) {
-                if ($layer->file?->sameAs($identity) === true) {
-                    return [];
-                }
-            }
-            // Imports resolve against the real directory of a symlinked root.
-            $entry = realpath(\dirname($configPath)) === realpath(\dirname($dist)) && !is_link($configPath) ? $name : $dist;
-            $message = \sprintf('Configuration file "%s" is not used: "%s" takes precedence and does not import it. Add "%s" to its "imports" to build on it.', $name, $sourceName, $entry);
+        try {
+            $read = (new ImportChain($this->loader))->expand($dist, ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $name));
+        } catch (ConfigurationRefusal $refusal) {
+            return [self::aboutDist($name, \sprintf('A run without "%s" refuses configuration file "%s": %s', $sourceName, $name, $refusal->summary()))];
         }
 
-        return [new ConfigurationDiagnostic($message, [new Provenance(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $name), null, 0)])];
+        // A file read without identity cannot be told apart from the files read, so it is not judged.
+        $identity = $read[array_key_last($read)]->file;
+        if ($identity === null) {
+            return [];
+        }
+        foreach ($authored as $layer) {
+            if ($layer->file !== null && $identity->sameAs($layer->file)) {
+                return [];
+            }
+        }
+
+        // Imports resolve against the real directory of a symlinked root.
+        $entry = \dirname((string) realpath($configPath)) === realpath(\dirname($dist)) ? $name : $dist;
+
+        return [self::aboutDist($name, \sprintf('Configuration file "%s" is not used: "%s" takes precedence and does not import it. Add "%s" to its "imports" to build on it.', $name, $sourceName, $entry))];
+    }
+
+    private static function aboutDist(string $name, string $message): ConfigurationDiagnostic
+    {
+        return new ConfigurationDiagnostic($message, [new Provenance(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $name), null, 0)]);
     }
 
     /**

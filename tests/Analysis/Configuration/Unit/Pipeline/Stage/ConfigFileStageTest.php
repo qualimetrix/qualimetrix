@@ -313,15 +313,22 @@ final class ConfigFileStageTest extends TestCase
     {
         touch($this->directory . '/qmx.dist.yaml');
         touch($this->directory . '/qmx.yml');
-        $this->loader->expects(self::once())->method('read')
-            ->with($this->directory . '/qmx.yml', ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yml'))
-            ->willReturn(new LoadedDocument(AuthoredNode::fromPlain([])));
+        $read = [];
+        $this->loader->expects(self::exactly(2))->method('read')
+            ->willReturnCallback(static function (string $path, ConfigurationOrigin $origin) use (&$read): LoadedDocument {
+                $read[] = [basename($path), $origin->locator()];
+
+                return new LoadedDocument(AuthoredNode::fromPlain(['fail_on' => basename($path) === 'qmx.yml' ? 'warning' : 'error']));
+            });
 
         $layer = (new ConfigFileStage($this->loader))
             ->apply(new ConfigurationResolutionRequest(AbsolutePath::fromString($this->directory)));
 
         self::assertNotNull($layer);
         self::assertSame('qmx.yml', $layer->source);
+        self::assertSame([['fail_on' => 'warning']], array_map(static fn($authored): mixed => $authored->root->plain(), $layer->authored));
+        // The dist file is read only to judge it, never applied.
+        self::assertSame([['qmx.yml', 'qmx.yml'], ['qmx.dist.yaml', 'qmx.dist.yaml']], $read);
     }
 
     #[Test]

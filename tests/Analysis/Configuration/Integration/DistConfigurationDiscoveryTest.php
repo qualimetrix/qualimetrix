@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Configuration\Integration;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
@@ -132,26 +133,47 @@ final class DistConfigurationDiscoveryTest extends TestCase
         );
     }
 
-    /** A run without the local file would refuse a dist file that is not a readable regular file. */
+    /** @return iterable<string, array{'directory'|'dangling link'|'unreadable'|'invalid YAML'|'missing import', string}> */
+    public static function provideDistFilesARunWithoutTheLocalFileRefuses(): iterable
+    {
+        yield 'directory' => ['directory', 'Configuration file "qmx.dist.yaml" is not a regular file.'];
+        yield 'dangling link' => ['dangling link', 'Configuration file "qmx.dist.yaml" was not found or is not accessible.'];
+        yield 'unreadable' => ['unreadable', 'Configuration file "qmx.dist.yaml" is not readable.'];
+        yield 'invalid YAML' => ['invalid YAML', 'Failed to parse configuration file "qmx.dist.yaml"'];
+        yield 'missing import' => ['missing import', 'Configuration file "absent.yaml" (imported by configuration file "qmx.dist.yaml") was not found or is not accessible.'];
+    }
+
+    /**
+     * The verdict is the one a run without the local file reaches reading the dist file.
+     *
+     * @param 'directory'|'dangling link'|'unreadable'|'invalid YAML'|'missing import' $form
+     */
     #[Test]
-    public function itReportsADistFileThatARunWithoutTheLocalFileRefuses(): void
+    #[DataProvider('provideDistFilesARunWithoutTheLocalFileRefuses')]
+    public function itReportsADistFileThatARunWithoutTheLocalFileRefuses(string $form, string $refusal): void
     {
         file_put_contents($this->directory . '/qmx.yaml', "fail_on: warning\n");
-        foreach (['directory', 'dangling link'] as $form) {
-            $form === 'directory'
-                ? mkdir($this->directory . '/qmx.dist.yaml')
-                : symlink($this->directory . '/absent.yaml', $this->directory . '/qmx.dist.yaml');
+        $dist = $this->directory . '/qmx.dist.yaml';
+        match ($form) {
+            'directory' => mkdir($dist),
+            'dangling link' => symlink($this->directory . '/absent.yaml', $dist),
+            'unreadable' => file_put_contents($dist, "fail_on: error\n") !== false && chmod($dist, 0o000),
+            'invalid YAML' => file_put_contents($dist, "fail_on: [\n"),
+            'missing import' => file_put_contents($dist, "imports: [absent.yaml]\n"),
+        };
+        try {
+            if ($form === 'unreadable' && is_readable($dist)) {
+                self::markTestSkipped('The file stays readable for this user.');
+            }
 
             $layer = (new ConfigFileStage(new YamlConfigLoader()))
                 ->apply(new ConfigurationResolutionRequest(AbsolutePath::fromString($this->directory)));
 
             self::assertNotNull($layer);
-            self::assertSame(
-                ['Configuration file "qmx.dist.yaml" is not a regular file or cannot be accessed, so a run without "qmx.yaml" refuses it.'],
-                array_map(static fn($diagnostic): string => $diagnostic->message, $layer->diagnostics),
-                $form,
-            );
-            $form === 'directory' ? rmdir($this->directory . '/qmx.dist.yaml') : unlink($this->directory . '/qmx.dist.yaml');
+            self::assertCount(1, $layer->diagnostics);
+            self::assertStringStartsWith('A run without "qmx.yaml" refuses configuration file "qmx.dist.yaml": ' . $refusal, $layer->diagnostics[0]->message);
+        } finally {
+            $form === 'directory' ? rmdir($dist) : @chmod($dist, 0o600);
         }
     }
 
@@ -182,6 +204,24 @@ final class DistConfigurationDiscoveryTest extends TestCase
             @unlink($this->directory . '/shared/qmx.yaml');
             @rmdir($this->directory . '/shared');
         }
+    }
+
+    /** A root linked to a file in the same directory still imports the dist file by its name. */
+    #[Test]
+    public function itAdvisesTheBareNameFromARootLinkedWithinItsDirectory(): void
+    {
+        file_put_contents($this->directory . '/qmx.dist.yaml', "fail_on: error\n");
+        file_put_contents($this->directory . '/mine.yaml', "fail_on: warning\n");
+        symlink($this->directory . '/mine.yaml', $this->directory . '/qmx.yaml');
+
+        $layer = (new ConfigFileStage(new YamlConfigLoader()))
+            ->apply(new ConfigurationResolutionRequest(AbsolutePath::fromString($this->directory)));
+
+        self::assertNotNull($layer);
+        self::assertSame(
+            ['Configuration file "qmx.dist.yaml" is not used: "qmx.yaml" takes precedence and does not import it. Add "qmx.dist.yaml" to its "imports" to build on it.'],
+            array_map(static fn($diagnostic): string => $diagnostic->message, $layer->diagnostics),
+        );
     }
 
     #[Test]

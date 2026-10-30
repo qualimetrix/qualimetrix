@@ -44,11 +44,15 @@ When an auto-discovered local file's import chain reads no file with the dist
 file's identity, a diagnostic says the dist file is not used and how to import
 it. The harm it names is silent: a local run whose configuration differs from
 the one CI reads. Identity, not spelling, decides, so `./qmx.dist.yaml` or a
-symlink to it count as importing it. A dist file that is not a regular file
-— a directory, a dangling link — is reported as one a run without the local
-file refuses; a regular file reporting inode 0 cannot be compared and is not
-judged. A local file that is a symlink resolves its imports beside its target,
-so the advice names the dist file by its full path. An explicit `--config` is a deliberate
+symlink to it count as importing it. The dist file is read through the same
+import chain a run without the local file would use, so that run's refusal —
+a directory, a dangling link, an unreadable file, invalid YAML, an import that
+cannot be read — is reported in its own words; a file read without identity
+(inode 0) cannot be compared and is not judged. Reproducing the loader's
+checks in the stage was rejected: a first version judged only the file type
+and advised importing an unreadable file, which then refused. A local file
+that is a symlink into another directory resolves its imports beside its
+target, so the advice names the dist file by its full path. An explicit `--config` is a deliberate
 choice and gets no such diagnostic. Rejected: staying silent as PHPStan does —
 the divergence is exactly what the committed-defaults pattern exists to
 prevent, and the diagnostic has a one-line cure.
