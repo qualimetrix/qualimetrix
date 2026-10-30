@@ -43,7 +43,7 @@ final readonly class PopulationGate
         return match (true) {
             $this->predicate instanceof KeyPresent => !array_any(array_keys($this->predicate->absenceBoundaries), fn(string $key): bool => $input->metricBag()->get($key) === $this->predicate->absenceBoundaries[$key]),
             $this->predicate instanceof KeyThreshold => $this->predicate->missing !== 'zero' && array_any($this->predicate->keys, static fn(string $key): bool => $input->metricBag()->get($key) === null),
-            $this->predicate instanceof ContextGuard => !\in_array($this->predicate->source, ['edgeSourceAssigned', 'edgeTargetAssigned', 'callableHasClassContext', 'excludeClauseActive', 'namespaceOwnCountExpected'], true),
+            $this->predicate instanceof ContextGuard => !\in_array($this->predicate->source, ['edgeSourceAssigned', 'edgeTargetAssigned', 'callableHasClassContext', 'excludeClauseActive', 'namespaceOwnCountExpected', 'configuredValueWrittenHere'], true),
             default => false,
         };
     }

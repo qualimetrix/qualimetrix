@@ -80,18 +80,115 @@ final class ProjectScopeDoorsTest extends TestCase
         self::assertSame([], $measurement->uncoveredRoots);
     }
 
+    #[Test]
+    public function itMarksAnUnansweredSelectorOnlyAnInstalledFileWroteAndNamesTheFileOnce(): void
+    {
+        $installed = self::installedFile();
+        $hider = [['directory' => 'src/Legacy', 'selector' => 'subtree:src/Legacy', 'sources' => [$installed]]];
+        $unmatched = ExcludeSelectorVerdict::fromMeasuredFacts(self::pattern(SelectorKind::Regex, '#Nope#'), [$installed], [], [], null, null, [], true);
+        $covered = ExcludeSelectorVerdict::fromMeasuredFacts(self::pattern(SelectorKind::Regex, '#Legacy/.*#'), [$installed], [], [], null, null, $hider, true);
+
+        $measurement = self::initial([$installed->describe()])->withDiscoveredFiles(self::files(new ScopeFacts([], [], [], false), [$unmatched, $covered]));
+
+        self::assertSame(
+            [ExcludeSelectorOutcome::InstalledWriter, ExcludeSelectorOutcome::InstalledWriter],
+            array_map(static fn(ExcludeSelectorVerdict $verdict): ExcludeSelectorOutcome => $verdict->outcome, $measurement->judgement()->excludeSelectors()),
+        );
+        $reasons = array_filter(
+            array_map(static fn($reason): array => $reason->toArray(), $measurement->reasons()),
+            static fn(array $reason): bool => $reason['kind'] === 'installed-configuration',
+        );
+        self::assertSame([[
+            'kind' => 'installed-configuration',
+            'source' => $installed->describe(),
+            'detail' => 'Set entries written only by a file an installed Composer package provides are not judged; the project can neither edit nor remove them.',
+        ]], array_values($reasons));
+    }
+
+    #[Test]
+    public function itJudgesASelectorAProjectFileAlsoWroteAndGivesNoReason(): void
+    {
+        $installed = self::installedFile();
+        $project = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml');
+        $unmatched = ExcludeSelectorVerdict::fromMeasuredFacts(self::pattern(SelectorKind::Regex, '#Nope#'), [$installed, $project], [], [], null, null, [], true);
+
+        $measurement = self::initial([$installed->describe()])->withDiscoveredFiles(self::files(new ScopeFacts([], [], [], false), [$unmatched]));
+
+        self::assertSame(ExcludeSelectorOutcome::Unmatched, $measurement->judgement()->excludeSelectors()[0]->outcome);
+        self::assertSame([], self::installedReasons($measurement));
+    }
+
+    #[Test]
+    public function itJudgesEverySelectorWhenNothingIsEstablishedAsInstalled(): void
+    {
+        $installed = self::installedFile();
+        $unmatched = ExcludeSelectorVerdict::fromMeasuredFacts(self::pattern(SelectorKind::Regex, '#Nope#'), [$installed], [], [], null, null, [], true);
+
+        $measurement = self::initial()->withDiscoveredFiles(self::files(new ScopeFacts([], [], [], false), [$unmatched]));
+
+        self::assertSame(ExcludeSelectorOutcome::Unmatched, $measurement->judgement()->excludeSelectors()[0]->outcome);
+        self::assertSame([], self::installedReasons($measurement));
+    }
+
+    #[Test]
+    public function itLeavesEveryOtherConclusionOfAnInstalledFilesSelectorAlone(): void
+    {
+        $installed = self::installedFile();
+        $project = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml');
+        $removed = ExcludeSelectorVerdict::fromMeasuredFacts(self::pattern(SelectorKind::Subtree, 'src/Legacy'), [$installed], ['src/Legacy'], ['src/Legacy'], 'php-file', null, [], true);
+        $blocked = ExcludeSelectorVerdict::fromMeasuredFacts(self::pattern(SelectorKind::Regex, '#Blocked#'), [$installed], [], [], null, 'src/Blocked', [], false);
+        $other = ExcludeSelectorVerdict::fromMeasuredFacts(self::pattern(SelectorKind::Regex, '#Legacy/.*#'), [$installed], [], [], null, null, [['directory' => 'src/Legacy', 'selector' => 'subtree:src/Legacy', 'sources' => [$project]]], true);
+
+        $measurement = self::initial([$installed->describe()])->withDiscoveredFiles(self::files(new ScopeFacts([], [], [], false), [$removed, $blocked, $other]));
+
+        self::assertSame(
+            [ExcludeSelectorOutcome::Removed, ExcludeSelectorOutcome::Unjudgeable, ExcludeSelectorOutcome::CoveredByOtherSource],
+            array_map(static fn(ExcludeSelectorVerdict $verdict): ExcludeSelectorOutcome => $verdict->outcome, $measurement->judgement()->excludeSelectors()),
+        );
+        self::assertSame([], self::installedReasons($measurement));
+    }
+
+    #[Test]
+    public function itKeepsAnOpenDoorSelectorNotJudgedWithoutAnInstalledReason(): void
+    {
+        $installed = self::installedFile();
+        $unmatched = ExcludeSelectorVerdict::fromMeasuredFacts(self::pattern(SelectorKind::Regex, '#Nope#'), [$installed], [], [], null, null, [], true);
+
+        $measurement = self::initial([$installed->describe()])->withDiscoveredFiles(self::files(new ScopeFacts([RelativePath::fromString('src/Other.php')], [], [], true), [$unmatched]));
+
+        self::assertSame([ProjectScopeDoor::Paths], $measurement->judgement()->selectorDoors());
+        self::assertSame(ExcludeSelectorOutcome::NotJudged, $measurement->judgement()->excludeSelectors()[0]->outcome);
+        self::assertSame([], self::installedReasons($measurement));
+    }
+
+    /** @return list<array<string, mixed>> */
+    private static function installedReasons(ProjectScopeMeasurement $measurement): array
+    {
+        return array_values(array_filter(
+            array_map(static fn($reason): array => $reason->toArray(), $measurement->reasons()),
+            static fn(array $reason): bool => $reason['kind'] === 'installed-configuration',
+        ));
+    }
+
+    private static function installedFile(): ConfigurationOrigin
+    {
+        return ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'vendor/acme/std/base.yaml')
+            ->importedThrough(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml'));
+    }
+
     /** @param list<ExcludeSelectorVerdict> $verdicts */
     private static function files(ScopeFacts $facts, array $verdicts = []): DiscoveredProjectFiles
     {
         return new DiscoveredProjectFiles([], [], [], [], $verdicts, $facts, 0);
     }
 
-    private static function initial(): ProjectScopeMeasurement
+    /** @param list<string> $installedSources */
+    private static function initial(array $installedSources = []): ProjectScopeMeasurement
     {
         $root = AbsolutePath::fromString('/project');
 
         return new ProjectScopeMeasurement(
-            new ProjectScopeUniverse($root, true, [], [], [], true, [], (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root)),
+            new ProjectScopeUniverse($root, true, [], [], [], true, [], (new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())->read($root), $installedSources),
             [$root],
             ProjectScopeState::Covered,
             [],

@@ -12,4 +12,5 @@ enum ExcludeSelectorOutcome: string
     case CoveredByOtherSource = 'covered-by-other-source';
     case Unjudgeable = 'unjudgeable';
     case NotJudged = 'not-judged';
+    case InstalledWriter = 'installed-writer';
 }

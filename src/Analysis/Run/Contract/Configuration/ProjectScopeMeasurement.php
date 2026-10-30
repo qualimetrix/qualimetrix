@@ -74,7 +74,7 @@ final readonly class ProjectScopeMeasurement
         if ($facts->generatedExcluded > 0) {
             $namespaceDoors[] = ProjectScopeDoor::Generated;
         }
-        [$selectors, $selectorReasons, $excludeDoors] = self::selectorMeasurements($files, $selectorDoors);
+        [$selectors, $selectorReasons, $excludeDoors] = self::selectorMeasurements($files, $selectorDoors, $this->universe->installedConfigurationSources);
         $namespaceDoors = [...$namespaceDoors, ...$excludeDoors];
         $reasons = [...$selectorReasons, ...$this->selectionReasons($files, $pathsMissing, $unknownDenominator)];
 
@@ -83,7 +83,7 @@ final readonly class ProjectScopeMeasurement
             $this->paths,
             $state,
             $pathsMissing ? $this->universe->uncoveredBy($this->paths) : [],
-            new ProjectScopeJudgement(self::uniqueDoors($namespaceDoors), self::uniqueDoors($selectorDoors), $selectors, $facts->removedCode),
+            new ProjectScopeJudgement(self::uniqueDoors($namespaceDoors), self::uniqueDoors($selectorDoors), $selectors, $facts->removedCode, $this->universe->installedConfigurationSources),
             $reasons,
         );
     }
@@ -118,14 +118,17 @@ final readonly class ProjectScopeMeasurement
 
     /**
      * @param list<ProjectScopeDoor> $selectorDoors
+     * @param list<string> $installedSources
      *
      * @return array{list<ExcludeSelectorVerdict>, list<ProjectScopeReason>, list<ProjectScopeDoor>}
      */
-    private static function selectorMeasurements(DiscoveredProjectFiles $files, array $selectorDoors): array
+    private static function selectorMeasurements(DiscoveredProjectFiles $files, array $selectorDoors, array $installedSources): array
     {
         $namespaceDoors = [];
         $reasons = [];
         $selectors = [];
+        $installed = new ProjectScopeJudgement(installedConfigurationSources: $installedSources);
+        $unjudgedSources = [];
         foreach ($files->selectorVerdicts as $selector) {
             if ($selector->phpEvidence !== null) {
                 $namespaceDoors[] = ProjectScopeDoor::Exclude;
@@ -138,11 +141,23 @@ final readonly class ProjectScopeMeasurement
             if ($selectorDoors !== []) {
                 $selector = $selector->withoutSelectorJudgement();
             }
+            if (!$installed->judgesValueWrittenBy($selector->writers())) {
+                $selector = $selector->withInstalledWriter();
+            }
             if ($selector->outcome === ExcludeSelectorOutcome::CoveredByOtherSource) {
                 $reasons[] = self::otherSourceReason($selector);
             }
+            if ($selector->outcome === ExcludeSelectorOutcome::InstalledWriter) {
+                foreach ($selector->writers()->origins as $origin) {
+                    $unjudgedSources[$origin->describe()] = true;
+                }
+            }
             $selectors[] = $selector;
         }
+        foreach (array_keys($unjudgedSources) as $source) {
+            $reasons[] = ProjectScopeReason::installedConfiguration($source);
+        }
+
         return [$selectors, $reasons, $namespaceDoors];
     }
 

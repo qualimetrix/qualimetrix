@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Finding\Contract\Channel\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Population\ContextGuard;
 use Qualimetrix\Analysis\Finding\Contract\Population\FlagExcludes;
 use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
@@ -16,8 +17,10 @@ use Qualimetrix\Analysis\Finding\Contract\Population\KeyPresent;
 use Qualimetrix\Analysis\Finding\Contract\Population\KeyThreshold;
 use Qualimetrix\Analysis\Finding\Contract\Population\KindIn;
 use Qualimetrix\Analysis\Finding\Contract\Population\NameMatches;
+use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Population\RuleValueThreshold;
 use Qualimetrix\Core\Symbol\ClassType;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 #[CoversClass(KeyPresent::class)]
@@ -28,6 +31,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 #[CoversClass(RuleValueThreshold::class)]
 #[CoversClass(ContextGuard::class)]
 #[CoversClass(GateInput::class)]
+#[CoversClass(PopulationGate::class)]
 final class PopulationPredicatesTest extends TestCase
 {
     #[Test]
@@ -116,5 +120,19 @@ final class PopulationPredicatesTest extends TestCase
     {
         $this->expectException(LogicException::class);
         (new KeyThreshold('children', ['noc'], '>', 0, nonnegative: true))->evaluate(GateInput::metrics('children', MetricBag::fromArray(['noc' => -1])));
+    }
+
+    #[Test]
+    public function itDeclaresAnInstalledWriterGateABoundaryAndNotADataGap(): void
+    {
+        $channel = new FindingChannel('fixture.channel');
+        $input = GateInput::context('configuredValueWrittenHere', false);
+        $boundary = new PopulationGate('installed-writer', $channel, SymbolLevel::Project, 'occurrence', new ContextGuard('configuredValueWrittenHere'), 'Written only by an installed file.');
+        $dataGap = new PopulationGate('judged', $channel, SymbolLevel::Project, 'occurrence', new ContextGuard('excludeVerdictJudged'), 'Not judged.');
+
+        self::assertNotNull($boundary->evaluate($input));
+        self::assertFalse($boundary->isDataGap($input));
+        self::assertTrue($dataGap->isDataGap(GateInput::context('excludeVerdictJudged', false)));
+        self::assertNull($boundary->evaluate(GateInput::context('configuredValueWrittenHere', true)));
     }
 }

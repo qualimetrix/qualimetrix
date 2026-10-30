@@ -22,6 +22,15 @@ final readonly class ProjectScopeReason
         return new self(ProjectScopeReasonKind::ManifestIssue, ['issueKind' => $issue->kind->value, 'source' => $issue->source, 'location' => $issue->location, 'detail' => $issue->detail, 'auxiliary' => true]);
     }
 
+    /** Set entries written only by an installed file are left unjudged; one reason per file. */
+    public static function installedConfiguration(string $source): self
+    {
+        return new self(ProjectScopeReasonKind::InstalledConfiguration, [
+            'source' => $source,
+            'detail' => 'Set entries written only by a file an installed Composer package provides are not judged; the project can neither edit nor remove them.',
+        ]);
+    }
+
     /** @return array<string, mixed> */
     public function toArray(): array
     {

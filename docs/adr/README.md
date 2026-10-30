@@ -188,6 +188,7 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0137 — Constructor-Only Helpers Leave the LCOM4 Graph](0137-constructor-only-helpers-leave-the-lcom4-graph.md) — private helpers only a constructor or destructor reaches leave the LCOM4 graph; deferred calls keep their callees; LCOM may rise or the graph may empty; TCC/LCC unchanged.
 - [0138 — Closures Are Named Under Their Enclosing Declaration](0138-closures-are-named-under-their-enclosing-declaration.md) — a closure is named `{Ns}\{parent}::{closure#k}` after its nearest enclosing frame and counted inside it; its path stays function-shaped; amends ADR 0026's closure stability statement.
 - [0139 — Configuration Imports](0139-configuration-imports.md) — the root configuration file's `imports:` list adds each file as a layer below it, flat and in written order, identified by inode; `imports` is read per file and never composed; the loader takes an origin; C3 linearization is the recorded path to nested imports.
+- [0142 — A Configured Value a Package Installed Is Named, and Judged Only Where It Can Be Removed](0142-installed-configuration-values.md) — every "configured value matches nothing" finding names the files that wrote the value; an `exclude`/`suppress_paths`/`suppress_namespaces` entry only a Composer-installed file wrote is listed as unjudged instead of reported, because the project can neither edit nor remove it.
 
 ## Superseded history
 

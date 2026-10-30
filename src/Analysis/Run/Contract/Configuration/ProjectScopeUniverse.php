@@ -15,6 +15,7 @@ final readonly class ProjectScopeUniverse
      * @param list<array{target: string, directory: string}> $prunedTargets
      * @param list<ProjectScopeReason> $reasons
      * @param list<array{written: AbsolutePath, path: AbsolutePath}> $pathResolutions
+     * @param list<string> $installedConfigurationSources `describe()` of each configuration source established as installed by Composer
      */
     public function __construct(
         public AbsolutePath $projectRoot,
@@ -25,6 +26,7 @@ final readonly class ProjectScopeUniverse
         public bool $namespaceMapUsable,
         public array $pathResolutions,
         public ComposerManifestFacts $manifestFacts,
+        public array $installedConfigurationSources = [],
     ) {}
 
     public function pathsAuthorship(): PathsAuthorship

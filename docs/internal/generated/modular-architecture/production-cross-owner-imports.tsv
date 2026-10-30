@@ -1581,6 +1581,8 @@ Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity	Analysis.Fin
 Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity	Analysis.Finding	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
 Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity	Analysis.Finding	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
 Qualimetrix\Analysis\Finding\Contract\Population\RuleAbstention	Analysis.Finding	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
+Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Document\Provenance	Analysis.Configuration	contract
+Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	Analysis.Configuration	contract
 Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorVerdict	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	Analysis.Configuration	contract
 Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorVerdict	Analysis.Finding	Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	contract
 Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorVerdict	Analysis.Finding	Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	contract
@@ -2244,6 +2246,18 @@ Qualimetrix\Analysis\Run\Collection\FileProcessor	Analysis.Run	Qualimetrix\Core\
 Qualimetrix\Analysis\Run\Collection\FileProcessor	Analysis.Run	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Analysis\Run\Collection\FileProcessor	Analysis.Run	Qualimetrix\Core\Path\PathFactory	Core.Path	contract
 Qualimetrix\Analysis\Run\Collection\FileProcessor	Analysis.Run	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
+Qualimetrix\Analysis\Run\Configuration\InstalledConfigurationSources	Analysis.Run	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	contract
+Qualimetrix\Analysis\Run\Configuration\InstalledConfigurationSources	Analysis.Run	Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface	Analysis.Configuration	contract
+Qualimetrix\Analysis\Run\Configuration\InstalledConfigurationSources	Analysis.Run	Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface	Analysis.Configuration	contract
+Qualimetrix\Analysis\Run\Configuration\InstalledConfigurationSources	Analysis.Run	Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaqueInterface	Analysis.Configuration	contract
+Qualimetrix\Analysis\Run\Configuration\InstalledConfigurationSources	Analysis.Run	Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface	Analysis.Configuration	contract
+Qualimetrix\Analysis\Run\Configuration\InstalledConfigurationSources	Analysis.Run	Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedWriteHistoryInterface	Analysis.Configuration	contract
+Qualimetrix\Analysis\Run\Configuration\InstalledConfigurationSources	Analysis.Run	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	Analysis.Configuration	contract
+Qualimetrix\Analysis\Run\Configuration\InstalledConfigurationSources	Analysis.Run	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource	Analysis.Configuration	contract
+Qualimetrix\Analysis\Run\Configuration\InstalledConfigurationSources	Analysis.Run	Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts	Analysis.ProjectManifest	contract
+Qualimetrix\Analysis\Run\Configuration\InstalledConfigurationSources	Analysis.Run	Qualimetrix\Analysis\ProjectManifest\Contract\ManifestReadState	Analysis.ProjectManifest	contract
+Qualimetrix\Analysis\Run\Configuration\InstalledConfigurationSources	Analysis.Run	Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	contract
+Qualimetrix\Analysis\Run\Configuration\InstalledConfigurationSources	Analysis.Run	Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	contract
 Qualimetrix\Analysis\Run\Configuration\ManifestScopeEvidence	Analysis.Run	Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts	Analysis.ProjectManifest	contract
 Qualimetrix\Analysis\Run\Configuration\ManifestScopeEvidence	Analysis.Run	Qualimetrix\Analysis\ProjectManifest\Contract\ManifestReadState	Analysis.ProjectManifest	contract
 Qualimetrix\Analysis\Run\Configuration\PathsNormalizer	Analysis.Run	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
@@ -2255,6 +2269,7 @@ Qualimetrix\Analysis\Run\Configuration\PathsSection	Analysis.Run	Qualimetrix\Ana
 Qualimetrix\Analysis\Run\Configuration\PathsSection	Analysis.Run	Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema	Analysis.Configuration	contract
 Qualimetrix\Analysis\Run\Configuration\PathsSection	Analysis.Run	Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm	Analysis.Configuration	contract
 Qualimetrix\Analysis\Run\Configuration\PathsSection	Analysis.Run	Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration	Analysis.Configuration	contract
+Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage	Analysis.Run	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	contract
 Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage	Analysis.Run	Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface	Analysis.ProjectManifest	contract
 Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage	Analysis.Run	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Analysis\Run\Configuration\ProjectScopeDefaults	Analysis.Run	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	Analysis.Configuration	contract

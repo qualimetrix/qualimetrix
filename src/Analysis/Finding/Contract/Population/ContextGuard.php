@@ -13,7 +13,7 @@ final readonly class ContextGuard implements GatePredicate
         'namedTypesJudged', 'suppressionPathJudged', 'suppressionNamespaceJudged', 'excludeVerdictJudged',
         'directiveScopeMeasured', 'edgeSourceAssigned', 'edgeTargetAssigned', 'directiveProducerRan',
         'namespaceCoordinateKnown', 'callableHasClassContext', 'excludeClauseActive',
-        'namespaceOwnCountExpected',
+        'namespaceOwnCountExpected', 'configuredValueWrittenHere',
     ];
 
     public function __construct(public string $source, public bool $allowOppositeSuppressionTag = false)

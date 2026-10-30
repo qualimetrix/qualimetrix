@@ -625,6 +625,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity'
         - 'Qualimetrix\Analysis\Finding\Contract\Population\RuleAbstention'
         - 'Qualimetrix\Analysis\Finding\Contract\Population\RuleValueThreshold'
+        - 'Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters'
         - 'Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorOutcome'
         - 'Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorVerdict'
         - 'Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels'
@@ -1035,6 +1036,7 @@ architecture:
         - 'Qualimetrix\Analysis\Run\Collection\FileProcessor'
         - 'Qualimetrix\Analysis\Run\Collection\SourceReader'
         - 'Qualimetrix\Analysis\Run\Collection\UnreadableSource'
+        - 'Qualimetrix\Analysis\Run\Configuration\InstalledConfigurationSources'
         - 'Qualimetrix\Analysis\Run\Configuration\ManifestScopeEvidence'
         - 'Qualimetrix\Analysis\Run\Configuration\PathsNormalizer'
         - 'Qualimetrix\Analysis\Run\Configuration\PathsSection'
@@ -1787,6 +1789,7 @@ architecture:
       - analysis-policy-architecture
       - analysis-policy-inline
       - analysis-projectmanifest
+      - core-filetarget
       - core-neutral
       - core-path
       - core-profiler

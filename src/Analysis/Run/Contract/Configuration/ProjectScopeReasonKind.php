@@ -16,4 +16,5 @@ enum ProjectScopeReasonKind: string
     case Generated = 'generated';
     case ExplicitFiles = 'explicit-files';
     case UnlistableOutsidePaths = 'unlistable-outside-paths';
+    case InstalledConfiguration = 'installed-configuration';
 }

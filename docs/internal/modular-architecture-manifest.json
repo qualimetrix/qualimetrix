@@ -260,6 +260,14 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckScope\\CheckScopeResolver"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\InstalledConfigurationSources"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopeCoverage"
         }
       ]
     },
@@ -356,6 +364,10 @@
         {
           "owner": "Infrastructure.Cache",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\Root\\CacheSource"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\ProjectScope\\ConfiguredValueWriters"
         }
       ]
     },
@@ -468,6 +480,10 @@
         {
           "owner": "Analysis.Evidence.ComputedMetrics",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\HealthDimensionExclusions"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\InstalledConfigurationSources"
         }
       ]
     },
@@ -512,6 +528,10 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Selection\\AuthoredSelectionDiagnostics"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\InstalledConfigurationSources"
         }
       ]
     },
@@ -528,6 +548,10 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\SectionSpot"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\InstalledConfigurationSources"
         }
       ]
     },
@@ -640,6 +664,10 @@
         {
           "owner": "Infrastructure.Cache",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\CacheConfigurationResolver"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\InstalledConfigurationSources"
         }
       ]
     },
@@ -672,6 +700,10 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Selection\\AuthoredSelectionDiagnostics"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\InstalledConfigurationSources"
         }
       ]
     },
@@ -1247,6 +1279,14 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimePolicy\\RuntimeLimits"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\ProjectScope\\ConfiguredValueWriters"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\InstalledConfigurationSources"
         }
       ]
     },
@@ -1527,6 +1567,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimePolicy\\RuntimeLimits"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\InstalledConfigurationSources"
         }
       ]
     },
@@ -10604,6 +10648,13 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\ProjectScope\\ConfiguredValueWriters": {
+      "path": "src/Analysis/Finding/Contract/ProjectScope/ConfiguredValueWriters.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Finding\\Contract\\ResolvedRuleOptions": {
       "path": "src/Analysis/Finding/Contract/ResolvedRuleOptions.php",
       "kind": "class",
@@ -17411,6 +17462,10 @@
         {
           "owner": "Analysis.Configuration",
           "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Pipeline\\Stage\\ComposerDiscoveryStage"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\InstalledConfigurationSources"
         }
       ]
     },
@@ -17675,6 +17730,10 @@
         {
           "owner": "Analysis.Configuration",
           "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Pipeline\\Stage\\ComposerDiscoveryStage"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\InstalledConfigurationSources"
         }
       ]
     },
@@ -17816,6 +17875,13 @@
     },
     "Qualimetrix\\Analysis\\Run\\Configuration\\RunPathSelection": {
       "path": "src/Analysis/Run/Configuration/RunPathSelection.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Run\\Configuration\\InstalledConfigurationSources": {
+      "path": "src/Analysis/Run/Configuration/InstalledConfigurationSources.php",
       "kind": "class",
       "owner": "Analysis.Run",
       "visibility": "internal",
@@ -19354,6 +19420,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunSetup\\Execution\\RunConfigurationPreparation"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\InstalledConfigurationSources"
         }
       ]
     },
@@ -19494,6 +19564,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunSetup\\Execution\\RunConfigurationPreparation"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\InstalledConfigurationSources"
         }
       ]
     },
