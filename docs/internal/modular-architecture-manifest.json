@@ -1894,6 +1894,48 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportEntries": {
+      "path": "src/Analysis/Configuration/Loader/ImportEntries.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportGlob": {
+      "path": "src/Analysis/Configuration/Loader/ImportGlob.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportLinearization": {
+      "path": "src/Analysis/Configuration/Loader/ImportLinearization.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportTarget": {
+      "path": "src/Analysis/Configuration/Loader/ImportTarget.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportingFile": {
+      "path": "src/Analysis/Configuration/Loader/ImportingFile.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Loader\\ResolvedImportEntry": {
+      "path": "src/Analysis/Configuration/Loader/ResolvedImportEntry.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Configuration\\Loader\\CommandLineLayer": {
       "path": "src/Analysis/Configuration/Loader/CommandLineLayer.php",
       "kind": "class",
@@ -19321,7 +19363,7 @@
         },
         {
           "owner": "Analysis.Configuration",
-          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportChain"
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportTarget"
         },
         {
           "owner": "Analysis.Configuration",
@@ -19465,7 +19507,11 @@
       "consumers": [
         {
           "owner": "Analysis.Configuration",
-          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportChain"
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportTarget"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportGlob"
         },
         {
           "owner": "Analysis.Policy.Baseline",

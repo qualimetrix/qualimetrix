@@ -134,7 +134,10 @@ final class EditorSchemaEngineAgreementTest extends TestCase
         yield 'an import that is not text' => ['imports', 'imports: [1]', self::REFUSES, '/imports/0'];
         yield 'an empty import' => ['imports', 'imports: [""]', self::REFUSES, '/imports/0'];
         yield 'an import naming a URL' => ['imports, layerJudge outside the promise', 'imports: ["https://example.com/a.yaml"]', self::REFUSES, self::SCHEMA_ACCEPTS];
-        yield 'an import with a glob' => ['imports, layerJudge outside the promise', 'imports: ["cfg/*.yaml"]', self::REFUSES, self::SCHEMA_ACCEPTS];
+        yield 'an import with a glob' => ['imports', 'imports: ["cfg/*.yaml"]', self::ACCEPTS, self::SCHEMA_ACCEPTS];
+        yield 'an import of a built-in preset' => ['imports', 'imports: [strict]', self::ACCEPTS, self::SCHEMA_ACCEPTS];
+        yield 'an import with a recursive glob' => ['imports, layerJudge outside the promise', 'imports: ["cfg/**/*.yaml"]', self::REFUSES, self::SCHEMA_ACCEPTS];
+        yield 'a glob without an extension' => ['imports, layerJudge outside the promise', 'imports: ["cfg/*"]', self::REFUSES, self::SCHEMA_ACCEPTS];
         yield 'an import of another format' => ['imports, layerJudge outside the promise', 'imports: [a.json]', self::REFUSES, self::SCHEMA_ACCEPTS];
         yield 'an unknown key of a map' => ['DeepMerge', 'cache: {nope: 1}', self::REFUSES, '/cache/nope'];
 

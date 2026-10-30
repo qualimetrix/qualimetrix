@@ -10,8 +10,8 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 
 /**
- * The form of the `imports` list: local paths of files this loader reads,
- * named one by one. The import chain reads the list with this schema before
+ * The form of the `imports` list: local file paths, globs over one directory
+ * level, and names of built-in presets. The import chain reads the list with this schema before
  * composition and hands the composer every layer without it.
  */
 final class ImportListSchema
@@ -31,9 +31,11 @@ final class ImportListSchema
     {
         $path = (string) $entry->plain();
         $extensions = YamlConfigLoader::SUPPORTED_EXTENSIONS;
+        $isPattern = ImportGlob::isPattern($path);
         $refusal = match (true) {
             preg_match('~^[a-z][a-z0-9+.-]*://~i', $path) === 1 => 'names a URL; an import is a local file path',
-            strpbrk($path, '*?[') !== false => 'contains a glob character (*, ?, [); name each file on its own',
+            $isPattern && ImportGlob::grammarProblem($path) !== null => ImportGlob::grammarProblem($path),
+            !$isPattern && ImportEntries::namesPreset($path) => null,
             !\in_array(strtolower(pathinfo($path, \PATHINFO_EXTENSION)), $extensions, true) => \sprintf('is not a %s file', implode(' or ', array_map(static fn(string $extension): string => '.' . $extension, $extensions))),
             default => null,
         };

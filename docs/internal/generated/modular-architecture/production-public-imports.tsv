@@ -2447,7 +2447,7 @@ Qualimetrix\Core\Environment\EnvironmentFailureInterface	Core.Environment	Qualim
 Qualimetrix\Core\Environment\EnvironmentFailureInterface	Core.Environment	Qualimetrix\Infrastructure\Parallel\WorkerStartFailure	Infrastructure.Parallel	src/Infrastructure/Parallel/WorkerStartFailure.php	ast-name
 Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	src/Analysis/Configuration/Contract/ConfigurationDocument.php	ast-name
 Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	Qualimetrix\Analysis\Configuration\Document\AuthoredLayer	Analysis.Configuration	src/Analysis/Configuration/Document/AuthoredLayer.php	ast-name
-Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	Qualimetrix\Analysis\Configuration\Loader\ImportChain	Analysis.Configuration	src/Analysis/Configuration/Loader/ImportChain.php	ast-name
+Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	Qualimetrix\Analysis\Configuration\Loader\ImportTarget	Analysis.Configuration	src/Analysis/Configuration/Loader/ImportTarget.php	ast-name
 Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	Qualimetrix\Analysis\Configuration\Loader\LoadedDocument	Analysis.Configuration	src/Analysis/Configuration/Loader/LoadedDocument.php	ast-name
 Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader	Analysis.Configuration	src/Analysis/Configuration/Loader/YamlConfigLoader.php	ast-name
 Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer	Analysis.Configuration	src/Analysis/Configuration/Pipeline/ConfigurationLayer.php	ast-name
@@ -2479,7 +2479,8 @@ Qualimetrix\Core\FileTarget\FileTargetFailureKind	Core.FileTarget	Qualimetrix\In
 Qualimetrix\Core\FileTarget\FileTargetFailureKind	Core.FileTarget	Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction	Infrastructure.Console	src/Infrastructure/Console/Hook/HookFileTransaction.php	ast-name
 Qualimetrix\Core\FileTarget\FileTargetFailureKind	Core.FileTarget	Qualimetrix\Infrastructure\Console\Refusal\FileTargetRefusal	Infrastructure.Console	src/Infrastructure/Console/Refusal/FileTargetRefusal.php	ast-name
 Qualimetrix\Core\FileTarget\FileTargetFailureKind	Core.FileTarget	Qualimetrix\Infrastructure\Console\RunTarget\TargetAccess	Infrastructure.Console	src/Infrastructure/Console/RunTarget/TargetAccess.php	ast-name
-Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	Qualimetrix\Analysis\Configuration\Loader\ImportChain	Analysis.Configuration	src/Analysis/Configuration/Loader/ImportChain.php	ast-name
+Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	Qualimetrix\Analysis\Configuration\Loader\ImportGlob	Analysis.Configuration	src/Analysis/Configuration/Loader/ImportGlob.php	ast-name
+Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	Qualimetrix\Analysis\Configuration\Loader\ImportTarget	Analysis.Configuration	src/Analysis/Configuration/Loader/ImportTarget.php	ast-name
 Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader	Analysis.Configuration	src/Analysis/Configuration/Loader/YamlConfigLoader.php	ast-name
 Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	Qualimetrix\Analysis\Configuration\Pipeline\Stage\ComposerDiscoveryStage	Analysis.Configuration	src/Analysis/Configuration/Pipeline/Stage/ComposerDiscoveryStage.php	ast-name
 Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	Qualimetrix\Analysis\Policy\Baseline\DocumentAccess\BaselineDocumentReader	Analysis.Policy.Baseline	src/Analysis/Policy/Baseline/DocumentAccess/BaselineDocumentReader.php	ast-name

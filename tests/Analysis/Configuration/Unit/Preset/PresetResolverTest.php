@@ -49,6 +49,14 @@ final class PresetResolverTest extends TestCase
     }
 
     #[Test]
+    public function itFindsABuiltInPresetByNameAndNothingElse(): void
+    {
+        self::assertSame($this->resolver->resolve('ci', $this->tempDir), $this->resolver->builtInPath('ci'));
+        self::assertNull($this->resolver->builtInPath('base'));
+        self::assertNull($this->resolver->builtInPath('strict.yaml'));
+    }
+
+    #[Test]
     public function itResolvesTheBuiltInLegacyPresetToItsYamlFile(): void
     {
         $path = $this->resolver->resolve('legacy', '/tmp');

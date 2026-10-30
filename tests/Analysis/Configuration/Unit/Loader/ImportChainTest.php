@@ -62,6 +62,37 @@ final class ImportChainTest extends TestCase
         );
     }
 
+    #[Test]
+    public function itFlattensAGlobsMatchesInByteOrderAtTheEntrysPlaceAndReadsEachFileOnce(): void
+    {
+        $this->write('qmx.yaml', "imports: [first.yaml, \"cfg/*.yaml\", strict, cfg/a.yaml]\n");
+        $this->write('first.yaml', '');
+        $this->write('cfg/b.yaml', '');
+        $this->write('cfg/a.yaml', '');
+
+        $layers = $this->expand();
+
+        self::assertSame([
+            'configuration file "first.yaml" (imported by configuration file "qmx.yaml")',
+            'configuration file "cfg/b.yaml" (imported by configuration file "qmx.yaml")',
+            'preset "strict" (imported by configuration file "qmx.yaml")',
+            'configuration file "cfg/a.yaml" (imported by configuration file "qmx.yaml")',
+            'configuration file "qmx.yaml"',
+        ], self::described($layers));
+        self::assertCount(5, $this->reads);
+    }
+
+    #[Test]
+    public function itRefusesAnImportedGlobMatchThatWritesImports(): void
+    {
+        $this->write('qmx.yaml', "imports: [\"cfg/*.yaml\"]\n");
+        $this->write('cfg/a.yaml', "imports: [b.yaml]\n");
+
+        $refusal = $this->refusal();
+
+        self::assertSame('configuration file "cfg/a.yaml" (imported by configuration file "qmx.yaml")', $refusal->sources()[0]->describe());
+    }
+
     /** @return iterable<string, array{string}> */
     public static function provideRootsWithoutImports(): iterable
     {
