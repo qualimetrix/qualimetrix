@@ -999,6 +999,13 @@ inline suppression cannot accept them.
 Together with `architecture.layer-violation` and `architecture.unassigned-class`,
 the layer policy publishes 11 channels.
 
+`architecture.unmatched-exclude`, `architecture.unreachable-layer` and
+`architecture.empty-template` end their message by naming the configuration that
+wrote `architecture.layers` (`Written by configuration file "…" (imported by
+configuration file "qmx.yaml").`); `architecture.unmatched-type` names its writer
+and path in its own words. Layers from a shared base, installed or not, are judged:
+writing `architecture.layers` in your own file replaces the base's list whole.
+
 | Selection door                                                   | Five configuration-error channels            | Four ordinary channels                |
 | ---------------------------------------------------------------- | -------------------------------------------- | ------------------------------------- |
 | Disable `architecture.layer-violation`                           | Still enabled by declaration producer        | Still enabled by declaration producer |

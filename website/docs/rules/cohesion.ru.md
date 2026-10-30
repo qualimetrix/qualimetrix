@@ -318,7 +318,7 @@ bin/qmx check src/ --format=metrics
 
 ## Ненайденные configured method names
 
-exclude_methods — sequence с PHP case-insensitive method matching и сохранением первого авторского написания. Когда измеренный охват допускает утверждения об отсутствии деклараций LCOM producer также публикует cohesion.unmatched-exclude-method один раз на unmatched normalized name. Functions и property hooks не являются Method-kind свидетельством; partial run не доказывает отсутствие во всём проекте. Secondary warning несёт project magnitude 1 и semantic occurrence нормализованного имени, без configured warning boundary. Primary LCOM band 3/5 и lifecycle secondary channel не меняются. CLI: --lcom-exclude-methods='[getName, getDescription]'.
+exclude_methods — sequence с PHP case-insensitive method matching и сохранением первого авторского написания. Когда измеренный охват допускает утверждения об отсутствии деклараций LCOM producer также публикует cohesion.unmatched-exclude-method один раз на unmatched normalized name. Functions и property hooks не являются Method-kind свидетельством; partial run не доказывает отсутствие во всём проекте. Secondary warning несёт project magnitude 1 и semantic occurrence нормализованного имени, без configured warning boundary. Primary LCOM band 3/5 и lifecycle secondary channel не меняются. CLI: --lcom-exclude-methods='[getName, getDescription]'. Сообщение заканчивается указанием конфигурации, записавшей список (`Written by option --lcom-exclude-methods (written as --lcom-exclude-methods=[getName]).` для CLI); список из общей базы судится, потому что `exclude_methods`, записанный в вашем файле, целиком его заменяет.
 
 ### Сравнение с baseline
 

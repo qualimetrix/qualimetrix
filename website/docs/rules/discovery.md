@@ -54,6 +54,16 @@ skip does not mean it is stale. Correct a typo or remove the selector after
 checking. Existing unmatched and inaccessible-location occurrence identities
 remain distinct: accepting one in a baseline does not accept the other.
 
+The message names the configuration that wrote the selector (`Written by
+configuration file "…" (imported by configuration file "qmx.yaml").`). A selector
+that only files a Composer package installed wrote — imported from the project's
+install directory, `vendor/` unless `config.vendor-dir` says otherwise — that
+matches nothing is not judged: the project cannot edit that file, and a later
+layer cannot remove an `exclude` entry. It is listed in
+`projectScope.unjudgedValues` with an `installed-configuration` reason naming the
+file. A selector the walk could not settle because a directory of the project's
+own tree is unreadable is still reported.
+
 ### Options
 
 | Option    | Default | Description                 |

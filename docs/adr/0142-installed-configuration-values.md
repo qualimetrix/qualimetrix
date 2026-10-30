@@ -124,6 +124,9 @@ before. An entry also written by the project is the project's and is judged.
 - A built-in preset is named by its preset name and is judged. No built-in preset
   writes an accumulating-set value; a test keeps it so, because such an entry
   would reach every consumer and could not be removed.
+- Whether a writer is installed is a fact about where its file lies, not about how
+  it was reached: a file named through a chain of importers, or matched by a
+  selector in `imports`, is judged by its own path.
 - A root configuration that is itself inside the install directory
   (`--config=vendor/acme/std/qmx.yaml`) has none of its set entries judged.
 - Accepted baseline entries for findings no longer produced become stale once.

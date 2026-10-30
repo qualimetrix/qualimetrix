@@ -303,6 +303,11 @@ It is an ordinary rule finding rather than a configuration error: it answers to
 `qmx.yaml` that legitimately names a framework one repository does not use is
 the case that keeps it out of the refusal path.
 
+The message ends by naming the configuration that wrote the selector list
+(`Written by configuration file "…" (imported by configuration file "qmx.yaml").`).
+A list from a shared base, installed or not, is judged: writing
+`coupling.framework_namespaces` in your own file replaces the base's list whole.
+
 ---
 
 ## RFC -- Response for a Class
