@@ -1932,11 +1932,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itComposesEachCollectionByItsOwnPolicyAcrossFiles
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itExpandsAShorthandInTheFileThatWroteIt
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itImportsABuiltInPresetByNameBelowTheFileThatNamesIt
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itImportsABuiltInPresetFromANestedFile
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itImportsEveryFileAGlobMatchesInByteOrder
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itJudgesARelationBetweenFilesAfterTheMerge
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itKeepsTheChainInTheConfigurationFileBand
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itKeepsTheNameOfAnImportedPresetApartFromTheOneOnTheCommandLine
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itLetsALaterImportOverrideAnEarlierOneAndTheRootOverrideBoth
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itLetsAnImportedFilesOwnImportsUnderlieItAndTheRootOverrideAll
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itNamesAnImportedPresetByIdentityAsAPresetImportedByTheFile
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itNamesEachFileAsAnAppliedSourceAndNeverResolvesImports
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itNamesEveryFileItReadByIdentity
@@ -1957,6 +1959,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itRefusesAnEntryOutsideTheGrammarAtItsPosition"unclosed bracket"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itRefusesAnEntryOutsideTheGrammarAtItsPosition"unknown preset"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itRefusesAnEntryOutsideTheGrammarAtItsPosition"url"
+ - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itRefusesAnImportCycleAtTheClosingEntry
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itRefusesAnInvalidValueEvenWhenTheRootOverridesIt
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itRefusesAnotherSpellingOfImportsAtTheRoot"capitalized"
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\ImportedConfigurationTest::itRefusesAnotherSpellingOfImportsAtTheRoot"near miss"
@@ -2314,6 +2317,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\CommandLineValueTest::itReadsOnlyFlowListsAndPreservesQuotedCommas
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\CommandLineValueTest::itRefusesNullAndMappingsAtTheCliDoor
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itFlattensAGlobsMatchesInByteOrderAtTheEntrysPlaceAndReadsEachFileOnce
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itFollowsABuiltInPresetNamedInANestedFile
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itFollowsAnImportedFileThatWritesNoEntriesAndStripsTheKey"an empty list"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itFollowsAnImportedFileThatWritesNoEntriesAndStripsTheKey"null"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itHandsTheLoaderTheImportedOriginSoItsRefusalsNameTheImporter"not a mapping"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itHandsTheLoaderTheImportedOriginSoItsRefusalsNameTheImporter"retired root key"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itHandsTheLoaderTheImportedOriginSoItsRefusalsNameTheImporter"unparseable"
@@ -2322,24 +2328,31 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itHandsTheRootAloneWhenItImportsNothing"null"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itKeepsParentSegmentsInTheNameSoTwoFilesNeverShareOne
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itNamesEveryImportOfAnAbsoluteRootByAPathThatLeadsToIt
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itNamesTheImportsOfASymlinkedNestedFileByItsRealDirectory
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itOrdersASiblingsImportsBelowItWhenAGlobMatchesThemAll
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itPlacesAFilesImportsBelowItAndNamesThemByTheChainThatReachedThem
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itPlacesTheEntriesInWrittenOrderBelowTheRootAndReadsEachOnce
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itReadsADiamondsSharedFileOnceAndNamesItByTheFirstChainThatReachedIt
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesAGlobMatchThatClosesACycle
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesAMissingImportBeforeReadingIt
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesATargetThatIsNotARegularFileWithoutReadingIt"directory"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesATargetThatIsNotARegularFileWithoutReadingIt"fifo"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesAnEntryNamingTheRootItself"dot segment"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesAnEntryNamingTheRootItself"its name"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesAnEntryNamingTheRootItself"symlink"
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesAnImportedFileThatWritesImportsAtThatKey"a list"
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesAnImportedFileThatWritesImportsAtThatKey"an empty list"
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesAnImportedFileThatWritesImportsAtThatKey"null"
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesAnImportedGlobMatchThatWritesImports
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesAnEntryThatClosesACycleNamingTheFilesInIt"a file and its importer"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesAnEntryThatClosesACycleNamingTheFilesInIt"another spelling of the file"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesAnEntryThatClosesACycleNamingTheFilesInIt"through the root"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesGraphsWhoseFilesDemandContradictoryPrecedenceNamingHowEachWasReached
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesTheEntryGrammarAtItsPosition
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesTheSameFileTwiceNamingBothPositions"dot segment"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesTheSameFileTwiceNamingBothPositions"not adjacent"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesTheSameFileTwiceNamingBothPositions"parent segment"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itRefusesTheSameFileTwiceNamingBothPositions"symlink"
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itResolvesANestedEntryAgainstItsOwnFilesDirectory
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itResolvesAnEntryAgainstTheImportingFilesDirectoryAndNamesItFromTheRootsName
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itResolvesEntriesBesideTheRealFileOfASymlinkedRoot
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportChainTest::itSkipsTheImportingFileInANestedGlobAndOrdersTheRestByBytes
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportEntriesTest::itAcceptsAGlobThatMatchesNothing
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportEntriesTest::itJudgesAPatternByItsGrammar"backslash"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\ImportEntriesTest::itJudgesAPatternByItsGrammar"brace"
@@ -12235,6 +12248,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandBaselineTest::itPromotesAMeasuredBreachToErrorAndFailsTheRun
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandBaselineTest::itPublishesUnusedEntriesInEightFormatsAndGatesAllElevenFormats
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandBaselineTest::itWritesNoEntryForAnAnnotatedFindingAndRefusesToBeAskedTo
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandConfigurationImportsTest::itAppliesABuiltInPresetImportedByNameWithoutThePresetOption
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandConfigurationImportsTest::itNamesBothImportersOfAMissingNestedFileInTheJsonEnvelope
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandConfigurationImportsTest::itNamesTheImporterOfAMissingFileInTheJsonEnvelope
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandConfigurationImportsTest::itReadsTheImportBesideTheConfigFileAndItsPathsFromTheWorkingDirectory
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Check\CheckCommandDrillDownFormatTest::itBindsAndSelectsANamespaceOpenedOnlyByADeclarationFreeFile
@@ -12465,6 +12480,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"graph:export --output over the imported file"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"graph:export --output over the preset also imported file"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverAFileTheConfigurationWasReadFrom"graph:export --output over the preset file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverANestedOrGlobbedConfigurationFile"globbed"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAWriteOverANestedOrGlobbedConfigurationFile"nested"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAnotherNameOfTheDiscoveredConfiguration"hard link"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itRefusesAnotherNameOfTheDiscoveredConfiguration"symlink"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ConfigurationInputCollisionTest::itWritesAReportBesideTheConfigurationFiles

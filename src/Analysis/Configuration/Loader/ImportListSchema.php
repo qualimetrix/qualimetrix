@@ -21,7 +21,7 @@ final class ImportListSchema
         return NodeSchema::list(
             NodeSchema::scalar(ScalarForm::String)->nonEmpty()->judgedInEachLayer(self::judge(...)),
         )->withWording(description: 'Configuration files this one builds on, lowest precedence first; this file overrides them all.'
-            . ' Read only in the root configuration file. Each entry is resolved against the directory of the file that writes it'
+            . ' Imports nest: a file an entry names may import in turn, but a file given to --preset may not. Each entry is resolved against the directory of the file that writes it'
             . ' (of its target, when that file is a symlink);'
             . ' every other path keeps the working directory as its base.');
     }

@@ -82,17 +82,6 @@ final class ImportChainTest extends TestCase
         self::assertCount(5, $this->reads);
     }
 
-    #[Test]
-    public function itRefusesAnImportedGlobMatchThatWritesImports(): void
-    {
-        $this->write('qmx.yaml', "imports: [\"cfg/*.yaml\"]\n");
-        $this->write('cfg/a.yaml', "imports: [b.yaml]\n");
-
-        $refusal = $this->refusal();
-
-        self::assertSame('configuration file "cfg/a.yaml" (imported by configuration file "qmx.yaml")', $refusal->sources()[0]->describe());
-    }
-
     /** @return iterable<string, array{string}> */
     public static function provideRootsWithoutImports(): iterable
     {
@@ -114,26 +103,201 @@ final class ImportChainTest extends TestCase
     }
 
     /** @return iterable<string, array{string}> */
-    public static function provideNestedImports(): iterable
+    public static function provideNestedImportsThatAddNothing(): iterable
     {
-        yield 'a list' => ["imports: [b.yaml]\n"];
         yield 'an empty list' => ["imports: []\n"];
         yield 'null' => ["imports: ~\n"];
     }
 
     #[Test]
-    #[DataProvider('provideNestedImports')]
-    public function itRefusesAnImportedFileThatWritesImportsAtThatKey(string $imported): void
+    #[DataProvider('provideNestedImportsThatAddNothing')]
+    public function itFollowsAnImportedFileThatWritesNoEntriesAndStripsTheKey(string $imported): void
     {
         $this->write('qmx.yaml', "imports: [cfg/a.yaml]\n");
-        $this->write('cfg/a.yaml', $imported);
+        $this->write('cfg/a.yaml', $imported . "format: json\n");
+
+        $layers = $this->expand();
+
+        self::assertSame(['configuration file "cfg/a.yaml" (imported by configuration file "qmx.yaml")', 'configuration file "qmx.yaml"'], self::described($layers));
+        self::assertSame([['format' => 'json'], []], self::plain($layers));
+    }
+
+    #[Test]
+    public function itPlacesAFilesImportsBelowItAndNamesThemByTheChainThatReachedThem(): void
+    {
+        $this->write('qmx.yaml', "imports: [a.yaml]\n");
+        $this->write('a.yaml', "imports: [b.yaml]\nformat: json\n");
+        $this->write('b.yaml', "format: text\n");
+
+        $layers = $this->expand();
+
+        self::assertSame([
+            'configuration file "b.yaml" (imported by configuration file "a.yaml" (imported by configuration file "qmx.yaml"))',
+            'configuration file "a.yaml" (imported by configuration file "qmx.yaml")',
+            'configuration file "qmx.yaml"',
+        ], self::described($layers));
+        self::assertSame([['format' => 'text'], ['format' => 'json'], []], self::plain($layers));
+    }
+
+    #[Test]
+    public function itReadsADiamondsSharedFileOnceAndNamesItByTheFirstChainThatReachedIt(): void
+    {
+        $this->write('qmx.yaml', "imports: [a.yaml, b.yaml]\n");
+        $this->write('a.yaml', "imports: [d.yaml]\n");
+        $this->write('b.yaml', "imports: [d.yaml]\n");
+        $this->write('d.yaml', '');
+
+        $layers = $this->expand();
+
+        self::assertSame([
+            'configuration file "d.yaml" (imported by configuration file "a.yaml" (imported by configuration file "qmx.yaml"))',
+            'configuration file "a.yaml" (imported by configuration file "qmx.yaml")',
+            'configuration file "b.yaml" (imported by configuration file "qmx.yaml")',
+            'configuration file "qmx.yaml"',
+        ], self::described($layers));
+        self::assertSame(
+            array_map(fn(string $file): string => $this->directory . '/' . $file, ['qmx.yaml', 'a.yaml', 'd.yaml', 'b.yaml']),
+            $this->reads->getArrayCopy(),
+        );
+    }
+
+    /** @return iterable<string, array{string, string, string, string}> root, a, b, the refusal's cycle */
+    public static function provideImportCycles(): iterable
+    {
+        yield 'a file and its importer' => ["imports: [a.yaml]\n", "imports: [b.yaml]\n", "imports: [a.yaml]\n", '"a.yaml" imports "b.yaml" imports "a.yaml"'];
+        yield 'another spelling of the file' => ["imports: [a.yaml]\n", "imports: [b.yaml]\n", "imports: [./a.yaml]\n", '"a.yaml" imports "b.yaml" imports "a.yaml"'];
+        yield 'through the root' => ["imports: [a.yaml]\n", "imports: [b.yaml]\n", "imports: [./qmx.yaml]\n", '"qmx.yaml" imports "a.yaml" imports "b.yaml" imports "qmx.yaml"'];
+    }
+
+    #[Test]
+    #[DataProvider('provideImportCycles')]
+    public function itRefusesAnEntryThatClosesACycleNamingTheFilesInIt(string $root, string $a, string $b, string $cycle): void
+    {
+        $this->write('qmx.yaml', $root);
+        $this->write('a.yaml', $a);
+        $this->write('b.yaml', $b);
 
         $refusal = $this->refusal();
 
-        self::assertStringContainsString('only the root configuration file may import files', $refusal->summary());
-        self::assertStringContainsString('in the "imports" of configuration file "qmx.yaml"', $refusal->summary());
-        self::assertSame('configuration file "cfg/a.yaml" (imported by configuration file "qmx.yaml")', $refusal->sources()[0]->describe());
+        self::assertStringContainsString('closes an import cycle: ' . $cycle . '.', $refusal->summary());
+        self::assertSame(['imports', '0'], $refusal->position()?->segments);
+        self::assertSame('b.yaml', $refusal->sources()[0]->locator());
+    }
+
+    #[Test]
+    public function itRefusesAGlobMatchThatClosesACycle(): void
+    {
+        $this->write('qmx.yaml', "imports: [\"cfg/*.yaml\"]\n");
+        $this->write('cfg/a.yaml', "imports: [b.yaml]\n");
+        $this->write('cfg/b.yaml', "imports: [\"*.yaml\"]\n");
+
+        $refusal = $this->refusal();
+
+        self::assertStringContainsString('closes an import cycle: "cfg/a.yaml" imports "cfg/b.yaml" imports "cfg/a.yaml".', $refusal->summary());
+        self::assertSame('cfg/b.yaml', $refusal->sources()[0]->locator());
+    }
+
+    #[Test]
+    public function itRefusesGraphsWhoseFilesDemandContradictoryPrecedenceNamingHowEachWasReached(): void
+    {
+        $this->write('qmx.yaml', "imports: [a.yaml, b.yaml]\n");
+        $this->write('a.yaml', "imports: [x.yaml, y.yaml]\n");
+        $this->write('b.yaml', "imports: [y.yaml, x.yaml]\n");
+        $this->write('x.yaml', '');
+        $this->write('y.yaml', '');
+
+        $refusal = $this->refusal();
+
+        self::assertStringContainsString('The imports of "qmx.yaml" cannot be ordered', $refusal->summary());
+        self::assertStringContainsString('The files were reached as', $refusal->summary());
+        self::assertStringContainsString('configuration file "x.yaml" (imported by configuration file "a.yaml" (imported by configuration file "qmx.yaml"))', $refusal->summary());
+        self::assertSame('qmx.yaml', $refusal->sources()[0]->locator());
         self::assertSame(['imports'], $refusal->position()?->segments);
+    }
+
+    /** A team file importing its siblings from the directory a glob of the root also matches. */
+    #[Test]
+    public function itOrdersASiblingsImportsBelowItWhenAGlobMatchesThemAll(): void
+    {
+        mkdir($this->directory . '/config/qmx', 0o777, true);
+        $this->write('qmx.yaml', "imports: [\"config/qmx/*.yaml\"]\n");
+        $this->write('config/qmx/team.yaml', "imports: [base.yaml, architecture.yaml]\n");
+        $this->write('config/qmx/base.yaml', '');
+        $this->write('config/qmx/architecture.yaml', '');
+
+        $layers = $this->expand();
+
+        self::assertSame(
+            ['config/qmx/base.yaml', 'config/qmx/architecture.yaml', 'config/qmx/team.yaml', 'qmx.yaml'],
+            array_map(static fn(AuthoredLayer $layer): ?string => $layer->origin->locator(), $layers),
+        );
+    }
+
+    #[Test]
+    public function itResolvesANestedEntryAgainstItsOwnFilesDirectory(): void
+    {
+        mkdir($this->directory . '/sub');
+        $this->write('qmx.yaml', "imports: [sub/a.yaml]\n");
+        $this->write('sub/a.yaml', "imports: [b.yaml]\n");
+        $this->write('sub/b.yaml', "imports: [../top.yaml]\n");
+        $this->write('top.yaml', '');
+
+        $layers = $this->expand();
+
+        self::assertSame(
+            ['sub/../top.yaml', 'sub/b.yaml', 'sub/a.yaml', 'qmx.yaml'],
+            array_map(static fn(AuthoredLayer $layer): ?string => $layer->origin->locator(), $layers),
+        );
+    }
+
+    /** A symlinked file's name leads to the link's directory, so its imports are named by where they are. */
+    #[Test]
+    public function itNamesTheImportsOfASymlinkedNestedFileByItsRealDirectory(): void
+    {
+        mkdir($this->directory . '/shared');
+        $this->write('qmx.yaml', "imports: [a-link.yaml]\n");
+        $this->write('shared/a.yaml', "imports: [b.yaml]\n");
+        $this->write('shared/b.yaml', "format: json\n");
+        symlink($this->directory . '/shared/a.yaml', $this->directory . '/a-link.yaml');
+
+        $layers = $this->expand();
+
+        self::assertSame(
+            [$this->directory . '/shared/b.yaml', 'a-link.yaml', 'qmx.yaml'],
+            array_map(static fn(AuthoredLayer $layer): ?string => $layer->origin->locator(), $layers),
+        );
+        self::assertSame([['format' => 'json'], [], []], self::plain($layers));
+    }
+
+    #[Test]
+    public function itFollowsABuiltInPresetNamedInANestedFile(): void
+    {
+        $this->write('qmx.yaml', "imports: [a.yaml]\n");
+        $this->write('a.yaml', "imports: [strict]\n");
+
+        $layers = $this->expand();
+
+        self::assertSame([
+            'preset "strict" (imported by configuration file "a.yaml" (imported by configuration file "qmx.yaml"))',
+            'configuration file "a.yaml" (imported by configuration file "qmx.yaml")',
+            'configuration file "qmx.yaml"',
+        ], self::described($layers));
+    }
+
+    #[Test]
+    public function itSkipsTheImportingFileInANestedGlobAndOrdersTheRestByBytes(): void
+    {
+        $this->write('qmx.yaml', "imports: [cfg/a.yaml]\n");
+        $this->write('cfg/a.yaml', "imports: [\"*.yaml\"]\n");
+        $this->write('cfg/b.yaml', '');
+        $this->write('cfg/c.yaml', '');
+
+        $layers = $this->expand();
+
+        self::assertSame(
+            ['cfg/b.yaml', 'cfg/c.yaml', 'cfg/a.yaml', 'qmx.yaml'],
+            array_map(static fn(AuthoredLayer $layer): ?string => $layer->origin->locator(), $layers),
+        );
     }
 
     /** @return iterable<string, array{list<string>, string}> */

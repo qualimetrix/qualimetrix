@@ -54,12 +54,7 @@ final class ImportedConfigurationTest extends TestCase
 
     protected function tearDown(): void
     {
-        $nested = glob($this->directory . '/cfg/*');
-        $top = glob($this->directory . '/*');
-        foreach ([...($nested === false ? [] : $nested), ...($top === false ? [] : $top)] as $path) {
-            is_dir($path) ? rmdir($path) : unlink($path);
-        }
-        rmdir($this->directory);
+        self::remove($this->directory);
     }
 
     #[Test]
@@ -266,9 +261,52 @@ final class ImportedConfigurationTest extends TestCase
 
         $refusal = $this->refusal(presets: ['./team.yaml']);
 
-        self::assertStringContainsString('is refused: only the root configuration file reads it', $refusal->summary());
+        self::assertStringContainsString('is refused: a file given to --preset does not read it', $refusal->summary());
         self::assertSame('preset "./team.yaml"', $refusal->sources()[0]->describe());
         self::assertSame(['imports'], $refusal->position()?->segments);
+    }
+
+    #[Test]
+    public function itLetsAnImportedFilesOwnImportsUnderlieItAndTheRootOverrideAll(): void
+    {
+        $this->write('qmx.yaml', "imports: [cfg/a.yaml]\nfail_on: none\n");
+        $this->write('cfg/a.yaml', "imports: [b.yaml]\nfail_on: warning\nformat: json\n");
+        $this->write('cfg/b.yaml', "fail_on: error\nformat: text\nmemory_limit: 1G\n");
+
+        $document = $this->resolve();
+        $resolved = $document->resolved();
+
+        self::assertSame(['defaults', 'cfg/b.yaml', 'cfg/a.yaml', 'qmx.yaml'], $document->appliedSources());
+        self::assertSame('none', $resolved->get('fail_on')?->plain());
+        self::assertSame('json', $resolved->get('format')?->plain());
+        self::assertSame('1G', $resolved->get('memory_limit')?->plain());
+        self::assertNull($resolved->get('imports'));
+    }
+
+    #[Test]
+    public function itImportsABuiltInPresetFromANestedFile(): void
+    {
+        $this->write('qmx.yaml', "imports: [cfg/a.yaml]\n");
+        $this->write('cfg/a.yaml', "imports: [strict]\n");
+
+        $document = $this->resolve();
+
+        self::assertSame(['defaults', 'strict', 'cfg/a.yaml', 'qmx.yaml'], $document->appliedSources());
+        self::assertSame(15, $document->resolved()->get('rules', 'complexity.ccn', 'callable', 'error')?->plain());
+    }
+
+    #[Test]
+    public function itRefusesAnImportCycleAtTheClosingEntry(): void
+    {
+        $this->write('qmx.yaml', "imports: [cfg/a.yaml]\n");
+        $this->write('cfg/a.yaml', "imports: [b.yaml]\n");
+        $this->write('cfg/b.yaml', "imports: [./a.yaml]\n");
+
+        $refusal = $this->refusal();
+
+        self::assertStringContainsString('closes an import cycle: "cfg/a.yaml" imports "cfg/b.yaml" imports "cfg/a.yaml"', $refusal->summary());
+        self::assertSame('configuration file "cfg/b.yaml" (imported by configuration file "cfg/a.yaml" (imported by configuration file "qmx.yaml"))', $refusal->sources()[0]->describe());
+        self::assertSame(['imports', '0'], $refusal->position()?->segments);
     }
 
     #[Test]
@@ -427,6 +465,19 @@ final class ImportedConfigurationTest extends TestCase
     private function write(string $file, string $content): void
     {
         file_put_contents($this->directory . '/' . $file, $content);
+    }
+
+    private static function remove(string $path): void
+    {
+        if (is_link($path) || is_file($path)) {
+            unlink($path);
+
+            return;
+        }
+        foreach (array_diff((array) scandir($path), ['.', '..']) as $entry) {
+            self::remove($path . '/' . $entry);
+        }
+        rmdir($path);
     }
 
     /**

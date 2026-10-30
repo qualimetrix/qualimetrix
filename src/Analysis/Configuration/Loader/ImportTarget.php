@@ -64,4 +64,20 @@ final readonly class ImportTarget
             ? new self('preset:' . $name, $physicalPath, $origin, false)
             : self::ofFile($physicalPath, $origin);
     }
+
+    /**
+     * The directory its own entries are read from: that of the file itself,
+     * through a symlink to it, so a configuration linked into a project reads
+     * the files beside its target.
+     *
+     * @throws ConfigurationRefusal
+     */
+    public function realDirectory(): string
+    {
+        $real = str_starts_with($this->physicalPath, self::PHAR_SCHEME) ? $this->physicalPath : realpath($this->physicalPath);
+
+        return $real === false
+            ? throw ConfigurationRefusal::aboutDocument($this->origin, \sprintf('%s cannot be resolved to a file path.', ucfirst($this->origin->describe())))
+            : \dirname($real);
+    }
 }
