@@ -198,13 +198,19 @@ The public migration is recorded in
 ## Configuration-file discovery
 
 Automatic discovery compares directory entries byte for byte with `qmx.yaml`
-and `qmx.yml`. Both exact names together refuse with exit 3; specify one through
-`--config`. With neither exact name, a near name produces a document diagnostic
-rather than being loaded. An exact name beside a near name is loaded without
-that warning. Explicit `--config` selects its named file directly.
+and `qmx.yml`, then, when neither exists, with `qmx.dist.yaml` and
+`qmx.dist.yml`. Both names of the searched pair together refuse with exit 3;
+specify one through `--config`. With no accepted name, a near name produces a
+document diagnostic rather than being loaded. A found name beside a near name
+is loaded without that warning. A local file never merges a dist file
+implicitly: when the local file's import chain reads no file with the dist
+file's identity, a diagnostic names the dist file as unused. A dist file that
+is a selected preset is left to the preset band, neither discovered nor
+reported. A layer carrying only diagnostics is not an applied source.
+Explicit `--config` selects its named file directly.
 An unlistable search directory refuses instead of inferring that no config exists.
-The loader reads the physical file while auto-discovered `qmx.yaml` or
-`qmx.yml` is named by its filename in authored origins, diagnostics and
+The loader reads the physical file while an auto-discovered `qmx.yaml`,
+`qmx.yml`, `qmx.dist.yaml` or `qmx.dist.yml` is named by its filename in authored origins, diagnostics and
 refusals. An explicit `--config` keeps the supplied path as its source name;
 a preset is named as it was written (`preset "strict"`, `preset "./team.yaml"`),
 including when its file cannot be read. Directory discovery refusals name `.`

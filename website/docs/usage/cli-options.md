@@ -248,8 +248,8 @@ ordinary inode, or one absent name, refuse before analysis, as does a target
 naming the baseline input. A target that is a file the run reads refuses
 before analysis too:
 
-- a configuration file — the auto-discovered `qmx.yaml`/`qmx.yml` or the
-  `--config` file, each file it imports, each preset file;
+- a configuration file — the auto-discovered `qmx.yaml`/`qmx.yml` (or
+  `qmx.dist.yaml`/`qmx.dist.yml`) or the `--config` file, each file it imports, each preset file;
 - the working directory's `composer.json`, whether or not it declares autoload
   paths;
 - a PHP file the run selects, analysed or excluded as generated.

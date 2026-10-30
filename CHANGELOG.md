@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Automatic discovery reads a committed `qmx.dist.yaml` or `qmx.dist.yml` when the working directory has no `qmx.yaml`/`qmx.yml`; a local `qmx.yaml` wins and builds on it only through `imports: [qmx.dist.yaml]`, and a run warns when an auto-discovered local file does not import the dist file beside it. Both dist names together are refused (exit 3), as both `qmx.yaml` and `qmx.yml` are.
+
 ### Fixed
 
 - `check -v` no longer lists a `config_file` source under "Configuration loaded from" when no configuration file was found and only a near name such as `qmx.yaml.bak` was warned about.
+
 - The write guard of `check --output`, `--profile` and `--log-file`, `graph:export --output` and the baseline file now also refuses (exit 3), before analysis, the working directory's `composer.json` and every PHP file the run selects, compared by file identity; `qmx check src/ --output=composer.json` or `--output=src/Foo.php` replaced the manifest or a source with the report. A `check` or `graph:export` report on standard output that the shell opened on the configuration, the manifest or a source (`>>`, `1<>`) is refused the same way and before any other target refusal, with the refusal on stderr only; a refusal reached earlier, while the options and configuration are still being read, is still written to standard output in the requested format (#223).
 - `suppress_paths`, `--suppress-path` and per-rule `suppress_paths` values that name a file the run discovered but did not analyse (it failed, or was excluded as `@generated`), or a path beneath a directory it could not list or did not follow, are listed in `projectScope.unjudgedValues` instead of being reported as `suppression.unmatched-path`; a `regex` value is withheld when it matches such a file or such a directory exists (#209).
 - The HTML report tree places a file-level finding of a file that declares no single class on the namespace its JSON record names — the deepest namespace common to all the file opens, or the nearest ancestor that has a tree node — instead of on the project root (#190).

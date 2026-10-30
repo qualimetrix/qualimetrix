@@ -227,6 +227,8 @@ final class ConfigFileStageTest extends TestCase
         yield 'suffix variant' => ['qmx.yaml.bak'];
         yield 'prefix variant' => ['backup-qmx.yml'];
         yield 'extensionless base' => ['qmx'];
+        yield 'dist case variant' => ['QMX.DIST.YAML'];
+        yield 'dist suffix variant' => ['qmx.dist.yaml.bak'];
     }
 
     #[Test]
@@ -242,7 +244,10 @@ final class ConfigFileStageTest extends TestCase
         self::assertNotNull($layer);
         self::assertSame([], $layer->values);
         self::assertCount(1, $layer->diagnostics);
-        self::assertStringContainsString($name, $layer->diagnostics[0]->message);
+        self::assertSame(
+            \sprintf('Ignored configuration-like filename "%s"; auto-discovery accepts only exact qmx.yaml, qmx.yml, qmx.dist.yaml or qmx.dist.yml.', $name),
+            $layer->diagnostics[0]->message,
+        );
         self::assertSame($name, $layer->diagnostics[0]->sources[0]->origin->locator());
     }
 
@@ -261,4 +266,76 @@ final class ConfigFileStageTest extends TestCase
         self::assertNotNull($layer);
         self::assertSame([], $layer->diagnostics);
     }
+
+    /** @return iterable<string, array{string}> */
+    public static function provideDistNames(): iterable
+    {
+        yield 'yaml' => ['qmx.dist.yaml'];
+        yield 'yml' => ['qmx.dist.yml'];
+    }
+
+    #[Test]
+    #[DataProvider('provideDistNames')]
+    public function itDiscoversTheDistFileWhenNoLocalFileExists(string $name): void
+    {
+        touch($this->directory . '/' . $name);
+        touch($this->directory . '/qmx.yaml.bak');
+        $this->loader->expects(self::once())->method('read')
+            ->with($this->directory . '/' . $name, ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $name))
+            ->willReturn(new LoadedDocument(AuthoredNode::fromPlain(['fail_on' => 'error'])));
+
+        $layer = (new ConfigFileStage($this->loader))
+            ->apply(new ConfigurationResolutionRequest(AbsolutePath::fromString($this->directory)));
+
+        self::assertNotNull($layer);
+        self::assertSame($name, $layer->source);
+        self::assertSame(['fail_on' => 'error'], $layer->authored[0]->root->plain());
+        self::assertSame([], $layer->diagnostics);
+    }
+
+    #[Test]
+    public function itPrefersTheLocalFileOverTheDistFile(): void
+    {
+        touch($this->directory . '/qmx.dist.yaml');
+        touch($this->directory . '/qmx.yml');
+        $this->loader->expects(self::once())->method('read')
+            ->with($this->directory . '/qmx.yml', ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yml'))
+            ->willReturn(new LoadedDocument(AuthoredNode::fromPlain([])));
+
+        $layer = (new ConfigFileStage($this->loader))
+            ->apply(new ConfigurationResolutionRequest(AbsolutePath::fromString($this->directory)));
+
+        self::assertNotNull($layer);
+        self::assertSame('qmx.yml', $layer->source);
+    }
+
+    #[Test]
+    public function itAttributesTheDistNameCollisionToBothFiles(): void
+    {
+        touch($this->directory . '/qmx.dist.yaml');
+        touch($this->directory . '/qmx.dist.yml');
+        $this->loader->expects(self::never())->method('read');
+        try {
+            (new ConfigFileStage($this->loader))->apply(new ConfigurationResolutionRequest(AbsolutePath::fromString($this->directory)));
+            self::fail('Both dist names must be refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('Both qmx.dist.yaml and qmx.dist.yml exist; keep exactly one configuration file.', $refusal->summary());
+            self::assertSame([$this->directory . '/qmx.dist.yaml', $this->directory . '/qmx.dist.yml'], array_map(static fn($origin): ?string => $origin->locator(), $refusal->sources()));
+        }
+    }
+
+    #[Test]
+    public function itLeavesADistFileNamedAsAPresetToItsBand(): void
+    {
+        touch($this->directory . '/qmx.dist.yaml');
+        $this->loader->expects(self::never())->method('read');
+
+        $layer = (new ConfigFileStage($this->loader))->apply(new ConfigurationResolutionRequest(
+            AbsolutePath::fromString($this->directory),
+            presetNames: ['./qmx.dist.yaml'],
+        ));
+
+        self::assertNull($layer);
+    }
+
 }
