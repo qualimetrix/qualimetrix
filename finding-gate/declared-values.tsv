@@ -1,1 +1,2 @@
 kind	key	level	reason
+field	message	project	A configured-value finding ends by naming the configuration that wrote the value (ADR 0142); no record, identity or exit changes.

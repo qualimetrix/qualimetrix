@@ -1,0 +1,20 @@
+--- candidate
++++ reference (mapped)
+@@ -1,4 +1,4 @@
+-visible 4172
+-::warning file=src/Router.php,line=46,title=cohesion.lcom::LCOM (Lack of Cohesion) is 2, reaches threshold of 2. Class could be split into 2 cohesive parts
+-::error file=src/Scattered.php,line=14,title=cohesion.lcom::LCOM (Lack of Cohesion) is 5, exceeds threshold of 4. Class could be split into 5 cohesive parts
+-::warning title=cohesion.unmatched-exclude-method::The exclude_methods name "brigde" matched no method declared in this project. Written by configuration file "qmx.yaml".
++visible 4130
++::warning file=src/Router.php,line=46,title=cohesion.lcom::LCOM (Lack of Cohesion) is 2, reaches threshold of 2. Class could be split into 2 cohesive parts
++::error file=src/Scattered.php,line=14,title=cohesion.lcom::LCOM (Lack of Cohesion) is 5, exceeds threshold of 4. Class could be split into 5 cohesive parts
++::warning title=cohesion.unmatched-exclude-method::The exclude_methods name "brigde" matched no method declared in this project.
+@@ -26,4 +26,4 @@
+-invocation-format:github 4172
+-::warning file=src/Router.php,line=46,title=cohesion.lcom::LCOM (Lack of Cohesion) is 2, reaches threshold of 2. Class could be split into 2 cohesive parts
+-::error file=src/Scattered.php,line=14,title=cohesion.lcom::LCOM (Lack of Cohesion) is 5, exceeds threshold of 4. Class could be split into 5 cohesive parts
+-::warning title=cohesion.unmatched-exclude-method::The exclude_methods name "brigde" matched no method declared in this project. Written by configuration file "qmx.yaml".
++invocation-format:github 4130
++::warning file=src/Router.php,line=46,title=cohesion.lcom::LCOM (Lack of Cohesion) is 2, reaches threshold of 2. Class could be split into 2 cohesive parts
++::error file=src/Scattered.php,line=14,title=cohesion.lcom::LCOM (Lack of Cohesion) is 5, exceeds threshold of 4. Class could be split into 5 cohesive parts
++::warning title=cohesion.unmatched-exclude-method::The exclude_methods name "brigde" matched no method declared in this project.

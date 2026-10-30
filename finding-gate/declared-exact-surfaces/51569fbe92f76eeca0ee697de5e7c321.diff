@@ -1,0 +1,14 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 30748
++visible 30704
+@@ -636,1 +636,1 @@
+-                        "text": "The framework namespace selector \"subtree:NoSuchVendor\\Framework\" matched no class the run analysed or depends on. Nothing was moved out of the application scope for it, so \"coupling.cbo-app\" still counts every class it was written to exclude and \"coupling.ce-framework\" counts none of them. Written by configuration file \"qmx.yaml\"."
++                        "text": "The framework namespace selector \"subtree:NoSuchVendor\\Framework\" matched no class the run analysed or depends on. Nothing was moved out of the application scope for it, so \"coupling.cbo-app\" still counts every class it was written to exclude and \"coupling.ce-framework\" counts none of them."
+@@ -657,1 +657,1 @@
+-invocation-format:sarif 30748
++invocation-format:sarif 30704
+@@ -1292,1 +1292,1 @@
+-                        "text": "The framework namespace selector \"subtree:NoSuchVendor\\Framework\" matched no class the run analysed or depends on. Nothing was moved out of the application scope for it, so \"coupling.cbo-app\" still counts every class it was written to exclude and \"coupling.ce-framework\" counts none of them. Written by configuration file \"qmx.yaml\"."
++                        "text": "The framework namespace selector \"subtree:NoSuchVendor\\Framework\" matched no class the run analysed or depends on. Nothing was moved out of the application scope for it, so \"coupling.cbo-app\" still counts every class it was written to exclude and \"coupling.ce-framework\" counts none of them."

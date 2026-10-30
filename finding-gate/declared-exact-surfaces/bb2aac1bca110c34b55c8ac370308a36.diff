@@ -1,0 +1,21 @@
+--- candidate
++++ reference (mapped)
+@@ -1,9 +1,9 @@
+-visible 929
+-::warning title=suppression.unmatched-path::The suppress_paths pattern "subtree:src/NoSuchDir" matched no file analysed by this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported. Written by configuration file "qmx.yaml".
+-::warning title=suppression.unmatched-namespace::The suppress_namespaces pattern "subtree:Corpus\Suppression\Gone" matched no namespace declared in this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported. Written by configuration file "qmx.yaml".
+-::warning title=suppression.unmatched-rule-ledger::The suppress_paths pattern "subtree:src/AlsoGone" configured under rule "complexity.ccn" matched nothing this run analysed, so it suppressed nothing and could not have. Written by configuration file "qmx.yaml".
+-
+-invocation-format:github 929
+-::warning title=suppression.unmatched-path::The suppress_paths pattern "subtree:src/NoSuchDir" matched no file analysed by this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported. Written by configuration file "qmx.yaml".
+-::warning title=suppression.unmatched-namespace::The suppress_namespaces pattern "subtree:Corpus\Suppression\Gone" matched no namespace declared in this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported. Written by configuration file "qmx.yaml".
+-::warning title=suppression.unmatched-rule-ledger::The suppress_paths pattern "subtree:src/AlsoGone" configured under rule "complexity.ccn" matched nothing this run analysed, so it suppressed nothing and could not have. Written by configuration file "qmx.yaml".
++visible 803
++::warning title=suppression.unmatched-path::The suppress_paths pattern "subtree:src/NoSuchDir" matched no file analysed by this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported.
++::warning title=suppression.unmatched-namespace::The suppress_namespaces pattern "subtree:Corpus\Suppression\Gone" matched no namespace declared in this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported.
++::warning title=suppression.unmatched-rule-ledger::The suppress_paths pattern "subtree:src/AlsoGone" configured under rule "complexity.ccn" matched nothing this run analysed, so it suppressed nothing and could not have.
++
++invocation-format:github 803
++::warning title=suppression.unmatched-path::The suppress_paths pattern "subtree:src/NoSuchDir" matched no file analysed by this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported.
++::warning title=suppression.unmatched-namespace::The suppress_namespaces pattern "subtree:Corpus\Suppression\Gone" matched no namespace declared in this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported.
++::warning title=suppression.unmatched-rule-ledger::The suppress_paths pattern "subtree:src/AlsoGone" configured under rule "complexity.ccn" matched nothing this run analysed, so it suppressed nothing and could not have.

@@ -1,0 +1,20 @@
+--- candidate
++++ reference (mapped)
+@@ -1,4 +1,4 @@
+-visible 1162
+-[project]: warning[suppression.unmatched-path]: The suppress_paths pattern "subtree:src/NoSuchDir" matched no file analysed by this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported. Written by configuration file "qmx.yaml".
+-[project]: warning[suppression.unmatched-namespace]: The suppress_namespaces pattern "subtree:Corpus\Suppression\Gone" matched no namespace declared in this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported. Written by configuration file "qmx.yaml".
+-[project]: warning[suppression.unmatched-rule-ledger]: The suppress_paths pattern "subtree:src/AlsoGone" configured under rule "complexity.ccn" matched nothing this run analysed, so it suppressed nothing and could not have. Written by configuration file "qmx.yaml".
++visible 1036
++[project]: warning[suppression.unmatched-path]: The suppress_paths pattern "subtree:src/NoSuchDir" matched no file analysed by this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported.
++[project]: warning[suppression.unmatched-namespace]: The suppress_namespaces pattern "subtree:Corpus\Suppression\Gone" matched no namespace declared in this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported.
++[project]: warning[suppression.unmatched-rule-ledger]: The suppress_paths pattern "subtree:src/AlsoGone" configured under rule "complexity.ccn" matched nothing this run analysed, so it suppressed nothing and could not have.
+@@ -11,4 +11,4 @@
+-invocation-format:text 1162
+-[project]: warning[suppression.unmatched-path]: The suppress_paths pattern "subtree:src/NoSuchDir" matched no file analysed by this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported. Written by configuration file "qmx.yaml".
+-[project]: warning[suppression.unmatched-namespace]: The suppress_namespaces pattern "subtree:Corpus\Suppression\Gone" matched no namespace declared in this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported. Written by configuration file "qmx.yaml".
+-[project]: warning[suppression.unmatched-rule-ledger]: The suppress_paths pattern "subtree:src/AlsoGone" configured under rule "complexity.ccn" matched nothing this run analysed, so it suppressed nothing and could not have. Written by configuration file "qmx.yaml".
++invocation-format:text 1036
++[project]: warning[suppression.unmatched-path]: The suppress_paths pattern "subtree:src/NoSuchDir" matched no file analysed by this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported.
++[project]: warning[suppression.unmatched-namespace]: The suppress_namespaces pattern "subtree:Corpus\Suppression\Gone" matched no namespace declared in this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported.
++[project]: warning[suppression.unmatched-rule-ledger]: The suppress_paths pattern "subtree:src/AlsoGone" configured under rule "complexity.ccn" matched nothing this run analysed, so it suppressed nothing and could not have.

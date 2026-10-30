@@ -1,8 +1,26 @@
 --- candidate
 +++ reference (mapped)
-@@ -18,1 +18,1 @@
--        "fingerprint": "8dadcdc72f638c930661c5802499609d",
-+        "fingerprint": "8b5518c8f11a3d6038936a78330e65c5",
-@@ -165,1 +165,1 @@
--        "fingerprint": "8dadcdc72f638c930661c5802499609d",
-+        "fingerprint": "8b5518c8f11a3d6038936a78330e65c5",
+@@ -1,1 +1,1 @@
+-visible 7549
++visible 7417
+@@ -28,1 +28,1 @@
+-        "description": "The \"exclude\" clause of layer \"controller\" (patterns: \"Corpus\\Layers\\Controller\\NoSuch\\**\") removed no class from it, while the layer's own criteria (patterns: \"Corpus\\Layers\\Controller\\**\") matched 1 symbol(s). The layer is therefore wider than the declaration asks for, and every verdict about it is drawn from that wider set. Written by configuration file \"qmx.yaml\".",
++        "description": "The \"exclude\" clause of layer \"controller\" (patterns: \"Corpus\\Layers\\Controller\\NoSuch\\**\") removed no class from it, while the layer's own criteria (patterns: \"Corpus\\Layers\\Controller\\**\") matched 1 symbol(s). The layer is therefore wider than the declaration asks for, and every verdict about it is drawn from that wider set.",
+@@ -100,1 +100,1 @@
+-        "description": "Layer \"service\" was assigned no symbol during analysis. 1 matching class(es) were taken by earlier layer \"extra-by-suffix\": Corpus\\Layers\\Service\\OrderService. Written by configuration file \"qmx.yaml\".",
++        "description": "Layer \"service\" was assigned no symbol during analysis. 1 matching class(es) were taken by earlier layer \"extra-by-suffix\": Corpus\\Layers\\Service\\OrderService.",
+@@ -136,1 +136,1 @@
+-        "description": "Template layer \"mod-{m}\" expanded to zero concrete layers \u2014 no class in the analysed codebase matched the template's criteria. Common causes: (1) a typo in the template name or pattern, (2) matching classes were filtered out by file discovery (`suppress_paths` / `suppress_namespaces` at top level or in rule options), (3) the module disappeared in a recent refactor, or (4) a single-segment capture `{var}` is used where the binding spans multiple namespace segments \u2014 try `{var:**}` for cross-segment captures. Written by configuration file \"qmx.yaml\".",
++        "description": "Template layer \"mod-{m}\" expanded to zero concrete layers \u2014 no class in the analysed codebase matched the template's criteria. Common causes: (1) a typo in the template name or pattern, (2) matching classes were filtered out by file discovery (`suppress_paths` / `suppress_namespaces` at top level or in rule options), (3) the module disappeared in a recent refactor, or (4) a single-segment capture `{var}` is used where the binding spans multiple namespace segments \u2014 try `{var:**}` for cross-segment captures.",
+@@ -148,1 +148,1 @@
+-invocation-format:gitlab 7549
++invocation-format:gitlab 7417
+@@ -175,1 +175,1 @@
+-        "description": "The \"exclude\" clause of layer \"controller\" (patterns: \"Corpus\\Layers\\Controller\\NoSuch\\**\") removed no class from it, while the layer's own criteria (patterns: \"Corpus\\Layers\\Controller\\**\") matched 1 symbol(s). The layer is therefore wider than the declaration asks for, and every verdict about it is drawn from that wider set. Written by configuration file \"qmx.yaml\".",
++        "description": "The \"exclude\" clause of layer \"controller\" (patterns: \"Corpus\\Layers\\Controller\\NoSuch\\**\") removed no class from it, while the layer's own criteria (patterns: \"Corpus\\Layers\\Controller\\**\") matched 1 symbol(s). The layer is therefore wider than the declaration asks for, and every verdict about it is drawn from that wider set.",
+@@ -247,1 +247,1 @@
+-        "description": "Layer \"service\" was assigned no symbol during analysis. 1 matching class(es) were taken by earlier layer \"extra-by-suffix\": Corpus\\Layers\\Service\\OrderService. Written by configuration file \"qmx.yaml\".",
++        "description": "Layer \"service\" was assigned no symbol during analysis. 1 matching class(es) were taken by earlier layer \"extra-by-suffix\": Corpus\\Layers\\Service\\OrderService.",
+@@ -283,1 +283,1 @@
+-        "description": "Template layer \"mod-{m}\" expanded to zero concrete layers \u2014 no class in the analysed codebase matched the template's criteria. Common causes: (1) a typo in the template name or pattern, (2) matching classes were filtered out by file discovery (`suppress_paths` / `suppress_namespaces` at top level or in rule options), (3) the module disappeared in a recent refactor, or (4) a single-segment capture `{var}` is used where the binding spans multiple namespace segments \u2014 try `{var:**}` for cross-segment captures. Written by configuration file \"qmx.yaml\".",
++        "description": "Template layer \"mod-{m}\" expanded to zero concrete layers \u2014 no class in the analysed codebase matched the template's criteria. Common causes: (1) a typo in the template name or pattern, (2) matching classes were filtered out by file discovery (`suppress_paths` / `suppress_namespaces` at top level or in rule options), (3) the module disappeared in a recent refactor, or (4) a single-segment capture `{var}` is used where the binding spans multiple namespace segments \u2014 try `{var:**}` for cross-segment captures.",

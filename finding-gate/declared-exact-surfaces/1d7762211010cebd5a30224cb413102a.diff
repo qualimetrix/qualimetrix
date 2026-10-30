@@ -1,0 +1,32 @@
+--- candidate
++++ reference (mapped)
+@@ -1,4 +1,4 @@
+-visible 1715
+-[
+-    {
+-        "description": "The suppress_paths pattern \"subtree:src/NoSuchDir\" matched no file analysed by this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported. Written by configuration file \"qmx.yaml\".",
++visible 1583
++[
++    {
++        "description": "The suppress_paths pattern \"subtree:src/NoSuchDir\" matched no file analysed by this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported.",
+@@ -16,1 +16,1 @@
+-        "description": "The suppress_namespaces pattern \"subtree:Corpus\\Suppression\\Gone\" matched no namespace declared in this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported. Written by configuration file \"qmx.yaml\".",
++        "description": "The suppress_namespaces pattern \"subtree:Corpus\\Suppression\\Gone\" matched no namespace declared in this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported.",
+@@ -28,1 +28,1 @@
+-        "description": "The suppress_paths pattern \"subtree:src/AlsoGone\" configured under rule \"complexity.ccn\" matched nothing this run analysed, so it suppressed nothing and could not have. Written by configuration file \"qmx.yaml\".",
++        "description": "The suppress_paths pattern \"subtree:src/AlsoGone\" configured under rule \"complexity.ccn\" matched nothing this run analysed, so it suppressed nothing and could not have.",
+@@ -40,4 +40,4 @@
+-invocation-format:gitlab 1715
+-[
+-    {
+-        "description": "The suppress_paths pattern \"subtree:src/NoSuchDir\" matched no file analysed by this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported. Written by configuration file \"qmx.yaml\".",
++invocation-format:gitlab 1583
++[
++    {
++        "description": "The suppress_paths pattern \"subtree:src/NoSuchDir\" matched no file analysed by this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported.",
+@@ -55,1 +55,1 @@
+-        "description": "The suppress_namespaces pattern \"subtree:Corpus\\Suppression\\Gone\" matched no namespace declared in this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported. Written by configuration file \"qmx.yaml\".",
++        "description": "The suppress_namespaces pattern \"subtree:Corpus\\Suppression\\Gone\" matched no namespace declared in this run, so it suppressed nothing and could not have. If the code it was written for still exists under another spelling, its findings are being reported.",
+@@ -67,1 +67,1 @@
+-        "description": "The suppress_paths pattern \"subtree:src/AlsoGone\" configured under rule \"complexity.ccn\" matched nothing this run analysed, so it suppressed nothing and could not have. Written by configuration file \"qmx.yaml\".",
++        "description": "The suppress_paths pattern \"subtree:src/AlsoGone\" configured under rule \"complexity.ccn\" matched nothing this run analysed, so it suppressed nothing and could not have.",

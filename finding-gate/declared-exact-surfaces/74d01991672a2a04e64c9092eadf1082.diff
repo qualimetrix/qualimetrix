@@ -1,0 +1,20 @@
+--- candidate
++++ reference (mapped)
+@@ -1,4 +1,4 @@
+-visible 448
+-[
+-    {
+-        "description": "The exclude pattern \"subtree:NoSuchDir\" matched no entry in the project, so it leaves nothing out. Written by configuration file \"qmx.yaml\".",
++visible 404
++[
++    {
++        "description": "The exclude pattern \"subtree:NoSuchDir\" matched no entry in the project, so it leaves nothing out.",
+@@ -16,4 +16,4 @@
+-invocation-format:gitlab 448
+-[
+-    {
+-        "description": "The exclude pattern \"subtree:NoSuchDir\" matched no entry in the project, so it leaves nothing out. Written by configuration file \"qmx.yaml\".",
++invocation-format:gitlab 404
++[
++    {
++        "description": "The exclude pattern \"subtree:NoSuchDir\" matched no entry in the project, so it leaves nothing out.",

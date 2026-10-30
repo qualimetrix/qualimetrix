@@ -1,0 +1,14 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 4330
++visible 4288
+@@ -15,1 +15,1 @@
+-[project]: warning[cohesion.unmatched-exclude-method]: The exclude_methods name "brigde" matched no method declared in this project. Written by configuration file "qmx.yaml".
++[project]: warning[cohesion.unmatched-exclude-method]: The exclude_methods name "brigde" matched no method declared in this project.
+@@ -31,1 +31,1 @@
+-invocation-format:text 4330
++invocation-format:text 4288
+@@ -45,1 +45,1 @@
+-[project]: warning[cohesion.unmatched-exclude-method]: The exclude_methods name "brigde" matched no method declared in this project. Written by configuration file "qmx.yaml".
++[project]: warning[cohesion.unmatched-exclude-method]: The exclude_methods name "brigde" matched no method declared in this project.

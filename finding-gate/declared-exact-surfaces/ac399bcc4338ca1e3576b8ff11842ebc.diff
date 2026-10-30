@@ -1,0 +1,19 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 5659
++visible 5607
+@@ -58,5 +58,5 @@
+-    <error line="1" severity="warning" message="The framework namespace selector &quot;subtree:NoSuchVendor\Framework&quot; matched no class the run analysed or depends on. Nothing was moved out of the application scope for it, so &quot;coupling.cbo-app&quot; still counts every class it was written to exclude and &quot;coupling.ce-framework&quot; counts none of them. Written by configuration file &quot;qmx.yaml&quot;." source="qmx.coupling.unmatched-framework-namespace"/>
+-  </file>
+-</checkstyle>
+-
+-invocation-format:checkstyle 5659
++    <error line="1" severity="warning" message="The framework namespace selector &quot;subtree:NoSuchVendor\Framework&quot; matched no class the run analysed or depends on. Nothing was moved out of the application scope for it, so &quot;coupling.cbo-app&quot; still counts every class it was written to exclude and &quot;coupling.ce-framework&quot; counts none of them." source="qmx.coupling.unmatched-framework-namespace"/>
++  </file>
++</checkstyle>
++
++invocation-format:checkstyle 5607
+@@ -119,1 +119,1 @@
+-    <error line="1" severity="warning" message="The framework namespace selector &quot;subtree:NoSuchVendor\Framework&quot; matched no class the run analysed or depends on. Nothing was moved out of the application scope for it, so &quot;coupling.cbo-app&quot; still counts every class it was written to exclude and &quot;coupling.ce-framework&quot; counts none of them. Written by configuration file &quot;qmx.yaml&quot;." source="qmx.coupling.unmatched-framework-namespace"/>
++    <error line="1" severity="warning" message="The framework namespace selector &quot;subtree:NoSuchVendor\Framework&quot; matched no class the run analysed or depends on. Nothing was moved out of the application scope for it, so &quot;coupling.cbo-app&quot; still counts every class it was written to exclude and &quot;coupling.ce-framework&quot; counts none of them." source="qmx.coupling.unmatched-framework-namespace"/>
