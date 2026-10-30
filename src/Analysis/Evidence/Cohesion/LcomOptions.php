@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Cohesion;
 
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\BandDirection;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\OptionLanguage\RuleOptionKeySet;
@@ -34,6 +35,7 @@ final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAware
     /**
      * @param int $minMethods Minimum number of LCOM graph vertices after exclusions and stateless merging
      * @param list<string>|null $excludeMethods Method names to exclude from LCOM graph (e.g., lifecycle hooks)
+     * @param ConfiguredValueWriters|null $excludeMethodsWriters The sources that wrote the list; null when the options were not built from a document
      */
     public function __construct(
         public bool $enabled = true,
@@ -42,18 +44,22 @@ final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAware
         public bool $excludeReadonly = true,
         public int $minMethods = 3,
         public ?array $excludeMethods = null,
+        public ?ConfiguredValueWriters $excludeMethodsWriters = null,
     ) {}
 
     public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
         $thresholds = ThresholdPair::fromResolved($config, RuleOptionSurface::bandFor(self::class, 'threshold'), 3, 5);
+        $excludeMethods = $config->list('exclude-methods');
+
         return new self(
             enabled: $config->boolean('enabled', true),
             warning: $thresholds->integerWarning(),
             error: $thresholds->integerError(),
             excludeReadonly: $config->boolean('exclude-readonly', true),
             minMethods: $config->integer('min-methods', 3),
-            excludeMethods: $config->list('exclude-methods') === null ? null : $config->strings('exclude-methods', []),
+            excludeMethods: $excludeMethods === null ? null : $config->strings('exclude-methods', []),
+            excludeMethodsWriters: $excludeMethods === null || $excludeMethods->contributors() === [] ? null : ConfiguredValueWriters::fromProvenance($excludeMethods->contributors()),
         );
     }
 
@@ -66,6 +72,7 @@ final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAware
             excludeReadonly: $this->excludeReadonly,
             minMethods: $this->minMethods,
             excludeMethods: $this->excludeMethods,
+            excludeMethodsWriters: $this->excludeMethodsWriters,
         );
     }
 

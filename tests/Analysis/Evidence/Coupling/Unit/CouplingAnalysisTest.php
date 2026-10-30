@@ -119,6 +119,24 @@ final class CouplingAnalysisTest extends TestCase
     }
 
     #[Test]
+    public function itCarriesTheSourcesThatWroteTheListBuiltFromADocument(): void
+    {
+        $analysis = new CouplingAnalysis();
+        $analysis->replace($analysis->resolve($this->document([
+            ['coupling' => ['frameworkNamespaces' => [['subtree' => 'Symfony']]]],
+            ['coupling' => ['frameworkNamespaces' => [['subtree' => 'Psr']]]],
+        ])));
+
+        self::assertSame('Written by configuration file "test".', $analysis->frameworkWriters()?->sentence());
+    }
+
+    #[Test]
+    public function itHasNoWritersForACarrierNotBuiltFromADocument(): void
+    {
+        self::assertNull((new CouplingAnalysis())->frameworkWriters());
+    }
+
+    #[Test]
     public function itReplacesPrefixesWithAnEmptyContribution(): void
     {
         $analysis = $this->configured(['Symfony']);

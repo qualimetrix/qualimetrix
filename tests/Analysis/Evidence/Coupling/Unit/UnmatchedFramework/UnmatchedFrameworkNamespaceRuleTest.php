@@ -8,8 +8,11 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Evidence\Coupling\Configuration\CouplingSection;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
+use Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFramework\UnmatchedFrameworkFinding;
 use Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFramework\UnmatchedFrameworkNamespaceOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFramework\UnmatchedFrameworkNamespaceRule;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
@@ -17,11 +20,14 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
@@ -38,6 +44,7 @@ use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
  * any assertion made here.
  */
 #[CoversClass(UnmatchedFrameworkNamespaceRule::class)]
+#[CoversClass(UnmatchedFrameworkFinding::class)]
 final class UnmatchedFrameworkNamespaceRuleTest extends TestCase
 {
     #[Test]
@@ -189,6 +196,38 @@ final class UnmatchedFrameworkNamespaceRuleTest extends TestCase
         self::assertCount(1, $findings);
         self::assertStringContainsString('Nope\\Missing', $findings[0]->message);
         self::assertSame(SymbolPath::forProject()->toCanonical(), $findings[0]->symbolPath->toCanonical());
+    }
+
+    #[Test]
+    public function itEndsTheFindingWithTheSourcesThatWroteTheList(): void
+    {
+        $findings = $this->rule(['Nope\\Missing'])->analyze($this->context($this->graph()));
+
+        self::assertCount(1, $findings);
+        self::assertStringEndsWith('Written by configuration file "test".', $findings[0]->message);
+    }
+
+    #[Test]
+    public function itSaysNothingAboutWritersOfAListNotBuiltFromADocument(): void
+    {
+        $selector = new NamespacePattern(SelectorDefinition::fromKindAndValue('subtree', 'Nope\\Missing'));
+
+        self::assertStringEndsWith('written to exclude and "coupling.ce-framework" counts none of them.', UnmatchedFrameworkFinding::of($selector, 'coupling.unmatched-framework-namespace')->message);
+    }
+
+    #[Test]
+    public function itKeepsTheOccurrenceKeyWhoeverWroteTheList(): void
+    {
+        $selector = new NamespacePattern(SelectorDefinition::fromKindAndValue('subtree', 'Nope\\Missing'));
+        $imported = new ConfiguredValueWriters([ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'vendor/acme/std/base.yaml')->importedThrough(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml'))]);
+        $root = new ConfiguredValueWriters([ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml')]);
+
+        $fromImport = UnmatchedFrameworkFinding::of($selector, 'coupling.unmatched-framework-namespace', $imported);
+        $fromRoot = UnmatchedFrameworkFinding::of($selector, 'coupling.unmatched-framework-namespace', $root);
+
+        self::assertStringEndsWith('Written by configuration file "vendor/acme/std/base.yaml" (imported by configuration file "qmx.yaml").', $fromImport->message);
+        self::assertNotSame($fromRoot->message, $fromImport->message);
+        self::assertSame($fromRoot->occurrenceKey?->value, $fromImport->occurrenceKey?->value);
     }
 
     /** @param list<string> $prefixes */

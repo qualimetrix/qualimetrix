@@ -8,6 +8,8 @@ use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Evidence\Coupling\Configuration\CouplingSection;
 use Qualimetrix\Analysis\Evidence\Coupling\Configuration\FrameworkNamespaceSelectorParser;
 use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface;
+use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\FrameworkNamespaces;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters;
 use Qualimetrix\Core\Pattern\NamespaceMatcher;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 
@@ -16,6 +18,8 @@ final class CouplingAnalysis implements CouplingConfiguratorInterface
     /** @var list<NamespacePattern> */
     private array $frameworkNamespaces = [];
 
+    private ?ConfiguredValueWriters $frameworkWriters = null;
+
     private NamespaceMatcher $frameworkMatcher;
 
     public function __construct()
@@ -23,26 +27,27 @@ final class CouplingAnalysis implements CouplingConfiguratorInterface
         $this->frameworkMatcher = new NamespaceMatcher([]);
     }
 
-    public function resolve(ConfigurationDocument $document): array
-    {
-        return $this->frameworkNamespacesFrom($document);
-    }
-
-    public function replace(array $frameworkNamespaces): void
-    {
-        $this->frameworkNamespaces = $frameworkNamespaces;
-        $this->frameworkMatcher = new NamespaceMatcher($frameworkNamespaces);
-    }
-
-    /** @return list<NamespacePattern> */
-    private function frameworkNamespacesFrom(ConfigurationDocument $document): array
+    public function resolve(ConfigurationDocument $document): FrameworkNamespaces
     {
         $selectors = $document->resolved()->get(CouplingSection::KEY, 'framework_namespaces');
         if ($selectors === null) {
-            return [];
+            return new FrameworkNamespaces();
         }
 
-        return FrameworkNamespaceSelectorParser::parseList($selectors);
+        return FrameworkNamespaceSelectorParser::parseDeclared($selectors);
+    }
+
+    public function replace(FrameworkNamespaces $frameworkNamespaces): void
+    {
+        $this->frameworkNamespaces = $frameworkNamespaces->patterns;
+        $this->frameworkWriters = $frameworkNamespaces->writers;
+        $this->frameworkMatcher = new NamespaceMatcher($frameworkNamespaces->patterns);
+    }
+
+    /** The sources that wrote the selector list; null when the list was not built from a document. */
+    public function frameworkWriters(): ?ConfiguredValueWriters
+    {
+        return $this->frameworkWriters;
     }
 
     public function isFramework(string $fqcn): bool

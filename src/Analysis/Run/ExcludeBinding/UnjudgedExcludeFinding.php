@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Run\ExcludeBinding;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -37,9 +38,16 @@ final readonly class UnjudgedExcludeFinding
      */
     private const string OCCURRENCE_KIND = 'unjudged-exclude-pattern';
 
-    public static function forPattern(string $display, AbsolutePath $directory, AbsolutePath $projectRoot): Finding
+    public static function forPattern(string $display, AbsolutePath $directory, AbsolutePath $projectRoot, ConfiguredValueWriters $writers): Finding
     {
         $blocking = $directory->tryRelativizeTo($projectRoot)?->value() ?? $directory->value();
+        $message = \sprintf(
+            'The exclude pattern "%s" could not be checked: the directory "%s" could not be listed, and a'
+            . ' directory the pattern would have matched may sit inside it. This report says nothing about'
+            . ' whether that pattern is still needed.',
+            $display,
+            $blocking,
+        );
 
         return new Finding(
             location: Location::none(),
@@ -47,13 +55,7 @@ final readonly class UnjudgedExcludeFinding
             symbolPath: SymbolPath::forProject(),
             ruleName: UnmatchedExcludeOptions::CHANNEL,
             code: UnmatchedExcludeOptions::CHANNEL,
-            message: \sprintf(
-                'The exclude pattern "%s" could not be checked: the directory "%s" could not be listed, and a'
-                . ' directory the pattern would have matched may sit inside it. This report says nothing about'
-                . ' whether that pattern is still needed.',
-                $display,
-                $blocking,
-            ),
+            message: $message . ' ' . $writers->sentence(),
             severity: Severity::Warning,
             recommendation: \sprintf(
                 'Give this process permission to list "%s" and run again, or exclude it so the walk stops'

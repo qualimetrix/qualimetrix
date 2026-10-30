@@ -324,7 +324,10 @@ or invokes this audit. Same-source warnings describe what lies outside the hider
 removal without claiming absolute staleness. Other-source skipped values retain
 `channel`, `option` and `pattern`; a linked Exclude scope reason names the query,
 chosen hider, only its foreign origins and a rerun without that exclusion.
-Occurrence kinds and
+Both
+findings end with the sources that wrote the selector. An `InstalledWriter` verdict
+produces no finding; its population input fails the second gate,
+`installed-writer`, declared a boundary and not a data gap. Occurrence kinds and
 producer identity remain unchanged.
 
 ## Graph discovery

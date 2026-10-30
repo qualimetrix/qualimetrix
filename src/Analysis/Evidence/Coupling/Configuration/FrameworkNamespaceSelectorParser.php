@@ -10,6 +10,8 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\FrameworkNamespaces;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters;
 use Qualimetrix\Core\Pattern\NamespaceMatcher;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Pattern\SelectorDefinition;
@@ -17,6 +19,14 @@ use Qualimetrix\Core\Pattern\SelectorDefinition;
 /** @qmx-threshold coupling.instability 0.800001 -- This subject implements an owner-declared outward protocol with intentionally few incoming readers; the finite boundary preserves visibility of additional dependencies. */
 final class FrameworkNamespaceSelectorParser
 {
+    /** The selectors with the sources that wrote the list: it is replaced whole, so one writer set covers every selector. */
+    public static function parseDeclared(ResolvedValueInterface $selectors): FrameworkNamespaces
+    {
+        $patterns = self::parseList($selectors);
+
+        return new FrameworkNamespaces($patterns, ConfiguredValueWriters::fromProvenance($selectors->contributors()));
+    }
+
     /** @return list<NamespacePattern> */
     public static function parseList(ResolvedValueInterface $selectors): array
     {

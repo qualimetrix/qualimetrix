@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Finding\Contract\Population\GateInput;
 
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationGate;
 use Qualimetrix\Analysis\Finding\Contract\Population\PopulationIdentity;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\CallableKind;
@@ -56,7 +57,7 @@ final class LcomExcludedMethods
             if (isset($methods[$normalized])) {
                 continue;
             }
-            $findings[] = self::unmatchedFinding($authored, $normalized);
+            $findings[] = self::unmatchedFinding($authored, $normalized, $options->excludeMethodsWriters);
         }
 
         return $findings;
@@ -88,15 +89,17 @@ final class LcomExcludedMethods
         return $methods;
     }
 
-    private static function unmatchedFinding(string $authored, string $normalized): Finding
+    private static function unmatchedFinding(string $authored, string $normalized, ?ConfiguredValueWriters $writers): Finding
     {
+        $message = \sprintf('The exclude_methods name "%s" matched no method declared in this project.', $authored);
+
         return new Finding(
             location: Location::none(),
             subject: MetricSubject::aggregate(SymbolPath::forProject()),
             symbolPath: SymbolPath::forProject(),
             ruleName: 'cohesion.unmatched-exclude-method',
             code: 'cohesion.unmatched-exclude-method',
-            message: \sprintf('The exclude_methods name "%s" matched no method declared in this project.', $authored),
+            message: $writers === null ? $message : $message . ' ' . $writers->sentence(),
             severity: Severity::Warning,
             metricValue: 1,
             occurrenceKey: OccurrenceKey::semantic('unmatched-exclude-method', ['method' => $normalized]),

@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Run\ExcludeBinding;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -26,17 +27,19 @@ final readonly class UnmatchedExcludeFinding
      */
     private const string OCCURRENCE_KIND = 'unmatched-exclude-pattern';
 
-    public static function forPattern(string $display, ?string $coveredBy = null): Finding
+    public static function forPattern(string $display, ConfiguredValueWriters $writers, ?string $coveredBy = null): Finding
     {
+        $message = $coveredBy === null
+            ? \sprintf('The exclude pattern "%s" matched no entry in the project, so it leaves nothing out.', $display)
+            : \sprintf('The exclude pattern "%s" matched no entry outside what "%s" already removes.', $display, $coveredBy);
+
         return new Finding(
             location: Location::none(),
             subject: MetricSubject::aggregate(SymbolPath::forProject()),
             symbolPath: SymbolPath::forProject(),
             ruleName: UnmatchedExcludeOptions::CHANNEL,
             code: UnmatchedExcludeOptions::CHANNEL,
-            message: $coveredBy === null
-                ? \sprintf('The exclude pattern "%s" matched no entry in the project, so it leaves nothing out.', $display)
-                : \sprintf('The exclude pattern "%s" matched no entry outside what "%s" already removes.', $display, $coveredBy),
+            message: $message . ' ' . $writers->sentence(),
             severity: Severity::Warning,
             recommendation: \sprintf(
                 'Check "%s" against project-relative entry paths. Exact selectors name one entry,'

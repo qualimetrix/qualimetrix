@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFramework;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ConfiguredValueWriters;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -22,9 +23,16 @@ final readonly class UnmatchedFrameworkFinding
      */
     private const string OCCURRENCE_KIND = 'unmatched-framework-prefix';
 
-    public static function of(NamespacePattern $selector, string $channel): Finding
+    /** @param ConfiguredValueWriters|null $writers null when the selectors were not built from a document */
+    public static function of(NamespacePattern $selector, string $channel, ?ConfiguredValueWriters $writers = null): Finding
     {
         $display = $selector->definition->display();
+        $message = \sprintf(
+            'The framework namespace selector "%s" matched no class the run analysed or depends on. Nothing was moved'
+            . ' out of the application scope for it, so "coupling.cbo-app" still counts every class it was'
+            . ' written to exclude and "coupling.ce-framework" counts none of them.',
+            $display,
+        );
 
         return new Finding(
             location: Location::none(),
@@ -32,12 +40,7 @@ final readonly class UnmatchedFrameworkFinding
             symbolPath: SymbolPath::forProject(),
             ruleName: $channel,
             code: $channel,
-            message: \sprintf(
-                'The framework namespace selector "%s" matched no class the run analysed or depends on. Nothing was moved'
-                . ' out of the application scope for it, so "coupling.cbo-app" still counts every class it was'
-                . ' written to exclude and "coupling.ce-framework" counts none of them.',
-                $display,
-            ),
+            message: $writers === null ? $message : $message . ' ' . $writers->sentence(),
             severity: Severity::Warning,
             recommendation: \sprintf(
                 'Check "%s" against the names the code really imports. Use exact for one name, subtree for a namespace'
