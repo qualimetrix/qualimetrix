@@ -227,6 +227,8 @@ final class ConfigFileStageTest extends TestCase
         yield 'suffix variant' => ['qmx.yaml.bak'];
         yield 'prefix variant' => ['backup-qmx.yml'];
         yield 'extensionless base' => ['qmx'];
+        yield 'dist case variant' => ['QMX.DIST.YAML'];
+        yield 'dist suffix variant' => ['qmx.dist.yaml.bak'];
     }
 
     #[Test]
@@ -242,7 +244,10 @@ final class ConfigFileStageTest extends TestCase
         self::assertNotNull($layer);
         self::assertSame([], $layer->values);
         self::assertCount(1, $layer->diagnostics);
-        self::assertStringContainsString($name, $layer->diagnostics[0]->message);
+        self::assertSame(
+            \sprintf('Ignored configuration-like filename "%s"; auto-discovery accepts only exact qmx.yaml, qmx.yml, qmx.dist.yaml or qmx.dist.yml.', $name),
+            $layer->diagnostics[0]->message,
+        );
         self::assertSame($name, $layer->diagnostics[0]->sources[0]->origin->locator());
     }
 
@@ -261,4 +266,124 @@ final class ConfigFileStageTest extends TestCase
         self::assertNotNull($layer);
         self::assertSame([], $layer->diagnostics);
     }
+
+    /** @return iterable<string, array{string}> */
+    public static function provideDistNames(): iterable
+    {
+        yield 'yaml' => ['qmx.dist.yaml'];
+        yield 'yml' => ['qmx.dist.yml'];
+    }
+
+    #[Test]
+    #[DataProvider('provideDistNames')]
+    public function itDiscoversTheDistFileWhenNoLocalFileExists(string $name): void
+    {
+        touch($this->directory . '/' . $name);
+        $this->loader->expects(self::once())->method('read')
+            ->with($this->directory . '/' . $name, ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $name))
+            ->willReturn(new LoadedDocument(AuthoredNode::fromPlain(['fail_on' => 'error'])));
+
+        $layer = (new ConfigFileStage($this->loader))
+            ->apply(new ConfigurationResolutionRequest(AbsolutePath::fromString($this->directory)));
+
+        self::assertNotNull($layer);
+        self::assertSame($name, $layer->source);
+        self::assertSame(['fail_on' => 'error'], $layer->authored[0]->root->plain());
+        self::assertSame([], $layer->diagnostics);
+    }
+
+    /** A near name beside a dist file is usually a misnamed local file, so it is still reported. */
+    #[Test]
+    public function itReportsANearNameBesideTheDistFile(): void
+    {
+        touch($this->directory . '/qmx.dist.yaml');
+        touch($this->directory . '/qmx.local.yaml');
+        $this->loader->expects(self::once())->method('read')->willReturn(new LoadedDocument(AuthoredNode::fromPlain([])));
+
+        $layer = (new ConfigFileStage($this->loader))
+            ->apply(new ConfigurationResolutionRequest(AbsolutePath::fromString($this->directory)));
+
+        self::assertNotNull($layer);
+        self::assertSame('qmx.dist.yaml', $layer->source);
+        self::assertSame(['qmx.local.yaml'], array_map(static fn($diagnostic): ?string => $diagnostic->sources[0]->origin->locator(), $layer->diagnostics));
+    }
+
+    #[Test]
+    public function itPrefersTheLocalFileOverTheDistFile(): void
+    {
+        touch($this->directory . '/qmx.dist.yaml');
+        touch($this->directory . '/qmx.yml');
+        $read = [];
+        $this->loader->expects(self::exactly(2))->method('read')
+            ->willReturnCallback(static function (string $path, ConfigurationOrigin $origin) use (&$read): LoadedDocument {
+                $read[] = [basename($path), $origin->locator()];
+
+                return new LoadedDocument(AuthoredNode::fromPlain(['fail_on' => basename($path) === 'qmx.yml' ? 'warning' : 'error']));
+            });
+
+        $layer = (new ConfigFileStage($this->loader))
+            ->apply(new ConfigurationResolutionRequest(AbsolutePath::fromString($this->directory)));
+
+        self::assertNotNull($layer);
+        self::assertSame('qmx.yml', $layer->source);
+        self::assertSame([['fail_on' => 'warning']], array_map(static fn($authored): mixed => $authored->root->plain(), $layer->authored));
+        // The dist file is read only to judge it, never applied.
+        self::assertSame([['qmx.yml', 'qmx.yml'], ['qmx.dist.yaml', 'qmx.dist.yaml']], $read);
+    }
+
+    #[Test]
+    public function itAttributesTheDistNameCollisionToBothFiles(): void
+    {
+        touch($this->directory . '/qmx.dist.yaml');
+        touch($this->directory . '/qmx.dist.yml');
+        $this->loader->expects(self::never())->method('read');
+        try {
+            (new ConfigFileStage($this->loader))->apply(new ConfigurationResolutionRequest(AbsolutePath::fromString($this->directory)));
+            self::fail('Both dist names must be refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('Both qmx.dist.yaml and qmx.dist.yml exist; keep exactly one configuration file.', $refusal->summary());
+            self::assertSame([$this->directory . '/qmx.dist.yaml', $this->directory . '/qmx.dist.yml'], array_map(static fn($origin): ?string => $origin->locator(), $refusal->sources()));
+        }
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function provideDistPresetSpellings(): iterable
+    {
+        yield 'dot slash' => ['./qmx.dist.yaml'];
+        yield 'bare name' => ['qmx.dist.yaml'];
+    }
+
+    #[Test]
+    #[DataProvider('provideDistPresetSpellings')]
+    public function itLeavesADistFileNamedAsAPresetToItsBand(string $preset): void
+    {
+        touch($this->directory . '/qmx.dist.yaml');
+        $this->loader->expects(self::never())->method('read');
+
+        $layer = (new ConfigFileStage($this->loader))->apply(new ConfigurationResolutionRequest(
+            AbsolutePath::fromString($this->directory),
+            presetNames: [$preset],
+        ));
+
+        self::assertNull($layer);
+    }
+
+    /** A run without the local file, or without the preset, would refuse the pair. */
+    #[Test]
+    public function itRefusesTheDistNameCollisionBehindALocalFileOrAPreset(): void
+    {
+        touch($this->directory . '/qmx.dist.yaml');
+        touch($this->directory . '/qmx.dist.yml');
+        touch($this->directory . '/qmx.yaml');
+        $this->loader->expects(self::never())->method('read');
+        foreach ([[], ['./qmx.dist.yaml']] as $presets) {
+            try {
+                (new ConfigFileStage($this->loader))->apply(new ConfigurationResolutionRequest(AbsolutePath::fromString($this->directory), presetNames: $presets));
+                self::fail('Both dist names must be refused.');
+            } catch (ConfigurationRefusal $refusal) {
+                self::assertSame('Both qmx.dist.yaml and qmx.dist.yml exist; keep exactly one configuration file.', $refusal->summary());
+            }
+        }
+    }
+
 }

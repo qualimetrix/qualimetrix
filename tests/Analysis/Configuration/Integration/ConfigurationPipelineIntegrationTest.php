@@ -34,6 +34,8 @@ final class ConfigurationPipelineIntegrationTest extends TestCase
     {
         @unlink($this->directory . '/composer.json');
         @unlink($this->directory . '/qmx.yaml');
+        @unlink($this->directory . '/qmx.yaml.bak');
+        @unlink($this->directory . '/qmx.dist.yaml');
         @rmdir($this->directory);
     }
 
@@ -70,6 +72,31 @@ final class ConfigurationPipelineIntegrationTest extends TestCase
         self::assertNull($document->resolved()->get('paths'));
         self::assertSame([], $document->discoveredProductionAutoloadTargets());
         self::assertSame([], $document->discoveredDevelopmentAutoloadTargets());
+    }
+
+    /** A notice about an ignored near name applies no source of its own. */
+    #[Test]
+    public function itListsNoSourceForANearNameNotice(): void
+    {
+        touch($this->directory . '/qmx.yaml.bak');
+
+        $document = $this->pipeline()->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString($this->directory)));
+
+        self::assertSame(['defaults'], $document->appliedSources());
+        self::assertCount(1, $document->diagnostics());
+        self::assertStringContainsString('qmx.yaml.bak', $document->diagnostics()[0]->message);
+    }
+
+    #[Test]
+    public function itAppliesTheDistFileWhenNoLocalFileExists(): void
+    {
+        file_put_contents($this->directory . '/qmx.dist.yaml', "fail_on: warning\n");
+
+        $document = $this->pipeline()->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString($this->directory)));
+
+        self::assertSame(['defaults', 'qmx.dist.yaml'], $document->appliedSources());
+        self::assertSame('warning', $document->resolved()->get('fail_on')?->plain());
+        self::assertSame([], $document->diagnostics());
     }
 
     private function pipeline(): ConfigurationPipeline

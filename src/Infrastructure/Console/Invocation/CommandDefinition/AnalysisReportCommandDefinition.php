@@ -42,7 +42,7 @@ final class AnalysisReportCommandDefinition
                 'config',
                 'c',
                 InputOption::VALUE_REQUIRED,
-                'Path to qmx.yaml (defaults to qmx.yaml in the current working directory)',
+                'Path to the configuration file (defaults to qmx.yaml or qmx.yml, else qmx.dist.yaml or qmx.dist.yml, in the current working directory)',
             )
             ->addOption(
                 'preset',

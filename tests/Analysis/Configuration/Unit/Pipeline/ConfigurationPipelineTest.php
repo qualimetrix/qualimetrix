@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ConfigurationDiagnostic;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaqueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
@@ -22,6 +23,7 @@ use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface;
+use Qualimetrix\Core\FileTarget\FileIdentity;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
@@ -92,6 +94,22 @@ final class ConfigurationPipelineTest extends TestCase
         $pipeline->addStage($this->stage(10, 'empty', null));
 
         self::assertSame([], $pipeline->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project')))->appliedSources());
+    }
+
+    /** A layer that read nothing keeps its notices but is not a source; one carrying values or a file read is. */
+    #[Test]
+    public function itListsNoSourceForALayerOfNoticesOnly(): void
+    {
+        $notice = new ConfigurationDiagnostic('notice', [new Provenance(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml.bak'), null, 0)]);
+        $pipeline = new ConfigurationPipeline(LayeredDocument::standaloneSections());
+        $pipeline->addStage($this->fixed(10, new ConfigurationLayer('values', ['discovered' => ['src']])));
+        $pipeline->addStage($this->fixed(15, new ConfigurationLayer('read', file: new FileIdentity(1, 2, 0100000))));
+        $pipeline->addStage($this->fixed(20, new ConfigurationLayer('notices', diagnostics: [$notice])));
+
+        $document = $pipeline->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project')));
+
+        self::assertSame(['values', 'read'], $document->appliedSources());
+        self::assertSame([$notice], $document->diagnostics());
     }
 
     #[Test]
@@ -227,6 +245,25 @@ final class ConfigurationPipelineTest extends TestCase
             public function apply(ConfigurationResolutionRequest $request): ?ConfigurationLayer
             {
                 return $this->values === null ? null : new ConfigurationLayer($this->stageName, $this->values, $this->authored);
+            }
+        };
+    }
+
+    private function fixed(int $priority, ConfigurationLayer $layer): ConfigurationStageInterface
+    {
+        return new class ($priority, $layer) implements ConfigurationStageInterface {
+            public function __construct(private readonly int $stagePriority, private readonly ConfigurationLayer $layer) {}
+            public function priority(): int
+            {
+                return $this->stagePriority;
+            }
+            public function name(): string
+            {
+                return $this->layer->source;
+            }
+            public function apply(ConfigurationResolutionRequest $request): ConfigurationLayer
+            {
+                return $this->layer;
             }
         };
     }
