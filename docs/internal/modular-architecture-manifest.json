@@ -668,6 +668,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\InstalledConfigurationSources"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\ProducerOptionsBuild"
         }
       ]
     },
@@ -704,6 +708,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\InstalledConfigurationSources"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\Configuration\\ConfiguredFindingExclusionsResolver"
         }
       ]
     },
@@ -1287,6 +1295,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\InstalledConfigurationSources"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckScope\\FindingProjectionOptionsResolver"
         }
       ]
     },
@@ -1571,6 +1583,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\InstalledConfigurationSources"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckScope\\FindingProjectionOptionsResolver"
         }
       ]
     },
@@ -3871,6 +3887,22 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Coupling\\CouplingConfigurator"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Coupling\\Contract\\Configuration\\FrameworkNamespaces": {
+      "path": "src/Analysis/Evidence/Coupling/Contract/Configuration/FrameworkNamespaces.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Coupling",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunSetup\\CapabilityState\\AnalysisRuntimeConfigurator"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunSetup\\CapabilityState\\PreparedAnalysisRuntimeConfiguration"
         }
       ]
     },
@@ -10652,8 +10684,57 @@
       "path": "src/Analysis/Finding/Contract/ProjectScope/ConfiguredValueWriters.php",
       "kind": "class",
       "owner": "Analysis.Finding",
-      "visibility": "internal",
-      "consumers": []
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomOptions"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Configuration\\FrameworkNamespaceSelectorParser"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CouplingAnalysis"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\UnmatchedFramework\\UnmatchedFrameworkFinding"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\ArchitectureConfiguration"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\SectionSpot"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnjudgedExcludeFinding"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeFinding"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckScope\\FindingProjectionOptionsResolver"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\Configuration\\ConfiguredFindingExclusionsResolver"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Contract\\Configuration\\FrameworkNamespaces"
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Finding\\Contract\\ResolvedRuleOptions": {
       "path": "src/Analysis/Finding/Contract/ResolvedRuleOptions.php",
@@ -14738,6 +14819,22 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\GlobalValueWriters": {
+      "path": "src/Analysis/Finding/SuppressionBinding/GlobalValueWriters.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckReport\\Projection\\FindingProjection"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckScope\\ProjectScopePresenter"
+        }
+      ]
+    },
     "Qualimetrix\\Analysis\\Policy\\Architecture\\ArchitecturePolicy": {
       "path": "src/Analysis/Policy/Architecture/ArchitecturePolicy.php",
       "kind": "class",
@@ -18176,6 +18273,10 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Contract\\Report\\ReportProjectScope"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckScope\\ProjectScopePresenter"
         }
       ]
     },
@@ -21053,6 +21154,14 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\GraphExport\\GraphExportInput"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckScope\\FindingProjectionOptionsResolver"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\GlobalValueWriters"
         }
       ]
     },
@@ -21141,6 +21250,14 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionFinding"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckScope\\FindingProjectionOptionsResolver"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\GlobalValueWriters"
         }
       ]
     },

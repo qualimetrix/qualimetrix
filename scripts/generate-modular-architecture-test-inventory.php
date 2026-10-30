@@ -1249,6 +1249,7 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Analysis/Evidence/ComputedMetrics/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Analysis/Run/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Analysis/Evidence/CodeSmell/Integration/', 'suite' => 'Integration'],
+        ['prefix' => 'tests/Analysis/Evidence/Cohesion/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Analysis/Evidence/Complexity/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Analysis/Evidence/Coupling/Integration/', 'suite' => 'Integration'],
         ['prefix' => 'tests/Analysis/Evidence/Design/Integration/', 'suite' => 'Integration'],
