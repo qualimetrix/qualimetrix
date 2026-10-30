@@ -70,37 +70,44 @@ final class ConfigFileStage implements ConfigurationStageInterface
         $sourceName = $request->configFilePath ?? basename($configPath);
 
         $authored = (new ImportChain($this->loader))->expand($configPath, ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $sourceName));
-        foreach ($passedOver as $dist) {
-            if (!self::readsFile($authored, $dist)) {
-                $diagnostics[] = new ConfigurationDiagnostic(
-                    \sprintf(
-                        'Configuration file "%1$s" is not used: "%2$s" takes precedence and does not import it. Add "%1$s" to the "imports" of "%2$s" to build on it.',
-                        basename($dist),
-                        $sourceName,
-                    ),
-                    [new Provenance(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, basename($dist)), null, 0)],
-                );
-            }
+        if ($passedOver !== null) {
+            $diagnostics = [...$diagnostics, ...self::passedOver($passedOver, $configPath, $sourceName, $authored)];
         }
 
         return new ConfigurationLayer($sourceName, [], authored: $authored, diagnostics: $diagnostics);
     }
 
-    /** @param list<AuthoredLayer> $authored */
-    private static function readsFile(array $authored, string $path): bool
+    /**
+     * What a run without the local file would read differently: a dist file
+     * the local import chain does not read, or one that run would refuse.
+     *
+     * @param list<AuthoredLayer> $authored
+     *
+     * @return list<ConfigurationDiagnostic>
+     */
+    private static function passedOver(string $dist, string $configPath, string $sourceName, array $authored): array
     {
-        [$stat] = NativeCall::attempt(static fn(): array|false => stat($path));
-        $identity = FileIdentity::ofRegularFile($stat);
-        if ($identity === null) {
-            return true;
-        }
-        foreach ($authored as $layer) {
-            if ($layer->file?->sameAs($identity) === true) {
-                return true;
+        $name = basename($dist);
+        [$stat] = NativeCall::attempt(static fn(): array|false => stat($dist));
+        if ($stat === false || !FileIdentity::fromStat($stat)->isRegularFile()) {
+            $message = \sprintf('Configuration file "%s" is not a regular file or cannot be accessed, so a run without "%s" refuses it.', $name, $sourceName);
+        } else {
+            // Inode 0 cannot be told apart from the files read, so it is not judged.
+            $identity = FileIdentity::ofRegularFile($stat);
+            if ($identity === null) {
+                return [];
             }
+            foreach ($authored as $layer) {
+                if ($layer->file?->sameAs($identity) === true) {
+                    return [];
+                }
+            }
+            // Imports resolve against the real directory of a symlinked root.
+            $entry = realpath(\dirname($configPath)) === realpath(\dirname($dist)) && !is_link($configPath) ? $name : $dist;
+            $message = \sprintf('Configuration file "%s" is not used: "%s" takes precedence and does not import it. Add "%s" to its "imports" to build on it.', $name, $sourceName, $entry);
         }
 
-        return false;
+        return [new ConfigurationDiagnostic($message, [new Provenance(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $name), null, 0)])];
     }
 
     /**
@@ -108,10 +115,10 @@ final class ConfigFileStage implements ConfigurationStageInterface
      *
      * If an explicit path was provided via --config, uses that (throws on missing file).
      * Otherwise, auto-detects qmx.yaml or qmx.yml in the working directory,
-     * falling back to qmx.dist.yaml or qmx.dist.yml. The third element lists
-     * the dist files a found local file passes over.
+     * falling back to qmx.dist.yaml or qmx.dist.yml. The third element is
+     * the dist file a found local file passes over.
      *
-     * @return array{?string, list<ConfigurationDiagnostic>, list<string>}
+     * @return array{?string, list<ConfigurationDiagnostic>, ?string}
      */
     private function resolveConfigPath(ConfigurationResolutionRequest $request): array
     {
@@ -123,14 +130,14 @@ final class ConfigFileStage implements ConfigurationStageInterface
                 );
             }
 
-            return [$request->configFilePath, [], []];
+            return [$request->configFilePath, [], null];
         }
 
         return $this->findConfigFile($request->workingDirectory->value(), PresetResolver::selectedPhysicalPaths($request->presetNames, $request->workingDirectory->value()));
     }
 
     /** @param list<string> $selectedPresetPaths
-     * @return array{?string, list<ConfigurationDiagnostic>, list<string>}
+     * @return array{?string, list<ConfigurationDiagnostic>, ?string}
      */
     private function findConfigFile(string $dir, array $selectedPresetPaths): array
     {
@@ -147,24 +154,32 @@ final class ConfigFileStage implements ConfigurationStageInterface
             );
         }
 
-        // A dist file named as a preset is already read in that band.
-        $dist = array_values(array_filter(
-            array_intersect($entries, self::DIST_FILE_NAMES),
-            static fn(string $entry): bool => !self::isSelectedPreset($dir . '/' . $entry, $selectedPresetPaths),
-        ));
         $local = self::single($entries, self::CONFIG_FILE_NAMES, $dir);
+        // Both dist names are refused beside a local file too: a run without it would refuse them.
+        $dist = self::single($entries, self::DIST_FILE_NAMES, $dir);
+        if ($dist !== null && self::isSelectedPreset($dist, $selectedPresetPaths)) {
+            $dist = null;
+        }
         if ($local !== null) {
-            return [$local, [], array_map(static fn(string $entry): string => $dir . '/' . $entry, $dist)];
+            return [$local, [], $dist];
         }
 
-        $found = self::single($dist, self::DIST_FILE_NAMES, $dir);
-        if ($found !== null) {
-            return [$found, [], []];
-        }
+        return [$dist, self::nearNames($entries, $dir, $selectedPresetPaths), null];
+    }
 
+    /**
+     * Beside a dist file a near name is still reported: it is usually a misnamed local file.
+     *
+     * @param list<string> $entries
+     * @param list<string> $selectedPresetPaths
+     *
+     * @return list<ConfigurationDiagnostic>
+     */
+    private static function nearNames(array $entries, string $dir, array $selectedPresetPaths): array
+    {
         $diagnostics = [];
         foreach ($entries as $entry) {
-            if (!self::isNearConfigName($entry)) {
+            if (!self::isNearConfigName($entry) || \in_array($entry, self::DIST_FILE_NAMES, true)) {
                 continue;
             }
             if (self::isSelectedPreset($dir . '/' . $entry, $selectedPresetPaths)) {
@@ -180,7 +195,7 @@ final class ConfigFileStage implements ConfigurationStageInterface
             );
         }
 
-        return [null, $diagnostics, []];
+        return $diagnostics;
     }
 
     /**

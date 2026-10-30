@@ -8,15 +8,18 @@ Qualimetrix works out of the box with sensible defaults. A configuration file le
 
 Automatic discovery accepts exactly `qmx.yaml` or `qmx.yml` in the working
 directory and, when neither exists, `qmx.dist.yaml` or `qmx.dist.yml`. If both
-names of a pair exist where that pair is searched, the command refuses with
-exit code 3; choose one with `--config`. A near spelling, such as `QMX.yaml` or
-`qmx.yaml.dist`, is warned about and not loaded when no accepted name exists. A
-found file beside a near name is loaded without that warning. `--config`
-selects its named file explicitly, independently of automatic discovery.
+names of a pair exist, the command refuses with exit code 3 — both dist names
+are refused even beside a local file, since a checkout without it would refuse
+them; choose one with `--config`. A near spelling, such as `QMX.yaml` or
+`qmx.yaml.dist`, is warned about and not loaded when no local name exists. A
+local file beside a near name is loaded without that warning; a dist file
+loaded in its absence keeps it, since such a name is usually a misnamed local
+file. `--config` selects its named file explicitly, independently of automatic
+discovery.
 
 **Committed defaults and a local file.** Commit `qmx.dist.yaml` and ignore
-`qmx.yaml` in Git: a checkout without `qmx.yaml`, such as CI, the pre-commit
-hook or the GitHub Action, reads `qmx.dist.yaml`. A developer's `qmx.yaml`
+`qmx.yaml` in Git: a checkout without `qmx.yaml`, such as CI or the GitHub
+Action, reads `qmx.dist.yaml`. A developer's `qmx.yaml`
 wins and is read alone — it builds on the committed file only by
 [importing](#splitting-a-configuration) it:
 
@@ -30,7 +33,10 @@ fail_on: warning
 
 When an auto-discovered `qmx.yaml` or `qmx.yml` does not import a
 `qmx.dist.yaml` or `qmx.dist.yml` beside it, the run warns that the dist file
-is not used, since the local run then differs from CI. A dist file selected
+is not used, since the local run then differs from CI — and says so too when
+the dist file is not a regular file a run without the local file could read.
+The advice names the dist file by its full path when the local file is a
+symlink, whose imports resolve beside its target. A dist file selected
 with `--preset` is read in the preset band only: it is neither discovered nor
 warned about.
 
@@ -1919,8 +1925,8 @@ next to `vendor/`.
 
 Open **Settings → Languages & Frameworks → Schemas and DTDs → JSON Schema
 Mappings**, add a mapping, choose `vendor/qualimetrix/qualimetrix/qmx.schema.json`
-(or one of the addresses above) as the schema, and add `qmx.yaml` and `qmx.yml`
-as files mapped to it. A config file with another name, passed through
+(or one of the addresses above) as the schema, and add `qmx.yaml`, `qmx.yml`,
+`qmx.dist.yaml` and `qmx.dist.yml` as files mapped to it. A config file with another name, passed through
 `--config` or a preset, is bound the same way: add its name or path to the
 mapping (or put the modeline from the VS Code section on its first line). If
 the dialog asks for a schema version, choose JSON Schema version 7.

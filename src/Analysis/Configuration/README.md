@@ -199,13 +199,15 @@ The public migration is recorded in
 
 Automatic discovery compares directory entries byte for byte with `qmx.yaml`
 and `qmx.yml`, then, when neither exists, with `qmx.dist.yaml` and
-`qmx.dist.yml`. Both names of the searched pair together refuse with exit 3;
-specify one through `--config`. With no accepted name, a near name produces a
-document diagnostic rather than being loaded. A found name beside a near name
-is loaded without that warning. A local file never merges a dist file
+`qmx.dist.yml`. Both names of either pair together refuse with exit 3, the
+dist pair also beside a local file; specify one through `--config`. With no
+local name, a near name produces a document diagnostic rather than being
+loaded, also beside a loaded dist file; a local name beside a near name is
+loaded without that warning. A local file never merges a dist file
 implicitly: when the local file's import chain reads no file with the dist
-file's identity, a diagnostic names the dist file as unused. A dist file that
-is a selected preset is left to the preset band, neither discovered nor
+file's identity, a diagnostic names the dist file as unused, and one that is
+not a regular file as refused by a run without the local file. A dist file
+that is a selected preset is left to the preset band, neither discovered nor
 reported. A layer carrying only diagnostics is not an applied source.
 Explicit `--config` selects its named file directly.
 An unlistable search directory refuses instead of inferring that no config exists.

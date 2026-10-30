@@ -23,7 +23,10 @@ defaults.
 
 When the working directory has neither `qmx.yaml` nor `qmx.yml`, discovery
 accepts `qmx.dist.yaml` or `qmx.dist.yml`, compared byte for byte like the
-local pair; both together are refused, naming both. `qmx.yaml.dist` stays a
+local pair. Both together are refused, naming both — beside a local file and
+beside a dist file selected as a preset too, because a run without either
+would refuse them. A near name is still reported beside a loaded dist file:
+with no local file present, it is usually the local file misnamed. `qmx.yaml.dist` stays a
 near name: an extension after `.yaml` hides the YAML type from editors and
 from the editor schema mapping, and an `imports` entry must end in `.yaml` or
 `.yml`, so a local file could not import it.
@@ -41,7 +44,11 @@ When an auto-discovered local file's import chain reads no file with the dist
 file's identity, a diagnostic says the dist file is not used and how to import
 it. The harm it names is silent: a local run whose configuration differs from
 the one CI reads. Identity, not spelling, decides, so `./qmx.dist.yaml` or a
-symlink to it count as importing it. An explicit `--config` is a deliberate
+symlink to it count as importing it. A dist file that is not a regular file
+— a directory, a dangling link — is reported as one a run without the local
+file refuses; a regular file reporting inode 0 cannot be compared and is not
+judged. A local file that is a symlink resolves its imports beside its target,
+so the advice names the dist file by its full path. An explicit `--config` is a deliberate
 choice and gets no such diagnostic. Rejected: staying silent as PHPStan does —
 the divergence is exactly what the committed-defaults pattern exists to
 prevent, and the diagnostic has a one-line cure.
