@@ -54,12 +54,7 @@ final class ImportedConfigurationTest extends TestCase
 
     protected function tearDown(): void
     {
-        $nested = glob($this->directory . '/cfg/*');
-        $top = glob($this->directory . '/*');
-        foreach ([...($nested === false ? [] : $nested), ...($top === false ? [] : $top)] as $path) {
-            is_dir($path) ? rmdir($path) : unlink($path);
-        }
-        rmdir($this->directory);
+        self::remove($this->directory);
     }
 
     #[Test]
@@ -159,12 +154,13 @@ final class ImportedConfigurationTest extends TestCase
     public static function provideRefusedEntries(): iterable
     {
         yield 'url' => ['https://example.com/a.yaml', 'Import "https://example.com/a.yaml" (imports[0]) names a URL'];
-        yield 'glob' => ['"*.yaml"', 'Import "*.yaml" (imports[0]) contains a glob character'];
-        yield 'bracket' => ['"cfg/[ab].yaml"', 'Import "cfg/[ab].yaml" (imports[0]) contains a glob character'];
+        yield 'unknown preset' => ['base', 'Unknown preset "base". Available presets: ci, legacy, strict. A file needs a .yaml or .yml extension.'];
         yield 'extension' => ['a.json', 'Import "a.json" (imports[0]) is not a .yaml or .yml file.'];
-        yield 'empty' => ['""', '"imports[0]" in configuration file "qmx.yaml" must be non-empty text.'];
-        yield 'null' => ['~', 'Item 0 of "imports" in configuration file "qmx.yaml" is null'];
-        yield 'integer' => ['1', '"imports[0]" in configuration file "qmx.yaml" must be non-empty string, got int.'];
+        yield 'empty' => ['""', 'Import "" (imports[0]) is empty; name a file.'];
+        yield 'null' => ['~', 'Import entry (imports[0]) is neither a file path nor a selector mapping.'];
+        yield 'integer' => ['1', 'Import entry (imports[0]) is neither a file path nor a selector mapping.'];
+        yield 'exact selector' => ['{exact: cfg/a.yaml}', 'Import {exact: cfg/a.yaml} (imports[0]) names one file; write a file path as a plain string.'];
+        yield 'parent directory' => ['{subtree: ../shared}', 'Import {subtree: ../shared} (imports[0]) names a directory with a "." or ".." segment'];
     }
 
     /** @param non-empty-string $expected */
@@ -260,9 +256,52 @@ final class ImportedConfigurationTest extends TestCase
 
         $refusal = $this->refusal(presets: ['./team.yaml']);
 
-        self::assertStringContainsString('is refused: only the root configuration file reads it', $refusal->summary());
+        self::assertStringContainsString('is refused: a file given to --preset does not read it', $refusal->summary());
         self::assertSame('preset "./team.yaml"', $refusal->sources()[0]->describe());
         self::assertSame(['imports'], $refusal->position()?->segments);
+    }
+
+    #[Test]
+    public function itLetsAnImportedFilesOwnImportsUnderlieItAndTheRootOverrideAll(): void
+    {
+        $this->write('qmx.yaml', "imports: [cfg/a.yaml]\nfail_on: none\n");
+        $this->write('cfg/a.yaml', "imports: [b.yaml]\nfail_on: warning\nformat: json\n");
+        $this->write('cfg/b.yaml', "fail_on: error\nformat: text\nmemory_limit: 1G\n");
+
+        $document = $this->resolve();
+        $resolved = $document->resolved();
+
+        self::assertSame(['defaults', 'cfg/b.yaml', 'cfg/a.yaml', 'qmx.yaml'], $document->appliedSources());
+        self::assertSame('none', $resolved->get('fail_on')?->plain());
+        self::assertSame('json', $resolved->get('format')?->plain());
+        self::assertSame('1G', $resolved->get('memory_limit')?->plain());
+        self::assertNull($resolved->get('imports'));
+    }
+
+    #[Test]
+    public function itImportsABuiltInPresetFromANestedFile(): void
+    {
+        $this->write('qmx.yaml', "imports: [cfg/a.yaml]\n");
+        $this->write('cfg/a.yaml', "imports: [strict]\n");
+
+        $document = $this->resolve();
+
+        self::assertSame(['defaults', 'strict', 'cfg/a.yaml', 'qmx.yaml'], $document->appliedSources());
+        self::assertSame(15, $document->resolved()->get('rules', 'complexity.ccn', 'callable', 'error')?->plain());
+    }
+
+    #[Test]
+    public function itRefusesAnImportCycleAtTheClosingEntry(): void
+    {
+        $this->write('qmx.yaml', "imports: [cfg/a.yaml]\n");
+        $this->write('cfg/a.yaml', "imports: [b.yaml]\n");
+        $this->write('cfg/b.yaml', "imports: [./a.yaml]\n");
+
+        $refusal = $this->refusal();
+
+        self::assertStringContainsString('closes an import cycle: "cfg/a.yaml" imports "cfg/b.yaml" imports "cfg/a.yaml"', $refusal->summary());
+        self::assertSame('configuration file "cfg/b.yaml" (imported by configuration file "cfg/a.yaml" (imported by configuration file "qmx.yaml"))', $refusal->sources()[0]->describe());
+        self::assertSame(['imports', '0'], $refusal->position()?->segments);
     }
 
     #[Test]
@@ -304,6 +343,89 @@ final class ImportedConfigurationTest extends TestCase
 
         self::assertSame(['defaults', 'cfg/a.yaml', 'cfg/b.yaml', 'qmx.yaml'], $document->appliedSources());
         self::assertNull($document->resolved()->get('imports'));
+    }
+
+    #[Test]
+    public function itImportsABuiltInPresetByNameBelowTheFileThatNamesIt(): void
+    {
+        $this->write('qmx.yaml', "imports: [strict]\nrules:\n  complexity.ccn:\n    callable: {warning: 30}\n");
+
+        $document = $this->resolve();
+        $resolved = $document->resolved();
+
+        self::assertSame(['defaults', 'strict', 'qmx.yaml'], $document->appliedSources());
+        self::assertSame(30, $resolved->get('rules', 'complexity.ccn', 'callable', 'warning')?->plain());
+        self::assertSame(15, $resolved->get('rules', 'complexity.ccn', 'callable', 'error')?->plain());
+    }
+
+    #[Test]
+    public function itKeepsTheNameOfAnImportedPresetApartFromTheOneOnTheCommandLine(): void
+    {
+        $this->write('qmx.yaml', "imports: [strict]\n");
+
+        $document = $this->resolve(presets: ['strict']);
+
+        self::assertSame(['defaults', 'preset:strict', 'strict', 'qmx.yaml'], array_values(array_filter(
+            $document->appliedSources(),
+            static fn(string $source): bool => !\in_array($source, ['composer.json', 'cli'], true),
+        )));
+    }
+
+    #[Test]
+    public function itNamesAnImportedPresetByIdentityAsAPresetImportedByTheFile(): void
+    {
+        $this->write('qmx.yaml', "imports: [strict]\n");
+        $stat = stat(__DIR__ . '/../../../../../src/Analysis/Configuration/Preset/strict.yaml');
+        self::assertNotFalse($stat);
+
+        self::assertSame('preset "strict" (imported by configuration file "qmx.yaml")', $this->resolve()->fileReadAs(FileIdentity::fromStat($stat)));
+    }
+
+    #[Test]
+    public function itImportsEveryFileASelectorMatchesInByteOrder(): void
+    {
+        $this->write('cfg/b.yaml', "fail_on: error\n");
+        $this->write('cfg/a.yaml', "fail_on: warning\nformat: json\n");
+        $this->write('qmx.yaml', "imports: [{subtree: cfg}]\n");
+
+        $document = $this->resolve();
+
+        self::assertSame(['defaults', 'cfg/a.yaml', 'cfg/b.yaml', 'qmx.yaml'], $document->appliedSources());
+        self::assertSame('error', $document->resolved()->get('fail_on')?->plain());
+        self::assertSame('json', $document->resolved()->get('format')?->plain());
+    }
+
+    #[Test]
+    public function itAcceptsASelectorThatMatchesNothing(): void
+    {
+        $this->write('qmx.yaml', "imports: [{regex: '.*\\.team\\.yaml'}]\nfail_on: error\n");
+
+        self::assertSame(['defaults', 'qmx.yaml'], $this->resolve()->appliedSources());
+    }
+
+    #[Test]
+    public function itImportsWhatARegexMatchesBelowAVendorDirectory(): void
+    {
+        mkdir($this->directory . '/vendor/acme/pkg', 0o777, true);
+        $this->write('vendor/acme/pkg/qmx-extension.yaml', "fail_on: error\n");
+        $this->write('vendor/acme/pkg/other.yaml', "format: json\n");
+        $this->write('qmx.yaml', "imports: [{regex: 'vendor/[^/]+/[^/]+/qmx-extension\\.yaml'}]\n");
+
+        $document = $this->resolve();
+
+        self::assertSame(['defaults', 'vendor/acme/pkg/qmx-extension.yaml', 'qmx.yaml'], $document->appliedSources());
+        self::assertNull($document->resolved()->get('format'));
+    }
+
+    #[Test]
+    public function itRefusesASelectorKindItDoesNotKnowAtThatKind(): void
+    {
+        $this->write('qmx.yaml', "imports: [{glob: 'cfg/*.yaml'}]\n");
+
+        $refusal = $this->refusal();
+
+        self::assertStringStartsWith('Unknown selector kind "glob"', $refusal->summary());
+        self::assertSame(['imports', '0', 'glob'], $refusal->position()?->segments);
     }
 
     #[Test]
@@ -363,6 +485,19 @@ final class ImportedConfigurationTest extends TestCase
     private function write(string $file, string $content): void
     {
         file_put_contents($this->directory . '/' . $file, $content);
+    }
+
+    private static function remove(string $path): void
+    {
+        if (is_link($path) || is_file($path)) {
+            unlink($path);
+
+            return;
+        }
+        foreach (array_diff((array) scandir($path), ['.', '..']) as $entry) {
+            self::remove($path . '/' . $entry);
+        }
+        rmdir($path);
     }
 
     /**

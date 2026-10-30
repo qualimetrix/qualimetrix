@@ -131,10 +131,14 @@ final class EditorSchemaEngineAgreementTest extends TestCase
 
         yield 'an import list' => ['imports', 'imports: [cfg/base.yaml, team.YML]', self::ACCEPTS, self::SCHEMA_ACCEPTS];
         yield 'a bare import' => ['imports', 'imports: cfg/base.yaml', self::REFUSES, '/imports'];
-        yield 'an import that is not text' => ['imports', 'imports: [1]', self::REFUSES, '/imports/0'];
-        yield 'an empty import' => ['imports', 'imports: [""]', self::REFUSES, '/imports/0'];
+        yield 'an import that is not text' => ['imports, layerJudge outside the promise', 'imports: [1]', self::REFUSES, self::SCHEMA_ACCEPTS];
+        yield 'an empty import' => ['imports, layerJudge outside the promise', 'imports: [""]', self::REFUSES, self::SCHEMA_ACCEPTS];
         yield 'an import naming a URL' => ['imports, layerJudge outside the promise', 'imports: ["https://example.com/a.yaml"]', self::REFUSES, self::SCHEMA_ACCEPTS];
-        yield 'an import with a glob' => ['imports, layerJudge outside the promise', 'imports: ["cfg/*.yaml"]', self::REFUSES, self::SCHEMA_ACCEPTS];
+        yield 'an import with a subtree' => ['imports', 'imports: [{subtree: cfg}]', self::ACCEPTS, self::SCHEMA_ACCEPTS];
+        yield 'an import with a regex' => ['imports', "imports: [{regex: 'vendor/[^/]+/qmx\\.yaml'}]", self::ACCEPTS, self::SCHEMA_ACCEPTS];
+        yield 'an import of a built-in preset' => ['imports', 'imports: [strict]', self::ACCEPTS, self::SCHEMA_ACCEPTS];
+        yield 'an import with an exact selector' => ['imports, layerJudge outside the promise', 'imports: [{exact: cfg/a.yaml}]', self::REFUSES, self::SCHEMA_ACCEPTS];
+        yield 'an import with an unknown selector kind' => ['imports, layerJudge outside the promise', "imports: [{glob: 'cfg/*.yaml'}]", self::REFUSES, self::SCHEMA_ACCEPTS];
         yield 'an import of another format' => ['imports, layerJudge outside the promise', 'imports: [a.json]', self::REFUSES, self::SCHEMA_ACCEPTS];
         yield 'an unknown key of a map' => ['DeepMerge', 'cache: {nope: 1}', self::REFUSES, '/cache/nope'];
 

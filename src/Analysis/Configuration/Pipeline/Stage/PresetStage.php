@@ -78,7 +78,7 @@ final class PresetStage implements ConfigurationStageInterface
     }
 
     /**
-     * A root read per file belongs to the root configuration file alone: a
+     * A root read per file belongs to configuration files and their imports: a
      * preset writing one is refused here rather than reaching the pipeline's
      * guard as a programmer error.
      *
@@ -92,7 +92,7 @@ final class PresetStage implements ConfigurationStageInterface
                     $origin,
                     RefusedPosition::open([$root->value], $root->value),
                     \sprintf(
-                        '"%s" in %s is refused: only the root configuration file reads it. To build on another file, name that file as its own --preset or import it from the configuration file.',
+                        '"%s" in %s is refused: a file given to --preset does not read it. To build on another file, name that file as its own --preset or import it from the configuration file.',
                         $root->value,
                         $origin->describe(),
                     ),

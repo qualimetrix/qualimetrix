@@ -51,10 +51,20 @@ final class ConfigurationInputCollisionTest extends TestCase
     protected function tearDown(): void
     {
         chdir($this->originalCwd);
-        foreach (array_diff((array) scandir($this->directory), ['.', '..']) as $entry) {
-            unlink($this->directory . '/' . $entry);
+        self::remove($this->directory);
+    }
+
+    private static function remove(string $path): void
+    {
+        if (is_link($path) || is_file($path)) {
+            unlink($path);
+
+            return;
         }
-        rmdir($this->directory);
+        foreach (array_diff((array) scandir($path), ['.', '..']) as $entry) {
+            self::remove($path . '/' . $entry);
+        }
+        rmdir($path);
     }
 
     /**
@@ -94,6 +104,31 @@ final class ConfigurationInputCollisionTest extends TestCase
             yield "graph:export --output over the {$kind} file" => [GraphExportCommand::class, [...$preset, '--output' => $file], $named];
             yield "baseline:generate over the {$kind} file" => [BaselineGenerateCommand::class, ['--workers' => '0', ...$preset, 'baseline' => $file, '--force' => true], $named];
         }
+    }
+
+    #[Test]
+    #[DataProvider('nestedAndSelectedConfigurationFiles')]
+    public function itRefusesAWriteOverANestedOrSelectedConfigurationFile(string $file, string $named): void
+    {
+        mkdir($this->directory . '/cfg');
+        file_put_contents($this->directory . '/qmx.yaml', "imports: [base.yaml, {subtree: cfg}]\n");
+        file_put_contents($this->directory . '/base.yaml', "imports: [nested.yaml]\n");
+        file_put_contents($this->directory . '/nested.yaml', self::BASE);
+        file_put_contents($this->directory . '/cfg/selected.yaml', self::BASE);
+
+        $tester = $this->execute(CheckCommand::class, ['--format' => 'json', '--workers' => '0', '--no-cache' => true, '--output' => $file]);
+
+        $answer = str_replace('\\"', '"', $tester->getDisplay() . $tester->getErrorOutput());
+        self::assertSame(3, $tester->getStatusCode(), $answer);
+        self::assertStringContainsString($named . ' name the same input target', $answer);
+        self::assertSame(self::BASE, file_get_contents($this->directory . '/' . $file));
+    }
+
+    /** @return iterable<string, array{string, string}> */
+    public static function nestedAndSelectedConfigurationFiles(): iterable
+    {
+        yield 'nested' => ['nested.yaml', 'configuration file "nested.yaml" (imported by configuration file "base.yaml" (imported by configuration file "qmx.yaml"))'];
+        yield 'selected' => ['cfg/selected.yaml', 'configuration file "cfg/selected.yaml" (imported by configuration file "qmx.yaml")'];
     }
 
     #[Test]

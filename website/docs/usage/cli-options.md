@@ -177,6 +177,8 @@ Available built-in presets: `strict`, `legacy`, `ci`.
 
 Presets are applied after `composer.json` auto-detection but before `qmx.yaml`, so your config file always takes precedence. See [Configuration > Presets](../getting-started/configuration.md#presets) for details.
 
+A built-in preset can also be imported from the configuration file — `imports: [strict]` — which applies it to every run that reads the file, including the pre-commit hook and the GitHub Action, neither of which passes `--preset`. An imported preset sits in the configuration-file band, above `--preset` presets. See [Configuration > Built-in presets](../getting-started/configuration.md#built-in-presets).
+
 ---
 
 ## Output options
@@ -248,8 +250,8 @@ ordinary inode, or one absent name, refuse before analysis, as does a target
 naming the baseline input. A target that is a file the run reads refuses
 before analysis too:
 
-- a configuration file — the auto-discovered `qmx.yaml`/`qmx.yml` or the
-  `--config` file, each file it imports, each preset file;
+- a configuration file — the auto-discovered `qmx.yaml`/`qmx.yml` (or
+  `qmx.dist.yaml`/`qmx.dist.yml`) or the `--config` file, each file it imports, each preset file;
 - the working directory's `composer.json`, whether or not it declares autoload
   paths;
 - a PHP file the run selects, analysed or excluded as generated.

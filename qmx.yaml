@@ -95,8 +95,6 @@ rules:
       - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationOrigin.php
       - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php
       - exact: src/Analysis/Configuration/Contract/Refusal/RefusedPosition.php
-      # The closed vocabulary of scalar forms every section declaration names.
-      - exact: src/Analysis/Configuration/Contract/Document/Schema/ScalarForm.php
       - exact: src/Analysis/Finding/Contract/Channel/ChannelDeclaration.php
       - exact: src/Analysis/Finding/Contract/Channel/ChannelDeclarationRegistryInterface.php
       - exact: src/Analysis/Finding/Contract/Channel/ChannelShape.php
@@ -162,6 +160,9 @@ rules:
       # FileIdentity is the one identity every input reader records and every
       # writer compares against; each such reader and writer must name it.
       - exact: src/Core/FileTarget/FileIdentity.php
+      # NativeCall is the one way a native filesystem call is made without a
+      # stray warning; every reader that stats or opens a file must name it.
+      - exact: src/Core/FileTarget/NativeCall.php
       # NamespacePattern binds the shared selector definition to namespace separators
       # for authored configuration, finding exclusion and reporting drill-down.
       - exact: src/Core/Pattern/NamespacePattern.php

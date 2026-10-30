@@ -70,6 +70,33 @@ final class CheckCommandConfigurationImportsTest extends TestCase
         );
     }
 
+    #[Test]
+    public function itNamesBothImportersOfAMissingNestedFileInTheJsonEnvelope(): void
+    {
+        file_put_contents($this->directory . '/sub/base.yaml', "imports: [missing.yaml]\n");
+
+        $process = $this->qmx('--format=json');
+
+        self::assertSame(3, $process->getExitCode(), $process->getErrorOutput());
+        /** @var array{source: list<array<string, mixed>>} $envelope */
+        $envelope = json_decode($process->getOutput(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(
+            [['kind' => 'file', 'name' => 'sub/missing.yaml', 'imported_by' => ['kind' => 'file', 'name' => 'sub/base.yaml', 'imported_by' => ['kind' => 'file', 'name' => 'sub/qmx.yaml', 'imported_by' => null]]]],
+            $envelope['source'],
+        );
+    }
+
+    #[Test]
+    public function itAppliesABuiltInPresetImportedByNameWithoutThePresetOption(): void
+    {
+        file_put_contents($this->directory . '/sub/base.yaml', "paths: [src]\nimports: [strict]\n");
+
+        $process = $this->qmx('-v');
+
+        self::assertSame(0, $process->getExitCode(), $process->getErrorOutput());
+        self::assertStringContainsString('Configuration loaded from: defaults, strict, sub/base.yaml, sub/qmx.yaml, cli', $process->getOutput() . $process->getErrorOutput());
+    }
+
     private function qmx(string $option): Process
     {
         $process = new Process(

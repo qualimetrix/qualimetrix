@@ -45,6 +45,10 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
 
             $authored = [...$authored, ...$layer->authored];
             $diagnostics = [...$diagnostics, ...$layer->diagnostics];
+            if ($layer->authored === [] && $layer->values === [] && $layer->file === null) {
+                // Only discovery notices: nothing was read, so nothing was applied.
+                continue;
+            }
 
             foreach ($layer->authored === [] ? [null] : $layer->authored as $file) {
                 $documents[] = self::source($layer, $file);

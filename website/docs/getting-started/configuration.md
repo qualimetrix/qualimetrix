@@ -7,11 +7,40 @@ Qualimetrix works out of the box with sensible defaults. A configuration file le
 ## Configuration File
 
 Automatic discovery accepts exactly `qmx.yaml` or `qmx.yml` in the working
-directory. If both exist, the command refuses with exit code 3; choose one
-with `--config`. A near spelling, such as `QMX.yaml` or `qmx.yaml.dist`, is
-warned about and not loaded when neither exact name exists. An exact file
-beside a near name is loaded without that warning. `--config` selects its named
-file explicitly, independently of automatic discovery.
+directory and, when neither exists, `qmx.dist.yaml` or `qmx.dist.yml`. If both
+names of a pair exist, the command refuses with exit code 3 — both dist names
+are refused even beside a local file, since a checkout without it would refuse
+them; choose one with `--config`. A near spelling, such as `QMX.yaml` or
+`qmx.yaml.dist`, is warned about and not loaded when no local name exists. A
+local file beside a near name is loaded without that warning; a dist file
+loaded in its absence keeps it, since such a name is usually a misnamed local
+file. `--config` selects its named file explicitly, independently of automatic
+discovery.
+
+**Committed defaults and a local file.** Commit `qmx.dist.yaml` and ignore
+`qmx.yaml` in Git: a checkout without `qmx.yaml`, such as CI or the GitHub
+Action, reads `qmx.dist.yaml`. A developer's `qmx.yaml`
+wins and is read alone — it builds on the committed file only by
+[importing](#splitting-a-configuration) it:
+
+```yaml
+# qmx.yaml (not committed)
+imports:
+  - qmx.dist.yaml
+
+fail_on: warning
+```
+
+When an auto-discovered `qmx.yaml` or `qmx.yml` does not import a
+`qmx.dist.yaml` or `qmx.dist.yml` beside it, the run warns that the dist file
+is not used, since the local run then differs from CI. When a run without the
+local file would refuse the dist file — it is not a readable regular file, is
+not valid YAML, or names an import that cannot be read — the warning gives
+that refusal instead. The advice names the dist file by its full path when the
+local file is a symlink into another directory, whose imports resolve beside
+its target. A dist file selected
+with `--preset` is read in the preset band only: it is neither discovered nor
+warned about.
 
 A near-name warning is suppressed only when that same physical file was already
 selected as a custom preset; the same basename elsewhere does not suppress it.
@@ -43,7 +72,7 @@ vendor/bin/qmx check src/ --config=my-config.yaml
 ```
 
 The file found or named this way is the **root configuration file**. It can
-build on other files through [`imports`](#splitting-a-configuration).
+build on other files and built-in presets through [`imports`](#splitting-a-configuration).
 
 ---
 
@@ -741,6 +770,8 @@ vendor/bin/qmx check src/ --preset=./my-preset.yaml
     `only_rules` is **not** accumulated across layers — the last layer that writes it replaces the list whole. This is intentional: `only_rules` is a restrictive filter, and union would widen the scope. `disabled_rules` accumulates authored statements, but a later exact producer enable can reverse an earlier disable; see [Rule selection](../usage/cli-options.md#rule-options).
 
 **Custom presets:** Any YAML file with the same structure as `qmx.yaml` can be used as a preset. Pass the file path instead of a built-in name.
+
+**Presets from the configuration file:** a built-in preset can also be imported by name — `imports: [strict]` in `qmx.yaml` — so every tool that reads the file, including the pre-commit hook and the GitHub Action (neither passes `--preset`), judges by it. See [Built-in presets](#built-in-presets). A file given to `--preset` cannot itself import.
 <!-- llms:skip-end -->
 
 ---
@@ -752,45 +783,179 @@ The root configuration file can list the files it builds on under `imports`:
 ```yaml
 # qmx.yaml
 imports:
-  - config/architecture.yaml
-  - config/thresholds.yaml
+  - strict                    # a built-in preset, by name
+  - config/architecture.yaml  # one file
+  - subtree: config/teams     # every .yaml / .yml file below the directory
 
 fail_on: error
 ```
 
+An entry is one of three things:
+
+1. **A built-in preset** — a string with no `/`, no `\` and no extension:
+   `strict`, `legacy` or `ci`.
+2. **A file path** — any other string, ending in `.yaml` or `.yml` (in any
+   letter case). `*`, `?` and `[` are ordinary characters in it.
+3. **A selector** — a one-entry mapping, `{subtree: …}` or `{regex: …}`, that
+   stands for a set of files; see [Selectors](#import-selectors).
+
 Each imported file is a layer of its own, written like any configuration file.
-The layers are the entries in the order written, then the root file:
-`config/architecture.yaml`, `config/thresholds.yaml`, `qmx.yaml`. A later entry
-overrides an earlier one, and the root file overrides them all — each key by
-the policy described in [How layers combine](#how-layers-combine). The whole
-chain sits where `qmx.yaml` sits: above every preset, below the command line.
-`-v` names every file in that order (`Configuration loaded from: defaults,
-config/architecture.yaml, config/thresholds.yaml, qmx.yaml, cli`).
+The layers are the entries in the order written, then the root file: for the
+list above, `strict`, `config/architecture.yaml`, the files below
+`config/teams`, `qmx.yaml`. A later entry overrides an earlier one, and
+the root file overrides them all — each key by the policy described in
+[How layers combine](#how-layers-combine). The whole chain sits where `qmx.yaml`
+sits: above every preset given on the command line, below the command line
+itself. `-v` names every file in that order (`Configuration loaded from:
+defaults, strict, config/architecture.yaml, config/teams/a.yaml,
+config/teams/b.yaml, qmx.yaml, cli`).
 
 **Paths.** An `imports` entry is resolved against the directory of the file
 that writes it, so `--config=sub/qmx.yaml` with `imports: [base.yaml]` reads
-`sub/base.yaml`. When the root file is a symlink, that is the directory of the
-file it points to: a configuration linked into a project reads the bases
-beside it. Every other path, in any file of the chain — `paths`, `exclude`,
-`cache.dir` — keeps the working directory as its base, exactly as in the root
-file. Refusals and `-v` name an imported file by that path as seen from the
-root file's name (`./` dropped, `..` kept) — or by its full path when the root
-file is a symlink — together with the file that imported it.
+`sub/base.yaml`, and an imported `config/a.yaml` with `imports: [b.yaml]` reads
+`config/b.yaml`. When a file is a symlink, that is the directory of the file it
+points to: a configuration linked into a project reads the bases beside it.
+Every other path, in any file of the chain — `paths`, `exclude`, `cache.dir` —
+keeps the working directory as its base, exactly as in the root file. Refusals
+and `-v` name an imported file by that path as seen from the file that imported
+it (`./` dropped, `..` kept) — or by its full path when that file is a symlink
+— together with the file that imported it.
 
-**Only the root imports.** An imported file that writes `imports` — even
-`imports: []` — is refused: list the files it builds on in the root file
-instead, in the order they should apply. A preset that writes `imports` is
-refused too; the same file can still be given as `--preset` and imported, and
-then it is placed in both bands.
+### Built-in presets {#built-in-presets}
 
-Also refused, before the file is read: the same file twice in the list (two
-spellings or a symlink of one file count as the same), the root file itself, a
-directory or other non-regular file, a URL, a glob (`*`, `?`, `[`), and a file
-that is not `.yaml` or `.yml` (in any letter case). `imports` is a list even
-for one file; `imports: ~` and `imports: []` import nothing.
+`imports: [strict]` applies the built-in preset the way `--preset=strict`
+does, but from the configuration file. This is what makes the pre-commit hook
+and the GitHub Action — neither passes `--preset` — judge by the same rules as
+a local `qmx check --preset=strict`.
 
-**What a later file can change.** Override follows the merge policy of each
-key, so some edits have no spelling:
+- The preset sits where the file naming it sits in the chain, so the file's own
+  keys override it. A preset given with `--preset` stays below the whole chain.
+- Name it by its bare name. A bare name that is not built-in is refused at its
+  position: `Unknown preset "x". Available presets: ci, legacy, strict. A file
+  needs a .yaml or .yml extension.` To import a file of your own, write its
+  extension (`team.yaml`).
+- Refusals and `-v` call it `strict`, and `source[]` in JSON reports it as
+  `{"kind": "preset", "name": "strict", "imported_by": {…}}`. The same preset
+  given with `--preset` is a separate layer named `preset:strict`; naming it
+  both ways applies it in both places.
+- Only built-in presets are imported by name. A preset file of your own is a
+  file: import it by path.
+
+### Selectors {#import-selectors}
+
+A selector stands for a set of files that changes without anyone editing the
+root file, such as `config/qmx` that other tools drop their parts into. It has
+the same shape as the selectors of [`suppress_paths`](#suppress-paths):
+
+```yaml
+imports:
+  - subtree: config/qmx                                   # the directory and everything below it
+  - regex: 'vendor/acme/[^/]+/qmx-extension\.yaml'         # the whole relative path matches
+```
+
+- **Which files.** Every file whose name ends in `.yaml` or `.yml` (in any
+  letter case) below the directory of the file that writes the entry, named by
+  its path from that directory. A selector never reaches above that directory;
+  a file above it is a plain string entry (`../shared.yaml`).
+- **`subtree`** names a directory below the importing file's directory and
+  stands for every file below it, at any depth. The directory must exist.
+  `{exact: …}` is refused: a single file is a plain string.
+- **`regex`** is a PCRE fragment that must match the whole path from the
+  importing file's directory (`config/teams/a.yaml`, not `a.yaml`), the same
+  way as in `suppress_paths`. The literal directory it starts with bounds the
+  walk: `vendor/[^/]+/qmx\.yaml` looks only inside `vendor/`, and that
+  directory must exist and is matched by the names on disk, letter for letter.
+  A fragment that starts with a metacharacter, or holds `|` or `)` anywhere,
+  walks the importing file's whole directory — `vendor/` and `node_modules/`
+  included — and is refused by any directory below it that cannot be listed or
+  entered, even one the pattern could never match. Start the regex with a
+  literal directory (`config/qmx/…`) to limit the walk and avoid that.
+- **Order.** The files one selector stands for have no order among themselves
+  except what their own imports and the other entries of the list demand (see
+  [Nested imports](#nested-imports)); where nothing decides, byte order of the
+  path applies, and a later name overrides an earlier one. Name two files in
+  the order you need as separate entries when it matters.
+- **Skipped, not refused.** A file named as a string anywhere in the same list,
+  a file an earlier selector already stands for, and the importing file itself.
+  A directory reached through several names (a symlink) is walked under each
+  name; a file found twice is imported once, under the first path in byte
+  order.
+- **Refused.** A directory the walk must list or enter and cannot (a missing
+  read or search permission is refused, not skipped); a `.yaml` / `.yml` name
+  that the selector matches but that is not a regular file (a broken link, a
+  pipe); a `subtree` or a regex prefix that is not an existing directory.
+  File names the selector does not match are never judged; directories are always entered.
+- **No match is accepted** and not reported — that is the point of a selector
+  over files that may be absent. The price is that a typo in the pattern
+  matches nothing and says nothing (a regex after its literal prefix; `.yml`
+  files for a pattern that ends in `\.yaml`); check `-v` once.
+
+!!! warning "Do not select over `vendor/`"
+    Every file a selector matches becomes a layer of your configuration and can
+    change any key, the fail threshold included. `{subtree: vendor}` hands that
+    power to every installed package. For the same reason never select a name
+    packages use for their own configuration (`qmx.yaml`): you would import
+    configurations that were written for other projects. Import the packages
+    you trust by path, or narrow a regex to the one file name an extension
+    convention defines.
+
+### Nested imports {#nested-imports}
+
+Any file read through `imports` may write `imports` itself — a shared standard
+can split itself without its consumer listing its parts. Built-in presets are
+included, though none writes it. A file given to `--preset` may not: it is
+refused, and the hint says to import the file from the configuration file or
+pass each as its own `--preset`.
+
+```yaml
+# qmx.yaml
+imports: [team/standard.yaml]
+fail_on: error
+
+# team/standard.yaml
+imports: [strict, thresholds.yaml]   # team/thresholds.yaml
+```
+
+The layers are `strict`, `team/thresholds.yaml`, `team/standard.yaml`,
+`qmx.yaml`: what a file imports always sits below the file, and inside one list
+a later entry sits above an earlier one. A file reached twice is read once and
+placed once — the diamond below is the usual case:
+
+| Graph                                       | Layers, lowest first |
+| ------------------------------------------- | -------------------- |
+| `F: [A, B]`                                 | `A B F`              |
+| `F: [A, B]`, `A: [D]`, `B: [D]` (a diamond) | `D A B F`            |
+| `F: [D, A]`, `A: [D]`                       | `D A F`              |
+| `F: [A, D]`, `A: [D]`                       | refused              |
+
+The order is the C3 linearization (the method resolution order of Python), so
+a file means the same whichever file imports it (a selector written in an imported
+file can break that; see ADR 0140). Two refusals follow from it:
+
+- **A cycle** is refused at the entry that closes it, naming the files:
+  `… closes an import cycle: "cfg/a.yaml" imports "cfg/b.yaml" imports
+  "cfg/a.yaml".`
+- **Contradictory precedence** is refused on the file whose entries cannot all
+  hold, naming each demand with the entry that makes it, and how each file was
+  reached: `F: [A, D]` writes `D` above `A`, while `A` imports `D` and so needs
+  `A` above `D`. Reorder the entries or drop one.
+
+A refusal can come from a pair of files you never wrote together: `F: [a, b,
+c]`, `c: [b, d]`, `d: [a]` is refused because `c` puts `a` above `b` through
+`d`. The refusal prints that derived order.
+
+### Other refusals
+
+Before the file is read: the same file twice in one list (two spellings or a
+symlink of one file count as the same), a file importing itself, a directory or
+other non-regular file, a URL, a file that is not `.yaml` or `.yml`, and an
+`exact` selector.
+`imports` is a list even for one file; `imports: ~` and `imports: []` import
+nothing.
+
+### What a later file can change
+
+Override follows the merge policy of each key, so some edits have no spelling:
 
 | Node kind                                                                   | A later file…                                                           |
 | --------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
@@ -896,9 +1061,9 @@ This makes it easy to experiment without editing the config file.
 ## How layers combine {#how-layers-combine}
 
 Every source of configuration is a **layer**: the built-in defaults, what
-`composer.json` discovery finds, each preset in the order given, the files
-`qmx.yaml` [imports](#splitting-a-configuration), `qmx.yaml`, and the command
-line — each one above the ones before it.
+`composer.json` discovery finds, each preset in the order given, the files and
+presets `qmx.yaml` [imports](#splitting-a-configuration), `qmx.yaml`, and the
+command line — each one above the ones before it.
 
 Each layer is read as it was written. Its keys are recognised and the form of
 every value it writes is judged in that layer, before anything is merged, so a
@@ -1096,7 +1261,7 @@ reports at the namespace level.
 | `exclude_health`                                                                  | list (item: string)                                                                 | Every layer adds its elements; duplicates collapse.                                                                                                                                                                | Not written: the layer below stands. An item written `~` is refused.                     | Adds nothing.                                                                                   |
 | `fail_on`                                                                         | string                                                                              | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |
 | `format`                                                                          | string                                                                              | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |
-| `imports`                                                                         | list (item: string)                                                                 | Read per file, in the root configuration file only; never merged across layers.                                                                                                                                    | Not written: the file imports nothing. An item written `~` is refused.                   | The file imports nothing.                                                                       |
+| `imports`                                                                         | list (item: read by its owner)                                                      | Read per file, in the root file and in any file read through `imports`; never merged across layers.                                                                                                                | Not written: the file imports nothing. An item written `~` is refused.                   | The file imports nothing.                                                                       |
 | `include_autoload_dev`                                                            | boolean                                                                             | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |
 | `include_generated`                                                               | boolean                                                                             | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |
 | `memory_limit`                                                                    | string or integer                                                                   | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |
@@ -1893,15 +2058,21 @@ paths: [src]
 `qmx.yaml.example` already starts with such a line. The path is resolved
 relative to the config file, so it works when the file lies in the project root
 next to `vendor/`.
+An imported file needs its own modeline, with the path written relative to that
+file (`# yaml-language-server: $schema=../vendor/qualimetrix/qualimetrix/qmx.schema.json`
+for `config/a.yaml`).
 
 ### PhpStorm
 
 Open **Settings → Languages & Frameworks → Schemas and DTDs → JSON Schema
 Mappings**, add a mapping, choose `vendor/qualimetrix/qualimetrix/qmx.schema.json`
-(or one of the addresses above) as the schema, and add `qmx.yaml` and `qmx.yml`
-as files mapped to it. A config file with another name, passed through
+(or one of the addresses above) as the schema, and add `qmx.yaml`, `qmx.yml`,
+`qmx.dist.yaml` and `qmx.dist.yml` as files mapped to it. A config file with another name, passed through
 `--config` or a preset, is bound the same way: add its name or path to the
-mapping (or put the modeline from the VS Code section on its first line). If
+mapping (or put the modeline from the VS Code section on its first line). The
+same goes for a file the root imports: the editor binds a schema to a file by
+its name, not by the file that imports it, so `config/*.yaml` needs its own
+mapping or a modeline. If
 the dialog asks for a schema version, choose JSON Schema version 7.
 <!-- llms:skip-end -->
 
