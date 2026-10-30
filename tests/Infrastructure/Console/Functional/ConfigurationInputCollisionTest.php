@@ -107,14 +107,14 @@ final class ConfigurationInputCollisionTest extends TestCase
     }
 
     #[Test]
-    #[DataProvider('nestedAndGlobbedConfigurationFiles')]
-    public function itRefusesAWriteOverANestedOrGlobbedConfigurationFile(string $file, string $named): void
+    #[DataProvider('nestedAndSelectedConfigurationFiles')]
+    public function itRefusesAWriteOverANestedOrSelectedConfigurationFile(string $file, string $named): void
     {
         mkdir($this->directory . '/cfg');
-        file_put_contents($this->directory . '/qmx.yaml', "imports: [base.yaml, \"cfg/*.yaml\"]\n");
+        file_put_contents($this->directory . '/qmx.yaml', "imports: [base.yaml, {subtree: cfg}]\n");
         file_put_contents($this->directory . '/base.yaml', "imports: [nested.yaml]\n");
         file_put_contents($this->directory . '/nested.yaml', self::BASE);
-        file_put_contents($this->directory . '/cfg/globbed.yaml', self::BASE);
+        file_put_contents($this->directory . '/cfg/selected.yaml', self::BASE);
 
         $tester = $this->execute(CheckCommand::class, ['--format' => 'json', '--workers' => '0', '--no-cache' => true, '--output' => $file]);
 
@@ -125,10 +125,10 @@ final class ConfigurationInputCollisionTest extends TestCase
     }
 
     /** @return iterable<string, array{string, string}> */
-    public static function nestedAndGlobbedConfigurationFiles(): iterable
+    public static function nestedAndSelectedConfigurationFiles(): iterable
     {
         yield 'nested' => ['nested.yaml', 'configuration file "nested.yaml" (imported by configuration file "base.yaml" (imported by configuration file "qmx.yaml"))'];
-        yield 'globbed' => ['cfg/globbed.yaml', 'configuration file "cfg/globbed.yaml" (imported by configuration file "qmx.yaml")'];
+        yield 'selected' => ['cfg/selected.yaml', 'configuration file "cfg/selected.yaml" (imported by configuration file "qmx.yaml")'];
     }
 
     #[Test]

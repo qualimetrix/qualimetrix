@@ -63,9 +63,9 @@ final class ImportChainTest extends TestCase
     }
 
     #[Test]
-    public function itFlattensAGlobsMatchesInByteOrderAtTheEntrysPlaceAndReadsEachFileOnce(): void
+    public function itFlattensASelectorsMatchesInByteOrderAtTheEntrysPlaceAndReadsEachFileOnce(): void
     {
-        $this->write('qmx.yaml', "imports: [first.yaml, \"cfg/*.yaml\", strict, cfg/a.yaml]\n");
+        $this->write('qmx.yaml', "imports: [first.yaml, {subtree: cfg}, strict, cfg/a.yaml]\n");
         $this->write('first.yaml', '');
         $this->write('cfg/b.yaml', '');
         $this->write('cfg/a.yaml', '');
@@ -185,11 +185,11 @@ final class ImportChainTest extends TestCase
     }
 
     #[Test]
-    public function itRefusesAGlobMatchThatClosesACycle(): void
+    public function itRefusesASelectedFileThatClosesACycle(): void
     {
-        $this->write('qmx.yaml', "imports: [\"cfg/*.yaml\"]\n");
+        $this->write('qmx.yaml', "imports: [{subtree: cfg}]\n");
         $this->write('cfg/a.yaml', "imports: [b.yaml]\n");
-        $this->write('cfg/b.yaml', "imports: [\"*.yaml\"]\n");
+        $this->write('cfg/b.yaml', "imports: [{regex: '[^/]*\\.yaml'}]\n");
 
         $refusal = $this->refusal();
 
@@ -215,12 +215,12 @@ final class ImportChainTest extends TestCase
         self::assertSame(['imports'], $refusal->position()?->segments);
     }
 
-    /** A team file importing its siblings from the directory a glob of the root also matches. */
+    /** A team file importing its siblings from the directory a selector of the root also matches. */
     #[Test]
-    public function itOrdersASiblingsImportsBelowItWhenAGlobMatchesThemAll(): void
+    public function itOrdersASiblingsImportsBelowItWhenASelectorMatchesThemAll(): void
     {
         mkdir($this->directory . '/config/qmx', 0o777, true);
-        $this->write('qmx.yaml', "imports: [\"config/qmx/*.yaml\"]\n");
+        $this->write('qmx.yaml', "imports: [{subtree: config/qmx}]\n");
         $this->write('config/qmx/team.yaml', "imports: [base.yaml, architecture.yaml]\n");
         $this->write('config/qmx/base.yaml', '');
         $this->write('config/qmx/architecture.yaml', '');
@@ -285,10 +285,10 @@ final class ImportChainTest extends TestCase
     }
 
     #[Test]
-    public function itSkipsTheImportingFileInANestedGlobAndOrdersTheRestByBytes(): void
+    public function itSkipsTheImportingFileInANestedSelectorAndOrdersTheRestByBytes(): void
     {
         $this->write('qmx.yaml', "imports: [cfg/a.yaml]\n");
-        $this->write('cfg/a.yaml', "imports: [\"*.yaml\"]\n");
+        $this->write('cfg/a.yaml', "imports: [{regex: '[^/]*\\.yaml'}]\n");
         $this->write('cfg/b.yaml', '');
         $this->write('cfg/c.yaml', '');
 

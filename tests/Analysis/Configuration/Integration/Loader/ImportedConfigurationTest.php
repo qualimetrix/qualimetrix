@@ -154,18 +154,13 @@ final class ImportedConfigurationTest extends TestCase
     public static function provideRefusedEntries(): iterable
     {
         yield 'url' => ['https://example.com/a.yaml', 'Import "https://example.com/a.yaml" (imports[0]) names a URL'];
-        yield 'recursive glob' => ['"cfg/**/*.yaml"', 'Import "cfg/**/*.yaml" (imports[0]) uses "**"'];
-        yield 'brace' => ['"cfg/{a,b}*.yaml"', 'Import "cfg/{a,b}*.yaml" (imports[0]) uses "{"'];
-        yield 'backslash' => ["'cfg/a\\*.yaml'", 'Import "cfg/a\\*.yaml" (imports[0]) contains a backslash'];
-        yield 'unclosed bracket' => ['"cfg/[ab.yaml"', 'Import "cfg/[ab.yaml" (imports[0]) has a "[" without its closing "]"'];
-        yield 'glob without extension' => ['"cfg/*"', 'Import "cfg/*" (imports[0]) is not a .yaml or .yml file.'];
-        yield 'partial name glob without extension' => ['"str*"', 'Import "str*" (imports[0]) is not a .yaml or .yml file.'];
-        yield 'glob of another format' => ['"cfg/*.json"', 'Import "cfg/*.json" (imports[0]) is not a .yaml or .yml file.'];
         yield 'unknown preset' => ['base', 'Unknown preset "base". Available presets: ci, legacy, strict. A file needs a .yaml or .yml extension.'];
         yield 'extension' => ['a.json', 'Import "a.json" (imports[0]) is not a .yaml or .yml file.'];
-        yield 'empty' => ['""', '"imports[0]" in configuration file "qmx.yaml" must be non-empty text.'];
-        yield 'null' => ['~', 'Item 0 of "imports" in configuration file "qmx.yaml" is null'];
-        yield 'integer' => ['1', '"imports[0]" in configuration file "qmx.yaml" must be non-empty string, got int.'];
+        yield 'empty' => ['""', 'Import "" (imports[0]) is empty; name a file.'];
+        yield 'null' => ['~', 'Import entry (imports[0]) is neither a file path nor a selector mapping.'];
+        yield 'integer' => ['1', 'Import entry (imports[0]) is neither a file path nor a selector mapping.'];
+        yield 'exact selector' => ['{exact: cfg/a.yaml}', 'Import {exact: cfg/a.yaml} (imports[0]) names one file; write a file path as a plain string.'];
+        yield 'parent directory' => ['{subtree: ../shared}', 'Import {subtree: ../shared} (imports[0]) names a directory with a "." or ".." segment'];
     }
 
     /** @param non-empty-string $expected */
@@ -387,11 +382,11 @@ final class ImportedConfigurationTest extends TestCase
     }
 
     #[Test]
-    public function itImportsEveryFileAGlobMatchesInByteOrder(): void
+    public function itImportsEveryFileASelectorMatchesInByteOrder(): void
     {
         $this->write('cfg/b.yaml', "fail_on: error\n");
         $this->write('cfg/a.yaml', "fail_on: warning\nformat: json\n");
-        $this->write('qmx.yaml', "imports: [\"cfg/*.yaml\"]\n");
+        $this->write('qmx.yaml', "imports: [{subtree: cfg}]\n");
 
         $document = $this->resolve();
 
@@ -401,11 +396,36 @@ final class ImportedConfigurationTest extends TestCase
     }
 
     #[Test]
-    public function itAcceptsAGlobThatMatchesNothing(): void
+    public function itAcceptsASelectorThatMatchesNothing(): void
     {
-        $this->write('qmx.yaml', "imports: [\"cfg/*.yaml\"]\nfail_on: error\n");
+        $this->write('qmx.yaml', "imports: [{regex: '.*\\.team\\.yaml'}]\nfail_on: error\n");
 
         self::assertSame(['defaults', 'qmx.yaml'], $this->resolve()->appliedSources());
+    }
+
+    #[Test]
+    public function itImportsWhatARegexMatchesBelowAVendorDirectory(): void
+    {
+        mkdir($this->directory . '/vendor/acme/pkg', 0o777, true);
+        $this->write('vendor/acme/pkg/qmx-extension.yaml', "fail_on: error\n");
+        $this->write('vendor/acme/pkg/other.yaml', "format: json\n");
+        $this->write('qmx.yaml', "imports: [{regex: 'vendor/[^/]+/[^/]+/qmx-extension\\.yaml'}]\n");
+
+        $document = $this->resolve();
+
+        self::assertSame(['defaults', 'vendor/acme/pkg/qmx-extension.yaml', 'qmx.yaml'], $document->appliedSources());
+        self::assertNull($document->resolved()->get('format'));
+    }
+
+    #[Test]
+    public function itRefusesASelectorKindItDoesNotKnowAtThatKind(): void
+    {
+        $this->write('qmx.yaml', "imports: [{glob: 'cfg/*.yaml'}]\n");
+
+        $refusal = $this->refusal();
+
+        self::assertStringStartsWith('Unknown selector kind "glob"', $refusal->summary());
+        self::assertSame(['imports', '0', 'glob'], $refusal->position()?->segments);
     }
 
     #[Test]

@@ -1901,8 +1901,8 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportGlob": {
-      "path": "src/Analysis/Configuration/Loader/ImportGlob.php",
+    "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportSelection": {
+      "path": "src/Analysis/Configuration/Loader/ImportSelection.php",
       "kind": "class",
       "owner": "Analysis.Configuration",
       "visibility": "internal",
@@ -19389,6 +19389,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunSetup\\Execution\\RunConfigurationPreparation"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportSelection"
         }
       ]
     },
@@ -19504,7 +19508,7 @@
         },
         {
           "owner": "Analysis.Configuration",
-          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportGlob"
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportSelection"
         },
         {
           "owner": "Analysis.Policy.Baseline",
@@ -20879,6 +20883,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Preparation\\DiscoveryResult"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportSelection"
         }
       ]
     },
@@ -21106,6 +21114,14 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\SuppressionBinding\\UnboundSuppressionFinding"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportListSchema"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportSelection"
         }
       ]
     },
@@ -21238,6 +21254,14 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\RunConfiguration"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportListSchema"
+        },
+        {
+          "owner": "Analysis.Configuration",
+          "source_fqcn": "Qualimetrix\\Analysis\\Configuration\\Loader\\ImportSelection"
         }
       ]
     },

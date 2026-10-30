@@ -2447,6 +2447,7 @@ Qualimetrix\Core\Environment\EnvironmentFailureInterface	Core.Environment	Qualim
 Qualimetrix\Core\Environment\EnvironmentFailureInterface	Core.Environment	Qualimetrix\Infrastructure\Parallel\WorkerStartFailure	Infrastructure.Parallel	src/Infrastructure/Parallel/WorkerStartFailure.php	ast-name
 Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	src/Analysis/Configuration/Contract/ConfigurationDocument.php	ast-name
 Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	Qualimetrix\Analysis\Configuration\Document\AuthoredLayer	Analysis.Configuration	src/Analysis/Configuration/Document/AuthoredLayer.php	ast-name
+Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	Qualimetrix\Analysis\Configuration\Loader\ImportSelection	Analysis.Configuration	src/Analysis/Configuration/Loader/ImportSelection.php	ast-name
 Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	Qualimetrix\Analysis\Configuration\Loader\ImportTarget	Analysis.Configuration	src/Analysis/Configuration/Loader/ImportTarget.php	ast-name
 Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	Qualimetrix\Analysis\Configuration\Loader\LoadedDocument	Analysis.Configuration	src/Analysis/Configuration/Loader/LoadedDocument.php	ast-name
 Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader	Analysis.Configuration	src/Analysis/Configuration/Loader/YamlConfigLoader.php	ast-name
@@ -2479,7 +2480,7 @@ Qualimetrix\Core\FileTarget\FileTargetFailureKind	Core.FileTarget	Qualimetrix\In
 Qualimetrix\Core\FileTarget\FileTargetFailureKind	Core.FileTarget	Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction	Infrastructure.Console	src/Infrastructure/Console/Hook/HookFileTransaction.php	ast-name
 Qualimetrix\Core\FileTarget\FileTargetFailureKind	Core.FileTarget	Qualimetrix\Infrastructure\Console\Refusal\FileTargetRefusal	Infrastructure.Console	src/Infrastructure/Console/Refusal/FileTargetRefusal.php	ast-name
 Qualimetrix\Core\FileTarget\FileTargetFailureKind	Core.FileTarget	Qualimetrix\Infrastructure\Console\RunTarget\TargetAccess	Infrastructure.Console	src/Infrastructure/Console/RunTarget/TargetAccess.php	ast-name
-Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	Qualimetrix\Analysis\Configuration\Loader\ImportGlob	Analysis.Configuration	src/Analysis/Configuration/Loader/ImportGlob.php	ast-name
+Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	Qualimetrix\Analysis\Configuration\Loader\ImportSelection	Analysis.Configuration	src/Analysis/Configuration/Loader/ImportSelection.php	ast-name
 Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	Qualimetrix\Analysis\Configuration\Loader\ImportTarget	Analysis.Configuration	src/Analysis/Configuration/Loader/ImportTarget.php	ast-name
 Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader	Analysis.Configuration	src/Analysis/Configuration/Loader/YamlConfigLoader.php	ast-name
 Qualimetrix\Core\FileTarget\NativeCall	Core.FileTarget	Qualimetrix\Analysis\Configuration\Pipeline\Stage\ComposerDiscoveryStage	Analysis.Configuration	src/Analysis/Configuration/Pipeline/Stage/ComposerDiscoveryStage.php	ast-name
@@ -2667,6 +2668,7 @@ Qualimetrix\Core\Path\PathFactory	Core.Path	Qualimetrix\Infrastructure\Cache\Cac
 Qualimetrix\Core\Path\PathFactory	Core.Path	Qualimetrix\Infrastructure\Console\Invocation\Configuration\ConfigurationInputAdapter	Infrastructure.Console	src/Infrastructure/Console/Invocation/Configuration/ConfigurationInputAdapter.php	ast-name
 Qualimetrix\Core\Path\PathFactory	Core.Path	Qualimetrix\Infrastructure\Git\ChangeListing\ChangedFile	Infrastructure.Git	src/Infrastructure/Git/ChangeListing/ChangedFile.php	ast-name
 Qualimetrix\Core\Path\PathFactory	Core.Path	Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy	Infrastructure.Parallel	src/Infrastructure/Parallel/Strategy/AmphpParallelStrategy.php	ast-name
+Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Configuration\Loader\ImportSelection	Analysis.Configuration	src/Analysis/Configuration/Loader/ImportSelection.php	ast-name
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellFinding	Analysis.Evidence.CodeSmell	src/Analysis/Evidence/CodeSmell/CodeSmellFinding.php	ast-name
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ParameterCountCollector	Analysis.Evidence.CodeSmell	src/Analysis/Evidence/CodeSmell/ParameterCount/ParameterCountCollector.php	ast-name
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCount\ParameterCountVisitor	Analysis.Evidence.CodeSmell	src/Analysis/Evidence/CodeSmell/ParameterCount/ParameterCountVisitor.php	ast-name
@@ -2805,6 +2807,8 @@ Qualimetrix\Core\Pattern\PathMatcher	Core.Neutral	Qualimetrix\Analysis\Finding\C
 Qualimetrix\Core\Pattern\PathMatcher	Core.Neutral	Qualimetrix\Analysis\Finding\Exclusion\RulePathExclusionProvider	Analysis.Finding	src/Analysis/Finding/Exclusion/RulePathExclusionProvider.php	ast-name
 Qualimetrix\Core\Pattern\PathMatcher	Core.Neutral	Qualimetrix\Reporting\FindingProjection\ConfiguredExclusionProjection	Reporting	src/Reporting/FindingProjection/ConfiguredExclusionProjection.php	ast-name
 Qualimetrix\Core\Pattern\PathMatcher	Core.Neutral	Qualimetrix\Reporting\FindingProjection\SuppressionCompositionBuilder	Reporting	src/Reporting/FindingProjection/SuppressionCompositionBuilder.php	ast-name
+Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	Qualimetrix\Analysis\Configuration\Loader\ImportListSchema	Analysis.Configuration	src/Analysis/Configuration/Loader/ImportListSchema.php	ast-name
+Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	Qualimetrix\Analysis\Configuration\Loader\ImportSelection	Analysis.Configuration	src/Analysis/Configuration/Loader/ImportSelection.php	ast-name
 Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	Qualimetrix\Analysis\Configuration\SelectorYamlDecoder	Analysis.Configuration	src/Analysis/Configuration/SelectorYamlDecoder.php	ast-name
 Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorVerdict	Analysis.Finding	src/Analysis/Finding/Contract/ProjectScope/ExcludeSelectorVerdict.php	ast-name
 Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	Qualimetrix\Analysis\Finding\RuleConfiguration\RuleSuppressionSelectorDecoder	Analysis.Finding	src/Analysis/Finding/RuleConfiguration/RuleSuppressionSelectorDecoder.php	ast-name
@@ -2831,6 +2835,8 @@ Qualimetrix\Core\Pattern\SelectorDefinition	Core.Neutral	Qualimetrix\Analysis\Ru
 Qualimetrix\Core\Pattern\SelectorDefinition	Core.Neutral	Qualimetrix\Infrastructure\Console\Invocation\CliSelectorDecoder	Infrastructure.Console	src/Infrastructure/Console/Invocation/CliSelectorDecoder.php	ast-name
 Qualimetrix\Core\Pattern\SelectorDefinition	Core.Neutral	Qualimetrix\Reporting\GraphProjection\NamespaceSelection	Reporting.GraphProjection	src/Reporting/GraphProjection/NamespaceSelection.php	ast-name
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Analysis\Configuration\ConfigurationRoot	Analysis.Configuration	src/Analysis/Configuration/ConfigurationRoot.php	ast-name
+Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Analysis\Configuration\Loader\ImportListSchema	Analysis.Configuration	src/Analysis/Configuration/Loader/ImportListSchema.php	ast-name
+Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Analysis\Configuration\Loader\ImportSelection	Analysis.Configuration	src/Analysis/Configuration/Loader/ImportSelection.php	ast-name
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorVerdict	Analysis.Finding	src/Analysis/Finding/Contract/ProjectScope/ExcludeSelectorVerdict.php	ast-name
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Analysis\Finding\SuppressionBinding\PathBinding	Analysis.Finding	src/Analysis/Finding/SuppressionBinding/PathBinding.php	ast-name
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement	Analysis.Finding	src/Analysis/Finding/SuppressionBinding/ValueScopeJudgement.php	ast-name

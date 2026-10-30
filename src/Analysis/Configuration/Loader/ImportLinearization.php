@@ -16,7 +16,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
  *
  * The written list is last-wins while C3 reads the highest priority first, so
  * each list is given reversed as bases and the result is reversed once at the
- * output. An entry is a group of files: the matches of one glob. The groups of
+ * output. An entry is a group of files: the matches of one selector. The groups of
  * a list are ordered against each other, the members of one group are not —
  * only the files they import decide between them, and where nothing does the
  * earlier member of the given order wins. The graph must be acyclic; callers
@@ -25,7 +25,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 final class ImportLinearization
 {
     /**
-     * @param array<string, list<list<string>>> $imports key => its entries as written, lowest first, each a group of keys: one for an explicit entry, a glob's matches in byte order; every reachable key is present
+     * @param array<string, list<list<string>>> $imports key => its entries as written, lowest first, each a group of keys: one for an explicit entry, a selector's matches in byte order; every reachable key is present
      * @param Closure(string): ConfigurationOrigin $origin the refusal is raised on the origin of the file whose merge is stuck
      * @param Closure(string, string): string $position (importer key, imported key) => the entry as written, e.g. `imports[1]`
      * @param string $listKey the key of the list in the file, where the refusal points

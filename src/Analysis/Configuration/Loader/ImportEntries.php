@@ -12,26 +12,25 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
 
 /**
- * One `imports` list as the files it leads to. An entry is a glob when it
- * holds `*`, `?` or `[`; otherwise a built-in preset name when it has no
- * directory part and no extension; otherwise a file path.
+ * One `imports` list as the files it leads to. A string entry is a built-in
+ * preset name when it has no directory part and no extension, otherwise a file
+ * path; a mapping entry is a `subtree` / `regex` selector over the files below
+ * the importing file's directory.
  *
  * Files are told apart by identity (device, inode, type), never by the path
- * written, so `./a.yaml`, `a.yaml` and a symlink to it are one file. A glob
+ * written, so `./a.yaml`, `a.yaml` and a symlink to it are one file. A selector
  * never repeats a file the list already names, and never names the importing
  * file; two entries that name one file explicitly are refused.
+ *
+ * Entries are judged in written order, so the first refusal is the first
+ * entry's. Only which files the list names explicitly is learned beforehand,
+ * and that without refusing.
  */
 final class ImportEntries
 {
     public function __construct(
         private readonly PresetResolver $presets = new PresetResolver(),
     ) {}
-
-    /** Whether the entry, taken as written, names a built-in preset rather than a file. */
-    public static function namesPreset(string $entry): bool
-    {
-        return !str_contains($entry, '/') && !str_contains($entry, '\\') && pathinfo($entry, \PATHINFO_EXTENSION) === '';
-    }
 
     /**
      * @param list<ResolvedValueInterface> $entries
@@ -42,41 +41,80 @@ final class ImportEntries
      */
     public function resolve(array $entries, ImportTarget $from): array
     {
-        $real = $from->realDirectory();
-        $shown = $from->displayDirectory();
-        $resolved = [];
+        $taken = $this->namedKeys($entries, $from);
         $placed = [$from->key => [-1, (string) $from->origin->locator()]];
+        $resolved = [];
         foreach ($entries as $position => $entry) {
-            $written = (string) $entry->plain();
-            if (ImportGlob::isPattern($written)) {
-                continue;
-            }
-            $target = self::namesPreset($written)
-                ? $this->presetTarget($written, $entry, $position, $from)
-                : ImportTarget::ofFile(self::joined($real, $written), self::originOf(self::normalize(self::joined($shown, $written)), $from));
-            $placed = self::place($placed, $position, $target->key, $entry, $from);
-            $resolved[$position] = new ResolvedImportEntry($position, $entry, false, [$target]);
+            $written = ImportListSchema::written($entry);
+            $resolved[] = \is_string($written)
+                ? $this->fileEntry($position, $entry, $written, $from, $placed)
+                : $this->selectorEntry($position, $entry, $from, $taken);
         }
 
-        $taken = array_fill_keys(array_keys($placed), true);
-        foreach ($entries as $position => $entry) {
-            $written = (string) $entry->plain();
-            if (!ImportGlob::isPattern($written)) {
+        return $resolved;
+    }
+
+    /**
+     * The files the list names as strings, without judging them: what a
+     * selector has to leave to them.
+     *
+     * @param list<ResolvedValueInterface> $entries
+     *
+     * @return array<string, true>
+     */
+    private function namedKeys(array $entries, ImportTarget $from): array
+    {
+        $keys = [$from->key => true];
+        foreach ($entries as $entry) {
+            $written = ImportListSchema::written($entry);
+            if (!\is_string($written)) {
                 continue;
             }
-            $targets = [];
-            foreach (ImportGlob::matches($written, $real, $shown, self::refusing($entry, $position, $written)) as [$physical, $display]) {
-                $target = ImportTarget::ofFile($physical, self::originOf($display, $from));
-                if (!isset($taken[$target->key])) {
-                    $taken[$target->key] = true;
-                    $targets[] = $target;
-                }
+            $key = $this->keyNamed($written, $from);
+            if ($key !== null) {
+                $keys[$key] = true;
             }
-            $resolved[$position] = new ResolvedImportEntry($position, $entry, true, $targets);
         }
-        ksort($resolved);
 
-        return array_values($resolved);
+        return $keys;
+    }
+
+    private function keyNamed(string $written, ImportTarget $from): ?string
+    {
+        if (!ImportListSchema::namesPreset($written)) {
+            return ImportTarget::keyIfRegular(self::joined($from->realDirectory(), $written));
+        }
+        $path = $this->presets->builtInPath($written);
+
+        return $path === null ? null : ImportTarget::presetKeyIfRegular($written, $path);
+    }
+
+    /** @param array<string, array{int, string}> $placed */
+    private function fileEntry(int $position, ResolvedValueInterface $entry, string $written, ImportTarget $from, array &$placed): ResolvedImportEntry
+    {
+        $target = ImportListSchema::namesPreset($written)
+            ? $this->presetTarget($written, $entry, $position, $from)
+            : ImportTarget::ofFile(self::joined($from->realDirectory(), $written), self::originOf(self::normalize(self::joined($from->displayDirectory(), $written)), $from));
+        $placed = self::place($placed, $position, $target->key, $entry, $from);
+
+        return new ResolvedImportEntry($position, $entry, false, [$target]);
+    }
+
+    /** @param array<string, true> $taken */
+    private function selectorEntry(int $position, ResolvedValueInterface $entry, ImportTarget $from, array &$taken): ResolvedImportEntry
+    {
+        $selector = ImportListSchema::selectorOf($entry);
+        $targets = [];
+        $matches = ImportSelection::matches($selector, $from->realDirectory(), $from->displayDirectory(), self::refusing($entry, $position, $selector->definition->display()));
+        foreach ($matches as [$physical, $display]) {
+            $target = ImportTarget::ofFile($physical, self::originOf($display, $from));
+            if (!isset($taken[$target->key])) {
+                $taken[$target->key] = true;
+                $targets[] = $target;
+            }
+        }
+
+        return new ResolvedImportEntry($position, $entry, true, $targets);
     }
 
     private function presetTarget(string $name, ResolvedValueInterface $entry, int $position, ImportTarget $from): ImportTarget
@@ -99,7 +137,7 @@ final class ImportEntries
      */
     private static function place(array $placed, int $position, string $key, ResolvedValueInterface $entry, ImportTarget $from): array
     {
-        $written = (string) $entry->plain();
+        $written = (string) ImportListSchema::written($entry);
         if (isset($placed[$key])) {
             [$earlier, $earlierWritten] = $placed[$key];
             $entry->refuse($earlier === -1

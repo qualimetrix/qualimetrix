@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `imports:` entries may name a built-in preset: `imports: [strict]` applies it from the configuration file, so the pre-commit hook and the GitHub Action, which pass no `--preset`, judge by the same preset as a local `--preset=strict`. A bare name that is not built-in is refused with the list of presets.
-- `imports:` entries may be globs over directory levels (`config/qmx/*.yaml`, `*`, `?`, `[...]`; no `**` or braces): the matches are imported in byte order unless their own imports demand another, a pattern that matches nothing is accepted, and an unreadable directory is refused.
+- `imports:` entries may be `{subtree: dir}` or `{regex: fragment}` selectors over the `.yaml` / `.yml` files below the importing file's directory (same shape as `suppress_paths`; no glob): the matches are imported in byte order unless their own imports demand another, a selector that matches nothing is accepted, and a directory that cannot be listed or entered is refused.
 - Imported files may import in turn, ordered by C3 linearization; a cycle and contradictory precedence are refused naming the files, while a file given to `--preset` still cannot import. See [ADR 0140](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0140-built-in-preset-glob-and-nested-imports.md).
 
 ### Fixed

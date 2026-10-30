@@ -329,7 +329,7 @@ function acrossCell(array $row, string $language): string
 {
     if (perFileRoot($row)) {
         return $language === 'ru'
-            ? 'Читается из каждого файла отдельно, в любом файле, прочитанном через `imports`; между слоями не сливается.'
+            ? 'Читается из каждого файла отдельно, в корневом файле и в любом файле, прочитанном через `imports`; между слоями не сливается.'
             : 'Read per file, in the root file and in any file read through `imports`; never merged across layers.';
     }
 

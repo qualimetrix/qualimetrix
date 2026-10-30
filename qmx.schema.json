@@ -203,12 +203,21 @@
             ]
         },
         "imports": {
-            "description": "Configuration files this one builds on, lowest precedence first; this file overrides them all. Imports nest: a file an entry names may import in turn, but a file given to --preset may not. Each entry is resolved against the directory of the file that writes it (of its target, when that file is a symlink); every other path keeps the working directory as its base.",
-            "allOf": [
-                {
-                    "$ref": "#/definitions/7a60024335a3"
+            "description": "Configuration files this one builds on, lowest precedence first; this file overrides them all. An entry is a file path, the name of a built-in preset (strict, legacy, ci), or a {subtree: dir} / {regex: fragment} selector standing for every .yaml or .yml file below this file's directory whose path it matches, in byte order of the path. Imports nest: a file an entry names may import in turn, but a file given to --preset may not. Each entry is resolved against the directory of the file that writes it (of its target, when that file is a symlink); every other path keeps the working directory as its base.",
+            "type": [
+                "array",
+                "object",
+                "null"
+            ],
+            "items": {
+                "description": "A file path, the name of a built-in preset, or a selector over the files below this file's directory: {subtree: dir} or {regex: fragment}."
+            },
+            "patternProperties": {
+                "^(?:0|-?[1-9][0-9]*)$": {
+                    "description": "A file path, the name of a built-in preset, or a selector over the files below this file's directory: {subtree: dir} or {regex: fragment}."
                 }
-            ]
+            },
+            "additionalProperties": false
         },
         "include_autoload_dev": {
             "type": [

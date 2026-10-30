@@ -52,7 +52,30 @@ final readonly class ImportTarget
             throw ConfigurationRefusal::aboutDocument($origin, \sprintf('%s %s.', ucfirst($origin->describe()), $problem ?? 'was not found or is not accessible'));
         }
 
-        return new self(\sprintf('file:%d:%d', $identity->device, $identity->inode), $physicalPath, $origin, is_link($physicalPath));
+        return new self(self::keyOf($identity), $physicalPath, $origin, is_link($physicalPath));
+    }
+
+    /**
+     * The key a regular file would have, or null where {@see self::ofFile()}
+     * would refuse it: for knowing which files a list names without judging them.
+     */
+    public static function keyIfRegular(string $physicalPath): ?string
+    {
+        [$stat] = NativeCall::attempt(static fn(): array|false => stat($physicalPath));
+        $identity = FileIdentity::ofRegularFile($stat);
+
+        return $identity === null ? null : self::keyOf($identity);
+    }
+
+    private static function keyOf(FileIdentity $identity): string
+    {
+        return \sprintf('file:%d:%d', $identity->device, $identity->inode);
+    }
+
+    /** The key {@see self::ofPreset()} would give, or null where it would refuse the file. */
+    public static function presetKeyIfRegular(string $name, string $physicalPath): ?string
+    {
+        return str_starts_with($physicalPath, self::PHAR_SCHEME) ? 'preset:' . $name : self::keyIfRegular($physicalPath);
     }
 
     /**

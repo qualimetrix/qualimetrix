@@ -142,9 +142,9 @@ final readonly class ImportChain
         $cycle[] = self::label($target->origin);
 
         $entry->value->refuse(\sprintf(
-            'Entry imports[%d] ("%s") of %s closes an import cycle: %s.',
+            'Entry imports[%d] (%s) of %s closes an import cycle: %s.',
             $entry->position,
-            (string) $entry->value->plain(),
+            ImportListSchema::shown(ImportListSchema::written($entry->value)),
             $from->origin->describe(),
             implode(' imports ', $cycle),
         ));

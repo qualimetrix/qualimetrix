@@ -14,9 +14,9 @@ final readonly class ResolvedImportEntry
         public int $position,
         /** To refuse at the entry. */
         public ResolvedValueInterface $value,
-        public bool $isGlob,
+        public bool $isSelector,
         /**
-         * Byte order of the path for a glob, which may match nothing; exactly one for any other entry.
+         * Byte order of the path for a selector, which may match nothing; exactly one for any other entry.
          *
          * @var list<ImportTarget>
          */

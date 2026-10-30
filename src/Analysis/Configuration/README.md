@@ -105,9 +105,9 @@ Configuration/
 │   ├── DocumentKeyNormalizer.php
 │   ├── ImportChain.php
 │   ├── ImportEntries.php
-│   ├── ImportGlob.php
 │   ├── ImportLinearization.php
 │   ├── ImportListSchema.php
+│   ├── ImportSelection.php
 │   ├── ImportTarget.php
 │   ├── LoadedDocument.php
 │   ├── ResolvedImportEntry.php
@@ -232,17 +232,24 @@ ADR 0139 records the flat chain and ADR 0140 the three extensions below.
 
 - **Entries.** `Loader/ImportEntries` turns one list into
   `ResolvedImportEntry` values, each a position and the `ImportTarget`s it
-  leads to. An entry holding `*`, `?` or `[` is a glob; else one with no
-  directory part and no extension is a built-in preset name
-  (`PresetResolver::builtInPath()`); else a file path. A preset's origin is
-  `Preset(name)` imported through the file, and its applied-source name is the
-  bare name, distinct from the `preset:<name>` of `--preset`.
-- **Globs.** `Loader/ImportGlob` owns the grammar (`*`, `?`, `[...]` within a
-  segment; no `**`, braces or escapes) and walks directories itself, because
-  PHP's `glob()` skips an unreadable directory without saying so. A directory
-  that must be listed or entered and cannot is refused; no match is accepted
-  silently. The matches of one glob form a group the linearization does not
-  order internally.
+  leads to, judging them in written order (a first pass only learns which files
+  the strings name, without refusing). A string with no directory part and no
+  extension is a built-in preset name (`PresetResolver::builtInPath()`); any
+  other string is a file path, in which `*`, `?` and `[` are ordinary. A
+  one-entry mapping is a selector. A preset's origin is `Preset(name)` imported
+  through the file, and its applied-source name is the bare name, distinct from
+  the `preset:<name>` of `--preset`.
+- **Selectors.** A `subtree` or `regex` entry is decoded by
+  `SelectorYamlDecoder::decodePath()` (ADR 0077; `exact` is refused, a file is
+  a string) and walked by `Loader/ImportSelection` over the `.yaml`/`.yml`
+  files below the importing file's real directory, matched by the selector's
+  full-path match on the path from that directory. The walk is ours because
+  PHP's `glob()` skips an unreadable directory without saying so: a directory
+  that cannot be listed or entered (read and search are different permission
+  bits, both checked before listing) is refused; symlinked directories are
+  followed once each by identity; a regex starts in its literal directory
+  prefix, which must exist. No match is accepted silently. The matches of one
+  selector form a group the linearization does not order internally.
 - **Walk and order.** `ImportChain` walks depth-first with a stack keyed by
   target identity (a cycle is refused at the closing entry), reads each file
   once and names it by the first chain reaching it. `Loader/ImportLinearization`
@@ -265,9 +272,10 @@ ADR 0139 records the flat chain and ADR 0140 the three extensions below.
   name. Every other path in any file keeps the request's working directory as
   its base.
 - **Read per file, never composed.** `ConfigurationRoot::Imports` declares the
-  key and `Loader/ImportListSchema` its grammar (non-empty strings, no URL,
-  a glob within the grammar above, a preset name, or a local `.yaml`/`.yml`
-  path, judged in each layer). The chain reads the entries by composing a
+  key and `Loader/ImportListSchema` its grammar: a per-layer element judged in
+  each layer as a non-empty string (no URL; a preset name or a local
+  `.yaml`/`.yml` path) or a one-entry `subtree`/`regex` mapping. The element is
+  not a typed scalar, so the editor schema describes it in words. The chain reads the entries by composing a
   one-key slice of each file, then hands every layer on without the key.
   `ConfigSchema::PER_FILE_ROOTS` names such roots: they join
   `allowedRootKeys()` but have no `ENTRIES` row and are not `DOCUMENT_ROOTS`;

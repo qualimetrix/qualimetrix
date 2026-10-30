@@ -756,28 +756,30 @@ The root configuration file can list the files it builds on under `imports`:
 imports:
   - strict                    # a built-in preset, by name
   - config/architecture.yaml  # one file
-  - config/teams/*.yaml       # every file the glob matches
+  - subtree: config/teams     # every .yaml / .yml file below the directory
 
 fail_on: error
 ```
 
-An entry is one of three things, decided in this order:
+An entry is one of three things:
 
-1. **A glob** — it contains `*`, `?` or `[`.
-2. **A built-in preset** — no `/`, no `\` and no extension: `strict`, `legacy`
-   or `ci`.
-3. **A file path** — anything else, ending in `.yaml` or `.yml` (in any letter
-   case).
+1. **A built-in preset** — a string with no `/`, no `\` and no extension:
+   `strict`, `legacy` or `ci`.
+2. **A file path** — any other string, ending in `.yaml` or `.yml` (in any
+   letter case). `*`, `?` and `[` are ordinary characters in it.
+3. **A selector** — a one-entry mapping, `{subtree: …}` or `{regex: …}`, that
+   stands for a set of files; see [Selectors](#import-selectors).
 
 Each imported file is a layer of its own, written like any configuration file.
 The layers are the entries in the order written, then the root file: for the
-list above, `strict`, `config/architecture.yaml`, the files of
-`config/teams/*.yaml`, `qmx.yaml`. A later entry overrides an earlier one, and
+list above, `strict`, `config/architecture.yaml`, the files below
+`config/teams`, `qmx.yaml`. A later entry overrides an earlier one, and
 the root file overrides them all — each key by the policy described in
 [How layers combine](#how-layers-combine). The whole chain sits where `qmx.yaml`
 sits: above every preset given on the command line, below the command line
 itself. `-v` names every file in that order (`Configuration loaded from:
-defaults, strict, config/architecture.yaml, qmx.yaml, cli`).
+defaults, strict, config/architecture.yaml, config/teams/a.yaml,
+config/teams/b.yaml, qmx.yaml, cli`).
 
 **Paths.** An `imports` entry is resolved against the directory of the file
 that writes it, so `--config=sub/qmx.yaml` with `imports: [base.yaml]` reads
@@ -810,44 +812,59 @@ a local `qmx check --preset=strict`.
 - Only built-in presets are imported by name. A preset file of your own is a
   file: import it by path.
 
-### Globs
+### Selectors {#import-selectors}
 
-A glob stands for the files of one directory level, or of several:
-`config/teams/*.yaml`, `config/*/rules.yaml`, `config/team-?.yaml`,
-`config/[ab].yaml`. Use one for a set of files that changes without anyone
-editing the root file, such as `config/qmx/*.yaml` that other tools drop their
-parts into.
+A selector stands for a set of files that changes without anyone editing the
+root file, such as `config/qmx` that other tools drop their parts into. It has
+the same shape as the selectors of [`suppress_paths`](#suppress-paths):
 
-- **Grammar.** `*`, `?` and `[...]` match within one path segment, never across
-  `/`. Refused: `**`, `{a,b}`, a backslash (a pattern cannot escape
-  characters) and a `[` without its `]`. The last segment must end in `.yaml`
-  or `.yml`, so `*` and `config/*` are refused.
-- **Matching** is case-sensitive: `*.yaml` does not match `team.YAML`. A
-  wildcard never matches a name starting with a dot.
-- **Order.** The files one glob matches have no order among themselves except
-  what their own imports demand (see [Nested imports](#nested-imports)); where
-  nothing decides, byte order of the path applies, and a later name overrides
-  an earlier one. Name two files in the order you need as separate entries
-  when it matters.
-- **Skipped, not refused.** A file named explicitly anywhere in the same list,
-  a file an earlier glob already matched, and the importing file itself. One
-  file reached twice by one glob (through a symlinked directory) is placed
-  once.
-- **Refused.** A directory before the first wildcard that does not exist; a
-  directory the match must list or enter and cannot; a match that is not a
-  regular file.
-- **No match is accepted** and not reported — that is the point of a glob over
-  files that may be absent. The price is that a typo after the first wildcard
-  (`config/teams/*.yml` for `*.yaml`) matches nothing and says nothing; check
-  `-v` once.
+```yaml
+imports:
+  - subtree: config/qmx                                   # the directory and everything below it
+  - regex: 'vendor/acme/[^/]+/qmx-extension\.yaml'         # the whole relative path matches
+```
 
-!!! warning "Do not glob over `vendor/`"
-    Every file a glob matches becomes a layer of your configuration and can
-    change any key, the fail threshold included. `vendor/*/qmx.yaml` hands that
-    power to every installed package. For the same reason never glob a name
+- **Which files.** Every file whose name ends in `.yaml` or `.yml` (in any
+  letter case) below the directory of the file that writes the entry, named by
+  its path from that directory. A selector never reaches above that directory;
+  a file above it is a plain string entry (`../shared.yaml`).
+- **`subtree`** names a directory below the importing file's directory and
+  stands for every file below it, at any depth. The directory must exist.
+  `{exact: …}` is refused: a single file is a plain string.
+- **`regex`** is a PCRE fragment that must match the whole path from the
+  importing file's directory (`config/teams/a.yaml`, not `a.yaml`), the same
+  way as in `suppress_paths`. The literal directory it starts with bounds the
+  walk: `vendor/[^/]+/qmx\.yaml` looks only inside `vendor/`, and that
+  directory must exist. A fragment that starts with a metacharacter, or holds
+  `|` anywhere, walks the importing file's whole directory — `vendor/`
+  and `node_modules/` included. Prefer a literal prefix.
+- **Order.** The files one selector stands for have no order among themselves
+  except what their own imports and the other entries of the list demand (see
+  [Nested imports](#nested-imports)); where nothing decides, byte order of the
+  path applies, and a later name overrides an earlier one. Name two files in
+  the order you need as separate entries when it matters.
+- **Skipped, not refused.** A file named as a string anywhere in the same list,
+  a file an earlier selector already stands for, and the importing file itself.
+  A directory reached through several names (a symlink) is walked once, under
+  the first name in byte order.
+- **Refused.** A directory the walk must list or enter and cannot (a missing
+  read or search permission is refused, not skipped); a `.yaml` / `.yml` name
+  that the selector matches but that is not a regular file (a broken link, a
+  pipe); a `subtree` or a regex prefix that is not an existing directory.
+  Names the selector does not match are never judged.
+- **No match is accepted** and not reported — that is the point of a selector
+  over files that may be absent. The price is that a typo in the pattern
+  matches nothing and says nothing (a regex after its literal prefix; `.yml`
+  files for a pattern that ends in `\.yaml`); check `-v` once.
+
+!!! warning "Do not select over `vendor/`"
+    Every file a selector matches becomes a layer of your configuration and can
+    change any key, the fail threshold included. `{subtree: vendor}` hands that
+    power to every installed package. For the same reason never select a name
     packages use for their own configuration (`qmx.yaml`): you would import
     configurations that were written for other projects. Import the packages
-    you trust by path.
+    you trust by path, or narrow a regex to the one file name an extension
+    convention defines.
 
 ### Nested imports {#nested-imports}
 
@@ -879,7 +896,7 @@ placed once — the diamond below is the usual case:
 | `F: [A, D]`, `A: [D]`                       | refused              |
 
 The order is the C3 linearization (the method resolution order of Python), so
-a file means the same whichever file imports it (a glob written in an imported
+a file means the same whichever file imports it (a selector written in an imported
 file can break that; see ADR 0140). Two refusals follow from it:
 
 - **A cycle** is refused at the entry that closes it, naming the files:
@@ -898,7 +915,8 @@ c]`, `c: [b, d]`, `d: [a]` is refused because `c` puts `a` above `b` through
 
 Before the file is read: the same file twice in one list (two spellings or a
 symlink of one file count as the same), a file importing itself, a directory or
-other non-regular file, a URL, and a file that is not `.yaml` or `.yml`.
+other non-regular file, a URL, a file that is not `.yaml` or `.yml`, and an
+`exact` selector.
 `imports` is a list even for one file; `imports: ~` and `imports: []` import
 nothing.
 
@@ -1210,7 +1228,7 @@ reports at the namespace level.
 | `exclude_health`                                                                  | list (item: string)                                                                 | Every layer adds its elements; duplicates collapse.                                                                                                                                                                | Not written: the layer below stands. An item written `~` is refused.                     | Adds nothing.                                                                                   |
 | `fail_on`                                                                         | string                                                                              | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |
 | `format`                                                                          | string                                                                              | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |
-| `imports`                                                                         | list (item: string)                                                                 | Read per file, in the root file and in any file read through `imports`; never merged across layers.                                                                                                                | Not written: the file imports nothing. An item written `~` is refused.                   | The file imports nothing.                                                                       |
+| `imports`                                                                         | list (item: read by its owner)                                                      | Read per file, in the root file and in any file read through `imports`; never merged across layers.                                                                                                                | Not written: the file imports nothing. An item written `~` is refused.                   | The file imports nothing.                                                                       |
 | `include_autoload_dev`                                                            | boolean                                                                             | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |
 | `include_generated`                                                               | boolean                                                                             | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |
 | `memory_limit`                                                                    | string or integer                                                                   | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |

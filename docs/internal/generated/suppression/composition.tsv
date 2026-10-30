@@ -101,7 +101,6 @@ rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contr
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Document/Provenance.php	Qualimetrix\Analysis\Configuration\Contract\Document\Provenance	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Document/ResolvedValueInterface.php	Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Document/Schema/NodeSchema.php	Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema	error	1
-rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Document/Schema/ScalarForm.php	Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Refusal/ConfigurationOrigin.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Configuration/Contract/Refusal/RefusedPosition.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	warning	1

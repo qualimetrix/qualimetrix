@@ -95,8 +95,6 @@ rules:
       - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationOrigin.php
       - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php
       - exact: src/Analysis/Configuration/Contract/Refusal/RefusedPosition.php
-      # The closed vocabulary of scalar forms every section declaration names.
-      - exact: src/Analysis/Configuration/Contract/Document/Schema/ScalarForm.php
       - exact: src/Analysis/Finding/Contract/Channel/ChannelDeclaration.php
       - exact: src/Analysis/Finding/Contract/Channel/ChannelDeclarationRegistryInterface.php
       - exact: src/Analysis/Finding/Contract/Channel/ChannelShape.php

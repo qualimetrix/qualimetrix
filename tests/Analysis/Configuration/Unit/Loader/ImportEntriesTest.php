@@ -18,13 +18,18 @@ use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
 use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
 use Qualimetrix\Analysis\Configuration\Loader\ImportEntries;
-use Qualimetrix\Analysis\Configuration\Loader\ImportGlob;
+use Qualimetrix\Analysis\Configuration\Loader\ImportListSchema;
+use Qualimetrix\Analysis\Configuration\Loader\ImportSelection;
 use Qualimetrix\Analysis\Configuration\Loader\ImportTarget;
 use Qualimetrix\Analysis\Configuration\Loader\ResolvedImportEntry;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
+use Qualimetrix\Core\Pattern\PathPattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
 
 #[CoversClass(ImportEntries::class)]
-#[CoversClass(ImportGlob::class)]
+#[CoversClass(ImportSelection::class)]
+#[CoversClass(ImportListSchema::class)]
 #[CoversClass(ImportTarget::class)]
 final class ImportEntriesTest extends TestCase
 {
@@ -40,8 +45,10 @@ final class ImportEntriesTest extends TestCase
 
     protected function tearDown(): void
     {
-        if (is_dir($this->directory . '/locked')) {
-            chmod($this->directory . '/locked', 0o755);
+        foreach (['locked', 'vendor', 'cfg/inner'] as $directory) {
+            if (is_dir($this->directory . '/' . $directory)) {
+                chmod($this->directory . '/' . $directory, 0o755);
+            }
         }
         self::remove($this->directory);
     }
@@ -63,7 +70,7 @@ final class ImportEntriesTest extends TestCase
     #[DataProvider('provideEntryClassification')]
     public function itTellsAPresetNameFromAPath(string $entry, bool $isName): void
     {
-        self::assertSame($isName, ImportEntries::namesPreset($entry));
+        self::assertSame($isName, ImportListSchema::namesPreset($entry));
     }
 
     #[Test]
@@ -76,7 +83,7 @@ final class ImportEntriesTest extends TestCase
         self::assertSame('preset "strict" (imported by configuration file "qmx.yaml")', $targets[0]->origin->describe());
         self::assertSame(ConfigurationSource::Preset, $targets[0]->origin->source());
         self::assertStringStartsWith('file:', $targets[0]->key);
-        self::assertFalse($this->resolve(['strict'])[0]->isGlob);
+        self::assertFalse($this->resolve(['strict'])[0]->isSelector);
     }
 
     #[Test]
@@ -113,25 +120,29 @@ final class ImportEntriesTest extends TestCase
     }
 
     #[Test]
-    public function itPlacesAGlobsMatchesInByteOrderWhateverTheOrderTheyWereCreatedIn(): void
+    public function itTakesPatternCharactersInAStringAsOrdinaryCharacters(): void
     {
-        foreach (['b.yaml', 'B1.yaml', 'a-b.yaml', 'a.yaml', 'c.yaml'] as $file) {
-            $this->write('cfg/' . $file, '');
-        }
+        $this->write('cfg/a*.yaml', '');
+        $this->write('cfg/ab.yaml', '');
 
-        $entry = $this->resolve(['cfg/*.yaml'])[0];
-
-        self::assertTrue($entry->isGlob);
-        self::assertSame(['cfg/B1.yaml', 'cfg/a-b.yaml', 'cfg/a.yaml', 'cfg/b.yaml', 'cfg/c.yaml'], self::locators($entry));
+        self::assertSame(['cfg/a*.yaml'], self::locators($this->resolve(['cfg/a*.yaml'])[0]));
+        self::assertStringContainsString('"cfg/?.yaml"', $this->refusal(['cfg/?.yaml'])->summary());
     }
 
     #[Test]
-    public function itAcceptsAGlobThatMatchesNothing(): void
+    public function itPlacesASubtreesFilesInByteOrderOfTheirPathWhateverTheOrderTheyWereCreatedIn(): void
     {
-        $entry = $this->resolve(['cfg/*.yaml'])[0];
+        foreach (['b.yaml', 'B1.yaml', 'a-b.yaml', 'a.yaml', 'c.yaml', 'e.YML', 'notes.txt', 'sub/d.yaml', 'sub/deep/f.yml'] as $file) {
+            $this->write('cfg/' . $file, '');
+        }
 
-        self::assertTrue($entry->isGlob);
-        self::assertSame([], $entry->targets);
+        $entry = $this->resolve([['subtree' => 'cfg']])[0];
+
+        self::assertTrue($entry->isSelector);
+        self::assertSame(
+            ['cfg/B1.yaml', 'cfg/a-b.yaml', 'cfg/a.yaml', 'cfg/b.yaml', 'cfg/c.yaml', 'cfg/e.YML', 'cfg/sub/d.yaml', 'cfg/sub/deep/f.yml'],
+            self::locators($entry),
+        );
     }
 
     #[Test]
@@ -141,19 +152,94 @@ final class ImportEntriesTest extends TestCase
         $this->write('cfg/b.yaml', '');
         $this->write('last.yaml', '');
 
-        $entries = $this->resolve(['cfg/*.yaml', 'strict', 'last.yaml']);
+        $entries = $this->resolve([['subtree' => 'cfg'], 'strict', 'last.yaml']);
 
         self::assertSame([0, 1, 2], array_map(static fn(ResolvedImportEntry $entry): int => $entry->position, $entries));
-        self::assertSame([true, false, false], array_map(static fn(ResolvedImportEntry $entry): bool => $entry->isGlob, $entries));
+        self::assertSame([true, false, false], array_map(static fn(ResolvedImportEntry $entry): bool => $entry->isSelector, $entries));
     }
 
     #[Test]
-    public function itRefusesAGlobWhoseLiteralDirectoryIsMissing(): void
+    public function itAcceptsASelectorThatMatchesNothing(): void
     {
-        $refusal = $this->refusal(['nowhere/*.yaml']);
+        $entry = $this->resolve([['subtree' => 'cfg'], ['regex' => '.*\.nomatch\.yaml']])[0];
 
-        self::assertSame('Import "nowhere/*.yaml" (imports[0]) names the directory "nowhere" before its first glob character, which does not exist.', $refusal->summary());
-        self::assertSame(['imports', '0'], $refusal->position()?->segments);
+        self::assertTrue($entry->isSelector);
+        self::assertSame([], $entry->targets);
+    }
+
+    #[Test]
+    public function itMatchesARegexAgainstTheWholePathBelowTheImportingDirectory(): void
+    {
+        foreach (['acme/pkg/qmx-extension.yaml', 'acme/pkg/sub/qmx-extension.yaml', 'acme/qmx-extension.yaml', 'acme/pkg/qmx-extension.yaml.bak', 'acme/pkg/qmx-extension.yml'] as $file) {
+            $this->write('vendor/' . $file, '');
+        }
+        $this->write('qmx-extension.yaml', '');
+
+        $entry = $this->resolve([['regex' => 'vendor/[^/]+/[^/]+/qmx-extension\.yaml']])[0];
+
+        self::assertSame(['vendor/acme/pkg/qmx-extension.yaml'], self::locators($entry));
+    }
+
+    #[Test]
+    public function itWalksFromTheImportingDirectoryWhenARegexHasNoLiteralDirectory(): void
+    {
+        $this->write('team.local.yaml', '');
+        $this->write('cfg/deep/a.local.yaml', '');
+        $this->write('cfg/b.yaml', '');
+
+        self::assertSame(['cfg/deep/a.local.yaml', 'team.local.yaml'], self::locators($this->resolve([['regex' => '.*\.local\.yaml']])[0]));
+    }
+
+    #[Test]
+    public function itDoesNotEnterADirectoryOutsideTheLiteralPrefixOfARegex(): void
+    {
+        $this->write('vendor/a.yaml', '');
+        mkdir($this->directory . '/locked');
+        $this->lock();
+
+        self::assertSame(['vendor/a.yaml'], self::locators($this->resolve([['regex' => 'vendor/.*\.yaml']])[0]));
+        self::assertSame(
+            'Import "regex:.*\.yaml" (imports[0]) needs the contents of the directory "locked", which cannot be listed.',
+            $this->refusal([['regex' => '.*\.yaml']])->summary(),
+        );
+    }
+
+    /** @return iterable<string, array{SelectorKind, string, string}> */
+    public static function provideWalkRoots(): iterable
+    {
+        yield 'a subtree is its own root' => [SelectorKind::Subtree, 'config/qmx', 'config/qmx'];
+        yield 'directories before a bracket' => [SelectorKind::Regex, 'vendor/[^/]+/[^/]+/qmx-extension\.yaml', 'vendor'];
+        yield 'nested literal directories' => [SelectorKind::Regex, 'cfg/teams/.*\.yaml', 'cfg/teams'];
+        yield 'literal file name only' => [SelectorKind::Regex, 'team\.yaml', ''];
+        yield 'a hyphenated file name' => [SelectorKind::Regex, 'cfg/team-a\.yaml', 'cfg'];
+        yield 'a trailing slash' => [SelectorKind::Regex, 'a/b/.*', 'a/b'];
+        yield 'optional last letter of a directory' => [SelectorKind::Regex, 'vendor/acme?/x\.yaml', 'vendor'];
+        yield 'optional whole directory' => [SelectorKind::Regex, 'vendor/a*/x\.yaml', 'vendor'];
+        yield 'a counted repeat' => [SelectorKind::Regex, 'cfg/x{2}/a\.yaml', 'cfg'];
+        yield 'an optional slash' => [SelectorKind::Regex, 'cfg/?x', ''];
+        yield 'an alternation in a group' => [SelectorKind::Regex, 'vendor/(a|b)/x\.yaml', ''];
+        yield 'a top-level alternation' => [SelectorKind::Regex, 'vendor/a/x|other/y', ''];
+        yield 'a group first' => [SelectorKind::Regex, '(?:vendor/)?x\.yaml', ''];
+        yield 'a leading anchor' => [SelectorKind::Regex, '^vendor/x', ''];
+    }
+
+    #[Test]
+    #[DataProvider('provideWalkRoots')]
+    public function itBoundsTheWalkByTheDirectoryARegexCannotLeave(SelectorKind $kind, string $value, string $root): void
+    {
+        self::assertSame($root, ImportSelection::walkRoot(new PathPattern(new SelectorDefinition($kind, $value))));
+    }
+
+    #[Test]
+    public function itRefusesAWalkRootThatIsMissingOrNotADirectory(): void
+    {
+        $this->write('file.yaml', '');
+        $this->write('notes', '');
+
+        self::assertSame('Import "subtree:nowhere" (imports[0]) names the directory "nowhere", which does not exist.', $this->refusal([['subtree' => 'nowhere']])->summary());
+        self::assertSame('Import "subtree:file.yaml" (imports[0]) names "file.yaml", which is not a directory; write a file as a plain string.', $this->refusal([['subtree' => 'file.yaml']])->summary());
+        self::assertSame('Import "regex:nowhere/.*\.yaml" (imports[0]) names the directory "nowhere", which does not exist.', $this->refusal([['regex' => 'nowhere/.*\.yaml']])->summary());
+        self::assertSame('Import "regex:notes/.*" (imports[0]) names "notes", which is not a directory.', $this->refusal([['regex' => 'notes/.*']])->summary());
     }
 
     #[Test]
@@ -161,82 +247,139 @@ final class ImportEntriesTest extends TestCase
     {
         $this->lock();
 
-        $refusal = $this->refusal(['locked/*.yaml']);
+        $refusal = $this->refusal([['subtree' => 'locked']]);
 
-        self::assertSame('Import "locked/*.yaml" (imports[0]) needs the contents of the directory "locked", which cannot be listed.', $refusal->summary());
+        self::assertSame('Import "subtree:locked" (imports[0]) needs the contents of the directory "locked", which cannot be listed.', $refusal->summary());
     }
 
+    /** A directory readable but not searchable lists its names yet hides what they stand for. */
     #[Test]
-    public function itRefusesADirectoryItMustEnterToReachALiteralSegmentAndCannot(): void
+    public function itRefusesADirectoryItCanListButNotEnter(): void
     {
-        mkdir($this->directory . '/vendor/a', 0o777, true);
-        $this->lock('vendor/a');
+        mkdir($this->directory . '/cfg/inner');
+        $this->write('cfg/inner/a.yaml', '');
+        $this->lock('cfg/inner', 0o444);
 
         try {
-            $refusal = $this->refusal(['vendor/*/qmx.yaml']);
+            $inner = $this->refusal([['subtree' => 'cfg']])->summary();
+            $root = $this->refusal([['subtree' => 'cfg/inner']])->summary();
         } finally {
-            chmod($this->directory . '/vendor/a', 0o755);
+            chmod($this->directory . '/cfg/inner', 0o755);
         }
 
-        self::assertSame('Import "vendor/*/qmx.yaml" (imports[0]) needs to enter the directory "vendor/a", which cannot be entered.', $refusal->summary());
+        self::assertSame('Import "subtree:cfg" (imports[0]) needs to enter the directory "cfg/inner", which cannot be entered.', $inner);
+        self::assertSame('Import "subtree:cfg/inner" (imports[0]) needs to enter the directory "cfg/inner", which cannot be entered.', $root);
     }
 
     #[Test]
-    public function itPassesOverACandidateThatIsNotADirectoryWhereADirectoryIsNeeded(): void
+    public function itRefusesADirectoryItMustEnterOnTheWayToTheRootAndCannot(): void
     {
-        mkdir($this->directory . '/vendor/acme/x', 0o777, true);
-        $this->write('vendor/autoload.php', '');
-        $this->write('vendor/acme/x/qmx.yaml', '');
-        mkdir($this->directory . '/vendor/other/x', 0o777, true);
+        mkdir($this->directory . '/vendor/a', 0o777, true);
+        $this->lock('vendor', 0o444);
 
-        $entry = $this->resolve(['vendor/*/x/qmx.yaml'])[0];
-
-        self::assertSame(['vendor/acme/x/qmx.yaml'], self::locators($entry));
-    }
-
-    #[Test]
-    public function itNeverMatchesTheDotEntriesAndKeepsHiddenFilesToAnExplicitDot(): void
-    {
-        $this->write('cfg/.a.yaml', '');
-        $this->write('cfg/b.yaml', '');
-        $this->write('x.yaml', '');
-
-        self::assertSame(['cfg/b.yaml'], self::locators($this->resolve(['cfg/*.yaml'])[0]));
-        self::assertSame(['cfg/.a.yaml'], self::locators($this->resolve(['cfg/.*.yaml'])[0]));
-        self::assertSame([], self::locators($this->resolve(['cfg/.*/x.yaml'])[0]));
-    }
-
-    #[Test]
-    public function itMatchesCaseSensitively(): void
-    {
-        $this->write('cfg/a.YAML', '');
-
-        self::assertSame([], self::locators($this->resolve(['cfg/*.yaml'])[0]));
-    }
-
-    #[Test]
-    public function itMatchesWithinOneSegmentByQuestionMarkAndBracket(): void
-    {
-        foreach (['a1.yaml', 'a2.yaml', 'a3.yaml', 'ab.yaml'] as $file) {
-            $this->write('cfg/' . $file, '');
+        try {
+            $refusal = $this->refusal([['subtree' => 'vendor/a']]);
+        } finally {
+            chmod($this->directory . '/vendor', 0o755);
         }
 
-        self::assertSame(['cfg/a1.yaml', 'cfg/a2.yaml', 'cfg/a3.yaml', 'cfg/ab.yaml'], self::locators($this->resolve(['cfg/a?.yaml'])[0]));
-        self::assertSame(['cfg/a1.yaml', 'cfg/a3.yaml'], self::locators($this->resolve(['cfg/a[13].yaml'])[0]));
-        self::assertSame(['cfg/a1.yaml', 'cfg/a2.yaml', 'cfg/a3.yaml'], self::locators($this->resolve(['cfg/a[0-9].yaml'])[0]));
+        self::assertSame('Import "subtree:vendor/a" (imports[0]) needs to enter the directory "vendor", which cannot be entered.', $refusal->summary());
     }
 
-    /** @return iterable<string, array{list<string>, list<list<string>>}> */
-    public static function provideOverlappingEntries(): iterable
+    #[Test]
+    public function itDescendsADirectoryNamedLikeAConfigurationFile(): void
     {
-        yield 'explicit after the glob' => [['cfg/*.yaml', 'cfg/b.yaml'], [['cfg/a.yaml', 'cfg/c.yaml'], ['cfg/b.yaml']]];
-        yield 'explicit before the glob' => [['cfg/b.yaml', 'cfg/*.yaml'], [['cfg/b.yaml'], ['cfg/a.yaml', 'cfg/c.yaml']]];
-        yield 'two globs' => [['cfg/[ab].yaml', 'cfg/*.yaml'], [['cfg/a.yaml', 'cfg/b.yaml'], ['cfg/c.yaml']]];
-        yield 'the same glob twice' => [['cfg/*.yaml', 'cfg/*.yaml'], [['cfg/a.yaml', 'cfg/b.yaml', 'cfg/c.yaml'], []]];
+        $this->write('cfg/d.yaml/e.yaml', '');
+
+        self::assertSame(['cfg/d.yaml/e.yaml'], self::locators($this->resolve([['subtree' => 'cfg']])[0]));
+    }
+
+    #[Test]
+    public function itWalksARealDirectoryOnceWhateverNumberOfNamesLeadToIt(): void
+    {
+        $this->write('vendor/a/qmx.yaml', '');
+        symlink($this->directory . '/vendor/a', $this->directory . '/vendor/b');
+        symlink($this->directory . '/cfg', $this->directory . '/cfg/loop');
+        $this->write('cfg/x.yaml', '');
+
+        self::assertSame(['vendor/a/qmx.yaml'], self::locators($this->resolve([['subtree' => 'vendor']])[0]));
+        self::assertSame(['cfg/x.yaml'], self::locators($this->resolve([['subtree' => 'cfg']])[0]));
+    }
+
+    #[Test]
+    public function itRefusesAMatchThatIsNotARegularFile(): void
+    {
+        if (!\function_exists('posix_mkfifo')) {
+            self::markTestSkipped('Named pipes need ext-posix.');
+        }
+        posix_mkfifo($this->directory . '/cfg/pipe.yaml', 0o644);
+
+        $refusal = $this->refusal([['subtree' => 'cfg']]);
+
+        self::assertSame('Configuration file "cfg/pipe.yaml" (imported by configuration file "qmx.yaml") is not a regular file.', $refusal->summary());
+    }
+
+    #[Test]
+    public function itRefusesABrokenLinkItMatchesButNotOneItDoesNot(): void
+    {
+        symlink($this->directory . '/nowhere', $this->directory . '/cfg/dead.yaml');
+
+        self::assertSame(
+            'Configuration file "cfg/dead.yaml" (imported by configuration file "qmx.yaml") was not found or is not accessible.',
+            $this->refusal([['subtree' => 'cfg']])->summary(),
+        );
+        self::assertSame([], self::locators($this->resolve([['regex' => 'cfg/live\.yaml']])[0]));
+    }
+
+    #[Test]
+    public function itRefusesARegexPcreCannotMatch(): void
+    {
+        $this->write('cfg/' . str_repeat('a', 40) . '.yaml', '');
+
+        $refusal = $this->refusal([['regex' => 'cfg/(?:a+)+b\.yaml']]);
+
+        self::assertStringContainsString('could not match', $refusal->summary());
+    }
+
+    /** @return iterable<string, array{list<mixed>, non-empty-string}> */
+    public static function provideEntriesTheListCannotHold(): iterable
+    {
+        yield 'an exact selector' => [[['exact' => 'cfg/a.yaml']], 'Import {exact: cfg/a.yaml} (imports[0]) names one file; write a file path as a plain string.'];
+        yield 'an unknown kind' => [[['glob' => 'cfg/*.yaml']], 'Unknown selector kind "glob"; expected exact, subtree, or regex.'];
+        yield 'two kinds in one entry' => [[['subtree' => 'cfg', 'regex' => 'x']], 'Selector entries must be one-entry mappings: {exact: value}, {subtree: value}, or {regex: value}. Bare strings are not supported.'];
+        yield 'a leading slash' => [[['subtree' => '/etc']], 'Path selector "subtree:/etc" must not have leading, trailing, or empty path segments'];
+        yield 'a trailing slash' => [[['subtree' => 'cfg/']], 'Path selector "subtree:cfg/" must not have leading, trailing, or empty path segments'];
+        yield 'a parent segment' => [[['subtree' => '../shared']], 'Import {subtree: ../shared} (imports[0]) names a directory with a "." or ".." segment; a subtree is named below the importing file\'s directory.'];
+        yield 'a dot segment' => [[['subtree' => 'cfg/./x']], 'Import {subtree: cfg/./x} (imports[0]) names a directory with a "." or ".." segment; a subtree is named below the importing file\'s directory.'];
+        yield 'an invalid pattern' => [[['regex' => '(']], 'Selector "regex:(" is not valid PCRE'];
+        yield 'an empty value' => [[['subtree' => '']], 'Selector "subtree" must have a non-empty string value.'];
+        yield 'a number' => [[5], 'Import entry (imports[0]) is neither a file path nor a selector mapping.'];
+        yield 'a list' => [[['a.yaml', 'b.yaml']], 'Import entry (imports[0]) is neither a file path nor a selector mapping.'];
+        yield 'an empty string' => [[''], 'Import "" (imports[0]) is empty; name a file.'];
     }
 
     /**
-     * @param list<string> $entries
+     * @param list<mixed> $entries
+     * @param non-empty-string $summary
+     */
+    #[Test]
+    #[DataProvider('provideEntriesTheListCannotHold')]
+    public function itRefusesAnEntryThatIsNeitherAPathNorAnExplicitSelector(array $entries, string $summary): void
+    {
+        self::assertStringStartsWith($summary, $this->refusal($entries)->summary());
+    }
+
+    /** @return iterable<string, array{list<string|array<string, string>>, list<list<string>>}> */
+    public static function provideOverlappingEntries(): iterable
+    {
+        yield 'explicit after the selector' => [[['subtree' => 'cfg'], 'cfg/b.yaml'], [['cfg/a.yaml', 'cfg/c.yaml'], ['cfg/b.yaml']]];
+        yield 'explicit before the selector' => [['cfg/b.yaml', ['subtree' => 'cfg']], [['cfg/b.yaml'], ['cfg/a.yaml', 'cfg/c.yaml']]];
+        yield 'two selectors' => [[['regex' => 'cfg/[ab]\.yaml'], ['subtree' => 'cfg']], [['cfg/a.yaml', 'cfg/b.yaml'], ['cfg/c.yaml']]];
+        yield 'the same selector twice' => [[['subtree' => 'cfg'], ['subtree' => 'cfg']], [['cfg/a.yaml', 'cfg/b.yaml', 'cfg/c.yaml'], []]];
+    }
+
+    /**
+     * @param list<string|array<string, string>> $entries
      * @param list<list<string>> $expected
      */
     #[Test]
@@ -255,27 +398,16 @@ final class ImportEntriesTest extends TestCase
     {
         $this->write('other.yaml', '');
 
-        self::assertSame(['other.yaml'], self::locators($this->resolve(['*.yaml'])[0]));
+        self::assertSame(['other.yaml'], self::locators($this->resolve([['regex' => '[^/]*\.yaml']])[0]));
     }
 
     #[Test]
-    public function itPlacesOneFileReachedTwiceThroughSymlinkedDirectoriesOnceAtItsFirstMatch(): void
+    public function itJudgesEntriesInWrittenOrder(): void
     {
-        mkdir($this->directory . '/vendor/a', 0o777, true);
-        $this->write('vendor/a/qmx.yaml', '');
-        symlink($this->directory . '/vendor/a', $this->directory . '/vendor/b');
+        $this->lock();
 
-        self::assertSame(['vendor/a/qmx.yaml'], self::locators($this->resolve(['vendor/*/qmx.yaml'])[0]));
-    }
-
-    #[Test]
-    public function itRefusesAMatchThatIsNotARegularFile(): void
-    {
-        mkdir($this->directory . '/cfg/d.yaml');
-
-        $refusal = $this->refusal(['cfg/*.yaml']);
-
-        self::assertSame('Configuration file "cfg/d.yaml" (imported by configuration file "qmx.yaml") is not a regular file.', $refusal->summary());
+        self::assertStringStartsWith('Import "subtree:locked" (imports[0])', $this->refusal([['subtree' => 'locked'], 'missing.yaml'])->summary());
+        self::assertStringStartsWith('Configuration file "missing.yaml"', $this->refusal(['missing.yaml', ['subtree' => 'locked']])->summary());
     }
 
     #[Test]
@@ -284,20 +416,11 @@ final class ImportEntriesTest extends TestCase
         $this->write('cfg/a.yaml', '');
 
         $entries = (new ImportEntries())->resolve(
-            $this->values(['cfg/*.yaml', $this->directory . '/cfg/*.yaml']),
+            $this->values([['subtree' => 'cfg']]),
             ImportTarget::ofFile($this->directory . '/qmx.yaml', ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'sub/qmx.yaml')),
         );
 
         self::assertSame(['sub/cfg/a.yaml'], self::locators($entries[0]));
-        self::assertSame([], self::locators($entries[1]));
-    }
-
-    #[Test]
-    public function itNamesAnAbsolutePatternsMatchesByTheirAbsolutePath(): void
-    {
-        $this->write('cfg/a.yaml', '');
-
-        self::assertSame([$this->directory . '/cfg/a.yaml'], self::locators($this->resolve([$this->directory . '/cfg/*.yaml'])[0]));
     }
 
     #[Test]
@@ -307,34 +430,37 @@ final class ImportEntriesTest extends TestCase
         $this->write('other.yaml', '');
         symlink($this->directory . '/other.yaml', $this->directory . '/cfg/b.yaml');
 
-        $targets = $this->resolve(['cfg/*.yaml'])[0]->targets;
+        $targets = $this->resolve([['subtree' => 'cfg']])[0]->targets;
 
         self::assertSame([false, true], array_map(static fn(ImportTarget $target): bool => $target->isSymlink, $targets));
     }
 
-    /** @return iterable<string, array{string, ?string}> */
-    public static function provideGrammar(): iterable
+    #[Test]
+    public function itKeysABuiltInPresetInsideAPharByItsNameWithoutReadingIt(): void
     {
-        yield 'plain' => ['cfg/*.yaml', null];
-        yield 'class' => ['cfg/[ab]*.yaml', null];
-        yield 'class holding a bracket first' => ['cfg/[]a].yaml', null];
-        yield 'recursive' => ['cfg/**/a.yaml', 'uses "**"; a glob stands for one directory level, so name each level'];
-        yield 'brace' => ['cfg/{a,b}.yaml', 'uses "{"; braces are not expanded, write one entry per alternative'];
-        yield 'backslash' => ['cfg/a\\*.yaml', 'contains a backslash; a pattern cannot escape characters'];
-        yield 'unclosed' => ['cfg/[a.yaml', 'has a "[" without its closing "]"'];
-        yield 'empty set' => ['cfg/[].yaml', 'has a "[" without its closing "]"'];
-        yield 'second unclosed' => ['cfg/[a]b[.yaml', 'has a "[" without its closing "]"'];
+        $origin = ConfigurationOrigin::of(ConfigurationSource::Preset, 'strict');
+
+        $target = ImportTarget::ofPreset('strict', 'phar:///opt/qmx.phar/src/Analysis/Configuration/Preset/strict.yaml', $origin);
+
+        self::assertSame('preset:strict', $target->key);
+        self::assertSame('preset:strict', ImportTarget::presetKeyIfRegular('strict', $target->physicalPath));
+        self::assertSame('phar:///opt/qmx.phar/src/Analysis/Configuration/Preset', $target->realDirectory());
     }
 
     #[Test]
-    #[DataProvider('provideGrammar')]
-    public function itJudgesAPatternByItsGrammar(string $pattern, ?string $problem): void
+    public function itKeysAPresetOutsideAPharByTheIdentityOfItsFile(): void
     {
-        self::assertSame($problem, ImportGlob::grammarProblem($pattern));
+        $path = (string) (new PresetResolver())->builtInPath('strict');
+
+        $target = ImportTarget::ofPreset('strict', $path, ConfigurationOrigin::of(ConfigurationSource::Preset, 'strict'));
+
+        self::assertStringStartsWith('file:', $target->key);
+        self::assertSame($target->key, ImportTarget::keyIfRegular($path));
+        self::assertNull(ImportTarget::keyIfRegular($this->directory . '/cfg'));
     }
 
     /**
-     * @param list<string> $entries
+     * @param list<string|array<string, string>> $entries
      *
      * @return list<ResolvedImportEntry>
      */
@@ -348,7 +474,7 @@ final class ImportEntriesTest extends TestCase
         );
     }
 
-    /** @param list<string> $entries */
+    /** @param list<mixed> $entries */
     private function refusal(array $entries): ConfigurationRefusal
     {
         try {
@@ -361,7 +487,7 @@ final class ImportEntriesTest extends TestCase
     }
 
     /**
-     * @param list<string> $entries
+     * @param list<mixed> $entries
      *
      * @return list<\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface>
      */
@@ -381,13 +507,13 @@ final class ImportEntriesTest extends TestCase
         return array_map(static fn(ImportTarget $target): string => (string) $target->origin->locator(), $entry->targets);
     }
 
-    private function lock(string $directory = 'locked'): void
+    private function lock(string $directory = 'locked', int $mode = 0o000): void
     {
         if (!is_dir($this->directory . '/' . $directory)) {
             mkdir($this->directory . '/' . $directory);
         }
-        chmod($this->directory . '/' . $directory, 0o000);
-        if (is_readable($this->directory . '/' . $directory)) {
+        chmod($this->directory . '/' . $directory, $mode);
+        if (is_executable($this->directory . '/' . $directory)) {
             chmod($this->directory . '/' . $directory, 0o755);
             self::markTestSkipped('The process ignores directory permissions.');
         }
@@ -404,7 +530,7 @@ final class ImportEntriesTest extends TestCase
 
     private static function remove(string $path): void
     {
-        if (is_link($path) || is_file($path)) {
+        if (is_link($path) || is_file($path) || @filetype($path) === 'fifo') {
             unlink($path);
 
             return;
