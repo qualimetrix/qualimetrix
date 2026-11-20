@@ -64,6 +64,13 @@ failure; automatic requests warn and collect in-process.
 returns a `WorkerStartFailure` with the request and native cause when it cannot
 connect. `WorkerPhpFailure` carries a worker's private PHP fatal diagnostic back
 through IPC so the failed file retains its actual cause.
+Process startup maps every descriptor the coordinator holds onto `/dev/null`
+at the same number in the worker, so a descriptor inherited at or above the
+open-files soft limit makes `proc_open()` fail. Before the first start,
+`WorkerContextFactory` raises the soft limit to the highest open
+descriptor plus one, within the hard limit, for the rest of the run; workers
+inherit the raised limit. When the hard limit is too low, the factory refuses
+with the descriptor and both limits instead of attempting a start.
 
 **Memory limit.** A worker is a separate process that starts under `php.ini`,
 and the coordinator's `ini_set()` does not cross the process boundary.

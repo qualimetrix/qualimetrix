@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Parallel workers start when qmx inherits a file descriptor numbered at or above the open-files soft limit (for example from an IDE or Git client under the macOS default `ulimit -n 256`); qmx raises the soft limit within the hard limit instead of failing with `posix_spawn() failed: Bad file descriptor` (macOS) or `Unable to copy file descriptor … into file descriptor …` (Linux). When the hard limit is too low, the startup failure names the descriptor and both limits.
+
 ## [0.32.0] - 2026-10-30
 
 ### Breaking
