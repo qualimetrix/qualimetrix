@@ -125,6 +125,7 @@ final class PhpBuiltinClassRegistryCensusTest extends TestCase
         'memcached' => 'PECL; preinstalled on the GitHub-hosted Ubuntu runner',
         'mongodb' => 'PECL; preinstalled on the GitHub-hosted Ubuntu runner',
         'msgpack' => 'PECL; preinstalled on the GitHub-hosted Ubuntu runner',
+        'pspell' => 'Bundled through 8.3, moved to PECL in 8.4; out of scope on every supported version',
         'redis' => 'PECL; preinstalled on the GitHub-hosted Ubuntu runner',
         'xdebug' => 'PECL; not shipped with PHP',
         'zmq' => 'PECL; preinstalled on the GitHub-hosted Ubuntu runner',
