@@ -14102,6 +14102,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerHolderTest::itCanSetCustomLogger
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerHolderTest::itInitiallyContainsNullLogger
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\LoggerHolderTest::itResetsToTheNullLoggerItStartsWith
+ - Qualimetrix\Tests\Infrastructure\Parallel\Integration\InheritedDescriptorLimitTest::itNamesTheDescriptorWhenTheHardLimitForbidsRaising
+ - Qualimetrix\Tests\Infrastructure\Parallel\Integration\InheritedDescriptorLimitTest::itStartsWorkersWhenAnInheritedDescriptorExceedsTheSoftLimit
  - Qualimetrix\Tests\Infrastructure\Parallel\Integration\WorkerMemoryLimitTest::itFailsTheFileInTheWorkerWhenTheResolvedLimitIsTooSmallAndNamesTheLimit
  - Qualimetrix\Tests\Infrastructure\Parallel\Integration\WorkerMemoryLimitTest::itLetsTheWorkerUseALimitLargerThanPhpIni
  - Qualimetrix\Tests\Infrastructure\Parallel\Unit\FileProcessingResultWireFormatTest::itRoundTripsFileProcessingResultFailureViaPhpSerialize
